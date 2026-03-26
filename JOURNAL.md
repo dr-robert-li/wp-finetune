@@ -8,7 +8,7 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ### Why this project exists
 
-A search for open-source, open-weight models fine-tuned on WordPress coding best practices turned up nothing. The tools that exist in this space are wrappers — some quite sophisticated — around frontier closed-source models (GPT-4, Claude, etc.). No one had published an open model that internalised WordPress Coding Standards, security patterns, and architectural opinions. So we decided to build one.
+A search for open-source, open-weight models fine-tuned on WordPress coding best practices turned up nothing. The tools that exist in this space are wrappers — some quite sophisticated — around frontier closed-source models (OpenAI, Claude, etc.). No one had published an open model that internalised WordPress Coding Standards, security patterns, and architectural opinions. So I decided to build one.
 
 The motivation is explicitly open-source: produce a model that the WordPress community can run locally, inspect, modify, and redistribute without vendor lock-in.
 
@@ -21,7 +21,7 @@ The motivation is explicitly open-source: produce a model that the WordPress com
 - Strong out-of-the-box PHP/web code understanding for its size class.
 - LLaMA-compatible architecture, making it easy to distribute and adopt. Users can serve it via Ollama, vLLM, llama.cpp, etc. without custom inference code.
 - Good HuggingFace ecosystem support and Unsloth compatibility for efficient LoRA fine-tuning.
-- The 8B size is a deliberate tradeoff: we sacrifice some raw capability vs. larger models in exchange for fast iteration, low serving cost, and broad accessibility.
+- The 8B size is a deliberate tradeoff: I sacrifice some raw capability vs. larger models in exchange for fast iteration, low serving cost, and broad accessibility.
 
 ### Architecture: MoE with task-token routing
 
@@ -91,7 +91,7 @@ Starting this journal to capture design choices, tradeoffs, and lessons learned 
 
 **Context:** What prompted this decision or observation.
 
-**Decision / Observation:** What we chose or noticed.
+**Decision / Observation:** What I chose or noticed.
 
 **Reasoning:** Why — tradeoffs considered, alternatives rejected.
 
