@@ -7,6 +7,7 @@ PHPDoc blocks, and dependency references from each PHP file.
 Outputs JSON files per repo in phase1_extraction/output/extracted/.
 """
 
+import fnmatch
 import json
 import subprocess
 import sys
@@ -37,15 +38,27 @@ def should_process_file(file_path: Path, repo_root: Path, repo_config: dict) -> 
         if skip in rel:
             return False
 
-    # Check skip_paths from config
+    # Check skip_paths from config (support both prefix and glob patterns)
     for skip in repo_config.get("skip_paths", []):
-        if rel.startswith(skip):
+        if rel.startswith(skip) or fnmatch.fnmatch(rel, skip):
             return False
 
     # If paths specified, file must be under one of them
+    # Supports both directory prefixes (e.g. "src/wp-includes") and
+    # glob patterns (e.g. "**/*.php", "includes/**/*.php")
     allowed_paths = repo_config.get("paths", [])
     if allowed_paths:
-        return any(rel.startswith(p) for p in allowed_paths)
+        for p in allowed_paths:
+            if "**" in p or "*" in p:
+                # Glob pattern: use fnmatch, converting ** to match any path component
+                pattern = p.replace("**/", "")  # strip leading **/
+                if fnmatch.fnmatch(rel, pattern) or fnmatch.fnmatch(rel, f"*/{pattern}"):
+                    return True
+            else:
+                # Directory prefix
+                if rel.startswith(p):
+                    return True
+        return False
 
     return True
 
