@@ -10,10 +10,14 @@ Outputs:
 """
 
 import json
+import re
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+from dotenv import load_dotenv
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 import anthropic
 import yaml
@@ -241,6 +245,18 @@ def judge_function(func: dict, client: anthropic.Anthropic, system: str) -> dict
         }
 
 
+def _sanitize_custom_id(repo_name: str, index: int, func_name: str) -> str:
+    """Build a Batch API custom_id matching ^[a-zA-Z0-9_-]{1,64}$.
+
+    Strips all characters outside [a-zA-Z0-9_-] and truncates to 64 chars.
+    Includes the index to guarantee uniqueness even after sanitization.
+    """
+    safe_repo = re.sub(r"[^a-zA-Z0-9_-]", "-", repo_name)
+    safe_func = re.sub(r"[^a-zA-Z0-9_-]", "-", func_name)
+    raw = f"{safe_repo}_{index}_{safe_func}"
+    return raw[:64]
+
+
 def judge_functions_batch(
     functions: list[dict],
     client: anthropic.Anthropic,
@@ -250,7 +266,7 @@ def judge_functions_batch(
     """Judge many functions via the Batch API, return assessments in order."""
     requests = []
     for i, func in enumerate(functions):
-        custom_id = f"{repo_name}_{i}_{func['function_name']}"
+        custom_id = _sanitize_custom_id(repo_name, i, func["function_name"])
         prompt = _make_judge_prompt(func)
         requests.append(make_batch_request(custom_id, system, prompt))
 
@@ -266,7 +282,7 @@ def judge_functions_batch(
 
     assessments = []
     for i, func in enumerate(functions):
-        custom_id = f"{repo_name}_{i}_{func['function_name']}"
+        custom_id = _sanitize_custom_id(repo_name, i, func["function_name"])
         if custom_id in result_map:
             assessment = result_map[custom_id]
             assessment = _apply_security_auto_fail(assessment, func)

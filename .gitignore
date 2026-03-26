@@ -36,3 +36,15 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Cloned repositories (large, re-cloneable)
+phase1_extraction/repos/
+
+# Pipeline output data (generated, not source)
+phase1_extraction/output/
+phase2_synthetic/
+phase3_cot/output/
+final_dataset/
+
+# Parse failure logs
+*_parse_failures.jsonl
