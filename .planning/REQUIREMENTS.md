@@ -1,0 +1,112 @@
+# Requirements: wp-qwen3-moe
+
+**Defined:** 2026-03-26
+**Core Value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured rubric scoring.
+
+## v1 Requirements
+
+Requirements for initial release. Each maps to roadmap phases.
+
+### Pipeline Hardening
+
+- [ ] **PIPE-01**: Pipeline pre-flight script validates PHPCS install, API key, PHP CLI, and WordPress-Coding-Standards before execution
+- [ ] **PIPE-02**: All long-running scripts support checkpoint/resume to survive interruptions
+- [ ] **PIPE-03**: API calls use exponential backoff with jitter instead of fixed sleep intervals
+- [ ] **PIPE-04**: Scripts integrate Anthropic Batch API for high-volume offline processing (50% cost savings)
+- [ ] **PIPE-05**: Parse failure stubs are detected and rejected instead of silently entering training data
+
+### Repository Curation
+
+- [ ] **REPO-01**: repos.yaml populated with WordPress Core repository
+- [ ] **REPO-02**: repos.yaml populated with 10+ high-quality plugins (WooCommerce, Jetpack, Yoast SEO, etc.)
+- [ ] **REPO-03**: repos.yaml populated with 5+ high-quality themes (Underscores, developer-focused themes)
+- [ ] **REPO-04**: Each repo entry has quality_tier, path_filters, and description
+
+### Data Pipeline Execution
+
+- [ ] **DATA-01**: Phase 1 clone completes — all repos in repos.yaml shallow-cloned
+- [ ] **DATA-02**: Phase 1 extract completes — PHP functions extracted with metadata
+- [ ] **DATA-03**: Phase 1 judge completes — functions assessed (PHPCS pre-filter + Claude judge), passed/failed separated
+- [ ] **DATA-04**: Phase 2 gap analysis completes — coverage gaps identified against taxonomy
+- [ ] **DATA-05**: Phase 2 mutation completes — contrastive bad→good pairs generated from passed code
+- [ ] **DATA-06**: Phase 2 generate completes — synthetic examples fill taxonomy gaps
+- [ ] **DATA-07**: Phase 2 judge completes — synthetic examples assessed, failed get one revision
+- [ ] **DATA-08**: Phase 2 judge_dataset completes — rubric-scored judge training data generated
+- [ ] **DATA-09**: Phase 3 CoT completes — instruction synthesis + reasoning chains generated
+- [ ] **DATA-10**: Phase 3 export completes — OpenAI, Alpaca, Raw JSONL with task tokens, 80/10/10 split
+- [ ] **DATA-11**: Final dataset contains ≥10,000 examples with ~50/50 wp_gen/wp_judge split
+
+### Model Preparation
+
+- [ ] **MODL-01**: Qwen3-8B converted to MoE via CMoE (8 experts, top-2 routing, ~5 min training-free)
+- [ ] **MODL-02**: Tokenizer extended with `<wp_gen>` and `<wp_judge>` special tokens
+- [ ] **MODL-03**: Model embeddings resized and new token embeddings initialized (mean of existing)
+- [ ] **MODL-04**: Smoke test passes — model loads, generates coherent text, task tokens are recognized
+
+### Training
+
+- [ ] **TRNG-01**: Unsloth LoRA SFT configured on DGX Spark (r=64, bf16, cosine LR)
+- [ ] **TRNG-02**: LoRA config includes `modules_to_save=["embed_tokens", "lm_head"]` for special tokens
+- [ ] **TRNG-03**: Training data loaded as 50/50 wp_gen/wp_judge multi-task mix
+- [ ] **TRNG-04**: MoE load balancing loss monitored throughout training (no routing collapse)
+- [ ] **TRNG-05**: W&B experiment tracking active via eval-toolbox
+- [ ] **TRNG-06**: Training completes without OOM or divergence on DGX Spark
+
+### Evaluation
+
+- [ ] **EVAL-01**: Custom eval script measures PHPCS pass rate on 500 held-out generation tasks (target >95%)
+- [ ] **EVAL-02**: Custom eval script measures judge Spearman correlation on 500 held-out scored pairs (target >0.85)
+- [ ] **EVAL-03**: Security pass rate measured on held-out tasks (target >98%)
+- [ ] **EVAL-04**: Eval scripts run via DGX Toolbox eval-toolbox container
+- [ ] **EVAL-05**: All three quality gates pass before proceeding to deployment
+
+### Deployment
+
+- [ ] **DPLT-01**: LoRA adapter merged into base model weights
+- [ ] **DPLT-02**: AWQ quantization produced for vLLM production serving
+- [ ] **DPLT-03**: GGUF quantization produced for Ollama local serving
+- [ ] **DPLT-04**: Model served via DGX Toolbox vLLM (:8020) and accessible through LiteLLM (:4000)
+- [ ] **DPLT-05**: Model served via DGX Toolbox Ollama (:11434)
+- [ ] **DPLT-06**: HuggingFace Hub upload with model card, benchmarks, and usage examples
+- [ ] **DPLT-07**: Interactive demo accessible via Open-WebUI (:12000)
+
+## v2 Requirements
+
+Deferred to future release. Tracked but not in current roadmap.
+
+### Extended Capabilities
+
+- **V2-01**: DPO/RLHF refinement using preference data from Argilla/Label Studio
+- **V2-02**: JavaScript/Gutenberg block generation via `<wp_block>` task token
+- **V2-03**: Multi-lingual comment support (non-English PHPDoc/i18n)
+- **V2-04**: Safety harness integration for production guardrails and red-teaming
+- **V2-05**: Triton/TensorRT-LLM optimized inference engine
+
+## Out of Scope
+
+Explicitly excluded. Documented to prevent scope creep.
+
+| Feature | Reason |
+|---------|--------|
+| Real-time PHPCS correction loop at inference | Adds inference latency, model should internalize standards |
+| Binary pass/fail judgment (no rubric) | Structured 9-dimension scoring is the differentiator |
+| Mobile app or custom web UI | DGX Toolbox Open-WebUI covers interactive demo needs |
+| Multi-model ensemble | Single model is the architectural constraint |
+| JavaScript training data | PHP only for v1, different domain requires separate pipeline |
+
+## Traceability
+
+Which phases cover which requirements. Updated during roadmap creation.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| (populated by roadmapper) | | |
+
+**Coverage:**
+- v1 requirements: 37 total
+- Mapped to phases: 0
+- Unmapped: 37 ⚠️
+
+---
+*Requirements defined: 2026-03-26*
+*Last updated: 2026-03-26 after initial definition*
