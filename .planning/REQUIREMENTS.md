@@ -26,9 +26,9 @@ Source data already exists at `/home/robert_li/Desktop/data/wp-finetune-data/`: 
 
 ### Data Pipeline Execution
 
-- [ ] **DATA-01**: Phase 1 clone completes — all repos in repos.yaml shallow-cloned
-- [ ] **DATA-02**: Phase 1 extract completes — PHP functions extracted with metadata
-- [ ] **DATA-03**: Phase 1 judge completes — functions assessed (PHPCS pre-filter + Claude judge), passed/failed separated
+- [x] **DATA-01**: Phase 1 clone completes — all repos in repos.yaml shallow-cloned
+- [x] **DATA-02**: Phase 1 extract completes — PHP functions extracted with metadata
+- [x] **DATA-03**: Phase 1 judge completes — functions assessed (PHPCS pre-filter + Claude judge), passed/failed separated
 - [ ] **DATA-04**: Phase 2 gap analysis completes — coverage gaps identified against taxonomy
 - [ ] **DATA-05**: Phase 2 mutation completes — contrastive bad→good pairs generated from passed code
 - [ ] **DATA-06**: Phase 2 generate completes — synthetic examples fill taxonomy gaps
@@ -111,9 +111,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REPO-02 | Phase 1 | Complete |
 | REPO-03 | Phase 1 | Complete |
 | REPO-04 | Phase 1 | Complete |
-| DATA-01 | Phase 2 | Pending |
-| DATA-02 | Phase 2 | Pending |
-| DATA-03 | Phase 2 | Pending |
+| DATA-01 | Phase 2 | Complete |
+| DATA-02 | Phase 2 | Complete |
+| DATA-03 | Phase 2 | Complete |
 | DATA-04 | Phase 2 | Pending |
 | DATA-05 | Phase 2 | Pending |
 | DATA-06 | Phase 2 | Pending |

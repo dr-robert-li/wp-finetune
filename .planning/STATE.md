@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 2 context gathered
-last_updated: "2026-03-26T04:09:24.569Z"
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-03-26T05:56:37.412Z"
 last_activity: 2026-03-26 — Completed 01-01 shared utils/preflight with 9 functions and 15 passing tests
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 5
+  completed_plans: 3
   percent: 20
 ---
 
@@ -50,6 +50,7 @@ Progress: [██░░░░░░░░] 20%
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 02-dataset-production P01 | 25 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,10 @@ Recent decisions affecting current work:
 - [01-01]: Batch threshold hardcoded at 50 (BATCH_THRESHOLD constant) per PIPE-04 spec
 - [01-01]: Checkpoint uses phase name as key so multiple pipeline stages coexist without collision
 - [01-01]: preflight.py catches FileNotFoundError so tests pass on machines without php/phpcs
+- [Phase 02-01]: Judge PASS threshold raised from >= 7 to >= 8 — stricter quality bar required before any pipeline execution (Pitfall 1 from research)
+- [Phase 02-01]: Security auto-FAIL enforced in judge.py code (_apply_security_auto_fail function) — code-level gate not just config documentation
+- [Phase 02-01]: N/A scoring deflated to 7 (from 10) for i18n and accessibility dims — prevents inflation on functions with no relevant output
+- [Phase 02-01]: Rejection templates use 3 sub-keys (proactive_nonce, proactive_capability, proactive_escaping) in synthetic_prompts.yaml — aligned with security training taxonomy
 
 ### Pending Todos
 
@@ -83,6 +88,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-26T04:09:24.568Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-dataset-production/02-CONTEXT.md
+Last session: 2026-03-26T05:56:37.411Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: None
