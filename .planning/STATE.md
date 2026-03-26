@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: Phase 1 context gathered
-last_updated: "2026-03-26T03:15:58.379Z"
-last_activity: 2026-03-26 — Roadmap created, requirements mapped, files initialized
+status: in-progress
+stopped_at: Completed 01-01-PLAN.md
+last_updated: "2026-03-26T04:00:00.000Z"
+last_activity: 2026-03-26 — Completed 01-01 shared utils/preflight with 9 functions and 15 passing tests
 progress:
   total_phases: 4
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 2
+  completed_plans: 2
+  percent: 20
 ---
 
 # Project State
@@ -26,27 +26,27 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 ## Current Position
 
 Phase: 1 of 4 (Pipeline Ready)
-Plan: 0 of 2 in current phase
-Status: Ready to plan
-Last activity: 2026-03-26 — Roadmap created, requirements mapped, files initialized
+Plan: 2 of 2 in current phase (both 01-01 and 01-02 complete)
+Status: In progress
+Last activity: 2026-03-26 — Completed 01-01 shared utils/preflight with 9 functions and 15 passing tests
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] 20%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: - min
-- Total execution time: 0 hours
+- Total plans completed: 2
+- Average duration: 13 min
+- Total execution time: 0.45 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01-pipeline-ready | 2 | 27 min | 13 min |
 
 **Recent Trend:**
-- Last 5 plans: -
+- Last 5 plans: 01-02 (2 min), 01-01 (25 min)
 - Trend: -
 
 *Updated after each plan completion*
@@ -62,6 +62,14 @@ Recent decisions affecting current work:
 - [Init]: Use Batch API for bulk judging (50% cost savings, required by PIPE-04)
 - [Init]: Eval scripts must be written before training completes (gate cannot function otherwise)
 - [Init]: Keep LoRA adapter separate from base model until all three eval thresholds pass
+- [01-02]: quality_tier=trusted requires zero total_known_vulns AND zero unpatched AND rating >= 90; otherwise assessed
+- [01-02]: active_installs '+' suffix stripped before int() conversion (e.g. '10000000+' -> 10000000)
+- [01-02]: github_url must start with 'https://github.com/' — git clone access required
+- [01-02]: If >100 repos pass filter, top 100 by active_installs retained
+- [01-02]: WordPress Core hardcoded as first entry with quality_tier=core — not sourced from CSV
+- [01-01]: Batch threshold hardcoded at 50 (BATCH_THRESHOLD constant) per PIPE-04 spec
+- [01-01]: Checkpoint uses phase name as key so multiple pipeline stages coexist without collision
+- [01-01]: preflight.py catches FileNotFoundError so tests pass on machines without php/phpcs
 
 ### Pending Todos
 
@@ -75,6 +83,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-26T03:15:58.377Z
-Stopped at: Phase 1 context gathered
-Resume file: .planning/phases/01-pipeline-ready/01-CONTEXT.md
+Last session: 2026-03-26T04:00:00Z
+Stopped at: Completed 01-01-PLAN.md
+Resume file: .planning/phases/01-pipeline-ready/01-01-SUMMARY.md
