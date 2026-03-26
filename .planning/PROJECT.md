@@ -53,16 +53,18 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 
 **Base model:** Qwen3-8B selected for strong PHP/code understanding, HuggingFace compatibility, and fit within DGX Spark memory. Dense-to-MoE conversion using LLaMA-MoE methodology.
 
-**Data pipeline dependencies:** Anthropic API (Claude Sonnet/Opus for judging and generation), PHP CLI with tokenizer extension, PHP_CodeSniffer with WordPress-Coding-Standards.
+**Execution model:** All LLM-heavy pipeline work (judging, generation, scoring, CoT reasoning) uses **Claude Code agents** instead of the Anthropic API — $0 cost, covered by subscription. Agents are spawned in parallel batches and continuously until data targets are met. See `docs/AGENT_PIPELINE.md` for the full execution model and output format contracts.
 
-**Target dataset:** ~13,500 examples (50/50 `<wp_gen>`/`<wp_judge>` split) from WordPress Core, curated plugins/themes, synthetic generation, and automated mutations.
+**Data pipeline dependencies:** Claude Code agents (subscription), PHP CLI with tokenizer extension, PHP_CodeSniffer with WordPress-Coding-Standards. Anthropic API key in `.env` for fallback/Batch API if needed.
+
+**Target dataset:** ~20,000+ examples (40/60 `<wp_gen>`/`<wp_judge>` split) from WordPress Core, curated plugins/themes, synthetic generation, rejection examples, and rubric-scored judge training data.
 
 ## Constraints
 
 - **API Cost:** Claude API calls for judging/generation are the primary cost driver — PHPCS pre-filtering reduces volume by ~60%
 - **Hardware:** Single DGX Spark — training must fit in 128GB unified memory
 - **Base Model:** Qwen3-8B — selected, not negotiable for v1
-- **Quality Floor:** All training examples must pass PHPCS pre-filter AND Claude 9-dimension judge (scores ≥ 7)
+- **Quality Floor:** All training examples must pass PHPCS pre-filter AND Claude 9-dimension judge (scores ≥ 8, security auto-FAIL if security < 5)
 - **Infrastructure:** DGX Toolbox components for all training, evaluation, and serving
 
 ## Key Decisions
@@ -76,6 +78,11 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 | LoRA fine-tuning via Unsloth | Memory-efficient, proven on DGX Spark hardware | — Pending |
 | DGX Toolbox for full lifecycle | Demonstrates toolbox usefulness across training→eval→serving | — Pending |
 | PHPCS pre-filter before Claude | Reduces API cost ~60% by filtering obvious failures cheaply | ✓ Good |
+| Claude Code agents over Batch API | $0 LLM cost (subscription), spawn-until-target pattern for data richness | ✓ Good |
+| 40/60 gen/judge split | Emphasizes critic capability, dual-mode architecture leverage | — Pending |
+| Judge threshold >= 8 (raised from 7) | Higher quality training data, compensated by larger repo pool | ✓ Good |
+| Security auto-FAIL (dim < 5) | Non-negotiable security floor for training data | ✓ Good |
+| Rejection examples in training | Model proactively adds security even when prompt omits it | — Pending |
 
 ---
 *Last updated: 2026-03-26 after initialization*
