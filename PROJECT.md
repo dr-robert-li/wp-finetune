@@ -6,7 +6,7 @@ A single Qwen3-based Mixture-of-Experts model that both **generates** and **judg
 
 ## Architecture
 
-- **Base:** Qwen3-8B (dense-to-MoE conversion using LLaMA-MoE methodology)
+- **Base:** Qwen3-30B-A3B (native MoE, ~30B total params, ~3B active per forward pass, 128 experts, top-8 routing)
 - **Size:** ~8B total params, ~4B active per forward pass (top-2 routing, 8 experts)
 - **Modes:** `<wp_gen>` (code generation) and `<wp_judge>` (structured critique with rubric scoring)
 - **Compatibility:** HuggingFace `AutoModelForCausalLM`, standard transformers tooling
@@ -85,7 +85,7 @@ The data pipeline lives in this directory and produces the training dataset.
 
 | Step | Description |
 |------|-------------|
-| B1 | Convert Qwen3-8B dense model to MoE using LLaMA-MoE methodology (via DGX Toolbox Unsloth Studio) |
+| B1 | Download Qwen3-30B-A3B base model (native MoE, no conversion needed) |
 | B2 | Extend tokenizer with `<wp_gen>`, `<wp_judge>` special tokens |
 | B3 | Resize model embeddings, initialize new token embeddings |
 | B4 | Configure MoE routing: 8 experts, top-2, load balancing + z-loss |

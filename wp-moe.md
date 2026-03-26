@@ -1,9 +1,9 @@
 # WordPress Best-Practice MoE Model: Project Specification
 
-**Project Goal:** Fine-tune a Qwen3-8B-based Mixture-of-Experts (MoE) model that generates and judges WordPress code according to strict WordPress Coding Standards (WPCS), combining both capabilities in a single network using task tokens. Built and served entirely on the [DGX Toolbox](~/dgx-toolbox) stack.
+**Project Goal:** Fine-tune a Qwen3-30B-A3B-based Mixture-of-Experts (MoE) model that generates and judges WordPress code according to strict WordPress Coding Standards (WPCS), combining both capabilities in a single network using task tokens. Built and served entirely on the [DGX Toolbox](~/dgx-toolbox) stack.
 
 **Target Architecture:** Single shared LLM with task-token routing + sparse MoE layers
-**Base Model Strategy:** Qwen3-8B dense-to-MoE conversion
+**Base Model Strategy:** Qwen3-30B-A3B native MoE (no conversion needed)
 **Infrastructure:** DGX Toolbox (Unsloth Studio, vLLM, eval-toolbox, safety harness)
 **Primary Use Cases:**
 - Code generation: `<wp_gen>` → Production-ready WordPress plugin/theme code
@@ -15,17 +15,17 @@
 
 ### Base Model Requirements
 - **Architecture:** Qwen3-based transformer, converted to MoE
-- **Size:** ~8B total parameters (target ~4B active per forward pass with top-2 routing)
-- **Code capability:** Qwen3-8B has strong PHP/web code understanding out of the box
+- **Size:** ~30B total parameters (~3B active per forward pass, 128 experts, top-8 routing)
+- **Code capability:** Qwen3-30B-A3B has strong PHP/web code understanding out of the box
 - **HF compatibility:** Must work with `AutoModelForCausalLM` and standard transformers tooling
 - **Infrastructure:** Must run on DGX Spark (Blackwell GB10, 128GB unified memory) via DGX Toolbox
 
 ### Selected Base Model
 
-**Qwen3-8B** (`Qwen/Qwen3-8B`)
+**Qwen3-30B-A3B** (`Qwen/Qwen3-30B-A3B`)
 - State-of-the-art code generation for its size class, strong PHP/WordPress understanding
-- Dense 8B architecture, convert FFN layers to MoE using LLaMA-MoE methodology
-- Target: 8 experts, top-2 routing (~4B active params per forward pass)
+- Native MoE architecture (128 experts, top-8 routing, ~3B active params per forward pass)
+- No dense-to-MoE conversion needed — production-ready serving via vLLM, Ollama, HuggingFace
 - Native HuggingFace integration, Unsloth-compatible for efficient LoRA fine-tuning
 - Fits comfortably in DGX Spark's 128GB unified memory for training and inference
 - Conversion script partitions dense FFN weights into expert shards + trains gating network
@@ -524,9 +524,9 @@ def create_judge_sample(code, is_positive=True):
 ### 4.1 MoE Architecture Configuration
 
 **Base Transformer**
-- Start from Qwen3-8B (`Qwen/Qwen3-8B`), convert dense FFNs to sparse MoE
-- Attention layers: all shared (not MoE)
-- FFN layers: convert to sparse MoE using LLaMA-MoE partitioning methodology
+- Start from Qwen3-30B-A3B (`Qwen/Qwen3-30B-A3B`) — already a native MoE
+- Attention layers: all shared
+- FFN layers: already sparse MoE (128 experts, top-8 routing per token)
 
 **MoE Layer Configuration**
 ```python
@@ -594,7 +594,7 @@ If you have preference data (human rankings of outputs):
 **Hardware: DGX Spark (via DGX Toolbox)**
 - NVIDIA Blackwell GB10 GPU, 6,144 CUDA cores
 - 128GB unified memory (model + data in single address space)
-- Ideal for Qwen3-8B MoE fine-tuning with LoRA
+- Ideal for Qwen3-30B-A3B LoRA fine-tuning (~60GB BF16, fits in 128GB unified memory)
 
 **Software Stack (DGX Toolbox Components)**
 - **Unsloth Studio** (:8000) — Interactive LoRA/QLoRA fine-tuning with session persistence
@@ -765,7 +765,8 @@ tags:
 - mixture-of-experts
 - code-generation
 - code-review
-base_model: Qwen/Qwen3-8B
+base_model: Qwen/Qwen3-30B-A3B
+model_type: moe
 datasets:
 - wordpress/wordpress-core
 - custom-synthetic-wp-data
@@ -773,7 +774,7 @@ metrics:
 - accuracy
 - pass@k
 model-index:
-- name: wp-qwen3-moe-8b
+- name: wp-qwen3-moe-30b
   results:
   - task:
       type: code-generation
@@ -793,7 +794,7 @@ model-index:
 ```python
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-model_name = "your-org/wp-qwen3-moe-8b"
+model_name = "your-org/wp-qwen3-moe-30b"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto")
 
@@ -832,7 +833,7 @@ critique = tokenizer.decode(outputs, skip_special_tokens=False)
 ~/dgx-toolbox/inference/start-vllm.sh  # auto-loads from ~/.vllm-model
 
 # Serve via Ollama (GGUF quantized)
-ollama run wp-qwen3-moe-8b
+ollama run wp-qwen3-moe-30b
 
 # Route through LiteLLM for unified API
 ~/dgx-toolbox/inference/start-litellm.sh  # config in ~/.litellm/config.yaml

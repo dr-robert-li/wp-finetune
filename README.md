@@ -8,7 +8,7 @@ No open-source model existed for this. The tools in this space are wrappers arou
 
 | Property | Value |
 |----------|-------|
-| Base model | Qwen3-8B (dense-to-MoE conversion) |
+| Base model | Qwen3-30B-A3B (native MoE, ~3B active params, 128 experts) |
 | Total params | ~8B |
 | Active params | ~4B per forward pass (top-2 of 8 experts) |
 | Task routing | First-token: `<wp_gen>` or `<wp_judge>` |

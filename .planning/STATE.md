@@ -61,7 +61,7 @@ Progress: [████░░░░░░] 40%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [Init]: Convert dense to MoE BEFORE tokenizer extension and fine-tuning (non-negotiable ordering)
+- [Init]: Download Qwen3-30B-A3B (native MoE) BEFORE tokenizer extension and fine-tuning
 - [Init]: Use Batch API for bulk judging (50% cost savings, required by PIPE-04)
 - [Init]: Eval scripts must be written before training completes (gate cannot function otherwise)
 - [Init]: Keep LoRA adapter separate from base model until all three eval thresholds pass
@@ -90,8 +90,8 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Phase 3]: CMoE is research code (arxiv:2502.04416) — verify public Python implementation exists before Phase 3 planning; ToMoE (arxiv:2501.15316) is the validated fallback
-- [Phase 3]: AWQ quantization support for Qwen3MoE routing tables needs explicit verification before Phase 4 planning
+- [Phase 3]: RESOLVED — switched to Qwen3-30B-A3B native MoE (CMoE/ToMoE had no serving stack support)
+- [Phase 4]: AWQ quantization for Qwen3-30B-A3B — verify vLLM support (likely native since it's an official Qwen model)
 - [Phase 3]: Judge correlation circularity — decide whether to use a different Claude model or human-scored subset for eval before training starts
 
 ## Session Continuity

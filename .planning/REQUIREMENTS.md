@@ -40,7 +40,7 @@ Source data already exists at `/home/robert_li/Desktop/data/wp-finetune-data/`: 
 
 ### Model Preparation
 
-- [ ] **MODL-01**: Qwen3-8B converted to MoE via CMoE (8 experts, top-2 routing, ~5 min training-free)
+- [ ] **MODL-01**: Qwen3-30B-A3B downloaded (native MoE, 128 experts, top-8 routing, no conversion needed)
 - [ ] **MODL-02**: Tokenizer extended with `<wp_gen>` and `<wp_judge>` special tokens
 - [ ] **MODL-03**: Model embeddings resized and new token embeddings initialized (mean of existing)
 - [ ] **MODL-04**: Smoke test passes — model loads, generates coherent text, task tokens are recognized
