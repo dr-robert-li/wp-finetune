@@ -13,7 +13,7 @@ Four phases take the project from fragile pipeline scripts to a deployed dual-mo
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Pipeline Ready** - Harden all pipeline scripts and convert existing CSV data into repos.yaml before any data is generated
-- [ ] **Phase 2: Dataset Production** - Execute all three pipeline phases to produce the final training dataset
+- [x] **Phase 2: Dataset Production** - Execute all three pipeline phases to produce the final training dataset (completed 2026-03-26)
 - [ ] **Phase 3: Model Prep and Training** - Convert to MoE, extend tokenizer, write eval suite, and fine-tune on DGX Spark
 - [ ] **Phase 4: Evaluation and Deployment** - Run quality gates and package the passing model for serving
 
@@ -92,6 +92,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Pipeline Ready | 2/2 | Complete | 2026-03-26 |
-| 2. Dataset Production | 1/3 | In Progress|  |
+| 2. Dataset Production | 3/3 | Complete   | 2026-03-26 |
 | 3. Model Prep and Training | 0/3 | Not started | - |
 | 4. Evaluation and Deployment | 0/3 | Not started | - |

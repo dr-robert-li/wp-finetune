@@ -34,9 +34,9 @@ Source data already exists at `/home/robert_li/Desktop/data/wp-finetune-data/`: 
 - [ ] **DATA-06**: Phase 2 generate completes — synthetic examples fill taxonomy gaps
 - [ ] **DATA-07**: Phase 2 judge completes — synthetic examples assessed, failed get one revision
 - [ ] **DATA-08**: Phase 2 judge_dataset completes — rubric-scored judge training data generated
-- [ ] **DATA-09**: Phase 3 CoT completes — instruction synthesis + reasoning chains generated
-- [ ] **DATA-10**: Phase 3 export completes — OpenAI, Alpaca, Raw JSONL with task tokens, 80/10/10 split
-- [ ] **DATA-11**: Final dataset contains ≥10,000 examples with ~50/50 wp_gen/wp_judge split
+- [x] **DATA-09**: Phase 3 CoT completes — instruction synthesis + reasoning chains generated
+- [x] **DATA-10**: Phase 3 export completes — OpenAI, Alpaca, Raw JSONL with task tokens, 80/10/10 split
+- [x] **DATA-11**: Final dataset contains ≥10,000 examples with ~50/50 wp_gen/wp_judge split
 
 ### Model Preparation
 
@@ -119,9 +119,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DATA-06 | Phase 2 | Pending |
 | DATA-07 | Phase 2 | Pending |
 | DATA-08 | Phase 2 | Pending |
-| DATA-09 | Phase 2 | Pending |
-| DATA-10 | Phase 2 | Pending |
-| DATA-11 | Phase 2 | Pending |
+| DATA-09 | Phase 2 | Complete |
+| DATA-10 | Phase 2 | Complete |
+| DATA-11 | Phase 2 | Complete |
 | MODL-01 | Phase 3 | Pending |
 | MODL-02 | Phase 3 | Pending |
 | MODL-03 | Phase 3 | Pending |
