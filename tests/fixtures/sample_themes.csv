@@ -1,0 +1,6 @@
+rank,name,slug,active_installs,rating_pct,rating_5star,editor_support,last_updated,parent_theme,homepage,github_url,wp_url,total_known_vulns,unpatched_vulns,max_cvss,max_cvss_severity,latest_vuln_date,top_cwes,tags
+1,Good Theme,good-theme,500000,92,,,,,https://example.com,https://github.com/example/good-theme.git,,0,0,,,,,"starter, fse"
+2,Also Good Theme,also-good-theme,100000,82,,,,,https://example.com,https://github.com/example/also-good-theme.git,,1,0,4.0,medium,,,"classic, blog"
+3,No GitHub Theme,no-github-theme,200000,90,,,,,,,,0,0,,,,,"portfolio"
+4,Low Rating Theme,low-rating-theme,300000,70,,,,,https://example.com,https://github.com/example/low-rating.git,,0,0,,,,,"starter"
+5,Unpatched Theme,unpatched-theme,400000,95,,,,,https://example.com,https://github.com/example/unpatched-theme.git,,1,1,6.5,medium,,,"starter"
