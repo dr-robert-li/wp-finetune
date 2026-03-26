@@ -14,6 +14,18 @@ A single Qwen3-based Mixture-of-Experts model that both **generates** and **judg
 
 See [wp-moe.md](wp-moe.md) for full model specification.
 
+## Execution Model
+
+All LLM-heavy pipeline work uses **Claude Code agents** instead of the Anthropic API:
+- **$0 cost** — covered by Claude subscription
+- **Parallel execution** — spawn 4-8 agents processing batches simultaneously
+- **Spawn-until-target** — continuously spawn agents until data targets are met
+- **Quality gates** — same strict rubric (threshold >= 8, security auto-FAIL) applied by agents
+
+See [docs/AGENT_PIPELINE.md](docs/AGENT_PIPELINE.md) for full agent execution model, output format contracts, and scaling guide.
+
+Non-LLM steps (cloning, extraction, gap analysis, mutations, export) run as Python scripts.
+
 ---
 
 ## Project Phases
