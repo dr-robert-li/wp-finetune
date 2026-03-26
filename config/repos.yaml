@@ -1,0 +1,367 @@
+core:
+- name: wordpress-develop
+  url: https://github.com/WordPress/wordpress-develop.git
+  quality_tier: core
+  paths:
+  - src/wp-includes
+  - src/wp-admin/includes
+  skip_paths:
+  - src/wp-includes/js
+  - src/wp-includes/css
+  description: WordPress Core — auto-passed
+plugins:
+- name: wordpress-seo
+  url: https://github.com/Yoast/wordpress-seo.git
+  quality_tier: assessed
+  paths: &id005
+  - includes/**/*.php
+  - src/**/*.php
+  skip_paths: &id001
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Yoast SEO – Advanced SEO with real-time guidance and built-in AI —
+    10,000,000 installs, 96% rating
+- name: contact-form-7
+  url: https://github.com/takayukister/contact-form-7.git
+  quality_tier: assessed
+  paths: &id002
+  - '**/*.php'
+  skip_paths: *id001
+  description: Contact Form 7 — 10,000,000 installs, 80% rating
+- name: classic-editor
+  url: https://github.com/WordPress/classic-editor.git
+  quality_tier: trusted
+  paths: *id002
+  skip_paths: *id001
+  description: Classic Editor — 9,000,000 installs, 98% rating
+- name: akismet
+  url: https://github.com/Automattic/akismet.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: 'Akismet Anti-spam: Spam Protection — 6,000,000 installs, 94% rating'
+- name: google-site-kit
+  url: https://github.com/google/site-kit-wp.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: Site Kit by Google – Analytics, Search Console, AdSense, Speed — 5,000,000
+    installs, 84% rating
+- name: wp-mail-smtp
+  url: https://github.com/awesomemotive/wp-mail-smtp.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: WP Mail SMTP by WPForms – The Most Popular SMTP and Email Log Plugin
+    — 4,000,000 installs, 96% rating
+- name: really-simple-ssl
+  url: https://github.com/Really-Simple-Plugins/really-simple-ssl.git
+  quality_tier: assessed
+  paths: &id003
+  - includes/**/*.php
+  - src/**/*.php
+  skip_paths: *id001
+  description: Really Simple Security – Simple and Performant Security (formerly Really
+    Simple SSL) — 3,000,000 installs, 98% rating
+- name: classic-widgets
+  url: https://github.com/WordPress/classic-widgets.git
+  quality_tier: trusted
+  paths: *id002
+  skip_paths: *id001
+  description: Classic Widgets — 2,000,000 installs, 98% rating
+- name: advanced-custom-fields
+  url: https://github.com/AdvancedCustomFields/acf.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: Advanced Custom Fields (ACF®) — 2,000,000 installs, 90% rating
+- name: wp-super-cache
+  url: https://github.com/Automattic/wp-super-cache.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: WP Super Cache — 1,000,000 installs, 86% rating
+- name: custom-post-type-ui
+  url: https://github.com/WebDevStudios/custom-post-type-ui.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: Custom Post Type UI — 1,000,000 installs, 92% rating
+- name: mailpoet
+  url: https://github.com/mailpoet/mailpoet.git
+  quality_tier: assessed
+  paths: &id004
+  - includes/**/*.php
+  - src/**/*.php
+  skip_paths: *id001
+  description: MailPoet – Newsletters, Email Marketing, and Automation — 500,000 installs,
+    88% rating
+- name: cmb2
+  url: https://github.com/CMB2/CMB2.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: CMB2 — 300,000 installs, 100% rating
+- name: query-monitor
+  url: https://github.com/johnbillion/query-monitor.git
+  quality_tier: trusted
+  paths: *id002
+  skip_paths: *id001
+  description: Query Monitor – The developer tools panel for WordPress — 200,000 installs,
+    98% rating
+- name: custom-post-type-permalinks
+  url: https://github.com/torounit/custom-post-type-permalinks.git
+  quality_tier: trusted
+  paths: *id002
+  skip_paths: *id001
+  description: Custom Post Type Permalinks — 200,000 installs, 96% rating
+- name: performance-lab
+  url: https://github.com/WordPress/performance.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: Performance Lab — 200,000 installs, 86% rating
+- name: connect-polylang-elementor
+  url: https://github.com/creame/connect-polylang-elementor.git
+  quality_tier: trusted
+  paths: *id002
+  skip_paths: *id001
+  description: Connect Polylang for Elementor — 100,000 installs, 96% rating
+- name: menu-icons
+  url: https://github.com/Codeinwp/wp-menu-icons.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: Menu Icons by ThemeIsle — 100,000 installs, 98% rating
+- name: ads-txt
+  url: https://github.com/10up/ads-txt.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: Ads.txt Manager — 100,000 installs, 88% rating
+- name: pubsubhubbub
+  url: https://github.com/pubsubhubbub/wordpress-pubsubhubbub.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: WebSub (FKA. PubSubHubbub) — 100,000 installs, 100% rating
+- name: edit-author-slug
+  url: https://github.com/thebrandonallen/edit-author-slug.git
+  quality_tier: trusted
+  paths: *id002
+  skip_paths: *id001
+  description: Edit Author Slug — 100,000 installs, 96% rating
+- name: vk-block-patterns
+  url: https://github.com/vektor-inc/vk-block-patterns.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: VK Block Patterns — 100,000 installs, 100% rating
+- name: vk-blocks
+  url: https://github.com/vektor-inc/vk-blocks.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: VK Blocks — 100,000 installs, 96% rating
+- name: public-post-preview
+  url: https://github.com/ocean90/public-post-preview.git
+  quality_tier: trusted
+  paths: *id002
+  skip_paths: *id001
+  description: Public Post Preview — 100,000 installs, 90% rating
+- name: duplicate-menu
+  url: https://github.com/jchristopher/duplicate-menu.git
+  quality_tier: trusted
+  paths: *id002
+  skip_paths: *id001
+  description: Duplicate Menu — 100,000 installs, 92% rating
+- name: two-factor
+  url: https://github.com/WordPress/two-factor.git
+  quality_tier: trusted
+  paths: *id003
+  skip_paths: *id001
+  description: Two Factor — 100,000 installs, 96% rating
+- name: blocks-animation
+  url: https://github.com/Codeinwp/otter-blocks.git
+  quality_tier: trusted
+  paths: *id002
+  skip_paths: *id001
+  description: 'Blocks Animation: CSS Animations for Gutenberg Blocks — 90,000 installs,
+    94% rating'
+- name: woocommerce-extra-checkout-fields-for-brazil
+  url: https://github.com/claudiosanches/woocommerce-extra-checkout-fields-for-brazil.git
+  quality_tier: trusted
+  paths: *id004
+  skip_paths: *id001
+  description: Brazilian Market on WooCommerce — 70,000 installs, 96% rating
+- name: speculation-rules
+  url: https://github.com/WordPress/performance.git
+  quality_tier: trusted
+  paths: *id002
+  skip_paths: *id001
+  description: Speculative Loading — 70,000 installs, 100% rating
+- name: wp-db-backup
+  url: https://github.com/deliciousbrains/wp-db-backup.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: Database Backup for WordPress — 70,000 installs, 90% rating
+- name: optimization-detective
+  url: https://github.com/WordPress/performance.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: Optimization Detective — 70,000 installs, 86% rating
+- name: dynamicconditions
+  url: https://github.com/RTO-Websites/dynamic-conditions.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: Dynamic Conditions — 60,000 installs, 98% rating
+- name: simple-image-sizes
+  url: https://github.com/Rahe/simple-image-sizes.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: Simple Image Sizes — 60,000 installs, 92% rating
+- name: yoast-test-helper
+  url: https://github.com/yoast/yoast-test-helper.git
+  quality_tier: trusted
+  paths: *id005
+  skip_paths: *id001
+  description: Yoast Test Helper — 60,000 installs, 98% rating
+- name: option-tree
+  url: https://github.com/valendesigns/option-tree/.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: OptionTree — 50,000 installs, 94% rating
+- name: wp-robots-txt
+  url: https://github.com/pattihis/wp-robots.txt.git
+  quality_tier: trusted
+  paths: *id005
+  skip_paths: *id001
+  description: WP Robots Txt — 50,000 installs, 100% rating
+- name: cms-tree-page-view
+  url: https://github.com/jchristopher/cms-tree-page-view.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: CMS Tree Page View — 50,000 installs, 98% rating
+- name: image-prioritizer
+  url: https://github.com/WordPress/performance/tree/trunk/plugins/image-prioritizer.git
+  quality_tier: trusted
+  paths: *id002
+  skip_paths: *id001
+  description: Image Prioritizer — 50,000 installs, 100% rating
+- name: customizer-search
+  url: https://github.com/Nikschavan/customizer-search.git
+  quality_tier: trusted
+  paths: *id002
+  skip_paths: *id001
+  description: Customizer Search — 50,000 installs, 100% rating
+- name: http-headers
+  url: https://github.com/riverside/http-headers.git
+  quality_tier: assessed
+  paths: *id003
+  skip_paths: *id001
+  description: HTTP Headers — 50,000 installs, 86% rating
+- name: simple-banner
+  url: https://github.com/rpetersen29/simple-banner.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: Simple Banner – Easily add multiple Banners/Bars/Notifications/Announcements
+    to the top or bottom of your website — 50,000 installs, 96% rating
+- name: sierotki
+  url: https://github.com/iworks/sierotki.git
+  quality_tier: trusted
+  paths: *id002
+  skip_paths: *id001
+  description: Orphans — 40,000 installs, 100% rating
+- name: varnish-http-purge
+  url: https://github.com/dvershinin/varnish-http-purge.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: Proxy Cache Purge — 40,000 installs, 88% rating
+- name: performant-translations
+  url: https://github.com/swissspidy/performant-translations.git
+  quality_tier: trusted
+  paths: *id002
+  skip_paths: *id001
+  description: Performant Translations — 40,000 installs, 98% rating
+- name: wp-scss
+  url: https://github.com/ConnectThink/WP-SCSS.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: WP-SCSS — 40,000 installs, 86% rating
+- name: say-what
+  url: https://github.com/leewillis77/say-what.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: Say What? — 40,000 installs, 86% rating
+- name: export-media-library
+  url: https://github.com/massedge/wordpress-plugin-export-media-library.git
+  quality_tier: trusted
+  paths: *id002
+  skip_paths: *id001
+  description: Export Media Library — 40,000 installs, 98% rating
+- name: insert-pages
+  url: https://github.com/uhm-coe/insert-pages.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: Insert Pages — 40,000 installs, 96% rating
+- name: autoconvert-greeklish-permalinks
+  url: https://github.com/dimavroudis/AutoConvert-Greeklish-Permalink.git
+  quality_tier: trusted
+  paths: *id002
+  skip_paths: *id001
+  description: AutoConvert Greeklish Permalinks — 30,000 installs, 98% rating
+themes:
+- name: twentytwentyfive
+  url: https://github.com/WordPress/twentytwentyfive.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: Twenty Twenty-Five — 1,000,000 installs, 84% rating
+- name: hello-elementor
+  url: https://github.com/elementor/hello-theme.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: Hello Elementor — 1,000,000 installs, 84% rating
+- name: twentytwentyone
+  url: https://github.com/WordPress/twentytwentyone.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: Twenty Twenty-One — 200,000 installs, 84% rating
+- name: twentyseventeen
+  url: https://github.com/WordPress/twentyseventeen.git
+  quality_tier: trusted
+  paths: *id002
+  skip_paths: *id001
+  description: Twenty Seventeen — 300,000 installs, 90% rating
+- name: neve
+  url: https://github.com/Codeinwp/neve.git
+  quality_tier: trusted
+  paths:
+  - includes/**/*.php
+  - src/**/*.php
+  skip_paths: *id001
+  description: Neve — 200,000 installs, 94% rating
+- name: twentytwenty
+  url: https://github.com/WordPress/twentytwenty.git
+  quality_tier: assessed
+  paths: *id002
+  skip_paths: *id001
+  description: Twenty Twenty — 200,000 installs, 88% rating

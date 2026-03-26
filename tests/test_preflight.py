@@ -39,9 +39,10 @@ def test_missing_phpcs():
 def test_missing_api_key():
     """Exits with code 1 when ANTHROPIC_API_KEY is not set."""
     env_without_key = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
-    with patch.dict(os.environ, env_without_key, clear=True):
-        with pytest.raises(SystemExit) as exc_info:
-            run_preflight()
+    with patch("subprocess.run", return_value=_make_run(returncode=0, stdout="WordPress-Extra")):
+        with patch.dict(os.environ, env_without_key, clear=True):
+            with pytest.raises(SystemExit) as exc_info:
+                run_preflight()
     assert exc_info.value.code == 1
 
 
