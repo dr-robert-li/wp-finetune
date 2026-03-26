@@ -1,0 +1,183 @@
+# Phase 2: Synthetic Generation Prompt Templates
+# ================================================
+# Templates for generating synthetic training data to fill coverage gaps.
+# Variables: {complexity}, {context}, {constraint}, {variation_seed}
+#
+# Each gap_tag maps to a list of prompt templates.
+# Claude selects and varies these during generation.
+
+# ─── Complexity levels for variation ───
+complexities:
+  - simple
+  - intermediate
+  - advanced
+  - production-scale
+
+# ─── Context types for variation ───
+contexts:
+  - standalone plugin
+  - WooCommerce extension
+  - theme functions.php
+  - mu-plugin
+  - WP-CLI command
+  - REST API controller
+  - admin settings page
+
+# ─── Constraint sets for variation ───
+constraints:
+  - "must work on multisite installations"
+  - "must handle tables with 10M+ rows efficiently"
+  - "must be compatible with PHP 7.4 through 8.3"
+  - "must pass WordPress-Extra PHPCS without suppressions"
+  - "must support persistent object caching (Redis/Memcached)"
+  - "must work without JavaScript enabled (progressive enhancement)"
+  - "must support WP_CLI bulk operations"
+
+# ─── Prompt templates by gap tag ───
+templates:
+
+  sql:batch_operations:
+    - >
+      Write a {complexity} WordPress function in a {context} that batch-processes
+      updates to a custom database table in chunks. The function should update a
+      calculated field across all matching rows without hitting PHP memory or
+      execution time limits. {constraint}.
+    - >
+      Implement a {complexity} data migration function for a {context} that moves
+      data from WordPress post_meta to a custom table in batches of 500 rows,
+      with progress tracking and resumability. {constraint}.
+
+  sql:transaction_handling:
+    - >
+      Write a {complexity} WordPress function in a {context} that performs a
+      multi-table write operation using $wpdb transactions. Include proper
+      rollback on failure and error reporting. {constraint}.
+
+  multisite:per_site_tables:
+    - >
+      Write a {complexity} mu-plugin that provisions a custom table per site on
+      wp_insert_site, runs dbDelta for existing sites on activation, and cleans
+      up on site deletion. Include proper switch_to_blog/restore_current_blog
+      patterns. {constraint}.
+
+  multisite:network_admin:
+    - >
+      Write a {complexity} network admin settings page in a {context} that
+      manages a plugin setting across all sites, with per-site override
+      capability. {constraint}.
+
+  perf:query_caching:
+    - >
+      Write a {complexity} function in a {context} that queries a custom table
+      with expensive JOINs, implements tiered caching (object cache -> transient
+      -> query), and properly invalidates when underlying data changes.
+      {constraint}.
+
+  perf:batch_processing:
+    - >
+      Implement a {complexity} background batch processor in a {context} that
+      processes a queue of items using WP-Cron, handling partial completion,
+      locking to prevent overlap, and error recovery. {constraint}.
+
+  arch:uninstall_cleanup:
+    - >
+      Write a complete uninstall.php for a {complexity} {context} that properly
+      removes all custom tables, options, transients, scheduled cron events,
+      user meta, post meta, custom post types and their posts, and any uploaded
+      files. Must handle multisite if applicable. {constraint}.
+
+  rest:permission_callbacks:
+    - >
+      Write {complexity} REST API route registration for a {context} with
+      granular permission callbacks that check different capabilities for
+      read vs write operations, handle nonce verification for cookie-auth,
+      and return proper WP_Error responses for denied access. {constraint}.
+
+  security:file_upload_validation:
+    - >
+      Write a {complexity} file upload handler in a {context} that validates
+      file type by content (not just extension), checks against allowed MIME
+      types, sanitizes filenames, uses WP_Filesystem, and stores files
+      outside the uploads directory with proper access controls. {constraint}.
+
+  theme:fse_templates:
+    - >
+      Create a {complexity} FSE block theme template in a {context} that
+      implements a custom query loop with pagination, conditional block
+      rendering based on post meta, and proper template part usage.
+      {constraint}.
+
+  cron:long_running_tasks:
+    - >
+      Implement a {complexity} long-running task system in a {context} that
+      splits work across multiple WP-Cron runs, tracks progress in an option,
+      handles overlapping execution with locking, and provides admin UI for
+      monitoring progress. {constraint}.
+
+# ─── Contrastive pair templates (bad -> good) ───
+contrastive_templates:
+
+  sql_injection:
+    - >
+      Show a realistic WordPress AJAX handler written by a junior developer
+      that contains SQL injection vulnerabilities: string concatenation in
+      $wpdb queries, unvalidated $_POST values used in ORDER BY and LIMIT
+      clauses, and a LIKE query built with sprintf instead of $wpdb->prepare.
+      Then show the corrected version with every fix annotated.
+
+  n_plus_one:
+    - >
+      Show a WordPress template function that displays a list of posts with
+      their authors and custom meta, written with an N+1 query pattern
+      (querying meta inside the loop). Then show the corrected version that
+      pre-fetches all needed data in bulk queries before the loop.
+
+  meta_query_at_scale:
+    - >
+      Show a WP_Query using meta_query with 3 conditions on a site with 1M+
+      posts (the slow way). Then show the refactored approach: custom table
+      with proper indexes, migration function, and the optimized query.
+      Include performance analysis.
+
+  unescaped_output:
+    - >
+      Show a WordPress admin settings page that renders form fields and
+      displays saved values without proper escaping. Include stored XSS
+      vectors. Then show the corrected version with context-appropriate
+      escaping for every output point.
+
+# --- Rejection example templates (proactive security) ---
+# ~500 examples where the model adds security measures the prompt didn't ask for.
+# These are wp_gen examples with metadata.task_type = "gen" and tag "rejection:proactive_{type}".
+rejection_templates:
+  proactive_nonce:
+    - >
+      Write a WordPress form handler for a {context} that processes user-submitted data
+      and saves settings. The prompt simply says "handle form submission" without
+      mentioning security. Your response MUST proactively add nonce verification
+      and explain CSRF risk in a code comment, even though the user did not ask for it.
+    - >
+      Create a WordPress AJAX handler that updates a {context} record based on
+      form input. The requirement only says "process the AJAX request". Your response
+      MUST proactively add check_ajax_referer() and explain why nonce verification
+      matters, even though the user did not request it.
+  proactive_capability:
+    - >
+      Write a WordPress admin page action handler for a {context}. The task description
+      only says "process the admin form". Your response MUST proactively add
+      current_user_can() checks and explain privilege escalation risk in comments,
+      even though the user did not ask for it.
+    - >
+      Create a WordPress REST API endpoint that modifies {context} data. The requirement
+      only says "handle the PUT request". Your response MUST proactively add a
+      permission_callback with current_user_can() and explain why, even though not requested.
+  proactive_escaping:
+    - >
+      Write a WordPress template function that displays user-submitted content in a {context}.
+      The requirement only says "display the content". Your response MUST proactively apply
+      esc_html() or wp_kses() and explain XSS risk in comments, even though not requested.
+    - >
+      Create a WordPress shortcode that renders {context} data from user input.
+      The requirement only says "render the shortcode output". Your response MUST
+      proactively escape all output with esc_attr()/esc_html() and explain why,
+      even though the user did not mention security.
