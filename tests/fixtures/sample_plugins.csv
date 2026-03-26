@@ -1,0 +1,6 @@
+rank,name,slug,active_installs,rating_pct,rating_5star,editor_support,last_updated,requires_wp,tested_up_to,homepage,github_url,wp_url,total_known_vulns,unpatched_vulns,max_cvss,max_cvss_severity,latest_vuln_date,top_cwes,tags
+1,Good Plugin,good-plugin,10000000+,96,,,,,,https://example.com,https://github.com/example/good-plugin.git,,0,0,,,,,"seo, optimization"
+2,Also Good,also-good,500000,85,,,,,,https://example.com,https://github.com/example/also-good.git,,3,0,7.5,high,,,"page builder, editor"
+3,No GitHub,no-github,1000000,90,,,,,,,,,0,0,,,,,"forms"
+4,Low Installs,low-installs,5000,95,,,,,,https://example.com,https://github.com/example/low-installs.git,,0,0,,,,,"analytics"
+5,Unpatched,unpatched-plugin,2000000,88,,,,,,https://example.com,https://github.com/example/unpatched.git,,2,1,9.8,critical,,,"security"
