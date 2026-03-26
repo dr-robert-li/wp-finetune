@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-03-26T05:59:26.000Z"
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-03-26T06:09:57.640Z"
 last_activity: 2026-03-26 — Completed 02-02 hardened all Phase 2 scripts with utils.py integration (7 new tests, 39 total passing)
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 5
-  completed_plans: 4
+  completed_plans: 5
   percent: 40
 ---
 
@@ -52,6 +52,7 @@ Progress: [████░░░░░░] 40%
 
 *Updated after each plan completion*
 | Phase 02-dataset-production P01 | 25 | 2 tasks | 7 files |
+| Phase 02-dataset-production P03 | 4 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -79,6 +80,9 @@ Recent decisions affecting current work:
 - [Phase 02-02]: PHPCS hard-fail guard added at module level in phase2_mutate.py — no silent fallback on FileNotFoundError from verify_mutation_detectable
 - [Phase 02-02]: batch results saved to disk immediately in phase2_judge_dataset after parse_batch_results (24h expiry protection, Pitfall 3)
 - [Phase 02-02]: security auto-FAIL enforced in _apply_security_auto_fail() in phase2_judge.py — score < 5 forces FAIL verdict
+- [Phase 02-03]: round() used instead of int() for gen/judge ratio calculation to avoid float precision truncation (0.60/0.40=1.4999... causes int to give 29 not 30)
+- [Phase 02-03]: utils.py checkpoints save every 100 examples in phase3_cot.py (authoritative resume); per-500 progress JSONL files kept for additional recovery
+- [Phase 02-03]: deduplicate() uses SHA-256 of assistant message content as reliable duplicate signal
 
 ### Pending Todos
 
@@ -92,6 +96,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-26T05:59:26.000Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-03-26T06:09:57.639Z
+Stopped at: Completed 02-03-PLAN.md
 Resume file: None
