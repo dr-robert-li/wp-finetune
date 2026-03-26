@@ -57,20 +57,20 @@ Plans:
 - [ ] 02-07-PLAN.md — [GAP CLOSURE] CoT reasoning via Claude Code agents + export dataset (Python) + human validation checkpoint
 
 ### Phase 3: Model Prep and Training
-**Goal**: Qwen3-30B-A3B (native MoE) has task tokens added, an evaluation suite is ready before training completes, and a LoRA-merged BF16 checkpoint exists on disk
+**Goal**: Qwen3-30B-A3B (native MoE) has task tokens added, an evaluation suite is ready before training completes, and a trained LoRA adapter exists on disk (kept separate from base model until eval passes)
 **Depends on**: Phase 2 (for training data); model prep scripts can be written during Phase 2
 **Requirements**: MODL-01, MODL-02, MODL-03, MODL-04, TRNG-01, TRNG-02, TRNG-03, TRNG-04, TRNG-05, TRNG-06, EVAL-01, EVAL-02, EVAL-03, EVAL-04, EVAL-05
 **Success Criteria** (what must be TRUE):
-  1. A smoke test confirms the converted MoE model loads, generates coherent text, recognizes `<wp_gen>` and `<wp_judge>` tokens, and routes tokens across all 8 experts
-  2. Training completes on DGX Spark without OOM or loss divergence, with W&B tracking showing stable per-expert token distribution (no expert exceeding 30% of tokens)
-  3. eval/eval_phpcs.py and eval/eval_judge_correlation.py are runnable against any merged checkpoint before the training run finishes
-  4. wp-qwen3-8b-moe-merged/ exists as a BF16 merged checkpoint with LoRA adapter kept separately until evaluation passes
-**Plans**: TBD
+  1. A smoke test confirms the native MoE model loads, generates coherent text, and recognizes `<wp_gen>` and `<wp_judge>` tokens as single-token IDs
+  2. Training completes on DGX Spark without OOM or loss divergence, with W&B tracking showing stable loss and router_aux_loss
+  3. scripts/eval_gen.py, scripts/eval_judge.py, and scripts/eval_gate.py are runnable against any served checkpoint before the training run finishes
+  4. adapters/qwen3-wp/ exists as a LoRA adapter checkpoint with tokenizer (adapter kept separate until evaluation passes in Phase 4)
+**Plans**: 3 plans
 
 Plans:
-- [ ] 03-01: Model download and tokenizer extension (download Qwen3-30B-A3B, add task tokens, smoke test)
-- [ ] 03-02: Evaluation suite (eval_phpcs.py, eval_judge_correlation.py, eval_benchmarks.sh, baseline capture)
-- [ ] 03-03: Training configuration and execution (Unsloth LoRA config, DGX Spark run, W&B monitoring)
+- [ ] 03-01-PLAN.md — Model download and tokenizer extension (download Qwen3-30B-A3B, add task tokens, mean-init embeddings, smoke test)
+- [ ] 03-02-PLAN.md — Evaluation suite (eval_gen.py PHPCS pass rate, eval_judge.py Spearman correlation, eval_gate.py quality gates, wp-bench config)
+- [ ] 03-03-PLAN.md — Training configuration and execution (Unsloth LoRA config, DGX Spark run, W&B monitoring, adapter save)
 
 ### Phase 4: Evaluation and Deployment
 **Goal**: All three quality gates pass and the model is live on vLLM and Ollama with a HuggingFace Hub release
