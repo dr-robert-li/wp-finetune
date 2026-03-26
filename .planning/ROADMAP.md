@@ -44,13 +44,13 @@ Plans:
   2. Functions pass the PHPCS pre-filter before any Claude API judging occurs, and passed/failed examples are stored in separate files
   3. Gap analysis identifies which taxonomy categories are underrepresented and synthetic generation fills those gaps
   4. final_dataset/ contains at least 10,000 examples in OpenAI JSONL, Alpaca JSON, and raw JSONL formats with an 80/10/10 train/val/test split and task tokens present
-  5. The wp_gen and wp_judge example counts are within 10% of each other (approximately 50/50 split)
-**Plans**: TBD
+  5. The wp_gen and wp_judge example counts follow approximately 40/60 gen/judge split (per user decision)
+**Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: Phase 1 execution (clone, extract, judge)
-- [ ] 02-02: Phase 2 execution (gap analysis, mutations, synthetic generation, judge dataset)
-- [ ] 02-03: Phase 3 execution (CoT, export, dataset validation)
+- [ ] 02-01-PLAN.md — Config updates (judge threshold >= 8, security auto-FAIL, N/A deflation, rejection templates) + Phase 1 script hardening (clone, extract, judge with utils.py)
+- [ ] 02-02-PLAN.md — Phase 2 script hardening (mutate PHPCS guard, generate with rejection examples + batch API, judge + judge_dataset with utils.py)
+- [ ] 02-03-PLAN.md — Phase 3 CoT hardening + export dataset update (40/60 ratio, metadata.json, dedup, PHP lint, sample_weight)
 
 ### Phase 3: Model Prep and Training
 **Goal**: Qwen3-8B is converted to an 8-expert MoE with task tokens, an evaluation suite is ready before training completes, and a LoRA-merged BF16 checkpoint exists on disk
