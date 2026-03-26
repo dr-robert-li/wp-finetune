@@ -92,6 +92,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Pipeline Ready | 2/2 | Complete | 2026-03-26 |
-| 2. Dataset Production | 0/3 | Not started | - |
+| 2. Dataset Production | 1/3 | In Progress|  |
 | 3. Model Prep and Training | 0/3 | Not started | - |
 | 4. Evaluation and Deployment | 0/3 | Not started | - |
