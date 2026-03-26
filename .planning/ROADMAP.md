@@ -29,11 +29,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. A conversion script reads `wp_top1000_plugins_final.csv` and `wp_top100_themes_final.csv`, applies quality_tier automatically based on vulnerability data (plugins with unpatched critical CVEs get "assessed" tier with stricter path filters), and writes a valid repos.yaml containing WordPress Core, at least 10 plugins, and at least 5 themes, each with quality_tier, path_filters, and description fields
   4. A test run of phase2_mutate.py with PHPCS unavailable hard-exits instead of silently accepting mutations
   5. All Claude API calls in the pipeline use exponential backoff with jitter and route bulk judging through the Batch API
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: Pipeline hardening (pre-flight, checkpointing, backoff, Batch API, parse failure rejection)
-- [ ] 01-02: CSV-to-repos.yaml conversion (script reads existing ranked CSVs, filters by active_installs/rating, auto-assigns quality_tier from vulnerability data, emits validated repos.yaml)
+- [ ] 01-01-PLAN.md — Shared utilities and pre-flight (utils.py with extract_json, backoff, checkpoint, Batch API; preflight.py with tool validation)
+- [ ] 01-02-PLAN.md — CSV-to-repos.yaml conversion (reads ranked CSVs, filters by installs/rating/vulns, auto-assigns quality_tier, emits validated repos.yaml)
 
 ### Phase 2: Dataset Production
 **Goal**: The full three-phase data pipeline executes against real repositories and produces a clean, split, multi-format training dataset
