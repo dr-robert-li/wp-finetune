@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-03-26T05:56:37.412Z"
-last_activity: 2026-03-26 — Completed 01-01 shared utils/preflight with 9 functions and 15 passing tests
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-03-26T05:59:26.000Z"
+last_activity: 2026-03-26 — Completed 02-02 hardened all Phase 2 scripts with utils.py integration (7 new tests, 39 total passing)
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 5
-  completed_plans: 3
-  percent: 20
+  completed_plans: 4
+  percent: 40
 ---
 
 # Project State
@@ -25,25 +25,26 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 
 ## Current Position
 
-Phase: 1 of 4 (Pipeline Ready)
-Plan: 2 of 2 in current phase (both 01-01 and 01-02 complete)
+Phase: 2 of 4 (Dataset Production)
+Plan: 2 of 2 in current phase (both 02-01 and 02-02 complete)
 Status: In progress
-Last activity: 2026-03-26 — Completed 01-01 shared utils/preflight with 9 functions and 15 passing tests
+Last activity: 2026-03-26 — Completed 02-02 hardened all Phase 2 scripts with utils.py integration (7 new tests, 39 total passing)
 
-Progress: [██░░░░░░░░] 20%
+Progress: [████░░░░░░] 40%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 13 min
-- Total execution time: 0.45 hours
+- Total plans completed: 4
+- Average duration: 9 min
+- Total execution time: 0.62 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-pipeline-ready | 2 | 27 min | 13 min |
+| 02-dataset-production | 2 | ~10 min | ~5 min |
 
 **Recent Trend:**
 - Last 5 plans: 01-02 (2 min), 01-01 (25 min)
@@ -75,6 +76,9 @@ Recent decisions affecting current work:
 - [Phase 02-01]: Security auto-FAIL enforced in judge.py code (_apply_security_auto_fail function) — code-level gate not just config documentation
 - [Phase 02-01]: N/A scoring deflated to 7 (from 10) for i18n and accessibility dims — prevents inflation on functions with no relevant output
 - [Phase 02-01]: Rejection templates use 3 sub-keys (proactive_nonce, proactive_capability, proactive_escaping) in synthetic_prompts.yaml — aligned with security training taxonomy
+- [Phase 02-02]: PHPCS hard-fail guard added at module level in phase2_mutate.py — no silent fallback on FileNotFoundError from verify_mutation_detectable
+- [Phase 02-02]: batch results saved to disk immediately in phase2_judge_dataset after parse_batch_results (24h expiry protection, Pitfall 3)
+- [Phase 02-02]: security auto-FAIL enforced in _apply_security_auto_fail() in phase2_judge.py — score < 5 forces FAIL verdict
 
 ### Pending Todos
 
@@ -88,6 +92,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-26T05:56:37.411Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-03-26T05:59:26.000Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None
