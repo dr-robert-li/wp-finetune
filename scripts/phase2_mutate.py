@@ -41,7 +41,7 @@ def mutate_remove_prepare(code: str) -> tuple[str, str]:
     vars_list = [v.strip() for v in vars_str.split(",")]
     mutated_query = query_str
     for var in vars_list:
-        mutated_query = re.sub(r'%[sdf]', f"' . {var} . '", mutated_query, count=1)
+        mutated_query = re.sub(r'%[sdf]', re.escape(f"' . {var} . '"), mutated_query, count=1)
 
     bad_code = code[:match.start()] + f'"{mutated_query}"' + code[match.end():]
     return bad_code, "sql_injection: Removed $wpdb->prepare(), concatenating variables directly into SQL"
