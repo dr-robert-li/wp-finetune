@@ -4,10 +4,22 @@ All notable changes to the wp-qwen3-moe project.
 
 ## [Unreleased]
 
-### Phase 2: Dataset Production (In Progress)
+### Base Model Switch
+- **Switched from Qwen3-8B (dense-to-MoE conversion) to Qwen3-30B-A3B (native MoE)**
+- Reason: CMoE and ToMoE have no serving stack support (no vLLM, no GGUF, no Ollama compatibility)
+- Qwen3-30B-A3B is production-ready: verified vLLM, Ollama, HuggingFace serving, Unsloth fine-tuning
+- ~30B total params, ~3B active per forward pass, 128 experts, top-8 routing
+- Fits DGX Spark 128GB unified memory (60GB BF16, 15GB QLoRA)
+
+### Phase 2: Dataset Production (Complete)
 - Switched pipeline execution from Anthropic Batch API to Claude Code agents ($0 LLM cost)
-- 52 repos cloned, 47 extracted (28,855 functions), 36 repos judged so far
-- 23 repos remaining to judge via Claude Code agents
+- 60 repos cloned, 57 extracted, 22,137 passed judge (69% pass rate)
+- 203 synthetic examples generated and judged (98.1% pass rate)
+- 4,010 judge training examples (1,500 high + 1,006 low + 1,504 synth)
+- 610 CoT reasoning chains (real code + contrastive + synthetic)
+- 5,958 final training examples after 40/60 ratio enforcement + dedup
+- Created autonomous pipeline skill (`skills/run-data-pipeline.md`) with spawn-until-target pattern
+- Created `scripts/pipeline_orchestrator.py` for state tracking and action planning
 
 ## [0.2.0] - 2026-03-26
 

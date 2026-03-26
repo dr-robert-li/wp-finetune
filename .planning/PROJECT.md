@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A WordPress best-practice fine-tuning pipeline that produces training data and trains a Qwen3-8B-based Mixture-of-Experts model capable of both generating and judging WordPress code. The model uses task tokens (`<wp_gen>`, `<wp_judge>`) to route to specialized expert pathways. Built and served on the DGX Toolbox infrastructure stack.
+A WordPress best-practice fine-tuning pipeline that produces training data and trains a Qwen3-30B-A3B-based Mixture-of-Experts model capable of both generating and judging WordPress code. The model uses task tokens (`<wp_gen>`, `<wp_judge>`) to route to specialized expert pathways (~3B active params from 128 experts). Built and served on the DGX Toolbox infrastructure stack.
 
 ## Core Value
 
@@ -30,7 +30,7 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 - [ ] Execute Phase 1: Clone repos, extract functions, judge quality
 - [ ] Execute Phase 2: Gap analysis, mutations, synthetic generation, judge dataset
 - [ ] Execute Phase 3: CoT reasoning, instruction synthesis, final export
-- [ ] Convert Qwen3-8B dense model to MoE (8 experts, top-2 routing)
+- [ ] Download Qwen3-30B-A3B base model (native MoE, no conversion needed)
 - [ ] Extend tokenizer with `<wp_gen>` and `<wp_judge>` special tokens
 - [ ] Fine-tune via Unsloth Studio (LoRA r=64, multi-task SFT)
 - [ ] Evaluate model (PHPCS pass rate >95%, judge correlation >0.85)
@@ -51,7 +51,7 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 
 **Infrastructure:** DGX Spark (Blackwell GB10, 128GB unified memory) via DGX Toolbox provides Unsloth Studio for fine-tuning, vLLM/Ollama for inference, eval-toolbox for benchmarks, and safety harness for guardrails.
 
-**Base model:** Qwen3-8B selected for strong PHP/code understanding, HuggingFace compatibility, and fit within DGX Spark memory. Dense-to-MoE conversion using LLaMA-MoE methodology.
+**Base model:** Qwen3-30B-A3B selected — native MoE (128 experts, top-8 routing, ~3B active params), proven serving compatibility (vLLM, Ollama, HuggingFace), and fits within DGX Spark 128GB unified memory. No dense-to-MoE conversion needed.
 
 **Execution model:** All LLM-heavy pipeline work (judging, generation, scoring, CoT reasoning) uses **Claude Code agents** instead of the Anthropic API — $0 cost, covered by subscription. Agents are spawned in parallel batches and continuously until data targets are met. See `docs/AGENT_PIPELINE.md` for the full execution model and output format contracts.
 
@@ -63,7 +63,7 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 
 - **API Cost:** Claude API calls for judging/generation are the primary cost driver — PHPCS pre-filtering reduces volume by ~60%
 - **Hardware:** Single DGX Spark — training must fit in 128GB unified memory
-- **Base Model:** Qwen3-8B — selected, not negotiable for v1
+- **Base Model:** Qwen3-30B-A3B — native MoE, proven toolchain, not negotiable for v1
 - **Quality Floor:** All training examples must pass PHPCS pre-filter AND Claude 9-dimension judge (scores ≥ 8, security auto-FAIL if security < 5)
 - **Infrastructure:** DGX Toolbox components for all training, evaluation, and serving
 
@@ -73,8 +73,8 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Qwen3-8B as base model | Strong code understanding, fits DGX Spark, active community | — Pending |
-| Dense-to-MoE conversion | Enables task-token routing to specialized experts | — Pending |
+| Qwen3-30B-A3B as base model | Native MoE (no conversion risk), proven vLLM/Ollama/HF serving, ~3B active params, fits DGX Spark | ✓ Good |
+| Native MoE over dense-to-MoE conversion | CMoE/ToMoE have no serving stack support (no vLLM, no GGUF); Qwen3-30B-A3B is production-ready | ✓ Good |
 | LoRA fine-tuning via Unsloth | Memory-efficient, proven on DGX Spark hardware | — Pending |
 | DGX Toolbox for full lifecycle | Demonstrates toolbox usefulness across training→eval→serving | — Pending |
 | PHPCS pre-filter before Claude | Reduces API cost ~60% by filtering obvious failures cheaply | ✓ Good |

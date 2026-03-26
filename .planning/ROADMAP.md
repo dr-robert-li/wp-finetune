@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Pipeline Ready** - Harden all pipeline scripts and convert existing CSV data into repos.yaml before any data is generated
 - [ ] **Phase 2: Dataset Production** - Execute all three pipeline phases to produce the final training dataset
-- [ ] **Phase 3: Model Prep and Training** - Convert to MoE, extend tokenizer, write eval suite, and fine-tune on DGX Spark
+- [ ] **Phase 3: Model Prep and Training** - Download Qwen3-30B-A3B, extend tokenizer, write eval suite, and fine-tune on DGX Spark
 - [ ] **Phase 4: Evaluation and Deployment** - Run quality gates and package the passing model for serving
 
 ## Phase Details
@@ -57,7 +57,7 @@ Plans:
 - [ ] 02-07-PLAN.md — [GAP CLOSURE] CoT reasoning via Claude Code agents + export dataset (Python) + human validation checkpoint
 
 ### Phase 3: Model Prep and Training
-**Goal**: Qwen3-8B is converted to an 8-expert MoE with task tokens, an evaluation suite is ready before training completes, and a LoRA-merged BF16 checkpoint exists on disk
+**Goal**: Qwen3-30B-A3B (native MoE) has task tokens added, an evaluation suite is ready before training completes, and a LoRA-merged BF16 checkpoint exists on disk
 **Depends on**: Phase 2 (for training data); model prep scripts can be written during Phase 2
 **Requirements**: MODL-01, MODL-02, MODL-03, MODL-04, TRNG-01, TRNG-02, TRNG-03, TRNG-04, TRNG-05, TRNG-06, EVAL-01, EVAL-02, EVAL-03, EVAL-04, EVAL-05
 **Success Criteria** (what must be TRUE):
@@ -68,7 +68,7 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 03-01: MoE conversion and tokenizer extension (CMoE script, tokenizer, smoke test)
+- [ ] 03-01: Model download and tokenizer extension (download Qwen3-30B-A3B, add task tokens, smoke test)
 - [ ] 03-02: Evaluation suite (eval_phpcs.py, eval_judge_correlation.py, eval_benchmarks.sh, baseline capture)
 - [ ] 03-03: Training configuration and execution (Unsloth LoRA config, DGX Spark run, W&B monitoring)
 
