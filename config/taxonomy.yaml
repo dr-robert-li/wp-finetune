@@ -1,0 +1,146 @@
+# WordPress Training Data Taxonomy
+# =================================
+# Defines the concept space the model must cover.
+# Used in Phase 1 for tagging, Phase 2 for gap analysis.
+
+categories:
+
+  sql_patterns:
+    - sql:prepared_statements
+    - sql:joins_across_meta
+    - sql:custom_table_creation
+    - sql:dbdelta_migrations
+    - sql:batch_operations
+    - sql:targeted_select        # get_var, get_col, get_row vs get_results
+    - sql:subqueries
+    - sql:index_aware_queries
+    - sql:transaction_handling
+
+  security:
+    - security:nonce_verification
+    - security:capability_checks
+    - security:output_escaping
+    - security:input_sanitization
+    - security:file_upload_validation
+    - security:prepared_statements   # overlaps sql, intentional
+    - security:csrf_protection
+    - security:xss_prevention
+
+  hooks_and_filters:
+    - hooks:action_registration
+    - hooks:filter_registration
+    - hooks:priority_management
+    - hooks:argument_passing
+    - hooks:conditional_loading
+    - hooks:removal_patterns
+
+  data_modeling:
+    - data:custom_post_types
+    - data:custom_taxonomies
+    - data:meta_fields
+    - data:options_api
+    - data:transients
+    - data:object_cache
+    - data:custom_tables
+
+  rest_api:
+    - rest:route_registration
+    - rest:permission_callbacks
+    - rest:schema_definition
+    - rest:request_validation
+    - rest:response_formatting
+    - rest:authentication
+
+  admin:
+    - admin:settings_pages
+    - admin:meta_boxes
+    - admin:admin_notices
+    - admin:list_table_columns
+    - admin:bulk_actions
+    - admin:dashboard_widgets
+
+  theme_patterns:
+    - theme:template_hierarchy
+    - theme:enqueue_scripts
+    - theme:customizer_api
+    - theme:block_patterns
+    - theme:fse_templates
+    - theme:child_theme_patterns
+    - theme:navigation_menus
+    - theme:widget_areas
+
+  performance:
+    - perf:query_caching
+    - perf:transient_caching
+    - perf:object_caching
+    - perf:lazy_loading
+    - perf:batch_processing
+    - perf:conditional_asset_loading
+    - perf:database_indexing
+
+  plugin_architecture:
+    - arch:activation_hooks
+    - arch:deactivation_hooks
+    - arch:uninstall_cleanup
+    - arch:upgrade_routines
+    - arch:dependency_management
+    - arch:autoloading
+    - arch:singleton_vs_hooks
+
+  multisite:
+    - multisite:network_admin
+    - multisite:site_switching
+    - multisite:per_site_tables
+    - multisite:network_options
+    - multisite:blog_creation_hooks
+
+  cron:
+    - cron:scheduled_events
+    - cron:custom_intervals
+    - cron:single_events
+    - cron:long_running_tasks
+
+  internationalization:
+    - i18n:translation_functions
+    - i18n:text_domain
+    - i18n:pluralization
+    - i18n:late_escaping
+    - i18n:sprintf_patterns
+
+  accessibility:
+    - a11y:semantic_html
+    - a11y:form_labels
+    - a11y:aria_attributes
+    - a11y:screen_reader_text
+    - a11y:keyboard_navigation
+
+# Minimum examples per tag for Phase 2 gap analysis
+minimum_coverage:
+  sql:prepared_statements: 400
+  sql:joins_across_meta: 150
+  sql:custom_table_creation: 100
+  sql:dbdelta_migrations: 80
+  sql:batch_operations: 100
+  security:nonce_verification: 250
+  security:capability_checks: 250
+  security:output_escaping: 400
+  security:input_sanitization: 300
+  rest:route_registration: 200
+  rest:permission_callbacks: 200
+  data:custom_post_types: 150
+  hooks:action_registration: 500
+  hooks:filter_registration: 500
+  perf:query_caching: 150
+  perf:batch_processing: 100
+  arch:activation_hooks: 80
+  arch:uninstall_cleanup: 50
+  multisite:per_site_tables: 60
+  theme:template_hierarchy: 100
+  theme:enqueue_scripts: 150
+  theme:block_patterns: 100
+  cron:scheduled_events: 80
+  i18n:translation_functions: 300
+  i18n:pluralization: 80
+  a11y:semantic_html: 100
+  a11y:form_labels: 100
+  a11y:aria_attributes: 80
