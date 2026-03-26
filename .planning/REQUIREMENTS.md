@@ -17,10 +17,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Repository Curation
 
+Source data already exists at `/home/robert_li/Desktop/data/wp-finetune-data/`: `wp_top1000_plugins_final.csv` (1,000 ranked plugins with github_url, active_installs, rating, vulnerability data, tags), `wp_top100_themes_final.csv` (100 ranked themes with same fields), and `wp_plugins_raw.json`. REPO-01 through REPO-04 are satisfied by writing a conversion script that reads these CSVs and emits repos.yaml — no manual URL hunting or sourcing required.
+
 - [ ] **REPO-01**: repos.yaml populated with WordPress Core repository
-- [ ] **REPO-02**: repos.yaml populated with 10+ high-quality plugins (WooCommerce, Jetpack, Yoast SEO, etc.)
-- [ ] **REPO-03**: repos.yaml populated with 5+ high-quality themes (Underscores, developer-focused themes)
-- [ ] **REPO-04**: Each repo entry has quality_tier, path_filters, and description
+- [ ] **REPO-02**: repos.yaml populated with 10+ high-quality plugins selected from ranked CSV (filtered by active_installs, rating, and vulnerability data)
+- [ ] **REPO-03**: repos.yaml populated with 5+ high-quality themes selected from ranked CSV
+- [ ] **REPO-04**: Each repo entry has quality_tier (auto-assigned from vulnerability data: unpatched critical CVEs → "assessed" tier with stricter filters), path_filters, and description
 
 ### Data Pipeline Execution
 
@@ -100,13 +102,54 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (populated by roadmapper) | | |
+| PIPE-01 | Phase 1 | Pending |
+| PIPE-02 | Phase 1 | Pending |
+| PIPE-03 | Phase 1 | Pending |
+| PIPE-04 | Phase 1 | Pending |
+| PIPE-05 | Phase 1 | Pending |
+| REPO-01 | Phase 1 | Pending |
+| REPO-02 | Phase 1 | Pending |
+| REPO-03 | Phase 1 | Pending |
+| REPO-04 | Phase 1 | Pending |
+| DATA-01 | Phase 2 | Pending |
+| DATA-02 | Phase 2 | Pending |
+| DATA-03 | Phase 2 | Pending |
+| DATA-04 | Phase 2 | Pending |
+| DATA-05 | Phase 2 | Pending |
+| DATA-06 | Phase 2 | Pending |
+| DATA-07 | Phase 2 | Pending |
+| DATA-08 | Phase 2 | Pending |
+| DATA-09 | Phase 2 | Pending |
+| DATA-10 | Phase 2 | Pending |
+| DATA-11 | Phase 2 | Pending |
+| MODL-01 | Phase 3 | Pending |
+| MODL-02 | Phase 3 | Pending |
+| MODL-03 | Phase 3 | Pending |
+| MODL-04 | Phase 3 | Pending |
+| TRNG-01 | Phase 3 | Pending |
+| TRNG-02 | Phase 3 | Pending |
+| TRNG-03 | Phase 3 | Pending |
+| TRNG-04 | Phase 3 | Pending |
+| TRNG-05 | Phase 3 | Pending |
+| TRNG-06 | Phase 3 | Pending |
+| EVAL-01 | Phase 3 | Pending |
+| EVAL-02 | Phase 3 | Pending |
+| EVAL-03 | Phase 3 | Pending |
+| EVAL-04 | Phase 3 | Pending |
+| EVAL-05 | Phase 3 | Pending |
+| DPLT-01 | Phase 4 | Pending |
+| DPLT-02 | Phase 4 | Pending |
+| DPLT-03 | Phase 4 | Pending |
+| DPLT-04 | Phase 4 | Pending |
+| DPLT-05 | Phase 4 | Pending |
+| DPLT-06 | Phase 4 | Pending |
+| DPLT-07 | Phase 4 | Pending |
 
 **Coverage:**
 - v1 requirements: 37 total
-- Mapped to phases: 0
-- Unmapped: 37 ⚠️
+- Mapped to phases: 37
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-26*
-*Last updated: 2026-03-26 after initial definition*
+*Last updated: 2026-03-26 — REPO-01 through REPO-04 updated to reflect existing CSV source data*
