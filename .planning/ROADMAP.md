@@ -51,10 +51,10 @@ Plans:
 - [x] 02-01-PLAN.md — Config updates (judge threshold >= 8, security auto-FAIL, N/A deflation, rejection templates) + Phase 1 script hardening (clone, extract, judge with utils.py)
 - [x] 02-02-PLAN.md — Phase 2 script hardening (mutate PHPCS guard, generate with rejection examples + batch API, judge + judge_dataset with utils.py)
 - [x] 02-03-PLAN.md — Phase 3 CoT hardening + export dataset update (40/60 ratio, metadata.json, dedup, PHP lint, sample_weight)
-- [ ] 02-04-PLAN.md — [GAP CLOSURE] Execute Phase 1 pipeline: clone repos, extract functions, judge via PHPCS + Claude API
-- [ ] 02-05-PLAN.md — [GAP CLOSURE] Execute Phase 2 generation: gap analysis, mutation pairs, synthetic examples
-- [ ] 02-06-PLAN.md — [GAP CLOSURE] Execute Phase 2 judging: assess synthetics, generate judge training data
-- [ ] 02-07-PLAN.md — [GAP CLOSURE] Execute Phase 3 pipeline + export: CoT reasoning, dataset export, validation
+- [ ] 02-04-PLAN.md — [GAP CLOSURE] Judge remaining 23 repos via Claude Code agents (auto-pass wordpress-develop core, judge 22 assessed repos with 5 parallel agents)
+- [ ] 02-05-PLAN.md — [GAP CLOSURE] Gap analysis + mutations (Python, no LLM) then synthetic generation via Claude Code agents (~500 rejection examples)
+- [ ] 02-06-PLAN.md — [GAP CLOSURE] Judge synthetics + generate judge training data via Claude Code agents (rubric-scored 0-100 examples)
+- [ ] 02-07-PLAN.md — [GAP CLOSURE] CoT reasoning via Claude Code agents + export dataset (Python) + human validation checkpoint
 
 ### Phase 3: Model Prep and Training
 **Goal**: Qwen3-8B is converted to an 8-expert MoE with task tokens, an evaluation suite is ready before training completes, and a LoRA-merged BF16 checkpoint exists on disk
