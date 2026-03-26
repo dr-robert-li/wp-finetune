@@ -111,10 +111,14 @@ wp-finetune/
 │   ├── agent_judge_helper.py       # Agent helper: list unjudged repos, split results
 │   ├── autopass_core.py            # Auto-pass WordPress Core with taxonomy tagging
 │   ├── csv_to_repos.py             # Convert ranked plugin/theme CSVs to repos.yaml
+│   ├── pipeline_orchestrator.py    # Pipeline state tracker + action planner
+│   ├── merge_dataset.py            # Merge all sources into OpenAI messages format
 │   ├── phase1_{clone,extract,judge}.py
 │   ├── phase2_{gap_analysis,mutate,generate,judge,judge_dataset}.py
 │   ├── phase3_cot.py
 │   └── export_dataset.py           # Multi-format export (40/60 gen/judge split)
+├── skills/
+│   └── run-data-pipeline.md        # Claude Code skill for autonomous pipeline execution
 ├── docs/
 │   └── AGENT_PIPELINE.md           # Agent execution model and output format contracts
 ├── phase1_extraction/              # Cloned repos + extracted/passed/failed functions
@@ -127,13 +131,74 @@ wp-finetune/
 └── wp-moe.md                       # Model architecture specification
 ```
 
+## Autonomous Pipeline
+
+The entire data pipeline runs autonomously with a single command in Claude Code — no continuous prompting required.
+
+### Install the Skill
+
+Copy the pipeline skill into your Claude Code skills directory:
+
+```bash
+# From the project root
+mkdir -p .claude/skills/run-data-pipeline
+cp skills/run-data-pipeline.md .claude/skills/run-data-pipeline/SKILL.md
+```
+
+Or symlink it so updates propagate:
+
+```bash
+mkdir -p .claude/skills/run-data-pipeline
+ln -sf "$(pwd)/skills/run-data-pipeline.md" .claude/skills/run-data-pipeline/SKILL.md
+```
+
+### Configure
+
+```bash
+cp .env.example .env
+# Edit .env and add your ANTHROPIC_API_KEY (used as fallback only)
+```
+
+### Run
+
+In Claude Code, say:
+
+```
+run the pipeline
+```
+
+Or check status first:
+
+```bash
+python scripts/pipeline_orchestrator.py status   # Current state
+python scripts/pipeline_orchestrator.py plan      # What needs doing
+```
+
+### How It Works
+
+The skill follows a **spawn-until-target** loop:
+
+```
+1. Orchestrator checks state → identifies gaps
+2. Claude Code spawns parallel agents for each gap
+3. Agents write results (judging, generation, scoring, CoT)
+4. Orchestrator re-checks state
+5. If targets not met → loop back to step 2
+6. When all targets met → merge → export → done
+```
+
+All LLM work uses Claude Code agents (covered by subscription, $0 API cost).
+Non-LLM steps (cloning, extraction, gap analysis, mutations, export) run as Python scripts.
+
+See [docs/AGENT_PIPELINE.md](docs/AGENT_PIPELINE.md) for the full execution model, output format contracts, and scaling guide.
+
 ## Requirements
 
 - Python 3.10+
 - `pyyaml`, `python-dotenv`
 - PHP CLI with `tokenizer` extension
 - PHP_CodeSniffer + WordPress-Coding-Standards
-- [Claude Code](https://claude.com/claude-code) (subscription) — used for all LLM pipeline steps (judging, generation, CoT)
+- [Claude Code](https://claude.com/claude-code) (subscription) — used for all LLM pipeline steps
 
 **Training/serving (Phase 3+):** [DGX Toolbox](https://github.com/dr-robert-li/dgx-toolbox) — Unsloth Studio, vLLM, Ollama, eval-toolbox, safety harness. Runs on DGX Spark (Blackwell GB10, 128GB unified memory).
 
