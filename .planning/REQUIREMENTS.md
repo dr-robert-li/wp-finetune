@@ -9,20 +9,20 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Pipeline Hardening
 
-- [ ] **PIPE-01**: Pipeline pre-flight script validates PHPCS install, API key, PHP CLI, and WordPress-Coding-Standards before execution
-- [ ] **PIPE-02**: All long-running scripts support checkpoint/resume to survive interruptions
-- [ ] **PIPE-03**: API calls use exponential backoff with jitter instead of fixed sleep intervals
-- [ ] **PIPE-04**: Scripts integrate Anthropic Batch API for high-volume offline processing (50% cost savings)
-- [ ] **PIPE-05**: Parse failure stubs are detected and rejected instead of silently entering training data
+- [x] **PIPE-01**: Pipeline pre-flight script validates PHPCS install, API key, PHP CLI, and WordPress-Coding-Standards before execution
+- [x] **PIPE-02**: All long-running scripts support checkpoint/resume to survive interruptions
+- [x] **PIPE-03**: API calls use exponential backoff with jitter instead of fixed sleep intervals
+- [x] **PIPE-04**: Scripts integrate Anthropic Batch API for high-volume offline processing (50% cost savings)
+- [x] **PIPE-05**: Parse failure stubs are detected and rejected instead of silently entering training data
 
 ### Repository Curation
 
 Source data already exists at `/home/robert_li/Desktop/data/wp-finetune-data/`: `wp_top1000_plugins_final.csv` (1,000 ranked plugins with github_url, active_installs, rating, vulnerability data, tags), `wp_top100_themes_final.csv` (100 ranked themes with same fields), and `wp_plugins_raw.json`. REPO-01 through REPO-04 are satisfied by writing a conversion script that reads these CSVs and emits repos.yaml — no manual URL hunting or sourcing required.
 
-- [ ] **REPO-01**: repos.yaml populated with WordPress Core repository
-- [ ] **REPO-02**: repos.yaml populated with 10+ high-quality plugins selected from ranked CSV (filtered by active_installs, rating, and vulnerability data)
-- [ ] **REPO-03**: repos.yaml populated with 5+ high-quality themes selected from ranked CSV
-- [ ] **REPO-04**: Each repo entry has quality_tier (auto-assigned from vulnerability data: unpatched critical CVEs → "assessed" tier with stricter filters), path_filters, and description
+- [x] **REPO-01**: repos.yaml populated with WordPress Core repository
+- [x] **REPO-02**: repos.yaml populated with 10+ high-quality plugins selected from ranked CSV (filtered by active_installs, rating, and vulnerability data)
+- [x] **REPO-03**: repos.yaml populated with 5+ high-quality themes selected from ranked CSV
+- [x] **REPO-04**: Each repo entry has quality_tier (auto-assigned from vulnerability data: unpatched critical CVEs → "assessed" tier with stricter filters), path_filters, and description
 
 ### Data Pipeline Execution
 
@@ -102,15 +102,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PIPE-01 | Phase 1 | Pending |
-| PIPE-02 | Phase 1 | Pending |
-| PIPE-03 | Phase 1 | Pending |
-| PIPE-04 | Phase 1 | Pending |
-| PIPE-05 | Phase 1 | Pending |
-| REPO-01 | Phase 1 | Pending |
-| REPO-02 | Phase 1 | Pending |
-| REPO-03 | Phase 1 | Pending |
-| REPO-04 | Phase 1 | Pending |
+| PIPE-01 | Phase 1 | Complete |
+| PIPE-02 | Phase 1 | Complete |
+| PIPE-03 | Phase 1 | Complete |
+| PIPE-04 | Phase 1 | Complete |
+| PIPE-05 | Phase 1 | Complete |
+| REPO-01 | Phase 1 | Complete |
+| REPO-02 | Phase 1 | Complete |
+| REPO-03 | Phase 1 | Complete |
+| REPO-04 | Phase 1 | Complete |
 | DATA-01 | Phase 2 | Pending |
 | DATA-02 | Phase 2 | Pending |
 | DATA-03 | Phase 2 | Pending |

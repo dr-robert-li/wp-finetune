@@ -12,7 +12,7 @@ Four phases take the project from fragile pipeline scripts to a deployed dual-mo
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Pipeline Ready** - Harden all pipeline scripts and convert existing CSV data into repos.yaml before any data is generated
+- [x] **Phase 1: Pipeline Ready** - Harden all pipeline scripts and convert existing CSV data into repos.yaml before any data is generated
 - [ ] **Phase 2: Dataset Production** - Execute all three pipeline phases to produce the final training dataset
 - [ ] **Phase 3: Model Prep and Training** - Convert to MoE, extend tokenizer, write eval suite, and fine-tune on DGX Spark
 - [ ] **Phase 4: Evaluation and Deployment** - Run quality gates and package the passing model for serving
@@ -32,8 +32,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 2 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Shared utilities and pre-flight (utils.py with extract_json, backoff, checkpoint, Batch API; preflight.py with tool validation)
-- [ ] 01-02-PLAN.md — CSV-to-repos.yaml conversion (reads ranked CSVs, filters by installs/rating/vulns, auto-assigns quality_tier, emits validated repos.yaml)
+- [x] 01-01-PLAN.md — Shared utilities and pre-flight (utils.py with extract_json, backoff, checkpoint, Batch API; preflight.py with tool validation)
+- [x] 01-02-PLAN.md — CSV-to-repos.yaml conversion (reads ranked CSVs, filters by installs/rating/vulns, auto-assigns quality_tier, emits validated repos.yaml)
 
 ### Phase 2: Dataset Production
 **Goal**: The full three-phase data pipeline executes against real repositories and produces a clean, split, multi-format training dataset
@@ -91,7 +91,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Pipeline Ready | 0/2 | Not started | - |
+| 1. Pipeline Ready | 2/2 | Complete | 2026-03-26 |
 | 2. Dataset Production | 0/3 | Not started | - |
 | 3. Model Prep and Training | 0/3 | Not started | - |
 | 4. Evaluation and Deployment | 0/3 | Not started | - |
