@@ -78,15 +78,17 @@ Plans:
 **Requirements**: DPLT-01, DPLT-02, DPLT-03, DPLT-04, DPLT-05, DPLT-06, DPLT-07
 **Success Criteria** (what must be TRUE):
   1. PHPCS pass rate on 500 held-out generation tasks exceeds 95%, judge Spearman correlation on 500 held-out scored pairs exceeds 0.85, and security pass rate exceeds 98%
-  2. The model responds to requests at `http://localhost:8020` via vLLM and `http://localhost:11434` via Ollama, and both backends correctly handle `<wp_gen>` and `<wp_judge>` task tokens
-  3. Open-WebUI at port 12000 shows the model available for interactive use
-  4. The HuggingFace Hub page contains the model card with eval metrics, GGUF and AWQ download links, and copy-pasteable usage examples
+  2. wp-bench execution and knowledge tests pass with scores competitive to frontier models
+  3. The model responds to requests at `http://localhost:8020` via vLLM and `http://localhost:11434` via Ollama, and both backends correctly handle `<wp_gen>` and `<wp_judge>` task tokens
+  4. Open-WebUI at port 12000 shows the model available for interactive use
+  5. The HuggingFace Hub page contains the model card with eval metrics (including wp-bench scores), GGUF and AWQ download links, and copy-pasteable usage examples
 **Plans**: TBD
 
 Plans:
-- [ ] 04-01: Quality gate execution (run eval suite, confirm all three thresholds pass)
-- [ ] 04-02: Packaging (merge LoRA, AWQ quantization for vLLM, GGUF for Ollama)
-- [ ] 04-03: Deployment and HuggingFace upload (vLLM serve, Ollama serve, Open-WebUI, HF model card)
+- [ ] 04-01: Quality gate execution (run static eval suite — PHPCS, Spearman, security gate)
+- [ ] 04-02: wp-bench evaluation (clone, install, run WordPress runtime benchmark against served model)
+- [ ] 04-03: Packaging (merge LoRA, AWQ quantization for vLLM, GGUF for Ollama)
+- [ ] 04-04: Deployment and HuggingFace upload (vLLM serve, Ollama serve, Open-WebUI, HF model card with wp-bench scores)
 
 ## Progress
 
