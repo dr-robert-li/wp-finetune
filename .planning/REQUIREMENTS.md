@@ -40,10 +40,10 @@ Source data already exists at `/home/robert_li/Desktop/data/wp-finetune-data/`: 
 
 ### Model Preparation
 
-- [ ] **MODL-01**: Qwen3-30B-A3B downloaded (native MoE, 128 experts, top-8 routing, no conversion needed)
-- [ ] **MODL-02**: Tokenizer extended with `<wp_gen>` and `<wp_judge>` special tokens
-- [ ] **MODL-03**: Model embeddings resized and new token embeddings initialized (mean of existing)
-- [ ] **MODL-04**: Smoke test passes — model loads, generates coherent text, task tokens are recognized
+- [x] **MODL-01**: Qwen3-30B-A3B downloaded (native MoE, 128 experts, top-8 routing, no conversion needed)
+- [x] **MODL-02**: Tokenizer extended with `<wp_gen>` and `<wp_judge>` special tokens
+- [x] **MODL-03**: Model embeddings resized and new token embeddings initialized (mean of existing)
+- [x] **MODL-04**: Smoke test passes — model loads, generates coherent text, task tokens are recognized
 
 ### Training
 
@@ -122,10 +122,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DATA-09 | Phase 2 | Complete |
 | DATA-10 | Phase 2 | Complete |
 | DATA-11 | Phase 2 | Complete |
-| MODL-01 | Phase 3 | Pending |
-| MODL-02 | Phase 3 | Pending |
-| MODL-03 | Phase 3 | Pending |
-| MODL-04 | Phase 3 | Pending |
+| MODL-01 | Phase 3 | Complete |
+| MODL-02 | Phase 3 | Complete |
+| MODL-03 | Phase 3 | Complete |
+| MODL-04 | Phase 3 | Complete |
 | TRNG-01 | Phase 3 | Pending |
 | TRNG-02 | Phase 3 | Pending |
 | TRNG-03 | Phase 3 | Pending |
