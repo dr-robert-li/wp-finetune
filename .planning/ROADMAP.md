@@ -69,7 +69,7 @@ Plans:
 
 Plans:
 - [x] 03-01-PLAN.md — Model download, tokenizer extension, config, and test scaffolds (download Qwen3-30B-A3B, add task tokens, mean-init embeddings, smoke test)
-- [ ] 03-02-PLAN.md — Evaluation suite in eval/ directory (eval_gen.py PHPCS pass rate, eval_judge.py Spearman correlation, eval_gate.py quality gates, wp-bench config)
+- [x] 03-02-PLAN.md — Evaluation suite in eval/ directory (eval_gen.py PHPCS pass rate, eval_judge.py Spearman correlation, eval_gate.py quality gates, wp-bench config)
 - [ ] 03-03-PLAN.md — Training script and merge adapter (Unsloth LoRA config, DGX Spark run, W&B monitoring, adapter save, merge with verification)
 
 ### Phase 4: Evaluation and Deployment
@@ -97,5 +97,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Pipeline Ready | 2/2 | Complete | 2026-03-26 |
 | 2. Dataset Production | 3/7 | In progress (gap closure) | - |
-| 3. Model Prep and Training | 1/3 | In progress | - |
+| 3. Model Prep and Training | 2/3 | In progress | - |
 | 4. Evaluation and Deployment | 0/3 | Not started | - |
