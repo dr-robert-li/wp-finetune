@@ -14,9 +14,9 @@ from pathlib import Path
 import yaml
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-PASSED_DIR = PROJECT_ROOT / "phase1_extraction" / "output" / "passed"
+PASSED_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "passed"
 TAXONOMY_PATH = PROJECT_ROOT / "config" / "taxonomy.yaml"
-GAP_REPORT_PATH = PROJECT_ROOT / "phase2_synthetic" / "gap_report.json"
+GAP_REPORT_PATH = PROJECT_ROOT / "data" / "phase2_synthetic" / "gap_report.json"
 
 
 def main():

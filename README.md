@@ -119,14 +119,15 @@ wp-finetune/
 │   ├── phase2_{gap_analysis,mutate,generate,judge,judge_dataset}.py
 │   ├── phase3_cot.py
 │   └── export_dataset.py           # Multi-format export (40/60 gen/judge split)
-├── skills/
-│   └── run-data-pipeline.md        # Claude Code skill for autonomous pipeline execution
 ├── docs/
-│   └── AGENT_PIPELINE.md           # Agent execution model and output format contracts
-├── phase1_extraction/              # Cloned repos + extracted/passed/failed functions
-├── phase2_synthetic/               # Gap reports + synthetic/mutated/judge training data
-├── phase3_cot/                     # CoT reasoning checkpoints
-├── final_dataset/                  # Train/val/test in OpenAI, Alpaca, Raw JSONL formats
+│   ├── AGENT_PIPELINE.md           # Agent execution model and output format contracts
+│   └── run-data-pipeline.md        # Claude Code skill for autonomous pipeline execution
+├── data/
+│   ├── phase1_extraction/          # Cloned repos + extracted/passed/failed functions
+│   ├── phase2_synthetic/           # Gap reports + synthetic/mutated/judge training data
+│   ├── phase3_cot/                 # CoT reasoning checkpoints
+│   ├── final_dataset/              # Train/val/test in OpenAI, Alpaca, Raw JSONL formats
+│   └── checkpoints/                # Pipeline execution checkpoints
 ├── tests/                          # Unit tests
 ├── PROJECT.md                      # Full project specification
 ├── JOURNAL.md                      # Engineering decisions log
@@ -144,14 +145,14 @@ Copy the pipeline skill into your Claude Code skills directory:
 ```bash
 # From the project root
 mkdir -p .claude/skills/run-data-pipeline
-cp skills/run-data-pipeline.md .claude/skills/run-data-pipeline/SKILL.md
+cp docs/run-data-pipeline.md .claude/skills/run-data-pipeline/SKILL.md
 ```
 
 Or symlink it so updates propagate:
 
 ```bash
 mkdir -p .claude/skills/run-data-pipeline
-ln -sf "$(pwd)/skills/run-data-pipeline.md" .claude/skills/run-data-pipeline/SKILL.md
+ln -sf "$(pwd)/docs/run-data-pipeline.md" .claude/skills/run-data-pipeline/SKILL.md
 ```
 
 ### Configure

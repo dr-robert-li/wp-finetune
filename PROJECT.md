@@ -47,7 +47,7 @@ The data pipeline lives in this directory and produces the training dataset.
 - `core` — WordPress Core. Auto-passed as reference implementation, tagged only.
 - `assessed` — Everything else. Function-by-function pass/fail. No partial credit.
 
-**Outputs:** `phase1_extraction/output/passed/` and `phase1_extraction/output/failed/`
+**Outputs:** `data/phase1_extraction/output/passed/` and `data/phase1_extraction/output/failed/`
 
 #### A2. Synthetic Generation & Judge Data
 
@@ -60,9 +60,9 @@ The data pipeline lives in this directory and produces the training dataset.
 | A2.5 | `phase2_judge_dataset.py` | Generates `<wp_judge>` training data: Claude scores passed code (high), failed code (low), and mutated code (controlled defects) on a 0-100 rubric across 6 dimensions. Sanity-checked against expected quality tier. |
 
 **Outputs:**
-- `phase2_synthetic/output/judged/` — passed/failed synthetic code
-- `phase2_synthetic/output/mutated/` — automated contrastive pairs
-- `phase2_synthetic/output/judge_training/` — rubric-scored judge examples
+- `data/phase2_synthetic/output/judged/` — passed/failed synthetic code
+- `data/phase2_synthetic/output/mutated/` — automated contrastive pairs
+- `data/phase2_synthetic/output/judge_training/` — rubric-scored judge examples
 
 #### A3. Chain-of-Thought & Export
 
@@ -71,7 +71,7 @@ The data pipeline lives in this directory and produces the training dataset.
 | A3.1 | `phase3_cot.py` | **Instruction synthesis** for real code (reverse-engineer prompts). **CoT reasoning** for complex examples (SQL, performance, architecture). **Contrastive CoT** for mutation pairs (explain defect + fix). Merges judge training data. |
 | A3.2 | `export_dataset.py` | Adds `<wp_gen>`/`<wp_judge>` task tokens. Exports OpenAI JSONL, Alpaca JSON, and raw JSONL with metadata. 80/10/10 train/val/test split. |
 
-**Final outputs in `final_dataset/`:**
+**Final outputs in `data/final_dataset/`:**
 - `openai_{train,val,test}.jsonl`
 - `alpaca_{train,val,test}.json`
 - `raw_{train,val,test}.jsonl`
@@ -160,26 +160,28 @@ wp-finetune/
 │   ├── phase2_judge_dataset.py        # Generate <wp_judge> training data
 │   ├── phase3_cot.py                  # CoT reasoning + merge all data
 │   └── export_dataset.py              # Task tokens + multi-format export
-├── phase1_extraction/
-│   ├── repos/                          # Cloned repositories
-│   └── output/
-│       ├── extracted/                  # Raw extracted functions (JSON)
-│       ├── passed/                     # Quality-assessed passed functions
-│       └── failed/                     # Failed functions (kept for analysis)
-├── phase2_synthetic/
-│   ├── gap_report.json                 # Coverage analysis
-│   └── output/
-│       ├── generated/                  # Raw synthetic examples
-│       ├── judged/                     # Judged synthetic (passed/failed)
-│       ├── mutated/                    # Automated contrastive pairs
-│       └── judge_training/             # <wp_judge> rubric-scored data
-├── phase3_cot/
-│   └── output/                         # CoT checkpoints
-└── final_dataset/
-    ├── metadata.json                   # Dataset statistics
-    ├── openai_{train,val,test}.jsonl   # OpenAI finetuning format
-    ├── alpaca_{train,val,test}.json    # Qwen3-MoE / Unsloth / Axolotl format
-    └── raw_{train,val,test}.jsonl      # Full metadata format
+├── data/
+│   ├── phase1_extraction/
+│   │   ├── repos/                      # Cloned repositories
+│   │   └── output/
+│   │       ├── extracted/              # Raw extracted functions (JSON)
+│   │       ├── passed/                 # Quality-assessed passed functions
+│   │       └── failed/                 # Failed functions (kept for analysis)
+│   ├── phase2_synthetic/
+│   │   ├── gap_report.json             # Coverage analysis
+│   │   └── output/
+│   │       ├── generated/              # Raw synthetic examples
+│   │       ├── judged/                 # Judged synthetic (passed/failed)
+│   │       ├── mutated/                # Automated contrastive pairs
+│   │       └── judge_training/         # <wp_judge> rubric-scored data
+│   ├── phase3_cot/
+│   │   └── output/                     # CoT checkpoints
+│   ├── final_dataset/
+│   │   ├── metadata.json               # Dataset statistics
+│   │   ├── openai_{train,val,test}.jsonl  # OpenAI finetuning format
+│   │   ├── alpaca_{train,val,test}.json   # Qwen3-MoE / Unsloth / Axolotl format
+│   │   └── raw_{train,val,test}.jsonl     # Full metadata format
+│   └── checkpoints/                    # Pipeline execution checkpoints
 ```
 
 ## Target Dataset Composition

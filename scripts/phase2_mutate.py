@@ -20,8 +20,8 @@ import tempfile
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-PASSED_DIR = PROJECT_ROOT / "phase1_extraction" / "output" / "passed"
-MUTATED_DIR = PROJECT_ROOT / "phase2_synthetic" / "output" / "mutated"
+PASSED_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "passed"
+MUTATED_DIR = PROJECT_ROOT / "data" / "phase2_synthetic" / "output" / "mutated"
 
 
 # ─── Mutation strategies ────────────────────────────────

@@ -27,8 +27,8 @@ from scripts.utils import (
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-GENERATED_DIR = PROJECT_ROOT / "phase2_synthetic" / "output" / "generated"
-JUDGED_DIR = PROJECT_ROOT / "phase2_synthetic" / "output" / "judged"
+GENERATED_DIR = PROJECT_ROOT / "data" / "phase2_synthetic" / "output" / "generated"
+JUDGED_DIR = PROJECT_ROOT / "data" / "phase2_synthetic" / "output" / "judged"
 JUDGE_SYSTEM_PATH = PROJECT_ROOT / "config" / "judge_system.md"
 
 

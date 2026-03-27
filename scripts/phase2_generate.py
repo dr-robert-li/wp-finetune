@@ -30,10 +30,10 @@ from scripts.utils import (
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-GAP_REPORT_PATH = PROJECT_ROOT / "phase2_synthetic" / "gap_report.json"
-PASSED_DIR = PROJECT_ROOT / "phase1_extraction" / "output" / "passed"
+GAP_REPORT_PATH = PROJECT_ROOT / "data" / "phase2_synthetic" / "gap_report.json"
+PASSED_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "passed"
 PROMPTS_PATH = PROJECT_ROOT / "config" / "synthetic_prompts.yaml"
-GENERATED_DIR = PROJECT_ROOT / "phase2_synthetic" / "output" / "generated"
+GENERATED_DIR = PROJECT_ROOT / "data" / "phase2_synthetic" / "output" / "generated"
 
 SYSTEM_PROMPT = """You are a senior WordPress core contributor and VIP platform engineer.
 Generate production-quality PHP code that:

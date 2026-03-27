@@ -18,9 +18,9 @@ import sys
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-EXTRACTED_DIR = PROJECT_ROOT / "phase1_extraction" / "output" / "extracted"
-PASSED_DIR = PROJECT_ROOT / "phase1_extraction" / "output" / "passed"
-FAILED_DIR = PROJECT_ROOT / "phase1_extraction" / "output" / "failed"
+EXTRACTED_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "extracted"
+PASSED_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "passed"
+FAILED_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "failed"
 
 
 def list_unjudged() -> list:

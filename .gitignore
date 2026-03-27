@@ -15,8 +15,8 @@ venv/
 env/
 
 # Checkpoints — runtime state, not committed
-checkpoints/*.json
-checkpoints/*.tmp
+data/checkpoints/*.json
+data/checkpoints/*.tmp
 
 # Environment
 .env
@@ -38,13 +38,13 @@ Thumbs.db
 htmlcov/
 
 # Cloned repositories (large, re-cloneable)
-phase1_extraction/repos/
+data/phase1_extraction/repos/
 
 # Pipeline output data (generated, not source)
-phase1_extraction/output/
-phase2_synthetic/
-phase3_cot/output/
-final_dataset/
+data/phase1_extraction/output/
+data/phase2_synthetic/
+data/phase3_cot/output/
+data/final_dataset/
 
 # Parse failure logs
 *_parse_failures.jsonl

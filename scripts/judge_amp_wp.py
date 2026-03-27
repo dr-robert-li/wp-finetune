@@ -7,10 +7,12 @@ Splits into passed and failed JSON files.
 import json
 import re
 import os
+from pathlib import Path
 
-INPUT_FILE = '/home/robert_li/Desktop/projects/wp-finetune/phase1_extraction/output/extracted/amp-wp.json'
-PASSED_FILE = '/home/robert_li/Desktop/projects/wp-finetune/phase1_extraction/output/passed/amp-wp.json'
-FAILED_FILE = '/home/robert_li/Desktop/projects/wp-finetune/phase1_extraction/output/failed/amp-wp.json'
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+INPUT_FILE = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "extracted" / "amp-wp.json"
+PASSED_FILE = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "passed" / "amp-wp.json"
+FAILED_FILE = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "failed" / "amp-wp.json"
 
 
 def has_test_code(func):

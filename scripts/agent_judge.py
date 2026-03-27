@@ -7,8 +7,8 @@ using heuristic analysis of PHP code patterns.
 Usage:
     python3 scripts/agent_judge.py <repo1> [<repo2> ...]
 
-Each repo must have an extracted file in phase1_extraction/output/extracted/.
-Results are written to phase1_extraction/output/passed/ and failed/.
+Each repo must have an extracted file in data/phase1_extraction/output/extracted/.
+Results are written to data/phase1_extraction/output/passed/ and failed/.
 """
 
 import json
@@ -17,9 +17,9 @@ import sys
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-EXTRACTED_DIR = PROJECT_ROOT / "phase1_extraction" / "output" / "extracted"
-PASSED_DIR = PROJECT_ROOT / "phase1_extraction" / "output" / "passed"
-FAILED_DIR = PROJECT_ROOT / "phase1_extraction" / "output" / "failed"
+EXTRACTED_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "extracted"
+PASSED_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "passed"
+FAILED_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "failed"
 
 
 # ---------------------------------------------------------------------------
