@@ -1,0 +1,21 @@
+dataset:
+  source: local
+  name: wp-core-v1
+
+models:
+  - name: openai/qwen3-wp
+    api_base: "http://localhost:8020/v1"  # Will be overridden by dgx.vllm_endpoint() at runtime
+    api_key: "none"
+
+grader:
+  kind: docker
+  wp_env_dir: ./wp-bench/runtime
+
+run:
+  suite: wp-core-v1
+  limit: null
+  concurrency: 4
+
+output:
+  path: output/wp-bench-results.json
+  jsonl_path: output/wp-bench-results.jsonl
