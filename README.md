@@ -121,7 +121,8 @@ wp-finetune/
 │   └── export_dataset.py           # Multi-format export (40/60 gen/judge split)
 ├── docs/
 │   ├── AGENT_PIPELINE.md           # Agent execution model and output format contracts
-│   └── run-data-pipeline.md        # Claude Code skill for autonomous pipeline execution
+│   ├── run-data-pipeline.md        # Claude Code skill: autonomous data pipeline
+│   └── run-training.md             # Claude Code skill: DGX Spark training pipeline
 ├── data/
 │   ├── phase1_extraction/          # Cloned repos + extracted/passed/failed functions
 │   ├── phase2_synthetic/           # Gap reports + synthetic/mutated/judge training data
@@ -140,19 +141,21 @@ The entire data pipeline runs autonomously with a single command in Claude Code 
 
 ### Install the Skill
 
-Copy the pipeline skill into your Claude Code skills directory:
+Copy the skills into your Claude Code skills directory:
 
 ```bash
-# From the project root
-mkdir -p .claude/skills/run-data-pipeline
+# From the project root — install both skills
+mkdir -p .claude/skills/run-data-pipeline .claude/skills/run-training
 cp docs/run-data-pipeline.md .claude/skills/run-data-pipeline/SKILL.md
+cp docs/run-training.md .claude/skills/run-training/SKILL.md
 ```
 
-Or symlink it so updates propagate:
+Or symlink so updates propagate:
 
 ```bash
-mkdir -p .claude/skills/run-data-pipeline
+mkdir -p .claude/skills/run-data-pipeline .claude/skills/run-training
 ln -sf "$(pwd)/docs/run-data-pipeline.md" .claude/skills/run-data-pipeline/SKILL.md
+ln -sf "$(pwd)/docs/run-training.md" .claude/skills/run-training/SKILL.md
 ```
 
 ### Configure
@@ -167,7 +170,8 @@ cp .env.example .env
 In Claude Code, say:
 
 ```
-run the pipeline
+run the pipeline          # Phase 2: generate training data
+run training              # Phase 3: download model, train on DGX Spark
 ```
 
 Or check status first:
