@@ -132,11 +132,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TRNG-04 | Phase 3 | Pending |
 | TRNG-05 | Phase 3 | Pending |
 | TRNG-06 | Phase 3 | Pending |
-| EVAL-01 | Phase 3 | Pending |
-| EVAL-02 | Phase 3 | Pending |
-| EVAL-03 | Phase 3 | Pending |
-| EVAL-04 | Phase 3 | Pending |
-| EVAL-05 | Phase 3 | Pending |
+| EVAL-01 | Phase 3 | Complete (03-02) |
+| EVAL-02 | Phase 3 | Complete (03-02) |
+| EVAL-03 | Phase 3 | Complete (03-02) |
+| EVAL-04 | Phase 3 | Complete (03-02) |
+| EVAL-05 | Phase 3 | Complete (03-02) |
 | DPLT-01 | Phase 4 | Pending |
 | DPLT-02 | Phase 4 | Pending |
 | DPLT-03 | Phase 4 | Pending |

@@ -90,6 +90,10 @@ Recent decisions affecting current work:
 - [Phase 03-01]: Mean embedding init: new token rows set to mean of existing embed_tokens rows (not random) for stable early training
 - [Phase 03-01]: Model saved back to local_dir after embedding resize — ensures model and tokenizer vocab sizes are consistent
 - [Phase 03-01]: All Phase 3 hyperparameters externalized in config/train_config.yaml (no hardcoded values in scripts)
+- [Phase 03-02]: Security pass rate uses WordPress.Security.* sniff prefix filter — matches PHPCS sniff taxonomy
+- [Phase 03-02]: PHPCS unavailability handled gracefully (passed=True with _phpcs_unavailable flag) to allow tests without binary
+- [Phase 03-02]: eval_gate.py falls back to _FALLBACK_THRESHOLDS when train_config.yaml absent — gate won't crash before 03-01 output exists
+- [Phase 03-02]: parse_judge_response returns None for unparseable JSON (not ValueError) — eval_judge.py skips and counts as skipped
 
 ### Pending Todos
 
@@ -103,6 +107,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T00:12:00.000Z
-Stopped at: Completed 03-01-PLAN.md
-Resume file: .planning/phases/03-model-prep-and-training/03-01-SUMMARY.md
+Last session: 2026-03-27T22:28:00.000Z
+Stopped at: Completed 03-02-PLAN.md
+Resume file: .planning/phases/03-model-prep-and-training/03-02-SUMMARY.md
