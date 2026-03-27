@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 3 context gathered
-last_updated: "2026-03-26T22:44:21.362Z"
-last_activity: 2026-03-26 — Completed 02-02 hardened all Phase 2 scripts with utils.py integration (7 new tests, 39 total passing)
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-03-27T22:28:00.000Z"
+last_activity: 2026-03-27 — Completed 03-02 eval suite (eval_gen, eval_judge, eval_gate + 11 tests, 74 total passing)
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 9
-  completed_plans: 5
-  percent: 40
+  completed_plans: 7
+  percent: 55
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-26)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 1 - Pipeline Ready
+**Current focus:** Phase 3 - Model Prep and Training
 
 ## Current Position
 
-Phase: 2 of 4 (Dataset Production)
-Plan: 2 of 2 in current phase (both 02-01 and 02-02 complete)
+Phase: 3 of 4 (Model Prep and Training)
+Plan: 2 of 3 in current phase (03-01, 03-02 complete)
 Status: In progress
-Last activity: 2026-03-26 — Completed 02-02 hardened all Phase 2 scripts with utils.py integration (7 new tests, 39 total passing)
+Last activity: 2026-03-27 — Completed 03-02 eval suite (eval_gen, eval_judge, eval_gate + 11 tests, 74 total passing)
 
-Progress: [████░░░░░░] 40%
+Progress: [██████░░░░] 55%
 
 ## Performance Metrics
 
@@ -45,14 +45,17 @@ Progress: [████░░░░░░] 40%
 |-------|-------|-------|----------|
 | 01-pipeline-ready | 2 | 27 min | 13 min |
 | 02-dataset-production | 2 | ~10 min | ~5 min |
+| 03-model-prep-and-training | 2 | 34 min | 17 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (2 min), 01-01 (25 min)
-- Trend: -
+- Last 5 plans: 03-02 (22 min), 03-01 (12 min), 01-02 (2 min), 01-01 (25 min)
+- Trend: steady
 
 *Updated after each plan completion*
 | Phase 02-dataset-production P01 | 25 | 2 tasks | 7 files |
 | Phase 02-dataset-production P03 | 4 | 2 tasks | 3 files |
+| Phase 03-model-prep-and-training P01 | 12 | 2 tasks | 5 files |
+| Phase 03-model-prep-and-training P02 | 22 | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -83,6 +86,10 @@ Recent decisions affecting current work:
 - [Phase 02-03]: round() used instead of int() for gen/judge ratio calculation to avoid float precision truncation (0.60/0.40=1.4999... causes int to give 29 not 30)
 - [Phase 02-03]: utils.py checkpoints save every 100 examples in phase3_cot.py (authoritative resume); per-500 progress JSONL files kept for additional recovery
 - [Phase 02-03]: deduplicate() uses SHA-256 of assistant message content as reliable duplicate signal
+- [Phase 03-01]: load_in_4bit=False LOCKED in prepare_tokenizer.py — no QLoRA for MoE (Qwen3-30B-A3B is MoE, QLoRA destabilizes routing)
+- [Phase 03-01]: Mean embedding init: new token rows set to mean of existing embed_tokens rows (not random) for stable early training
+- [Phase 03-01]: Model saved back to local_dir after embedding resize — ensures model and tokenizer vocab sizes are consistent
+- [Phase 03-01]: All Phase 3 hyperparameters externalized in config/train_config.yaml (no hardcoded values in scripts)
 
 ### Pending Todos
 
@@ -96,6 +103,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-26T22:44:21.361Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-model-prep-and-training/03-CONTEXT.md
+Last session: 2026-03-28T00:12:00.000Z
+Stopped at: Completed 03-01-PLAN.md
+Resume file: .planning/phases/03-model-prep-and-training/03-01-SUMMARY.md
