@@ -137,13 +137,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EVAL-03 | Phase 3 | Complete (03-02) |
 | EVAL-04 | Phase 3 | Complete (03-02) |
 | EVAL-05 | Phase 3 | Complete (03-02) |
-| DPLT-01 | Phase 4 | Pending |
-| DPLT-02 | Phase 4 | Pending |
-| DPLT-03 | Phase 4 | Pending |
-| DPLT-04 | Phase 4 | Pending |
-| DPLT-05 | Phase 4 | Pending |
-| DPLT-06 | Phase 4 | Pending |
-| DPLT-07 | Phase 4 | Pending |
+| DPLT-01 | Phase 5 | Pending |
+| DPLT-02 | Phase 5 | Pending |
+| DPLT-03 | Phase 5 | Pending |
+| DPLT-04 | Phase 5 | Pending |
+| DPLT-05 | Phase 5 | Pending |
+| DPLT-06 | Phase 5 | Pending |
+| DPLT-07 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 37 total
