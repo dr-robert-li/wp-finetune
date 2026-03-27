@@ -4,6 +4,15 @@ All notable changes to the wp-qwen3-moe project.
 
 ## [Unreleased]
 
+### Phase 3: Model Prep and Training (Planned)
+- Replanned from scratch with updated research (merge fix confirmed, data/ paths, DGX resolver)
+- Eval scripts go in `eval/` directory (eval_gen.py, eval_judge.py, eval_gate.py)
+- Training scripts in `scripts/` (train_model.py, merge_adapter.py, download_model.py, prepare_tokenizer.py)
+- All configs in `config/` (train_config.yaml, wp-bench.yaml, dgx_toolbox.yaml)
+- Unsloth-zoo merge bug FIXED (PR #369 + #559 in our container version 2026.3.5)
+- Defense-in-depth: save adapter → attempt merge → verify special tokens → fallback to vLLM --lora-modules
+- wp-bench as primary eval (WordPress runtime grades code, no Claude in loop)
+
 ### DGX Toolbox Integration
 - Added `config/dgx_toolbox.yaml` — configurable path to dgx-toolbox project (transportable across environments)
 - Added `scripts/dgx_toolbox.py` — Python resolver for DGX Toolbox components (`get_toolbox().run("vllm")`)

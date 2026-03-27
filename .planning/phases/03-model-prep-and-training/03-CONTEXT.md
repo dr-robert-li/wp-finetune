@@ -61,7 +61,17 @@ Download Qwen3-30B-A3B (native MoE), extend tokenizer with `<wp_gen>` and `<wp_j
 - **QLoRA is OFF-LIMITS for MoE** — Unsloth explicitly states BitsandBytes doesn't support MoE nn.Parameter in 4-bit. Must use `load_in_4bit=False` with BF16 LoRA.
 - **Peak memory ~63GB** — fits DGX Spark 128GB with Unsloth FastLanguageModel (avoids page cache OOM)
 - **output_router_logits=True** must be explicitly set for MoE load balancing loss to appear in W&B
-- **modules_to_save merge is buggy** (Unsloth #3444) — keep adapter separate through Phase 3, merge in Phase 4 with verification roundtrip
+- **modules_to_save merge FIXED** — Unsloth-zoo PR #369 (merged 2026-01-30) + PR #559 (merged 2026-03-24) fix the embed_tokens/lm_head corruption. DGX Toolbox installs latest from PyPI (unsloth-zoo 2026.3.5) which contains both fixes. `merge_and_unload()` should work correctly in our environment.
+  - **Defense-in-depth:** Still save adapter separately first, verify merge via roundtrip (save → reload → test special tokens), then keep merged model if verification passes
+  - **Fallback:** vLLM `--lora-modules` can serve the adapter directly without merging if anything goes wrong
+
+### Data Directory Layout
+All pipeline output under `data/` prefix:
+- `data/phase1_extraction/output/passed/` and `failed/`
+- `data/phase2_synthetic/output/generated/`, `judged/`, `judge_training/`
+- `data/phase3_cot/output/`
+- `data/final_dataset/` — training splits
+- `data/checkpoints/` — pipeline execution state
 
 ### Claude's Discretion
 - LoRA rank (r=32 vs r=64), alpha, dropout
@@ -86,10 +96,10 @@ Download Qwen3-30B-A3B (native MoE), extend tokenizer with `<wp_gen>` and `<wp_j
 - Config: `wp-bench.example.yaml` — model configuration template
 
 ### Training data
-- `final_dataset/openai_train.jsonl` — 4,766 training examples in OpenAI format
-- `final_dataset/openai_val.jsonl` — 595 validation examples
-- `final_dataset/openai_test.jsonl` — 597 test examples (held-out for eval)
-- `final_dataset/metadata.json` — dataset statistics
+- `data/final_dataset/openai_train.jsonl` — 4,766 training examples in OpenAI format
+- `data/final_dataset/openai_val.jsonl` — 595 validation examples
+- `data/final_dataset/openai_test.jsonl` — 597 test examples (held-out for eval)
+- `data/final_dataset/metadata.json` — dataset statistics
 
 ### Model
 - `Qwen/Qwen3-30B-A3B` — HuggingFace model page
