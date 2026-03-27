@@ -78,10 +78,11 @@ Download Qwen3-30B-A3B (native MoE), extend tokenizer with `<wp_gen>` and `<wp_j
 - `Qwen/Qwen3-30B-A3B` — HuggingFace model page
 - Unsloth DGX Spark playbook: `github.com/NVIDIA/dgx-spark-playbooks/tree/main/nvidia/unsloth`
 
-### DGX Toolbox
-- `~/dgx-toolbox/containers/unsloth-studio.sh` — Unsloth Studio launcher
-- `~/dgx-toolbox/eval/eval-toolbox.sh` — Evaluation container
-- `~/dgx-toolbox/inference/start-vllm.sh` — vLLM inference server
+### DGX Toolbox Integration
+- `config/dgx_toolbox.yaml` — Configurable path to dgx-toolbox project (default ~/dgx-toolbox, override via DGX_TOOLBOX_PATH env var)
+- `scripts/dgx_toolbox.py` — Python resolver for DGX Toolbox components. Usage: `from scripts.dgx_toolbox import get_toolbox; dgx = get_toolbox(); dgx.run("vllm", model_name)`
+- All eval/training/inference scripts MUST use the resolver (not hardcoded ~/dgx-toolbox paths) for transportability
+- Key components: unsloth_studio (training), eval_toolbox (eval), vllm (serving), litellm (proxy), open_webui (demo)
 
 ### Project config
 - `config/judge_system.md` — Judge rubric (for custom judge eval design)

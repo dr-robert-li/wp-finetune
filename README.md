@@ -103,9 +103,11 @@ wp-finetune/
 │   ├── repos.yaml                  # 56 repos (auto-generated from ranked CSVs)
 │   ├── judge_system.md             # 9-dimension judge rubric (threshold >= 8)
 │   ├── taxonomy.yaml               # 87 concept tags + coverage minimums
-│   └── synthetic_prompts.yaml      # Generation templates + rejection examples
+│   ├── synthetic_prompts.yaml      # Generation templates + rejection examples
+│   └── dgx_toolbox.yaml           # DGX Toolbox path config (transportable)
 ├── scripts/
 │   ├── utils.py                    # Shared utilities (JSON parsing, backoff, checkpoints)
+│   ├── dgx_toolbox.py             # DGX Toolbox path resolver (configurable location)
 │   ├── preflight.py                # Pre-execution validation
 │   ├── agent_judge.py              # Static heuristic judge (9-dimension rubric scoring)
 │   ├── agent_judge_helper.py       # Agent helper: list unjudged repos, split results
@@ -192,6 +194,45 @@ Non-LLM steps (cloning, extraction, gap analysis, mutations, export) run as Pyth
 
 See [docs/AGENT_PIPELINE.md](docs/AGENT_PIPELINE.md) for the full execution model, output format contracts, and scaling guide.
 
+## DGX Toolbox Integration
+
+This project pairs with [DGX Toolbox](https://github.com/dr-robert-li/dgx-toolbox) for training, evaluation, and serving. The toolbox location is **configurable** — it doesn't need to be at `~/dgx-toolbox`:
+
+```bash
+# Option 1: Edit config file
+vim config/dgx_toolbox.yaml
+# Change: dgx_toolbox_path: /path/to/your/dgx-toolbox
+
+# Option 2: Environment variable (overrides config)
+export DGX_TOOLBOX_PATH=/path/to/your/dgx-toolbox
+
+# Verify
+python scripts/dgx_toolbox.py
+```
+
+All scripts use the resolver — never hardcoded paths:
+
+```python
+from scripts.dgx_toolbox import get_toolbox
+
+dgx = get_toolbox()
+dgx.run("unsloth_studio")          # Launch training container
+dgx.run("vllm", "model-name")      # Start inference server
+dgx.run("eval_toolbox")            # Launch eval container
+print(dgx.vllm_endpoint())         # http://localhost:8020/v1
+```
+
+**Components used:**
+
+| Component | Script | Purpose |
+|-----------|--------|---------|
+| Unsloth Studio | `containers/unsloth-studio.sh` | LoRA fine-tuning on DGX Spark |
+| vLLM | `inference/start-vllm.sh` | Model serving for eval + production |
+| LiteLLM | `inference/start-litellm.sh` | Unified API proxy (wp-bench uses this) |
+| Open-WebUI | `inference/start-open-webui.sh` | Interactive demo |
+| eval-toolbox | `eval/eval-toolbox.sh` | lm-eval, W&B, scipy for eval suite |
+| Ollama | `inference/setup-ollama-remote.sh` | GGUF local serving |
+
 ## Requirements
 
 - Python 3.10+
@@ -199,8 +240,7 @@ See [docs/AGENT_PIPELINE.md](docs/AGENT_PIPELINE.md) for the full execution mode
 - PHP CLI with `tokenizer` extension
 - PHP_CodeSniffer + WordPress-Coding-Standards
 - [Claude Code](https://claude.com/claude-code) (subscription) — used for all LLM pipeline steps
-
-**Training/serving (Phase 3+):** [DGX Toolbox](https://github.com/dr-robert-li/dgx-toolbox) — Unsloth Studio, vLLM, Ollama, eval-toolbox, safety harness. Runs on DGX Spark (Blackwell GB10, 128GB unified memory).
+- [DGX Toolbox](https://github.com/dr-robert-li/dgx-toolbox) — training, eval, and serving (Phase 3+)
 
 ## License
 
