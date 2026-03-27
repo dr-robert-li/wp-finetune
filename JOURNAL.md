@@ -4,6 +4,48 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-03-27 — Training strategy: BF16 LoRA (not QLoRA), post-training quantization, and the Unsloth merge bug
+
+### QLoRA is incompatible with MoE models
+
+**Context:** The original memory budget assumed QLoRA (4-bit quantized base + BF16 LoRA adapters) for ~15GB footprint. Research found that Unsloth explicitly states BitsandBytes does not support MoE `nn.Parameter` in 4-bit quantization.
+
+The problem: QLoRA quantizes base model weights to 4-bit NF4. But MoE models have router/gating weights (`nn.Parameter` tensors that decide which experts handle each token) — and BitsandBytes can't quantize these correctly. The result is broken routing where experts don't activate properly.
+
+**Decision:** Use full-precision BF16 LoRA instead. The base model stays in BF16 (~63GB), LoRA adapters train on top in BF16. DGX Spark has 128GB unified memory, so 63GB fits with plenty of headroom for activations and optimizer state. QLoRA would save memory but break the model — and I don't need the savings on this hardware.
+
+### Post-training size reduction path
+
+Quantization is already planned for Phase 4 (no retraining needed):
+
+- **AWQ 4-bit** → ~8GB serving via vLLM (Marlin kernel), minimal quality loss
+- **GGUF Q4_K_M** → ~9GB serving via Ollama/llama.cpp, minimal quality loss
+- **GGUF Q8_0** → ~16GB serving via Ollama, near-zero quality loss
+
+Since only ~3B params are active per forward pass, inference is already fast even at full precision. Quantization is purely about reducing the serving footprint.
+
+**Future (v2):** Two additional options for further compression:
+
+1. **Knowledge distillation** — use the fine-tuned 30B model as a teacher to train a smaller dense student (Qwen3-8B → AWQ → ~4GB, runs on any consumer GPU). The teacher generates outputs on all training prompts, the student learns from those outputs.
+
+2. **Expert pruning** — analyze which of the 128 experts actually fire on WordPress code (W&B tracks this during training). Remove unused experts and merge similar ones. Could reduce from 128 → 32-64 experts, cutting total params from 30B → 10-15B while keeping the same ~3B active.
+
+### The Unsloth modules_to_save merge bug
+
+**Context:** When fine-tuning with `modules_to_save=["embed_tokens", "lm_head"]`, the special token embeddings (`<wp_gen>`, `<wp_judge>`) are trained as part of the LoRA adapter. The bug (Unsloth GitHub issue #3444): calling `model.merge_and_unload()` followed by save/reload silently dropped `modules_to_save` weights. The merged model contained the original untrained embeddings for the special tokens, not the fine-tuned ones. The model would load but `<wp_gen>` and `<wp_judge>` would produce random outputs.
+
+**Research finding:** The fix is Unsloth-zoo PR #369, merged 2026-01-30, first shipped in unsloth-zoo 2026.2.1. The latest PyPI version is 2026.3.5 (which also includes a follow-up PR #559 for an embed_tokens edge case). DGX Toolbox uses `nvcr.io/nvidia/pytorch:25.11-py3` and installs `unsloth` + `unsloth_zoo` via `pip install --no-deps` at container launch — so it automatically gets the latest fixed version from PyPI.
+
+**Decision:** Our environment is unaffected, so merging should work correctly. However, as defense-in-depth:
+
+1. Save the LoRA adapter separately alongside the tokenizer (don't merge immediately)
+2. Verify before merge: merge → save → reload → test that special tokens still produce correct outputs
+3. Keep vLLM `--lora-modules` as a fallback (loads adapter at inference time, no merge needed)
+
+If the verification roundtrip fails for any reason, I fall back to adapter-only serving — no risk of shipping a model with corrupted embeddings.
+
+---
+
 ## 2026-03-27 — Evaluation strategy: solving Claude-in-the-loop circularity
 
 **Context:** The original eval plan used Claude as a judge to score model outputs. This creates a circularity problem: the training data was curated by Claude, the model was trained on Claude-judged examples, and now Claude would evaluate the result. Any systematic bias in Claude's judgments would be invisible — the eval would confirm the training signal rather than independently validating it.
