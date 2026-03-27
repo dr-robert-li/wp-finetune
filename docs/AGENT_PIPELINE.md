@@ -37,37 +37,37 @@ while target_not_met:
 ### Agent Types by Pipeline Step
 
 #### 1. Code Judging (Phase 1 Judge)
-- **Input:** Extracted function JSON from `phase1_extraction/output/extracted/{repo}.json`
+- **Input:** Extracted function JSON from `data/phase1_extraction/output/extracted/{repo}.json`
 - **Rubric:** `config/judge_system.md` (9 dimensions, threshold >= 8, security auto-FAIL)
-- **Output:** `phase1_extraction/output/passed/{repo}.json` and `failed/{repo}.json`
+- **Output:** `data/phase1_extraction/output/passed/{repo}.json` and `failed/{repo}.json`
 - **Batch size:** 1 repo per agent (small repos can be batched)
 - **Parallelism:** 4-5 agents
 
 #### 2. Synthetic Generation (Phase 2 Generate)
-- **Input:** Gap report from `phase2_synthetic/gap_report.json` + style anchors from passed code
+- **Input:** Gap report from `data/phase2_synthetic/gap_report.json` + style anchors from passed code
 - **Templates:** `config/synthetic_prompts.yaml` (including rejection templates)
-- **Output:** `phase2_synthetic/output/generated/{category}_synthetic.json`
+- **Output:** `data/phase2_synthetic/output/generated/{category}_synthetic.json`
 - **Batch size:** 20-30 examples per agent, grouped by taxonomy tag
 - **Parallelism:** 4-5 agents covering different tag categories
 
 #### 3. Synthetic Judging (Phase 2 Judge)
-- **Input:** Generated synthetic files from `phase2_synthetic/output/generated/`
+- **Input:** Generated synthetic files from `data/phase2_synthetic/output/generated/`
 - **Rubric:** Same as Phase 1 judge
-- **Output:** `phase2_synthetic/output/judged/passed_synthetic_{batch}.json` and `failed_synthetic_{batch}.json`
+- **Output:** `data/phase2_synthetic/output/judged/passed_synthetic_{batch}.json` and `failed_synthetic_{batch}.json`
 - **Batch size:** 50-80 examples per agent
 - **Parallelism:** 3 agents
 
 #### 4. Judge Training Data (Phase 2 Judge Dataset)
 - **Input:** Passed functions (high-score), failed functions (low-score), judged synthetics
 - **Rubric:** 0-100 scale across 6 dimensions
-- **Output:** `phase2_synthetic/output/judge_training/{quality}_{batch}.json`
+- **Output:** `data/phase2_synthetic/output/judge_training/{quality}_{batch}.json`
 - **Batch size:** 150-200 examples per agent
 - **Parallelism:** 3-5 agents per quality tier (high/low/synthetic)
 - **Target:** ~1,500 high + ~1,000 low + ~1,500 synthetic = ~4,000 total
 
 #### 5. CoT Reasoning (Phase 3 CoT)
 - **Input:** Passed functions (instruction synthesis), failed functions (contrastive), judged synthetics
-- **Output:** `phase3_cot/output/cot_{type}_{batch}.json`
+- **Output:** `data/phase3_cot/output/cot_{type}_{batch}.json`
 - **Types:** real code (instruction-completion), contrastive (bad→fix), synthetic (with rejection CoT)
 - **Batch size:** 40-100 examples per agent
 - **Parallelism:** 3-5 agents

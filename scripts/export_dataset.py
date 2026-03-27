@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Export final dataset in formats for different finetuning platforms.
 
-Reads from final_dataset/wordpress_finetune.jsonl and exports:
+Reads from data/final_dataset/wordpress_finetune.jsonl and exports:
 - MoE format with <wp_gen>/<wp_judge> task tokens (Alpaca for Llama-MoE)
 - OpenAI format (messages array with system/user/assistant)
 - Split into train/validation/test sets (80/10/10)
@@ -16,7 +16,7 @@ import tempfile
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-FINAL_DIR = PROJECT_ROOT / "final_dataset"
+FINAL_DIR = PROJECT_ROOT / "data" / "final_dataset"
 SOURCE_PATH = FINAL_DIR / "wordpress_finetune.jsonl"
 
 TRAIN_SPLIT = 0.80
@@ -212,7 +212,7 @@ def generate_metadata(
     php_lint_failures: int,
     dupes_removed: int,
 ) -> dict:
-    """Generate full stats report for final_dataset/metadata.json."""
+    """Generate full stats report for data/final_dataset/metadata.json."""
     gen_count = sum(1 for ex in dataset if infer_task_type(ex) == "gen")
     judge_count = sum(1 for ex in dataset if infer_task_type(ex) == "judge")
     total = max(len(dataset), 1)

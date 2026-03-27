@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Merge all data sources into final_dataset/wordpress_finetune.jsonl.
+"""Merge all data sources into data/final_dataset/wordpress_finetune.jsonl.
 
 Converts all pipeline outputs into the OpenAI messages format expected
 by export_dataset.py. Handles:
@@ -13,7 +13,7 @@ import json
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-FINAL_DIR = PROJECT_ROOT / "final_dataset"
+FINAL_DIR = PROJECT_ROOT / "data" / "final_dataset"
 
 
 def merge_all():
@@ -21,7 +21,7 @@ def merge_all():
     examples = []
 
     # 1. Real code passed (wp_gen)
-    passed_dir = PROJECT_ROOT / "phase1_extraction" / "output" / "passed"
+    passed_dir = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "passed"
     if passed_dir.exists():
         for f in sorted(passed_dir.glob("*.json")):
             for func in json.loads(f.read_text()):
@@ -47,7 +47,7 @@ def merge_all():
 
     # 2. Synthetic passed (wp_gen)
     s = len(examples)
-    judged_dir = PROJECT_ROOT / "phase2_synthetic" / "output" / "judged"
+    judged_dir = PROJECT_ROOT / "data" / "phase2_synthetic" / "output" / "judged"
     if judged_dir.exists():
         for f in sorted(judged_dir.glob("passed_*.json")):
             for item in json.loads(f.read_text()):
@@ -73,7 +73,7 @@ def merge_all():
 
     # 3. Judge training (wp_judge)
     s = len(examples)
-    jt_dir = PROJECT_ROOT / "phase2_synthetic" / "output" / "judge_training"
+    jt_dir = PROJECT_ROOT / "data" / "phase2_synthetic" / "output" / "judge_training"
     if jt_dir.exists():
         for f in sorted(jt_dir.glob("*.json")):
             for item in json.loads(f.read_text()):
@@ -100,7 +100,7 @@ def merge_all():
 
     # 4. CoT reasoning (wp_gen with reasoning)
     s = len(examples)
-    cot_dir = PROJECT_ROOT / "phase3_cot" / "output"
+    cot_dir = PROJECT_ROOT / "data" / "phase3_cot" / "output"
     if cot_dir.exists():
         for f in sorted(cot_dir.glob("*.json")):
             for item in json.loads(f.read_text()):

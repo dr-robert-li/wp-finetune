@@ -4,7 +4,7 @@
 Uses a PHP helper script to tokenize and extract function boundaries,
 PHPDoc blocks, and dependency references from each PHP file.
 
-Outputs JSON files per repo in phase1_extraction/output/extracted/.
+Outputs JSON files per repo in data/phase1_extraction/output/extracted/.
 """
 
 import fnmatch
@@ -18,8 +18,8 @@ import yaml
 from scripts.utils import load_checkpoint, save_checkpoint
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-REPOS_DIR = PROJECT_ROOT / "phase1_extraction" / "repos"
-EXTRACTED_DIR = PROJECT_ROOT / "phase1_extraction" / "output" / "extracted"
+REPOS_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "repos"
+EXTRACTED_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "extracted"
 CONFIG_PATH = PROJECT_ROOT / "config" / "repos.yaml"
 PHP_EXTRACTOR = Path(__file__).resolve().parent / "php_extract_functions.php"
 

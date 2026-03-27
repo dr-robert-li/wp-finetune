@@ -41,9 +41,9 @@ Agent(
   description="Judge repos: {batch_repos}",
   prompt="You are a WordPress code quality judge. Read config/judge_system.md.
   Judge all functions in these repos: {batch_repos}.
-  For each repo, read phase1_extraction/output/extracted/{repo}.json.
-  Read one existing passed file first for format: phase1_extraction/output/passed/wp-super-cache.json.
-  Split into passed/failed, write to phase1_extraction/output/passed/{repo}.json and failed/{repo}.json.
+  For each repo, read data/phase1_extraction/output/extracted/{repo}.json.
+  Read one existing passed file first for format: data/phase1_extraction/output/passed/wp-super-cache.json.
+  Split into passed/failed, write to data/phase1_extraction/output/passed/{repo}.json and failed/{repo}.json.
   PASS requires ALL scores >= 8, no critical failures. Security < 5 = auto-FAIL.",
   run_in_background=true
 )

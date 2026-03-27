@@ -5,8 +5,8 @@
 - Everything else (quality_tier: "assessed") -> judged by Claude, pass/fail
 
 Outputs:
-  phase1_extraction/output/passed/   -> Functions that passed assessment
-  phase1_extraction/output/failed/   -> Functions that failed (kept for analysis)
+  data/phase1_extraction/output/passed/   -> Functions that passed assessment
+  data/phase1_extraction/output/failed/   -> Functions that failed (kept for analysis)
 """
 
 import json
@@ -35,9 +35,9 @@ from scripts.utils import (
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-EXTRACTED_DIR = PROJECT_ROOT / "phase1_extraction" / "output" / "extracted"
-PASSED_DIR = PROJECT_ROOT / "phase1_extraction" / "output" / "passed"
-FAILED_DIR = PROJECT_ROOT / "phase1_extraction" / "output" / "failed"
+EXTRACTED_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "extracted"
+PASSED_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "passed"
+FAILED_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "failed"
 JUDGE_SYSTEM_PATH = PROJECT_ROOT / "config" / "judge_system.md"
 TAXONOMY_PATH = PROJECT_ROOT / "config" / "taxonomy.yaml"
 

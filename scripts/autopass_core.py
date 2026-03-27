@@ -4,7 +4,7 @@
 WordPress Core is the reference implementation — all functions are auto-passed
 with tag-only assessment (no LLM judging needed).
 
-Writes: phase1_extraction/output/passed/wordpress-develop.json
+Writes: data/phase1_extraction/output/passed/wordpress-develop.json
 """
 
 import json
@@ -12,8 +12,8 @@ import re
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-EXTRACTED_DIR = PROJECT_ROOT / "phase1_extraction" / "output" / "extracted"
-PASSED_DIR = PROJECT_ROOT / "phase1_extraction" / "output" / "passed"
+EXTRACTED_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "extracted"
+PASSED_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "passed"
 
 
 def auto_tag_function(func: dict) -> list:

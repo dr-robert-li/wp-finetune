@@ -151,7 +151,7 @@ def _get_checkpoint_dir(override: Optional[Path] = None) -> Path:
         return Path(override)
     global _DEFAULT_CHECKPOINT_DIR
     if _DEFAULT_CHECKPOINT_DIR is None:
-        _DEFAULT_CHECKPOINT_DIR = Path(__file__).resolve().parent.parent / "checkpoints"
+        _DEFAULT_CHECKPOINT_DIR = Path(__file__).resolve().parent.parent / "data" / "checkpoints"
     return _DEFAULT_CHECKPOINT_DIR
 
 

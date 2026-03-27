@@ -7,18 +7,22 @@ Samples 40 diverse examples across gap tags (34 normal + 6 rejection).
 import json
 import random
 from collections import defaultdict
+from pathlib import Path
 
 random.seed(42)
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+JUDGED_DIR = PROJECT_ROOT / "data" / "phase2_synthetic" / "output" / "judged"
 
 # ---------------------------------------------------------------------------
 # Load source data
 # ---------------------------------------------------------------------------
 
-with open("phase2_synthetic/output/judged/passed_synthetic_A.json") as f:
+with open(JUDGED_DIR / "passed_synthetic_A.json") as f:
     a = json.load(f)
-with open("phase2_synthetic/output/judged/passed_synthetic_B.json") as f:
+with open(JUDGED_DIR / "passed_synthetic_B.json") as f:
     b = json.load(f)
-with open("phase2_synthetic/output/judged/passed_synthetic_C.json") as f:
+with open(JUDGED_DIR / "passed_synthetic_C.json") as f:
     c = json.load(f)
 
 all_examples = a + b + c
@@ -1258,13 +1262,13 @@ for e in rejection_sampled:
 # Write output
 # ---------------------------------------------------------------------------
 
-import os
-os.makedirs("phase3_cot/output", exist_ok=True)
+COT_OUTPUT = PROJECT_ROOT / "data" / "phase3_cot" / "output"
+COT_OUTPUT.mkdir(parents=True, exist_ok=True)
 
-with open("phase3_cot/output/cot_synthetic.json", "w") as f:
+with open(COT_OUTPUT / "cot_synthetic.json", "w") as f:
     json.dump(output, f, indent=2, ensure_ascii=False)
 
-print(f"Written {len(output)} CoT records to phase3_cot/output/cot_synthetic.json")
+print(f"Written {len(output)} CoT records to data/phase3_cot/output/cot_synthetic.json")
 
 # Verify tag coverage
 from collections import Counter

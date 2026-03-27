@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """
 Generate Chain-of-Thought (CoT) instruction-completion pairs from real passed WordPress code.
-Reads 40 diverse functions from phase1_extraction/output/passed/ (10+ repos) and
+Reads 40 diverse functions from data/phase1_extraction/output/passed/ (10+ repos) and
 produces cot_real_code.json with step-by-step reasoning for each function.
 """
 
 import json
 import os
+from pathlib import Path
 
-BASE = "/home/robert_li/Desktop/projects/wp-finetune/phase1_extraction/output/passed"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+BASE = str(PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "passed")
 
 TARGET_REPOS = [
     "advanced-custom-fields.json",
@@ -368,7 +370,9 @@ def main():
     for fn, cot in zip(selected, COT_DATA):
         output.append(build_entry(fn, cot))
 
-    out_path = "/home/robert_li/Desktop/projects/wp-finetune/phase3_cot/output/cot_real_code.json"
+    out_dir = PROJECT_ROOT / "data" / "phase3_cot" / "output"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = str(out_dir / "cot_real_code.json")
     with open(out_path, "w") as f:
         json.dump(output, f, indent=2, ensure_ascii=False)
 

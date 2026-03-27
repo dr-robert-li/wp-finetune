@@ -10,7 +10,7 @@ import yaml
 from scripts.utils import load_checkpoint, save_checkpoint
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-REPOS_DIR = PROJECT_ROOT / "phase1_extraction" / "repos"
+REPOS_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "repos"
 CONFIG_PATH = PROJECT_ROOT / "config" / "repos.yaml"
 
 

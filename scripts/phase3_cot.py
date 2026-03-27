@@ -6,7 +6,7 @@ Takes all passed examples from Phase 1 + Phase 2 and generates:
 2. CoT reasoning wrappers for complex examples (architecture decisions, performance)
 3. Contrastive reasoning pairs (already generated in Phase 2, enhanced here with CoT)
 
-Final output: training-ready JSONL in final_dataset/
+Final output: training-ready JSONL in data/final_dataset/
 """
 
 import json
@@ -21,12 +21,12 @@ import anthropic
 from scripts.utils import call_with_backoff, load_checkpoint, save_checkpoint
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-PHASE1_PASSED = PROJECT_ROOT / "phase1_extraction" / "output" / "passed"
-PHASE2_JUDGED = PROJECT_ROOT / "phase2_synthetic" / "output" / "judged"
-PHASE2_MUTATED = PROJECT_ROOT / "phase2_synthetic" / "output" / "mutated"
-PHASE2_JUDGE_TRAINING = PROJECT_ROOT / "phase2_synthetic" / "output" / "judge_training"
-COT_OUTPUT = PROJECT_ROOT / "phase3_cot" / "output"
-FINAL_DIR = PROJECT_ROOT / "final_dataset"
+PHASE1_PASSED = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "passed"
+PHASE2_JUDGED = PROJECT_ROOT / "data" / "phase2_synthetic" / "output" / "judged"
+PHASE2_MUTATED = PROJECT_ROOT / "data" / "phase2_synthetic" / "output" / "mutated"
+PHASE2_JUDGE_TRAINING = PROJECT_ROOT / "data" / "phase2_synthetic" / "output" / "judge_training"
+COT_OUTPUT = PROJECT_ROOT / "data" / "phase3_cot" / "output"
+FINAL_DIR = PROJECT_ROOT / "data" / "final_dataset"
 
 SYSTEM_PROMPT = """You are a senior WordPress core contributor and VIP platform engineer.
 You write production-quality PHP following WordPress Coding Standards with strict security,

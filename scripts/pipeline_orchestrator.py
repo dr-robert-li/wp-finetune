@@ -32,16 +32,16 @@ TARGETS = {
 }
 
 # ── Paths ────────────────────────────────────────────────────────────
-REPOS_DIR = PROJECT_ROOT / "phase1_extraction" / "repos"
-EXTRACTED_DIR = PROJECT_ROOT / "phase1_extraction" / "output" / "extracted"
-PASSED_DIR = PROJECT_ROOT / "phase1_extraction" / "output" / "passed"
-FAILED_DIR = PROJECT_ROOT / "phase1_extraction" / "output" / "failed"
-GAP_REPORT = PROJECT_ROOT / "phase2_synthetic" / "gap_report.json"
-GENERATED_DIR = PROJECT_ROOT / "phase2_synthetic" / "output" / "generated"
-JUDGED_DIR = PROJECT_ROOT / "phase2_synthetic" / "output" / "judged"
-JUDGE_TRAINING_DIR = PROJECT_ROOT / "phase2_synthetic" / "output" / "judge_training"
-COT_DIR = PROJECT_ROOT / "phase3_cot" / "output"
-FINAL_DIR = PROJECT_ROOT / "final_dataset"
+REPOS_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "repos"
+EXTRACTED_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "extracted"
+PASSED_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "passed"
+FAILED_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "failed"
+GAP_REPORT = PROJECT_ROOT / "data" / "phase2_synthetic" / "gap_report.json"
+GENERATED_DIR = PROJECT_ROOT / "data" / "phase2_synthetic" / "output" / "generated"
+JUDGED_DIR = PROJECT_ROOT / "data" / "phase2_synthetic" / "output" / "judged"
+JUDGE_TRAINING_DIR = PROJECT_ROOT / "data" / "phase2_synthetic" / "output" / "judge_training"
+COT_DIR = PROJECT_ROOT / "data" / "phase3_cot" / "output"
+FINAL_DIR = PROJECT_ROOT / "data" / "final_dataset"
 REPOS_YAML = PROJECT_ROOT / "config" / "repos.yaml"
 
 
@@ -197,7 +197,7 @@ def get_plan(status: dict) -> dict:
         phase = "phase2_gaps"
 
     # Phase 2: Mutations (script)
-    mutated_dir = PROJECT_ROOT / "phase2_synthetic" / "output" / "mutated"
+    mutated_dir = PROJECT_ROOT / "data" / "phase2_synthetic" / "output" / "mutated"
     if not mutated_dir.exists() and status["real_passed"] > 0:
         actions.append({
             "step": "mutations",

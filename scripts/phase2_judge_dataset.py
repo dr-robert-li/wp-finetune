@@ -8,7 +8,7 @@ Sources:
 3. Automated mutations from phase2_mutate.py (controlled-defect examples)
 4. Claude-scored examples for silver-annotated ground truth
 
-Outputs judge training data to phase2_synthetic/output/judge_training/
+Outputs judge training data to data/phase2_synthetic/output/judge_training/
 """
 
 import json
@@ -34,10 +34,10 @@ from scripts.utils import (
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-PASSED_DIR = PROJECT_ROOT / "phase1_extraction" / "output" / "passed"
-FAILED_DIR = PROJECT_ROOT / "phase1_extraction" / "output" / "failed"
-MUTATED_DIR = PROJECT_ROOT / "phase2_synthetic" / "output" / "mutated"
-JUDGE_OUTPUT = PROJECT_ROOT / "phase2_synthetic" / "output" / "judge_training"
+PASSED_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "passed"
+FAILED_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "failed"
+MUTATED_DIR = PROJECT_ROOT / "data" / "phase2_synthetic" / "output" / "mutated"
+JUDGE_OUTPUT = PROJECT_ROOT / "data" / "phase2_synthetic" / "output" / "judge_training"
 
 JUDGE_SCORER_SYSTEM = """You are a WordPress code quality scoring system. You produce structured
 rubric scores for PHP code samples. Your scores will be used to train a judge model, so accuracy
