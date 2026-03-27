@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-03-27T22:28:00.000Z"
+stopped_at: "Paused at 03-03 Task 2 (checkpoint:human-verify)"
+last_updated: "2026-03-27T22:16:18.030Z"
 last_activity: 2026-03-27 — Completed 03-02 eval suite (eval_gen, eval_judge, eval_gate + 11 tests, 74 total passing)
 progress:
   total_phases: 4
-  completed_phases: 1
-  total_plans: 9
-  completed_plans: 7
+  completed_phases: 2
+  total_plans: 12
+  completed_plans: 8
   percent: 55
 ---
 
@@ -56,6 +56,7 @@ Progress: [██████░░░░] 55%
 | Phase 02-dataset-production P03 | 4 | 2 tasks | 3 files |
 | Phase 03-model-prep-and-training P01 | 12 | 2 tasks | 5 files |
 | Phase 03-model-prep-and-training P02 | 22 | 2 tasks | 8 files |
+| Phase 03 P03 | 2 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,8 @@ Recent decisions affecting current work:
 - [Phase 03-02]: PHPCS unavailability handled gracefully (passed=True with _phpcs_unavailable flag) to allow tests without binary
 - [Phase 03-02]: eval_gate.py falls back to _FALLBACK_THRESHOLDS when train_config.yaml absent — gate won't crash before 03-01 output exists
 - [Phase 03-02]: parse_judge_response returns None for unparseable JSON (not ValueError) — eval_judge.py skips and counts as skipped
+- [Phase 03]: output_router_logits=True set both in model_kwargs and model.config — Unsloth version inconsistency protection
+- [Phase 03]: merge_adapter.py falls back to vLLM --lora-modules on special-token assertion failure — adapter always stays safe
 
 ### Pending Todos
 
@@ -107,6 +110,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T22:28:00.000Z
-Stopped at: Completed 03-02-PLAN.md
-Resume file: .planning/phases/03-model-prep-and-training/03-02-SUMMARY.md
+Last session: 2026-03-27T22:16:06.975Z
+Stopped at: Paused at 03-03 Task 2 (checkpoint:human-verify)
+Resume file: None
