@@ -4,6 +4,13 @@ All notable changes to the wp-qwen3-moe project.
 
 ## [Unreleased]
 
+### DGX Toolbox Integration
+- Added `config/dgx_toolbox.yaml` — configurable path to dgx-toolbox project (transportable across environments)
+- Added `scripts/dgx_toolbox.py` — Python resolver for DGX Toolbox components (`get_toolbox().run("vllm")`)
+- Path resolution: env var `DGX_TOOLBOX_PATH` > config file > default `~/dgx-toolbox`
+- All Phase 3/4 scripts use the resolver — never hardcoded paths
+- Training via Unsloth Studio, eval via eval-toolbox, serving via vLLM/LiteLLM/Ollama
+
 ### Base Model Switch
 - **Switched from Qwen3-8B (dense-to-MoE conversion) to Qwen3-30B-A3B (native MoE)**
 - Reason: CMoE and ToMoE have no serving stack support (no vLLM, no GGUF, no Ollama compatibility)

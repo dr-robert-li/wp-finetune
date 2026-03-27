@@ -1,0 +1,58 @@
+# DGX Toolbox Configuration
+#
+# Points to the dgx-toolbox project directory. All DGX Toolbox scripts
+# are resolved relative to this path. Change this if your dgx-toolbox
+# is in a different location.
+#
+# Can also be overridden via DGX_TOOLBOX_PATH environment variable.
+
+dgx_toolbox_path: ~/dgx-toolbox
+
+# Component paths (relative to dgx_toolbox_path)
+components:
+  # Training
+  unsloth_studio: containers/unsloth-studio.sh
+  ngc_pytorch: containers/ngc-pytorch.sh
+
+  # Inference
+  vllm: inference/start-vllm.sh
+  litellm: inference/start-litellm.sh
+  ollama_setup: inference/setup-ollama-remote.sh
+  open_webui: inference/start-open-webui.sh
+
+  # Evaluation
+  eval_toolbox: eval/eval-toolbox.sh
+  eval_jupyter: eval/eval-toolbox-jupyter.sh
+  triton: eval/triton-trtllm.sh
+
+  # Data
+  data_toolbox: data/data-toolbox.sh
+  label_studio: data/start-label-studio.sh
+  argilla: data/start-argilla.sh
+
+  # Utilities
+  status: status.sh
+  modelstore: modelstore.sh
+  build_toolboxes: build-toolboxes.sh
+  litellm_config: inference/setup-litellm-config.sh
+
+# Shared directories (used by DGX Toolbox containers)
+shared_dirs:
+  huggingface_cache: ~/.cache/huggingface
+  unsloth_data: ~/unsloth-data
+  eval_datasets: ~/eval/datasets
+  eval_models: ~/eval/models
+  eval_runs: ~/eval/runs
+  data_exports: ~/data/exports
+
+# Ports
+ports:
+  unsloth_studio: 8000
+  vllm: 8020
+  litellm: 4000
+  open_webui: 12000
+  ollama: 11434
+  label_studio: 8081
+  argilla: 6900
+  triton_http: 8010
+  triton_grpc: 8011
