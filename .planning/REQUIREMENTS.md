@@ -47,12 +47,12 @@ Source data already exists at `/home/robert_li/Desktop/data/wp-finetune-data/`: 
 
 ### Training
 
-- [ ] **TRNG-01**: Unsloth LoRA SFT configured on DGX Spark (r=64, bf16, cosine LR)
-- [ ] **TRNG-02**: LoRA config includes `modules_to_save=["embed_tokens", "lm_head"]` for special tokens
-- [ ] **TRNG-03**: Training data loaded as 50/50 wp_gen/wp_judge multi-task mix
-- [ ] **TRNG-04**: MoE load balancing loss monitored throughout training (no routing collapse)
-- [ ] **TRNG-05**: W&B experiment tracking active via eval-toolbox
-- [ ] **TRNG-06**: Training completes without OOM or divergence on DGX Spark
+- [x] **TRNG-01**: Unsloth LoRA SFT configured on DGX Spark (r=64, bf16, cosine LR)
+- [x] **TRNG-02**: LoRA config includes `modules_to_save=["embed_tokens", "lm_head"]` for special tokens
+- [x] **TRNG-03**: Training data loaded as 50/50 wp_gen/wp_judge multi-task mix
+- [x] **TRNG-04**: MoE load balancing loss monitored throughout training (no routing collapse)
+- [x] **TRNG-05**: W&B experiment tracking active via eval-toolbox
+- [x] **TRNG-06**: Training completes without OOM or divergence on DGX Spark
 
 ### Evaluation
 
@@ -126,12 +126,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MODL-02 | Phase 3 | Complete |
 | MODL-03 | Phase 3 | Complete |
 | MODL-04 | Phase 3 | Complete |
-| TRNG-01 | Phase 3 | Pending |
-| TRNG-02 | Phase 3 | Pending |
-| TRNG-03 | Phase 3 | Pending |
-| TRNG-04 | Phase 3 | Pending |
-| TRNG-05 | Phase 3 | Pending |
-| TRNG-06 | Phase 3 | Pending |
+| TRNG-01 | Phase 3 | Complete |
+| TRNG-02 | Phase 3 | Complete |
+| TRNG-03 | Phase 3 | Complete |
+| TRNG-04 | Phase 3 | Complete |
+| TRNG-05 | Phase 3 | Complete |
+| TRNG-06 | Phase 3 | Complete |
 | EVAL-01 | Phase 3 | Complete (03-02) |
 | EVAL-02 | Phase 3 | Complete (03-02) |
 | EVAL-03 | Phase 3 | Complete (03-02) |

@@ -29,7 +29,7 @@ decisions:
 metrics:
   duration_minutes: 2
   completed_date: "2026-03-28"
-  tasks_completed: 1
+  tasks_completed: 2
   tasks_total: 2
   files_created: 2
   files_modified: 0
@@ -84,7 +84,24 @@ None - plan executed exactly as written.
 
 ## Status
 
-Task 1 committed (98e7596). Paused at Task 2 (checkpoint:human-verify) — awaiting human review before DGX execution.
+All tasks complete. Task 1 committed (98e7596). Task 2 (checkpoint:human-verify) approved by human on 2026-03-28 — all Phase 3 scripts approved for DGX execution.
+
+## DGX Execution Sequence (Ready to Run)
+
+```bash
+python -m scripts.download_model          # ~60GB download
+python -m scripts.prepare_tokenizer       # extend tokenizer, mean-init, smoke test
+python -m scripts.train_model             # LoRA SFT (~6-12 hours)
+python -m scripts.merge_adapter           # merge with verification roundtrip
+```
+
+Then run eval gate:
+
+```bash
+python -m eval.eval_gen     # PHPCS pass rate
+python -m eval.eval_judge   # Spearman correlation
+python -m eval.eval_gate    # Quality gate (pass/fail)
+```
 
 ## Self-Check: PASSED
 
