@@ -46,12 +46,29 @@ Download Qwen3-30B-A3B (native MoE), extend tokenizer with `<wp_gen>` and `<wp_j
   - LoRA adapter kept separate until eval passes
   - bf16 training
 
+### DGX Toolbox Integration (LOCKED)
+- **All scripts MUST use `scripts/dgx_toolbox.py` resolver** — never hardcode ~/dgx-toolbox or any absolute paths
+- **Toolbox location configurable:** `config/dgx_toolbox.yaml` → `dgx_toolbox_path` or `DGX_TOOLBOX_PATH` env var
+- **Training:** Use `dgx.run("unsloth_studio")` to launch Unsloth container
+- **Serving:** Use `dgx.run("vllm", model_path)` — endpoint via `dgx.vllm_endpoint()`
+- **Eval:** Use `dgx.run("eval_toolbox")` — eval scripts run inside eval-toolbox container
+- **LiteLLM proxy:** Use `dgx.run("litellm")` — wp-bench routes through `dgx.litellm_endpoint()`
+- **Ports from config:** `dgx.port("vllm")` = 8020, `dgx.port("litellm")` = 4000, etc.
+- **Transportability:** Projects are a paired set — clone both, point config, everything works
+- **Import pattern:** `from scripts.dgx_toolbox import get_toolbox; dgx = get_toolbox()`
+
+### Research Findings (LOCKED)
+- **QLoRA is OFF-LIMITS for MoE** — Unsloth explicitly states BitsandBytes doesn't support MoE nn.Parameter in 4-bit. Must use `load_in_4bit=False` with BF16 LoRA.
+- **Peak memory ~63GB** — fits DGX Spark 128GB with Unsloth FastLanguageModel (avoids page cache OOM)
+- **output_router_logits=True** must be explicitly set for MoE load balancing loss to appear in W&B
+- **modules_to_save merge is buggy** (Unsloth #3444) — keep adapter separate through Phase 3, merge in Phase 4 with verification roundtrip
+
 ### Claude's Discretion
 - LoRA rank (r=32 vs r=64), alpha, dropout
 - Number of epochs (1-3)
 - Batch size and gradient accumulation
 - Learning rate and scheduler
-- Whether to use QLoRA (4-bit) or full LoRA (BF16) — depends on memory fit
+- BF16 LoRA only (QLoRA off-limits per research)
 - Training script format (Jupyter notebook via Unsloth Studio or headless Python)
 
 </decisions>
@@ -78,11 +95,15 @@ Download Qwen3-30B-A3B (native MoE), extend tokenizer with `<wp_gen>` and `<wp_j
 - `Qwen/Qwen3-30B-A3B` — HuggingFace model page
 - Unsloth DGX Spark playbook: `github.com/NVIDIA/dgx-spark-playbooks/tree/main/nvidia/unsloth`
 
-### DGX Toolbox Integration
-- `config/dgx_toolbox.yaml` — Configurable path to dgx-toolbox project (default ~/dgx-toolbox, override via DGX_TOOLBOX_PATH env var)
-- `scripts/dgx_toolbox.py` — Python resolver for DGX Toolbox components. Usage: `from scripts.dgx_toolbox import get_toolbox; dgx = get_toolbox(); dgx.run("vllm", model_name)`
-- All eval/training/inference scripts MUST use the resolver (not hardcoded ~/dgx-toolbox paths) for transportability
-- Key components: unsloth_studio (training), eval_toolbox (eval), vllm (serving), litellm (proxy), open_webui (demo)
+### DGX Toolbox Integration (MUST READ)
+- `config/dgx_toolbox.yaml` — Configurable path to dgx-toolbox + all component paths, ports, shared dirs
+- `scripts/dgx_toolbox.py` — Python resolver: `from scripts.dgx_toolbox import get_toolbox; dgx = get_toolbox()`
+  - `dgx.run("unsloth_studio")` — launch training container
+  - `dgx.run("vllm", model_path)` — start inference
+  - `dgx.run("eval_toolbox")` — launch eval container
+  - `dgx.vllm_endpoint()` — returns `http://localhost:{port}/v1`
+  - `dgx.litellm_endpoint()` — returns `http://localhost:{port}/v1`
+- **ALL scripts in this phase MUST import and use the resolver — NEVER hardcode paths or ports**
 
 ### Project config
 - `config/judge_system.md` — Judge rubric (for custom judge eval design)
