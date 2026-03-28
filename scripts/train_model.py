@@ -49,6 +49,108 @@ def resolve_path(raw: str) -> Path:
 
 
 # ---------------------------------------------------------------------------
+# Memory pre-check
+# ---------------------------------------------------------------------------
+
+# Qwen3-30B-A3B BF16 LoRA peak memory estimate (from Unsloth docs)
+MIN_FREE_MEMORY_GB = 70  # 63GB model + ~7GB overhead for optimizer states, activations
+
+
+def check_memory(config: dict) -> None:
+    """Verify sufficient system memory is available before loading the model.
+
+    Checks free RAM (not GPU VRAM — DGX Spark uses unified memory).
+    If insufficient, lists top memory-consuming processes and exits.
+    """
+    import shutil
+    import subprocess as _sp
+
+    total, used, free = shutil.disk_usage("/")  # disk — not what we want
+    # Use /proc/meminfo for actual RAM
+    try:
+        meminfo = Path("/proc/meminfo").read_text()
+        mem_lines = {
+            line.split(":")[0].strip(): int(line.split(":")[1].strip().split()[0])
+            for line in meminfo.splitlines()
+            if ":" in line
+        }
+        total_gb = mem_lines.get("MemTotal", 0) / (1024 * 1024)
+        available_gb = mem_lines.get("MemAvailable", 0) / (1024 * 1024)
+    except Exception:
+        # Fallback: psutil if available, or skip check
+        try:
+            import psutil
+            mem = psutil.virtual_memory()
+            total_gb = mem.total / (1024**3)
+            available_gb = mem.available / (1024**3)
+        except ImportError:
+            print("Warning: Cannot check memory (no /proc/meminfo or psutil). Proceeding anyway.")
+            return
+
+    print(f"\n{'=' * 60}")
+    print(f"  MEMORY PRE-CHECK")
+    print(f"{'=' * 60}")
+    print(f"  Total system memory: {total_gb:.1f} GB")
+    print(f"  Available memory:    {available_gb:.1f} GB")
+    print(f"  Required minimum:    {MIN_FREE_MEMORY_GB} GB")
+    print(f"  Headroom:            {available_gb - MIN_FREE_MEMORY_GB:.1f} GB")
+
+    if available_gb >= MIN_FREE_MEMORY_GB:
+        print(f"  Status:              OK ✓")
+        print(f"{'=' * 60}\n")
+        return
+
+    # Insufficient memory — show top consumers
+    print(f"  Status:              INSUFFICIENT ✗")
+    print(f"\n  Need {MIN_FREE_MEMORY_GB - available_gb:.1f} GB more free memory.")
+    print(f"\n  Top memory consumers:")
+    print(f"  {'─' * 50}")
+
+    try:
+        # Get top memory-consuming processes
+        result = _sp.run(
+            ["ps", "aux", "--sort=-rss"],
+            capture_output=True, text=True, timeout=10,
+        )
+        lines = result.stdout.strip().split("\n")
+        print(f"  {'USER':<12} {'RSS MB':>8}  {'COMMAND'}")
+        for line in lines[1:11]:  # Top 10
+            parts = line.split(None, 10)
+            if len(parts) >= 11:
+                user = parts[0]
+                rss_kb = int(parts[5]) if parts[5].isdigit() else 0
+                cmd = parts[10][:60]
+                if rss_kb > 10240:  # Only show >10MB
+                    print(f"  {user:<12} {rss_kb // 1024:>7} MB  {cmd}")
+    except Exception:
+        pass
+
+    # Also show Docker containers
+    try:
+        result = _sp.run(
+            ["docker", "ps", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+            capture_output=True, text=True, timeout=10,
+        )
+        if result.stdout.strip():
+            print(f"\n  Running Docker containers:")
+            print(f"  {'─' * 50}")
+            for line in result.stdout.strip().split("\n"):
+                print(f"  {line}")
+    except Exception:
+        pass
+
+    print(f"\n  {'=' * 60}")
+    print(f"  ACTION REQUIRED: Free up memory before training.")
+    print(f"  Suggestions:")
+    print(f"    • Stop non-essential Docker containers: docker stop <name>")
+    print(f"    • Close browser tabs and IDEs")
+    print(f"    • Kill large background processes")
+    print(f"    • Run: docker container prune -f && docker image prune -f")
+    print(f"  {'=' * 60}")
+    sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
 # Model + tokenizer
 # ---------------------------------------------------------------------------
 
@@ -233,6 +335,9 @@ def train(args: argparse.Namespace) -> None:
         print(f"Trained adapter already exists at {output_dir}/adapter_config.json")
         print("Use --resume to continue training, or delete the adapter dir to retrain from scratch.")
         return
+
+    # --- Memory pre-check: ensure enough free memory before loading 63GB model ---
+    check_memory(config)
 
     # Load model + tokenizer
     model, tokenizer = load_model_and_tokenizer(config)
