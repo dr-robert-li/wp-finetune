@@ -24,8 +24,7 @@ plugins:
   - assets
   - css
   - js
-  description: Yoast SEO – Advanced SEO with real-time guidance and built-in AI —
-    10,000,000 installs, 96% rating
+  description: Yoast SEO – Advanced SEO with real-time guidance and built-in AI — 10,000,000 installs, 96% rating
 - name: contact-form-7
   url: https://github.com/takayukister/contact-form-7.git
   quality_tier: assessed
@@ -50,15 +49,13 @@ plugins:
   quality_tier: assessed
   paths: *id002
   skip_paths: *id001
-  description: Site Kit by Google – Analytics, Search Console, AdSense, Speed — 5,000,000
-    installs, 84% rating
+  description: Site Kit by Google – Analytics, Search Console, AdSense, Speed — 5,000,000 installs, 84% rating
 - name: wp-mail-smtp
   url: https://github.com/awesomemotive/wp-mail-smtp.git
   quality_tier: assessed
   paths: *id002
   skip_paths: *id001
-  description: WP Mail SMTP by WPForms – The Most Popular SMTP and Email Log Plugin
-    — 4,000,000 installs, 96% rating
+  description: WP Mail SMTP by WPForms – The Most Popular SMTP and Email Log Plugin — 4,000,000 installs, 96% rating
 - name: really-simple-ssl
   url: https://github.com/Really-Simple-Plugins/really-simple-ssl.git
   quality_tier: assessed
@@ -66,8 +63,8 @@ plugins:
   - includes/**/*.php
   - src/**/*.php
   skip_paths: *id001
-  description: Really Simple Security – Simple and Performant Security (formerly Really
-    Simple SSL) — 3,000,000 installs, 98% rating
+  description: Really Simple Security – Simple and Performant Security (formerly Really Simple SSL) — 3,000,000 installs,
+    98% rating
 - name: classic-widgets
   url: https://github.com/WordPress/classic-widgets.git
   quality_tier: trusted
@@ -99,8 +96,7 @@ plugins:
   - includes/**/*.php
   - src/**/*.php
   skip_paths: *id001
-  description: MailPoet – Newsletters, Email Marketing, and Automation — 500,000 installs,
-    88% rating
+  description: MailPoet – Newsletters, Email Marketing, and Automation — 500,000 installs, 88% rating
 - name: cmb2
   url: https://github.com/CMB2/CMB2.git
   quality_tier: assessed
@@ -112,8 +108,7 @@ plugins:
   quality_tier: trusted
   paths: *id002
   skip_paths: *id001
-  description: Query Monitor – The developer tools panel for WordPress — 200,000 installs,
-    98% rating
+  description: Query Monitor – The developer tools panel for WordPress — 200,000 installs, 98% rating
 - name: custom-post-type-permalinks
   url: https://github.com/torounit/custom-post-type-permalinks.git
   quality_tier: trusted
@@ -191,8 +186,7 @@ plugins:
   quality_tier: trusted
   paths: *id002
   skip_paths: *id001
-  description: 'Blocks Animation: CSS Animations for Gutenberg Blocks — 90,000 installs,
-    94% rating'
+  description: 'Blocks Animation: CSS Animations for Gutenberg Blocks — 90,000 installs, 94% rating'
 - name: woocommerce-extra-checkout-fields-for-brazil
   url: https://github.com/claudiosanches/woocommerce-extra-checkout-fields-for-brazil.git
   quality_tier: trusted
@@ -254,9 +248,10 @@ plugins:
   skip_paths: *id001
   description: CMS Tree Page View — 50,000 installs, 98% rating
 - name: image-prioritizer
-  url: https://github.com/WordPress/performance/tree/trunk/plugins/image-prioritizer.git
+  url: https://github.com/WordPress/performance.git
   quality_tier: trusted
-  paths: *id002
+  paths:
+  - plugins/image-prioritizer/**/*.php
   skip_paths: *id001
   description: Image Prioritizer — 50,000 installs, 100% rating
 - name: customizer-search
@@ -276,8 +271,8 @@ plugins:
   quality_tier: assessed
   paths: *id002
   skip_paths: *id001
-  description: Simple Banner – Easily add multiple Banners/Bars/Notifications/Announcements
-    to the top or bottom of your website — 50,000 installs, 96% rating
+  description: Simple Banner – Easily add multiple Banners/Bars/Notifications/Announcements to the top or bottom of your website
+    — 50,000 installs, 96% rating
 - name: sierotki
   url: https://github.com/iworks/sierotki.git
   quality_tier: trusted
@@ -326,6 +321,300 @@ plugins:
   paths: *id002
   skip_paths: *id001
   description: AutoConvert Greeklish Permalinks — 30,000 installs, 98% rating
+- name: elementor
+  url: https://github.com/elementor/elementor.git
+  quality_tier: assessed
+  paths:
+  - includes/**/*.php
+  - src/**/*.php
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Elementor Website Builder — 10,000,000 installs
+- name: woocommerce
+  url: https://github.com/woocommerce/woocommerce.git
+  quality_tier: assessed
+  paths:
+  - plugins/woocommerce/includes/**/*.php
+  - plugins/woocommerce/src/**/*.php
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: WooCommerce — 7,000,000 installs
+- name: wpforms-lite
+  url: https://github.com/awesomemotive/wpforms-lite.git
+  quality_tier: assessed
+  paths:
+  - includes/**/*.php
+  - src/**/*.php
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: WPForms Lite — 6,000,000 installs
+- name: duplicate-post
+  url: https://github.com/Yoast/duplicate-post.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Yoast Duplicate Post — 4,000,000 installs
+- name: seo-by-rank-math
+  url: https://github.com/rankmath/seo-by-rank-math.git
+  quality_tier: assessed
+  paths:
+  - includes/**/*.php
+  - src/**/*.php
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Rank Math SEO — 3,000,000 installs
+- name: jetpack
+  url: https://github.com/Automattic/jetpack.git
+  quality_tier: assessed
+  paths:
+  - projects/plugins/jetpack/modules/**/*.php
+  - projects/plugins/jetpack/src/**/*.php
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Jetpack — 3,000,000 installs
+- name: all-in-one-seo-pack
+  url: https://github.com/awesomemotive/all-in-one-seo-pack.git
+  quality_tier: assessed
+  paths:
+  - includes/**/*.php
+  - src/**/*.php
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: All in One SEO — 3,000,000 installs
+- name: wordpress-importer
+  url: https://github.com/WordPress/wordpress-importer.git
+  quality_tier: trusted
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: WordPress Importer — 2,000,000 installs
+- name: woocommerce-payments
+  url: https://github.com/Automattic/woocommerce-payments.git
+  quality_tier: assessed
+  paths:
+  - includes/**/*.php
+  - src/**/*.php
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: WooCommerce Payments — 900,000 installs
+- name: woocommerce-gateway-stripe
+  url: https://github.com/woocommerce/woocommerce-gateway-stripe.git
+  quality_tier: assessed
+  paths:
+  - includes/**/*.php
+  - src/**/*.php
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: WooCommerce Stripe Gateway — 700,000 installs
+- name: facebook-for-woocommerce
+  url: https://github.com/woocommerce/facebook-for-woocommerce.git
+  quality_tier: assessed
+  paths:
+  - includes/**/*.php
+  - src/**/*.php
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Facebook for WooCommerce — 500,000 installs
+- name: amp
+  url: https://github.com/ampproject/amp-wp.git
+  quality_tier: assessed
+  paths:
+  - includes/**/*.php
+  - src/**/*.php
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: AMP — 400,000 installs
+- name: woocommerce-legacy-rest-api
+  url: https://github.com/woocommerce/woocommerce-legacy-rest-api.git
+  quality_tier: assessed
+  paths:
+  - includes/**/*.php
+  - src/**/*.php
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: WooCommerce Legacy REST API — 400,000 installs
+- name: webp-express
+  url: https://github.com/rosell-dk/webp-express.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: WebP Express — 300,000 installs
+- name: gutenberg
+  url: https://github.com/WordPress/gutenberg.git
+  quality_tier: assessed
+  paths:
+  - lib/**/*.php
+  - phpunit/**/*.php
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  - packages
+  description: Gutenberg — 300,000 installs
+- name: header-and-footer-scripts
+  url: https://github.com/anandkumar/header-and-footer-scripts.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Header and Footer Scripts — 200,000 installs
+- name: woocommerce-mercadopago
+  url: https://github.com/mercadopago/cart-woocommerce.git
+  quality_tier: assessed
+  paths:
+  - includes/**/*.php
+  - src/**/*.php
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Mercado Pago payments for WooCommerce — 100,000 installs
+- name: list-category-posts
+  url: https://github.com/picandocodigo/List-Category-Posts.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: List Category Posts — 80,000 installs
+- name: smart-custom-fields
+  url: https://github.com/inc2734/smart-custom-fields.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Smart Custom Fields — 50,000 installs
+- name: recaptcha-for-mw-wp-form
+  url: https://github.com/kanakogi/recaptcha-for-mw-wp-form.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: reCAPTCHA for MW WP Form — 30,000 installs
 themes:
 - name: twentytwentyfive
   url: https://github.com/WordPress/twentytwentyfive.git
@@ -365,3 +654,45 @@ themes:
   paths: *id002
   skip_paths: *id001
   description: Twenty Twenty — 200,000 installs, 88% rating
+- name: twentytwentyfour
+  url: https://github.com/WordPress/twentytwentyfour.git
+  quality_tier: trusted
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Twenty Twenty-Four — 600,000 installs
+- name: twentytwentythree
+  url: https://github.com/WordPress/twentytwentythree.git
+  quality_tier: trusted
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Twenty Twenty-Three — 300,000 installs
+- name: twentytwentytwo
+  url: https://github.com/WordPress/twentytwentytwo.git
+  quality_tier: trusted
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Twenty Twenty-Two — 200,000 installs
