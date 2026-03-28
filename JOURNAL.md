@@ -4,6 +4,81 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-03-28 — First training run failure: torch_dtype deprecation and pipeline hardening
+
+### What happened
+
+The first training run failed because `torch_dtype` has been fully deprecated in the current PyTorch/Unsloth stack. It's been a while since I've trained a model and I missed this — a simple mistake, but one that cost a failed run on the DGX Spark.
+
+### Fix and hardening
+
+After fixing the `torch_dtype` issue, I took the opportunity to harden the entire training pipeline:
+
+1. **Stitched all Phase 3 scripts into a single Claude Code skill** (`docs/run-training.md`) — download, tokenizer prep, training, and merge now run as one atomic flow
+2. **Made each step idempotent** — every script checks whether its output already exists and skips if so:
+
+| Step | Skip condition | Re-run behavior |
+|------|---------------|-----------------|
+| Download model | Safetensors shards exist | Skips entirely |
+| Extend tokenizer | `adapters/tokenizer/` has special tokens | Skips entirely |
+| Train model | `adapter_config.json` exists | Skips (use `--resume` for partial) |
+| Merge adapter | Merged model passes token verification | Skips entirely |
+
+3. **Checkpoint-based resumability** — if training crashes mid-epoch, the next run picks up from the last checkpoint rather than starting over
+4. **Memory pre-check** added to `train_model.py` — reads `/proc/meminfo` for available RAM (70GB minimum required). If insufficient: shows top memory consumers (processes + Docker containers), prints actionable suggestions (stop containers, prune Docker), and blocks training (`exit 1`) until memory is freed
+
+The idempotency pattern is the same one that worked well in the data pipeline: check output → skip if exists → run if missing → verify output → proceed. This means a single "run training" command always does the right thing regardless of where the pipeline last stopped.
+
+### Near-miss: memory-hungry containers
+
+I almost started training without clearing memory-hungry containers from previous work. The DGX Spark had 8 containers running — vLLM, Open-WebUI, LiteLLM, n8n, and several unnamed PyTorch sessions — collectively consuming significant memory. Only the Unsloth Studio container was needed for training. The 30B MoE model at BF16 takes ~63GB, and with batch size already at minimum (1) with `gradient_accumulation=8`, there's no room for waste on 128GB unified memory.
+
+The memory pre-check now catches this automatically before training starts, but the lesson is: always audit running processes before committing GPU memory to a large training run.
+
+### Lessons learned
+
+1. **Smoke-test your toolchain after a gap.** A quick `python -c "import torch; help(torch.dtype)"` or checking the migration guide would have caught the deprecation before wasting a DGX cycle.
+2. **Memory pre-check before training is non-negotiable.** On shared or multi-use machines, stale containers and processes silently eat memory. The training script should refuse to start if memory is insufficient — better to fail fast with an actionable message than to OOM mid-training.
+
+---
+
+## 2026-03-28 — Phase 3 complete: model prep scripts, DGX Toolbox integration, and phase restructuring
+
+### Model prep is ready
+
+Phase 3 (Model Prep and Training) is at checkpoint — all scripts written, tested, and integrated with DGX Toolbox. The test suite grew from 46 to 75 tests, all passing:
+
+- `test_prepare_tokenizer.py` — verifies `<wp_gen>` and `<wp_judge>` special tokens are added without duplicates, embeddings are mean-initialized (not zero, not random), and each token resolves to a single ID
+- `test_train_model.py` — verifies model download check, LoRA config (r=64, BF16, cosine LR scheduler), `modules_to_save` includes embed_tokens/lm_head, dataset schema (messages format with valid roles), and router logits are enabled for MoE load balancing
+- `test_eval_gate.py` — verifies quality gate pass/fail logic against PHPCS pass rate, Spearman correlation, and security thresholds read from config
+- `test_eval_gen.py` — verifies PHPCS evaluation runs, security rate detection, and pass rate calculation
+- `test_eval_judge.py` — verifies Spearman computation, score inversion detection, and judge output parsing
+
+DGX Toolbox is fully integrated — all training, eval, and serving scripts use the configurable resolver (`scripts/dgx_toolbox.py`) rather than hardcoded paths.
+
+### Decision: Split eval from packaging
+
+**Decision:** Separate evaluation (Phase 4) from packaging and deployment (Phase 5), with a human review checkpoint between them.
+
+**Reasoning:**
+- I want to inspect eval results (static eval scores + wp-bench scores) before committing to quantization and release. If results are poor, I need to go back to training — and that's much easier at full BF16 precision than after quantization.
+- Quantization is a one-way compression step. AWQ/GGUF can't be reversed to full precision. Keeping eval at full precision means I retain the option to adjust training hyperparameters, add more data, or run additional DPO refinement before packaging.
+- The human gate at the end of Phase 4 (plan 04-03) is where I review all eval results and decide whether the model meets the success criteria before proceeding.
+
+### Updated phase structure
+
+| Phase | Name | Status |
+|-------|------|--------|
+| 1 | Pipeline Ready | Complete |
+| 2 | Dataset Production | Complete |
+| 3 | Model Prep and Training | At checkpoint (before DGX execution) |
+| 4 | Evaluation | Not started (human gate: review results before packaging) |
+| 5 | Packaging and Deployment | Not started |
+
+Phase 3 is at checkpoint because the scripts are ready but actual DGX Spark execution (downloading the model, running LoRA fine-tuning) hasn't started yet. That's the next step.
+
+---
+
 ## 2026-03-27 — Training strategy: BF16 LoRA (not QLoRA), post-training quantization, and the Unsloth merge bug
 
 ### QLoRA is incompatible with MoE models

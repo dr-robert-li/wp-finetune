@@ -46,5 +46,10 @@ data/phase2_synthetic/
 data/phase3_cot/output/
 data/final_dataset/
 
+# Model weights and adapters (large, re-downloadable)
+models/
+adapters/
+merged_model/
+
 # Parse failure logs
 *_parse_failures.jsonl
