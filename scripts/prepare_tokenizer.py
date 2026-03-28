@@ -180,12 +180,23 @@ def prepare_tokenizer(skip_download: bool = False, smoke_only: bool = False) -> 
     # --- Step 2: Load model ---
     print(f"Loading model from {local_dir} ...")
     tokenizer = AutoTokenizer.from_pretrained(str(local_dir))
-    model = AutoModelForCausalLM.from_pretrained(
-        str(local_dir),
-        torch_dtype=torch.bfloat16,
-        device_map="auto",
-        load_in_4bit=False,  # LOCKED — no QLoRA for MoE
-    )
+    try:
+        # Prefer Unsloth FastLanguageModel (handles MoE + avoids page cache OOM)
+        from unsloth import FastLanguageModel
+        model, tokenizer = FastLanguageModel.from_pretrained(
+            model_name=str(local_dir),
+            max_seq_length=config["model"]["max_seq_length"],
+            load_in_4bit=False,  # LOCKED — no QLoRA for MoE
+            dtype=torch.bfloat16,
+        )
+    except ImportError:
+        # Fallback for environments without Unsloth (CI, local dev)
+        print("Warning: Unsloth not available, using AutoModelForCausalLM (slower, higher memory)")
+        model = AutoModelForCausalLM.from_pretrained(
+            str(local_dir),
+            dtype=torch.bfloat16,
+            device_map="auto",
+        )
 
     # --- Step 3: Extend tokenizer and mean-init embeddings ---
     extend_tokenizer(tokenizer, model, special_tokens)
