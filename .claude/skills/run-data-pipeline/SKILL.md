@@ -67,11 +67,37 @@ Each agent generates 20-30 examples for its assigned taxonomy tags.
 **If type is "agent" and step is "judge_synthetics":**
 Spawn agents to assess generated synthetic files against the judge rubric.
 
-**If type is "agent" and step is "cot_reasoning":**
-Spawn agents for:
-- Real code CoT (instruction-completion from passed functions)
-- Contrastive CoT (bad→fix from failed functions)
-- Synthetic CoT (from judged synthetics)
+**If type is "agent" and step is "cot_gen_pattern":**
+Spawn agents for Gen Pattern CoT from passed functions.
+Each agent reads passed functions from `source_dir`, generates examples:
+- instruction: "Implement a WordPress function that [requirement derived from code]"
+- reasoning: "Pattern selection → why this WP API → implementation steps → edge cases"
+- response: the actual function code
+Write to: `{output_dir}/{output_prefix}_batch{N}.json`
+
+**If type is "agent" and step is "cot_judge_rubric":**
+Spawn agents for Judge Rubric CoT from mixed passed+failed functions.
+Each agent reads functions from both passed/ and failed/ dirs, generates examples:
+- instruction: "<wp_judge> Evaluate this WordPress code:\n\n{function body}"
+- reasoning: "D1 WPCS check → D2 Security check → D3 SQL → ... → D9 Structure → overall score → verdict"
+- response: structured rubric score JSON (matching eval judge training format)
+Write to: `{output_dir}/{output_prefix}_batch{N}.json`
+
+**If type is "agent" and step is "cot_judge_contrastive":**
+Spawn agents for Judge Contrastive CoT from failed functions.
+Each agent reads failed functions from `source_dir`, generates examples:
+- instruction: "Review this WordPress code and identify issues:\n\n{bad code}"
+- reasoning: "Issue 1: [what's wrong] → Fix: [how to fix] → Issue 2: ..."
+- response: fixed version of the code with explanation
+Write to: `{output_dir}/{output_prefix}_batch{N}.json`
+
+**If type is "agent" and step is "cot_security":**
+Spawn agents for Security CoT from security-tagged functions (both passed and failed).
+Each agent reads functions with security surface (superglobals, nonces, escaping), generates examples:
+- instruction: "Analyze the security of this WordPress code:\n\n{function body}"
+- reasoning: "Nonce check → capability check → input sanitization → output escaping → verdict"
+- response: security assessment with specific findings
+Write to: `{output_dir}/{output_prefix}_batch{N}.json`
 
 ### 4. Wait for All Agents
 
@@ -120,13 +146,20 @@ Display final dataset statistics. Pipeline complete.
 - Output format: read existing files to match structure exactly
 - 40/60 gen/judge split enforced during export
 
-## Targets
+## Targets (percentage-based)
 
-| Category | Target |
-|----------|--------|
-| Real code passed | 15,000+ |
-| Synthetic passed | 200+ |
-| Judge high-score | 1,500 |
-| Judge low-score | 1,000 |
-| Judge synth-scored | 1,500 |
-| CoT reasoning | 500 |
+All targets are dynamic — computed from actual judged function counts by `pipeline_orchestrator.py`.
+
+| Category | Formula | Floor |
+|----------|---------|-------|
+| Real code judging | Judge ALL extracted repos | — |
+| Synthetic generation | Fill gap_report.json deficit to 0 | — |
+| Judge high-score | 10% of passed functions | — |
+| Judge low-score | 10% of failed functions | — |
+| Judge synth-scored | 10% of synthetic passed | — |
+| CoT: Gen Pattern | max(500, 10% of passed) | 500 |
+| CoT: Judge Rubric | max(500, 10% of total judged) | 500 |
+| CoT: Judge Contrastive | max(500, 10% of failed) | 500 |
+| CoT: Security | max(500, 10% of security-tagged) | 500 |
+
+Run `python scripts/pipeline_orchestrator.py status` to see current values.
