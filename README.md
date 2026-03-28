@@ -42,6 +42,8 @@ The judge returns structured scores across 9 dimensions: WPCS compliance, SQL sa
 
 **Current:** Phase 3 — scripts ready, tokenizer prepared, 5 ratio exports produced (30/70 through 70/30). Training on DGX Spark next.
 
+**Building in public.** Read the [Engineering Journal](JOURNAL.md) for real-time decisions, tradeoffs, failures, and lessons learned as the project evolves.
+
 See [PROJECT.md](PROJECT.md) for full phase details and success criteria.
 
 ## Data Pipeline
