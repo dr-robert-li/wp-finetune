@@ -192,6 +192,7 @@ def prepare_tokenizer(skip_download: bool = False, smoke_only: bool = False) -> 
     tokenizer = AutoTokenizer.from_pretrained(str(local_dir))
     try:
         # Prefer Unsloth FastLanguageModel (handles MoE + avoids page cache OOM)
+        # Must run inside DGX Toolbox Unsloth Studio container (requires GPU)
         from unsloth import FastLanguageModel
         model, tokenizer = FastLanguageModel.from_pretrained(
             model_name=str(local_dir),
@@ -199,7 +200,24 @@ def prepare_tokenizer(skip_download: bool = False, smoke_only: bool = False) -> 
             load_in_4bit=False,  # LOCKED — no QLoRA for MoE
             dtype=torch.bfloat16,
         )
-    except ImportError:
+    except (ImportError, NotImplementedError) as e:
+        if "GPU" in str(e) or "accelerator" in str(e):
+            print("\n" + "=" * 60)
+            print("  ERROR: Unsloth requires a GPU.")
+            print("=" * 60)
+            print()
+            print("  This script must run inside the DGX Toolbox Unsloth Studio container:")
+            print()
+            print("    ~/dgx-toolbox/containers/unsloth-studio.sh")
+            print()
+            print("  Then from inside the container:")
+            print("    cd /workspace/work  # or bind-mount your project")
+            print("    python -m scripts.prepare_tokenizer")
+            print()
+            print("  Or use the tokenizer-only mode (no GPU needed):")
+            print("    python -m scripts.prepare_tokenizer --tokenizer-only")
+            print("=" * 60)
+            sys.exit(1)
         # Fallback for environments without Unsloth (CI, local dev)
         print("Warning: Unsloth not available, using AutoModelForCausalLM (slower, higher memory)")
         model = AutoModelForCausalLM.from_pretrained(
@@ -216,11 +234,12 @@ def prepare_tokenizer(skip_download: bool = False, smoke_only: bool = False) -> 
     tokenizer.save_pretrained(str(save_dir))
     print(f"Extended tokenizer saved to {save_dir}")
 
-    # --- Step 5: Save model with resized embeddings ---
-    model.save_pretrained(str(local_dir))
-    print(f"Model with resized embeddings saved to {local_dir}")
-
-    # --- Step 6: Smoke test ---
+    # --- Step 5: Smoke test ---
+    # Note: We don't re-save the full model here. The resized embeddings exist
+    # in memory for the smoke test, and train_model.py will handle embedding
+    # resize at training time via modules_to_save=["embed_tokens", "lm_head"].
+    # Re-saving a 60GB MoE model just for 2 new embedding rows is wasteful and
+    # fails on some MoE architectures (Qwen3MoeExperts serialization bug).
     run_smoke_test(tokenizer, model)
 
 
