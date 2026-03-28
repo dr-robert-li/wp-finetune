@@ -173,8 +173,10 @@ In Claude Code, say:
 
 ```
 run the pipeline          # Phase 2: generate training data
-run training              # Phase 3: download model, train on DGX Spark
+run training              # Phase 3: download, tokenizer, train, merge via dgx-toolbox
 ```
+
+The training skill uses `dgx_toolbox.py` as the execution engine — it validates state, manages containers, installs deps, and executes commands dynamically. No hardcoded Docker commands.
 
 Or check status first:
 

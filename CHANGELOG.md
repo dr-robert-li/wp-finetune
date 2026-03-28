@@ -4,14 +4,24 @@ All notable changes to the wp-qwen3-moe project.
 
 ## [Unreleased]
 
-### Phase 3: Model Prep and Training (Planned)
-- Replanned from scratch with updated research (merge fix confirmed, data/ paths, DGX resolver)
-- Eval scripts go in `eval/` directory (eval_gen.py, eval_judge.py, eval_gate.py)
+### Execution Engine Architecture
+- Refactored `scripts/dgx_toolbox.py` from path resolver into full execution engine
+- Architecture: Skill (intent + recovery) → dgx_toolbox.py (validate + execute) → Docker commands (dynamic)
+- New methods: `validate()`, `ensure_ready()`, `execute()`, `run_service()`, `status_report()`
+- `CONTAINER_MAP` maps phases to dgx-toolbox containers (unsloth_studio, eval_toolbox, vllm)
+- `status_report()` provides structured telemetry for background observer agents
+- Removed brittle `run_training_pipeline.sh` — Python engine replaces it
+- Skills declare intent + recovery logic, engine handles container lifecycle dynamically
+- Idempotency built into `execute()` via `idempotency_check` parameter
+
+### Phase 3: Model Prep and Training (Scripts Complete — Awaiting DGX Execution)
+- 75 tests passing, all scripts created and approved
+- Eval scripts in `eval/` (eval_gen.py, eval_judge.py, eval_gate.py)
 - Training scripts in `scripts/` (train_model.py, merge_adapter.py, download_model.py, prepare_tokenizer.py)
-- All configs in `config/` (train_config.yaml, wp-bench.yaml, dgx_toolbox.yaml)
-- Unsloth-zoo merge bug FIXED (PR #369 + #559 in our container version 2026.3.5)
-- Defense-in-depth: save adapter → attempt merge → verify special tokens → fallback to vLLM --lora-modules
-- wp-bench as primary eval (WordPress runtime grades code, no Claude in loop)
+- Configs in `config/` (train_config.yaml, wp-bench.yaml, dgx_toolbox.yaml)
+- Unsloth-zoo merge bug FIXED (PR #369 + #559 in container version 2026.3.5)
+- wp-bench deferred to Phase 4 (live eval after model is served)
+- Phase 4 split into Evaluation (4) + Packaging/Deployment (5) with human review gate
 
 ### DGX Toolbox Integration
 - Added `config/dgx_toolbox.yaml` — configurable path to dgx-toolbox project (transportable across environments)
