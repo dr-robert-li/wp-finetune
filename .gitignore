@@ -53,3 +53,4 @@ merged_model/
 
 # Parse failure logs
 *_parse_failures.jsonl
+unsloth_compiled_cache/
