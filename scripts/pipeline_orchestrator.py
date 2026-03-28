@@ -298,7 +298,8 @@ def get_plan(status: dict) -> dict:
         })
 
     # Phase 2: Synthetic generation — fill gap deficit (not hardcoded target)
-    if status["gap_deficit"] > 0 and status["has_gap_report"]:
+    # Skip if we already generated enough synthetics (generated >= deficit, regardless of pass rate)
+    if status["gap_deficit"] > 0 and status["has_gap_report"] and status["synthetic_generated"] < status["gap_deficit"]:
         actions.append({
             "step": "synthetic_generation",
             "type": "agent",
@@ -408,7 +409,7 @@ def get_plan(status: dict) -> dict:
     # Check all targets met
     all_targets_met = all([
         status["repos_unjudged_count"] == 0,
-        status["gap_deficit"] == 0 or not status["has_gap_report"],
+        status["gap_deficit"] == 0 or not status["has_gap_report"] or status["synthetic_generated"] >= status["gap_deficit"],
         status["judge_high"] >= targets["judge_high"],
         status["judge_low"] >= targets["judge_low"],
         status["judge_synth"] >= targets["judge_synth"],

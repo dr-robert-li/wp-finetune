@@ -106,12 +106,29 @@ def merge_all():
             for item in json.loads(f.read_text()):
                 instr = item.get("instruction", "")
                 resp = item.get("response", "")
-                cot = item.get("cot_reasoning", "")
+                reasoning = item.get("reasoning", "") or item.get("cot_reasoning", "")
+                # Handle dict responses (judge rubric/security CoT have scores as dict)
+                if isinstance(resp, dict):
+                    resp = json.dumps(resp)
+                if not isinstance(instr, str) or not isinstance(resp, str):
+                    continue
                 if not instr.strip() or not resp.strip():
                     continue
-                full_resp = f"{resp}\n\n## Reasoning\n\n{cot}" if cot else resp
-                if not instr.startswith("<wp_gen>"):
-                    instr = f"<wp_gen> {instr}"
+                # Prepend reasoning to response if present (CoT chain-of-thought)
+                if reasoning:
+                    full_resp = f"## Reasoning\n\n{reasoning}\n\n## Answer\n\n{resp}"
+                else:
+                    full_resp = resp
+                # Determine task type from instruction content
+                task_type = item.get("task_type", "gen")
+                if "<wp_judge>" in instr:
+                    task_token = "<wp_judge>"
+                    meta_task = "judge"
+                else:
+                    task_token = "<wp_gen>"
+                    meta_task = "gen"
+                    if not instr.startswith("<wp_gen>"):
+                        instr = f"<wp_gen> {instr}"
                 examples.append({
                     "messages": [
                         {"role": "user", "content": instr},
@@ -121,7 +138,7 @@ def merge_all():
                         "source": "cot",
                         "complexity": item.get("complexity", ""),
                         "training_tags": item.get("training_tags", []),
-                        "task_type": "gen",
+                        "task_type": meta_task,
                     },
                 })
     print(f"  CoT: {len(examples) - s}")
