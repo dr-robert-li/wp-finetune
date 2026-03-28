@@ -96,7 +96,7 @@ The speed difference isn't just API latency — it's developer velocity. Writing
 
 ### Update: pulling all repos confirmed the quality bias
 
-I pulled ALL repos from `repos.yaml` (not just the ones already processed) in an attempt to enrich the judge dataset. Result: top plugins and themes are just generally coded to a high standard. More repos produced more generation examples but barely moved the judge needle — the 7:1 ratio held.
+I pulled ALL repos from `repos.yaml` (not just the ones already processed) in an attempt to enrich the judge dataset. Result: top plugins and themes are just generally coded to a high standard. More repos produced more generation examples but barely moved the judge needle — the imbalance worsened to ~14:1 gen-to-judge.
 
 Current state across all ratio options:
 
