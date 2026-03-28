@@ -24,17 +24,20 @@ from pathlib import Path
 from typing import Optional
 
 from eval.rubric_definitions import (
-    CHECK_DIMENSION_MAP,
-    CHECK_WEIGHTS,
+    CHECK_REGISTRY,
     CRITICAL_FLOOR_RULES,
     DIMENSION_MAX_POSITIVE,
     DIMENSION_WEIGHTS,
     NA_DETECTION_HINTS,
-    NEGATIVE_CHECK_IDS,
-    POSITIVE_CHECK_IDS,
     REGEX_PATTERNS,
     SNIFF_TO_CHECKS,
 )
+
+# Derive lookup tables from CHECK_REGISTRY
+CHECK_DIMENSION_MAP: dict[str, str] = {cid: c.dimension for cid, c in CHECK_REGISTRY.items()}
+CHECK_WEIGHTS: dict[str, int] = {cid: c.weight for cid, c in CHECK_REGISTRY.items()}
+POSITIVE_CHECK_IDS: set[str] = {cid for cid, c in CHECK_REGISTRY.items() if c.polarity == "positive"}
+NEGATIVE_CHECK_IDS: set[str] = {cid for cid, c in CHECK_REGISTRY.items() if c.polarity == "negative"}
 
 # ---------------------------------------------------------------------------
 # Grade bands (from rubric Section D)
@@ -481,9 +484,13 @@ def apply_floor_rules(
     applied: list[str] = []
 
     for rule in CRITICAL_FLOOR_RULES:
-        dim_key = rule["dimension"]
-        cap = rule["cap"]
-        trigger_checks = rule["triggers"]
+        # CRITICAL_FLOOR_RULES entries are (dimension, cap, triggers) tuples
+        if isinstance(rule, (list, tuple)):
+            dim_key, cap, trigger_checks = rule[0], rule[1], rule[2]
+        else:
+            dim_key = rule["dimension"]
+            cap = rule["cap"]
+            trigger_checks = rule["triggers"]
 
         if scores.get(dim_key) is None:
             continue  # N/A dimension, skip

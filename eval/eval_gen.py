@@ -1,7 +1,8 @@
-"""PHPCS pass rate and security pass rate evaluation.
+"""9-dimension rubric evaluation for generated WordPress PHP code.
 
 Runs the served model in <wp_gen> mode on held-out test examples,
-pipes generated PHP through phpcs, and computes pass/fail rates.
+scores generated PHP through the full rubric scoring engine, and
+computes per-dimension + overall metrics.
 
 Usage:
     python -m eval.eval_gen [--limit N] [--output PATH]
@@ -9,17 +10,18 @@ Usage:
 import argparse
 import json
 import re
-import subprocess
+import statistics
 import sys
-import tempfile
 from pathlib import Path
 from typing import Optional
 
 import openai
 
+from eval.rubric_definitions import CRITICAL_FLOOR_RULES, DIMENSION_WEIGHTS, GRADE_BANDS
+from eval.rubric_scorer import RubricScore, score_code
 from scripts.dgx_toolbox import get_toolbox
 
-# Module-level toolbox singleton (lazy — does not require DGX to be present at import time)
+# Module-level toolbox singleton (lazy -- does not require DGX to be present at import time)
 _dgx = None
 
 
@@ -31,103 +33,8 @@ def _get_dgx():
 
 
 # ---------------------------------------------------------------------------
-# PHPCS helpers
+# PHP extraction helper (kept from original)
 # ---------------------------------------------------------------------------
-
-SECURITY_SNIFF_PREFIX = "WordPress.Security."
-
-
-def run_phpcs(code: str) -> dict:
-    """Run phpcs on a PHP code string and return a structured result dict.
-
-    Args:
-        code: PHP source code as a string.
-
-    Returns:
-        dict with keys:
-            - errors (int): total error count
-            - warnings (int): total warning count
-            - passed (bool): True if errors == 0
-            - phpcs_output (dict): raw parsed PHPCS JSON
-            - security_issues (list[str]): list of security sniff sources triggered
-    """
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".php", delete=False) as tmp:
-        tmp.write(code)
-        tmp_path = tmp.name
-
-    try:
-        proc = subprocess.run(
-            ["phpcs", "--standard=WordPress", "--report=json", tmp_path],
-            capture_output=True,
-            text=True,
-        )
-        # PHPCS exits 1 when violations found — that's expected, not an error
-        raw = proc.stdout.strip()
-        if not raw:
-            # PHPCS not installed or no output — treat as pass with warning
-            return {
-                "errors": 0,
-                "warnings": 0,
-                "passed": True,
-                "phpcs_output": {},
-                "security_issues": [],
-                "_phpcs_unavailable": True,
-            }
-
-        phpcs_output = json.loads(raw)
-        totals = phpcs_output.get("totals", {})
-        error_count = totals.get("errors", 0)
-        warning_count = totals.get("warnings", 0)
-
-        # Collect all messages across all files
-        security_issues = []
-        for file_data in phpcs_output.get("files", {}).values():
-            for msg in file_data.get("messages", []):
-                source = msg.get("source", "")
-                if source.startswith(SECURITY_SNIFF_PREFIX):
-                    security_issues.append(source)
-
-        return {
-            "errors": error_count,
-            "warnings": warning_count,
-            "passed": error_count == 0,
-            "phpcs_output": phpcs_output,
-            "security_issues": security_issues,
-        }
-    finally:
-        Path(tmp_path).unlink(missing_ok=True)
-
-
-def classify_security(phpcs_output: dict) -> bool:
-    """Return True if the phpcs output contains any WordPress.Security.* sniff violations.
-
-    Args:
-        phpcs_output: Parsed PHPCS JSON output dict (as returned by run_phpcs or directly).
-
-    Returns:
-        True if security issues found, False otherwise.
-    """
-    for file_data in phpcs_output.get("files", {}).values():
-        for msg in file_data.get("messages", []):
-            source = msg.get("source", "")
-            if source.startswith(SECURITY_SNIFF_PREFIX):
-                return True
-    return False
-
-
-def compute_pass_rate(results: list) -> float:
-    """Compute the fraction of results where passed is True.
-
-    Args:
-        results: List of dicts, each must have a 'passed' key (bool).
-
-    Returns:
-        Float in [0.0, 1.0]. Returns 0.0 for empty list.
-    """
-    if not results:
-        return 0.0
-    passed = sum(1 for r in results if r.get("passed", False))
-    return passed / len(results)
 
 
 def _extract_php_code(text: str) -> str:
@@ -151,28 +58,171 @@ def _extract_php_code(text: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Floor rule key mapping
+# ---------------------------------------------------------------------------
+
+# Build stable keys for floor rule tracking from CRITICAL_FLOOR_RULES tuples
+_FLOOR_RULE_KEYS = []
+for _rule in CRITICAL_FLOOR_RULES:
+    _dim = _rule[0] if isinstance(_rule, (list, tuple)) else _rule.get("dimension", "")
+    _FLOOR_RULE_KEYS.append(f"{_dim}_capped")
+
+
+# ---------------------------------------------------------------------------
+# Summary computation
+# ---------------------------------------------------------------------------
+
+DIMENSION_KEYS = list(DIMENSION_WEIGHTS.keys())
+
+
+def _compute_summary(
+    rubric_scores: list[RubricScore],
+) -> dict:
+    """Aggregate per-example RubricScores into a summary dict."""
+    n = len(rubric_scores)
+    if n == 0:
+        return {"total": 0}
+
+    overall_scores = [r.overall for r in rubric_scores]
+    overall_mean = statistics.mean(overall_scores)
+    overall_median = statistics.median(overall_scores)
+
+    # Grade distribution
+    grade_names = [label for _, label in GRADE_BANDS]
+    grade_dist = {label: 0 for label in grade_names}
+    for r in rubric_scores:
+        grade_dist[r.grade] = grade_dist.get(r.grade, 0) + 1
+
+    # Per-dimension metrics
+    per_dimension: dict[str, dict] = {}
+    for dim_key in DIMENSION_KEYS:
+        dim_vals = [
+            r.dimension_scores[dim_key]
+            for r in rubric_scores
+            if r.dimension_scores.get(dim_key) is not None
+        ]
+        na_count = sum(
+            1 for r in rubric_scores if r.dimension_scores.get(dim_key) is None
+        )
+        if dim_vals:
+            dim_mean = statistics.mean(dim_vals)
+            pass_rate_8 = sum(1 for v in dim_vals if v >= 8.0) / len(dim_vals)
+        else:
+            dim_mean = 0.0
+            pass_rate_8 = 0.0
+
+        per_dimension[dim_key] = {
+            "mean": round(dim_mean, 2),
+            "pass_rate_8": round(pass_rate_8, 4),
+            "na_count": na_count,
+        }
+
+    # Floor rule trigger rates
+    floor_rules: dict[str, float] = {}
+    for i, rule in enumerate(CRITICAL_FLOOR_RULES):
+        rule_key = _FLOOR_RULE_KEYS[i]
+        # Count how many examples had this floor rule fire
+        if isinstance(rule, (list, tuple)):
+            dim = rule[0]
+        else:
+            dim = rule.get("dimension", "")
+        fired = sum(
+            1 for r in rubric_scores
+            if any(dim in applied for applied in r.floor_rules_applied)
+        )
+        floor_rules[rule_key] = round(fired / n, 4)
+
+    # Backward compat metrics
+    phpcs_pass_rate = sum(1 for r in rubric_scores if r.overall >= 80.0) / n
+    security_vals = [
+        r.dimension_scores.get("D2_security")
+        for r in rubric_scores
+        if r.dimension_scores.get("D2_security") is not None
+    ]
+    if security_vals:
+        security_pass_rate = sum(1 for v in security_vals if v >= 8.0) / len(security_vals)
+    else:
+        security_pass_rate = 1.0
+
+    return {
+        "total": n,
+        "overall_mean": round(overall_mean, 2),
+        "overall_median": round(overall_median, 2),
+        "grade_distribution": grade_dist,
+        "per_dimension": per_dimension,
+        "floor_rules": floor_rules,
+        # Backward compat
+        "phpcs_pass_rate": round(phpcs_pass_rate, 4),
+        "security_pass_rate": round(security_pass_rate, 4),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Human-readable summary
+# ---------------------------------------------------------------------------
+
+
+def _print_summary_table(summary: dict, file=sys.stderr) -> None:
+    """Print a human-readable summary table to the given file."""
+    print("\n" + "=" * 60, file=file)
+    print("  RUBRIC EVALUATION SUMMARY", file=file)
+    print("=" * 60, file=file)
+
+    print(f"\n  Total examples:   {summary['total']}", file=file)
+    print(f"  Overall mean:     {summary['overall_mean']:.1f} / 100", file=file)
+    print(f"  Overall median:   {summary['overall_median']:.1f} / 100", file=file)
+
+    # Grade distribution
+    print("\n  Grade Distribution:", file=file)
+    for grade, count in summary.get("grade_distribution", {}).items():
+        bar = "#" * count
+        print(f"    {grade:<12s} {count:>4d}  {bar}", file=file)
+
+    # Per-dimension table
+    print("\n  Per-Dimension Scores:", file=file)
+    print(f"    {'Dimension':<16s} {'Mean':>6s} {'Pass@8':>7s} {'N/A':>5s}", file=file)
+    print(f"    {'-'*16} {'-'*6} {'-'*7} {'-'*5}", file=file)
+    for dim_key, metrics in summary.get("per_dimension", {}).items():
+        print(
+            f"    {dim_key:<16s} {metrics['mean']:>6.2f} {metrics['pass_rate_8']:>6.1%} {metrics['na_count']:>5d}",
+            file=file,
+        )
+
+    # Floor rules
+    print("\n  Floor Rule Trigger Rates:", file=file)
+    for rule_key, rate in summary.get("floor_rules", {}).items():
+        print(f"    {rule_key:<24s} {rate:>6.1%}", file=file)
+
+    # Backward compat
+    print(f"\n  phpcs_pass_rate (overall>=80): {summary['phpcs_pass_rate']:.1%}", file=file)
+    print(f"  security_pass_rate (D2>=8):    {summary['security_pass_rate']:.1%}", file=file)
+    print("=" * 60 + "\n", file=file)
+
+
+# ---------------------------------------------------------------------------
 # Main evaluation runner
 # ---------------------------------------------------------------------------
+
 
 def run_eval(
     dataset_path: str = "data/final_dataset/openai_test.jsonl",
     limit: Optional[int] = None,
     output_path: str = "output/eval_gen_results.json",
 ) -> dict:
-    """Run PHPCS pass rate and security pass rate evaluation.
+    """Run 9-dimension rubric evaluation on wp_gen examples.
 
     Loads wp_gen examples from the test dataset, queries the served model via
     vLLM endpoint (resolved from DGX Toolbox), and evaluates generated PHP
-    through phpcs.
+    through the rubric scoring engine.
 
     Args:
         dataset_path: Path to OpenAI-format JSONL test dataset.
         limit: Maximum number of examples to evaluate (None = all).
-        output_path: Path to save JSON results.
+        output_path: Path to save JSON summary results.
 
     Returns:
-        dict with phpcs_pass_rate, security_pass_rate, total, passed,
-        security_total, security_passed.
+        dict with overall_mean, overall_median, grade_distribution,
+        per_dimension metrics, floor_rules, and backward-compat rates.
     """
     dgx = _get_dgx()
     client = openai.OpenAI(base_url=dgx.vllm_endpoint(), api_key="none")
@@ -196,59 +246,68 @@ def run_eval(
 
     print(f"Evaluating {len(examples)} wp_gen examples via {dgx.vllm_endpoint()}", file=sys.stderr)
 
-    phpcs_results = []
-    for i, example in enumerate(examples):
-        messages = example["messages"]
-        user_messages = [m for m in messages if m["role"] == "user"]
+    # Per-example JSONL output path
+    jsonl_path = Path(output_path).with_suffix(".jsonl")
+    jsonl_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Query the model
-        try:
-            response = client.chat.completions.create(
-                model="openai/qwen3-wp",
-                messages=user_messages,
-                max_tokens=2048,
-                temperature=0.0,
-            )
-            generated = response.choices[0].message.content or ""
-        except Exception as e:
-            print(f"  [{i}] Model error: {e}", file=sys.stderr)
-            generated = ""
+    rubric_scores: list[RubricScore] = []
 
-        # Extract and evaluate PHP code
-        php_code = _extract_php_code(generated)
-        result = run_phpcs(php_code)
-        phpcs_results.append(result)
+    with jsonl_path.open("w") as jsonl_f:
+        for i, example in enumerate(examples):
+            messages = example["messages"]
+            user_messages = [m for m in messages if m["role"] == "user"]
 
-        if (i + 1) % 50 == 0:
-            current_rate = compute_pass_rate(phpcs_results)
-            print(f"  [{i+1}/{len(examples)}] pass_rate={current_rate:.3f}", file=sys.stderr)
+            # Query the model
+            try:
+                response = client.chat.completions.create(
+                    model="openai/qwen3-wp",
+                    messages=user_messages,
+                    max_tokens=2048,
+                    temperature=0.0,
+                )
+                generated = response.choices[0].message.content or ""
+            except Exception as e:
+                print(f"  [{i}] Model error: {e}", file=sys.stderr)
+                generated = ""
 
-    # Compute metrics
-    phpcs_pass_rate = compute_pass_rate(phpcs_results)
-    total = len(phpcs_results)
-    passed = sum(1 for r in phpcs_results if r.get("passed", False))
+            # Extract and score PHP code
+            php_code = _extract_php_code(generated)
+            result = score_code(php_code)
+            rubric_scores.append(result)
 
-    # Security subset: examples where security sniffs were triggered
-    # (either in failures OR detected as security issues)
-    security_results = [r for r in phpcs_results if r.get("security_issues")]
-    security_total = len(security_results)
-    security_passed = sum(1 for r in security_results if r.get("passed", False))
-    security_pass_rate = security_passed / security_total if security_total > 0 else 1.0
+            # Write per-example detail
+            detail = {
+                "example_idx": i,
+                "overall": result.overall,
+                "grade": result.grade,
+                "dimension_scores": result.dimension_scores,
+                "dimension_na": result.dimension_na,
+                "floor_rules_applied": result.floor_rules_applied,
+                "triggered_checks": result.triggered_checks,
+            }
+            jsonl_f.write(json.dumps(detail) + "\n")
 
-    summary = {
-        "phpcs_pass_rate": phpcs_pass_rate,
-        "security_pass_rate": security_pass_rate,
-        "total": total,
-        "passed": passed,
-        "security_total": security_total,
-        "security_passed": security_passed,
-    }
+            if (i + 1) % 50 == 0:
+                current_scores = [r.overall for r in rubric_scores]
+                current_mean = statistics.mean(current_scores)
+                print(
+                    f"  [{i+1}/{len(examples)}] overall_mean={current_mean:.1f}",
+                    file=sys.stderr,
+                )
 
-    # Save results
+    # Compute summary
+    summary = _compute_summary(rubric_scores)
+
+    # Save summary JSON
     output_file = Path(output_path)
     output_file.parent.mkdir(parents=True, exist_ok=True)
     output_file.write_text(json.dumps(summary, indent=2))
-    print(f"Results saved to {output_path}", file=sys.stderr)
+
+    print(f"Summary saved to {output_path}", file=sys.stderr)
+    print(f"Per-example details saved to {jsonl_path}", file=sys.stderr)
+
+    # Print human-readable summary to stderr
+    _print_summary_table(summary)
 
     return summary
 
@@ -257,14 +316,17 @@ def run_eval(
 # CLI entry point
 # ---------------------------------------------------------------------------
 
+
 def main():
-    parser = argparse.ArgumentParser(description="Evaluate PHPCS pass rate for wp_gen mode.")
+    parser = argparse.ArgumentParser(
+        description="Evaluate WordPress PHP code quality with 9-dimension rubric scoring."
+    )
     parser.add_argument("--limit", type=int, default=None, help="Max examples to evaluate")
     parser.add_argument(
         "--output",
         type=str,
         default="output/eval_gen_results.json",
-        help="Path to save results JSON",
+        help="Path to save results JSON (JSONL detail file saved alongside)",
     )
     parser.add_argument(
         "--dataset",
@@ -280,11 +342,8 @@ def main():
         output_path=args.output,
     )
 
+    # Print JSON summary to stdout
     print(json.dumps(summary, indent=2))
-
-    # Print human-readable summary
-    print(f"\nPHPCS pass rate:    {summary['phpcs_pass_rate']:.1%} ({summary['passed']}/{summary['total']})")
-    print(f"Security pass rate: {summary['security_pass_rate']:.1%} ({summary['security_passed']}/{summary['security_total']})")
 
 
 if __name__ == "__main__":
