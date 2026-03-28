@@ -26,14 +26,14 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 
 <!-- Current scope. Building toward these. -->
 
-- [ ] Curate repos.yaml with high-quality WordPress plugin/theme repositories
-- [ ] Execute Phase 1: Clone repos, extract functions, judge quality
-- [ ] Execute Phase 2: Gap analysis, mutations, synthetic generation, judge dataset
-- [ ] Execute Phase 3: CoT reasoning, instruction synthesis, final export
+- [x] Curate repos.yaml with high-quality WordPress plugin/theme repositories (236 repos: 1 core + 226 plugins + 9 themes)
+- [x] Execute Phase 1: Clone repos, extract functions, judge quality (134,659 judged: 93,904 passed + 40,755 failed)
+- [x] Execute Phase 2: Gap analysis, mutations, synthetic generation, judge dataset (143K judge training, 2,720 synthetic passed)
+- [x] Execute Phase 3: CoT reasoning, instruction synthesis, final export (29,020 CoT across 4 types, 5 ratio exports from 43K-102K)
 - [ ] Download Qwen3-30B-A3B base model (native MoE, no conversion needed)
 - [ ] Extend tokenizer with `<wp_gen>` and `<wp_judge>` special tokens
-- [ ] Fine-tune via Unsloth Studio (LoRA r=64, multi-task SFT)
-- [ ] Evaluate model (PHPCS pass rate >95%, judge correlation >0.85)
+- [ ] Fine-tune via Unsloth Studio (LoRA r=32, multi-task SFT, multi-ratio training)
+- [ ] Evaluate model (9-dimension rubric: 241 checks, per-dimension Spearman correlation + wp-bench)
 - [ ] Package and deploy (GGUF for Ollama, AWQ for vLLM, HuggingFace upload)
 
 ### Out of Scope
@@ -47,7 +47,7 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 
 ## Context
 
-**Existing codebase:** Complete data pipeline with 10 Python scripts across 3 phases, 4 YAML/Markdown config files, and comprehensive documentation. Scripts are written and tested but not yet executed against real data.
+**Existing codebase:** Complete data pipeline with 18+ Python scripts across 3 phases, 4 YAML/Markdown config files, 6-file eval suite (241-check 9-dimension rubric scorer), and 8 Claude Code skills. Pipeline has been fully executed against 236 real repositories producing 267K merged training examples.
 
 **Infrastructure:** DGX Spark (Blackwell GB10, 128GB unified memory) via DGX Toolbox provides Unsloth Studio for fine-tuning, vLLM/Ollama for inference, eval-toolbox for benchmarks, and safety harness for guardrails.
 
@@ -57,7 +57,7 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 
 **Data pipeline dependencies:** Claude Code agents (subscription), PHP CLI with tokenizer extension, PHP_CodeSniffer with WordPress-Coding-Standards. Anthropic API key in `.env` for fallback/Batch API if needed.
 
-**Target dataset:** ~20,000+ examples (40/60 `<wp_gen>`/`<wp_judge>` split) from WordPress Core, curated plugins/themes, synthetic generation, rejection examples, and rubric-scored judge training data.
+**Target dataset:** 43K-102K examples (exported at 5 ratios: 30/70, 40/60, 50/50, 60/40, 70/30 gen/judge) from 236 WordPress repos (core + top plugins + poor-quality plugins for judge training), synthetic generation, rejection examples, rubric-scored judge training data (143K), and 4-way CoT reasoning (29K).
 
 ## Constraints
 
@@ -79,10 +79,17 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 | DGX Toolbox for full lifecycle | Demonstrates toolbox usefulness across training→eval→serving | — Pending |
 | PHPCS pre-filter before Claude | Reduces API cost ~60% by filtering obvious failures cheaply | ✓ Good |
 | Claude Code agents over Batch API | $0 LLM cost (subscription), spawn-until-target pattern for data richness | ✓ Good |
-| 40/60 gen/judge split | Emphasizes critic capability, dual-mode architecture leverage | — Pending |
+| Multi-ratio export (30/70 through 70/30) | Empirical comparison — train on each, eval decides best ratio | — Pending |
 | Judge threshold >= 8 (raised from 7) | Higher quality training data, compensated by larger repo pool | ✓ Good |
 | Security auto-FAIL (dim < 5) | Non-negotiable security floor for training data | ✓ Good |
-| Rejection examples in training | Model proactively adds security even when prompt omits it | — Pending |
+| Rejection examples in training | Model proactively adds security even when prompt omits it | ✓ Good |
+| Percentage-based pipeline targets | All targets derived from judged function counts, not hardcoded numbers | ✓ Good |
+| 4-way CoT split | gen_pattern + judge_rubric + judge_contrastive + security — each max(500, 10% of base) | ✓ Good |
+| Full-coverage judge training | All 134K judged functions converted to judge training format (not sampled) | ✓ Good |
+| 9-dimension eval rubric (241 checks) | Replaces PHPCS-only eval with multi-tool ground truth pipeline | ✓ Good |
+| Multi-ratio training with isolated checkpoints | Each ratio trains to adapters/{run_name}/, models/{run_name}-merged/ | ✓ Good |
+| No one-off scripts in pipeline | Skills + pipeline_orchestrator.py, not throwaway agent scripts | ✓ Good |
+| dgx_toolbox.py project-agnostic | All project-specific couplings moved to config/dgx_toolbox.yaml | ✓ Good |
 
 ---
-*Last updated: 2026-03-26 after initialization*
+*Last updated: 2026-03-29 after data pipeline completion + eval rewrite*

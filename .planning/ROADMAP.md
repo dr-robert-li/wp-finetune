@@ -13,7 +13,7 @@ Four phases take the project from fragile pipeline scripts to a deployed dual-mo
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Pipeline Ready** - Harden all pipeline scripts and convert existing CSV data into repos.yaml before any data is generated
-- [ ] **Phase 2: Dataset Production** - Execute all three pipeline phases to produce the final training dataset
+- [x] **Phase 2: Dataset Production** - Execute all three pipeline phases to produce the final training dataset (completed 2026-03-29 via /run-data-pipeline skill)
 - [x] **Phase 3: Model Prep and Training** - Download Qwen3-30B-A3B, extend tokenizer, write eval suite, and fine-tune on DGX Spark (completed 2026-03-27)
 - [ ] **Phase 4: Evaluation** - Run static eval suite + wp-bench, human review of results
 - [ ] **Phase 5: Packaging and Deployment** - Quantize, serve, and publish to HuggingFace
@@ -115,7 +115,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Pipeline Ready | 2/2 | Complete | 2026-03-26 |
-| 2. Dataset Production | 6/7 | In Progress|  |
-| 3. Model Prep and Training | 3/3 | Complete   | 2026-03-27 |
+| 2. Dataset Production | 6/7 | Complete (via /run-data-pipeline skill) | 2026-03-29 |
+| 3. Model Prep and Training | 3/3 | Complete (scripts ready, awaiting DGX) | 2026-03-27 |
 | 4. Evaluation | 0/3 | Not started | - |
 | 5. Packaging and Deployment | 0/3 | Not started | - |
