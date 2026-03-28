@@ -2,6 +2,11 @@
 
 Run the complete wp-qwen3-moe data pipeline end-to-end using Claude Code agents for all LLM work. Single invocation, no prompting required.
 
+## Telemetry
+
+> **Recommended:** Say `/observe-data-pipeline` before starting to spawn background telemetry agents.
+> Optional — the pipeline runs fine without it. Output: `telemetry/data-pipeline/{timestamp}/`
+
 ## Trigger
 
 User says: "run the pipeline", "generate training data", "run data pipeline", "/run-pipeline"

@@ -15,6 +15,12 @@ Every step is safe to re-run. If the pipeline fails partway through, just re-inv
 | Train model | `adapters/qwen3-wp/adapter_config.json` exists (use `--resume` to continue partial training) |
 | Merge adapter | `models/Qwen3-30B-A3B-merged/config.json` exists and special tokens verify as single-token IDs |
 
+## Telemetry
+
+> **Recommended:** Say `/observe-training` before starting to spawn background telemetry agents.
+> Training runs 6-12 hours — observers track GPU health, training metrics, and checkpoint integrity.
+> Optional — training runs fine without it. Output: `telemetry/training/{timestamp}/`
+
 ## Trigger
 
 User says: "run training", "train the model", "start DGX training", "/run-training"

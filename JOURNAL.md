@@ -4,6 +4,51 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-03-28 — Agentic telemetry framework: observability across containers and pipeline stages
+
+### The problem
+
+Training runs inside the Unsloth Studio Docker container on DGX Spark. The host sees GPU metrics via `nvidia-smi`, but training progress (loss curves, gradient norms, checkpoint saves) is only visible inside the container via `docker logs` and `docker exec`. System-level signals (disk I/O, thermal throttling, memory pressure) live on the host. There's no single place to look — I'd have to manually run `nvidia-smi`, `docker logs`, `docker stats`, `iostat`, and check adapter files in separate terminals, then mentally correlate the signals.
+
+During the first training attempt, I manually spawned 7 background Claude Code agents to cover different monitoring concerns. It worked — each agent polled its signals, and I could check on them periodically. But it was ad-hoc: agents had to be re-spawned on every session, their prompts were written from scratch each time, and their output was scattered across temporary files. If I wanted to review what happened during a 6-hour training run, there was nothing persistent to look at.
+
+### The solution: stage-specific telemetry skills
+
+I encoded the monitoring patterns as reusable Claude Code skills — one per pipeline stage, each spawning a specialized team of background observer agents. The agents write append-only markdown reports to `telemetry/{stage}/{timestamp}/`, giving me both real-time visibility (tail the file) and a post-hoc audit trail.
+
+**Skills created:**
+
+| Skill | Agents | Stage |
+|-------|--------|-------|
+| `/observe-data-pipeline` | 3 (progress, system-resources, disk-io) | Data pipeline |
+| `/observe-training` | 6 (gpu, thermal, training-metrics, disk-io, checkpoint, container) | Training |
+| `/observe-evaluation` | 3 (eval-progress, gpu-metrics, result-tracking) | Evaluation |
+| `/observe-packaging` | 3 (quantization-progress, file-integrity, size-tracking) | Packaging |
+| `/observe-inference` | 5 (latency, throughput, gpu-util, memory, error-rates) | Serving |
+| `/review-telemetry` | 0 (reads all reports, produces summary) | Any |
+
+Each agent has concrete WARNING/CRITICAL thresholds (e.g., GPU temp > 80C, loss increasing for 3+ readings, disk > 85%) and a stop mechanism (`_stop` file). The execution skills (`run-training`, `run-data-pipeline`) now reference the relevant telemetry skill as an optional Step 0.
+
+### Why agent teams vary by stage
+
+Not every stage needs the same monitoring. The agent team composition is driven by a checklist:
+
+- Uses GPU? → add gpu-metrics, possibly thermal-throttling
+- Runs > 30 min? → add system-resources
+- Writes large files? → add disk-io, file-integrity
+- Runs in Docker? → add container-monitor
+- Has checkpoints? → add checkpoint-integrity
+- Has progress metric? → add stage-specific progress observer
+- Serves network? → add latency, throughput, error-rates
+
+Training needs all 6 concerns (GPU-heavy, Docker, long-running, checkpoints). The data pipeline only needs 3 (CPU-bound, no GPU, no Docker). Inference needs 5 (network-facing, latency-sensitive). This keeps the agent count proportional to the actual failure modes.
+
+### Why this matters
+
+The model trains for 6-12 hours unsupervised. Without structured telemetry, I'd either have to babysit it or discover problems after the fact with no diagnostic data. The framework means I say `/observe-training`, walk away, and come back to a full report — or say `/review-telemetry` mid-run for a consolidated status. Each new skill I create just needs to assess which agent team it needs using the checklist.
+
+---
+
 ## 2026-03-28 — First training run failure: torch_dtype deprecation and pipeline hardening
 
 ### What happened
