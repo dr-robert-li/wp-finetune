@@ -33,6 +33,18 @@ data:
   test_file: "data/final_dataset/openai_test.jsonl"
 
 eval:
+  # Overall targets
+  overall_mean_target: 75.0
+  overall_spearman_target: 0.80
+  # Per-dimension gen pass rates (score >= 8/10)
+  gen_dimension_targets:
+    D2_security: 0.95
+    D3_sql: 0.90
+  # Per-dimension judge correlations
+  judge_dimension_targets:
+    D2_security: 0.75
+    D3_sql: 0.75
+  # Legacy (backward compat)
   phpcs_pass_target: 0.95
   spearman_target: 0.85
   security_pass_target: 0.98
