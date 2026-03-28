@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 Phase: 3 of 4 complete (Model Prep and Training — DONE)
 Plan: 3 of 3 in phase 3 complete (03-01, 03-02, 03-03 all complete)
 Status: Phase 3 complete — DGX execution pending (user-initiated), ready for Phase 4
-Last activity: 2026-03-28 — Completed 03-03 training scripts, human-approved for DGX execution
+Last activity: 2026-03-28 - Completed quick task 260328-h1d: Make dgx_toolbox.py project-agnostic
 
 Progress: [███████░░░] 67%
 
@@ -110,6 +110,12 @@ None yet.
 - [Phase 3]: RESOLVED — switched to Qwen3-30B-A3B native MoE (CMoE/ToMoE had no serving stack support)
 - [Phase 4]: AWQ quantization for Qwen3-30B-A3B — verify vLLM support (likely native since it's an official Qwen model)
 - [Phase 3]: Judge correlation circularity — decide whether to use a different Claude model or human-scored subset for eval before training starts
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260328-h1d | Make dgx_toolbox.py project-agnostic by moving all hardcoded couplings to dgx_toolbox.yaml | 2026-03-28 | e1cec35 | [260328-h1d-make-dgx-toolbox-py-project-agnostic-by-](./quick/260328-h1d-make-dgx-toolbox-py-project-agnostic-by-/) |
 
 ## Session Continuity
 
