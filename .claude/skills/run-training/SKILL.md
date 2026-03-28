@@ -6,6 +6,17 @@ Run the complete Phase 3 training pipeline on DGX Spark — download model, exte
 
 User says: "run training", "train the model", "start DGX training", "run phase 3", "/run-training"
 
+## Idempotency
+
+Every step is safe to re-run. If the pipeline fails partway through, just re-invoke "run training" — completed steps are automatically skipped:
+
+| Step | Skip condition |
+|------|---------------|
+| Download model | `models/Qwen3-30B-A3B/*.safetensors` exist |
+| Extend tokenizer | `adapters/tokenizer/tokenizer_config.json` exists with special tokens in vocab |
+| Train model | `adapters/qwen3-wp/adapter_config.json` exists (use `--resume` to continue partial training) |
+| Merge adapter | `models/Qwen3-30B-A3B-merged/config.json` exists and special tokens verify as single-token IDs |
+
 ## Prerequisites
 
 Before running, verify:
@@ -37,8 +48,8 @@ python -m scripts.download_model
 ```
 
 This downloads Qwen3-30B-A3B (~60GB) from HuggingFace with resume support.
+- **Idempotent:** Checks for existing safetensor shards — skips entirely if already downloaded
 - Downloads to `models/Qwen3-30B-A3B/`
-- Checks for existing safetensor shards (skips if already downloaded)
 - Uses HuggingFace `snapshot_download` with resume capability
 
 **Verify:** `ls models/Qwen3-30B-A3B/*.safetensors | wc -l` should show 16 shards.
@@ -54,6 +65,7 @@ python -m scripts.prepare_tokenizer
 ```
 
 This extends the tokenizer with `<wp_gen>` and `<wp_judge>` special tokens:
+- **Idempotent:** Checks if `adapters/tokenizer/` already has special tokens in vocab — skips if so
 - Loads the base model and tokenizer
 - Adds special tokens via `add_special_tokens`
 - Resizes model embeddings
@@ -81,6 +93,7 @@ python -m scripts.train_model
 ```
 
 This runs Unsloth LoRA SFT on DGX Spark:
+- **Idempotent:** Checks if `adapters/qwen3-wp/adapter_config.json` exists — skips if trained (use `--resume` to continue partial training)
 - Loads model via `FastLanguageModel.from_pretrained` (BF16, no QLoRA)
 - Applies LoRA with `modules_to_save=["embed_tokens", "lm_head"]`
 - Sets `output_router_logits=True` for MoE load balancing monitoring
@@ -112,6 +125,7 @@ python -m scripts.merge_adapter
 ```
 
 This merges the LoRA adapter into the base model with a verification roundtrip:
+- **Idempotent:** Checks if merged model exists with verified special tokens — skips if already merged successfully
 1. Loads base model + LoRA adapter
 2. Calls `merge_and_unload()`
 3. Saves merged model to `models/Qwen3-30B-A3B-merged/`
