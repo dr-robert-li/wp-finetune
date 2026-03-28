@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Completed 02-04-PLAN.md
-last_updated: "2026-03-28T03:29:01.888Z"
-last_activity: "2026-03-28 - Completed 02-04-PLAN.md: Judge remaining repos (all 55 repos judged)"
+status: executing
+stopped_at: Data pipeline complete, eval suite rewritten, 5 ratio exports ready
+last_updated: "2026-03-29T00:00:00.000Z"
+last_activity: "2026-03-29 - Data pipeline complete (134K judged, 29K CoT, 5 ratio exports), eval suite rewritten with 241-check rubric, training skill updated with multi-ratio support"
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 12
   completed_plans: 9
-  percent: 75
+  percent: 60
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-26)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 4 - Deployment (Phase 3 complete)
+**Current focus:** Phase 3 — DGX Training (scripts ready, data exported at 5 ratios, eval suite rewritten)
 
 ## Current Position
 
-Phase: 3 of 4 complete (Model Prep and Training -- DONE)
-Plan: 6 of 6 in phase 2 complete (02-01 through 02-06 all complete)
-Status: Phase 2 dataset-production fully complete (including judging); Phase 3 complete; ready for Phase 4
-Last activity: 2026-03-28 - Completed 02-06-PLAN.md: Phase 2 judging (synthetic assessment + judge training data)
+Phase: 2 of 5 complete (Pipeline Ready + Dataset Production via /run-data-pipeline skill)
+Phase 3: Scripts written (train_model.py, merge_adapter.py), awaiting DGX execution
+Status: Data pipeline complete (236 repos, 134K judged, 29K CoT, 5 ratio exports). Eval suite rewritten with 241-check 9-dimension rubric. Training skill ready with multi-ratio + model selection.
+Last activity: 2026-03-29 - Full data pipeline + eval rewrite + training skill update
 
-Progress: [████████░░] 75%
+Progress: [██████░░░░] 60%
 
 ## Performance Metrics
 
@@ -121,7 +121,7 @@ None yet.
 
 - [Phase 3]: RESOLVED — switched to Qwen3-30B-A3B native MoE (CMoE/ToMoE had no serving stack support)
 - [Phase 4]: AWQ quantization for Qwen3-30B-A3B — verify vLLM support (likely native since it's an official Qwen model)
-- [Phase 3]: Judge correlation circularity — decide whether to use a different Claude model or human-scored subset for eval before training starts
+- [Phase 3]: Judge correlation circularity — PARTIALLY ADDRESSED: eval_judge.py now uses 9-dimension rubric ground truth (241 checks) instead of PHPCS-only. Scoring calibration still needed during Phase 4 against real model output.
 
 ### Quick Tasks Completed
 
@@ -131,6 +131,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T03:46:54Z
-Stopped at: Completed 02-06-PLAN.md
+Last session: 2026-03-29T00:00:00Z
+Stopped at: Data pipeline complete, eval suite rewritten, training skill updated — ready for /run-training
 Resume file: None
