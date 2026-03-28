@@ -4,6 +4,171 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-03-29 — Milestone: judge pool surpasses CoT reasoning, 4-way split dataset
+
+### The breakthrough
+
+The judge data bottleneck is gone. Full-coverage judge training combined with a 4-way CoT split has transformed the dataset from ratio-constrained to ratio-flexible:
+
+- **Judge pool:** 3,956 → 30,498 (7.7x increase)
+- **CoT data:** 610 → 29,020 (47x increase across 4 specialised types)
+- **Total dataset:** 5,868 → up to 101,660 depending on ratio
+
+### 4-way CoT split
+
+Instead of treating CoT as a single category, I split it into four types that each teach a different reasoning pathway:
+
+| Type | Source | Teaches |
+|------|--------|---------|
+| Gen: Pattern CoT | Passed functions | "Requirement → pattern → implementation → reasoning" |
+| Judge: Rubric CoT | Mixed passed+failed | "Code → walk through 9 dimensions → scores → verdict" |
+| Judge: Contrastive CoT | Failed functions | "Bad code → issues → fixes → what good version looks like" |
+| Shared: Security CoT | Functions with security surface | "Security analysis → nonce/cap/escape → verdict" |
+
+Each split has a 10% minimum floor and 500-example minimum to prevent any pathway from being starved.
+
+### Final ratio exports
+
+All 5 ratio variants exported to `data/final_dataset/ratio_{gen}_{judge}/`:
+
+| Ratio | Gen | Judge | Total | Train |
+|-------|-----|-------|-------|-------|
+| 30/70 | 13,071 | 30,498 | 43,569 | 34,855 |
+| 40/60 | 20,332 | 30,498 | 50,830 | 40,664 |
+| 50/50 | 30,498 | 30,498 | 60,996 | 48,796 |
+| 60/40 | 45,747 | 30,498 | 76,245 | 60,996 |
+| 70/30 | 71,162 | 30,498 | 101,660 | 81,328 |
+
+The judge count holds steady at 30,498 across all ratios — the constraint has flipped from "not enough judge data" to "how much generation data to include." This is a much better problem to have.
+
+---
+
+## 2026-03-28 — Observation: good/bad code imbalance and dataset ratio strategy
+
+### The imbalance
+
+Using top plugins and themes by active installs as the source corpus has created a disproportionate ratio of "good" to "bad" code units. First pass results:
+
+| Category | Count | Use |
+|----------|-------|-----|
+| Real code (passed judge) | 22,137 | `<wp_gen>` generation examples |
+| Synthetic (passed) | 2,720 | `<wp_gen>` generation examples |
+| Judge training (scored) | 3,956 | `<wp_judge>` critique examples |
+
+That's roughly **7:1 good-to-bad**. I probably should have expected this. The most popular WordPress plugins and themes tend to be well-maintained, well-reviewed code — they're popular *because* they're good. Selecting by active installs was a deliberate quality filter for the generation pathway, but it systematically starved the judge pathway of the negative examples it needs to learn from.
+
+### The ratio enforcement problem
+
+The export pipeline enforces a 40/60 gen/judge split. With only 3,521 judge examples, this caps the total dataset:
+
+- Pre-dedup merged: 29,423 examples
+- After dedup: 26,915
+- After 40/60 ratio enforcement: **5,868** (2,347 gen / 3,521 judge)
+
+We're throwing away ~21,000 generation examples to maintain the ratio. The bottleneck isn't data volume — it's judge data scarcity.
+
+### Plan: test multiple ratios via evals
+
+Rather than committing to one ratio, I'm going to export multiple versions and compare eval scores after training:
+
+- **40/60** (current) — 5,868 examples, emphasises judge capability
+- **50/50** — ~7,000 examples, balanced
+- **60/40** — ~8,800 examples, prioritises code generation (the primary use case)
+- **Uncapped with 2K judge floor** — ~27,000 examples, uses all available data
+
+The 40/60 split was set before I knew the actual data distribution. Now that I know gen outnumbers judge 7:1, it's worth testing whether the judge pathway really needs 60% of training time or whether 3,500 well-scored examples is sufficient for 0.85 Spearman correlation.
+
+### Expanding the source corpus — both directions
+
+**More good code (generation):** 24 plugins with GitHub URLs not yet in `repos.yaml` — including Elementor (10M installs), WooCommerce (7M), wpforms-lite (6M), Jetpack (3M), and Rank Math (3M). Adding these could yield 5,000-15,000 additional extractable functions. Three block themes (twentytwentyfour, twentytwentythree, twentytwentytwo) also available for modern Full Site Editing patterns.
+
+**More bad code (judge):** I need to pull a separate dataset of poorly rated, vulnerable, out-of-date, and unscalable plugins and themes. The current corpus is biased toward quality by design — to train a judge that can identify *bad* code, I need to show it real-world bad code, not just synthetic mutations. Candidates: plugins with known CVEs (CVSS > 7), plugins not updated in 2+ years, plugins with < 3-star ratings, abandoned themes with known compatibility issues. This is a different curation exercise than the original "top by installs" approach — deliberately selecting for poor quality rather than filtering it out.
+
+I've added the 24 new plugins and 3 themes to `repos.yaml` and am re-running the full data pipeline to process all repos. I'll run evals with the current dataset in parallel, but will also enrich the judge training data with poor code examples from the bad-code corpus as a follow-up.
+
+### Side observation: Claude Code agents vs API-driven scripts for data pipeline work
+
+Claude Code agents are significantly faster at judging and CoT reasoning across code units than the static Anthropic API-driven scripts I built in Phase 1. The original `phase1_judge.py` and `phase2_judge_dataset.py` scripts used the Batch API with polling loops, retry logic, JSON extraction fallbacks, and checkpoint management — all of which I had to build and debug myself. Claude Code agents handle all of that natively: they read the rubric, read the code, produce structured output, and move on. No polling, no retry wrappers, no batch ID tracking.
+
+The speed difference isn't just API latency — it's developer velocity. Writing a prompt for a Claude Code agent takes minutes. Writing, testing, and hardening an API-driven script with the same capability took hours. And the agent can adapt mid-run (read a different file format, handle an edge case) without a code change.
+
+**Recommendation for future projects:** Use Claude Code agents as first-class integration for any LLM-driven pipeline work. Reserve direct API calls for cases where you need deterministic, repeatable outputs with exact token control (e.g., structured evaluation benchmarks). For data processing, judging, generation, and CoT — agents are faster to build, faster to run, and cheaper (subscription vs per-token).
+
+### Update: pulling all repos confirmed the quality bias
+
+I pulled ALL repos from `repos.yaml` (not just the ones already processed) in an attempt to enrich the judge dataset. Result: top plugins and themes are just generally coded to a high standard. More repos produced more generation examples but barely moved the judge needle — the 7:1 ratio held.
+
+Current state across all ratio options:
+
+| Ratio | Gen | Judge | Total |
+|-------|-----|-------|-------|
+| 40/60 (current) | 2,347 | 3,521 | 5,868 |
+| 50/50 | 3,521 | 3,521 | 7,042 |
+| 60/40 | 5,282 | 3,521 | 8,803 |
+| 70/30 | 8,216 | 3,521 | 11,737 |
+| Uncapped | 48,333 | 3,521 | 51,854 |
+
+The judge count is stuck at 3,521 regardless of how many repos I process. The generation count scales freely (48K uncapped) but is meaningless without matching judge data.
+
+### Decision: deliberately curate a poor-code corpus
+
+Since the top-plugins approach won't produce bad code no matter how many repos I add, I did the same discovery process but inverted the selection criteria: plugins and themes rated 3 stars or less on WordPress.org, with at least 100 active installations, ordered by most active installs descending. The goal was to find poorly implemented code for the judge pathway's negative dataset.
+
+**Data collection process:**
+
+Queried the WordPress.org API for both plugins and themes. The plugin directory yielded 1,000 qualifying entries after scanning 16,500 plugins (66 pages). The themes directory is far more curated — across all 8,007 themes, only 186 had ratings of 3 stars or less with 100+ installs. That's the hard ceiling, not a sample.
+
+Enriched all entries with vulnerability data from WPVulnerability.net (CVSS scores, unpatched vulns, CWE classifications). Then ran a three-phase GitHub URL discovery process: WordPress.org page scraping (356 repos), `gh search repos` CLI search (501 repos), followed by a validation pass to classify official developer repos vs mirror repos (wp-plugins/, WordpressPluginDirectory/, etc.) and remove false positives. Notable catches: Gutenberg itself at 2.1 stars (3,863 ratings, 300K installs), WooCommerce PayPal Payments at 2.7 stars, Meta for WooCommerce at 2.2 stars.
+
+**Results — 4 datasets total:**
+
+| Dataset | Rows | GitHub URLs | Official | Mirror |
+|---------|------|-------------|----------|--------|
+| Top 1000 plugins | 1,000 | 776 (77.6%) | 561 | 215 |
+| Top 100 themes | 100 | 25 (25%) | 25 | 0 |
+| Poor plugins (<=3 stars) | 1,000 | 163 (16.3%) | 153 | 10 |
+| Poor themes (<=3 stars) | 186 | 1 (0.5%) | 1 | 0 |
+
+Coverage varies predictably: top plugins maintain public GitHub repos; themes mostly use WordPress.org's SVN system; poorly-rated projects tend to be smaller with no public source repos. Mirror repos still contain the actual code (synced from SVN) so they're usable for extraction.
+
+### Hypothesis confirmed: poor-code corpus transformed the dataset
+
+After running the full pipeline on all repos including the poor-code corpus, the judge bottleneck broke:
+
+| Ratio | Gen | Judge | Total |
+|-------|-----|-------|-------|
+| 40/60 (current) | 11,926 | 17,889 | 29,815 |
+| 50/50 | 17,889 | 17,889 | 35,778 |
+| 60/40 | 26,833 | 17,888 | 44,721 |
+| 70/30 | 41,740 | 17,888 | 59,628 |
+| 80/20 | 71,556 | 17,888 | 89,444 |
+| Uncapped | 76,741 | 17,889 | 94,630 |
+
+**Before:** 3,956 judge examples bottlenecked everything at ~6K total. **After:** 17,889 unique judge examples — even at 40/60, I get 29,815 examples. The dataset is no longer ratio-constrained at any practical split. The poorly-rated repos contributed exactly what I needed: organic defects (sloppy SQL concatenation, missing nonces, unescaped output in legacy admin pages) that the 9-dimension rubric scores low.
+
+### Plan: export all ratios and experiment
+
+The concrete plan:
+
+1. Export at 30/70, 40/60, 50/50, 60/40, 70/30
+2. Train on each — LoRA is cheap enough to run 5 times
+3. Eval each against the canonical rubric in `docs/eval/`, not just the Phase 4 gate thresholds
+4. Let the data decide
+
+The eval infrastructure has three layers:
+
+**Canonical rubric** (`docs/eval/wp_code_quality_rubric.md`) — 193 unique check IDs (83 positive signals, 110 negative signals) across all 9 weighted dimensions, each with a detection method and point weight. Security is weighted 20%, SQL Safety 15%, with critical floor rules: if a direct XSS vector is found, Dimension 2 cannot score above 3/10 regardless of other patterns. The rubric defines a ground truth scoring procedure using a multi-tool pipeline — PHPCS with WordPress/VIP/Security standards (~120 check IDs), PHPStan level 5 with wordpress-stubs, regex patterns for 30+ checks not covered by PHPCS (N+1 loops, missing transient caching), and LLM judgment for 18 checks requiring semantic understanding (architectural appropriateness, ARIA completeness).
+
+**Research backing** (`docs/eval/research_wpcs_standards.md`, `docs/eval/research_wp_security_sql_perf.md`) — complete evidence base: all 58 WPCS sniffs, 39 VIP sniffs, Plugin Check tool checks, PHPCompatibilityWP rules, full sanitization/escaping function tables, `$wpdb` method reference, N+1 detection patterns, 18 translation functions, 21 accessibility criteria, hook anti-patterns, REST API permission/schema requirements.
+
+**Eval scripts** (`eval/eval_gen.py`, `eval/eval_judge.py`, `eval/eval_gate.py`) — `eval_gen.py` measures generation quality (PHPCS pass rate, security pass rate against the rubric's check IDs), `eval_judge.py` measures scoring correlation (Spearman against the multi-tool ground truth, not just PHPCS alone), `eval_gate.py` applies pass/fail thresholds.
+
+Five LoRA training runs with the same base model, same hyperparameters, only the ratio changes — a clean A/B/C/D/E test evaluated against the full 193-check rubric.
+
+My concern remains that an MoE model with 128 experts and top-8 routing may not provide enough separation between expert pathways to produce genuinely "bipolar" behaviour — harshly judging poorly created code via `<wp_judge>` while still generating high-quality output via `<wp_gen>`. The experts were pre-learned on general data, not task-specific routing, so the fine-tuning has to create that separation through the task token signal alone. Five ratio variants let me test whether more judge data actually improves the judge pathway's discrimination, or whether it plateaus and the extra data just adds noise.
+
+---
+
 ## 2026-03-28 — Reflection: atomic composable skills as an architectural pattern
 
 ### What I'm actually building
