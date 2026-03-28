@@ -615,6 +615,594 @@ plugins:
   - css
   - js
   description: reCAPTCHA for MW WP Form — 30,000 installs
+- name: enhance-wp-rocket-loadcss
+  url: https://github.com/ensemblebd/wp-rocket-loadcss.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: WP Rocket | Simple LoadCSS Preloader — 5000 installs (poor quality source)
+- name: samedaycourier-shipping
+  url: https://github.com/sameday-courier/woocommerce-plugin.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: SamedayCourier Shipping — 4000 installs (poor quality source)
+- name: cecabank-woocommerce
+  url: https://github.com/cecabank/cecabank-woocommerce.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Cecabank WooCommerce Plugin — 3000 installs (poor quality source)
+- name: woo-postnl
+  url: https://github.com/Progressus-io/postnl-for-woocommerce.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: PostNL for WooCommerce — 3000 installs (poor quality source)
+- name: razorpay-quick-payments
+  url: https://github.com/razorpay/razorpay-quick-payments.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Razorpay Quick Payments — 3000 installs (poor quality source)
+- name: wp-job-manager-companies
+  url: https://github.com/astoundify/wp-job-manager-companies.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: WP Job Manager – Company Profiles — 3000 installs (poor quality source)
+- name: algori-image-video-slider
+  url: https://github.com/kevinbazira/algori-image-and-video-slider-lite.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Algori Video and Image Slider — 2000 installs (poor quality source)
+- name: reachedge
+  url: https://github.com/reachlocal/localiq-wordpress-4x-tracking-plugin.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: LocaliQ – Tracking Code — 2000 installs (poor quality source)
+- name: masvideos
+  url: https://github.com/madrasthemes/masvideos.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: MAS Videos — 1000 installs (poor quality source)
+- name: constant-contact-woocommerce
+  url: https://github.com/WebDevStudios/constant-contact-woocommerce.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Constant Contact + WooCommerce — 1000 installs (poor quality source)
+- name: komoju-japanese-payments
+  url: https://github.com/komoju/komoju-woocommerce.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: KOMOJU Payments — 1000 installs (poor quality source)
+- name: razorpay-payment-button-elementor
+  url: https://github.com/razorpay/payment-button-elementor-plugin.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Razorpay Payment Button Elementor Plugin — 1000 installs (poor quality source)
+- name: bullhorn-oscp
+  url: https://github.com/bullhorn/career-portal.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Bullhorn Career Portal WordPress Plugin — 1000 installs (poor quality source)
+- name: global-payments-woocommerce
+  url: https://github.com/globalpayments/globalpayments-woocommerce.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: GlobalPayments Gateway Provider for WooCommerce — 1000 installs (poor quality source)
+- name: custom-post-type-rewrite
+  url: https://github.com/thingsym/custom-post-type-rewrite.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Custom Post Type Rewrite — 1000 installs (poor quality source)
+- name: gopay-gateway
+  url: https://github.com/argo22packages/gopay-woocommerce-integration.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: GoPay for WooCommerce — 1000 installs (poor quality source)
+- name: dpo-group-for-woocommerce
+  url: https://github.com/DPO-Group/DPO_WooCommerce.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: DPO Pay for WooCommerce — 1000 installs (poor quality source)
+- name: posti-shipping
+  url: https://github.com/PostiDigital/woocommerce-shipping-plugin.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Posti Shipping — 1000 installs (poor quality source)
+- name: substack-importer
+  url: https://github.com/Automattic/substack-importer.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Substack Importer — 900 installs (poor quality source)
+- name: gui-for-lcp
+  url: https://github.com/klemens-st/gui-for-lcp.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: GUI for List Category Posts — 600 installs (poor quality source)
+- name: 360-video
+  url: https://github.com/kevinbazira/algori-360-video.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Algori 360 Video — 500 installs (poor quality source)
+- name: directorist-wpml-integration
+  url: https://github.com/sovware/directorist-wpml-integration.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Directorist – WPML Integration — 400 installs (poor quality source)
+- name: doqrcode
+  url: https://github.com/wpdo/doqrcode.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: QRCode — 400 installs (poor quality source)
+- name: acf-date-time-picker
+  url: https://github.com/toszcze/acf-date-time-picker.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Date & Time Picker for Advanced Custom Fields — 300 installs (poor quality source)
+- name: woo-safepay-gateway
+  url: https://github.com/getsafepay/safepay-woocommerce.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Safepay for WooCommerce — 300 installs (poor quality source)
+- name: mautic-for-fluent-forms
+  url: https://github.com/hasanuzzamanbe/ff-mautic-add-on.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Mautic Integration For Fluent Forms — 300 installs (poor quality source)
+- name: publishing-checklist
+  url: https://github.com/fusioneng/publishing-checklist.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Publishing Checklist — 200 installs (poor quality source)
+- name: kelkoogroup-sales-tracking
+  url: https://github.com/KelkooGroup/woocommerce-kelkoogroup-salestracking.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Kelkoogroup Salestracking — 200 installs (poor quality source)
+- name: ultimate-pdf-flipbooks-flip-books-made-easy
+  url: https://github.com/meumairakram/Ultimate-PDF-Flipbooks.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Ultimate PDF Flipbooks | Flip Books Made Easy! — 200 installs (poor quality source)
+- name: wp-optimizer
+  url: https://github.com/sh1zen/wp-optimizer.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: WP Optimizer — 100 installs (poor quality source)
+- name: woo-round-up-prices
+  url: https://github.com/neevalex/woocommerce-round-up-prices.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Round Up Woocommerce Catalog Prices — 100 installs (poor quality source)
+- name: wp-unit-converter
+  url: https://github.com/centangle/wp-unit-converter.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: WP Unit Converter — 100 installs (poor quality source)
+- name: embed-google-drive
+  url: https://github.com/rtCamp/embed-google-drive.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Embed Google Drive — 100 installs (poor quality source)
+- name: pmc-disable-comments
+  url: https://github.com/vickybiswas/pmc-disable-comments.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: PMC Disable Comments — 100 installs (poor quality source)
+- name: archive
+  url: https://github.com/bueltge/Archive.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Archive — 100 installs (poor quality source)
+- name: recent-posts-block
+  url: https://github.com/BRdhanani/gutenberg-recent-posts.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Recent Posts block — 100 installs (poor quality source)
+- name: plugnmeet
+  url: https://github.com/mynaparrot/plugNmeet-WordPress.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Plug-N-Meet web conference integration — 100 installs (poor quality source)
+- name: permalink-fix-disable-canonical-redirects-pack
+  url: https://github.com/ccheney/permalink-fix-disable-canonical-redirects-pack.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Permalink Fix & Disable Canonical Redirects — 100 installs (poor quality source)
+- name: plyr
+  url: https://github.com/drrobotnik/plyr.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Plyr — 100 installs (poor quality source)
+- name: vindi-payment-gateway
+  url: https://github.com/vindi/vindi-woocommerce.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Vindi Hub — 100 installs (poor quality source)
+- name: advanced-custom-fields-markdown
+  url: https://github.com/jensjns/acf-markdown-field.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: 'Advanced Custom Fields: Markdown Field — 100 installs (poor quality source)'
+- name: wp-frequently-searched-words
+  url: https://github.com/miiitaka/wp-frequently-searched-words.git
+  quality_tier: assessed
+  paths:
+  - '**/*.php'
+  skip_paths:
+  - vendor
+  - node_modules
+  - tests
+  - test
+  - assets
+  - css
+  - js
+  description: Frequently Searched Words — 100 installs (poor quality source)
 themes:
 - name: twentytwentyfive
   url: https://github.com/WordPress/twentytwentyfive.git
