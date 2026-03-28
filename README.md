@@ -8,9 +8,9 @@ No open-source model existed for this. The tools in this space are wrappers arou
 
 | Property | Value |
 |----------|-------|
-| Base model | Qwen3-30B-A3B (native MoE, ~3B active params, 128 experts) |
-| Total params | ~8B |
-| Active params | ~4B per forward pass (top-2 of 8 experts) |
+| Base model | Qwen3-30B-A3B (native MoE, 128 experts, top-8 routing) |
+| Total params | ~30B |
+| Active params | ~3B per forward pass |
 | Task routing | First-token: `<wp_gen>` or `<wp_judge>` |
 | Training | LoRA SFT via Unsloth on DGX Spark |
 | Serving | vLLM, Ollama, GGUF, AWQ |
@@ -35,11 +35,12 @@ The judge returns structured scores across 9 dimensions: WPCS compliance, SQL sa
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 1. Pipeline Ready | Harden scripts, generate repos.yaml from curated data | Complete |
-| 2. Dataset Production | Execute agent pipeline, produce ~20,000+ training examples | In progress |
-| 3. Model Prep & Training | MoE conversion, tokenizer extension, LoRA SFT on DGX Spark | Planned |
-| 4. Eval & Deployment | Quality gates, quantization, HuggingFace Hub release | Planned |
+| 2. Dataset Production | Execute agent pipeline, produce training examples | Complete |
+| 3. Model Prep & Training | Tokenizer extension, BF16 LoRA SFT on DGX Spark | At checkpoint |
+| 4. Evaluation | wp-bench + 193-check rubric eval, quality gates | Not started |
+| 5. Packaging & Deployment | AWQ/GGUF quantization, HuggingFace Hub release | Not started |
 
-**Current:** Phase 2 — 42 repos judged, gap closure in progress (synthetic generation, judge training data, CoT reasoning).
+**Current:** Phase 3 — scripts ready, tokenizer prepared, 5 ratio exports produced (30/70 through 70/30). Training on DGX Spark next.
 
 See [PROJECT.md](PROJECT.md) for full phase details and success criteria.
 
@@ -69,21 +70,23 @@ Clone repos ──► Extract ──►       Generate synthetic ──►      
               auto-passed
 ```
 
-**Sources:** Top 1000 WordPress plugins and top 100 themes by active installs, plus WordPress Core as reference implementation.
+**Sources:** Top 1000 plugins + top 100 themes (high-quality generation data), 1000 poorly-rated plugins + 186 poorly-rated themes (negative judge data), plus WordPress Core as reference implementation. GitHub URLs discovered via 3-phase process (WP.org scraping, `gh search`, validation).
 
 **Quality gates:** Every non-core example passes PHPCS pre-filtering AND 9-dimension rubric assessment (threshold >= 8, security auto-FAIL below 5). WordPress Core functions are auto-passed as the reference implementation.
 
-### Dataset Composition Target
+### Dataset Composition (Actual)
 
-| Source | ~Count | Task Token |
-|--------|--------|------------|
-| Real code (passed judge) | 15,000+ | `<wp_gen>` |
-| Synthetic gap-fill (passed judge) | 200+ | `<wp_gen>` |
-| Judge training — high-score | ~1,500 | `<wp_judge>` |
-| Judge training — low-score | ~1,000 | `<wp_judge>` |
-| Judge training — synthetic | ~1,500 | `<wp_judge>` |
-| CoT reasoning (real + contrastive + synthetic) | ~500 | `<wp_gen>` |
-| **Total** | **~20,000+** | **40/60 gen/judge** |
+94,630 unique examples after dedup, exported at 5 gen/judge ratios:
+
+| Ratio | Gen | Judge | Total | Train |
+|-------|-----|-------|-------|-------|
+| 30/70 | 13,071 | 30,498 | 43,569 | 34,855 |
+| 40/60 | 20,332 | 30,498 | 50,830 | 40,664 |
+| 50/50 | 30,498 | 30,498 | 60,996 | 48,796 |
+| 60/40 | 45,747 | 30,498 | 76,245 | 60,996 |
+| 70/30 | 71,162 | 30,498 | 101,660 | 81,328 |
+
+**4-way CoT split:** Gen pattern CoT, judge rubric CoT, judge contrastive CoT, shared security CoT — each with 10% minimum floor and 500-example minimum.
 
 ## Success Criteria
 
@@ -93,45 +96,55 @@ Clone repos ──► Extract ──►       Generate synthetic ──►      
 | Generator security pass rate | > 98% |
 | Judge Spearman correlation | > 0.85 |
 | Judge classification precision | > 0.90 |
-| Active parameters per inference | ~4B |
+| Active parameters per inference | ~3B |
 
 ## Project Structure
 
 ```
 wp-finetune/
 ├── config/
-│   ├── repos.yaml                  # 56 repos (auto-generated from ranked CSVs)
+│   ├── repos.yaml                  # 213 repos (top + poor-quality plugins/themes)
 │   ├── judge_system.md             # 9-dimension judge rubric (threshold >= 8)
 │   ├── taxonomy.yaml               # 87 concept tags + coverage minimums
 │   ├── synthetic_prompts.yaml      # Generation templates + rejection examples
-│   └── dgx_toolbox.yaml           # DGX Toolbox path config (transportable)
+│   ├── train_config.yaml           # Training hyperparameters (LoRA, scheduler, etc.)
+│   ├── wp-bench.yaml               # Evaluation benchmark config
+│   └── dgx_toolbox.yaml            # DGX Toolbox execution engine config (project-agnostic)
 ├── scripts/
 │   ├── utils.py                    # Shared utilities (JSON parsing, backoff, checkpoints)
-│   ├── dgx_toolbox.py             # DGX Toolbox path resolver (configurable location)
-│   ├── preflight.py                # Pre-execution validation
-│   ├── agent_judge.py              # Static heuristic judge (9-dimension rubric scoring)
-│   ├── agent_judge_helper.py       # Agent helper: list unjudged repos, split results
-│   ├── autopass_core.py            # Auto-pass WordPress Core with taxonomy tagging
-│   ├── csv_to_repos.py             # Convert ranked plugin/theme CSVs to repos.yaml
+│   ├── dgx_toolbox.py              # Execution engine: validate → resolve → Docker exec
 │   ├── pipeline_orchestrator.py    # Pipeline state tracker + action planner
-│   ├── merge_dataset.py            # Merge all sources into OpenAI messages format
+│   ├── download_model.py           # Download base model from HuggingFace
+│   ├── prepare_tokenizer.py        # Extend tokenizer with <wp_gen>/<wp_judge>
+│   ├── train_model.py              # BF16 LoRA SFT with memory pre-check
+│   ├── merge_adapter.py            # Merge adapter with verification roundtrip
 │   ├── phase1_{clone,extract,judge}.py
 │   ├── phase2_{gap_analysis,mutate,generate,judge,judge_dataset}.py
-│   ├── phase3_cot.py
-│   └── export_dataset.py           # Multi-format export (40/60 gen/judge split)
+│   ├── phase3_cot.py, merge_dataset.py, export_dataset.py
+│   └── (+ agent_judge, autopass_core, csv_to_repos, preflight)
+├── eval/
+│   ├── rubric_definitions.py       # 193 check IDs across 9 weighted dimensions
+│   ├── rubric_scorer.py            # 4-tool ground truth scoring engine
+│   ├── eval_gen.py                 # Generator eval (PHPCS + security pass rates)
+│   ├── eval_judge.py               # Judge eval (per-dimension Spearman correlation)
+│   └── eval_gate.py                # Quality gate (pass/fail against thresholds)
 ├── docs/
 │   ├── AGENT_PIPELINE.md           # Agent execution model and output format contracts
-│   ├── run-data-pipeline.md        # Claude Code skill: autonomous data pipeline
-│   ├── run-training.md             # Claude Code skill: DGX Spark training pipeline
-│   ├── observe-{stage}.md          # Telemetry skills: spawn agent teams per stage
-│   └── review-telemetry.md         # Telemetry aggregation and summary skill
+│   ├── run-data-pipeline.md        # Skill: autonomous data pipeline
+│   ├── run-training.md             # Skill: DGX Spark training pipeline
+│   ├── observe-{stage}.md          # Telemetry skills (5 stages, 3-6 agents each)
+│   └── review-telemetry.md         # Telemetry aggregation and summary
+├── docs/eval/
+│   ├── wp_code_quality_rubric.md   # 193-check canonical rubric (9 dimensions, weighted)
+│   ├── research_wpcs_standards.md  # WPCS + VIP sniff reference
+│   └── research_wp_security_sql_perf.md  # Security, SQL, performance patterns
 ├── data/
 │   ├── phase1_extraction/          # Cloned repos + extracted/passed/failed functions
 │   ├── phase2_synthetic/           # Gap reports + synthetic/mutated/judge training data
 │   ├── phase3_cot/                 # CoT reasoning checkpoints
 │   ├── final_dataset/              # Train/val/test in OpenAI, Alpaca, Raw JSONL formats
 │   └── checkpoints/                # Pipeline execution checkpoints
-├── tests/                          # Unit tests
+├── tests/                          # 75 tests (13 test files)
 ├── PROJECT.md                      # Full project specification
 ├── JOURNAL.md                      # Engineering decisions log
 └── wp-moe.md                       # Model architecture specification
@@ -219,17 +232,19 @@ export DGX_TOOLBOX_PATH=/path/to/your/dgx-toolbox
 python scripts/dgx_toolbox.py
 ```
 
-All scripts use the resolver — never hardcoded paths:
+All scripts use the execution engine — config-driven, never hardcoded:
 
 ```python
 from scripts.dgx_toolbox import get_toolbox
 
 dgx = get_toolbox()
-dgx.run("unsloth_studio")          # Launch training container
-dgx.run("vllm", "model-name")      # Start inference server
-dgx.run("eval_toolbox")            # Launch eval container
-print(dgx.vllm_endpoint())         # http://localhost:8020/v1
+dgx.ensure_ready("unsloth_studio")                    # Launch + mount + install deps
+dgx.execute("unsloth_studio", "python", "-m", "scripts.train_model")  # Idempotent exec
+status = dgx.status_report()                           # Structured telemetry for agents
+print(dgx.vllm_endpoint())                            # http://localhost:8020/v1
 ```
+
+The engine reads all project-specific config from `config/dgx_toolbox.yaml` — container names, validation paths, required imports, status artifacts. Swap the YAML for a different project.
 
 **Components used:**
 
