@@ -4,6 +4,53 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-03-28 — Reflection: atomic composable skills as an architectural pattern
+
+### What I'm actually building
+
+I came into this project to fine-tune a WordPress model. Somewhere along the way, I started building something else without realising it: an architectural pattern for autonomous agent execution.
+
+The three-layer stack that emerged from the training pipeline refactoring:
+
+```
+Skill (intent + recovery logic)
+  → dgx_toolbox.py (resolves paths, validates state, handles errors)
+    → Shell/Docker commands (generated dynamically, not hardcoded)
+```
+
+This isn't just a training pipeline. It's a general pattern: define *what* needs to happen and *how to recover from failure*, give agents a set of tools and parameters, and let them fill in the actual execution. The skills in `docs/` demonstrate this — they range from data pipeline orchestration (`run-data-pipeline.md`) to model training (`run-training.md`) to system monitoring (`observe-training.md`) to self-introspection (`review-telemetry.md`). Same pattern, completely different domains.
+
+### Outcomes-driven, not functionally-driven
+
+Traditional automation is functionally-driven: write a script that does step 1, then step 2, then step 3. If step 2 fails, the script fails. If the environment changes, the script breaks.
+
+What I've ended up with is outcomes-driven: define the desired outcome ("model is trained"), define the preconditions ("model downloaded, tokenizer extended, memory sufficient"), define recovery paths ("if container dies, restart with mounts; if deps missing, install"), and let the agent figure out the sequencing. The skill doesn't *do* the work — it describes what done looks like and how to get unstuck.
+
+The idempotency guards are the key enabler. Every step checks "is this already done?" before executing. This means an agent can be interrupted, restarted, or even replaced mid-execution, and it just picks up from where things left off. The skill doesn't need to know *which* agent ran previously or *how far* it got — the filesystem state is the checkpoint.
+
+### It's like IKEA, but for software
+
+IKEA gives you a bill of materials, assembly instructions with diagrams, and a bag of screws. You supply the labour and the Allen key. The instructions don't *do* the assembly — they describe the outcome of each step and the order of operations. The person building it fills in the motor skills.
+
+These skills are the same thing. The skill file is the assembly instructions. The YAML config is the bill of materials. The agents are the person with the Allen key. They don't get frustrated, they don't misread the instructions (though they may misinterpret them — an important distinction), and they don't call customer support to complain.
+
+If IKEA-built furniture is still furniture, isn't agent-built software still software?
+
+### Why this matters beyond this project
+
+The pattern is generally applicable:
+
+- **Pipeline execution**: `run-data-pipeline.md` spawns agents to judge code, generate synthetics, score examples — each agent batch is independent, idempotent, and resumable
+- **Infrastructure management**: `run-training.md` orchestrates container lifecycle, dependency installation, model download, training, and merge — each step validates before proceeding
+- **Monitoring and alerting**: `observe-training.md` spawns a team of 6 specialised observers that independently track GPU metrics, thermals, training progress, disk I/O, checkpoint integrity, and container health
+- **Self-introspection**: `review-telemetry.md` reads the output of the monitoring agents and produces a consolidated summary
+
+The same Skill → Engine → Dynamic Commands stack could be applied to deploying a web application, running a CI/CD pipeline, managing a fleet of microservices, or building and testing software. The skill defines intent; the engine validates and resolves; the agents execute. Swap out the YAML config and you have a different project. Swap out the engine and you have a different infrastructure. The skills stay the same.
+
+I didn't set out to build this. It emerged from repeatedly hitting the same problem — brittle shell scripts breaking silently — and iterating toward something that fails loudly, recovers gracefully, and doesn't need me watching it.
+
+---
+
 ## 2026-03-28 — Refactor: dgx_toolbox.py as project-agnostic execution engine
 
 ### The problem
