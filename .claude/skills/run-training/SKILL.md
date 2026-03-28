@@ -73,6 +73,60 @@ Select exports to train (comma-separated, e.g. "2,3,4" or "all"):
 
 Use AskUserQuestion for selection. Store as `$SELECTED_RATIOS` list.
 
+### Step 0c: Confirm training plan
+
+Present a full summary of what will happen and ask for explicit confirmation. Training runs are long (6-12 hours per ratio) and expensive — mistakes here are costly.
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║  TRAINING PLAN — PLEASE REVIEW                               ║
+╚══════════════════════════════════════════════════════════════╝
+
+  Base model:    {BASE_MODEL}
+  Local path:    {MODEL_LOCAL_DIR}
+  Status:        [Downloaded ✓ / Not yet downloaded]
+
+  LoRA config:   r={r}, alpha={alpha}, dropout={dropout}
+  Target modules: {target_modules}
+  Modules saved: {modules_to_save}
+
+  Training:      {num_epochs} epochs, batch={batch_size}, grad_accum={grad_accum}
+  Learning rate: {lr} ({scheduler})
+  Precision:     bf16
+
+  Runs planned:  {len(SELECTED_RATIOS)}
+  Est. duration: ~{len(SELECTED_RATIOS) * 6}-{len(SELECTED_RATIOS) * 12} hours total
+
+  ┌─────┬─────────────────────────────┬──────────┬────────────────────────────────┐
+  │ Run │ Dataset                     │ Train ex │ Output                         │
+  ├─────┼─────────────────────────────┼──────────┼────────────────────────────────┤
+  │  1  │ ratio_50_50 (gen=30K j=30K) │ 48,796   │ adapters/{run_name_1}/         │
+  │  2  │ ratio_60_40 (gen=46K j=30K) │ 60,996   │ adapters/{run_name_2}/         │
+  │ ... │                             │          │                                │
+  └─────┴─────────────────────────────┴──────────┴────────────────────────────────┘
+
+  Disk required: ~{estimate}GB per run (adapter + checkpoints)
+  Memory required: ~70GB (Qwen3-30B-A3B bf16 + LoRA optimizer states)
+
+──────────────────────────────────────────────────────────────
+→ Type "confirmed" to start training, or describe changes
+──────────────────────────────────────────────────────────────
+```
+
+Read the base config from `config/train_config.yaml` to populate LoRA and training hyperparameters in the summary. Check disk space with `df -h .` and model download status with `ls models/*/config.json`.
+
+Use AskUserQuestion:
+- header: "Training Plan Confirmation"
+- question: "Review the plan above. Start training?"
+- options:
+  - "Confirmed — start training" → proceed to Step 1
+  - "Change model" → go back to Step 0a
+  - "Change ratios" → go back to Step 0b
+  - "Change hyperparameters" → tell user to edit config/train_config.yaml, then re-run
+  - "Abort" → exit skill
+
+**Do NOT proceed to Step 1 until the user explicitly confirms.**
+
 **For each selected ratio**, execute Steps 1-8 below with run-specific paths:
 - `run_name` = `{model_short}-wp-{ratio}` (e.g., `qwen3-30b-wp-50_50`)
 - `data_dir` = `data/final_dataset/ratio_{ratio}/`
