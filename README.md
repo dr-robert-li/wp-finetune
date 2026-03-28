@@ -122,7 +122,9 @@ wp-finetune/
 ├── docs/
 │   ├── AGENT_PIPELINE.md           # Agent execution model and output format contracts
 │   ├── run-data-pipeline.md        # Claude Code skill: autonomous data pipeline
-│   └── run-training.md             # Claude Code skill: DGX Spark training pipeline
+│   ├── run-training.md             # Claude Code skill: DGX Spark training pipeline
+│   ├── observe-{stage}.md          # Telemetry skills: spawn agent teams per stage
+│   └── review-telemetry.md         # Telemetry aggregation and summary skill
 ├── data/
 │   ├── phase1_extraction/          # Cloned repos + extracted/passed/failed functions
 │   ├── phase2_synthetic/           # Gap reports + synthetic/mutated/judge training data
