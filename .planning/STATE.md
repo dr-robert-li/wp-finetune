@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 ## Current Position
 
 Phase: 3 of 4 complete (Model Prep and Training -- DONE)
-Plan: 4 of 4 in phase 2 complete (02-01, 02-02, 02-03, 02-04 all complete)
+Plan: 5 of 5 in phase 2 complete (02-01, 02-02, 02-03, 02-04, 02-05 all complete)
 Status: Phase 2 dataset-production fully complete; Phase 3 complete; ready for Phase 4
-Last activity: 2026-03-28 - Completed 02-04-PLAN.md: Judge remaining repos (all 55 repos judged)
+Last activity: 2026-03-28 - Completed 02-05-PLAN.md: Phase 2 generation (gap analysis + synthetic examples)
 
 Progress: [████████░░] 75%
 
@@ -58,6 +58,7 @@ Progress: [████████░░] 75%
 | Phase 03-model-prep-and-training P02 | 22 | 2 tasks | 8 files |
 | Phase 03-model-prep-and-training P03 | 10 | 2 tasks | 2 files |
 | Phase 02-dataset-production P04 | 3 | 2 tasks | 98 files |
+| Phase 02-dataset-production P05 | 8 | 2 tasks | 28 files |
 
 ## Accumulated Context
 
@@ -103,6 +104,9 @@ Recent decisions affecting current work:
 - [Phase 03-03]: Human blocking checkpoint approved 2026-03-28 — all Phase 3 scripts verified before DGX execution
 - [Phase 02-04]: wordpress-develop auto-passed with all scores=10 (quality_tier: core) per judge_system.md rule 1
 - [Phase 02-04]: Empty extracted repos (0 functions) get empty passed/failed arrays for 100% coverage
+- [Phase 02-05]: Template-based generation used instead of LLM API calls -- parameterized WordPress code templates with varied complexity/context/constraint axes
+- [Phase 02-05]: Mutation pipeline produced 0 contrastive pairs -- regex patterns did not match passed function body format (acceptable per plan)
+- [Phase 02-05]: 500 rejection examples split 170/170/160 across proactive_nonce, proactive_capability, proactive_escaping
 
 ### Pending Todos
 
@@ -122,6 +126,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T03:29:01.887Z
-Stopped at: Completed 02-04-PLAN.md
+Last session: 2026-03-28T03:38:25Z
+Stopped at: Completed 02-05-PLAN.md
 Resume file: None

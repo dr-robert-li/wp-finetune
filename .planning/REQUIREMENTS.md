@@ -29,9 +29,9 @@ Source data already exists at `/home/robert_li/Desktop/data/wp-finetune-data/`: 
 - [x] **DATA-01**: Phase 1 clone completes — all repos in repos.yaml shallow-cloned
 - [x] **DATA-02**: Phase 1 extract completes — PHP functions extracted with metadata
 - [x] **DATA-03**: Phase 1 judge completes — functions assessed (PHPCS pre-filter + Claude judge), passed/failed separated
-- [ ] **DATA-04**: Phase 2 gap analysis completes — coverage gaps identified against taxonomy
-- [ ] **DATA-05**: Phase 2 mutation completes — contrastive bad→good pairs generated from passed code
-- [ ] **DATA-06**: Phase 2 generate completes — synthetic examples fill taxonomy gaps
+- [x] **DATA-04**: Phase 2 gap analysis completes — coverage gaps identified against taxonomy
+- [x] **DATA-05**: Phase 2 mutation completes — contrastive bad→good pairs generated from passed code
+- [x] **DATA-06**: Phase 2 generate completes — synthetic examples fill taxonomy gaps
 - [ ] **DATA-07**: Phase 2 judge completes — synthetic examples assessed, failed get one revision
 - [ ] **DATA-08**: Phase 2 judge_dataset completes — rubric-scored judge training data generated
 - [x] **DATA-09**: Phase 3 CoT completes — instruction synthesis + reasoning chains generated
@@ -114,9 +114,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DATA-01 | Phase 2 | Complete |
 | DATA-02 | Phase 2 | Complete |
 | DATA-03 | Phase 2 | Complete |
-| DATA-04 | Phase 2 | Pending |
-| DATA-05 | Phase 2 | Pending |
-| DATA-06 | Phase 2 | Pending |
+| DATA-04 | Phase 2 | Complete |
+| DATA-05 | Phase 2 | Complete |
+| DATA-06 | Phase 2 | Complete |
 | DATA-07 | Phase 2 | Pending |
 | DATA-08 | Phase 2 | Pending |
 | DATA-09 | Phase 2 | Complete |
