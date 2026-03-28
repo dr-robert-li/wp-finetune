@@ -173,11 +173,12 @@ def load_model_and_tokenizer(config: dict):
         max_seq_length=max_seq_length,
         load_in_4bit=False,  # LOCKED — no QLoRA for MoE
         dtype=torch.bfloat16,
-        model_kwargs={"output_router_logits": True},  # TRNG-04
     )
 
-    # Belt-and-suspenders: also set on config directly (some Unsloth versions need this)
+    # Enable MoE load balancing loss (TRNG-04) — set on config after loading
+    # (model_kwargs doesn't work with Unsloth's FastLanguageModel wrapper)
     model.config.output_router_logits = True
+    print("  output_router_logits = True (MoE load balancing monitoring enabled)")
 
     # Load extended tokenizer (with <wp_gen> and <wp_judge>)
     from transformers import AutoTokenizer  # noqa: PLC0415
