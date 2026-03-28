@@ -351,9 +351,16 @@ def run_regex_checks(code: str) -> tuple[dict[str, bool], dict[str, list[str]]]:
     check_hits: dict[str, bool] = {}
     evidence: dict[str, list[str]] = {}
 
+    # Normalize quotes: PHP uses both ' and " interchangeably for strings.
+    # Rubric patterns use single quotes. Create a quote-normalized copy for matching.
+    code_normalized = code.replace('"', "'")
+
     for check_id, pattern in REGEX_PATTERNS.items():
         try:
+            # Match against both original and quote-normalized code
             matches = list(re.finditer(pattern, code, re.MULTILINE))
+            if not matches:
+                matches = list(re.finditer(pattern, code_normalized, re.MULTILINE))
             matched = len(matches) > 0
             check_hits[check_id] = matched
             if matched:
@@ -397,20 +404,16 @@ def run_regex_checks(code: str) -> tuple[dict[str, bool], dict[str, list[str]]]:
 def determine_na_dimensions(code: str) -> list[str]:
     """Use NA_DETECTION_HINTS to detect which dimensions are N/A for this code.
 
-    Each hint in NA_DETECTION_HINTS maps a dimension key to a list of patterns.
-    If NONE of the patterns match, the dimension is N/A (no code surface exists).
+    Each hint in NA_DETECTION_HINTS maps a dimension key to a single regex pattern.
+    If the pattern does NOT match, the dimension is N/A (no code surface exists).
     """
     na_dims: list[str] = []
 
-    for dim_key, hint_patterns in NA_DETECTION_HINTS.items():
-        has_surface = False
-        for pattern in hint_patterns:
-            try:
-                if re.search(pattern, code, re.MULTILINE | re.IGNORECASE):
-                    has_surface = True
-                    break
-            except re.error:
-                continue
+    for dim_key, pattern in NA_DETECTION_HINTS.items():
+        try:
+            has_surface = bool(re.search(pattern, code, re.MULTILINE | re.IGNORECASE))
+        except re.error:
+            has_surface = True  # If pattern is invalid, assume applicable
         if not has_surface:
             na_dims.append(dim_key)
 
@@ -429,11 +432,16 @@ def compute_dimension_scores(
     """Compute per-dimension scores from check hits.
 
     For each dimension:
-    1. Sum positive weights for checks that are True
-    2. Subtract negative weights for checks that are True
-    3. Normalize by DIMENSION_MAX_POSITIVE
+    1. Start at 10.0 (assume code is correct for patterns not evaluated)
+    2. Deduct for negative checks that fired (proportional to weight)
+    3. Grant bonus for positive checks that fired (up to the score cap)
     4. Clamp to [0, 10]
     5. Return None for N/A dimensions
+
+    Scoring philosophy: A function starts at full marks and loses points
+    for detected problems. Positive checks can recover lost points but
+    cannot exceed 10. This avoids penalizing simple functions that don't
+    exhibit many patterns.
     """
     scores: dict[str, Optional[float]] = {}
 
@@ -447,25 +455,40 @@ def compute_dimension_scores(
             cid for cid, d in CHECK_DIMENSION_MAP.items() if d == dim_key
         }
 
-        raw = 0.0
+        # Start at 10 (full marks) and deduct for negatives
+        score = 10.0
+        evaluated_negative_weight = 0.0
+        max_negative_weight = sum(
+            abs(CHECK_WEIGHTS.get(cid, 0))
+            for cid in dim_checks
+            if cid in NEGATIVE_CHECK_IDS and cid in check_hits
+        )
+
         for check_id in dim_checks:
             if check_id not in check_hits:
-                # Check was not evaluated (tool unavailable, etc.)
                 continue
 
             weight = CHECK_WEIGHTS.get(check_id, 0)
-            if check_id in POSITIVE_CHECK_IDS:
-                if check_hits[check_id]:
-                    raw += weight
-            elif check_id in NEGATIVE_CHECK_IDS:
-                if check_hits[check_id]:
-                    raw -= abs(weight)
+            if check_id in NEGATIVE_CHECK_IDS and check_hits[check_id]:
+                # Deduct proportionally: each negative point costs up to 10/max_neg
+                if max_negative_weight > 0:
+                    deduction = (abs(weight) / max(max_negative_weight, abs(weight))) * 3.0
+                else:
+                    deduction = 1.0
+                score -= deduction
 
-        # Normalize to 0-10 scale
+        # Positive checks provide a floor — if many positives fire,
+        # the score can't go below a baseline
+        positive_hits = sum(
+            CHECK_WEIGHTS.get(cid, 0)
+            for cid in dim_checks
+            if cid in POSITIVE_CHECK_IDS and check_hits.get(cid, False)
+        )
         if max_pos > 0:
-            score = (raw / max_pos) * 10.0
-        else:
-            score = 5.0  # default if no positive signals defined
+            positive_ratio = positive_hits / max_pos
+            # Positive signals set a floor proportional to their coverage
+            positive_floor = positive_ratio * 8.0  # up to 8/10 from positives alone
+            score = max(score, positive_floor)
 
         scores[dim_key] = max(0.0, min(10.0, score))
 
