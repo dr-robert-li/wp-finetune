@@ -32,8 +32,8 @@ Source data already exists at `/home/robert_li/Desktop/data/wp-finetune-data/`: 
 - [x] **DATA-04**: Phase 2 gap analysis completes — coverage gaps identified against taxonomy
 - [x] **DATA-05**: Phase 2 mutation completes — contrastive bad→good pairs generated from passed code
 - [x] **DATA-06**: Phase 2 generate completes — synthetic examples fill taxonomy gaps
-- [ ] **DATA-07**: Phase 2 judge completes — synthetic examples assessed, failed get one revision
-- [ ] **DATA-08**: Phase 2 judge_dataset completes — rubric-scored judge training data generated
+- [x] **DATA-07**: Phase 2 judge completes — synthetic examples assessed, failed get one revision
+- [x] **DATA-08**: Phase 2 judge_dataset completes — rubric-scored judge training data generated
 - [x] **DATA-09**: Phase 3 CoT completes — instruction synthesis + reasoning chains generated
 - [x] **DATA-10**: Phase 3 export completes — OpenAI, Alpaca, Raw JSONL with task tokens, 80/10/10 split
 - [x] **DATA-11**: Final dataset contains ≥10,000 examples with ~50/50 wp_gen/wp_judge split
@@ -117,8 +117,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DATA-04 | Phase 2 | Complete |
 | DATA-05 | Phase 2 | Complete |
 | DATA-06 | Phase 2 | Complete |
-| DATA-07 | Phase 2 | Pending |
-| DATA-08 | Phase 2 | Pending |
+| DATA-07 | Phase 2 | Complete |
+| DATA-08 | Phase 2 | Complete |
 | DATA-09 | Phase 2 | Complete |
 | DATA-10 | Phase 2 | Complete |
 | DATA-11 | Phase 2 | Complete |

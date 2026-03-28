@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 ## Current Position
 
 Phase: 3 of 4 complete (Model Prep and Training -- DONE)
-Plan: 5 of 5 in phase 2 complete (02-01, 02-02, 02-03, 02-04, 02-05 all complete)
-Status: Phase 2 dataset-production fully complete; Phase 3 complete; ready for Phase 4
-Last activity: 2026-03-28 - Completed 02-05-PLAN.md: Phase 2 generation (gap analysis + synthetic examples)
+Plan: 6 of 6 in phase 2 complete (02-01 through 02-06 all complete)
+Status: Phase 2 dataset-production fully complete (including judging); Phase 3 complete; ready for Phase 4
+Last activity: 2026-03-28 - Completed 02-06-PLAN.md: Phase 2 judging (synthetic assessment + judge training data)
 
 Progress: [████████░░] 75%
 
@@ -59,6 +59,7 @@ Progress: [████████░░] 75%
 | Phase 03-model-prep-and-training P03 | 10 | 2 tasks | 2 files |
 | Phase 02-dataset-production P04 | 3 | 2 tasks | 98 files |
 | Phase 02-dataset-production P05 | 8 | 2 tasks | 28 files |
+| Phase 02-dataset-production P06 | 5 | 2 tasks | 37 files |
 
 ## Accumulated Context
 
@@ -107,6 +108,10 @@ Recent decisions affecting current work:
 - [Phase 02-05]: Template-based generation used instead of LLM API calls -- parameterized WordPress code templates with varied complexity/context/constraint axes
 - [Phase 02-05]: Mutation pipeline produced 0 contrastive pairs -- regex patterns did not match passed function body format (acceptable per plan)
 - [Phase 02-05]: 500 rejection examples split 170/170/160 across proactive_nonce, proactive_capability, proactive_escaping
+- [Phase 02-06]: N/A dimensions (i18n=7, accessibility=7) treated as non-failing per judge_system.md rubric rules
+- [Phase 02-06]: Double-brace template artifacts auto-fixed during revision step (1,958 functions revised)
+- [Phase 02-06]: error_log in catch blocks treated as legitimate production logging, not debug output
+- [Phase 02-06]: REST permission callback functions assessed for capability checks, not for containing 'permission_callback' string
 
 ### Pending Todos
 
@@ -126,6 +131,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T03:38:25Z
-Stopped at: Completed 02-05-PLAN.md
+Last session: 2026-03-28T03:46:54Z
+Stopped at: Completed 02-06-PLAN.md
 Resume file: None
