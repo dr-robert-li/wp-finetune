@@ -40,8 +40,7 @@ from typing import Any
 
 import yaml
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-CONFIG_PATH = PROJECT_ROOT / "config" / "dgx_toolbox.yaml"
+CONFIG_PATH = Path.cwd() / "config" / "dgx_toolbox.yaml"
 
 
 # ─── Data classes ────────────────────────────────────────────────────────────
@@ -100,31 +99,6 @@ class ExecResult:
         return f"{status} [{self.duration_s:.1f}s] {' '.join(self.command[-3:])}"
 
 
-# ─── Container mapping ──────────────────────────────────────────────────────
-
-# Maps pipeline phases to dgx-toolbox container components
-CONTAINER_MAP = {
-    "unsloth_studio": {
-        "container_name": "unsloth-studio",
-        "component": "unsloth_studio",
-        "workdir": "/workspace/wp-finetune",
-        "purpose": "Model download, tokenizer extension, LoRA training, adapter merge",
-    },
-    "eval_toolbox": {
-        "container_name": "eval-toolbox",
-        "component": "eval_toolbox",
-        "workdir": "/workspace",
-        "purpose": "Evaluation suite (PHPCS, Spearman, wp-bench), benchmarks",
-    },
-    "vllm": {
-        "container_name": "vllm",
-        "component": "vllm",
-        "workdir": None,  # Not exec'd into — started as a service
-        "purpose": "Model serving for eval and production inference",
-    },
-}
-
-
 # ─── Main class ──────────────────────────────────────────────────────────────
 
 
@@ -138,6 +112,8 @@ class DGXToolbox:
     def __init__(self, config_path: Path | None = None):
         self._config = self._load_config(config_path or CONFIG_PATH)
         self._base = self._resolve_base()
+        self._project_root = Path(self._config.get("project_root", ".")).resolve()
+        self._containers: dict[str, dict] = self._config.get("containers", {})
         self._exec_log: list[ExecResult] = []
 
     # ── Config ───────────────────────────────────────────────────────────
@@ -168,8 +144,8 @@ class DGXToolbox:
 
     @property
     def project_root(self) -> Path:
-        """Root path of this wp-finetune project."""
-        return PROJECT_ROOT
+        """Root path of the project using this toolbox."""
+        return self._project_root
 
     # ── Component resolution ─────────────────────────────────────────────
 
@@ -216,8 +192,8 @@ class DGXToolbox:
 
         Available checks:
             "toolbox"        — dgx-toolbox directory exists
-            "training_data"  — data/final_dataset/openai_train.jsonl exists
-            "config"         — config/train_config.yaml exists
+            "training_data"  — training data file exists (path from config)
+            "config"         — config file exists (path from config)
             "memory:N"       — at least N GB available memory
             "container:name" — named container is running
             "mounted:name"   — project is mounted in named container
@@ -258,14 +234,16 @@ class DGXToolbox:
         return CheckResult("toolbox", False, f"Not found at {self._base}")
 
     def _check_training_data(self, _: str) -> CheckResult:
-        path = PROJECT_ROOT / "data" / "final_dataset" / "openai_train.jsonl"
+        rel = self._config.get("validation_paths", {}).get("training_data", "data/final_dataset/openai_train.jsonl")
+        path = self._project_root / rel
         if path.exists():
             lines = sum(1 for _ in open(path))
             return CheckResult("training_data", True, f"{lines} examples", {"path": str(path), "lines": lines})
         return CheckResult("training_data", False, f"Not found: {path}")
 
     def _check_config(self, _: str) -> CheckResult:
-        path = PROJECT_ROOT / "config" / "train_config.yaml"
+        rel = self._config.get("validation_paths", {}).get("config", "config/train_config.yaml")
+        path = self._project_root / rel
         if path.exists():
             return CheckResult("config", True, f"Found: {path}")
         return CheckResult("config", False, f"Not found: {path}")
@@ -299,7 +277,7 @@ class DGXToolbox:
             return CheckResult("memory", False, f"Cannot check: {e}")
 
     def _check_container(self, name: str) -> CheckResult:
-        cname = CONTAINER_MAP.get(name, {}).get("container_name", name)
+        cname = self._containers.get(name, {}).get("container_name", name)
         result = subprocess.run(["docker", "ps", "--format", "{{.Names}}"],
                                 capture_output=True, text=True, timeout=5)
         running = result.stdout.strip().split("\n")
@@ -308,11 +286,12 @@ class DGXToolbox:
         return CheckResult(f"container:{name}", False, f"{cname} is not running")
 
     def _check_mounted(self, name: str) -> CheckResult:
-        mapping = CONTAINER_MAP.get(name, {})
+        mapping = self._containers.get(name, {})
         cname = mapping.get("container_name", name)
         workdir = mapping.get("workdir", "/workspace/wp-finetune")
+        check_file = self._config.get("mount_check_file", "config/train_config.yaml")
         check = subprocess.run(
-            ["docker", "exec", cname, "test", "-f", f"{workdir}/config/train_config.yaml"],
+            ["docker", "exec", cname, "test", "-f", f"{workdir}/{check_file}"],
             capture_output=True, timeout=5)
         if check.returncode == 0:
             return CheckResult(f"mounted:{name}", True, f"Project visible at {workdir}")
@@ -320,7 +299,7 @@ class DGXToolbox:
                            f"Project not mounted in {cname}. Restart with EXTRA_MOUNTS.")
 
     def _check_gpu(self, name: str) -> CheckResult:
-        cname = CONTAINER_MAP.get(name, {}).get("container_name", name) if name else "unsloth-studio"
+        cname = self._containers.get(name, {}).get("container_name", name) if name else "unsloth-studio"
         result = subprocess.run(
             ["docker", "exec", cname, "nvidia-smi", "--query-gpu=name,memory.total",
              "--format=csv,noheader"],
@@ -330,10 +309,11 @@ class DGXToolbox:
         return CheckResult("gpu", False, "No GPU access in container")
 
     def _check_deps(self, name: str) -> CheckResult:
-        cname = CONTAINER_MAP.get(name, {}).get("container_name", name)
-        workdir = CONTAINER_MAP.get(name, {}).get("workdir", "/workspace")
+        cname = self._containers.get(name, {}).get("container_name", name)
+        workdir = self._containers.get(name, {}).get("workdir", "/workspace")
         # Check critical imports
-        check_script = "import unsloth,trl,peft,datasets,wandb,yaml,scipy;print('OK')"
+        imports = self._config.get("required_imports", ["unsloth", "trl", "peft", "datasets", "wandb", "yaml", "scipy"])
+        check_script = "import " + ",".join(imports) + ";print('OK')"
         result = subprocess.run(
             ["docker", "exec", "-w", workdir, cname, "python", "-c", check_script],
             capture_output=True, text=True, timeout=30)
@@ -351,20 +331,20 @@ class DGXToolbox:
         It handles: start → wait → mount check → dep install → validate.
 
         Args:
-            component: Key from CONTAINER_MAP (e.g., "unsloth_studio")
+            component: Key from containers config (e.g., "unsloth_studio")
             wait: Seconds to wait after starting container
 
         Returns:
             ValidationResult with all checks.
         """
-        mapping = CONTAINER_MAP.get(component)
+        mapping = self._containers.get(component)
         if not mapping:
             r = ValidationResult()
             r.checks.append(CheckResult(component, False, f"Unknown component: {component}"))
             return r
 
         cname = mapping["container_name"]
-        workdir = mapping["workdir"]
+        workdir = mapping.get("workdir")
 
         # Step 1: Is container running?
         container_check = self._check_container(component)
@@ -400,21 +380,21 @@ class DGXToolbox:
 
     def _start_container(self, component: str) -> None:
         """Start a container via dgx-toolbox with EXTRA_MOUNTS."""
-        mapping = CONTAINER_MAP[component]
+        mapping = self._containers[component]
         script = self.resolve(mapping["component"])
         env = os.environ.copy()
-        env["EXTRA_MOUNTS"] = f"{PROJECT_ROOT}:{mapping['workdir']}"
+        env["EXTRA_MOUNTS"] = f"{self._project_root}:{mapping['workdir']}"
         subprocess.run(["bash", str(script)], env=env, capture_output=True, text=True)
 
     def _install_deps(self, component: str) -> None:
         """Install pinned deps inside a container."""
-        cname = CONTAINER_MAP[component]["container_name"]
+        cname = self._containers[component]["container_name"]
         versions = self.pinned_versions
         if not versions:
             return
         # Build pip install command from pinned versions
         pkgs = [f"{pkg}=={ver}" for pkg, ver in versions.items()]
-        extras = ["pyyaml", "python-dotenv", "scipy", "wandb", "peft", "hf_transfer"]
+        extras = self._config.get("extra_deps", ["pyyaml", "python-dotenv", "scipy", "wandb", "peft", "hf_transfer"])
         cmd = ["docker", "exec", cname, "pip", "install", "--no-deps"] + pkgs
         subprocess.run(cmd, capture_output=True, text=True, timeout=300)
         # Install extras (with deps)
@@ -434,7 +414,7 @@ class DGXToolbox:
         """Execute a command inside a container. The core execution method.
 
         Args:
-            component: Key from CONTAINER_MAP (e.g., "unsloth_studio")
+            component: Key from containers config (e.g., "unsloth_studio")
             *cmd: Command and args (e.g., "python", "-m", "scripts.train_model")
             capture: Capture stdout/stderr (default: stream to terminal)
             timeout: Timeout in seconds
@@ -443,12 +423,12 @@ class DGXToolbox:
         Returns:
             ExecResult with structured output.
         """
-        mapping = CONTAINER_MAP.get(component)
+        mapping = self._containers.get(component)
         if not mapping:
             return ExecResult(list(cmd), 1, "", f"Unknown component: {component}", 0, "")
 
         cname = mapping["container_name"]
-        workdir = mapping["workdir"]
+        workdir = mapping.get("workdir")
 
         # Idempotency: skip if output already exists
         if idempotency_check:
@@ -496,14 +476,15 @@ class DGXToolbox:
         """
         script = self.resolve(component)
         env = os.environ.copy()
-        env["EXTRA_MOUNTS"] = f"{PROJECT_ROOT}:/workspace/wp-finetune"
+        mount_target = self._containers.get(component, {}).get("workdir", "/workspace")
+        env["EXTRA_MOUNTS"] = f"{self._project_root}:{mount_target}"
         start = time.time()
         proc = subprocess.run(
             ["bash", str(script)] + list(args),
             env=env, capture_output=True, text=True, timeout=60,
         )
         duration = time.time() - start
-        cname = CONTAINER_MAP.get(component, {}).get("container_name", component)
+        cname = self._containers.get(component, {}).get("container_name", component)
         result = ExecResult(
             command=["bash", str(script)] + list(args),
             returncode=proc.returncode,
@@ -546,22 +527,23 @@ class DGXToolbox:
         except Exception:
             memory = {}
 
-        # Pipeline artifacts
-        artifacts = {
-            "model_downloaded": (PROJECT_ROOT / "models" / "Qwen3-30B-A3B" / "config.json").exists(),
-            "model_shards": len(list((PROJECT_ROOT / "models" / "Qwen3-30B-A3B").glob("*.safetensors")))
-                if (PROJECT_ROOT / "models" / "Qwen3-30B-A3B").exists() else 0,
-            "tokenizer_ready": (PROJECT_ROOT / "adapters" / "tokenizer" / "tokenizer_config.json").exists(),
-            "adapter_trained": (PROJECT_ROOT / "adapters" / "qwen3-wp" / "adapter_config.json").exists(),
-            "model_merged": (PROJECT_ROOT / "models" / "Qwen3-30B-A3B-merged" / "config.json").exists(),
-            "training_data_exists": (PROJECT_ROOT / "data" / "final_dataset" / "openai_train.jsonl").exists(),
-        }
+        # Pipeline artifacts (config-driven)
+        artifact_defs = self._config.get("status_artifacts", {})
+        artifacts = {}
+        for name, defn in artifact_defs.items():
+            rel_path = defn.get("path", "")
+            full = self._project_root / rel_path
+            if defn.get("type") == "glob":
+                pattern = defn.get("pattern", "*")
+                artifacts[name] = len(list(full.glob(pattern))) if full.exists() else 0
+            else:
+                artifacts[name] = full.exists()
 
         return {
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
             "dgx_toolbox_path": str(self._base),
             "dgx_toolbox_available": self.available,
-            "project_root": str(PROJECT_ROOT),
+            "project_root": str(self._project_root),
             "containers": containers,
             "memory": memory,
             "artifacts": artifacts,
@@ -586,7 +568,7 @@ class DGXToolbox:
             "vllm_endpoint": self.vllm_endpoint(),
             "litellm_endpoint": self.litellm_endpoint(),
             "components": list(self._config.get("components", {}).keys()),
-            "containers": list(CONTAINER_MAP.keys()),
+            "containers": list(self._containers.keys()),
         }
 
 
@@ -622,7 +604,7 @@ if __name__ == "__main__":
             icon = "✓" if full.exists() else "✗"
             print(f"  {icon} {name:20s} → {rel}")
         print(f"\nContainers:")
-        for name, mapping in CONTAINER_MAP.items():
+        for name, mapping in dgx._containers.items():
             print(f"  {name:20s} → {mapping['container_name']:20s} ({mapping['purpose'][:50]})")
 
     elif cmd == "validate":
