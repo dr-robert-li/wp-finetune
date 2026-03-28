@@ -131,6 +131,101 @@ class DGXToolbox:
             text=True,
         )
 
+    @property
+    def container_workdir(self) -> str:
+        """Get the working directory inside the container."""
+        return self._config.get("container_workdir", "/workspace/wp-finetune")
+
+    @property
+    def extra_mounts_env(self) -> str:
+        """Build EXTRA_MOUNTS env var value for dgx-toolbox container scripts.
+
+        Replaces {project_root} with the actual project root path.
+        """
+        mounts = self._config.get("extra_mounts", {})
+        specs = []
+        for _name, spec in mounts.items():
+            resolved = spec.replace("{project_root}", str(PROJECT_ROOT))
+            specs.append(resolved)
+        return ",".join(specs)
+
+    def container_exec(
+        self,
+        *cmd: str,
+        container: str = "unsloth-studio",
+        capture: bool = False,
+        timeout: int | None = None,
+    ) -> subprocess.CompletedProcess:
+        """Execute a command inside a running DGX Toolbox container.
+
+        Args:
+            *cmd: Command and arguments to run inside the container.
+            container: Container name (default: unsloth-studio).
+            capture: If True, capture stdout/stderr.
+            timeout: Timeout in seconds.
+
+        Returns:
+            CompletedProcess result.
+        """
+        full_cmd = [
+            "docker", "exec",
+            "-w", self.container_workdir,
+            container,
+        ] + list(cmd)
+        return subprocess.run(
+            full_cmd,
+            capture_output=capture,
+            text=True,
+            timeout=timeout,
+        )
+
+    def ensure_container(
+        self,
+        container: str = "unsloth-studio",
+        component: str = "unsloth_studio",
+    ) -> bool:
+        """Ensure a DGX Toolbox container is running with project mounted.
+
+        If not running, launches it via the component script with EXTRA_MOUNTS set.
+
+        Returns:
+            True if container is running (or was started), False on failure.
+        """
+        # Check if already running
+        result = subprocess.run(
+            ["docker", "ps", "--format", "{{.Names}}"],
+            capture_output=True, text=True,
+        )
+        if container in result.stdout.strip().split("\n"):
+            # Verify our project is mounted
+            check = subprocess.run(
+                ["docker", "exec", container, "test", "-f",
+                 f"{self.container_workdir}/config/train_config.yaml"],
+                capture_output=True,
+            )
+            if check.returncode == 0:
+                return True
+            # Container running but project not mounted — need restart
+            subprocess.run(["docker", "stop", container], capture_output=True)
+            subprocess.run(["docker", "rm", container], capture_output=True)
+
+        # Launch with EXTRA_MOUNTS
+        env = os.environ.copy()
+        env["EXTRA_MOUNTS"] = self.extra_mounts_env
+        script = self.resolve(component)
+        result = subprocess.run(
+            ["bash", str(script)],
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+        return result.returncode == 0
+
+    @property
+    def pinned_versions(self) -> dict[str, str]:
+        """Get pinned dependency versions for container setup."""
+        return self._config.get("pinned_versions", {})
+
     def status(self) -> str:
         """Run dgx-toolbox status.sh and return output."""
         result = self.run("status", capture=True)

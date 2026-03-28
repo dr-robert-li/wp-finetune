@@ -45,6 +45,24 @@ shared_dirs:
   eval_runs: ~/eval/runs
   data_exports: ~/data/exports
 
+# Extra bind mounts (used via EXTRA_MOUNTS env var in dgx-toolbox lib.sh)
+# Format: comma-separated host:container pairs
+# Set automatically by run-training skill, or manually:
+#   export EXTRA_MOUNTS="/path/to/wp-finetune:/workspace/wp-finetune"
+extra_mounts:
+  wp_finetune: "{project_root}:/workspace/wp-finetune"
+
+# Container working directory for exec commands
+container_workdir: /workspace/wp-finetune
+
+# Pinned dependency versions (must match inside container)
+pinned_versions:
+  transformers: "4.56.2"
+  trl: "0.24.0"
+  datasets: "4.3.0"
+  bitsandbytes: "0.48.0"
+  huggingface_hub: "0.34.1"
+
 # Ports
 ports:
   unsloth_studio: 8000
