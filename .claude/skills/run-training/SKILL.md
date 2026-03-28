@@ -23,25 +23,50 @@ User says: "run training", "train the model", "start DGX training", "/run-traini
 
 ## Process
 
-### Step 0: Select dataset exports
+### Step 0a: Select base model
 
-List available ratio exports and let the user choose:
+Check for available/downloaded models and let the user choose exactly one:
+
+```bash
+# Check what's already downloaded locally
+ls models/*/config.json 2>/dev/null
+```
+
+Present a selection using AskUserQuestion:
+```
+Select base model (1 only):
+
+| # | Model | Status | Params | Active | Notes |
+|---|-------|--------|--------|--------|-------|
+| 1 | Qwen/Qwen3-30B-A3B | [Downloaded/Not downloaded] | 30B | ~3B (MoE) | Default — native MoE, proven serving |
+| 2 | Qwen/Qwen3-14B | [Downloaded/Not downloaded] | 14B | 14B (dense) | Faster iteration, smaller |
+| 3 | Qwen/Qwen3-8B | [Downloaded/Not downloaded] | 8B | 8B (dense) | Quick experiments |
+| 4 | Custom | — | — | — | Enter HuggingFace model ID |
+```
+
+If "Custom": ask for the HuggingFace model ID (e.g., `meta-llama/Llama-3-8B`).
+
+Store as `$BASE_MODEL` (HF name) and `$MODEL_LOCAL_DIR` (local path like `models/Qwen3-30B-A3B`).
+
+**Only one base model per training session.** All selected ratios train against the same base.
+
+### Step 0b: Select dataset exports
+
+List available ratio exports and let the user choose one or more:
 
 ```bash
 ls data/final_dataset/ratio_*/metadata.json
 ```
 
-Present a selection:
+Read each metadata.json and present a table:
 ```
 Available dataset exports:
 
 | # | Ratio | Gen    | Judge  | Total  | Train  |
 |---|-------|--------|--------|--------|--------|
-| 1 | 30/70 | 13,071 | 30,498 | 43,569 | 34,855 |
-| 2 | 40/60 | 20,332 | 30,498 | 50,830 | 40,664 |
-| 3 | 50/50 | 30,498 | 30,498 | 60,996 | 48,796 |
-| 4 | 60/40 | 45,747 | 30,498 | 76,245 | 60,996 |
-| 5 | 70/30 | 71,162 | 30,498 | 101,660| 81,328 |
+| 1 | 30/70 | ...    | ...    | ...    | ...    |
+| 2 | 40/60 | ...    | ...    | ...    | ...    |
+| ... |
 
 Select exports to train (comma-separated, e.g. "2,3,4" or "all"):
 ```
@@ -49,7 +74,7 @@ Select exports to train (comma-separated, e.g. "2,3,4" or "all"):
 Use AskUserQuestion for selection. Store as `$SELECTED_RATIOS` list.
 
 **For each selected ratio**, execute Steps 1-8 below with run-specific paths:
-- `run_name` = `qwen3-wp-{ratio}` (e.g., `qwen3-wp-50_50`)
+- `run_name` = `{model_short}-wp-{ratio}` (e.g., `qwen3-30b-wp-50_50`)
 - `data_dir` = `data/final_dataset/ratio_{ratio}/`
 - `adapter_dir` = `adapters/{run_name}/`
 - `merged_dir` = `models/{run_name}-merged/`
@@ -59,9 +84,13 @@ Use AskUserQuestion for selection. Store as `$SELECTED_RATIOS` list.
 Before training, create a run-specific config overlay:
 
 ```python
-import yaml, shutil
+import yaml
 
 base_config = yaml.safe_load(open("config/train_config.yaml"))
+
+# Override model to user's selection
+base_config["model"]["name"] = BASE_MODEL           # e.g. "Qwen/Qwen3-30B-A3B"
+base_config["model"]["local_dir"] = MODEL_LOCAL_DIR  # e.g. "./models/Qwen3-30B-A3B"
 
 # Override data paths for this ratio
 base_config["data"]["train_file"] = f"data/final_dataset/ratio_{ratio}/openai_train.jsonl"
