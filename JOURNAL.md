@@ -4,6 +4,91 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-03-28 — Refactor: dgx_toolbox.py as project-agnostic execution engine
+
+### The problem
+
+The training pipeline had accumulated a lot of manual handling: bash scripts with hardcoded container names, `docker exec` commands with hardcoded mount paths, pip install commands with hardcoded package lists. While repeatable, this was incredibly brittle — if a path changed, a container name changed, or DGX Toolbox restructured, the shell script would break silently. No error, just wrong behavior or a cryptic failure deep in a 6-12 hour training run.
+
+I paused the training pipeline mid-download to fix this before continuing. The idempotency guards mean I can resume from exactly where I left off.
+
+### Before: 8 hardcoded couplings
+
+The original `dgx_toolbox.py` had project-agnostic infrastructure (path resolution, component lookup) mixed with wp-finetune-specific assumptions:
+
+1. `CONTAINER_MAP` — hardcoded to 3 containers with wp-finetune workdirs
+2. `_check_training_data` — hardcoded path `data/final_dataset/openai_train.jsonl`
+3. `_check_config` — hardcoded path `config/train_config.yaml`
+4. `_check_mounted` — checked for `train_config.yaml` specifically
+5. `_check_deps` — hardcoded `import unsloth,trl,peft,...`
+6. `status_report` artifacts — hardcoded model/adapter/dataset paths
+7. `_install_deps` extras — hardcoded `wandb, peft, hf_transfer`
+8. `PROJECT_ROOT` — assumed it lived inside the consuming project
+
+### After: config-driven engine
+
+All 8 couplings moved to `config/dgx_toolbox.yaml`. The Python module is now a pure execution engine that reads everything from config:
+
+```yaml
+# Container definitions (was CONTAINER_MAP global)
+containers:
+  unsloth_studio:
+    container_name: unsloth-studio
+    component: unsloth_studio
+    workdir: /workspace/wp-finetune
+
+# Validation paths (was hardcoded in _check_* methods)
+validation_paths:
+  training_data: data/final_dataset/openai_train.jsonl
+  config: config/train_config.yaml
+
+# Required imports (was hardcoded in _check_deps)
+required_imports: [unsloth, trl, peft, datasets, wandb, yaml, scipy]
+
+# Status artifacts (was hardcoded in status_report)
+status_artifacts:
+  model_downloaded: { path: models/Qwen3-30B-A3B/config.json, type: file }
+  model_shards: { path: models/Qwen3-30B-A3B, type: glob, pattern: "*.safetensors" }
+  ...
+```
+
+The Python engine (639 lines) now provides:
+- `validate()` — named checks (`"toolbox"`, `"memory:70"`, `"container:unsloth_studio"`, `"deps:unsloth_studio"`) with structured `CheckResult` objects
+- `ensure_ready()` — full lifecycle: start container → wait → check mount → install deps → validate
+- `execute()` — container exec with idempotency checks, timing, and structured `ExecResult`
+- `status_report()` — config-driven artifact checks for telemetry agents to consume
+
+### The three-layer architecture
+
+```
+Skill (intent + recovery logic)          ← 8 skills in .claude/skills/
+  → dgx_toolbox.py (resolve + validate)  ← 639-line config-driven engine
+    → Shell/Docker commands (dynamic)      ← config/dgx_toolbox.yaml
+```
+
+Skills define *what* to do and *when* to retry. The Python engine handles *how* — resolving paths, validating preconditions, generating Docker commands dynamically. The YAML config holds all project-specific values. Changing a container name, adding a dependency, or pointing to a different training dataset is a YAML edit, not a code change.
+
+### Making it reusable
+
+Once the couplings moved to YAML, the engine became project-agnostic. Any project can supply its own `dgx_toolbox.yaml` and use the same Python engine. Example files were created in `examples/` showing how an external project would configure it. The core API is the same:
+
+```python
+from scripts.dgx_toolbox import get_toolbox
+dgx = get_toolbox()
+dgx.ensure_ready("unsloth_studio")
+dgx.execute("unsloth_studio", "python", "-m", "scripts.train_model")
+```
+
+### Lessons learned
+
+1. **Config over code for anything project-specific.** If a value might differ between projects (container names, paths, package lists), it belongs in YAML, not Python. The engine should be dumb about the domain and smart about execution.
+
+2. **Pause and fix the foundation mid-pipeline.** Idempotency guards made it safe to stop, refactor, and resume. Without idempotency, I'd have been trapped — unable to fix the architecture without losing progress. This validates the earlier decision to make every step skip-safe.
+
+3. **Structured validation beats silent failure.** The old shell script would fail deep in execution with a cryptic Docker error. The new engine runs all precondition checks upfront and returns structured `CheckResult` objects with actionable messages. Failing fast with a clear "training data not found at X" beats failing 2 hours in with "No such file."
+
+---
+
 ## 2026-03-28 — Agentic telemetry framework: observability across containers and pipeline stages
 
 ### The problem
