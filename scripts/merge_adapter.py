@@ -63,6 +63,23 @@ def merge_adapter(adapter_dir: str, output_dir: str, config: dict) -> None:
     Raises:
         SystemExit(1) on verification failure (prints vLLM fallback command).
     """
+    # --- Idempotency check: skip if merged model already exists and verified ---
+    merged_path = Path(output_dir)
+    if merged_path.exists() and (merged_path / "config.json").exists():
+        # Quick verification — are special tokens intact?
+        from transformers import AutoTokenizer as _AT  # noqa: PLC0415
+        try:
+            verify_tok = _AT.from_pretrained(str(merged_path))
+            special_tokens = config.get("tokenizer", {}).get("special_tokens", ["<wp_gen>", "<wp_judge>"])
+            all_single = all(
+                len(verify_tok.encode(t, add_special_tokens=False)) == 1 for t in special_tokens
+            )
+            if all_single:
+                print(f"Merged model already exists at {merged_path} with verified special tokens. Skipping.")
+                return
+        except Exception:
+            pass  # Fall through to re-merge
+
     from unsloth import FastLanguageModel  # noqa: PLC0415
 
     local_dir = str(resolve_path(config["model"]["local_dir"]))

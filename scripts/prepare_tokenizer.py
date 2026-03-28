@@ -171,6 +171,16 @@ def prepare_tokenizer(skip_download: bool = False, smoke_only: bool = False) -> 
         run_smoke_test(tokenizer, model)
         return
 
+    # --- Idempotency check: skip if tokenizer already extended ---
+    if save_dir.exists() and (save_dir / "tokenizer_config.json").exists():
+        # Verify the saved tokenizer has our special tokens
+        check_tok = AutoTokenizer.from_pretrained(str(save_dir))
+        all_present = all(t in check_tok.get_vocab() for t in special_tokens)
+        if all_present:
+            print(f"Extended tokenizer already exists at {save_dir} with all special tokens. Skipping.")
+            print("Use --smoke-only to re-run smoke test, or delete adapters/tokenizer/ to force re-extension.")
+            return
+
     # --- Step 1: Download (optional) ---
     if not skip_download:
         maybe_download_model(config)

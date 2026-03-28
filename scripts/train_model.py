@@ -226,6 +226,14 @@ def train(args: argparse.Namespace) -> None:
     """Run the full training pipeline."""
     config = load_config()
 
+    # --- Idempotency check: skip if adapter already trained ---
+    output_dir = resolve_path(config["training"]["output_dir"])
+    adapter_config = output_dir / "adapter_config.json"
+    if adapter_config.exists() and not args.resume and not args.dry_run:
+        print(f"Trained adapter already exists at {output_dir}/adapter_config.json")
+        print("Use --resume to continue training, or delete the adapter dir to retrain from scratch.")
+        return
+
     # Load model + tokenizer
     model, tokenizer = load_model_and_tokenizer(config)
 
