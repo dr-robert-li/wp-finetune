@@ -1,6 +1,6 @@
 # Skill: run-training
 
-Run the complete training pipeline via the DGX Toolbox execution engine. The skill declares intent — `dgx_toolbox.py` resolves paths, validates state, manages containers, and executes dynamically.
+Run the training pipeline via the DGX Toolbox execution engine. Supports training on one or more dataset ratio exports sequentially, with isolated checkpoints per run.
 
 ## Architecture
 
@@ -9,7 +9,7 @@ Skill (this file — intent + recovery logic)
   → dgx_toolbox.py (resolve paths, validate state, manage containers, execute)
     → Docker commands (generated dynamically from config, not hardcoded)
       → Python scripts (inside container, idempotent)
-        → Output (adapters/, models/)
+        → Output (adapters/{run_name}/, models/{run_name}-merged/)
 ```
 
 ## Telemetry
@@ -23,49 +23,94 @@ User says: "run training", "train the model", "start DGX training", "/run-traini
 
 ## Process
 
-Execute these steps in order. Each step uses `dgx_toolbox.py` — never hardcode paths or docker commands.
+### Step 0: Select dataset exports
 
-### Step 1: Validate
+List available ratio exports and let the user choose:
+
+```bash
+ls data/final_dataset/ratio_*/metadata.json
+```
+
+Present a selection:
+```
+Available dataset exports:
+
+| # | Ratio | Gen    | Judge  | Total  | Train  |
+|---|-------|--------|--------|--------|--------|
+| 1 | 30/70 | 13,071 | 30,498 | 43,569 | 34,855 |
+| 2 | 40/60 | 20,332 | 30,498 | 50,830 | 40,664 |
+| 3 | 50/50 | 30,498 | 30,498 | 60,996 | 48,796 |
+| 4 | 60/40 | 45,747 | 30,498 | 76,245 | 60,996 |
+| 5 | 70/30 | 71,162 | 30,498 | 101,660| 81,328 |
+
+Select exports to train (comma-separated, e.g. "2,3,4" or "all"):
+```
+
+Use AskUserQuestion for selection. Store as `$SELECTED_RATIOS` list.
+
+**For each selected ratio**, execute Steps 1-8 below with run-specific paths:
+- `run_name` = `qwen3-wp-{ratio}` (e.g., `qwen3-wp-50_50`)
+- `data_dir` = `data/final_dataset/ratio_{ratio}/`
+- `adapter_dir` = `adapters/{run_name}/`
+- `merged_dir` = `models/{run_name}-merged/`
+
+### Step 1: Configure run
+
+Before training, create a run-specific config overlay:
+
+```python
+import yaml, shutil
+
+base_config = yaml.safe_load(open("config/train_config.yaml"))
+
+# Override data paths for this ratio
+base_config["data"]["train_file"] = f"data/final_dataset/ratio_{ratio}/openai_train.jsonl"
+base_config["data"]["val_file"] = f"data/final_dataset/ratio_{ratio}/openai_val.jsonl"
+base_config["data"]["test_file"] = f"data/final_dataset/ratio_{ratio}/openai_test.jsonl"
+
+# Override output dir for run isolation
+base_config["training"]["output_dir"] = f"./adapters/{run_name}"
+
+# Write run config
+run_config_path = f"config/train_config_{ratio}.yaml"
+yaml.dump(base_config, open(run_config_path, "w"))
+```
+
+### Step 2: Validate
 
 ```python
 from scripts.dgx_toolbox import get_toolbox
 dgx = get_toolbox()
 
-result = dgx.validate(["toolbox", "training_data", "config", "memory:70"])
+result = dgx.validate(["toolbox", "config", "memory:70"])
 print(result.report())
 if not result.ok:
-    # Report failures to user with actionable fixes
     for f in result.failures:
         print(f"  FIX: {f.name} — {f.message}")
-        if f.details.get("running_containers"):
-            print(f"    Running containers: {f.details['running_containers']}")
-        if f.details.get("top_processes"):
-            print(f"    Top memory: {f.details['top_processes'][:3]}")
-    # STOP — do not proceed until all checks pass
+    # STOP
 ```
 
-If validation fails, tell the user what to fix and stop. Do NOT proceed with partial validation.
+Also verify the ratio-specific training data exists:
+```python
+from pathlib import Path
+train_file = Path(f"data/final_dataset/ratio_{ratio}/openai_train.jsonl")
+if not train_file.exists():
+    print(f"ERROR: Training data not found: {train_file}")
+    # STOP
+```
 
-### Step 2: Ensure container ready
+### Step 3: Ensure container ready
 
 ```python
 ready = dgx.ensure_ready("unsloth_studio")
 print(ready.report())
 if not ready.ok:
-    # Container failed to start/mount/install deps
     for f in ready.failures:
         print(f"  ISSUE: {f.name} — {f.message}")
     # STOP
 ```
 
-This automatically:
-- Starts the Unsloth Studio container via dgx-toolbox (with EXTRA_MOUNTS)
-- Waits for setup
-- Verifies project is mounted
-- Installs pinned deps if missing
-- Checks GPU access
-
-### Step 3: Download model (idempotent)
+### Step 4: Download model (idempotent — shared across runs)
 
 ```python
 result = dgx.execute(
@@ -74,13 +119,9 @@ result = dgx.execute(
     idempotency_check="models/Qwen3-30B-A3B/config.json",
 )
 print(result.summary())
-if not result.ok:
-    # Download failed — network? disk space?
-    print(f"STDERR: {result.stderr[-500:]}")
-    # Can retry — download_model.py has resume support
 ```
 
-### Step 4: Extend tokenizer (idempotent)
+### Step 5: Extend tokenizer (idempotent — shared across runs)
 
 ```python
 result = dgx.execute(
@@ -89,76 +130,110 @@ result = dgx.execute(
     idempotency_check="adapters/tokenizer/tokenizer_config.json",
 )
 print(result.summary())
-if not result.ok:
-    print(f"STDERR: {result.stderr[-500:]}")
 ```
 
-### Step 5: Dry run (validate config before committing to hours of training)
-
-```python
-result = dgx.execute(
-    "unsloth_studio",
-    "python", "-m", "scripts.train_model", "--dry-run",
-    capture=True,
-)
-print(result.stdout)
-if not result.ok:
-    # Config issue — fix before proceeding
-    print(f"Dry run failed: {result.stderr[-500:]}")
-    # STOP — do not start real training
-```
-
-**Present dry run output to user.** If it shows errors, fix them. If it shows a valid training summary, proceed.
-
-### Step 6: Train (long-running, idempotent)
+### Step 6: Dry run (per-run config)
 
 ```python
 result = dgx.execute(
     "unsloth_studio",
     "python", "-m", "scripts.train_model",
-    idempotency_check="adapters/qwen3-wp/adapter_config.json",
+    "--dry-run",
+    "--config", f"config/train_config_{ratio}.yaml",
+    capture=True,
+)
+print(result.stdout)
+if not result.ok:
+    print(f"Dry run failed: {result.stderr[-500:]}")
+    # STOP
+```
+
+**Present dry run output to user.** If it shows errors, fix them. If valid, proceed.
+
+### Step 7: Train (long-running, per-run isolated)
+
+```python
+result = dgx.execute(
+    "unsloth_studio",
+    "python", "-m", "scripts.train_model",
+    "--config", f"config/train_config_{ratio}.yaml",
+    idempotency_check=f"adapters/{run_name}/adapter_config.json",
     timeout=None,  # No timeout — training takes 6-12 hours
 )
 print(result.summary())
 if not result.ok:
-    # Check if partial — can resume
-    print("Training failed. Check W&B for loss curves.")
-    print("To resume: run this skill again (idempotency will skip completed steps)")
+    print(f"Training failed for {run_name}. Check W&B for loss curves.")
+    print("To resume: run this skill again (idempotency will skip completed runs)")
 ```
 
-### Step 7: Merge adapter (idempotent)
+### Step 8: Merge adapter (per-run isolated)
 
 ```python
 result = dgx.execute(
     "unsloth_studio",
     "python", "-m", "scripts.merge_adapter",
-    idempotency_check="models/Qwen3-30B-A3B-merged/config.json",
+    "--adapter-dir", f"adapters/{run_name}",
+    "--output-dir", f"models/{run_name}-merged",
+    idempotency_check=f"models/{run_name}-merged/config.json",
 )
 print(result.summary())
 if not result.ok:
-    print("Merge failed. Adapter is safe at adapters/qwen3-wp/")
-    print("Fallback: serve with vLLM --lora-modules")
+    print(f"Merge failed. Adapter is safe at adapters/{run_name}/")
+    print(f"Fallback: serve with vLLM --lora-modules adapters/{run_name}")
 ```
 
-### Step 8: Status report
+### Step 9: Report (after all runs complete)
 
 ```python
 status = dgx.status_report()
-print(f"Model downloaded: {status['artifacts']['model_downloaded']}")
-print(f"Model shards: {status['artifacts']['model_shards']}")
-print(f"Tokenizer ready: {status['artifacts']['tokenizer_ready']}")
-print(f"Adapter trained: {status['artifacts']['adapter_trained']}")
-print(f"Model merged: {status['artifacts']['model_merged']}")
-print(f"Memory: {status['memory']}")
-print(f"\nExecution log:")
-for entry in status['execution_log']:
-    print(f"  {entry['status']}")
-print(f"\nNext: /gsd:execute-phase 4 (evaluation via dgx-toolbox eval-toolbox)")
+print(f"\nTraining runs complete:")
+for ratio in selected_ratios:
+    run_name = f"qwen3-wp-{ratio}"
+    adapter_exists = Path(f"adapters/{run_name}/adapter_config.json").exists()
+    merged_exists = Path(f"models/{run_name}-merged/config.json").exists()
+    print(f"  {run_name}: adapter={'✓' if adapter_exists else '✗'}  merged={'✓' if merged_exists else '✗'}")
+
+print(f"\nNext: /run-evaluation to compare model quality across ratios")
 ```
 
-## Recovery Logic
+## Checkpoint Storage
 
-The skill should handle these failure modes:
+Each training run produces isolated artifacts:
+
+```
+adapters/
+  qwen3-wp-30_70/           # LoRA adapter for 30/70 ratio
+    adapter_config.json
+    adapter_model.safetensors
+    checkpoint-200/          # Intermediate checkpoints
+    checkpoint-400/
+    ...
+  qwen3-wp-50_50/           # LoRA adapter for 50/50 ratio
+    adapter_config.json
+    adapter_model.safetensors
+    ...
+  tokenizer/                 # Shared tokenizer (not per-run)
+
+models/
+  Qwen3-30B-A3B/             # Shared base model (not per-run)
+  qwen3-wp-30_70-merged/     # Merged model for 30/70 ratio
+  qwen3-wp-50_50-merged/     # Merged model for 50/50 ratio
+  ...
+
+config/
+  train_config.yaml           # Base config
+  train_config_30_70.yaml     # Per-run config overlay
+  train_config_50_50.yaml     # Per-run config overlay
+  ...
+```
+
+**Why isolated:** Each ratio produces a different model. Keeping them separate lets you:
+- Run eval on each to find the best ratio
+- Serve any model via vLLM (`--model models/qwen3-wp-50_50-merged/`)
+- Roll back to any ratio without retraining
+- Compare W&B runs side-by-side (each run has a unique name)
+
+## Recovery Logic
 
 | Failure | Detection | Recovery |
 |---------|-----------|----------|
@@ -170,8 +245,9 @@ The skill should handle these failure modes:
 | Training interrupted | `execute()` returns non-zero | Re-run with `--resume` flag |
 | Merge fails | `execute()` returns non-zero | Adapter is safe, suggest `--lora-modules` fallback |
 | GPU not accessible | `validate(["gpu:unsloth_studio"])` fails | Check container has `--gpus all` |
+| Previous run exists | Idempotency check finds adapter | Skip to next ratio |
 
-**Key principle:** Every step is idempotent. If the skill fails at step 5, re-running starts from step 5 (steps 1-4 are skipped via idempotency checks). The user never needs to manually track where things left off.
+**Key principle:** Every step is idempotent. Re-running the skill picks up where it left off — completed runs are skipped, interrupted runs resume from the latest checkpoint.
 
 ## Telemetry Integration
 
@@ -187,14 +263,13 @@ status = dgx.status_report()
 # status["endpoints"] — vLLM/LiteLLM URLs for inference monitoring
 ```
 
-This structured output feeds directly into the observe-training agents without them needing to parse logs or guess state.
-
 ## Key Constraints
 
 - `load_in_4bit=False` — QLoRA off-limits for MoE
 - `output_router_logits=True` — MoE load balancing monitoring
 - `modules_to_save=["embed_tokens", "lm_head"]` — special token embeddings
-- All config from `config/train_config.yaml`
+- Base config from `config/train_config.yaml`, per-run overlay in `config/train_config_{ratio}.yaml`
 - All paths from `config/dgx_toolbox.yaml`
 - Adapter saved separately before merge (defense-in-depth)
 - Pinned versions: transformers==4.56.2, trl==0.24.0, datasets==4.3.0, bitsandbytes==0.48.0
+- Base model + tokenizer shared across runs (downloaded once)

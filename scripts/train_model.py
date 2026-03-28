@@ -327,7 +327,8 @@ def print_training_summary(config: dict, train_dataset, val_dataset) -> None:
 
 def train(args: argparse.Namespace) -> None:
     """Run the full training pipeline."""
-    config = load_config()
+    config_path = Path(args.config) if args.config else CONFIG_PATH
+    config = load_config(config_path)
 
     # --- Idempotency check: skip if adapter already trained ---
     output_dir = resolve_path(config["training"]["output_dir"])
@@ -408,6 +409,13 @@ def _build_parser() -> argparse.ArgumentParser:
         "--dry-run",
         action="store_true",
         help="Load model and config, print training summary, then exit without training.",
+    )
+    parser.add_argument(
+        "--config",
+        type=str,
+        default=None,
+        metavar="CONFIG_PATH",
+        help="Path to training config YAML (default: config/train_config.yaml).",
     )
     return parser
 
