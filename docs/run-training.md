@@ -1,214 +1,200 @@
 # Skill: run-training
 
-Run the complete training pipeline on DGX Spark via the DGX Toolbox Unsloth Studio container. Single invocation, handles failures and resume.
+Run the complete training pipeline via the DGX Toolbox execution engine. The skill declares intent — `dgx_toolbox.py` resolves paths, validates state, manages containers, and executes dynamically.
 
-All GPU steps run inside the container — the skill handles `docker exec` automatically.
+## Architecture
 
-## Idempotency
-
-Every step is safe to re-run. If the pipeline fails partway through, just re-invoke "run training" — completed steps are automatically skipped:
-
-| Step | Skip condition |
-|------|---------------|
-| Download model | `models/Qwen3-30B-A3B/*.safetensors` exist |
-| Extend tokenizer | `adapters/tokenizer/tokenizer_config.json` exists with special tokens in vocab |
-| Train model | `adapters/qwen3-wp/adapter_config.json` exists (use `--resume` to continue partial training) |
-| Merge adapter | `models/Qwen3-30B-A3B-merged/config.json` exists and special tokens verify as single-token IDs |
+```
+Skill (this file — intent + recovery logic)
+  → dgx_toolbox.py (resolve paths, validate state, manage containers, execute)
+    → Docker commands (generated dynamically from config, not hardcoded)
+      → Python scripts (inside container, idempotent)
+        → Output (adapters/, models/)
+```
 
 ## Telemetry
 
 > **Recommended:** Say `/observe-training` before starting to spawn background telemetry agents.
-> Training runs 6-12 hours — observers track GPU health, training metrics, and checkpoint integrity.
-> Optional — training runs fine without it. Output: `telemetry/training/{timestamp}/`
+> They consume `dgx.status_report()` for GPU health, training metrics, and checkpoint monitoring.
 
 ## Trigger
 
 User says: "run training", "train the model", "start DGX training", "/run-training"
 
-## Prerequisites
-
-Before running, verify:
-1. DGX Toolbox installed: `python scripts/dgx_toolbox.py`
-2. Training data exists: `ls data/final_dataset/openai_train.jsonl`
-3. Config exists: `ls config/train_config.yaml`
-4. Sufficient memory: `free -h` (need 70GB+ available)
-
-## Container Setup
-
-All GPU steps run inside the DGX Toolbox Unsloth Studio container. The project is bind-mounted via `EXTRA_MOUNTS`:
-
-```bash
-# Set the extra mount so unsloth-studio.sh binds our project
-export EXTRA_MOUNTS="$(pwd):/workspace/wp-finetune"
-
-# Launch (or restart) the container via DGX Toolbox
-# If container is already running, stop and re-launch to pick up the mount
-docker stop unsloth-studio 2>/dev/null; docker rm unsloth-studio 2>/dev/null
-~/dgx-toolbox/containers/unsloth-studio.sh
-```
-
-Wait for the container to finish setup (~30s for pip installs), then install training deps:
-
-```bash
-docker exec unsloth-studio pip install --no-deps "transformers==4.56.2" "trl==0.24.0" "datasets==4.3.0" "bitsandbytes==0.48.0" pyyaml python-dotenv scipy wandb peft hf_transfer 2>&1 | tail -3
-```
-
-**Verify container sees the project:**
-```bash
-docker exec unsloth-studio ls /workspace/wp-finetune/config/train_config.yaml
-```
-
-### Helper: DCRUN
-
-All GPU commands use this pattern. Define a helper:
-
-```bash
-DCRUN="docker exec -w /workspace/wp-finetune unsloth-studio"
-```
-
-Then every step is just `$DCRUN python -m scripts.xxx`.
-
 ## Process
 
-### 1. Pre-flight Check
+Execute these steps in order. Each step uses `dgx_toolbox.py` — never hardcode paths or docker commands.
 
-```bash
-# Host-side checks
-echo "=== Pre-flight ===" &&
-python scripts/dgx_toolbox.py &&
-test -f data/final_dataset/openai_train.jsonl && echo "Training data: OK" || echo "ERROR: No training data" &&
-test -f config/train_config.yaml && echo "Config: OK" || echo "ERROR: No config" &&
-free -h | head -2
+### Step 1: Validate
 
-# Container-side checks
-$DCRUN python -c "import unsloth; print('Unsloth OK')"
-$DCRUN python -c "import torch; print(f'GPU: {torch.cuda.get_device_name(0)}')"
-$DCRUN nvidia-smi --query-gpu=name,memory.total,memory.free --format=csv,noheader
+```python
+from scripts.dgx_toolbox import get_toolbox
+dgx = get_toolbox()
+
+result = dgx.validate(["toolbox", "training_data", "config", "memory:70"])
+print(result.report())
+if not result.ok:
+    # Report failures to user with actionable fixes
+    for f in result.failures:
+        print(f"  FIX: {f.name} — {f.message}")
+        if f.details.get("running_containers"):
+            print(f"    Running containers: {f.details['running_containers']}")
+        if f.details.get("top_processes"):
+            print(f"    Top memory: {f.details['top_processes'][:3]}")
+    # STOP — do not proceed until all checks pass
 ```
 
-If any check fails, stop and report the issue.
+If validation fails, tell the user what to fix and stop. Do NOT proceed with partial validation.
 
-### 2. Download Model
+### Step 2: Ensure container ready
 
-```bash
-$DCRUN python -m scripts.download_model
+```python
+ready = dgx.ensure_ready("unsloth_studio")
+print(ready.report())
+if not ready.ok:
+    # Container failed to start/mount/install deps
+    for f in ready.failures:
+        print(f"  ISSUE: {f.name} — {f.message}")
+    # STOP
 ```
 
-- **Idempotent:** Skips if safetensors shards already exist
-- Downloads Qwen3-30B-A3B (~60GB) with resume support
-- Downloads to `models/Qwen3-30B-A3B/` (visible on host via bind mount)
+This automatically:
+- Starts the Unsloth Studio container via dgx-toolbox (with EXTRA_MOUNTS)
+- Waits for setup
+- Verifies project is mounted
+- Installs pinned deps if missing
+- Checks GPU access
 
-**Verify:** `$DCRUN ls models/Qwen3-30B-A3B/*.safetensors | wc -l` (expect 16 or 33 shards)
+### Step 3: Download model (idempotent)
 
-### 3. Extend Tokenizer
-
-```bash
-$DCRUN python -m scripts.prepare_tokenizer
+```python
+result = dgx.execute(
+    "unsloth_studio",
+    "python", "-m", "scripts.download_model",
+    idempotency_check="models/Qwen3-30B-A3B/config.json",
+)
+print(result.summary())
+if not result.ok:
+    # Download failed — network? disk space?
+    print(f"STDERR: {result.stderr[-500:]}")
+    # Can retry — download_model.py has resume support
 ```
 
-- **Idempotent:** Skips if `adapters/tokenizer/` already has special tokens
-- Adds `<wp_gen>` and `<wp_judge>` special tokens
-- Mean-initializes new embedding rows
-- Saves extended tokenizer to `adapters/tokenizer/`
-- Runs smoke test
+### Step 4: Extend tokenizer (idempotent)
 
-**Verify:**
-```bash
-$DCRUN python -c "
-from transformers import AutoTokenizer
-tok = AutoTokenizer.from_pretrained('adapters/tokenizer')
-gen_ids = tok.encode('<wp_gen>', add_special_tokens=False)
-judge_ids = tok.encode('<wp_judge>', add_special_tokens=False)
-assert len(gen_ids) == 1 and len(judge_ids) == 1
-print(f'OK: wp_gen={gen_ids[0]}, wp_judge={judge_ids[0]}')
-"
+```python
+result = dgx.execute(
+    "unsloth_studio",
+    "python", "-m", "scripts.prepare_tokenizer",
+    idempotency_check="adapters/tokenizer/tokenizer_config.json",
+)
+print(result.summary())
+if not result.ok:
+    print(f"STDERR: {result.stderr[-500:]}")
 ```
 
-### 4. Train Model
+### Step 5: Dry run (validate config before committing to hours of training)
 
-```bash
-$DCRUN python -m scripts.train_model
+```python
+result = dgx.execute(
+    "unsloth_studio",
+    "python", "-m", "scripts.train_model", "--dry-run",
+    capture=True,
+)
+print(result.stdout)
+if not result.ok:
+    # Config issue — fix before proceeding
+    print(f"Dry run failed: {result.stderr[-500:]}")
+    # STOP — do not start real training
 ```
 
-- **Idempotent:** Skips if adapter_config.json exists (use `--resume` for partial)
-- **Memory pre-check:** Blocks if <70GB available, lists top consumers
-- Loads model via Unsloth FastLanguageModel (BF16, no QLoRA)
-- Applies LoRA with `modules_to_save=["embed_tokens", "lm_head"]`
-- Sets `output_router_logits=True` for MoE monitoring
-- Trains on `data/final_dataset/openai_train.jsonl` (4,766 examples)
-- Logs to W&B
-- Saves adapter to `adapters/qwen3-wp/`
+**Present dry run output to user.** If it shows errors, fix them. If it shows a valid training summary, proceed.
 
-**Expected duration:** ~6-12 hours
+### Step 6: Train (long-running, idempotent)
 
-**Dry run first (recommended):**
-```bash
-$DCRUN python -m scripts.train_model --dry-run
+```python
+result = dgx.execute(
+    "unsloth_studio",
+    "python", "-m", "scripts.train_model",
+    idempotency_check="adapters/qwen3-wp/adapter_config.json",
+    timeout=None,  # No timeout — training takes 6-12 hours
+)
+print(result.summary())
+if not result.ok:
+    # Check if partial — can resume
+    print("Training failed. Check W&B for loss curves.")
+    print("To resume: run this skill again (idempotency will skip completed steps)")
 ```
 
-**Resume from checkpoint:**
-```bash
-$DCRUN python -m scripts.train_model --resume
+### Step 7: Merge adapter (idempotent)
+
+```python
+result = dgx.execute(
+    "unsloth_studio",
+    "python", "-m", "scripts.merge_adapter",
+    idempotency_check="models/Qwen3-30B-A3B-merged/config.json",
+)
+print(result.summary())
+if not result.ok:
+    print("Merge failed. Adapter is safe at adapters/qwen3-wp/")
+    print("Fallback: serve with vLLM --lora-modules")
 ```
 
-**Monitor:**
-- W&B dashboard: loss curves, router_aux_loss
-- `docker exec unsloth-studio nvidia-smi` for GPU memory
+### Step 8: Status report
 
-### 5. Merge Adapter
-
-```bash
-$DCRUN python -m scripts.merge_adapter
+```python
+status = dgx.status_report()
+print(f"Model downloaded: {status['artifacts']['model_downloaded']}")
+print(f"Model shards: {status['artifacts']['model_shards']}")
+print(f"Tokenizer ready: {status['artifacts']['tokenizer_ready']}")
+print(f"Adapter trained: {status['artifacts']['adapter_trained']}")
+print(f"Model merged: {status['artifacts']['model_merged']}")
+print(f"Memory: {status['memory']}")
+print(f"\nExecution log:")
+for entry in status['execution_log']:
+    print(f"  {entry['status']}")
+print(f"\nNext: /gsd:execute-phase 4 (evaluation via dgx-toolbox eval-toolbox)")
 ```
 
-- **Idempotent:** Skips if merged model exists with verified special tokens
-- Loads base model + LoRA adapter
-- Calls `merge_and_unload()` (fix confirmed in unsloth-zoo 2026.3.5)
-- Saves merged model to `models/Qwen3-30B-A3B-merged/`
-- Verification roundtrip: reload, check `<wp_gen>` and `<wp_judge>` are single-token IDs
-- If verification fails: prints vLLM `--lora-modules` fallback
+## Recovery Logic
 
-### 6. Post-Training Summary
+The skill should handle these failure modes:
 
-```bash
-echo "=== Training Complete ===" &&
-ls -lh adapters/qwen3-wp/adapter_config.json &&
-ls models/Qwen3-30B-A3B-merged/*.safetensors 2>/dev/null | wc -l &&
-echo "Next: /gsd:execute-phase 4 (evaluation)"
+| Failure | Detection | Recovery |
+|---------|-----------|----------|
+| Container not running | `validate(["container:unsloth_studio"])` fails | `ensure_ready()` starts it |
+| Project not mounted | `validate(["mounted:unsloth_studio"])` fails | `ensure_ready()` restarts with EXTRA_MOUNTS |
+| Deps missing | `validate(["deps:unsloth_studio"])` fails | `ensure_ready()` installs them |
+| OOM | `validate(["memory:70"])` fails | Report top consumers, suggest `docker stop` |
+| Download interrupted | `execute()` returns non-zero | Re-run (resume support built in) |
+| Training interrupted | `execute()` returns non-zero | Re-run with `--resume` flag |
+| Merge fails | `execute()` returns non-zero | Adapter is safe, suggest `--lora-modules` fallback |
+| GPU not accessible | `validate(["gpu:unsloth_studio"])` fails | Check container has `--gpus all` |
+
+**Key principle:** Every step is idempotent. If the skill fails at step 5, re-running starts from step 5 (steps 1-4 are skipped via idempotency checks). The user never needs to manually track where things left off.
+
+## Telemetry Integration
+
+Background telemetry agents (spawned by `/observe-training`) can poll:
+
+```python
+dgx = get_toolbox()
+status = dgx.status_report()
+# status["containers"] — running container states
+# status["memory"] — system memory
+# status["artifacts"] — pipeline progress (what exists on disk)
+# status["execution_log"] — recent command results
+# status["endpoints"] — vLLM/LiteLLM URLs for inference monitoring
 ```
 
-## Error Recovery
-
-| Error | Fix |
-|-------|-----|
-| "Unsloth cannot find any torch accelerator" | Must run inside container: `$DCRUN python -m scripts.xxx` |
-| Download interrupted | Re-run `$DCRUN python -m scripts.download_model` (resumes) |
-| datasets version mismatch | `docker exec unsloth-studio pip install "datasets==4.3.0"` |
-| huggingface-hub version mismatch | `docker exec unsloth-studio pip install "huggingface-hub==0.34.1"` |
-| hf_transfer missing | `docker exec unsloth-studio pip install hf_transfer` |
-| bitsandbytes missing | `docker exec unsloth-studio pip install "bitsandbytes==0.48.0"` |
-| OOM during training | Reduce `max_seq_length` in config/train_config.yaml (4096 → 2048) |
-| Training divergence | Reduce `learning_rate` (2e-4 → 1e-4) in config |
-| Merge verification fails | Use adapter: `vllm serve models/Qwen3-30B-A3B --lora-modules qwen3-wp=adapters/qwen3-wp` |
-| Container stopped | `EXTRA_MOUNTS="$(pwd):/workspace/wp-finetune" ~/dgx-toolbox/containers/unsloth-studio.sh` |
-
-## DGX Toolbox Integration
-
-This skill uses the DGX Toolbox `EXTRA_MOUNTS` feature (added in `build_extra_mounts()` in lib.sh) to bind-mount the project into the Unsloth Studio container. The mount spec is:
-
-```
-EXTRA_MOUNTS="/path/to/wp-finetune:/workspace/wp-finetune"
-```
-
-This is set automatically by the skill. The `config/dgx_toolbox.yaml` file points to the toolbox location (override with `DGX_TOOLBOX_PATH` env var).
+This structured output feeds directly into the observe-training agents without them needing to parse logs or guess state.
 
 ## Key Constraints
 
-- All GPU steps run inside `unsloth-studio` container (never on host)
-- `load_in_4bit=False` — QLoRA is off-limits for MoE models
-- `output_router_logits=True` — required for MoE load balancing loss
-- `modules_to_save=["embed_tokens", "lm_head"]` — special token embeddings must train
-- Config from `config/train_config.yaml` — nothing hardcoded
-- Scripts use `scripts/dgx_toolbox.py` resolver — never hardcode DGX paths
+- `load_in_4bit=False` — QLoRA off-limits for MoE
+- `output_router_logits=True` — MoE load balancing monitoring
+- `modules_to_save=["embed_tokens", "lm_head"]` — special token embeddings
+- All config from `config/train_config.yaml`
+- All paths from `config/dgx_toolbox.yaml`
 - Adapter saved separately before merge (defense-in-depth)
 - Pinned versions: transformers==4.56.2, trl==0.24.0, datasets==4.3.0, bitsandbytes==0.48.0
