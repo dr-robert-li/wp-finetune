@@ -74,3 +74,72 @@ ports:
   argilla: 6900
   triton_http: 8010
   triton_grpc: 8011
+
+# ── Project-specific couplings (loaded by dgx_toolbox.py at runtime) ──────
+
+# Container mapping — replaces hardcoded CONTAINER_MAP in Python
+containers:
+  unsloth_studio:
+    container_name: unsloth-studio
+    component: unsloth_studio
+    workdir: /workspace/wp-finetune
+    purpose: "Model download, tokenizer extension, LoRA training, adapter merge"
+  eval_toolbox:
+    container_name: eval-toolbox
+    component: eval_toolbox
+    workdir: /workspace
+    purpose: "Evaluation suite (PHPCS, Spearman, wp-bench), benchmarks"
+  vllm:
+    container_name: vllm
+    component: vllm
+    workdir: null
+    purpose: "Model serving for eval and production inference"
+
+# Validation paths for precondition checks
+validation_paths:
+  training_data: data/final_dataset/openai_train.jsonl
+  config: config/train_config.yaml
+
+# File checked inside container to verify project mount
+mount_check_file: config/train_config.yaml
+
+# Required Python imports to verify in container
+required_imports:
+  - unsloth
+  - trl
+  - peft
+  - datasets
+  - wandb
+  - yaml
+  - scipy
+
+# Pipeline artifact checks for status_report
+status_artifacts:
+  model_downloaded:
+    path: models/Qwen3-30B-A3B/config.json
+    type: file
+  model_shards:
+    path: models/Qwen3-30B-A3B
+    type: glob
+    pattern: "*.safetensors"
+  tokenizer_ready:
+    path: adapters/tokenizer/tokenizer_config.json
+    type: file
+  adapter_trained:
+    path: adapters/qwen3-wp/adapter_config.json
+    type: file
+  model_merged:
+    path: models/Qwen3-30B-A3B-merged/config.json
+    type: file
+  training_data_exists:
+    path: data/final_dataset/openai_train.jsonl
+    type: file
+
+# Extra pip packages to install in containers (beyond pinned_versions)
+extra_deps:
+  - pyyaml
+  - python-dotenv
+  - scipy
+  - wandb
+  - peft
+  - hf_transfer
