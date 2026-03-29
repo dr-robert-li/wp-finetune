@@ -12,6 +12,7 @@ dgx_toolbox_path: ~/dgx-toolbox
 components:
   # Training
   unsloth_studio: containers/unsloth-studio.sh
+  unsloth_headless: containers/unsloth-headless-sync.sh
   ngc_pytorch: containers/ngc-pytorch.sh
 
   # Inference
@@ -80,8 +81,8 @@ ports:
 # Container mapping — replaces hardcoded CONTAINER_MAP in Python
 containers:
   unsloth_studio:
-    container_name: unsloth-studio
-    component: unsloth_studio
+    container_name: unsloth-headless
+    component: unsloth_headless
     workdir: /workspace/wp-finetune
     purpose: "Model download, tokenizer extension, LoRA training, adapter merge"
   eval_toolbox:
