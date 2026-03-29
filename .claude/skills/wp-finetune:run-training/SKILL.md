@@ -74,42 +74,114 @@ Use AskUserQuestion for selection. Store as `$SELECTED_RATIOS` list.
 
 ### Step 0c: Telemetry monitoring
 
-Telemetry is **enabled by default** — it is required for adaptive resource planning (Step 8.5) which adjusts batch size, gradient accumulation, and workers between runs based on GPU thermal and utilization data.
+Choose which telemetry collectors to run. Both feed the same **canonical thermal log** — a single JSONL file per run that drives adaptive resource planning (Step 8.5).
 
 Use AskUserQuestion:
 - header: "Telemetry"
-- question: "Telemetry is enabled by default (required for adaptive resource planning). Disable?"
+- question: "Select telemetry mode. Both options write to the same canonical thermal log used by adaptive resource planning."
+- multiSelect: false
 - options:
-  - "Keep enabled (Recommended)" → set `$TELEMETRY = true`
-  - "Disable telemetry" → set `$TELEMETRY = false`
+  - "Observe agents (Recommended)" → set `$TELEMETRY_MODE = "observe"`
+    - description: "Full 6-agent team: GPU metrics, thermal/throttling, training loss, disk I/O, checkpoint integrity, container health. Richer data but heavier — 6 background agents running continuously."
+  - "Lightweight monitor" → set `$TELEMETRY_MODE = "monitor"`
+    - description: "Single background agent polling nvidia-smi every 10 minutes. Only GPU utilization and temperature are recorded — no loss tracking, checkpoint integrity, or container health. Sufficient for adaptive resource planning."
+  - "None" → set `$TELEMETRY_MODE = "none"`
 
-Store as `$TELEMETRY` (true/false).
-
-**If the user selects "Disable telemetry"**, show a warning via AskUserQuestion:
+**If the user selects "None"**, show a warning via AskUserQuestion:
 - header: "Warning"
-- question: "Disabling telemetry also disables adaptive resource planning. Without it, training config will NOT auto-adjust between runs — GPU may be underutilized or overheat without detection. Are you sure?"
+- question: "No telemetry means no adaptive resource planning. Training config will NOT auto-adjust between runs — GPU may be underutilized or overheat without detection. Are you sure?"
 - options:
-  - "Keep telemetry enabled" → set `$TELEMETRY = true`
-  - "Disable anyway — I'll monitor manually" → set `$TELEMETRY = false`
+  - "Use observe agents" → set `$TELEMETRY_MODE = "observe"`
+  - "Use lightweight monitor" → set `$TELEMETRY_MODE = "monitor"`
+  - "Disable anyway" → set `$TELEMETRY_MODE = "none"`
 
-**When `$TELEMETRY = true`**, the orchestrator spawns the appropriate observe skill agents at each training phase:
+Store as `$TELEMETRY_MODE` ("observe" | "monitor" | "none").
 
-| Training phase | Observe skill spawned | Why |
-|---------------|----------------------|-----|
-| Step 4: Download model | `wp-finetune:observe-data-pipeline` | Network I/O, disk usage during multi-GB download |
-| Step 7: Train | `wp-finetune:observe-training` | GPU metrics, thermal, loss curves, checkpoint integrity (6 agents) |
-| Step 8: Merge adapter | `wp-finetune:observe-packaging` | Merge progress, file integrity, disk usage |
+Derive convenience flags:
+- `$TELEMETRY = ($TELEMETRY_MODE != "none")` — controls adaptive planning (Step 8.5)
+- `$OBSERVE = ($TELEMETRY_MODE == "observe")` — controls full agent spawning (Steps 4/7/8)
+- `$MONITOR = ($TELEMETRY_MODE == "monitor")` — controls lightweight monitor spawning
 
-**Between runs:** After each ratio's Step 8 completes, spawn `wp-finetune:review-telemetry` to consolidate that run's telemetry into `_summary.md` before starting the next ratio.
+#### Canonical thermal log
 
-**After all runs:** Final `wp-finetune:review-telemetry` produces a cross-run comparison summary.
+All telemetry collectors (observe agents and lightweight monitor) append to the same canonical file:
 
-**Lifecycle per observe agent spawn:**
+```
+telemetry/training/{model_short}_{date}_{ratio}_thermal.jsonl
+```
+
+- `{model_short}` = base model short name (e.g., `qwen3-30b`)
+- `{date}` = date training commenced (e.g., `20260330`)
+- `{ratio}` = dataset ratio (e.g., `30_70`)
+- Example: `telemetry/training/qwen3-30b_20260330_30_70_thermal.jsonl`
+
+**JSONL schema** (one line per reading):
+
+```jsonl
+{"ts": "2026-03-30T06:57:47Z", "gpu_util": 82, "temp": 65, "vram_used_mb": 92493, "source": "monitor"}
+{"ts": "2026-03-30T06:58:17Z", "gpu_util": 85, "temp": 66, "vram_used_mb": 92493, "source": "observe-agent"}
+```
+
+Store the canonical log path as `$THERMAL_LOG` for this run:
+```python
+THERMAL_LOG = f"telemetry/training/{model_short}_{date}_{ratio}_thermal.jsonl"
+```
+
+This file is the **single source of truth** for adaptive resource planning. Step 8.5a reads only this file — it never parses agent markdown or monitor output directly.
+
+```
+Collectors (Step 0c)              Canonical log                Downstream consumers
+────────────────────             ──────────────               ────────────────────
+Lightweight monitor ──┐
+                      ├──► {model}_{date}_{ratio}    ──┬──► Step 8.5a: compute avg/peak
+Observe agents ───────┘    _thermal.jsonl              │
+                           (append-only JSONL)         ├──► Step 8.5b: thermal_history.json
+                                                       │    (one summary record per run)
+                                                       │
+                                                       ├──► Step 8.5c: zone classification
+                                                       │
+                                                       └──► Step 8.5d: CRITICAL backoff
+                                                            (lookup last WARM in history)
+```
+
+#### What each mode spawns
+
+**Observe agents** (`$TELEMETRY_MODE = "observe"`):
+
+| Training phase | Spawned | Purpose |
+|---------------|---------|---------|
+| Step 4: Download | observe-data-pipeline (3 agents) | Network I/O, disk, progress |
+| Step 7: Train | observe-training (6 agents) | GPU, thermal (writes to `$THERMAL_LOG`), loss, disk, checkpoints, container |
+| Step 8: Merge | observe-packaging (3 agents) | Merge progress, file integrity, size |
+| Step 8d | review-telemetry | Per-run `_summary.md` |
+| Step 9b | review-telemetry | Cross-run comparison |
+
+**Lightweight monitor** (`$TELEMETRY_MODE = "monitor"`):
+
+| Training phase | Spawned | Purpose |
+|---------------|---------|---------|
+| Step 7: Train | 1 background agent | Polls nvidia-smi every 10 min, appends to `$THERMAL_LOG` |
+
+No observe agents, no review-telemetry, no per-run summaries. Only the canonical thermal log is produced — sufficient for adaptive resource planning.
+
+**Lifecycle (observe mode):**
 1. Spawn observe agents in background before the long-running step
-2. Run the step (download/train/merge)
-3. Touch `_stop` file to signal agents to write final summaries and exit
-4. Spawn review-telemetry to consolidate
-5. Proceed to next step
+2. Agents append to their markdown files AND to `$THERMAL_LOG` (thermal/GPU agents)
+3. Execute the step (download/train/merge)
+4. Touch `_stop` file — agents write Final Summary and exit
+5. Invoke review-telemetry to consolidate into `_summary.md`
+6. Proceed to next step
+
+**Lifecycle (monitor mode):**
+1. Spawn single monitor agent before training
+2. Monitor appends to `$THERMAL_LOG` every 10 minutes
+3. Execute training
+4. Touch `_stop` — monitor exits
+5. Proceed to next step (no review-telemetry)
+
+**Between runs (both modes):** Step 8.5 reads `$THERMAL_LOG`, computes aggregates, updates `thermal_history.json`, adjusts config.
+
+**After all runs (observe mode only):** Final review-telemetry produces `cross_run_summary.md`.
 
 ### Step 0d: Confirm training plan
 
@@ -240,7 +312,7 @@ if not ready.ok:
 
 ```
 # 4a: Spawn telemetry (only if download will actually run)
-if $TELEMETRY and not Path("models/Qwen3-30B-A3B/config.json").exists():
+if $OBSERVE and not Path("models/Qwen3-30B-A3B/config.json").exists():
     DOWNLOAD_TDIR = f"telemetry/data-pipeline/{timestamp}"
     mkdir -p $DOWNLOAD_TDIR
 
@@ -262,7 +334,7 @@ print(result.summary())
 
 ```
 # 4c: Stop telemetry
-if $TELEMETRY and DOWNLOAD_TDIR:
+if $OBSERVE and DOWNLOAD_TDIR:
     touch $DOWNLOAD_TDIR/_stop   # agents write Final Summary and exit
 ```
 
@@ -297,9 +369,15 @@ if not result.ok:
 
 ### Step 7: Train (long-running, per-run isolated)
 
-**7a: Spawn observe-training (6 agents) before training starts.**
+**7a: Set up canonical thermal log and spawn collectors.**
 
-If `$TELEMETRY`, invoke `wp-finetune:observe-training` inline — create run dir and spawn all 6 agents in background:
+```python
+# Canonical thermal log path for this run
+THERMAL_LOG = f"telemetry/training/{model_short}_{date}_{ratio}_thermal.jsonl"
+Path(THERMAL_LOG).parent.mkdir(parents=True, exist_ok=True)
+```
+
+**If `$OBSERVE`** — spawn full 6-agent observe-training team. The thermal and GPU agents append to both their markdown files AND `$THERMAL_LOG`:
 
 ```
 TRAIN_TDIR = f"telemetry/training/{timestamp}"
@@ -309,7 +387,9 @@ mkdir -p $TRAIN_TDIR
 Agent(
   description="Telemetry: GPU metrics",
   prompt="You are a GPU metrics observer. Write to {TRAIN_TDIR}/gpu-metrics.md.
-  LOOP (30s): nvidia-smi memory/util/clock → append. CRITICAL if mem > 120GB. WARNING if util < 50% 3x.
+  ALSO append JSONL to {THERMAL_LOG} on each reading:
+    {\"ts\": \"...\", \"gpu_util\": N, \"temp\": N, \"vram_used_mb\": N, \"source\": \"observe-agent\"}
+  LOOP (30s): nvidia-smi memory/util/clock → append to both files. CRITICAL if mem > 120GB. WARNING if util < 50% 3x.
   STOP: {TRAIN_TDIR}/_stop exists → write Final Summary → exit.",
   run_in_background=true
 )
@@ -363,6 +443,27 @@ Agent(
 )
 ```
 
+**If `$MONITOR`** — spawn single lightweight agent that only writes to `$THERMAL_LOG`:
+
+```
+Agent(
+  description="Telemetry: lightweight thermal monitor",
+  prompt="You are a lightweight GPU monitor. Append JSONL to {THERMAL_LOG} every 10 minutes.
+
+  LOOP (every 600 seconds):
+  1. Run: docker exec unsloth-headless nvidia-smi --query-gpu=utilization.gpu,memory.used,temperature.gpu --format=csv,noheader,nounits
+  2. Parse gpu_util, vram_used_mb, temp from output
+  3. Append one JSONL line to {THERMAL_LOG}:
+     {\"ts\": \"YYYY-MM-DDTHH:MM:SSZ\", \"gpu_util\": N, \"temp\": N, \"vram_used_mb\": N, \"source\": \"monitor\"}
+  4. If temp >= 83: also touch telemetry/training/_thermal_pause
+  5. Check if telemetry/training/_stop exists → exit
+  6. Sleep 600 seconds, repeat
+
+  STOP: telemetry/training/_stop file exists OR after 84 checks (14 hours).",
+  run_in_background=true
+)
+```
+
 **7b: Execute training.**
 
 ```python
@@ -382,18 +483,22 @@ if not result.ok:
 **7c: Stop training telemetry and check for thermal events.**
 
 ```
-touch $TRAIN_TDIR/_stop   # all 6 agents write Final Summary and exit
+if $OBSERVE:
+    touch $TRAIN_TDIR/_stop   # all 6 agents write Final Summary and exit
+if $MONITOR:
+    touch telemetry/training/_stop   # lightweight monitor exits
 
-# Check for live thermal guard trigger
-if Path(f"{TRAIN_TDIR}/_thermal_pause").exists():
+# Check for live thermal guard trigger (both modes write this)
+if Path("telemetry/training/_thermal_pause").exists():
     print("⚠ THERMAL EVENT detected during training — adaptive planning will apply CRITICAL backoff")
+    Path("telemetry/training/_thermal_pause").unlink()  # reset for next run
 ```
 
 ### Step 8: Merge adapter (per-run isolated)
 
 **8a: Spawn observe-packaging (3 agents) before merge.**
 
-If `$TELEMETRY`:
+If `$OBSERVE`:
 
 ```
 MERGE_TDIR = f"telemetry/packaging/{timestamp}"
@@ -447,13 +552,13 @@ if not result.ok:
 **8c: Stop packaging telemetry.**
 
 ```
-if $TELEMETRY:
+if $OBSERVE:
     touch $MERGE_TDIR/_stop   # 3 agents write Final Summary and exit
 ```
 
-**8d: Invoke review-telemetry to consolidate this run.**
+**8d: Invoke review-telemetry to consolidate this run (observe mode only).**
 
-Invoke `wp-finetune:review-telemetry` inline — read all agent reports from this run's telemetry dirs and produce `_summary.md`:
+If `$OBSERVE`, invoke `wp-finetune:review-telemetry` inline — read all agent reports from this run's telemetry dirs and produce `_summary.md`:
 
 ```
 # Review training telemetry
@@ -469,6 +574,12 @@ Write: $MERGE_TDIR/_summary.md
 print(f"Run {run_name} complete. Telemetry summary:")
 print(f"  Training: {TRAIN_TDIR}/_summary.md")
 print(f"  Packaging: {MERGE_TDIR}/_summary.md")
+print(f"  Canonical thermal log: {THERMAL_LOG}")
+```
+
+If `$MONITOR` (no agent reports to review), just print the canonical log path:
+```
+print(f"Run {run_name} complete. Thermal log: {THERMAL_LOG}")
 ```
 
 ### Step 8.5: Adaptive resource planning (between runs)
@@ -477,39 +588,39 @@ print(f"  Packaging: {MERGE_TDIR}/_summary.md")
 
 **Requires `$TELEMETRY = true`.** If telemetry is disabled, skip this step entirely (config stays static across all runs).
 
-#### 8.5a: Collect metrics from completed run
+#### 8.5a: Collect metrics from canonical thermal log
 
-Parse the telemetry monitor file for the completed ratio:
+Read the canonical JSONL thermal log for the completed run. This file is the single source of truth — it contains readings from whichever collector was active (observe agents, lightweight monitor, or both).
 
 ```python
-import re
+import json
 from pathlib import Path
 
-monitor_file = Path(f"telemetry/training/ratio_{ratio}_v2_monitor.md")
-if not monitor_file.exists():
-    monitor_file = Path(f"telemetry/training/ratio_{ratio}_monitor.md")
+# THERMAL_LOG was set in Step 7a
+readings = []
+for line in Path(THERMAL_LOG).read_text().splitlines():
+    if line.strip():
+        readings.append(json.loads(line))
 
-gpu_utils = []
-gpu_temps = []
-for line in monitor_file.read_text().splitlines():
-    # Parse: "62 %, [N/A], [N/A], 63"
-    m = re.match(r"(\d+)\s*%.*,\s*(\d+)\s*$", line.strip())
-    if m:
-        gpu_utils.append(int(m.group(1)))
-        gpu_temps.append(int(m.group(2)))
+if not readings:
+    print(f"WARNING: No thermal data in {THERMAL_LOG} — skipping adaptive planning")
+    # Skip to next ratio
 
-# Also get VRAM from nvidia-smi (live)
-# docker exec unsloth-headless nvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader
+gpu_utils = [r["gpu_util"] for r in readings]
+gpu_temps = [r["temp"] for r in readings]
+vram_readings = [r["vram_used_mb"] for r in readings if r.get("vram_used_mb")]
 ```
 
 Compute:
-- `avg_gpu_util` — mean GPU utilization across all checks
-- `peak_gpu_util` — max GPU utilization
-- `avg_temp` — mean temperature
-- `peak_temp` — max temperature
-- `vram_used_gb` — current VRAM usage (from nvidia-smi)
-- `vram_total_gb` — total VRAM capacity
-- `vram_headroom_gb` — total minus used
+- `avg_gpu_util = sum(gpu_utils) / len(gpu_utils)`
+- `peak_gpu_util = max(gpu_utils)`
+- `avg_temp = sum(gpu_temps) / len(gpu_temps)`
+- `peak_temp = max(gpu_temps)`
+- `vram_used_gb = max(vram_readings) / 1024 if vram_readings else 0`
+- `vram_total_gb` — from nvidia-smi live query
+- `vram_headroom_gb = vram_total_gb - vram_used_gb`
+- `num_readings = len(readings)`
+- `sources = set(r.get("source", "unknown") for r in readings)`
 
 #### 8.5b: Update thermal history
 
@@ -741,18 +852,19 @@ for ratio in selected_ratios:
 
 **9b: Invoke final cross-run review-telemetry.**
 
-If `$TELEMETRY`, invoke `wp-finetune:review-telemetry` inline to produce a cross-run comparison:
+If `$TELEMETRY` (either mode), produce a cross-run comparison from `thermal_history.json`:
 
 ```
-# Read all per-run _summary.md files
-for each ratio in selected_ratios:
-    Read telemetry/training/{ratio_timestamp}/_summary.md
-    Read telemetry/packaging/{ratio_timestamp}/_summary.md
-    Extract: peak_temp, avg_util, final_loss, training_duration, alerts
-
-# Read thermal_history.json for config progression
+# Read thermal_history.json for config progression (written by Step 8.5b for every run)
 Read telemetry/training/thermal_history.json
 Read telemetry/training/adaptive_adjustments.md
+
+# If $OBSERVE: also read per-run _summary.md files for richer data
+if $OBSERVE:
+    for each ratio in selected_ratios:
+        Read telemetry/training/{ratio_timestamp}/_summary.md
+        Read telemetry/packaging/{ratio_timestamp}/_summary.md
+        Extract: final_loss, training_duration, alerts
 
 # Write cross-run comparison summary
 Write telemetry/training/cross_run_summary.md:
@@ -765,8 +877,11 @@ Write telemetry/training/cross_run_summary.md:
     | 2   | 40/60 | 8     | 2     | 8       | WARM | 74°C      | 85%      | 18h      |
     | ... |
 
+    ## Canonical Thermal Logs
+    {List all JSONL files: telemetry/training/{model}_{date}_{ratio}_thermal.jsonl}
+
     ## Alerts Across All Runs
-    {Consolidated WARNING/CRITICAL events}
+    {Consolidated WARNING/CRITICAL events from _summary.md files (observe) or thermal logs (monitor)}
 
     ## Recommendations
     {Which ratio had best loss? Any thermal concerns? Suggested eval order.}
