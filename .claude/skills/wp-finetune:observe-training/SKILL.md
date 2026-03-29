@@ -93,7 +93,7 @@ Agent(
   LOOP (every 60 seconds):
   1. Run: docker logs --tail 30 unsloth-headless 2>&1 | grep -i 'loss\|step\|epoch\|lr\|grad'
   2. Check for trainer state: docker exec unsloth-headless cat /workspace/outputs/trainer_state.json 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); print(json.dumps(d[\"log_history\"][-3:], indent=2))' 2>/dev/null || true
-  3. Check W&B: docker exec unsloth-headless ls -la /workspace/wandb/latest-run/ 2>/dev/null || true
+  3. Check MLflow logs: docker exec unsloth-headless ls -la /workspace/wp-finetune/mlruns/ 2>/dev/null || true
   4. Check TensorBoard: docker exec unsloth-headless find /workspace -name 'events.out.tfevents*' -newer /tmp/.last_tb_check 2>/dev/null || true
   5. Parse and append to {TDIR}/training-metrics.md:
      ### {HH:MM:SS} -- Step {N}/{total}

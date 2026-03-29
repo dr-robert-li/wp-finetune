@@ -110,7 +110,7 @@ required_imports:
   - trl
   - peft
   - datasets
-  - wandb
+  - mlflow
   - yaml
   - scipy
 
@@ -141,6 +141,6 @@ extra_deps:
   - pyyaml
   - python-dotenv
   - scipy
-  - wandb
+  - mlflow
   - peft
   - hf_transfer
