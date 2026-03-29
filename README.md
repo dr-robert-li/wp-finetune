@@ -230,7 +230,7 @@ Runs the training pipeline on DGX Spark via the `dgx_toolbox.py` execution engin
 ```
 Step 0a: Select base model (Qwen3-30B-A3B, 14B, 8B, or custom HF ID)
 Step 0b: Select dataset exports (one or more of the 5 ratio exports)
-Step 0c: Enable/disable telemetry monitoring
+Step 0c: Telemetry (default on — controls all observe/review/adaptive)
 Step 0d: Review full training plan → confirm before starting
    │
    │  For each selected ratio:
@@ -261,41 +261,40 @@ Step 9: Report (after all runs: cross-run comparison summary)
 
 **Confirmation gate:** Step 0d presents the full plan (model, LoRA config, hyperparameters, telemetry choice, estimated duration, disk requirements, output paths) and requires explicit confirmation before starting. No silent multi-hour training runs.
 
-### `/wp-finetune:observe-*` — Background Telemetry
+### `/wp-finetune:observe-*` and `/wp-finetune:review-telemetry` — Embedded Telemetry
 
-Five stage-specific observe skills spawn background agent teams that continuously monitor long-running operations. Run them *before* starting the operation they monitor.
+Observe and review skills are **embedded within `/wp-finetune:run-training`** — they are spawned automatically at the right lifecycle points when telemetry is enabled (Step 0c, default on). No need to invoke them separately during training.
 
-| Skill | Agents | What they watch |
-|-------|--------|-----------------|
-| `wp-finetune:observe-data-pipeline` | 3 | Pipeline progress, system resources, disk I/O |
-| `wp-finetune:observe-training` | 6 | GPU metrics, thermal throttling, training loss, disk I/O, checkpoint integrity, container health |
-| `wp-finetune:observe-evaluation` | 3 | Eval progress, GPU metrics, result tracking |
-| `wp-finetune:observe-inference` | 5 | Request latency, throughput, GPU utilization, memory, error rates |
-| `wp-finetune:observe-packaging` | 3 | Quantization progress, file integrity, size tracking |
+They can still be invoked standalone for non-training operations (eval, inference, packaging).
+
+| Skill | Agents | Spawned by run-training at |
+|-------|--------|---------------------------|
+| `observe-data-pipeline` | 3 | Step 4 (model download) |
+| `observe-training` | 6 | Step 7 (training) — includes live thermal guard |
+| `observe-packaging` | 3 | Step 8 (adapter merge) |
+| `review-telemetry` | — | Step 8d (per-run summary) + Step 9b (cross-run comparison) |
+| `observe-evaluation` | 3 | Standalone (Phase 4) |
+| `observe-inference` | 5 | Standalone (Phase 5) |
 
 ```
 telemetry/
-  training/2026-03-29T10:00:00/
+  training/{timestamp}/
     gpu-metrics.md          ← Agent 1: nvidia-smi every 30s
-    thermal-throttling.md   ← Agent 2: temp warnings > 80C
+    thermal-throttling.md   ← Agent 2: temp warnings > 80C, _thermal_pause at ≥83C
     training-metrics.md     ← Agent 3: loss curves from MLflow
     disk-io.md              ← Agent 4: checkpoint sizes
     checkpoint-integrity.md ← Agent 5: adapter_config.json validation
     container-monitor.md    ← Agent 6: docker health checks
-    _stop                   ← Touch this file to stop all agents
+    _stop                   ← Touched after training ends — agents write Final Summary
+    _thermal_pause          ← Touched by thermal agent if ≥83C (triggers CRITICAL backoff)
+    _summary.md             ← Written by review-telemetry after run completes
+  training/
+    thermal_history.json    ← Persistent record of all runs (config + thermal zone)
+    adaptive_adjustments.md ← Log of config changes between runs
+    cross_run_summary.md    ← Final comparison table across all ratios
 ```
 
-Each agent runs in a continuous loop, appending to its markdown file. Agents check for a `_stop` signal file each iteration — touch it to gracefully shut them all down. WARNING/CRITICAL thresholds are concrete (GPU temp > 80C, loss divergence > 2x, disk > 85%).
-
-### `/wp-finetune:review-telemetry` — Consolidation
-
-After an operation completes (or at any point during), this skill reads all telemetry files for a stage and produces a `_summary.md` with:
-
-- Key metrics (peak GPU temp, final loss, total duration)
-- Alerts triggered (any WARNING/CRITICAL events)
-- Recommendations (e.g., "checkpoint-400 had a loss spike — consider rolling back")
-
-This is the self-introspection loop: observe agents collect raw data, review-telemetry synthesizes it into actionable insights.
+**Lifecycle per run:** spawn agents (background) → execute step → touch `_stop` → agents write summaries → review-telemetry consolidates → adaptive planning reads telemetry → adjust config → next run.
 
 ## DGX Toolbox Integration
 
