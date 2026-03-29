@@ -240,6 +240,42 @@ Step 8: Merge adapter into base model (with verification roundtrip)
 
 **Confirmation gate:** Step 0c presents the full plan (model, LoRA config, hyperparameters, estimated duration, disk requirements, output paths) and requires explicit confirmation before starting. No silent multi-hour training runs.
 
+### `/wp-finetune:observe-*` — Background Telemetry
+
+Five stage-specific observe skills spawn background agent teams that continuously monitor long-running operations. Run them *before* starting the operation they monitor.
+
+| Skill | Agents | What they watch |
+|-------|--------|-----------------|
+| `wp-finetune:observe-data-pipeline` | 3 | Pipeline progress, system resources, disk I/O |
+| `wp-finetune:observe-training` | 6 | GPU metrics, thermal throttling, training loss, disk I/O, checkpoint integrity, container health |
+| `wp-finetune:observe-evaluation` | 3 | Eval progress, GPU metrics, result tracking |
+| `wp-finetune:observe-inference` | 5 | Request latency, throughput, GPU utilization, memory, error rates |
+| `wp-finetune:observe-packaging` | 3 | Quantization progress, file integrity, size tracking |
+
+```
+telemetry/
+  training/2026-03-29T10:00:00/
+    gpu-metrics.md          ← Agent 1: nvidia-smi every 30s
+    thermal-throttling.md   ← Agent 2: temp warnings > 80C
+    training-metrics.md     ← Agent 3: loss curves from W&B
+    disk-io.md              ← Agent 4: checkpoint sizes
+    checkpoint-integrity.md ← Agent 5: adapter_config.json validation
+    container-monitor.md    ← Agent 6: docker health checks
+    _stop                   ← Touch this file to stop all agents
+```
+
+Each agent runs in a continuous loop, appending to its markdown file. Agents check for a `_stop` signal file each iteration — touch it to gracefully shut them all down. WARNING/CRITICAL thresholds are concrete (GPU temp > 80C, loss divergence > 2x, disk > 85%).
+
+### `/wp-finetune:review-telemetry` — Consolidation
+
+After an operation completes (or at any point during), this skill reads all telemetry files for a stage and produces a `_summary.md` with:
+
+- Key metrics (peak GPU temp, final loss, total duration)
+- Alerts triggered (any WARNING/CRITICAL events)
+- Recommendations (e.g., "checkpoint-400 had a loss spike — consider rolling back")
+
+This is the self-introspection loop: observe agents collect raw data, review-telemetry synthesizes it into actionable insights.
+
 ## DGX Toolbox Integration
 
 This project pairs with [DGX Toolbox](https://github.com/dr-robert-li/dgx-toolbox) for training, evaluation, and serving. The toolbox location is **configurable** — it doesn't need to be at `~/dgx-toolbox`:
