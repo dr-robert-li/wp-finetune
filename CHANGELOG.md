@@ -41,7 +41,7 @@ All notable changes to the wp-qwen3-moe project.
 - Stop mechanism via `_stop` file
 - Agent team assessment checklist for future skill creators
 
-### Phase 3: Model Prep and Training (At Checkpoint)
+### Phase 3: Model Prep and Training (In Progress — 5 Sequential Runs)
 - 75 tests passing across 13 test files
 - Training scripts: `download_model.py`, `prepare_tokenizer.py`, `train_model.py`, `merge_adapter.py`
 - Tokenizer extended with `<wp_gen>` (ID 151669) and `<wp_judge>` (ID 151670), mean-initialized embeddings
@@ -51,6 +51,8 @@ All notable changes to the wp-qwen3-moe project.
 - Telemetry integration: when enabled, orchestrator spawns observe-training (6 agents) during training, observe-packaging during merge, review-telemetry between runs for per-run and cross-run summaries
 - BF16 LoRA (not QLoRA) — MoE router weights incompatible with BitsandBytes 4-bit quantization
 - Unsloth-zoo merge bug (PR #369) confirmed fixed in DGX Toolbox container version
+- **Training commenced:** 5 sequential runs (30/70, 40/60, 50/50, 60/40, 70/30) on DGX Spark, ~30-60hr estimated
+- Each run produces isolated adapter in `adapters/qwen3-30b-wp-{ratio}/` for A/B/C/D/E eval comparison
 
 ### Base Model Switch
 - **Switched from Qwen3-8B (dense-to-MoE conversion) to Qwen3-30B-A3B (native MoE)**
