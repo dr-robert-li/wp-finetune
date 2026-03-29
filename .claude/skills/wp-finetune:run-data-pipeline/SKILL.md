@@ -1,4 +1,4 @@
-# Skill: run-data-pipeline
+# Skill: wp-finetune:run-data-pipeline
 
 Run the complete wp-qwen3-moe data pipeline end-to-end using Claude Code agents for all LLM work. Single invocation, no prompting required.
 

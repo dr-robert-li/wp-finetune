@@ -1,4 +1,4 @@
-# Skill: observe-evaluation
+# Skill: wp-finetune:observe-evaluation
 
 Spawn background observer agents to monitor model evaluation. Writes telemetry to `telemetry/evaluation/{timestamp}/`.
 

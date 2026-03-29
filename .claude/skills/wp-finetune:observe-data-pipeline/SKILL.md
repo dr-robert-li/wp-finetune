@@ -1,4 +1,4 @@
-# Skill: observe-data-pipeline
+# Skill: wp-finetune:observe-data-pipeline
 
 Spawn background observer agents to monitor data pipeline execution. Writes telemetry to `telemetry/data-pipeline/{timestamp}/`.
 

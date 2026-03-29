@@ -1,4 +1,4 @@
-# Skill: review-telemetry
+# Skill: wp-finetune:review-telemetry
 
 Read all telemetry files for a stage and produce a consolidated summary with alerts and key metrics.
 
