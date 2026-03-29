@@ -1,39 +1,43 @@
 # Changelog
 
-All notable changes to the wp-qwen3-moe project.
+All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Dataset Production — Complete (267K merged, 5 ratio exports)
-- **236 repos** in repos.yaml (1 core + 226 plugins + 9 themes): top-quality + poor-quality corpus
-- **134,659 judged functions** (93,904 passed + 40,755 failed) across all repos
-- **143K judge training examples** — full coverage of all judged functions (not sampled)
-- **29,020 CoT examples** across 4-way split: gen pattern (9,400), judge rubric (13,500), judge contrastive (4,080), security (2,000)
-- **5 ratio exports** at 30/70, 40/60, 50/50, 60/40, 70/30 — from 43K to 102K examples per export
+- Training in progress: 5 sequential LoRA runs on DGX Spark (~30-60hr estimated)
+- Phase 4 (Evaluation) and Phase 5 (Packaging & Deployment) not started
+
+## [0.5.0] - 2026-03-29 — Training Commenced
+
+### Added
+- **Training commenced:** 5 sequential runs (30/70, 40/60, 50/50, 60/40, 70/30) on DGX Spark
+- Each run produces isolated adapter in `adapters/qwen3-30b-wp-{ratio}/` for A/B/C/D/E eval comparison
+- Multi-ratio training workflow: Step 0a model selection, 0b ratio selection, 0c telemetry opt-in, 0d confirmation gate
+- Telemetry integration: observe-training (6 agents) during training, review-telemetry between runs
+- `wp-moe.md` rewritten to v2.0 reflecting current project state
+
+## [0.4.0] - 2026-03-29 — Dataset Complete (267K merged, 5 ratio exports)
+
+### Added
+- **Poor-code corpus:** 1,000 poorly-rated plugins (<=3 stars) + 186 poorly-rated themes from WordPress.org
+- **GitHub URL discovery:** 3-phase process (WP.org scraping, `gh search`, validation) — 983 root repo URLs across 4 datasets
+- **4-way CoT split:** Gen pattern CoT, judge rubric CoT, judge contrastive CoT, shared security CoT — each with max(500, 10%) floor
 - **Percentage-based targets** — all pipeline targets derive from actual data counts, not hardcoded numbers
-- **Pipeline orchestrator** rewritten with 4-way CoT actions and max(500, 10%) floor per type
-- **Fixed double-brace template artifact** in synthetic generation (1,909 functions recovered)
+- **5 ratio exports** at 30/70, 40/60, 50/50, 60/40, 70/30 — from 43K to 102K examples per export
 
-### Evaluation Suite — 241-Check Canonical Rubric
-- `docs/eval/wp_code_quality_rubric.md` — 241 check IDs (105 positive, 136 negative) across 9 weighted dimensions
-- `eval/rubric_definitions.py` — all check IDs, weights, detection methods, automation mappings
-- `eval/rubric_scorer.py` — 4-tool ground truth scoring engine (PHPCS, PHPStan, regex, LLM)
-- Rewrote `eval/eval_gen.py` with full 9-dimension rubric scoring (not just PHPCS pass rate)
-- Rewrote `eval/eval_judge.py` with per-dimension Spearman correlation
-- Updated `eval/eval_gate.py` with multi-dimension threshold support
-- Critical floor rules: Security/SQL/Structure dimensions have automatic score caps for catastrophic flaws
-- Research backing: `research_wpcs_standards.md` (58 WPCS + 39 VIP sniffs), `research_wp_security_sql_perf.md` (security/SQL/perf patterns)
+### Changed
+- `config/repos.yaml` expanded from 56 → 236 repos (top-quality + poor-quality corpus)
+- Pipeline orchestrator rewritten with 4-way CoT actions
+- Judge pool: 3,956 → 30,498 examples (7.7x increase)
+- CoT data: 610 → 29,020 examples (47x increase across 4 types)
+- Total dataset: 5,868 → up to 101,660 depending on ratio
 
-### Execution Engine Architecture
-- Refactored `scripts/dgx_toolbox.py` from path resolver into project-agnostic execution engine (639 lines)
-- Architecture: Skill (intent + recovery) → dgx_toolbox.py (validate + execute) → Docker commands (dynamic from YAML)
-- All 8 project-specific couplings moved to `config/dgx_toolbox.yaml` — Python engine is project-agnostic
-- New methods: `validate()`, `ensure_ready()`, `execute()`, `run_service()`, `status_report()`
-- Idempotency built into `execute()` via `idempotency_check` parameter
-- Container lifecycle: start → wait → mount check → dep install → validate — fully automated
-- Removed brittle `run_training_pipeline.sh` — Python engine replaces it
+### Fixed
+- Double-brace template artifact in synthetic generation (1,909 functions recovered)
 
-### Agentic Telemetry Framework
+## [0.3.2] - 2026-03-28 — Agentic Telemetry Framework
+
+### Added
 - 5 stage-specific observe skills: `/wp-finetune:observe-data-pipeline` (3 agents), `/wp-finetune:observe-training` (6 agents), `/wp-finetune:observe-evaluation` (3 agents), `/wp-finetune:observe-packaging` (3 agents), `/wp-finetune:observe-inference` (5 agents)
 - `/wp-finetune:review-telemetry` consolidates agent output into `_summary.md`
 - Each agent writes append-only markdown to `telemetry/{stage}/{timestamp}/`
@@ -41,55 +45,72 @@ All notable changes to the wp-qwen3-moe project.
 - Stop mechanism via `_stop` file
 - Agent team assessment checklist for future skill creators
 
-### Phase 3: Model Prep and Training (In Progress — 5 Sequential Runs)
-- 75 tests passing across 13 test files
+## [0.3.1] - 2026-03-28 — Execution Engine Architecture
+
+### Added
+- `scripts/dgx_toolbox.py` refactored into project-agnostic execution engine (639 lines)
+- New methods: `validate()`, `ensure_ready()`, `execute()`, `run_service()`, `status_report()`
+- Idempotency built into `execute()` via `idempotency_check` parameter
+- Container lifecycle: start → wait → mount check → dep install → validate — fully automated
+
+### Changed
+- All 8 project-specific couplings moved from Python to `config/dgx_toolbox.yaml`
+- Architecture: Skill (intent + recovery) → dgx_toolbox.py (validate + execute) → Docker commands (dynamic from YAML)
+
+### Removed
+- Brittle `run_training_pipeline.sh` — Python engine replaces it
+
+## [0.3.0] - 2026-03-28 — Model Prep and Training Scripts
+
+### Added
 - Training scripts: `download_model.py`, `prepare_tokenizer.py`, `train_model.py`, `merge_adapter.py`
+- Eval scripts: `eval/eval_gen.py`, `eval/eval_judge.py`, `eval/eval_gate.py`
+- Eval rubric: `docs/eval/wp_code_quality_rubric.md` — 241 check IDs (105 positive, 136 negative) across 9 weighted dimensions
+- `eval/rubric_definitions.py` — all check IDs, weights, detection methods, automation mappings
+- `eval/rubric_scorer.py` — 4-tool ground truth scoring engine (PHPCS, PHPStan, regex, LLM)
+- Research backing: `research_wpcs_standards.md`, `research_wp_security_sql_perf.md`
+- `config/train_config.yaml` — externalized training hyperparameters
+- `config/wp-bench.yaml` — evaluation benchmark config
 - Tokenizer extended with `<wp_gen>` (ID 151669) and `<wp_judge>` (ID 151670), mean-initialized embeddings
 - Memory pre-check blocks training if < 70GB available (with actionable diagnostics)
-- All steps idempotent: download skips if shards exist, tokenizer skips if tokens present, training skips if adapter exists
-- Multi-ratio training: Step 0a model selection, 0b ratio selection, 0c telemetry opt-in, 0d confirmation gate
-- Telemetry integration: when enabled, orchestrator spawns observe-training (6 agents) during training, observe-packaging during merge, review-telemetry between runs for per-run and cross-run summaries
+- All training steps idempotent: download skips if shards exist, tokenizer skips if tokens present
+- 75 tests passing across 13 test files
+- Critical floor rules: Security/SQL/Structure dimensions have automatic score caps for catastrophic flaws
+
+### Changed
+- **Base model switched from Qwen3-8B (dense-to-MoE conversion) to Qwen3-30B-A3B (native MoE)**
+- CMoE and ToMoE rejected: no serving stack (no vLLM, no GGUF, no Ollama)
 - BF16 LoRA (not QLoRA) — MoE router weights incompatible with BitsandBytes 4-bit quantization
-- Unsloth-zoo merge bug (PR #369) confirmed fixed in DGX Toolbox container version
-- **Training commenced:** 5 sequential runs (30/70, 40/60, 50/50, 60/40, 70/30) on DGX Spark, ~30-60hr estimated
-- Each run produces isolated adapter in `adapters/qwen3-30b-wp-{ratio}/` for A/B/C/D/E eval comparison
+- Phase 4 split into Evaluation (4) + Packaging/Deployment (5) with human review gate
+- wp-bench deferred to Phase 4 (live eval after model is served)
 
-### Base Model Switch
-- **Switched from Qwen3-8B (dense-to-MoE conversion) to Qwen3-30B-A3B (native MoE)**
-- CMoE and ToMoE have no serving stack (no vLLM, no GGUF, no Ollama)
-- Qwen3-30B-A3B: verified vLLM, Ollama, HuggingFace, Unsloth support
-- ~30B total params, ~3B active per forward pass, 128 experts, top-8 routing
-- Fits DGX Spark 128GB unified memory (63GB BF16 with headroom)
+### Fixed
+- Unsloth-zoo merge bug (PR #369 + #559) confirmed fixed in DGX Toolbox container version 2026.3.5
 
-### Skills (8 total, all prefixed `wp-finetune:`)
-- `wp-finetune:run-data-pipeline` — autonomous data pipeline with spawn-until-target pattern
-- `wp-finetune:run-training` — DGX Spark training with dry-run, base model selection, ratio selection
-- `wp-finetune:observe-{data-pipeline,training,evaluation,packaging,inference}` — stage-specific telemetry
-- `wp-finetune:review-telemetry` — aggregation and self-introspection
+## [0.2.0] - 2026-03-26 — Pipeline Ready
 
-## [0.2.0] - 2026-03-26
-
-### Phase 1: Pipeline Ready (Complete)
-- Created `scripts/utils.py` with 9 shared functions: extract_json (4-strategy fallback), call_with_backoff (exponential + retry-after), checkpoint save/load (atomic rename), Batch API routing (threshold=50)
-- Created `scripts/preflight.py` validating PHPCS, PHP CLI, and API key
-- Created `scripts/csv_to_repos.py` converting ranked CSV data to repos.yaml
-- Generated initial `config/repos.yaml` with 56 repos (1 core + 49 plugins + 6 themes) with auto-assigned quality_tier from vulnerability data (later expanded to 236)
-- 26 passing tests across test_utils.py, test_preflight.py, test_csv_to_repos.py
-
-### Phase 2: Script Hardening (Complete)
-- Updated `config/judge_system.md`: threshold raised to >= 8, security auto-FAIL (dim < 5), N/A deflated to 7
-- Added rejection templates to `config/synthetic_prompts.yaml` (proactive nonce, capability, escaping)
-- Hardened all 8 pipeline scripts with utils.py integration (extract_json, call_with_backoff, checkpoints, Batch API routing)
-- Added PHPCS hard-fail guard to phase2_mutate.py
-- Updated export_dataset.py with 40/60 gen/judge ratio, deduplication, PHP lint, sample_weight, metadata.json
-- Added python-dotenv to all scripts (API key loaded from .env)
+### Added
+- `scripts/utils.py` with 9 shared functions: extract_json (4-strategy fallback), call_with_backoff (exponential + retry-after), checkpoint save/load (atomic rename), Batch API routing (threshold=50)
+- `scripts/preflight.py` validating PHPCS, PHP CLI, and API key
+- `scripts/csv_to_repos.py` converting ranked CSV data to repos.yaml
+- `config/repos.yaml` with 56 repos (1 core + 49 plugins + 6 themes) with auto-assigned quality_tier from vulnerability data
+- `config/judge_system.md`: threshold >= 8, security auto-FAIL (dim < 5), N/A deflated to 7
+- Rejection templates in `config/synthetic_prompts.yaml` (proactive nonce, capability, escaping)
+- PHPCS hard-fail guard to `phase2_mutate.py`
+- `export_dataset.py` with gen/judge ratio enforcement, deduplication, PHP lint, sample_weight, metadata.json
+- python-dotenv for API key loading from `.env`
 - 46 passing tests total
 
-## [0.1.0] - 2026-03-26
+### Changed
+- Hardened all 8 pipeline scripts with utils.py integration
 
-### Project Initialization
-- Updated base model from LLaMA-MoE to Qwen3-8B throughout all documentation
-- Integrated DGX Toolbox references (Unsloth Studio, vLLM, Ollama, eval-toolbox, safety harness)
-- Created GSD project structure with 4-phase roadmap and 37 requirements
-- Codebase mapping (7 documents), domain research (5 documents)
+## [0.1.0] - 2026-03-26 — Project Initialization
+
+### Added
 - Initial pipeline scripts (10 scripts) and configuration files (4 configs)
+- GSD project structure with 4-phase roadmap and 37 requirements
+- Codebase mapping (7 documents), domain research (5 documents)
+- DGX Toolbox references (Unsloth Studio, vLLM, Ollama, eval-toolbox, safety harness)
+
+### Changed
+- Base model updated from LLaMA-MoE to Qwen3-8B throughout all documentation
