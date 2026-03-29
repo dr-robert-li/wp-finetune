@@ -197,7 +197,7 @@ The idempotency guards are the key enabler. Every step checks "is this already d
 
 IKEA gives you a bill of materials, assembly instructions with diagrams, and a bag of screws. You supply the labour and the Allen key. The instructions don't *do* the assembly — they describe the outcome of each step and the order of operations. The person building it fills in the motor skills.
 
-These skills are the same thing. The skill file is the assembly instructions. The YAML config is the bill of materials. The agents are the person with the Allen key. They don't get frustrated, they don't misread the instructions (though they may misinterpret them — an important distinction), and they don't call customer support to complain.
+These skills are the same thing. The skill file is the assembly instructions. The YAML config is the bill of materials. The Python engine is the Allen key. The agents are the person. They don't get frustrated, they don't misread the instructions (though they may misinterpret them — an important distinction), and they don't call customer support to complain.
 
 If IKEA-built furniture is still furniture, isn't agent-built software still software?
 
