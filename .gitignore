@@ -54,6 +54,10 @@ merged_model/
 # Telemetry output (ephemeral run data)
 telemetry/
 
+# MLflow artifacts
+mlruns/
+mlruns.db
+
 # Parse failure logs
 *_parse_failures.jsonl
 unsloth_compiled_cache/
