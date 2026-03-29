@@ -73,7 +73,9 @@ Agent(
      - Power: {draw}W / {limit}W ({pct}%)
      - Throttle reasons: {reasons or 'None'}
   5. Flag WARNING if temp > 80C
-  6. Flag CRITICAL if temp > 85C or any throttle reason is Active
+  6. Flag CRITICAL if temp >= 83C or any throttle reason is Active
+     → Touch {TDIR}/_thermal_pause to signal adaptive resource planning
+     → Write thermal event details to {TDIR}/_thermal_pause (temp, timestamp, power)
   7. Flag WARNING if power.draw > 90% of power.limit
   8. Check {TDIR}/_stop -- if so, write ## Final Summary (peak temp, throttle event count, avg power) and exit
   9. Sleep 30 seconds, repeat
