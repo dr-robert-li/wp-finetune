@@ -14,8 +14,7 @@ Skill (this file — intent + recovery logic)
 
 ## Telemetry
 
-> **Recommended:** Say `/observe-training` before starting to spawn background telemetry agents.
-> They consume `dgx.status_report()` for GPU health, training metrics, and checkpoint monitoring.
+> Telemetry is **embedded** — this skill spawns observe-data-pipeline (3 agents), observe-training (6 agents), and observe-packaging (3 agents) inline at the appropriate steps. It also invokes review-telemetry after each run and after all runs complete. No need to invoke observe skills separately.
 
 ## Trigger
 
@@ -237,15 +236,34 @@ if not ready.ok:
 
 ### Step 4: Download model (idempotent — shared across runs)
 
-**If `$TELEMETRY` and model not yet downloaded:** Spawn `wp-finetune:observe-data-pipeline` agents in background before download (monitors network I/O, disk usage). Touch `_stop` after download completes.
+**If `$TELEMETRY` and model not yet downloaded**, spawn observe-data-pipeline before download:
+
+```
+# 4a: Spawn telemetry (only if download will actually run)
+if $TELEMETRY and not Path("models/Qwen3-30B-A3B/config.json").exists():
+    DOWNLOAD_TDIR = f"telemetry/data-pipeline/{timestamp}"
+    mkdir -p $DOWNLOAD_TDIR
+
+    # Invoke wp-finetune:observe-data-pipeline inline — spawn its 3 agents:
+    Agent(description="Telemetry: pipeline progress", prompt="...write to {DOWNLOAD_TDIR}/pipeline-progress.md...", run_in_background=true)
+    Agent(description="Telemetry: system resources", prompt="...write to {DOWNLOAD_TDIR}/system-resources.md...", run_in_background=true)
+    Agent(description="Telemetry: disk I/O", prompt="...write to {DOWNLOAD_TDIR}/disk-io.md...", run_in_background=true)
+```
 
 ```python
+# 4b: Execute download
 result = dgx.execute(
     "unsloth_studio",
     "python", "-m", "scripts.download_model",
     idempotency_check="models/Qwen3-30B-A3B/config.json",
 )
 print(result.summary())
+```
+
+```
+# 4c: Stop telemetry
+if $TELEMETRY and DOWNLOAD_TDIR:
+    touch $DOWNLOAD_TDIR/_stop   # agents write Final Summary and exit
 ```
 
 ### Step 5: Extend tokenizer (idempotent — shared across runs)
@@ -279,7 +297,73 @@ if not result.ok:
 
 ### Step 7: Train (long-running, per-run isolated)
 
-**If `$TELEMETRY`:** Spawn `wp-finetune:observe-training` agents in background before training starts. These 6 agents monitor GPU metrics, thermal throttling, training loss, disk I/O, checkpoint integrity, and container health. They write to `telemetry/training/{timestamp}/` and stop when `_stop` is touched after training completes.
+**7a: Spawn observe-training (6 agents) before training starts.**
+
+If `$TELEMETRY`, invoke `wp-finetune:observe-training` inline — create run dir and spawn all 6 agents in background:
+
+```
+TRAIN_TDIR = f"telemetry/training/{timestamp}"
+mkdir -p $TRAIN_TDIR
+
+# GPU Metrics Observer (every 30s)
+Agent(
+  description="Telemetry: GPU metrics",
+  prompt="You are a GPU metrics observer. Write to {TRAIN_TDIR}/gpu-metrics.md.
+  LOOP (30s): nvidia-smi memory/util/clock → append. CRITICAL if mem > 120GB. WARNING if util < 50% 3x.
+  STOP: {TRAIN_TDIR}/_stop exists → write Final Summary → exit.",
+  run_in_background=true
+)
+
+# Thermal/Throttling Observer (every 30s) — includes live thermal guard
+Agent(
+  description="Telemetry: thermal/throttling",
+  prompt="You are a GPU thermal observer. Write to {TRAIN_TDIR}/thermal-throttling.md.
+  LOOP (30s): nvidia-smi temp/power/throttle → append. WARNING > 80C. CRITICAL >= 83C → touch {TRAIN_TDIR}/_thermal_pause.
+  STOP: {TRAIN_TDIR}/_stop exists → write Final Summary → exit.",
+  run_in_background=true
+)
+
+# Training Metrics Observer (every 60s)
+Agent(
+  description="Telemetry: training metrics",
+  prompt="You are a training metrics observer. Write to {TRAIN_TDIR}/training-metrics.md.
+  LOOP (60s): docker logs → grep loss/step/epoch. Check trainer_state.json, MLflow logs.
+  WARNING if loss increases 3x. CRITICAL if loss > 10 or grad_norm > 100.
+  STOP: {TRAIN_TDIR}/_stop exists → write Final Summary → exit.",
+  run_in_background=true
+)
+
+# Disk I/O Observer (every 60s)
+Agent(
+  description="Telemetry: disk I/O",
+  prompt="You are a disk I/O observer. Write to {TRAIN_TDIR}/disk-io.md.
+  LOOP (60s): iostat, df, du adapters/. WARNING if iowait > 20% or disk > 85%.
+  STOP: {TRAIN_TDIR}/_stop exists → write Final Summary → exit.",
+  run_in_background=true
+)
+
+# Checkpoint Integrity Observer (every 5 min)
+Agent(
+  description="Telemetry: checkpoint integrity",
+  prompt="You are a checkpoint integrity observer. Write to {TRAIN_TDIR}/checkpoint-integrity.md.
+  LOOP (5m): ls checkpoints, verify adapter_config.json valid, safetensors > 0 bytes, tokenizer present.
+  WARNING if no new checkpoint in 30m. CRITICAL if 0-byte safetensors.
+  STOP: {TRAIN_TDIR}/_stop exists → write Final Summary → exit.",
+  run_in_background=true
+)
+
+# Container Monitor (every 60s)
+Agent(
+  description="Telemetry: container monitor",
+  prompt="You are a container health observer. Write to {TRAIN_TDIR}/container-monitor.md.
+  LOOP (60s): docker ps, docker stats, top processes, dmesg OOM check.
+  WARNING if container not running. CRITICAL if OOM killer detected.
+  STOP: {TRAIN_TDIR}/_stop exists → write Final Summary → exit.",
+  run_in_background=true
+)
+```
+
+**7b: Execute training.**
 
 ```python
 result = dgx.execute(
@@ -295,9 +379,56 @@ if not result.ok:
     print("To resume: run this skill again (idempotency will skip completed runs)")
 ```
 
+**7c: Stop training telemetry and check for thermal events.**
+
+```
+touch $TRAIN_TDIR/_stop   # all 6 agents write Final Summary and exit
+
+# Check for live thermal guard trigger
+if Path(f"{TRAIN_TDIR}/_thermal_pause").exists():
+    print("⚠ THERMAL EVENT detected during training — adaptive planning will apply CRITICAL backoff")
+```
+
 ### Step 8: Merge adapter (per-run isolated)
 
-**If `$TELEMETRY`:** Spawn `wp-finetune:observe-packaging` agents in background before merge. Touch `_stop` after merge completes. Then spawn `wp-finetune:review-telemetry` to consolidate this run's telemetry into `_summary.md` before proceeding to the next ratio.
+**8a: Spawn observe-packaging (3 agents) before merge.**
+
+If `$TELEMETRY`:
+
+```
+MERGE_TDIR = f"telemetry/packaging/{timestamp}"
+mkdir -p $MERGE_TDIR
+
+# Quantization/Merge Progress Observer (every 2 min)
+Agent(
+  description="Telemetry: merge progress",
+  prompt="You are a merge progress observer. Write to {MERGE_TDIR}/quantization-progress.md.
+  LOOP (2m): ps aux for merge process, nvidia-smi, check output files in models/{run_name}-merged/.
+  STOP: {MERGE_TDIR}/_stop exists → write Final Summary → exit.",
+  run_in_background=true
+)
+
+# File Integrity Observer (every 5 min)
+Agent(
+  description="Telemetry: file integrity",
+  prompt="You are a file integrity observer. Write to {MERGE_TDIR}/file-integrity.md.
+  LOOP (5m): verify config.json valid, safetensors > 0 bytes, special tokens in tokenizer.
+  CRITICAL if 0-byte files or missing config. CRITICAL if wp_gen/wp_judge missing.
+  STOP: {MERGE_TDIR}/_stop exists → write Final Summary → exit.",
+  run_in_background=true
+)
+
+# Size Tracking Observer (every 2 min)
+Agent(
+  description="Telemetry: size tracking",
+  prompt="You are a size tracking observer. Write to {MERGE_TDIR}/size-tracking.md.
+  LOOP (2m): du -sh merged dir, df -h disk free. WARNING if disk free < 50GB.
+  STOP: {MERGE_TDIR}/_stop exists → write Final Summary → exit.",
+  run_in_background=true
+)
+```
+
+**8b: Execute merge.**
 
 ```python
 result = dgx.execute(
@@ -311,6 +442,33 @@ print(result.summary())
 if not result.ok:
     print(f"Merge failed. Adapter is safe at adapters/{run_name}/")
     print(f"Fallback: serve with vLLM --lora-modules adapters/{run_name}")
+```
+
+**8c: Stop packaging telemetry.**
+
+```
+if $TELEMETRY:
+    touch $MERGE_TDIR/_stop   # 3 agents write Final Summary and exit
+```
+
+**8d: Invoke review-telemetry to consolidate this run.**
+
+Invoke `wp-finetune:review-telemetry` inline — read all agent reports from this run's telemetry dirs and produce `_summary.md`:
+
+```
+# Review training telemetry
+Read all .md files in $TRAIN_TDIR (gpu-metrics, thermal-throttling, training-metrics, disk-io, checkpoint-integrity, container-monitor)
+Extract: all WARNING/CRITICAL lines, Final Summary sections, key metrics (peak temp, final loss, peak memory, avg util)
+Write: $TRAIN_TDIR/_summary.md with consolidated status, alerts, metrics, timeline, recommendations
+
+# Review packaging telemetry (if merge ran)
+Read all .md files in $MERGE_TDIR
+Write: $MERGE_TDIR/_summary.md
+
+# Print summary to conversation
+print(f"Run {run_name} complete. Telemetry summary:")
+print(f"  Training: {TRAIN_TDIR}/_summary.md")
+print(f"  Packaging: {MERGE_TDIR}/_summary.md")
 ```
 
 ### Step 8.5: Adaptive resource planning (between runs)
@@ -569,21 +727,59 @@ This file persists across skill invocations — if the user re-runs `/run-traini
 
 ### Step 9: Report (after all runs complete)
 
-**If `$TELEMETRY`:** Spawn final `wp-finetune:review-telemetry` to produce a cross-run comparison summary covering all ratios trained. Output: `telemetry/training/cross_run_summary.md` with per-ratio peak GPU temp, final loss, training duration, and any alerts.
+**9a: Print run status table.**
 
 ```python
 status = dgx.status_report()
 print(f"\nTraining runs complete:")
 for ratio in selected_ratios:
-    run_name = f"qwen3-wp-{ratio}"
+    run_name = f"qwen3-30b-wp-{ratio}"
     adapter_exists = Path(f"adapters/{run_name}/adapter_config.json").exists()
     merged_exists = Path(f"models/{run_name}-merged/config.json").exists()
     print(f"  {run_name}: adapter={'✓' if adapter_exists else '✗'}  merged={'✓' if merged_exists else '✗'}")
+```
 
-if TELEMETRY:
-    print(f"\nTelemetry reports: telemetry/training/")
-    print(f"Cross-run summary: telemetry/training/cross_run_summary.md")
+**9b: Invoke final cross-run review-telemetry.**
 
+If `$TELEMETRY`, invoke `wp-finetune:review-telemetry` inline to produce a cross-run comparison:
+
+```
+# Read all per-run _summary.md files
+for each ratio in selected_ratios:
+    Read telemetry/training/{ratio_timestamp}/_summary.md
+    Read telemetry/packaging/{ratio_timestamp}/_summary.md
+    Extract: peak_temp, avg_util, final_loss, training_duration, alerts
+
+# Read thermal_history.json for config progression
+Read telemetry/training/thermal_history.json
+Read telemetry/training/adaptive_adjustments.md
+
+# Write cross-run comparison summary
+Write telemetry/training/cross_run_summary.md:
+
+    # Cross-Run Training Summary
+    ## Config Progression (adaptive resource planning)
+    | Run | Ratio | batch | accum | workers | Zone | Peak Temp | Avg Util | Duration |
+    |-----|-------|-------|-------|---------|------|-----------|----------|----------|
+    | 1   | 30/70 | 4     | 4     | 4       | COOL | 70°C      | 73%      | 33h      |
+    | 2   | 40/60 | 8     | 2     | 8       | WARM | 74°C      | 85%      | 18h      |
+    | ... |
+
+    ## Alerts Across All Runs
+    {Consolidated WARNING/CRITICAL events}
+
+    ## Recommendations
+    {Which ratio had best loss? Any thermal concerns? Suggested eval order.}
+
+print(f"\nTelemetry reports: telemetry/training/")
+print(f"Cross-run summary: telemetry/training/cross_run_summary.md")
+print(f"Thermal history: telemetry/training/thermal_history.json")
+print(f"Adaptive adjustments: telemetry/training/adaptive_adjustments.md")
+```
+
+**9c: Next steps.**
+
+```
 print(f"\nNext: /wp-finetune:run-evaluation to compare model quality across ratios")
 ```
 
