@@ -4,6 +4,41 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-03-29 — Training commenced: 5 sequential LoRA runs, ~30-60 hours estimated
+
+All 5 ratio variants are now running sequentially on DGX Spark. This is the moment the dataset work pays off — or doesn't.
+
+### Training plan
+
+| Property | Value |
+|----------|-------|
+| Base model | Qwen/Qwen3-30B-A3B (downloaded, verified) |
+| LoRA config | r=32, alpha=64, dropout=0.05 |
+| Target modules | q_proj, k_proj, v_proj, o_proj, gate_up_proj, down_proj |
+| Modules saved | embed_tokens, lm_head |
+| Training | 2 epochs, batch=1, grad_accum=8 (effective batch 8) |
+| Learning rate | 2e-4, cosine scheduler |
+| Precision | BF16 |
+| Telemetry | Enabled (`/observe-training` + `/review-telemetry`) |
+| Disk available | 3.3TB (8% used) |
+| Memory required | ~70GB (BF16 model + LoRA optimizer states) |
+
+### 5 sequential runs
+
+| Run | Dataset | Gen | Judge | Train examples | Output |
+|-----|---------|-----|-------|----------------|--------|
+| 1 | ratio_30_70 | 13,071 | 30,498 | 34,855 | `adapters/qwen3-30b-wp-30_70/` |
+| 2 | ratio_40_60 | 20,332 | 30,498 | 40,664 | `adapters/qwen3-30b-wp-40_60/` |
+| 3 | ratio_50_50 | 30,498 | 30,498 | 48,796 | `adapters/qwen3-30b-wp-50_50/` |
+| 4 | ratio_60_40 | 45,747 | 30,498 | 60,996 | `adapters/qwen3-30b-wp-60_40/` |
+| 5 | ratio_70_30 | 71,162 | 30,498 | 81,328 | `adapters/qwen3-30b-wp-70_30/` |
+
+Estimated 6-12 hours per run depending on dataset size, ~30-60 hours total. Each run produces an isolated adapter in its own directory. Same base model, same hyperparameters, only the gen/judge ratio changes — a clean A/B/C/D/E test.
+
+After all 5 complete, each adapter gets evaluated against the 193-check canonical rubric via `eval_gen.py`, `eval_judge.py`, and `eval_gate.py`. The data decides the optimal ratio.
+
+---
+
 ## 2026-03-29 — Milestone: judge pool surpasses CoT reasoning, 4-way split dataset
 
 ### The breakthrough
