@@ -73,7 +73,39 @@ Select exports to train (comma-separated, e.g. "2,3,4" or "all"):
 
 Use AskUserQuestion for selection. Store as `$SELECTED_RATIOS` list.
 
-### Step 0c: Confirm training plan
+### Step 0c: Telemetry monitoring
+
+Ask whether to run background telemetry agents during training.
+
+Use AskUserQuestion:
+- header: "Telemetry Monitoring"
+- question: "Run background observer agents during training? They monitor GPU health, training metrics, checkpoints, and produce a summary report after each run."
+- options:
+  - "Yes — full telemetry" → set `$TELEMETRY = true`
+  - "Skip telemetry" → set `$TELEMETRY = false`
+
+Store as `$TELEMETRY` (true/false).
+
+**When `$TELEMETRY = true`**, the orchestrator spawns the appropriate observe skill agents at each training phase:
+
+| Training phase | Observe skill spawned | Why |
+|---------------|----------------------|-----|
+| Step 4: Download model | `wp-finetune:observe-data-pipeline` | Network I/O, disk usage during multi-GB download |
+| Step 7: Train | `wp-finetune:observe-training` | GPU metrics, thermal, loss curves, checkpoint integrity (6 agents) |
+| Step 8: Merge adapter | `wp-finetune:observe-packaging` | Merge progress, file integrity, disk usage |
+
+**Between runs:** After each ratio's Step 8 completes, spawn `wp-finetune:review-telemetry` to consolidate that run's telemetry into `_summary.md` before starting the next ratio.
+
+**After all runs:** Final `wp-finetune:review-telemetry` produces a cross-run comparison summary.
+
+**Lifecycle per observe agent spawn:**
+1. Spawn observe agents in background before the long-running step
+2. Run the step (download/train/merge)
+3. Touch `_stop` file to signal agents to write final summaries and exit
+4. Spawn review-telemetry to consolidate
+5. Proceed to next step
+
+### Step 0d: Confirm training plan
 
 Present a full summary of what will happen and ask for explicit confirmation. Training runs are long (6-12 hours per ratio) and expensive — mistakes here are costly.
 
@@ -93,6 +125,8 @@ Present a full summary of what will happen and ask for explicit confirmation. Tr
   Training:      {num_epochs} epochs, batch={batch_size}, grad_accum={grad_accum}
   Learning rate: {lr} ({scheduler})
   Precision:     bf16
+
+  Telemetry:     {TELEMETRY ? "✓ Enabled (observe-training + review)" : "✗ Disabled"}
 
   Runs planned:  {len(SELECTED_RATIOS)}
   Est. duration: ~{len(SELECTED_RATIOS) * 6}-{len(SELECTED_RATIOS) * 12} hours total
@@ -122,6 +156,7 @@ Use AskUserQuestion:
   - "Confirmed — start training" → proceed to Step 1
   - "Change model" → go back to Step 0a
   - "Change ratios" → go back to Step 0b
+  - "Change telemetry" → go back to Step 0c
   - "Change hyperparameters" → tell user to edit config/train_config.yaml, then re-run
   - "Abort" → exit skill
 
@@ -195,6 +230,8 @@ if not ready.ok:
 
 ### Step 4: Download model (idempotent — shared across runs)
 
+**If `$TELEMETRY` and model not yet downloaded:** Spawn `wp-finetune:observe-data-pipeline` agents in background before download (monitors network I/O, disk usage). Touch `_stop` after download completes.
+
 ```python
 result = dgx.execute(
     "unsloth_studio",
@@ -235,6 +272,8 @@ if not result.ok:
 
 ### Step 7: Train (long-running, per-run isolated)
 
+**If `$TELEMETRY`:** Spawn `wp-finetune:observe-training` agents in background before training starts. These 6 agents monitor GPU metrics, thermal throttling, training loss, disk I/O, checkpoint integrity, and container health. They write to `telemetry/training/{timestamp}/` and stop when `_stop` is touched after training completes.
+
 ```python
 result = dgx.execute(
     "unsloth_studio",
@@ -250,6 +289,8 @@ if not result.ok:
 ```
 
 ### Step 8: Merge adapter (per-run isolated)
+
+**If `$TELEMETRY`:** Spawn `wp-finetune:observe-packaging` agents in background before merge. Touch `_stop` after merge completes. Then spawn `wp-finetune:review-telemetry` to consolidate this run's telemetry into `_summary.md` before proceeding to the next ratio.
 
 ```python
 result = dgx.execute(
@@ -267,6 +308,8 @@ if not result.ok:
 
 ### Step 9: Report (after all runs complete)
 
+**If `$TELEMETRY`:** Spawn final `wp-finetune:review-telemetry` to produce a cross-run comparison summary covering all ratios trained. Output: `telemetry/training/cross_run_summary.md` with per-ratio peak GPU temp, final loss, training duration, and any alerts.
+
 ```python
 status = dgx.status_report()
 print(f"\nTraining runs complete:")
@@ -276,7 +319,11 @@ for ratio in selected_ratios:
     merged_exists = Path(f"models/{run_name}-merged/config.json").exists()
     print(f"  {run_name}: adapter={'✓' if adapter_exists else '✗'}  merged={'✓' if merged_exists else '✗'}")
 
-print(f"\nNext: /run-evaluation to compare model quality across ratios")
+if TELEMETRY:
+    print(f"\nTelemetry reports: telemetry/training/")
+    print(f"Cross-run summary: telemetry/training/cross_run_summary.md")
+
+print(f"\nNext: /wp-finetune:run-evaluation to compare model quality across ratios")
 ```
 
 ## Checkpoint Storage
