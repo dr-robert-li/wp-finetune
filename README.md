@@ -280,7 +280,7 @@ They can still be invoked standalone for non-training operations (eval, inferenc
 ```
 telemetry/training/
   # Canonical thermal log (one per run — written by both modes)
-  qwen3-30b_20260330_30_70_thermal.jsonl   ← {"ts","gpu_util","temp","vram_used_mb","source"}
+  qwen3-30b_20260330_30_70_thermal.jsonl   ← {"ts","gpu_util","temp","vram_used_mb","sys_ram_used_mb","sys_ram_total_mb","source"}
   qwen3-30b_20260330_40_60_thermal.jsonl
 
   # Observe mode only — per-run agent reports

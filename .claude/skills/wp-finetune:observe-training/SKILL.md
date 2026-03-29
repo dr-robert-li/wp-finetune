@@ -39,17 +39,25 @@ Agent(
   LOOP (every 30 seconds):
   1. Run: nvidia-smi --query-gpu=memory.used,memory.total,utilization.gpu,utilization.memory,clocks.current.sm --format=csv,noheader,nounits
   2. Run: nvidia-smi --query-compute-apps=pid,name,used_memory --format=csv
-  3. Append to {TDIR}/gpu-metrics.md:
+  3. Run: free -m | grep Mem (system RAM — critical for unified memory systems like GB10 where VRAM reports [N/A])
+  4. Parse memory: use nvidia-smi memory.used if available, otherwise compute from system RAM (total - available)
+  5. Append to {TDIR}/gpu-metrics.md:
      ### {HH:MM:SS}
-     - Memory: {used}/{total} MiB ({pct}%)
+     - VRAM: {used}/{total} MiB ({pct}%) [or N/A on unified memory]
+     - System RAM: {used}/{total} MiB ({pct}%)
      - GPU Util: {util}%
      - Mem Util: {mem_util}%
      - SM Clock: {clock} MHz
      - Processes: {list}
-  4. Flag CRITICAL if memory.used > 120000 MiB
-  5. Flag WARNING if utilization.gpu < 50% for 3+ consecutive readings
-  6. Check if {TDIR}/_stop exists -- if so, write ## Final Summary (peak memory, avg util, total readings) and exit
-  7. Sleep 30 seconds, repeat
+  6. Flag WARNING if memory > 90%, CRITICAL (warn+log, do NOT stop training) if memory >= 98%
+     Memory is caught pre-training by validate (Step 2) and dry run (Step 6). During training, just observe.
+  7. Flag WARNING if utilization.gpu < 50% for 3+ consecutive readings
+  8. Check if {TDIR}/_stop exists -- if so, write ## Final Summary (peak memory, avg util, total readings) and exit
+  9. Sleep 30 seconds, repeat
+
+  NOTE: On unified memory systems (NVIDIA GB10/Grace Hopper), nvidia-smi memory reports [N/A].
+  System RAM IS the GPU memory — use free/proc/meminfo instead. On discrete GPU systems,
+  both VRAM and system RAM are meaningful and should both be recorded.
 
   STOP CONDITIONS: _stop file exists OR no GPU compute processes for 15+ minutes",
   run_in_background=true
@@ -189,15 +197,18 @@ Agent(
   1. Run: docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' 2>/dev/null
   2. Run: docker stats --no-stream --format '{{.Name}}: CPU {{.CPUPerc}} MEM {{.MemUsage}} ({{.MemPerc}})' unsloth-headless 2>/dev/null
   3. Run: docker exec unsloth-headless ps aux --sort=-%mem 2>/dev/null | head -10
-  4. Run: dmesg 2>/dev/null | tail -5 | grep -i 'oom\|kill\|error' || echo 'No OOM events'
-  5. Append to {TDIR}/container-monitor.md:
+  4. Run: free -m (system RAM — especially important on unified memory)
+  5. Run: dmesg 2>/dev/null | tail -5 | grep -i 'oom\|kill\|error' || echo 'No OOM events'
+  6. Append to {TDIR}/container-monitor.md:
      ### {HH:MM:SS}
      - Unsloth Headless: {status} | CPU: {pct} | MEM: {usage}
+     - System RAM: {used}/{total} MiB ({pct}%) | Available: {available} MiB
      - Top processes: {list}
      - Other containers: {list or 'none'}
      - OOM events: {count or 'none'}
-  6. Flag WARNING if unsloth-headless is not running
-  7. Flag CRITICAL if OOM killer detected in dmesg
+  7. Flag WARNING if unsloth-headless is not running
+  8. Flag WARNING if system RAM available < 10GB
+  9. Flag CRITICAL if OOM killer detected in dmesg
   8. Check {TDIR}/_stop -- if so, write ## Final Summary (uptime, peak container memory, OOM count) and exit
   9. Sleep 60 seconds, repeat
 

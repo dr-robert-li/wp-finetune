@@ -118,9 +118,16 @@ telemetry/training/{model_short}_{date}_{ratio}_thermal.jsonl
 **JSONL schema** (one line per reading):
 
 ```jsonl
-{"ts": "2026-03-30T06:57:47Z", "gpu_util": 82, "temp": 65, "vram_used_mb": 92493, "source": "monitor"}
-{"ts": "2026-03-30T06:58:17Z", "gpu_util": 85, "temp": 66, "vram_used_mb": 92493, "source": "observe-agent"}
+{"ts": "2026-03-30T06:57:47Z", "gpu_util": 82, "temp": 65, "vram_used_mb": null, "sys_ram_used_mb": 109568, "sys_ram_total_mb": 122368, "source": "monitor"}
+{"ts": "2026-03-30T06:58:17Z", "gpu_util": 85, "temp": 66, "vram_used_mb": 92493, "sys_ram_used_mb": 109568, "sys_ram_total_mb": 122368, "source": "observe-agent"}
 ```
+
+**Memory fields:**
+- `vram_used_mb` — nvidia-smi `memory.used`. Reports `null` on unified memory systems (GB10/Grace Hopper).
+- `sys_ram_used_mb` — from `free -m` (total - available). Always available.
+- `sys_ram_total_mb` — from `free -m`. Always available.
+- On unified memory: `sys_ram_used_mb` IS the GPU memory — VRAM and system RAM share the same pool.
+- On discrete GPU: both fields are meaningful and tracked independently.
 
 Store the canonical log path as `$THERMAL_LOG` for this run:
 ```python
@@ -388,8 +395,16 @@ Agent(
   description="Telemetry: GPU metrics",
   prompt="You are a GPU metrics observer. Write to {TRAIN_TDIR}/gpu-metrics.md.
   ALSO append JSONL to {THERMAL_LOG} on each reading:
-    {\"ts\": \"...\", \"gpu_util\": N, \"temp\": N, \"vram_used_mb\": N, \"source\": \"observe-agent\"}
-  LOOP (30s): nvidia-smi memory/util/clock → append to both files. CRITICAL if mem > 120GB. WARNING if util < 50% 3x.
+    {\"ts\": \"...\", \"gpu_util\": N, \"temp\": N, \"vram_used_mb\": N_or_null, \"sys_ram_used_mb\": N, \"sys_ram_total_mb\": N, \"source\": \"observe-agent\"}
+  LOOP (30s):
+    1. nvidia-smi --query-gpu=memory.used,memory.total,utilization.gpu,temperature.gpu --format=csv,noheader,nounits
+    2. free -m | grep Mem → parse used and total system RAM
+    3. If nvidia-smi memory reports [N/A]: set vram_used_mb=null (unified memory — sys_ram IS GPU memory)
+    4. Append to gpu-metrics.md AND {THERMAL_LOG}
+    5. WARNING if memory > 90%. CRITICAL (warn+log only, do NOT stop training) if memory >= 98%.
+       Memory issues are caught pre-training by Step 2 (validate memory >= 70GB) and Step 6 (dry run).
+       During training, memory CRITICAL is observational — the OS/driver will OOM-kill if truly exhausted.
+    6. WARNING if util < 50% 3x.
   STOP: {TRAIN_TDIR}/_stop exists → write Final Summary → exit.",
   run_in_background=true
 )
@@ -452,12 +467,14 @@ Agent(
 
   LOOP (every 600 seconds):
   1. Run: docker exec unsloth-headless nvidia-smi --query-gpu=utilization.gpu,memory.used,temperature.gpu --format=csv,noheader,nounits
-  2. Parse gpu_util, vram_used_mb, temp from output
-  3. Append one JSONL line to {THERMAL_LOG}:
-     {\"ts\": \"YYYY-MM-DDTHH:MM:SSZ\", \"gpu_util\": N, \"temp\": N, \"vram_used_mb\": N, \"source\": \"monitor\"}
-  4. If temp >= 83: also touch telemetry/training/_thermal_pause
-  5. Check if telemetry/training/_stop exists → exit
-  6. Sleep 600 seconds, repeat
+  2. Run: free -m | grep Mem → parse total, used, available system RAM
+  3. Parse gpu_util, temp from nvidia-smi. Set vram_used_mb from nvidia-smi memory.used (null if [N/A]).
+  4. Compute sys_ram_used_mb = total - available, sys_ram_total_mb = total
+  5. Append one JSONL line to {THERMAL_LOG}:
+     {\"ts\": \"YYYY-MM-DDTHH:MM:SSZ\", \"gpu_util\": N, \"temp\": N, \"vram_used_mb\": N_or_null, \"sys_ram_used_mb\": N, \"sys_ram_total_mb\": N, \"source\": \"monitor\"}
+  6. If temp >= 83: also touch telemetry/training/_thermal_pause
+  7. Check if telemetry/training/_stop exists → exit
+  8. Sleep 600 seconds, repeat
 
   STOP: telemetry/training/_stop file exists OR after 84 checks (14 hours).",
   run_in_background=true
@@ -609,6 +626,8 @@ if not readings:
 gpu_utils = [r["gpu_util"] for r in readings]
 gpu_temps = [r["temp"] for r in readings]
 vram_readings = [r["vram_used_mb"] for r in readings if r.get("vram_used_mb")]
+sys_ram_readings = [r["sys_ram_used_mb"] for r in readings if r.get("sys_ram_used_mb")]
+sys_ram_totals = [r["sys_ram_total_mb"] for r in readings if r.get("sys_ram_total_mb")]
 ```
 
 Compute:
@@ -616,11 +635,17 @@ Compute:
 - `peak_gpu_util = max(gpu_utils)`
 - `avg_temp = sum(gpu_temps) / len(gpu_temps)`
 - `peak_temp = max(gpu_temps)`
-- `vram_used_gb = max(vram_readings) / 1024 if vram_readings else 0`
-- `vram_total_gb` — from nvidia-smi live query
-- `vram_headroom_gb = vram_total_gb - vram_used_gb`
 - `num_readings = len(readings)`
 - `sources = set(r.get("source", "unknown") for r in readings)`
+
+Memory (supports both discrete GPU and unified memory systems):
+- `vram_used_gb = max(vram_readings) / 1024 if vram_readings else None`
+- `sys_ram_used_gb = max(sys_ram_readings) / 1024 if sys_ram_readings else 0`
+- `sys_ram_total_gb = max(sys_ram_totals) / 1024 if sys_ram_totals else 0`
+- `is_unified_memory = (vram_used_gb is None)` — True on GB10/Grace Hopper
+- If unified memory: `mem_used_gb = sys_ram_used_gb`, `mem_total_gb = sys_ram_total_gb`
+- If discrete GPU: `mem_used_gb = vram_used_gb`, `mem_total_gb` from nvidia-smi
+- `mem_headroom_gb = mem_total_gb - mem_used_gb`
 
 #### 8.5b: Update thermal history
 
@@ -656,6 +681,10 @@ history.append({
     "avg_gpu_util": avg_gpu_util,
     "peak_gpu_util": peak_gpu_util,
     "vram_used_gb": vram_used_gb,
+    "sys_ram_used_gb": sys_ram_used_gb,
+    "sys_ram_total_gb": sys_ram_total_gb,
+    "mem_headroom_gb": mem_headroom_gb,
+    "is_unified_memory": is_unified_memory,
     "batch_size": config["training"]["per_device_train_batch_size"],
     "grad_accum": config["training"]["gradient_accumulation_steps"],
     "dataloader_num_workers": config["training"]["dataloader_num_workers"],
@@ -725,12 +754,12 @@ elif zone == "HOT":
 Scale based on GPU utilization headroom AND VRAM headroom:
 
 ```
-IF avg_gpu_util < 60% AND vram_headroom_gb > 20:
+IF avg_gpu_util < 60% AND mem_headroom_gb > 20:
     # Aggressive: double batch_size, halve grad_accum
     new_batch = min(batch_size * 2, 16)  # cap at 16
     new_accum = max(eff_batch // new_batch, 1)
 
-ELIF avg_gpu_util < 75% AND vram_headroom_gb > 10:
+ELIF avg_gpu_util < 75% AND mem_headroom_gb > 10:
     # Moderate: increase batch_size by 50%
     new_batch = min(int(batch_size * 1.5), 16)
     new_accum = max(eff_batch // new_batch, 1)
@@ -771,7 +800,7 @@ adjustment_log = f"""
 ### Adaptive adjustment after {ratio}
 - Thermal zone: {zone} (peak={peak_temp}°C, avg={avg_temp}°C)
 - GPU util: avg={avg_gpu_util}%, peak={peak_gpu_util}%
-- VRAM: {vram_used_gb:.0f}/{vram_total_gb:.0f} GB ({vram_headroom_gb:.0f} GB headroom)
+- Memory: {mem_used_gb:.0f}/{mem_total_gb:.0f} GB ({mem_headroom_gb:.0f} GB headroom) [{'unified' if is_unified_memory else 'discrete VRAM'}]
 - batch_size: {old_batch} → {new_batch}
 - grad_accum: {old_accum} → {new_accum}
 - eff_batch: {old_batch * old_accum} → {new_batch * new_accum}
@@ -812,7 +841,11 @@ This ensures we never cook the GPU across multi-day sequential runs.
     "avg_temp": 65,
     "avg_gpu_util": 77,
     "peak_gpu_util": 95,
-    "vram_used_gb": 92.5,
+    "vram_used_gb": null,
+    "sys_ram_used_gb": 92.5,
+    "sys_ram_total_gb": 119.7,
+    "mem_headroom_gb": 27.2,
+    "is_unified_memory": true,
     "batch_size": 4,
     "grad_accum": 4,
     "dataloader_num_workers": 4,
@@ -825,7 +858,11 @@ This ensures we never cook the GPU across multi-day sequential runs.
     "avg_temp": 70,
     "avg_gpu_util": 85,
     "peak_gpu_util": 97,
-    "vram_used_gb": 110,
+    "vram_used_gb": null,
+    "sys_ram_used_gb": 110,
+    "sys_ram_total_gb": 119.7,
+    "mem_headroom_gb": 9.7,
+    "is_unified_memory": true,
     "batch_size": 8,
     "grad_accum": 2,
     "dataloader_num_workers": 8,
