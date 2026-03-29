@@ -4,6 +4,48 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-03-29 — GPU underutilisation: conservative config wasting DGX Spark capacity
+
+### What the telemetry showed
+
+The first training run (30/70 ratio) was running with telemetry enabled. The observers caught a problem I wouldn't have noticed for hours otherwise:
+
+| Time | GPU Util | Temp | Notes |
+|------|----------|------|-------|
+| 05:05-05:35 | 4-8% | 54-57C | Model loading / tokenisation |
+| 05:45 | 77% | 63C | Brief spike (torch.compile warmup) |
+| 05:49-06:39 | 4-53% | 60-63C | Training steps — oscillating, avg ~35% |
+
+The GPU was averaging ~35% utilisation during actual training. At 8W power draw and 60-63C, the DGX Spark was barely working. This is a 128GB unified memory machine with a Blackwell GB10 — it should be saturated during training, not idling between steps.
+
+### Root causes
+
+1. **Batch size 1 with grad_accum=8** — the GPU processes one example at a time, then idles during gradient accumulation. Effective batch is only 8, but the GPU only sees 1 example per forward/backward pass.
+2. **~50 seconds per step** — most time spent on CPU-side data loading/processing between GPU passes. Zero DataLoader workers meant sequential data loading.
+3. **No gradient checkpointing in SFTConfig** — while Unsloth sets it on the model side, the trainer config wasn't using it, limiting how much batch size could increase.
+4. **Massive memory headroom** — the 63GB model leaves ~65GB unused. No reason to be conservative with batch size.
+
+### Fix: aggressive config
+
+Stopped the first run, updated `config/train_config.yaml`:
+
+| Parameter | Before | After | Why |
+|-----------|--------|-------|-----|
+| `per_device_train_batch_size` | 1 | 4 | GPU processes 4 examples per pass instead of 1 |
+| `gradient_accumulation_steps` | 8 | 4 | Effective batch stays at 16 (4x4), but GPU works 4x harder per step |
+| `gradient_checkpointing` | not set | true | Enables larger batch by trading compute for memory |
+| `dataloader_num_workers` | 0 | 4 | Parallel data loading eliminates CPU-side idle time |
+
+Regenerated all 5 per-ratio config overlays and cleaned the partial 30/70 adapter. Restarting from scratch with the new config.
+
+### Lesson learned
+
+The telemetry framework paid for itself on the first training run. Without the GPU metrics observer, I would have let it run at 35% utilisation for 60+ hours — effectively wasting 65% of the compute. The fix took 5 minutes; the time savings across 5 runs is substantial.
+
+Conservative defaults are safe for a first run, but always check utilisation early. A 5-minute telemetry review after the first 100 steps would have caught this immediately.
+
+---
+
 ## 2026-03-29 — Training commenced: 5 sequential LoRA runs, ~30-60 hours estimated
 
 All 5 ratio variants are now running sequentially on DGX Spark. This is the moment the dataset work pays off — or doesn't.
