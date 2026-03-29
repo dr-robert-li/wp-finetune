@@ -4,8 +4,28 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 
 ## [Unreleased]
 
-- Training in progress: 5 sequential LoRA runs on DGX Spark (~30-60hr estimated)
+- Training in progress: 5 sequential LoRA runs on DGX Spark
 - Phase 4 (Evaluation) and Phase 5 (Packaging & Deployment) not started
+
+## [0.5.1] - 2026-03-29 — Adaptive Resource Planning & MLflow
+
+### Added
+- **Adaptive resource planning (Step 8.5):** Between sequential training runs, telemetry is parsed to classify GPU thermal zone (COLD/COOL/WARM/HOT/CRITICAL) and auto-adjust batch_size, grad_accum, and dataloader_num_workers for the next run
+- **Thermal history (`thermal_history.json`):** Persistent record of each run's config and thermal outcome — survives context resets, enables backoff-to-last-WARM on CRITICAL events
+- **CRITICAL backoff:** Instead of blind halving, restores the exact config from the last run that registered WARM (72-77°C peak) — the last known-safe operating point
+- **Live thermal guard:** observe-training agent touches `_thermal_pause` at ≥83°C, orchestrator applies CRITICAL rules before next run
+- **Telemetry default-on:** Step 0c now defaults to enabled with double-confirmation required to disable, since adaptive resource planning depends on it
+- **MLflow integration:** Replaced W&B (cloud) with MLflow (local sqlite at `mlruns.db`) — zero cloud dependencies for training telemetry
+- **`formatting_func`** for Unsloth SFTTrainer: converts OpenAI chat format to model chat template
+
+### Changed
+- Training config optimized based on telemetry: batch_size 1→4→8, grad_accum 8→4→2, workers 0→4→8 (GPU util improved from ~35% to ~77% avg)
+- Container name updated to `unsloth-headless` (no Studio web UI needed for training)
+- `extra_special_tokens` format fixed in saved tokenizer (list→dict for transformers 4.56.2 compat)
+
+### Fixed
+- Model download: 7 corrupt shards from interrupted download detected and re-downloaded
+- W&B auth blocker: removed all cloud-hosted dependencies from scripts, skills, and config
 
 ## [0.5.0] - 2026-03-29 — Training Commenced
 

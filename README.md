@@ -244,15 +244,20 @@ Step 5: Extend tokenizer with <wp_gen>/<wp_judge> (idempotent — shared)
 Step 6: Dry run (validate config before committing to hours of training)
 Step 7: Train (BF16 LoRA SFT, 6-12 hours, idempotent)
         [if telemetry: observe-training agents (6) monitor GPU/loss/checkpoints]
+        [if telemetry: live thermal guard — _thermal_pause at ≥83°C]
 Step 8: Merge adapter into base model (with verification roundtrip)
         [if telemetry: observe-packaging agents monitor merge]
         [if telemetry: review-telemetry consolidates this run's data]
+Step 8.5: Adaptive resource planning (between runs)
+        Parse telemetry → classify thermal zone → adjust config for next run
+        CRITICAL: backoff to last WARM config from thermal_history.json
+        COOL/COLD: scale up batch_size if VRAM headroom allows
 Step 9: Report (after all runs: cross-run comparison summary)
 ```
 
 **Run isolation:** Each ratio trains to `adapters/{model}-wp-{ratio}/` and merges to `models/{model}-wp-{ratio}-merged/`. Previous runs are never overwritten. Re-running the skill skips completed runs via idempotency checks.
 
-**Telemetry opt-in:** Step 0c lets you enable background observer agents. When enabled, the orchestrator automatically spawns the right observe skill at each phase and runs review-telemetry between runs to produce per-run and cross-run summaries.
+**Telemetry default-on:** Telemetry is enabled by default because it feeds the adaptive resource planning system (Step 8.5). Disabling it requires double-confirmation since it also disables automatic GPU utilization and thermal optimization between runs.
 
 **Confirmation gate:** Step 0d presents the full plan (model, LoRA config, hyperparameters, telemetry choice, estimated duration, disk requirements, output paths) and requires explicit confirmation before starting. No silent multi-hour training runs.
 
@@ -273,7 +278,7 @@ telemetry/
   training/2026-03-29T10:00:00/
     gpu-metrics.md          ← Agent 1: nvidia-smi every 30s
     thermal-throttling.md   ← Agent 2: temp warnings > 80C
-    training-metrics.md     ← Agent 3: loss curves from W&B
+    training-metrics.md     ← Agent 3: loss curves from MLflow
     disk-io.md              ← Agent 4: checkpoint sizes
     checkpoint-integrity.md ← Agent 5: adapter_config.json validation
     container-monitor.md    ← Agent 6: docker health checks
@@ -330,7 +335,7 @@ The engine reads all project-specific config from `config/dgx_toolbox.yaml` — 
 | vLLM | `inference/start-vllm.sh` | Model serving for eval + production |
 | LiteLLM | `inference/start-litellm.sh` | Unified API proxy (wp-bench uses this) |
 | Open-WebUI | `inference/start-open-webui.sh` | Interactive demo |
-| eval-toolbox | `eval/eval-toolbox.sh` | lm-eval, W&B, scipy for eval suite |
+| eval-toolbox | `eval/eval-toolbox.sh` | lm-eval, MLflow, scipy for eval suite |
 | Ollama | `inference/setup-ollama-remote.sh` | GGUF local serving |
 
 ## Requirements
