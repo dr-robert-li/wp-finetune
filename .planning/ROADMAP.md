@@ -115,7 +115,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Pipeline Ready | 2/2 | Complete | 2026-03-26 |
-| 2. Dataset Production | 6/7 | Complete (via /run-data-pipeline skill) | 2026-03-29 |
+| 2. Dataset Production | 6/7 | Complete    | 2026-03-29 |
 | 3. Model Prep and Training | 3/3 | Complete (scripts ready, awaiting DGX) | 2026-03-27 |
 | 4. Evaluation | 0/3 | Not started | - |
 | 5. Packaging and Deployment | 0/3 | Not started | - |

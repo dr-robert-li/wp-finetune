@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Data pipeline complete, eval suite rewritten, 5 ratio exports ready
-last_updated: "2026-03-29T00:00:00.000Z"
-last_activity: "2026-03-29 - Data pipeline complete (134K judged, 29K CoT, 5 ratio exports), eval suite rewritten with 241-check rubric, training skill updated with multi-ratio support"
+status: completed
+stopped_at: Data pipeline complete, eval suite rewritten, training skill updated — ready for /run-training
+last_updated: "2026-03-29T02:18:21.358Z"
+last_activity: 2026-03-29 - Full data pipeline + eval rewrite + training skill update
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 12
-  completed_plans: 9
+  completed_plans: 11
   percent: 60
 ---
 
