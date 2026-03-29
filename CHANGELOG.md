@@ -47,7 +47,8 @@ All notable changes to the wp-qwen3-moe project.
 - Tokenizer extended with `<wp_gen>` (ID 151669) and `<wp_judge>` (ID 151670), mean-initialized embeddings
 - Memory pre-check blocks training if < 70GB available (with actionable diagnostics)
 - All steps idempotent: download skips if shards exist, tokenizer skips if tokens present, training skips if adapter exists
-- Multi-ratio training support: Step 0 selects ratio export, isolated checkpoint dirs per ratio
+- Multi-ratio training: Step 0a model selection, 0b ratio selection, 0c telemetry opt-in, 0d confirmation gate
+- Telemetry integration: when enabled, orchestrator spawns observe-training (6 agents) during training, observe-packaging during merge, review-telemetry between runs for per-run and cross-run summaries
 - BF16 LoRA (not QLoRA) — MoE router weights incompatible with BitsandBytes 4-bit quantization
 - Unsloth-zoo merge bug (PR #369) confirmed fixed in DGX Toolbox container version
 
