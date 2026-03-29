@@ -7,6 +7,13 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 - Training in progress: 5 sequential LoRA runs on DGX Spark
 - Phase 4 (Evaluation) and Phase 5 (Packaging & Deployment) not started
 
+## [0.5.2] - 2026-03-30 — Embedded Telemetry Lifecycle
+
+### Changed
+- **Observe/review skills embedded in run-training:** Steps 4/7/8 now spawn observe agents inline with concrete `Agent()` blocks and full lifecycle (spawn → execute → `_stop` → review). No longer requires separate `/observe-training` invocation.
+- **Step 0c gates all telemetry:** `$TELEMETRY` flag (default on) controls all 12 agent spawns, review-telemetry consolidation, adaptive resource planning, and cross-run comparison — single toggle for the full stack
+- **README restructured:** observe/review skills documented as embedded within run-training, with table showing which skill is spawned at which step
+
 ## [0.5.1] - 2026-03-29 — Adaptive Resource Planning & MLflow
 
 ### Added
