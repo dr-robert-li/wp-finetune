@@ -290,6 +290,8 @@ def build_trainer(model, tokenizer, train_dataset, val_dataset, config: dict):
             warmup_ratio=train_cfg["warmup_ratio"],
             bf16=train_cfg["bf16"],
             fp16=False,
+            gradient_checkpointing=train_cfg.get("gradient_checkpointing", False),
+            dataloader_num_workers=train_cfg.get("dataloader_num_workers", 0),
             logging_steps=train_cfg["logging_steps"],
             eval_steps=train_cfg["eval_steps"],
             save_steps=train_cfg["save_steps"],
