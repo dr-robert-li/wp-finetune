@@ -1,4 +1,4 @@
-# Skill: run-training
+# Skill: wp-finetune:run-training
 
 Run the training pipeline via the DGX Toolbox execution engine. Supports training on one or more dataset ratio exports sequentially, with isolated checkpoints per run.
 

@@ -1,4 +1,4 @@
-# Skill: observe-packaging
+# Skill: wp-finetune:observe-packaging
 
 Spawn background observer agents to monitor model packaging (quantization, GGUF export). Writes telemetry to `telemetry/packaging/{timestamp}/`.
 

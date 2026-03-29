@@ -132,10 +132,10 @@ wp-finetune/
 │   └── eval_gate.py                # Quality gate (pass/fail against thresholds)
 ├── docs/
 │   ├── AGENT_PIPELINE.md           # Agent execution model and output format contracts
-│   ├── run-data-pipeline.md        # Skill: autonomous data pipeline
-│   ├── run-training.md             # Skill: DGX Spark training pipeline
-│   ├── observe-{stage}.md          # Telemetry skills (5 stages, 3-6 agents each)
-│   └── review-telemetry.md         # Telemetry aggregation and summary
+│   ├── wp-finetune:run-data-pipeline.md   # Skill: autonomous data pipeline
+│   ├── wp-finetune:run-training.md        # Skill: DGX Spark training pipeline
+│   ├── wp-finetune:observe-{stage}.md     # Telemetry skills (5 stages, 3-6 agents each)
+│   └── wp-finetune:review-telemetry.md    # Telemetry aggregation and summary
 ├── docs/eval/
 │   ├── wp_code_quality_rubric.md   # 193-check canonical rubric (9 dimensions, weighted)
 │   ├── research_wpcs_standards.md  # WPCS + VIP sniff reference
@@ -161,18 +161,18 @@ The entire data pipeline runs autonomously with a single command in Claude Code 
 Copy the skills into your Claude Code skills directory:
 
 ```bash
-# From the project root — install both skills
-mkdir -p .claude/skills/run-data-pipeline .claude/skills/run-training
-cp docs/run-data-pipeline.md .claude/skills/run-data-pipeline/SKILL.md
-cp docs/run-training.md .claude/skills/run-training/SKILL.md
+# From the project root — install all skills
+mkdir -p .claude/skills/wp-finetune:run-data-pipeline .claude/skills/wp-finetune:run-training
+cp docs/wp-finetune:run-data-pipeline.md .claude/skills/wp-finetune:run-data-pipeline/SKILL.md
+cp docs/wp-finetune:run-training.md .claude/skills/wp-finetune:run-training/SKILL.md
 ```
 
 Or symlink so updates propagate:
 
 ```bash
-mkdir -p .claude/skills/run-data-pipeline .claude/skills/run-training
-ln -sf "$(pwd)/docs/run-data-pipeline.md" .claude/skills/run-data-pipeline/SKILL.md
-ln -sf "$(pwd)/docs/run-training.md" .claude/skills/run-training/SKILL.md
+mkdir -p .claude/skills/wp-finetune:run-data-pipeline .claude/skills/wp-finetune:run-training
+ln -sf "$(pwd)/docs/wp-finetune:run-data-pipeline.md" .claude/skills/wp-finetune:run-data-pipeline/SKILL.md
+ln -sf "$(pwd)/docs/wp-finetune:run-training.md" .claude/skills/wp-finetune:run-training/SKILL.md
 ```
 
 ### Configure

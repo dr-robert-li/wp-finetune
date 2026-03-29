@@ -1,4 +1,4 @@
-# Skill: observe-inference
+# Skill: wp-finetune:observe-inference
 
 Spawn background observer agents to monitor model serving (vLLM, Ollama, LiteLLM). Writes telemetry to `telemetry/inference/{timestamp}/`.
 

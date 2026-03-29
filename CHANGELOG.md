@@ -33,8 +33,8 @@ All notable changes to the wp-qwen3-moe project.
 - Removed brittle `run_training_pipeline.sh` — Python engine replaces it
 
 ### Agentic Telemetry Framework
-- 5 stage-specific observe skills: `/observe-data-pipeline` (3 agents), `/observe-training` (6 agents), `/observe-evaluation` (3 agents), `/observe-packaging` (3 agents), `/observe-inference` (5 agents)
-- `/review-telemetry` consolidates agent output into `_summary.md`
+- 5 stage-specific observe skills: `/wp-finetune:observe-data-pipeline` (3 agents), `/wp-finetune:observe-training` (6 agents), `/wp-finetune:observe-evaluation` (3 agents), `/wp-finetune:observe-packaging` (3 agents), `/wp-finetune:observe-inference` (5 agents)
+- `/wp-finetune:review-telemetry` consolidates agent output into `_summary.md`
 - Each agent writes append-only markdown to `telemetry/{stage}/{timestamp}/`
 - WARNING/CRITICAL thresholds with concrete numbers (GPU temp > 80C, loss divergence, disk > 85%)
 - Stop mechanism via `_stop` file
@@ -57,11 +57,11 @@ All notable changes to the wp-qwen3-moe project.
 - ~30B total params, ~3B active per forward pass, 128 experts, top-8 routing
 - Fits DGX Spark 128GB unified memory (63GB BF16 with headroom)
 
-### Skills (8 total)
-- `run-data-pipeline` — autonomous data pipeline with spawn-until-target pattern
-- `run-training` — DGX Spark training with dry-run, base model selection, ratio selection
-- `observe-{data-pipeline,training,evaluation,packaging,inference}` — stage-specific telemetry
-- `review-telemetry` — aggregation and self-introspection
+### Skills (8 total, all prefixed `wp-finetune:`)
+- `wp-finetune:run-data-pipeline` — autonomous data pipeline with spawn-until-target pattern
+- `wp-finetune:run-training` — DGX Spark training with dry-run, base model selection, ratio selection
+- `wp-finetune:observe-{data-pipeline,training,evaluation,packaging,inference}` — stage-specific telemetry
+- `wp-finetune:review-telemetry` — aggregation and self-introspection
 
 ## [0.2.0] - 2026-03-26
 

@@ -1,4 +1,4 @@
-# Skill: observe-training
+# Skill: wp-finetune:observe-training
 
 Spawn background observer agents to monitor DGX Spark training. Writes telemetry to `telemetry/training/{timestamp}/`.
 
