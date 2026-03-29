@@ -78,7 +78,7 @@ Clone repos ──► Extract ──►       Generate synthetic ──►      
 
 ### Dataset Composition (Actual)
 
-94,630 unique examples after dedup, exported at 5 gen/judge ratios:
+267K merged examples (134K judged functions + 143K judge training + 29K CoT), exported at 5 gen/judge ratios after dedup:
 
 | Ratio | Gen | Judge | Total | Train |
 |-------|-----|-------|-------|-------|
@@ -105,7 +105,7 @@ Clone repos ──► Extract ──►       Generate synthetic ──►      
 ```
 wp-finetune/
 ├── config/
-│   ├── repos.yaml                  # 213 repos (top + poor-quality plugins/themes)
+│   ├── repos.yaml                  # 236 repos (top + poor-quality plugins/themes)
 │   ├── judge_system.md             # 9-dimension judge rubric (threshold >= 8)
 │   ├── taxonomy.yaml               # 87 concept tags + coverage minimums
 │   ├── synthetic_prompts.yaml      # Generation templates + rejection examples
@@ -123,11 +123,11 @@ wp-finetune/
 │   ├── phase1_{clone,extract,judge}.py
 │   ├── phase2_{gap_analysis,mutate,generate,judge,judge_dataset}.py
 │   ├── phase3_cot.py, merge_dataset.py, export_dataset.py
-│   └── (+ agent_judge, autopass_core, csv_to_repos, preflight)
+│   └── (+ csv_to_repos, preflight)
 ├── eval/
-│   ├── rubric_definitions.py       # 193 check IDs across 9 weighted dimensions
+│   ├── rubric_definitions.py       # 241 check IDs across 9 weighted dimensions
 │   ├── rubric_scorer.py            # 4-tool ground truth scoring engine
-│   ├── eval_gen.py                 # Generator eval (PHPCS + security pass rates)
+│   ├── eval_gen.py                 # Generator eval (9-dimension rubric scoring)
 │   ├── eval_judge.py               # Judge eval (per-dimension Spearman correlation)
 │   └── eval_gate.py                # Quality gate (pass/fail against thresholds)
 ├── docs/
@@ -137,7 +137,7 @@ wp-finetune/
 │   ├── wp-finetune:observe-{stage}.md     # Telemetry skills (5 stages, 3-6 agents each)
 │   └── wp-finetune:review-telemetry.md    # Telemetry aggregation and summary
 ├── docs/eval/
-│   ├── wp_code_quality_rubric.md   # 193-check canonical rubric (9 dimensions, weighted)
+│   ├── wp_code_quality_rubric.md   # 241-check canonical rubric (9 dimensions, weighted)
 │   ├── research_wpcs_standards.md  # WPCS + VIP sniff reference
 │   └── research_wp_security_sql_perf.md  # Security, SQL, performance patterns
 ├── data/
