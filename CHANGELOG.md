@@ -19,6 +19,8 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 - **Step 0c expanded:** From binary on/off to three-way mode selection with `$OBSERVE`/`$MONITOR`/`$TELEMETRY` flags. All step gates updated accordingly.
 - **Step 8.5a reads canonical JSONL:** No longer parses markdown — `json.loads()` on each line of the thermal log, source-agnostic
 - **Thermal log naming:** `{model_short}_{date}_{ratio}` instead of just `{ratio}` to avoid ambiguity across training sessions
+- **Unified memory support:** JSONL schema tracks both `vram_used_mb` (discrete GPU) and `sys_ram_used_mb`/`sys_ram_total_mb` (always available). On unified memory systems (GB10/Grace Hopper) where VRAM reports `[N/A]`, system RAM is used for all memory headroom calculations. Observe agents and lightweight monitor both collect system RAM via `free -m`.
+- **Memory thresholds:** WARNING at >90%, CRITICAL at >=98% (warn+log only — does NOT stop training). Insufficient memory is caught pre-training by Step 2 validate and Step 6 dry run.
 
 ## [0.5.1] - 2026-03-29 — Adaptive Resource Planning & MLflow
 
