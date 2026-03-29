@@ -152,27 +152,18 @@ wp-finetune/
 └── wp-moe.md                       # Model architecture specification
 ```
 
-## Autonomous Pipeline
+## Getting Started
 
-The entire data pipeline runs autonomously with a single command in Claude Code — no continuous prompting required.
+### Install Skills
 
-### Install the Skill
-
-Copy the skills into your Claude Code skills directory:
+All skills are prefixed `wp-finetune:` for easy discovery in Claude Code's command palette.
 
 ```bash
-# From the project root — install all skills
+# Skills are already in .claude/skills/ — no install needed if you cloned this repo.
+# To install manually from docs/:
 mkdir -p .claude/skills/wp-finetune:run-data-pipeline .claude/skills/wp-finetune:run-training
 cp docs/wp-finetune:run-data-pipeline.md .claude/skills/wp-finetune:run-data-pipeline/SKILL.md
 cp docs/wp-finetune:run-training.md .claude/skills/wp-finetune:run-training/SKILL.md
-```
-
-Or symlink so updates propagate:
-
-```bash
-mkdir -p .claude/skills/wp-finetune:run-data-pipeline .claude/skills/wp-finetune:run-training
-ln -sf "$(pwd)/docs/wp-finetune:run-data-pipeline.md" .claude/skills/wp-finetune:run-data-pipeline/SKILL.md
-ln -sf "$(pwd)/docs/wp-finetune:run-training.md" .claude/skills/wp-finetune:run-training/SKILL.md
 ```
 
 ### Configure
@@ -184,39 +175,70 @@ cp .env.example .env
 
 ### Run
 
-In Claude Code, say:
+In Claude Code, type `/wp-finetune:` to see all available skills, or say:
 
 ```
-run the pipeline          # Phase 2: generate training data
-run training              # Phase 3: download, tokenizer, train, merge via dgx-toolbox
+run the pipeline          # Data pipeline: clone, extract, judge, CoT, export
+run training              # Training: model selection, ratio selection, DGX execution
 ```
-
-The training skill uses `dgx_toolbox.py` as the execution engine — it validates state, manages containers, installs deps, and executes commands dynamically. No hardcoded Docker commands.
 
 Or check status first:
 
 ```bash
-python scripts/pipeline_orchestrator.py status   # Current state
-python scripts/pipeline_orchestrator.py plan      # What needs doing
+python scripts/pipeline_orchestrator.py status   # Current pipeline state
+python scripts/pipeline_orchestrator.py plan      # What actions are needed
 ```
 
-### How It Works
+## How It Works
 
-The skill follows a **spawn-until-target** loop:
+The project has two autonomous skills that handle the full lifecycle from raw repos to a trained model.
+
+### `/wp-finetune:run-data-pipeline` — Data Production
+
+Runs the complete data pipeline end-to-end using Claude Code agents for all LLM work. Single invocation, no prompting required.
 
 ```
-1. Orchestrator checks state → identifies gaps
-2. Claude Code spawns parallel agents for each gap
-3. Agents write results (judging, generation, scoring, CoT)
-4. Orchestrator re-checks state
-5. If targets not met → loop back to step 2
-6. When all targets met → merge → export → done
+1. Orchestrator scans output dirs → computes percentage-based targets
+2. Clone all repos from repos.yaml (script)
+3. Extract PHP functions from cloned repos (script)
+4. Judge ALL extracted functions via parallel agents (9-dimension rubric)
+5. Gap analysis → synthetic generation → judge synthetics (agents)
+6. Judge training data: score all passed (75-100) and failed (10-65) functions
+7. 4-way CoT: gen pattern + judge rubric + judge contrastive + security
+8. Re-check targets → if not met, loop back to step 2
+9. Merge all sources → export at configured ratio → done
 ```
 
-All LLM work uses Claude Code agents (covered by subscription, $0 API cost).
-Non-LLM steps (cloning, extraction, gap analysis, mutations, export) run as Python scripts.
+**Spawn-until-target pattern:** The orchestrator keeps spawning agent waves until all percentage-based targets are met. Targets scale with the dataset — no hardcoded numbers.
 
-See [docs/AGENT_PIPELINE.md](docs/AGENT_PIPELINE.md) for the full execution model, output format contracts, and scaling guide.
+**All LLM work via Claude Code agents** (covered by subscription, $0 API cost). Non-LLM steps (cloning, extraction, gap analysis, mutations, export) run as Python scripts.
+
+See [docs/AGENT_PIPELINE.md](docs/AGENT_PIPELINE.md) for the full execution model and output format contracts.
+
+### `/wp-finetune:run-training` — Model Training
+
+Runs the training pipeline on DGX Spark via the `dgx_toolbox.py` execution engine. Supports training on multiple dataset ratio exports sequentially with isolated checkpoints.
+
+```
+Step 0a: Select base model (Qwen3-30B-A3B, 14B, 8B, or custom HF ID)
+Step 0b: Select dataset exports (one or more of the 5 ratio exports)
+Step 0c: Review full training plan → confirm before starting
+   │
+   │  For each selected ratio:
+   │
+Step 1: Generate per-run config overlay (data paths + output dir)
+Step 2: Validate (toolbox, config, memory ≥ 70GB)
+Step 3: Ensure Unsloth Studio container ready (start + mount + deps)
+Step 4: Download base model (idempotent — shared across runs)
+Step 5: Extend tokenizer with <wp_gen>/<wp_judge> (idempotent — shared)
+Step 6: Dry run (validate config before committing to hours of training)
+Step 7: Train (BF16 LoRA SFT, 6-12 hours, idempotent)
+Step 8: Merge adapter into base model (with verification roundtrip)
+```
+
+**Run isolation:** Each ratio trains to `adapters/{model}-wp-{ratio}/` and merges to `models/{model}-wp-{ratio}-merged/`. Previous runs are never overwritten. Re-running the skill skips completed runs via idempotency checks.
+
+**Confirmation gate:** Step 0c presents the full plan (model, LoRA config, hyperparameters, estimated duration, disk requirements, output paths) and requires explicit confirmation before starting. No silent multi-hour training runs.
 
 ## DGX Toolbox Integration
 
