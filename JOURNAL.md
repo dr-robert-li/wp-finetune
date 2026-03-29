@@ -4,6 +4,56 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-03-29 — Adaptive resource planning: telemetry-informed convergence toward thermal sweet spot
+
+### Context
+
+After catching the GPU underutilisation on the first run (35% avg util with batch=1), I pushed to a more aggressive config (batch=4, 4 workers, gradient checkpointing). This improved utilisation but still left headroom — the GPU was running comfortably in the COOL zone (65-71C). Rather than manually tuning after each run, I built an adaptive feedback loop between the telemetry agents and the training orchestrator.
+
+### The convergence function
+
+The `/observe-training` telemetry agents collect GPU temperature, utilisation, and VRAM usage during each run. Between runs (Step 8.5 of the training skill), the orchestrator reads these metrics and classifies the thermal zone:
+
+| Zone | Temp Range | Action |
+|------|-----------|--------|
+| CRITICAL | >= 83C peak | **Pause.** Backoff to last WARM config. Alert user. Wait for cooldown. |
+| HOT | 78-82C | Step down: reduce batch by 1, increase grad_accum to compensate |
+| WARM | 72-77C | **Target zone.** Hold config — no changes needed |
+| COOL | 65-71C | Scale up if GPU util < 75% and VRAM headroom > 10GB |
+| COLD | < 65C | Aggressive scale-up if GPU util < 60% |
+
+The system converges toward the WARM zone (72-77C) across sequential runs — each run informs the next. Expected convergence:
+
+```
+Run 1: COLD (batch=4)  → scale up to batch=8
+Run 2: WARM (batch=8)  → hold (saved as safe point)
+Run 3: COOL (batch=8)  → scale up to batch=12
+Run 4: CRITICAL (batch=12) → backoff to batch=8 (last WARM)
+Run 5: WARM (batch=8)  → hold (system stabilised)
+```
+
+### Thermal history as memory
+
+The key insight: the system needs to remember what worked. A persistent `telemetry/training/thermal_history.json` records each run's config and thermal outcome. When a CRITICAL event occurs, the backoff doesn't blindly halve the batch size — it restores the exact config from the last run that was in the WARM zone. This is the last known-safe operating point.
+
+If no WARM history exists (first run overheats), it falls back to halving as a conservative default. The history file persists across skill invocations and context resets.
+
+### Live thermal guard
+
+During training, the telemetry observer touches `_thermal_pause` if GPU hits >= 83C. The orchestrator checks for this after training ends and applies CRITICAL backoff rules before starting the next run. This prevents multi-day sequential runs from cooking the GPU if conditions change (ambient temperature, other workloads).
+
+### Telemetry is now default-on
+
+Changed Step 0c of the training skill: telemetry is enabled by default because adaptive resource planning depends on it. If the user tries to disable, a warning explains the consequence (no auto-adjustment, risk of underutilisation or overheating) and requires double-confirmation.
+
+### Why this matters
+
+With 5 sequential training runs (30-60 hours total), I can't babysit the GPU for the entire duration. The adaptive loop means the system self-tunes: if the first run runs cold, the second run pushes harder; if a run gets too hot, it backs off to the last safe config. By the third or fourth run, the config should have converged to the thermal sweet spot for this specific model on this specific hardware.
+
+This is another instance of the outcomes-driven pattern: define the desired state (WARM zone), define the feedback mechanism (telemetry), define the recovery logic (backoff to last WARM), and let the system converge.
+
+---
+
 ## 2026-03-29 — GPU underutilisation: conservative config wasting DGX Spark capacity
 
 ### What the telemetry showed
