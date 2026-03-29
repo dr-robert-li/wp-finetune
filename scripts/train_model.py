@@ -6,7 +6,7 @@ Full pipeline:
   3. Load extended tokenizer from adapters/tokenizer/
   4. Apply LoRA via FastLanguageModel.get_peft_model (modules_to_save=[embed_tokens, lm_head])
   5. Load train/val datasets from data/final_dataset/
-  6. Train with SFTTrainer + W&B tracking
+  6. Train with SFTTrainer + MLflow tracking (local)
   7. Save adapter to adapters/qwen3-wp/
 
 Usage:
@@ -253,20 +253,35 @@ def load_datasets(config: dict):
 
 
 def build_trainer(model, tokenizer, train_dataset, val_dataset, config: dict):
-    """Build SFTTrainer with W&B tracking."""
-    import wandb  # noqa: PLC0415
+    """Build SFTTrainer with MLflow tracking (local)."""
+    import mlflow  # noqa: PLC0415
     from trl import SFTConfig, SFTTrainer  # noqa: PLC0415
 
-    wandb.init(project="wp-qwen3-moe", name="qwen3-30b-a3b-lora-sft")
-
     train_cfg = config["training"]
+    output_dir = str(resolve_path(train_cfg["output_dir"]))
+
+    # Configure MLflow to use local sqlite store (no cloud)
+    mlflow.set_tracking_uri(f"sqlite:///{resolve_path('mlruns.db')}")
+    mlflow.set_experiment("wp-qwen3-moe")
+
+    # Format OpenAI chat messages using the model's chat template
+    # Unsloth always expects a list of strings returned
+    def formatting_func(example):
+        messages = example["messages"]
+        # Single example: messages is a list of dicts [{role, content}, ...]
+        if messages and isinstance(messages[0], dict):
+            return [tokenizer.apply_chat_template(messages, tokenize=False)]
+        # Batch mode: messages is a list of lists
+        return [tokenizer.apply_chat_template(m, tokenize=False) for m in messages]
+
     trainer = SFTTrainer(
         model=model,
         tokenizer=tokenizer,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
+        formatting_func=formatting_func,
         args=SFTConfig(
-            output_dir=str(resolve_path(train_cfg["output_dir"])),
+            output_dir=output_dir,
             num_train_epochs=train_cfg["num_train_epochs"],
             per_device_train_batch_size=train_cfg["per_device_train_batch_size"],
             gradient_accumulation_steps=train_cfg["gradient_accumulation_steps"],
@@ -278,7 +293,7 @@ def build_trainer(model, tokenizer, train_dataset, val_dataset, config: dict):
             logging_steps=train_cfg["logging_steps"],
             eval_steps=train_cfg["eval_steps"],
             save_steps=train_cfg["save_steps"],
-            report_to="wandb",  # TRNG-05
+            report_to="mlflow",  # TRNG-05 — local sqlite store, no cloud
             max_seq_length=config["model"]["max_seq_length"],
             dataset_num_proc=4,
         ),
@@ -316,7 +331,7 @@ def print_training_summary(config: dict, train_dataset, val_dataset) -> None:
     print(f"  Train size:   {len(train_dataset)}")
     print(f"  Val size:     {len(val_dataset)}")
     print(f"  Output dir:   {train['output_dir']}")
-    print(f"  W&B project:  wp-qwen3-moe")
+    print(f"  Tracking:     MLflow (local file store)")
     print("=" * 60)
 
 

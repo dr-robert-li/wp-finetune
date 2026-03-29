@@ -284,7 +284,7 @@ result = dgx.execute(
 )
 print(result.summary())
 if not result.ok:
-    print(f"Training failed for {run_name}. Check W&B for loss curves.")
+    print(f"Training failed for {run_name}. Check MLflow logs: mlflow ui --backend-store-uri mlruns/")
     print("To resume: run this skill again (idempotency will skip completed runs)")
 ```
 
@@ -361,7 +361,7 @@ config/
 - Run eval on each to find the best ratio
 - Serve any model via vLLM (`--model models/qwen3-wp-50_50-merged/`)
 - Roll back to any ratio without retraining
-- Compare W&B runs side-by-side (each run has a unique name)
+- Compare MLflow runs side-by-side (`mlflow ui --backend-store-uri mlruns/`)
 
 ## Recovery Logic
 
