@@ -7,12 +7,18 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 - Training in progress: 5 sequential LoRA runs on DGX Spark
 - Phase 4 (Evaluation) and Phase 5 (Packaging & Deployment) not started
 
-## [0.5.2] - 2026-03-30 — Embedded Telemetry Lifecycle
+## [0.5.2] - 2026-03-30 — Canonical Thermal Log & Telemetry Modes
+
+### Added
+- **Canonical thermal JSONL log:** All telemetry collectors (observe agents and lightweight monitor) append to `{model}_{date}_{ratio}_thermal.jsonl` — single source of truth for adaptive resource planning
+- **Three telemetry modes (Step 0c):** Observe agents (default, full 6-agent team), lightweight monitor (single agent, thermal only), or none (double-confirm warning)
+- **Lightweight monitor agent:** Polls nvidia-smi every 10 min, appends to canonical JSONL — sufficient for adaptive planning without the overhead of 6 agents
 
 ### Changed
-- **Observe/review skills embedded in run-training:** Steps 4/7/8 now spawn observe agents inline with concrete `Agent()` blocks and full lifecycle (spawn → execute → `_stop` → review). No longer requires separate `/observe-training` invocation.
-- **Step 0c gates all telemetry:** `$TELEMETRY` flag (default on) controls all 12 agent spawns, review-telemetry consolidation, adaptive resource planning, and cross-run comparison — single toggle for the full stack
-- **README restructured:** observe/review skills documented as embedded within run-training, with table showing which skill is spawned at which step
+- **Observe/review skills embedded in run-training:** Steps 4/7/8 spawn observe agents inline with concrete `Agent()` blocks and full lifecycle (spawn → execute → `_stop` → review). No separate invocation needed.
+- **Step 0c expanded:** From binary on/off to three-way mode selection with `$OBSERVE`/`$MONITOR`/`$TELEMETRY` flags. All step gates updated accordingly.
+- **Step 8.5a reads canonical JSONL:** No longer parses markdown — `json.loads()` on each line of the thermal log, source-agnostic
+- **Thermal log naming:** `{model_short}_{date}_{ratio}` instead of just `{ratio}` to avoid ambiguity across training sessions
 
 ## [0.5.1] - 2026-03-29 — Adaptive Resource Planning & MLflow
 
