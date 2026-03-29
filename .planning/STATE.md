@@ -134,6 +134,7 @@ None yet.
 | 260329-g9p | README How It Works section with both pipeline and training skills | 2026-03-29 | 163497e | [260329-g9p-readme-how-it-works-section-with-both-pi](./quick/260329-g9p-readme-how-it-works-section-with-both-pi/) |
 | 260329-gmf | README add observe and review-telemetry skill descriptions | 2026-03-29 | d31e013 | [260329-gmf-readme-add-observe-and-review-telemetry-](./quick/260329-gmf-readme-add-observe-and-review-telemetry-/) |
 | 260329-gre | Add telemetry opt-in Step 0c to run-training skill | 2026-03-29 | 09beab1 | [260329-gre-add-telemetry-opt-in-step-0c-to-run-trai](./quick/260329-gre-add-telemetry-opt-in-step-0c-to-run-trai/) |
+| 260329-gvs | Update README CHANGELOG with telemetry opt-in and training steps | 2026-03-29 | 9a99da8 | [260329-gvs-update-readme-changelog-with-telemetry-o](./quick/260329-gvs-update-readme-changelog-with-telemetry-o/) |
 
 ## Session Continuity
 
