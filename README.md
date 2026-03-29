@@ -1,5 +1,13 @@
 # wp-qwen3-moe
 
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Base Model: Qwen3-30B-A3B](https://img.shields.io/badge/Base_Model-Qwen3--30B--A3B-purple.svg)](https://huggingface.co/Qwen/Qwen3-30B-A3B)
+[![Training: BF16 LoRA](https://img.shields.io/badge/Training-BF16_LoRA-green.svg)]()
+[![Infrastructure: DGX Spark](https://img.shields.io/badge/Infrastructure-DGX_Spark-76b900.svg)](https://github.com/dr-robert-li/dgx-toolbox)
+[![Built with Claude Code](https://img.shields.io/badge/Built_with-Claude_Code-orange.svg)](https://claude.com/claude-code)
+
+**Author:** [Dr. Robert Li](https://github.com/dr-robert-li)
+
 An open-weight Mixture-of-Experts model that generates and judges WordPress code according to strict WordPress Coding Standards. A single model, two modes: `<wp_gen>` for code generation, `<wp_judge>` for structured critique with 9-dimension rubric scoring.
 
 No open-source model existed for this. The tools in this space are wrappers around closed-source frontier models (OpenAI, Claude, etc.). This project builds one from scratch — open weights, self-hostable, no vendor lock-in.
