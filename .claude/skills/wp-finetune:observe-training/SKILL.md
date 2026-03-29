@@ -91,10 +91,10 @@ Agent(
   prompt="You are a training metrics observer. Write observations to {TDIR}/training-metrics.md.
 
   LOOP (every 60 seconds):
-  1. Run: docker logs --tail 30 unsloth-studio 2>&1 | grep -i 'loss\|step\|epoch\|lr\|grad'
-  2. Check for trainer state: docker exec unsloth-studio cat /workspace/outputs/trainer_state.json 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); print(json.dumps(d[\"log_history\"][-3:], indent=2))' 2>/dev/null || true
-  3. Check W&B: docker exec unsloth-studio ls -la /workspace/wandb/latest-run/ 2>/dev/null || true
-  4. Check TensorBoard: docker exec unsloth-studio find /workspace -name 'events.out.tfevents*' -newer /tmp/.last_tb_check 2>/dev/null || true
+  1. Run: docker logs --tail 30 unsloth-headless 2>&1 | grep -i 'loss\|step\|epoch\|lr\|grad'
+  2. Check for trainer state: docker exec unsloth-headless cat /workspace/outputs/trainer_state.json 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); print(json.dumps(d[\"log_history\"][-3:], indent=2))' 2>/dev/null || true
+  3. Check W&B: docker exec unsloth-headless ls -la /workspace/wandb/latest-run/ 2>/dev/null || true
+  4. Check TensorBoard: docker exec unsloth-headless find /workspace -name 'events.out.tfevents*' -newer /tmp/.last_tb_check 2>/dev/null || true
   5. Parse and append to {TDIR}/training-metrics.md:
      ### {HH:MM:SS} -- Step {N}/{total}
      - Loss: {loss} (delta: {change from last})
@@ -125,7 +125,7 @@ Agent(
   2. Run: sar -u 1 1 2>/dev/null || vmstat 1 2 | tail -1
   3. Run: df -h /home/robert_li/Desktop/projects/wp-finetune
   4. Run: du -sh adapters/ merged_model/ 2>/dev/null || true
-  5. Run: docker stats --no-stream --format '{{.Name}}: Block I/O {{.BlockIO}}' unsloth-studio 2>/dev/null
+  5. Run: docker stats --no-stream --format '{{.Name}}: Block I/O {{.BlockIO}}' unsloth-headless 2>/dev/null
   6. Append to {TDIR}/disk-io.md:
      ### {HH:MM:SS}
      - iowait: {pct}%
@@ -151,7 +151,7 @@ Agent(
   prompt="You are a checkpoint integrity observer. Write observations to {TDIR}/checkpoint-integrity.md.
 
   LOOP (every 5 minutes):
-  1. List checkpoints: ls -ltd adapters/qwen3-wp/checkpoint-*/ 2>/dev/null || docker exec unsloth-studio ls -ltd /workspace/adapters/qwen3-wp/checkpoint-*/ 2>/dev/null
+  1. List checkpoints: ls -ltd adapters/qwen3-wp/checkpoint-*/ 2>/dev/null || docker exec unsloth-headless ls -ltd /workspace/adapters/qwen3-wp/checkpoint-*/ 2>/dev/null
   2. For latest checkpoint, verify:
      - adapter_config.json exists and is valid JSON (python3 -c 'import json; json.load(open(\"...\"))')
      - adapter_model.safetensors exists and size > 0
@@ -185,16 +185,16 @@ Agent(
 
   LOOP (every 60 seconds):
   1. Run: docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' 2>/dev/null
-  2. Run: docker stats --no-stream --format '{{.Name}}: CPU {{.CPUPerc}} MEM {{.MemUsage}} ({{.MemPerc}})' unsloth-studio 2>/dev/null
-  3. Run: docker exec unsloth-studio ps aux --sort=-%mem 2>/dev/null | head -10
+  2. Run: docker stats --no-stream --format '{{.Name}}: CPU {{.CPUPerc}} MEM {{.MemUsage}} ({{.MemPerc}})' unsloth-headless 2>/dev/null
+  3. Run: docker exec unsloth-headless ps aux --sort=-%mem 2>/dev/null | head -10
   4. Run: dmesg 2>/dev/null | tail -5 | grep -i 'oom\|kill\|error' || echo 'No OOM events'
   5. Append to {TDIR}/container-monitor.md:
      ### {HH:MM:SS}
-     - Unsloth Studio: {status} | CPU: {pct} | MEM: {usage}
+     - Unsloth Headless: {status} | CPU: {pct} | MEM: {usage}
      - Top processes: {list}
      - Other containers: {list or 'none'}
      - OOM events: {count or 'none'}
-  6. Flag WARNING if unsloth-studio is not running
+  6. Flag WARNING if unsloth-headless is not running
   7. Flag CRITICAL if OOM killer detected in dmesg
   8. Check {TDIR}/_stop -- if so, write ## Final Summary (uptime, peak container memory, OOM count) and exit
   9. Sleep 60 seconds, repeat

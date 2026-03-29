@@ -282,6 +282,20 @@ class DGXToolbox:
                                 capture_output=True, text=True, timeout=5)
         running = result.stdout.strip().split("\n")
         if cname in running:
+            # Check for restart loop — container shows as running but can't be exec'd
+            inspect = subprocess.run(
+                ["docker", "inspect", cname, "--format",
+                 "{{.State.Restarting}} {{.RestartCount}}"],
+                capture_output=True, text=True, timeout=5)
+            if inspect.returncode == 0:
+                parts = inspect.stdout.strip().split()
+                restarting = parts[0] == "true" if parts else False
+                restart_count = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 0
+                if restarting or restart_count > 2:
+                    return CheckResult(
+                        f"container:{name}", False,
+                        f"{cname} is in a restart loop (restarts={restart_count})",
+                        {"restart_count": restart_count, "restarting": restarting})
             return CheckResult(f"container:{name}", True, f"{cname} is running")
         return CheckResult(f"container:{name}", False, f"{cname} is not running")
 
@@ -299,7 +313,7 @@ class DGXToolbox:
                            f"Project not mounted in {cname}. Restart with EXTRA_MOUNTS.")
 
     def _check_gpu(self, name: str) -> CheckResult:
-        cname = self._containers.get(name, {}).get("container_name", name) if name else "unsloth-studio"
+        cname = self._containers.get(name, {}).get("container_name", name) if name else "unsloth-headless"
         result = subprocess.run(
             ["docker", "exec", cname, "nvidia-smi", "--query-gpu=name,memory.total",
              "--format=csv,noheader"],
@@ -346,9 +360,14 @@ class DGXToolbox:
         cname = mapping["container_name"]
         workdir = mapping.get("workdir")
 
-        # Step 1: Is container running?
+        # Step 1: Is container running (and not in a restart loop)?
         container_check = self._check_container(component)
         if not container_check.passed:
+            # If restart loop detected, clean up first
+            if container_check.details.get("restart_count", 0) > 0:
+                print(f"  {cname} is in a restart loop — removing and recreating...")
+                subprocess.run(["docker", "stop", cname], capture_output=True, timeout=30)
+                subprocess.run(["docker", "rm", cname], capture_output=True, timeout=10)
             print(f"  Starting {cname} via dgx-toolbox...")
             self._start_container(component)
             print(f"  Waiting {wait}s for setup...")

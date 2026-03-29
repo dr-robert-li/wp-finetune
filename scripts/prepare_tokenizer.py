@@ -208,7 +208,7 @@ def prepare_tokenizer(skip_download: bool = False, smoke_only: bool = False) -> 
             print()
             print("  This script must run inside the DGX Toolbox Unsloth Studio container:")
             print()
-            print("    ~/dgx-toolbox/containers/unsloth-studio.sh")
+            print("    ~/dgx-toolbox/containers/unsloth-headless.sh")
             print()
             print("  Then from inside the container:")
             print("    cd /workspace/work  # or bind-mount your project")
