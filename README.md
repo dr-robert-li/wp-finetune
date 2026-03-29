@@ -36,11 +36,11 @@ The judge returns structured scores across 9 dimensions: WPCS compliance, SQL sa
 |-------|-------------|--------|
 | 1. Pipeline Ready | Harden scripts, generate repos.yaml from curated data | Complete |
 | 2. Dataset Production | Execute agent pipeline, produce training examples | Complete |
-| 3. Model Prep & Training | Tokenizer extension, BF16 LoRA SFT on DGX Spark | At checkpoint |
-| 4. Evaluation | wp-bench + 193-check rubric eval, quality gates | Not started |
+| 3. Model Prep & Training | Tokenizer extension, BF16 LoRA SFT on DGX Spark | Training (5 runs) |
+| 4. Evaluation | wp-bench + 241-check rubric eval, quality gates | Not started |
 | 5. Packaging & Deployment | AWQ/GGUF quantization, HuggingFace Hub release | Not started |
 
-**Current:** Phase 3 — scripts ready, tokenizer prepared, 5 ratio exports produced (30/70 through 70/30). Training on DGX Spark next.
+**Current:** Phase 3 — 5 sequential LoRA training runs in progress on DGX Spark (ratios 30/70 through 70/30, ~30-60 hours total). Each produces an isolated adapter for A/B/C/D/E eval comparison.
 
 **Building in public.** Read the [Engineering Journal](JOURNAL.md) for real-time decisions, tradeoffs, failures, and lessons learned as the project evolves.
 
