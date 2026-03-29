@@ -1,0 +1,53 @@
+data:
+  test_file: data/final_dataset/ratio_50_50/openai_test.jsonl
+  train_file: data/final_dataset/ratio_50_50/openai_train.jsonl
+  val_file: data/final_dataset/ratio_50_50/openai_val.jsonl
+eval:
+  gen_dimension_targets:
+    D2_security: 0.95
+    D3_sql: 0.9
+  judge_dimension_targets:
+    D2_security: 0.75
+    D3_sql: 0.75
+  overall_mean_target: 75.0
+  overall_spearman_target: 0.8
+  phpcs_pass_target: 0.95
+  security_pass_target: 0.98
+  spearman_target: 0.85
+lora:
+  lora_alpha: 64
+  lora_dropout: 0.05
+  modules_to_save:
+  - embed_tokens
+  - lm_head
+  r: 32
+  target_modules:
+  - q_proj
+  - k_proj
+  - v_proj
+  - o_proj
+  - gate_up_proj
+  - down_proj
+model:
+  local_dir: ./models/Qwen3-30B-A3B
+  max_seq_length: 4096
+  name: Qwen/Qwen3-30B-A3B
+tokenizer:
+  save_dir: ./adapters/tokenizer
+  special_tokens:
+  - <wp_gen>
+  - <wp_judge>
+training:
+  bf16: true
+  dataloader_num_workers: 4
+  eval_steps: 100
+  gradient_accumulation_steps: 4
+  gradient_checkpointing: true
+  learning_rate: 0.0002
+  logging_steps: 10
+  lr_scheduler_type: cosine
+  num_train_epochs: 2
+  output_dir: ./adapters/qwen3-30b-wp-50_50
+  per_device_train_batch_size: 4
+  save_steps: 200
+  warmup_ratio: 0.05
