@@ -131,6 +131,7 @@ None yet.
 | 260329-cy1 | Sync STATE.md, ROADMAP.md, PROJECT.md with current project state | 2026-03-29 | 726ec5a | [260329-cy1-update-state-md-roadmap-md-project-md-to](./quick/260329-cy1-update-state-md-roadmap-md-project-md-to/) |
 | 260329-g30 | Prefix all 8 skills with wp-finetune: for Claude Code discoverability | 2026-03-29 | ba82fab | [260329-g30-rename-all-skills-with-wp-finetune-prefi](./quick/260329-g30-rename-all-skills-with-wp-finetune-prefi/) |
 | 260329-g6l | Update README and CHANGELOG to match current project state | 2026-03-29 | 33f5311 | [260329-g6l-update-readme-and-changelog-to-reflect-c](./quick/260329-g6l-update-readme-and-changelog-to-reflect-c/) |
+| 260329-g9p | README How It Works section with both pipeline and training skills | 2026-03-29 | 163497e | [260329-g9p-readme-how-it-works-section-with-both-pi](./quick/260329-g9p-readme-how-it-works-section-with-both-pi/) |
 
 ## Session Continuity
 
