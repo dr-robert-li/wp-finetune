@@ -230,7 +230,7 @@ Runs the training pipeline on DGX Spark via the `dgx_toolbox.py` execution engin
 ```
 Step 0a: Select base model (Qwen3-30B-A3B, 14B, 8B, or custom HF ID)
 Step 0b: Select dataset exports (one or more of the 5 ratio exports)
-Step 0c: Telemetry (default on — controls all observe/review/adaptive)
+Step 0c: Telemetry mode (observe agents / lightweight monitor / none)
 Step 0d: Review full training plan → confirm before starting
    │
    │  For each selected ratio:
@@ -239,15 +239,15 @@ Step 1: Generate per-run config overlay (data paths + output dir)
 Step 2: Validate (toolbox, config, memory ≥ 70GB)
 Step 3: Ensure Unsloth Studio container ready (start + mount + deps)
 Step 4: Download base model (idempotent — shared across runs)
-        [if telemetry: observe-data-pipeline agents monitor download]
+        [observe: 3 data-pipeline agents]
 Step 5: Extend tokenizer with <wp_gen>/<wp_judge> (idempotent — shared)
 Step 6: Dry run (validate config before committing to hours of training)
 Step 7: Train (BF16 LoRA SFT, 6-12 hours, idempotent)
-        [if telemetry: observe-training agents (6) monitor GPU/loss/checkpoints]
-        [if telemetry: live thermal guard — _thermal_pause at ≥83°C]
+        [observe: 6 training agents + live thermal guard at ≥83°C]
+        [monitor: 1 lightweight agent polling every 10min]
+        [both: append to canonical {model}_{date}_{ratio}_thermal.jsonl]
 Step 8: Merge adapter into base model (with verification roundtrip)
-        [if telemetry: observe-packaging agents monitor merge]
-        [if telemetry: review-telemetry consolidates this run's data]
+        [observe: 3 packaging agents + review-telemetry → _summary.md]
 Step 8.5: Adaptive resource planning (between runs)
         Parse telemetry → classify thermal zone → adjust config for next run
         CRITICAL: backoff to last WARM config from thermal_history.json
@@ -257,44 +257,45 @@ Step 9: Report (after all runs: cross-run comparison summary)
 
 **Run isolation:** Each ratio trains to `adapters/{model}-wp-{ratio}/` and merges to `models/{model}-wp-{ratio}-merged/`. Previous runs are never overwritten. Re-running the skill skips completed runs via idempotency checks.
 
-**Telemetry default-on:** Telemetry is enabled by default because it feeds the adaptive resource planning system (Step 8.5). Disabling it requires double-confirmation since it also disables automatic GPU utilization and thermal optimization between runs.
+**Telemetry modes:** Step 0c offers three modes (default: observe agents). **Observe** spawns the full 6-agent team with rich telemetry. **Monitor** runs a single lightweight agent that only records GPU utilization and temperature. Both write to the same canonical JSONL thermal log that feeds adaptive resource planning. **None** disables all telemetry (double-confirm warning).
 
 **Confirmation gate:** Step 0d presents the full plan (model, LoRA config, hyperparameters, telemetry choice, estimated duration, disk requirements, output paths) and requires explicit confirmation before starting. No silent multi-hour training runs.
 
 ### `/wp-finetune:observe-*` and `/wp-finetune:review-telemetry` — Embedded Telemetry
 
-Observe and review skills are **embedded within `/wp-finetune:run-training`** — they are spawned automatically at the right lifecycle points when telemetry is enabled (Step 0c, default on). No need to invoke them separately during training.
+Observe and review skills are **embedded within `/wp-finetune:run-training`** — they are spawned automatically at the right lifecycle points based on the telemetry mode selected in Step 0c. No need to invoke them separately during training.
 
 They can still be invoked standalone for non-training operations (eval, inference, packaging).
 
-| Skill | Agents | Spawned by run-training at |
-|-------|--------|---------------------------|
-| `observe-data-pipeline` | 3 | Step 4 (model download) |
-| `observe-training` | 6 | Step 7 (training) — includes live thermal guard |
-| `observe-packaging` | 3 | Step 8 (adapter merge) |
-| `review-telemetry` | — | Step 8d (per-run summary) + Step 9b (cross-run comparison) |
-| `observe-evaluation` | 3 | Standalone (Phase 4) |
-| `observe-inference` | 5 | Standalone (Phase 5) |
+| Skill | Agents | Spawned at | Mode |
+|-------|--------|-----------|------|
+| `observe-data-pipeline` | 3 | Step 4 (download) | observe only |
+| `observe-training` | 6 | Step 7 (training) | observe only |
+| `observe-packaging` | 3 | Step 8 (merge) | observe only |
+| `review-telemetry` | — | Step 8d + 9b | observe only |
+| lightweight monitor | 1 | Step 7 (training) | monitor only |
+| `observe-evaluation` | 3 | Standalone (Phase 4) | — |
+| `observe-inference` | 5 | Standalone (Phase 5) | — |
 
 ```
-telemetry/
-  training/{timestamp}/
-    gpu-metrics.md          ← Agent 1: nvidia-smi every 30s
-    thermal-throttling.md   ← Agent 2: temp warnings > 80C, _thermal_pause at ≥83C
-    training-metrics.md     ← Agent 3: loss curves from MLflow
-    disk-io.md              ← Agent 4: checkpoint sizes
-    checkpoint-integrity.md ← Agent 5: adapter_config.json validation
-    container-monitor.md    ← Agent 6: docker health checks
-    _stop                   ← Touched after training ends — agents write Final Summary
-    _thermal_pause          ← Touched by thermal agent if ≥83C (triggers CRITICAL backoff)
-    _summary.md             ← Written by review-telemetry after run completes
-  training/
-    thermal_history.json    ← Persistent record of all runs (config + thermal zone)
-    adaptive_adjustments.md ← Log of config changes between runs
-    cross_run_summary.md    ← Final comparison table across all ratios
+telemetry/training/
+  # Canonical thermal log (one per run — written by both modes)
+  qwen3-30b_20260330_30_70_thermal.jsonl   ← {"ts","gpu_util","temp","vram_used_mb","source"}
+  qwen3-30b_20260330_40_60_thermal.jsonl
+
+  # Observe mode only — per-run agent reports
+  {timestamp}/
+    gpu-metrics.md, thermal-throttling.md, training-metrics.md,
+    disk-io.md, checkpoint-integrity.md, container-monitor.md
+    _stop, _thermal_pause, _summary.md
+
+  # Shared — adaptive resource planning state
+  thermal_history.json       ← Persistent record of all runs (config + thermal zone)
+  adaptive_adjustments.md    ← Log of config changes between runs
+  cross_run_summary.md       ← Final comparison table across all ratios
 ```
 
-**Lifecycle per run:** spawn agents (background) → execute step → touch `_stop` → agents write summaries → review-telemetry consolidates → adaptive planning reads telemetry → adjust config → next run.
+**Lifecycle per run:** spawn collectors (per mode) → all append to canonical JSONL → execute step → `_stop` → review-telemetry (observe only) → adaptive planning reads JSONL → adjust config → next run.
 
 ## DGX Toolbox Integration
 
