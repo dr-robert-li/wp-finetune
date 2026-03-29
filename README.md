@@ -222,7 +222,8 @@ Runs the training pipeline on DGX Spark via the `dgx_toolbox.py` execution engin
 ```
 Step 0a: Select base model (Qwen3-30B-A3B, 14B, 8B, or custom HF ID)
 Step 0b: Select dataset exports (one or more of the 5 ratio exports)
-Step 0c: Review full training plan → confirm before starting
+Step 0c: Enable/disable telemetry monitoring
+Step 0d: Review full training plan → confirm before starting
    │
    │  For each selected ratio:
    │
@@ -230,15 +231,22 @@ Step 1: Generate per-run config overlay (data paths + output dir)
 Step 2: Validate (toolbox, config, memory ≥ 70GB)
 Step 3: Ensure Unsloth Studio container ready (start + mount + deps)
 Step 4: Download base model (idempotent — shared across runs)
+        [if telemetry: observe-data-pipeline agents monitor download]
 Step 5: Extend tokenizer with <wp_gen>/<wp_judge> (idempotent — shared)
 Step 6: Dry run (validate config before committing to hours of training)
 Step 7: Train (BF16 LoRA SFT, 6-12 hours, idempotent)
+        [if telemetry: observe-training agents (6) monitor GPU/loss/checkpoints]
 Step 8: Merge adapter into base model (with verification roundtrip)
+        [if telemetry: observe-packaging agents monitor merge]
+        [if telemetry: review-telemetry consolidates this run's data]
+Step 9: Report (after all runs: cross-run comparison summary)
 ```
 
 **Run isolation:** Each ratio trains to `adapters/{model}-wp-{ratio}/` and merges to `models/{model}-wp-{ratio}-merged/`. Previous runs are never overwritten. Re-running the skill skips completed runs via idempotency checks.
 
-**Confirmation gate:** Step 0c presents the full plan (model, LoRA config, hyperparameters, estimated duration, disk requirements, output paths) and requires explicit confirmation before starting. No silent multi-hour training runs.
+**Telemetry opt-in:** Step 0c lets you enable background observer agents. When enabled, the orchestrator automatically spawns the right observe skill at each phase and runs review-telemetry between runs to produce per-run and cross-run summaries.
+
+**Confirmation gate:** Step 0d presents the full plan (model, LoRA config, hyperparameters, telemetry choice, estimated duration, disk requirements, output paths) and requires explicit confirmation before starting. No silent multi-hour training runs.
 
 ### `/wp-finetune:observe-*` — Background Telemetry
 
