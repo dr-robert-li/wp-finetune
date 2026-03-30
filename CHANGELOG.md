@@ -22,6 +22,9 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 - **Unified memory support:** JSONL schema tracks both `vram_used_mb` (discrete GPU) and `sys_ram_used_mb`/`sys_ram_total_mb` (always available). On unified memory systems (GB10/Grace Hopper) where VRAM reports `[N/A]`, system RAM is used for all memory headroom calculations. Observe agents and lightweight monitor both collect system RAM via `free -m`.
 - **Memory thresholds:** WARNING at >90%, CRITICAL at >=98% (warn+log only — does NOT stop training). Insufficient memory is caught pre-training by Step 2 validate and Step 6 dry run.
 
+### Fixed
+- **nvidia-smi queries run on host, not container:** Long-running containers lose NVML access (observed after 31hrs on unsloth-headless) while host nvidia-smi stays reliable. Lightweight monitor was using `docker exec nvidia-smi` — fixed to query from host. Explicit `HOST, not docker exec` notes added to both skills.
+
 ## [0.5.1] - 2026-03-29 — Adaptive Resource Planning & MLflow
 
 ### Added
