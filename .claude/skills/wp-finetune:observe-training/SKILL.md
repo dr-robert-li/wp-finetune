@@ -55,6 +55,9 @@ Agent(
   8. Check if {TDIR}/_stop exists -- if so, write ## Final Summary (peak memory, avg util, total readings) and exit
   9. Sleep 30 seconds, repeat
 
+  NOTE: All nvidia-smi and free commands run on the HOST, not via docker exec.
+  Long-running containers can lose NVML access while the host nvidia-smi stays reliable.
+
   NOTE: On unified memory systems (NVIDIA GB10/Grace Hopper), nvidia-smi memory reports [N/A].
   System RAM IS the GPU memory — use free/proc/meminfo instead. On discrete GPU systems,
   both VRAM and system RAM are meaningful and should both be recorded.

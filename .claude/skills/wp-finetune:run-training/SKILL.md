@@ -465,10 +465,13 @@ Agent(
   description="Telemetry: lightweight thermal monitor",
   prompt="You are a lightweight GPU monitor. Append JSONL to {THERMAL_LOG} every 10 minutes.
 
+  IMPORTANT: All queries run on the HOST, not inside the container. docker exec nvidia-smi
+  can lose NVML access on long-running containers while the host nvidia-smi stays reliable.
+
   LOOP (every 600 seconds):
-  1. Run: docker exec unsloth-headless nvidia-smi --query-gpu=utilization.gpu,memory.used,temperature.gpu --format=csv,noheader,nounits
-  2. Run: free -m | grep Mem → parse total, used, available system RAM
-  3. Parse gpu_util, temp from nvidia-smi. Set vram_used_mb from nvidia-smi memory.used (null if [N/A]).
+  1. Run: nvidia-smi --query-gpu=utilization.gpu,memory.used,temperature.gpu --format=csv,noheader,nounits  (HOST, not docker exec)
+  2. Run: free -m | grep Mem → parse total, used, available system RAM (HOST)
+  3. Parse gpu_util, temp from nvidia-smi. Set vram_used_mb from memory.used (null if [N/A]).
   4. Compute sys_ram_used_mb = total - available, sys_ram_total_mb = total
   5. Append one JSONL line to {THERMAL_LOG}:
      {\"ts\": \"YYYY-MM-DDTHH:MM:SSZ\", \"gpu_util\": N, \"temp\": N, \"vram_used_mb\": N_or_null, \"sys_ram_used_mb\": N, \"sys_ram_total_mb\": N, \"source\": \"monitor\"}
