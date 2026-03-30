@@ -4,6 +4,64 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-03-31 — Run 2 commencing (40/60), adaptive resource planning working
+
+### Run 2: 40/60 ratio
+
+Starting the 40/60 ratio — the one I expect to yield the best results for both generation and judging. The original project spec called for 40/60, and now with 30,498 judge examples it's no longer a compromise forced by data scarcity. This ratio gives the judge pathway 60% of training time (more rubric scoring practice) while still providing substantial generation examples (20,332). If any ratio produces genuinely bipolar behaviour through `<wp_gen>` and `<wp_judge>` task tokens, this is the one.
+
+### Adaptive resource planning is working
+
+The system I built in the previous session actually works. After Run 1 completed, the orchestrator automatically:
+
+1. Parsed the telemetry from the 30/70 run (85 readings)
+2. Classified the thermal zone: **COOL** (peak 71C, avg 65.3C)
+3. Confirmed the config bump to batch=8, grad_accum=2, workers=8 was appropriate
+4. Wrote the thermal history to `telemetry/training/thermal_history.json` (1 run recorded)
+5. Logged the adjustment to `telemetry/training/adaptive_adjustments.md`
+
+The COOL zone (65-71C) with 68% avg GPU utilisation confirms there's still headroom. The config was already bumped from the conservative batch=4 to batch=8 based on the underutilisation observation, and the thermal data validates that decision — the GPU isn't stressed. If Run 2 pushes into WARM (72-77C), that's the target zone and the config will hold. If it stays COOL, the system will try to scale up further for Run 3.
+
+This is the convergence loop in action: Run 1 data → classify → adjust → Run 2 → repeat. No manual tuning needed between runs.
+
+---
+
+## 2026-03-31 — Run 1 complete overnight, NVML stale context false alarm
+
+### What happened
+
+Woke up to the first training run (30/70) completed — 4,358/4,358 steps, epoch 2.0, final loss ~0.29, 3.4GB adapter saved with 22 checkpoints. But the container had lost GPU access (NVML error). Needed a container restart to re-bind the GPU before starting run 2.
+
+### Investigation
+
+Four possible causes for a container losing GPU access:
+
+1. **NVIDIA driver reload** — host driver updated/reloaded, container's `/dev/nvidia*` handles become stale
+2. **GPU reset** — thermal event, ECC error, or `nvidia-smi -r` invalidates the NVML context
+3. **cgroup changes** — systemd or Docker daemon restart revokes device cgroup permissions
+4. **Suspend/resume** — host suspended (unlikely on a server, but DGX Spark is a desktop form factor)
+
+Diagnosed as **#1 — stale container with long-lived GPU context**. The evidence:
+
+- `dmesg` had zero NVIDIA/NVRM/XID entries — the driver never crashed or reset
+- No system suspend events — only `cups-browsed` hourly sleep entries. Uptime was 14 days continuous
+- Docker daemon never restarted
+- Container ran for **41 hours** (`execDuration=41h2m53s`) before being force-killed (exit 137 = SIGKILL)
+
+On the GB10's unified memory architecture, long-lived NVML contexts can become stale. The host-side driver manages unified memory differently than discrete GPU memory. After extended training with repeated model loads, the container's NVML library loses its ability to query GPU state, even though the GPU itself is fine (host `nvidia-smi` showed 48C, 13W, 7% util — perfectly healthy).
+
+### Resolution: false alarm, no fix needed
+
+The NVML context went stale **after** training completed, not during. The container was sitting idle for hours waiting for the next run to be triggered. Training data and adapters are fully intact.
+
+Since the telemetry agents already run `nvidia-smi` on the host (not inside the container), this doesn't affect monitoring. The orchestrator restarts the container between runs anyway.
+
+### Note for others
+
+If you're monitoring GPU health with `nvidia-smi` **inside** a container deployed for long-lived training runs — particularly on unified memory architectures like the GB10, or in environments where you can't install `nvidia-smi` on the host machine — be aware that the NVML context can go stale after 24+ hours. The GPU is fine; the container just can't see it anymore. A container restart fixes it. Consider adding a periodic `nvidia-smi` health check inside the container and triggering a checkpoint-save + restart if it fails.
+
+---
+
 ## 2026-03-29 — Adaptive resource planning: telemetry-informed convergence toward thermal sweet spot
 
 ### Context
