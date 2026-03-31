@@ -4,6 +4,100 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-03-31 — Run 2 OOM crash, DGX Spark unified memory deadlock, config rollback
+
+### What happened
+
+Run 2 (40/60 split) crashed twice from OOM — not a clean CUDA OOM, but the DGX Spark's unified memory driver-level deadlock. The GB10's shared memory pool (CPU + GPU + page cache in ~128 GB) has no discrete VRAM, so when memory pressure spikes, the NVIDIA driver's internal descriptor allocations fail below the CUDA runtime layer. The GPU context cascades into failure, `nvidia-modeset` enters uninterruptible D-state, and the entire system freezes (SSH dies, no logs flush). This is a known open issue on NVIDIA's tracker — the driver doesn't handle reclaim latency gracefully on UMA platforms.
+
+### Telemetry timeline
+
+The telemetry agent captured the full progression across 85 samples at 10-min intervals:
+
+- **20:51 UTC** — Pre-training idle at 9.4 GB (8% RAM)
+- **21:01** — Model loaded, training starts: 95.4 GB (80%), GPU 82%, 65C
+- **21:21** — Steady state: ~103 GB (87%)
+- **01:21** — Memory creep begins: 111 GB (93%) — sawtooth pattern from dataloader worker respawn
+- **04:51** — **First OOM**: RAM hit 119.3 GB (97%), GPU 95%, temp 79C — peak on both axes
+- **05:01** — OOM kill fires, RAM drops to 92 GB, training auto-restarts from checkpoint
+- **05:11–09:51** — Second attempt oscillates 99–121 GB, same sawtooth creep
+- **10:01** — **Second OOM**: 122.5 GB (99.9%), GPU drops to 5% — training killed again
+- **10:11–10:41** — Dead state: GPU idle (4–7%), RAM pinned at 122 GB ceiling, training did not recover
+- **10:51** — Monitor stopped (`max_checks_reached`)
+
+Last valid checkpoint: `checkpoint-2200` at step 2200/5084 (epoch 0.87).
+
+### Root cause
+
+The adaptive planning after Run 1 doubled `dataloader_num_workers` from 4→8 and `per_device_train_batch_size` from 4→8 based on Run 1's 15.7 GB headroom and COOL thermal zone. This was too aggressive — Run 2 has ~17% more training data (40/60 vs 30/70), and 8 workers each prefetch batches with 4096 seq_length into RAM. The sawtooth pattern (workers killed → respawned → re-allocate buffers) caused periodic spikes that hit the memory ceiling.
+
+Run 1 comparison: peaked at 104 GB with workers=4, batch=4 — 15.7 GB headroom, no OOM.
+
+### Why discrete GPUs don't have this problem
+
+On a discrete GPU, PyTorch gets a clean `RuntimeError: CUDA out of memory` from the CUDA runtime and can handle it gracefully. On the Spark, the failure occurs in the driver's internal allocation path (NV_ERR_NO_MEMORY), below where CUDA would catch it. The process never gets a chance to throw the Python-level exception — instead the whole system deadlocks. Hard reboot is the only recovery.
+
+### Additional memory creep mechanisms (from research)
+
+- **PyTorch caching allocator fragmentation** — variable-sized tensor alloc/free over thousands of steps creates increasingly fragmented memory; reported up to 43% waste in large-scale LLM training
+- **torch.compile() host RAM leak** — internal caching of compiled graph artifacts grows with every minibatch (not using this, but noting for future)
+- **Checkpoint spikes** — serializing full model + optimizer state temporarily doubles memory usage
+- **DataLoader worker accumulation** — each `num_workers > 0` subprocess gradually grows resident memory from Python object overhead
+
+### Config changes made
+
+Rolled back the aggressive adaptive scaling and added persistent workers to eliminate the sawtooth respawn pattern:
+
+```yaml
+# config/train_config.yaml
+per_device_train_batch_size: 4    # was 8 (adaptive) — back to Run 1 proven value
+gradient_accumulation_steps: 4    # was 2 (adaptive) — keeps effective batch=16
+dataloader_num_workers: 6         # was 8 (adaptive) — split difference: more GPU util than 4, less RAM than 8
+dataloader_persistent_workers: true  # NEW — workers stay alive between epochs, eliminates respawn allocation spikes
+```
+
+Also added `dataloader_persistent_workers` passthrough in `scripts/train_model.py:295` to SFTConfig.
+
+### Mitigations to investigate for future runs
+
+- Drop page cache before training: `sudo sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches'`
+- Disable swap: `sudo swapoff -a` (swap extends thrashing window before OOM killer can act on UMA)
+- `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` — reduces fragmentation by growing segments rather than allocating new fixed-size blocks
+- `torch.cuda.empty_cache()` before checkpointing
+- Memory watchdog in dgx-toolbox: if `MemAvailable` drops below ~15 GB, graceful save-and-exit before driver deadlock
+- Docker memory limits (`--memory=90g`) as additional safety layer (NVIDIA forums report these don't fully contain the issue)
+- OOM score override for SSH: `OOMScoreAdjust=-1000` (doesn't prevent driver deadlock but protects SSH if OOM killer fires first)
+
+### Lesson for adaptive planning
+
+The adaptive convergence loop assumed monotonic scaling was safe if thermal zone was COOL. It didn't account for the memory dimension separately from temperature. On unified memory architectures, memory pressure can hit the ceiling while thermals are still comfortable. The adaptive system needs a memory ceiling check alongside the thermal zone classification — not just "is there VRAM headroom" but "what's the system RAM trajectory over the last N readings."
+
+### Adaptive planning caused this — and will do it again if not fixed
+
+The adaptive resource planning (Step 8.5 of the `/run-training` skill) optimises for thermal budget but has no concept of memory pressure. After Run 1, it saw COOL zone with 32% avg GPU idle and scaled up:
+
+```
+### After ratio 30_70
+- batch_size: 4 → 8
+- grad_accum: 4 → 2
+- workers: 4 → 8
+- reason: COOL zone with 32% avg GPU idle — scaling up to fill headroom
+```
+
+This is exactly what caused the OOM. The adaptive logic overwrote `train_config.yaml` between runs, and the new config exceeded the Spark's unified memory ceiling.
+
+**The danger**: if this logic runs again after the current run completes, it could see the rolled-back config (batch=4, workers=6), observe headroom, and scale right back up to the values that caused the crash. The convergence loop has no memory of what failed — it only looks at the most recent run's telemetry.
+
+The adaptive planning lives in the skill orchestrator (Step 8.5e), not in the Python training script. Its scaling rules use `mem_headroom_gb > 10` and `avg_gpu_util < 75%` as triggers, but the headroom calculation uses **average** RAM, not **peak** spikes from worker respawns. On unified memory, the peak is what kills you.
+
+Three things need fixing in the skill before it's safe to run unattended again:
+
+1. **Use peak RAM, not average, for headroom calculation** — the sawtooth spikes are 10–20 GB above the mean
+2. **Cap `dataloader_num_workers`** — prevent unbounded scaling on unified memory (hard cap at 6 for Spark)
+3. **Preserve `dataloader_persistent_workers`** — the skill currently doesn't write it back when rewriting the config, so each adaptive pass would silently drop it
+
+---
+
 ## 2026-03-31 — Run 2 commencing (40/60), adaptive resource planning working
 
 ### Run 2: 40/60 ratio

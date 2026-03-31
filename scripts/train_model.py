@@ -248,6 +248,58 @@ def load_datasets(config: dict):
 
 
 # ---------------------------------------------------------------------------
+# Memory watchdog callback
+# ---------------------------------------------------------------------------
+
+# Threshold: trigger graceful exit when available RAM drops below this.
+# 2 GB leaves enough room for the checkpoint save itself (~1.2 GB adapter).
+OOM_WATCHDOG_THRESHOLD_MB = 2048
+
+
+class MemoryWatchdogCallback:
+    """TrainerCallback that monitors system RAM and triggers a graceful
+    save-and-exit before the OOM killer strikes.
+
+    On unified memory systems (DGX Spark), the training process, model weights,
+    optimizer states, and dataloader workers all compete for the same RAM pool.
+    The kernel OOM killer terminates the process with no checkpoint save, losing
+    up to save_steps worth of training.  This callback reads /proc/meminfo every
+    step and, when available memory drops below the threshold, saves a checkpoint
+    and exits cleanly.
+    """
+
+    def __init__(self, threshold_mb: int = OOM_WATCHDOG_THRESHOLD_MB):
+        self.threshold_mb = threshold_mb
+        self._triggered = False
+
+    @staticmethod
+    def _available_mb() -> int:
+        """Read MemAvailable from /proc/meminfo (Linux only)."""
+        try:
+            for line in Path("/proc/meminfo").read_text().splitlines():
+                if line.startswith("MemAvailable"):
+                    return int(line.split()[1]) // 1024  # kB -> MB
+        except Exception:
+            pass
+        return 999_999  # fail-open: if we can't read, don't block training
+
+    def on_step_end(self, args, state, control, **kwargs):
+        if self._triggered:
+            return
+        avail = self._available_mb()
+        if avail < self.threshold_mb:
+            self._triggered = True
+            print(
+                f"\n{'=' * 60}\n"
+                f"  MEMORY WATCHDOG: {avail} MB available (threshold: {self.threshold_mb} MB)\n"
+                f"  Saving emergency checkpoint at step {state.global_step} and exiting.\n"
+                f"{'=' * 60}\n"
+            )
+            control.should_save = True
+            control.should_training_stop = True
+
+
+# ---------------------------------------------------------------------------
 # Trainer
 # ---------------------------------------------------------------------------
 
@@ -280,6 +332,7 @@ def build_trainer(model, tokenizer, train_dataset, val_dataset, config: dict):
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
         formatting_func=formatting_func,
+        callbacks=[MemoryWatchdogCallback()],
         args=SFTConfig(
             output_dir=output_dir,
             num_train_epochs=train_cfg["num_train_epochs"],
