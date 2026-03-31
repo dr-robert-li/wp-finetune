@@ -41,7 +41,8 @@ training:
   bf16: true
   dataloader_num_workers: 3
   dataloader_persistent_workers: true
-  eval_steps: 100
+  dataloader_prefetch_factor: 3
+  eval_steps: 200
   gradient_accumulation_steps: 4
   gradient_checkpointing: true
   learning_rate: 0.0002
@@ -50,5 +51,5 @@ training:
   num_train_epochs: 2
   output_dir: ./adapters/qwen3-30b-wp-50_50
   per_device_train_batch_size: 4
-  save_steps: 200
+  save_steps: 400
   warmup_ratio: 0.05
