@@ -4,6 +4,93 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-04-01 — Thermal budget exploitation without memory pressure
+
+### Context
+
+Woke up to discover telemetry shows thermal budget remains unexploited across Run 2 and current Run 3 — GPU averaging 67% utilization at 65-67°C (COOL zone) while the adaptive planner held back from scaling due to the OOM zombie state discovered in Run 2. Run 3 commenced with a conservative configuration (workers=3, batch=4) that stabilized RAM at 97-98 GB with 22 GB headroom, but left significant compute capacity on the table.
+
+The core tension: on DGX Spark's unified memory, compute has a safe observable ceiling (thermal throttling at ~82°C with graceful clock scaling) while memory has an unsafe invisible cliff (driver-level deadlock at ~120 GB with catastrophic system freeze). You can probe thermal limits freely but you can't probe memory limits safely.
+
+### Research: thermal exploitation options evaluated
+
+Researched six approaches to exploit thermal headroom, cross-referenced against DGX Spark UGC and this project's actual state:
+
+**Already in place:** BF16 (enabled), persistent_workers=True (enabled this session), pin_memory (no-op on Spark's NVLink-C2C — no host-to-device copy to eliminate).
+
+**Adopted — zero/low memory cost:**
+
+| Option | Memory Cost | Rationale |
+|---|---|---|
+| `prefetch_factor` 2→4 | ~600 MB | Each worker pre-loads more batches into queue. Directly addresses 49-62% GPU dips in telemetry. ~200 MB per worker per increment — negligible. |
+| `save_steps` 200→400 | 0 | Telemetry shows GPU drops to 6-7% during checkpoint writes (serializing 3.3 GB adapter weights). Halves these stalls. Watchdog provides safety net between checkpoints. |
+| `eval_steps` 100→200 | 0 | Eval runs 5K val examples in inference mode, pausing training. Less frequent eval = more training steps per hour. Loss still logged every 10 steps. |
+
+**Rejected — memory cost too high for 30B on Spark:**
+
+| Option | Why Not |
+|---|---|
+| Increase micro-batch | Already at batch=4 (Unsloth packs to effective 8). 40/60 OOM happened at batch=8. Zombie-OOM on Spark = hard freeze, no clean CUDA error. UGC consensus for 30B+: batch 1-4, stop at 80-85% memory. We're at 82%. |
+| Disable gradient checkpointing | Using `use_gradient_checkpointing="unsloth"` optimized for MoE. Disabling on 30B MoE would add ~20-30 GB activation memory. With 22 GB headroom, instant OOM. |
+| torch.compile | 13 GB overhead for ~3% speedup per Spark UGC. Leaves 9 GB headroom — inside the danger zone that killed the 40/60 run. |
+| Gradient accumulation | Already at grad_accum=4. Doesn't change per-step intensity — each micro-batch forward/backward is identical. Good for convergence, not for thermal exploitation. |
+
+**Key distinction discovered:** `prefetch_factor` increases *utilization* (fraction of time GPU is working) by reducing micro-stalls between batches. `save_steps`/`eval_steps` increase utilization by reducing macro-stalls (checkpoint writes, eval pauses). `batch_size` increases *intensity* (how hard GPU works per step). Steps 1-2 raise temperature by keeping the GPU busy more often. Step 3 raises temperature by making each step more compute-dense — but only step 3 raises memory.
+
+### Implementation: thermal exploitation ladder in adaptive planner
+
+Replaced the old batch-first scaling policy (Step 8.5e) with a 4-rung prioritized ladder that applies zero-memory changes first:
+
+| Rung | Change | Memory Cost | Trigger |
+|---|---|---|---|
+| 1 | `prefetch_factor` +1 (cap 4) | ~600 MB | GPU util < 80% |
+| 2 | `save_steps` x2 (cap 400) | 0 | GPU util < 80% |
+| 3 | `eval_steps` x2 (cap 200) | 0 | GPU util < 80% |
+| 4 | `batch_size` +1 (model-scale cap) | High | Rungs 1-3 maxed AND util < 65% AND headroom > scale-aware minimum |
+
+Multiple rungs can fire in a single planning step. The old planner jumped straight to batch/worker scaling and missed the free wins entirely.
+
+### Implementation: model-scale-aware batch ceiling
+
+Rung 4 is now model-scale-aware, using batch ceilings derived from DGX Spark UGC:
+
+| Model Scale | Params | Batch Ceiling | Min Headroom | Notes |
+|---|---|---|---|---|
+| Small | ≤1B | 64 | 15% of total | I/O bound — batch freely |
+| Medium | 1B-13B | 16 | 20% of total | Balanced — room to explore |
+| Large | 13B-30B | 8 | 25% of total | Model dominates |
+| XL | 30B+ | 4 | 30% of total | At the cliff — batch increase rarely safe |
+
+The 85% memory ceiling rule is the universal safety gate, but larger models need even more margin because activation memory scales non-linearly with batch size. For our Qwen3-30B-A3B, rung 4 is triple-blocked: at ceiling (batch=4 == XL cap), insufficient headroom (17 GB < 36 GB minimum at 30%), and GPU not underutilized enough (67% > 65% threshold).
+
+For a hypothetical 7B model on the same Spark with ~40 GB headroom and 50% util, rung 4 would fire and propose batch 5→6→...→16 incrementally across runs, with warmup probes at each step.
+
+### Implementation: warmup probe for batch scaling safety
+
+The existing watchdog catches gradual memory creep but cannot prevent the Spark's driver-level deadlock on sudden allocation failures — CUDA tries to allocate a large activation tensor, the unified memory driver fails internally, and the system freezes before any Python code executes. The preflight check only runs at startup before the model is loaded.
+
+When rung 4 fires (batch+1), the planner writes a `_warmup_probe_required` flag. Before the next run's full training starts, Step 6 runs 1 real training step at the new batch size and checks `/proc/meminfo`. If the probe survives, proceed. If it OOMs or memory drops below 2 GB available, revert to the previous batch size automatically. Cost of a failed probe: 1 step (not hours).
+
+### Implementation: prefetch_factor passthrough
+
+Added `dataloader_prefetch_factor` passthrough to `train_model.py` → `SFTConfig`. Verified it's accepted by HuggingFace Trainer (inherits from PyTorch DataLoader kwargs) and requires only `num_workers > 0` (we have 3-4).
+
+### Adaptive resource planning summary
+
+The adaptive planner now manages two resource budgets with fundamentally different risk profiles:
+
+**Thermal budget** (safe to probe): GPU temperature and utilization. Observable via telemetry, degrades gracefully via clock scaling at ~82°C, recoverable. The thermal exploitation ladder pushes utilization from ~67% toward 75-80% through pipeline optimization (prefetch, fewer stalls) before considering compute intensity increases (batch size).
+
+**Memory budget** (unsafe to probe on Spark): Unified memory usage. The DGX Spark's driver-level deadlock on allocation failure means there's no safe way to discover the memory limit at runtime — you either stay below it or the system freezes. The planner enforces model-scale-aware ceilings derived from community experience, requires warmup probes before any batch increase, and applies the 85% universal ceiling rule.
+
+The asymmetry is structural: compute has a safe, observable ceiling with graceful degradation. Memory has an unsafe, invisible cliff with catastrophic failure. The ladder respects this by exhausting all zero-memory thermal optimizations before touching the one lever (batch size) that crosses into memory risk.
+
+### Reflection
+
+Finetuning 30B models on 120 GB unified memory is operating in a narrow corridor: ~97 GB floor (model + optimizer + activations) to ~102 GB ceiling (85% safety rule). That's a 5 GB optimization window. The thermal ladder exploits what's available by reducing idle time, but it can't change the fundamental geometry that the model consumes 80%+ of memory before training even starts. The remaining ~30% GPU idle time isn't wasted thermal budget — it's the cost of the safety margin that keeps the system alive.
+
+---
+
 ## 2026-03-31 — Run 2 OOM crash, DGX Spark unified memory deadlock, config rollback
 
 ### What happened
