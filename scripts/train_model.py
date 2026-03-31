@@ -251,12 +251,14 @@ def load_datasets(config: dict):
 # Memory watchdog callback
 # ---------------------------------------------------------------------------
 
+from transformers import TrainerCallback as _TrainerCallback
+
 # Threshold: trigger graceful exit when available RAM drops below this.
 # 2 GB leaves enough room for the checkpoint save itself (~1.2 GB adapter).
 OOM_WATCHDOG_THRESHOLD_MB = 2048
 
 
-class MemoryWatchdogCallback:
+class MemoryWatchdogCallback(_TrainerCallback):
     """TrainerCallback that monitors system RAM and triggers a graceful
     save-and-exit before the OOM killer strikes.
 
