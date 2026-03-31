@@ -10,11 +10,11 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 Woke up to discover telemetry shows thermal budget remains unexploited across Run 2 and current Run 3 — GPU averaging 67% utilization at 65-67°C (COOL zone) while the adaptive planner held back from scaling due to the OOM zombie state discovered in Run 2. Run 3 commenced with a conservative configuration (workers=3, batch=4) that stabilized RAM at 97-98 GB with 22 GB headroom, but left significant compute capacity on the table.
 
-The core tension: on DGX Spark's unified memory, compute has a safe observable ceiling (thermal throttling at ~82°C with graceful clock scaling) while memory has an unsafe invisible cliff (driver-level deadlock at ~120 GB with catastrophic system freeze). You can probe thermal limits freely but you can't probe memory limits safely.
+The core tension: on DGX Spark's unified memory, compute has a safe observable ceiling (thermal throttling at ~82°C with graceful clock scaling) while memory has an unsafe invisible cliff (driver-level deadlock at ~120 GB with catastrophic system freeze ([pytorch/pytorch#174358](https://github.com/pytorch/pytorch/issues/174358))). You can probe thermal limits freely but you can't probe memory limits safely.
 
 ### Research: thermal exploitation options evaluated
 
-Researched six approaches to exploit thermal headroom, cross-referenced against DGX Spark UGC and this project's actual state:
+Researched six approaches to exploit thermal headroom, cross-referenced against NVIDIA Developers Forum and this project's actual state:
 
 **Already in place:** BF16 (enabled), persistent_workers=True (enabled this session), pin_memory (no-op on Spark's NVLink-C2C — no host-to-device copy to eliminate).
 
@@ -30,7 +30,7 @@ Researched six approaches to exploit thermal headroom, cross-referenced against 
 
 | Option | Memory Cost | Rationale |
 |---|---|---|
-| Increase micro-batch (scale-aware) | High — but capped per model size | Not rejected outright — implemented as Rung 4 of the thermal ladder with triple safety gates: model-scale batch ceilings from DGX Spark UGC (XL ≤4, Large ≤8, Medium ≤16, Small ≤64), minimum headroom thresholds that scale with param count (30% for XL), and mandatory warmup probes before any increase takes effect. The 40/60 OOM at batch=8 happened without these guards. With them, batch scaling is available for smaller models while correctly blocked for our 30B where we're already at the XL ceiling. |
+| Increase micro-batch (scale-aware) | High — but capped per model size | Not rejected outright — implemented as Rung 4 of the thermal ladder with triple safety gates: model-scale batch ceilings from NVIDIA Developers Forum (XL ≤4, Large ≤8, Medium ≤16, Small ≤64), minimum headroom thresholds that scale with param count (30% for XL), and mandatory warmup probes before any increase takes effect. The 40/60 OOM at batch=8 happened without these guards. With them, batch scaling is available for smaller models while correctly blocked for our 30B where we're already at the XL ceiling. |
 
 **Rejected — memory cost too high for 30B on Spark:**
 
@@ -57,7 +57,7 @@ Multiple rungs can fire in a single planning step. The old planner jumped straig
 
 ### Implementation: model-scale-aware batch ceiling
 
-Rung 4 is now model-scale-aware, using batch ceilings derived from DGX Spark UGC:
+Rung 4 is now model-scale-aware, using batch ceilings derived from NVIDIA Developers Forum:
 
 | Model Scale | Params | Batch Ceiling | Min Headroom | Notes |
 |---|---|---|---|---|
