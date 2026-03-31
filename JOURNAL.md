@@ -26,11 +26,16 @@ Researched six approaches to exploit thermal headroom, cross-referenced against 
 | `save_steps` 200→400 | 0 | Telemetry shows GPU drops to 6-7% during checkpoint writes (serializing 3.3 GB adapter weights). Halves these stalls. Watchdog provides safety net between checkpoints. |
 | `eval_steps` 100→200 | 0 | Eval runs 5K val examples in inference mode, pausing training. Less frequent eval = more training steps per hour. Loss still logged every 10 steps. |
 
+**Adopted — with model-scale-aware guardrails:**
+
+| Option | Memory Cost | Rationale |
+|---|---|---|
+| Increase micro-batch (scale-aware) | High — but capped per model size | Not rejected outright — implemented as Rung 4 of the thermal ladder with triple safety gates: model-scale batch ceilings from DGX Spark UGC (XL ≤4, Large ≤8, Medium ≤16, Small ≤64), minimum headroom thresholds that scale with param count (30% for XL), and mandatory warmup probes before any increase takes effect. The 40/60 OOM at batch=8 happened without these guards. With them, batch scaling is available for smaller models while correctly blocked for our 30B where we're already at the XL ceiling. |
+
 **Rejected — memory cost too high for 30B on Spark:**
 
 | Option | Why Not |
 |---|---|
-| Increase micro-batch | Already at batch=4 (Unsloth packs to effective 8). 40/60 OOM happened at batch=8. Zombie-OOM on Spark = hard freeze, no clean CUDA error. UGC consensus for 30B+: batch 1-4, stop at 80-85% memory. We're at 82%. |
 | Disable gradient checkpointing | Using `use_gradient_checkpointing="unsloth"` optimized for MoE. Disabling on 30B MoE would add ~20-30 GB activation memory. With 22 GB headroom, instant OOM. |
 | torch.compile | 13 GB overhead for ~3% speedup per Spark UGC. Leaves 9 GB headroom — inside the danger zone that killed the 40/60 run. |
 | Gradient accumulation | Already at grad_accum=4. Doesn't change per-step intensity — each micro-batch forward/backward is identical. Good for convergence, not for thermal exploitation. |
