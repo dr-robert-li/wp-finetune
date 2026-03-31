@@ -58,23 +58,39 @@ dataloader_persistent_workers: true  # NEW — workers stay alive between epochs
 
 Also added `dataloader_persistent_workers` passthrough in `scripts/train_model.py:295` to SFTConfig.
 
-### Mitigations to investigate for future runs
+### Mitigations — what was done, what was skipped
+
+**Implemented:**
+
+- **Memory watchdog callback** (`scripts/train_model.py`) — `MemoryWatchdogCallback` reads `/proc/meminfo` every training step. When `MemAvailable` drops below 2 GB, it sets `should_save = True` and `should_training_stop = True`, triggering a clean checkpoint save before the OOM killer strikes. Fail-open: if `/proc/meminfo` can't be read, it returns a high value and never triggers. The 2 GB threshold leaves room for the checkpoint save itself (~1.2 GB for the LoRA adapter + optimizer state). This prevents the scenario from Run 2 where up to 200 steps of training were lost per OOM kill.
+
+- **Adaptive planning fixes** (Step 8.5 of `/run-training` skill) — all three issues from the root cause analysis were fixed:
+  - **8.5a** — Added peak RAM tracking with 5 GB safety margin (`effective_headroom_gb`), plus OOM detection from telemetry (GPU idle + RAM >95% in final readings)
+  - **8.5b** — Thermal history records now include `peak_ram_gb`, `p95_ram_gb`, `safe_headroom_gb`, `effective_headroom_gb`, `likely_oom`, and `dataloader_persistent_workers`
+  - **8.5c** — OOM overrides thermal: if `likely_oom` is True, skip thermal scaling entirely and jump to memory backoff
+  - **8.5d-mem** (new step) — Memory backoff: restores last non-OOM config, steps workers down by 1, force-enables `persistent_workers`
+  - **8.5e** — Uses `effective_headroom_gb` (peak-based + 5 GB margin) instead of average-based headroom. Batch cap lowered from 16 to 8 on unified memory. Workers scale +1 at a time (not doubling), hard-capped at 6 on unified memory, decrease if headroom <10 GB. `persistent_workers` is preserved once enabled
+  - **8.5f** — Writes `dataloader_persistent_workers` to config, logs OOM count and effective headroom
+
+**Skipped — `torch.cuda.empty_cache()` before checkpointing:**
+
+On unified memory (DGX Spark), the CUDA allocator and system RAM share the same pool. `empty_cache()` releases the allocator's free blocks, but those are typically small fragments — not the large contiguous allocations that cause OOM. Worse, it forces reallocation on the next forward pass, which can actually increase peak memory momentarily and hurt throughput. The real memory pressure comes from dataloader workers and optimizer states, not CUDA cache fragmentation.
+
+**Still to investigate for future runs:**
 
 - Drop page cache before training: `sudo sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches'`
 - Disable swap: `sudo swapoff -a` (swap extends thrashing window before OOM killer can act on UMA)
 - `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` — reduces fragmentation by growing segments rather than allocating new fixed-size blocks
-- `torch.cuda.empty_cache()` before checkpointing
-- Memory watchdog in dgx-toolbox: if `MemAvailable` drops below ~15 GB, graceful save-and-exit before driver deadlock
 - Docker memory limits (`--memory=90g`) as additional safety layer (NVIDIA forums report these don't fully contain the issue)
 - OOM score override for SSH: `OOMScoreAdjust=-1000` (doesn't prevent driver deadlock but protects SSH if OOM killer fires first)
 
 ### Lesson for adaptive planning
 
-The adaptive convergence loop assumed monotonic scaling was safe if thermal zone was COOL. It didn't account for the memory dimension separately from temperature. On unified memory architectures, memory pressure can hit the ceiling while thermals are still comfortable. The adaptive system needs a memory ceiling check alongside the thermal zone classification — not just "is there VRAM headroom" but "what's the system RAM trajectory over the last N readings."
+The adaptive convergence loop assumed monotonic scaling was safe if thermal zone was COOL. It didn't account for the memory dimension separately from temperature. On unified memory architectures, memory pressure can hit the ceiling while thermals are still comfortable. The adaptive system now checks memory pressure alongside thermal zone classification — using peak RAM with a safety margin, not average — and has OOM-aware backoff that restores the last known-safe config.
 
-### Adaptive planning caused this — and will do it again if not fixed
+### How the adaptive planning caused this
 
-The adaptive resource planning (Step 8.5 of the `/run-training` skill) optimises for thermal budget but has no concept of memory pressure. After Run 1, it saw COOL zone with 32% avg GPU idle and scaled up:
+The adaptive resource planning (Step 8.5 of the `/run-training` skill) optimised for thermal budget but had no concept of memory pressure. After Run 1, it saw COOL zone with 32% avg GPU idle and scaled up:
 
 ```
 ### After ratio 30_70
@@ -84,17 +100,7 @@ The adaptive resource planning (Step 8.5 of the `/run-training` skill) optimises
 - reason: COOL zone with 32% avg GPU idle — scaling up to fill headroom
 ```
 
-This is exactly what caused the OOM. The adaptive logic overwrote `train_config.yaml` between runs, and the new config exceeded the Spark's unified memory ceiling.
-
-**The danger**: if this logic runs again after the current run completes, it could see the rolled-back config (batch=4, workers=6), observe headroom, and scale right back up to the values that caused the crash. The convergence loop has no memory of what failed — it only looks at the most recent run's telemetry.
-
-The adaptive planning lives in the skill orchestrator (Step 8.5e), not in the Python training script. Its scaling rules use `mem_headroom_gb > 10` and `avg_gpu_util < 75%` as triggers, but the headroom calculation uses **average** RAM, not **peak** spikes from worker respawns. On unified memory, the peak is what kills you.
-
-Three things need fixing in the skill before it's safe to run unattended again:
-
-1. **Use peak RAM, not average, for headroom calculation** — the sawtooth spikes are 10–20 GB above the mean
-2. **Cap `dataloader_num_workers`** — prevent unbounded scaling on unified memory (hard cap at 6 for Spark)
-3. **Preserve `dataloader_persistent_workers`** — the skill currently doesn't write it back when rewriting the config, so each adaptive pass would silently drop it
+This is exactly what caused the OOM. The adaptive logic overwrote `train_config.yaml` between runs, and the new config exceeded the Spark's unified memory ceiling. The headroom calculation used **average** RAM, not **peak** spikes from worker respawns — on unified memory, the peak is what kills you. This has now been fixed (see above).
 
 ---
 
