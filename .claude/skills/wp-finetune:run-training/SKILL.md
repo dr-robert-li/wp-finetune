@@ -650,6 +650,27 @@ Memory (supports both discrete GPU and unified memory systems):
 - If discrete GPU: `mem_used_gb = vram_used_gb`, `mem_total_gb` from nvidia-smi
 - `mem_headroom_gb = mem_total_gb - mem_used_gb`
 
+**Peak RAM with safety margin** (unified memory only — dataloader workers cause transient spikes between samples):
+- `peak_ram_gb = max(sys_ram_readings) / 1024 if sys_ram_readings else 0`
+- `p95_ram_gb = sorted(sys_ram_readings)[int(len(sys_ram_readings) * 0.95)] / 1024 if sys_ram_readings else 0`
+- `safe_headroom_gb = mem_total_gb - peak_ram_gb`
+- On unified memory, **`safe_headroom_gb` is used for all scaling decisions** (not `mem_headroom_gb` which uses averages)
+- The 10-min sample interval misses sub-minute spikes from worker buffer refills, so apply a **5 GB safety margin** on unified memory: `effective_headroom_gb = safe_headroom_gb - 5`
+
+**OOM detection** — check if the run died before completing:
+```python
+# Check if training completed or was OOM-killed
+# Signs of OOM: GPU util drops to <10% in final readings while RAM is >95%
+final_readings = readings[-5:] if len(readings) >= 5 else readings
+final_gpu_utils = [r["gpu_util"] for r in final_readings]
+final_ram_pcts = [r["sys_ram_used_mb"] / r["sys_ram_total_mb"] * 100 for r in final_readings if r.get("sys_ram_total_mb")]
+likely_oom = (
+    any(u < 10 for u in final_gpu_utils) and
+    any(p > 95 for p in final_ram_pcts)
+)
+```
+If `likely_oom` is True, treat as a **memory CRITICAL** event — apply memory backoff (8.5d-mem) regardless of thermal zone.
+
 #### 8.5b: Update thermal history
 
 Maintain a persistent thermal history file that records each run's config and thermal outcome. This is the memory that enables backoff-to-last-WARM.
@@ -686,20 +707,28 @@ history.append({
     "vram_used_gb": vram_used_gb,
     "sys_ram_used_gb": sys_ram_used_gb,
     "sys_ram_total_gb": sys_ram_total_gb,
+    "peak_ram_gb": peak_ram_gb,
+    "p95_ram_gb": p95_ram_gb,
+    "safe_headroom_gb": safe_headroom_gb,
+    "effective_headroom_gb": effective_headroom_gb if is_unified_memory else mem_headroom_gb,
     "mem_headroom_gb": mem_headroom_gb,
     "is_unified_memory": is_unified_memory,
+    "likely_oom": likely_oom,
     "batch_size": config["training"]["per_device_train_batch_size"],
     "grad_accum": config["training"]["gradient_accumulation_steps"],
     "dataloader_num_workers": config["training"]["dataloader_num_workers"],
+    "dataloader_persistent_workers": config["training"].get("dataloader_persistent_workers", False),
     "eff_batch": config["training"]["per_device_train_batch_size"] * config["training"]["gradient_accumulation_steps"],
 })
 
 history_file.write_text(json.dumps(history, indent=2))
 ```
 
-#### 8.5c: Apply thermal safety rules
+#### 8.5c: Apply thermal and memory safety rules
 
-**Thermal zones** (GPU temperature in °C):
+**If `likely_oom` is True**, skip thermal scaling entirely and jump to **8.5d-mem (memory backoff)** — an OOM overrides all thermal decisions.
+
+**Thermal zones** (GPU temperature in °C) — only applied when `likely_oom` is False:
 
 | Zone | Temp Range | Action |
 |------|-----------|--------|
@@ -752,19 +781,66 @@ elif zone == "HOT":
     reason = f"HOT zone ({peak_temp}°C) — reduced batch by 1"
 ```
 
-#### 8.5e: Utilization scaling (only if thermal zone is COOL or COLD)
+#### 8.5d-mem: Memory backoff (OOM recovery)
 
-Scale based on GPU utilization headroom AND VRAM headroom:
+**Triggered when `likely_oom` is True.** This takes priority over all thermal scaling.
+
+Find the last run in thermal history that did NOT OOM. Restore its config, then step down workers by 1 as additional safety margin:
+
+```python
+if likely_oom:
+    # Find last non-OOM entry in thermal history
+    safe_entries = [h for h in history[:-1] if not h.get("likely_oom", False)]
+
+    if safe_entries:
+        last_safe = safe_entries[-1]
+        new_batch = last_safe["batch_size"]
+        new_accum = last_safe["grad_accum"]
+        new_workers = max(last_safe["dataloader_num_workers"] - 1, 2)  # step down 1 from last safe, floor 2
+        new_persistent_workers = True  # always enable after OOM — eliminates respawn spikes
+        reason = (
+            f"OOM RECOVERY → restored config from {last_safe['ratio']} "
+            f"(batch={new_batch}, workers={last_safe['dataloader_num_workers']}→{new_workers}) "
+            f"+ persistent_workers=true"
+        )
+    else:
+        # No safe history — fall back to conservative defaults
+        new_batch = 2
+        new_accum = max(eff_batch // new_batch, 1)
+        new_workers = 2
+        new_persistent_workers = True
+        reason = "OOM RECOVERY → conservative defaults (no safe history available)"
+
+    # Alert user
+    # Use AskUserQuestion:
+    #   header: "MEMORY ALERT"
+    #   question: "Run {ratio} appears to have been OOM-killed (GPU idle + RAM at {peak_ram_gb:.0f}/{mem_total_gb:.0f} GB).
+    #              Restoring last safe config: batch={new_batch}, accum={new_accum}, workers={new_workers}, persistent_workers=true.
+    #              Continue?"
+    #   options: "Continue with safe config" / "Abort remaining runs"
+
+    # Skip 8.5e entirely — go straight to 8.5f
+```
+
+#### 8.5e: Utilization scaling (only if thermal zone is COOL or COLD, and `likely_oom` is False)
+
+Scale based on GPU utilization headroom AND memory headroom. On unified memory systems, use `effective_headroom_gb` (peak-based with 5 GB safety margin) instead of `mem_headroom_gb`.
+
+```python
+headroom = effective_headroom_gb if is_unified_memory else mem_headroom_gb
+```
+
+**Batch size scaling** — only scale up if memory headroom permits:
 
 ```
-IF avg_gpu_util < 60% AND mem_headroom_gb > 20:
+IF avg_gpu_util < 60% AND headroom > 25:
     # Aggressive: double batch_size, halve grad_accum
-    new_batch = min(batch_size * 2, 16)  # cap at 16
+    new_batch = min(batch_size * 2, 8)  # cap at 8 (not 16 — unified memory is shared)
     new_accum = max(eff_batch // new_batch, 1)
 
-ELIF avg_gpu_util < 75% AND mem_headroom_gb > 10:
-    # Moderate: increase batch_size by 50%
-    new_batch = min(int(batch_size * 1.5), 16)
+ELIF avg_gpu_util < 75% AND headroom > 15:
+    # Moderate: increase batch_size by 1
+    new_batch = min(batch_size + 1, 8)
     new_accum = max(eff_batch // new_batch, 1)
 
 ELIF avg_gpu_util > 90%:
@@ -778,9 +854,33 @@ ELSE:
     new_accum = grad_accum
 ```
 
-Also adjust `dataloader_num_workers`:
-- If `avg_gpu_util < 70%` and workers < 8: increase workers (CPU may be bottleneck)
-- Cap at `min(cpu_count // 2, 16)`
+**Worker scaling** — adjust `dataloader_num_workers` conservatively:
+- Only increase workers if `avg_gpu_util < 70%` AND `headroom > 15` — low GPU util with tight memory means workers are NOT the bottleneck
+- Increase by 1 at a time (not doubling)
+- **Hard cap**: `min(cpu_count // 2, 6)` on unified memory, `min(cpu_count // 2, 16)` on discrete GPU
+- If `headroom < 10`: **decrease** workers by 1 (min 2) — memory is tight regardless of GPU util
+
+```python
+if is_unified_memory:
+    max_workers = min(os.cpu_count() // 2, 6)  # hard cap for unified memory
+else:
+    max_workers = min(os.cpu_count() // 2, 16)
+
+if headroom < 10:
+    new_workers = max(workers - 1, 2)
+    reason += f"; workers {workers}→{new_workers} (tight memory: {headroom:.0f} GB headroom)"
+elif avg_gpu_util < 70% and headroom > 15 and workers < max_workers:
+    new_workers = workers + 1
+    reason += f"; workers {workers}→{new_workers} (GPU starving, headroom OK)"
+else:
+    new_workers = workers
+```
+
+**Persistent workers** — always preserve the current setting. If `dataloader_persistent_workers` was enabled (especially after an OOM recovery), never disable it automatically:
+```python
+new_persistent_workers = config["training"].get("dataloader_persistent_workers", False)
+# Once enabled, persistent_workers stays on — it stabilizes memory and improves GPU util
+```
 
 #### 8.5f: Apply and log adjustment
 
@@ -791,10 +891,12 @@ base_config = yaml.safe_load(open("config/train_config.yaml"))
 old_batch = base_config["training"]["per_device_train_batch_size"]
 old_accum = base_config["training"]["gradient_accumulation_steps"]
 old_workers = base_config["training"]["dataloader_num_workers"]
+old_persistent = base_config["training"].get("dataloader_persistent_workers", False)
 
 base_config["training"]["per_device_train_batch_size"] = new_batch
 base_config["training"]["gradient_accumulation_steps"] = new_accum
 base_config["training"]["dataloader_num_workers"] = new_workers
+base_config["training"]["dataloader_persistent_workers"] = new_persistent_workers
 
 yaml.dump(base_config, open("config/train_config.yaml", "w"))
 
@@ -803,12 +905,14 @@ adjustment_log = f"""
 ### Adaptive adjustment after {ratio}
 - Thermal zone: {zone} (peak={peak_temp}°C, avg={avg_temp}°C)
 - GPU util: avg={avg_gpu_util}%, peak={peak_gpu_util}%
-- Memory: {mem_used_gb:.0f}/{mem_total_gb:.0f} GB ({mem_headroom_gb:.0f} GB headroom) [{'unified' if is_unified_memory else 'discrete VRAM'}]
+- Memory: peak={peak_ram_gb:.0f}/{mem_total_gb:.0f} GB, effective_headroom={effective_headroom_gb:.0f} GB [{'unified' if is_unified_memory else 'discrete VRAM'}]
+- OOM detected: {likely_oom}
 - batch_size: {old_batch} → {new_batch}
 - grad_accum: {old_accum} → {new_accum}
 - eff_batch: {old_batch * old_accum} → {new_batch * new_accum}
 - workers: {old_workers} → {new_workers}
-- thermal_history: {len(history)} runs recorded, {len([h for h in history if h['zone']=='WARM'])} WARM
+- persistent_workers: {old_persistent} → {new_persistent_workers}
+- thermal_history: {len(history)} runs recorded, {len([h for h in history if h['zone']=='WARM'])} WARM, {len([h for h in history if h.get('likely_oom')])} OOM
 - reason: {reason}
 """
 with open("telemetry/training/adaptive_adjustments.md", "a") as f:
@@ -847,28 +951,40 @@ This ensures we never cook the GPU across multi-day sequential runs.
     "vram_used_gb": null,
     "sys_ram_used_gb": 92.5,
     "sys_ram_total_gb": 119.7,
+    "peak_ram_gb": 104.0,
+    "p95_ram_gb": 101.5,
+    "safe_headroom_gb": 15.7,
+    "effective_headroom_gb": 10.7,
     "mem_headroom_gb": 27.2,
     "is_unified_memory": true,
+    "likely_oom": false,
     "batch_size": 4,
     "grad_accum": 4,
     "dataloader_num_workers": 4,
+    "dataloader_persistent_workers": false,
     "eff_batch": 16
   },
   {
     "ratio": "40_60",
-    "zone": "WARM",
-    "peak_temp": 74,
-    "avg_temp": 70,
-    "avg_gpu_util": 85,
-    "peak_gpu_util": 97,
+    "zone": "COOL",
+    "peak_temp": 79,
+    "avg_temp": 68,
+    "avg_gpu_util": 80,
+    "peak_gpu_util": 96,
     "vram_used_gb": null,
     "sys_ram_used_gb": 110,
     "sys_ram_total_gb": 119.7,
+    "peak_ram_gb": 119.3,
+    "p95_ram_gb": 117.8,
+    "safe_headroom_gb": 0.4,
+    "effective_headroom_gb": -4.6,
     "mem_headroom_gb": 9.7,
     "is_unified_memory": true,
+    "likely_oom": true,
     "batch_size": 8,
     "grad_accum": 2,
     "dataloader_num_workers": 8,
+    "dataloader_persistent_workers": false,
     "eff_batch": 16
   }
 ]
