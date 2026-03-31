@@ -25,6 +25,7 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 
 ### Fixed
 - **Run 2 (40/60) OOM crash:** Adaptive planning after Run 1 doubled batch size and workers based on COOL thermal zone, but didn't account for unified memory pressure from dataloader worker respawns. Two OOM kills at 97% and 99.9% RAM, with driver-level deadlock (DGX Spark known issue — no clean CUDA OOM, system freezes instead). Last valid checkpoint: step 2200/5084. Config rolled back and memory safeguards added.
+- **MemoryWatchdogCallback `AttributeError` on `on_init_end`:** Callback was a plain class; HuggingFace Trainer calls all callback events during `__init__`. Fixed by inheriting from `transformers.TrainerCallback`, which provides no-op stubs for all events.
 
 ## [0.5.2] - 2026-03-30 — Canonical Thermal Log & Telemetry Modes
 
