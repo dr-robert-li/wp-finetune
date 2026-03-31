@@ -4,8 +4,26 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 
 ## [Unreleased]
 
-- Training in progress: 5 sequential LoRA runs on DGX Spark
+- Training in progress: 5 sequential LoRA runs on DGX Spark (Run 1 complete, Run 2 resuming)
 - Phase 4 (Evaluation) and Phase 5 (Packaging & Deployment) not started
+
+## [0.5.3] - 2026-03-31 — OOM Recovery & Memory-Aware Adaptive Planning
+
+### Added
+- **Memory watchdog callback (`MemoryWatchdogCallback`):** Reads `/proc/meminfo` every training step. When `MemAvailable` drops below 2 GB, triggers graceful checkpoint save and clean exit before the OOM killer strikes. Fail-open: if `/proc/meminfo` is unreadable, training continues uninterrupted. Prevents the up-to-200-steps loss observed in Run 2's OOM kills.
+- **OOM-aware adaptive planning (Step 8.5):** Detects OOM from telemetry (GPU idle + RAM >95% in final readings). OOM overrides thermal classification — skips scaling and jumps to memory backoff.
+- **Memory backoff step (8.5d-mem):** On OOM detection, restores last non-OOM config, steps workers down by 1, force-enables `dataloader_persistent_workers`.
+- **`dataloader_persistent_workers` support:** Passthrough added to `SFTConfig` in `train_model.py`. Workers stay alive between epochs instead of respawning, eliminating the sawtooth allocation spikes that caused Run 2's memory creep.
+
+### Changed
+- **Adaptive headroom calculation uses peak RAM:** `effective_headroom_gb` uses peak RAM with 5 GB safety margin instead of average-based headroom. On unified memory, the peak spikes (10–20 GB above mean) are what trigger OOM.
+- **Batch cap lowered to 8 on unified memory:** Previous cap of 16 was unsafe on DGX Spark's shared memory pool.
+- **Worker scaling conservative:** Workers now scale +1 at a time (not doubling), hard-capped at 6 on unified memory, decreased if headroom <10 GB.
+- **Thermal history records expanded:** Now include `peak_ram_gb`, `p95_ram_gb`, `safe_headroom_gb`, `effective_headroom_gb`, `likely_oom`, and `dataloader_persistent_workers`.
+- **Training config rolled back from adaptive overshoot:** `per_device_train_batch_size` 8→4, `gradient_accumulation_steps` 2→4, `dataloader_num_workers` 8→6 (effective batch size unchanged at 16).
+
+### Fixed
+- **Run 2 (40/60) OOM crash:** Adaptive planning after Run 1 doubled batch size and workers based on COOL thermal zone, but didn't account for unified memory pressure from dataloader worker respawns. Two OOM kills at 97% and 99.9% RAM, with driver-level deadlock (DGX Spark known issue — no clean CUDA OOM, system freezes instead). Last valid checkpoint: step 2200/5084. Config rolled back and memory safeguards added.
 
 ## [0.5.2] - 2026-03-30 — Canonical Thermal Log & Telemetry Modes
 

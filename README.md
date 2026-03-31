@@ -48,7 +48,7 @@ The judge returns structured scores across 9 dimensions: WPCS compliance, SQL sa
 | 4. Evaluation | wp-bench + 241-check rubric eval, quality gates | Not started |
 | 5. Packaging & Deployment | AWQ/GGUF quantization, HuggingFace Hub release | Not started |
 
-**Current:** Phase 3 — 5 sequential LoRA training runs in progress on DGX Spark (ratios 30/70 through 70/30, ~30-60 hours total). Each produces an isolated adapter for A/B/C/D/E eval comparison.
+**Current:** Phase 3 — 5 sequential LoRA training runs in progress on DGX Spark (ratios 30/70 through 70/30, ~30-60 hours total). Each produces an isolated adapter for A/B/C/D/E eval comparison. Run 1 (30/70) complete; Run 2 (40/60) resuming from checkpoint after OOM recovery.
 
 **Building in public.** Read the [Engineering Journal](JOURNAL.md) for real-time decisions, tradeoffs, failures, and lessons learned as the project evolves.
 
@@ -126,7 +126,7 @@ wp-finetune/
 │   ├── pipeline_orchestrator.py    # Pipeline state tracker + action planner
 │   ├── download_model.py           # Download base model from HuggingFace
 │   ├── prepare_tokenizer.py        # Extend tokenizer with <wp_gen>/<wp_judge>
-│   ├── train_model.py              # BF16 LoRA SFT with memory pre-check
+│   ├── train_model.py              # BF16 LoRA SFT with memory pre-check + OOM watchdog
 │   ├── merge_adapter.py            # Merge adapter with verification roundtrip
 │   ├── phase1_{clone,extract,judge}.py
 │   ├── phase2_{gap_analysis,mutate,generate,judge,judge_dataset}.py
@@ -250,8 +250,10 @@ Step 8: Merge adapter into base model (with verification roundtrip)
         [observe: 3 packaging agents + review-telemetry → _summary.md]
 Step 8.5: Adaptive resource planning (between runs)
         Parse telemetry → classify thermal zone → adjust config for next run
+        OOM detection overrides thermal: restore last non-OOM config + step down workers
+        Peak RAM headroom (not average) with 5 GB safety margin on unified memory
         CRITICAL: backoff to last WARM config from thermal_history.json
-        COOL/COLD: scale up batch_size if VRAM headroom allows
+        COOL/COLD: scale up batch_size if headroom allows (capped on unified memory)
 Step 9: Report (after all runs: cross-run comparison summary)
 ```
 
