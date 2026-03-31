@@ -102,6 +102,14 @@ The adaptive resource planning (Step 8.5 of the `/run-training` skill) optimised
 
 This is exactly what caused the OOM. The adaptive logic overwrote `train_config.yaml` between runs, and the new config exceeded the Spark's unified memory ceiling. The headroom calculation used **average** RAM, not **peak** spikes from worker respawns — on unified memory, the peak is what kills you. This has now been fixed (see above).
 
+### Resume gap in `/run-training` skill
+
+Attempted to resume the 40/60 run from checkpoint-2200 using `/run-training`, but the skill had no resume path. The idempotency check in Step 7 correctly identified the run as incomplete (no `adapter_config.json`), but the training command was hardcoded as a fresh start — `python -m scripts.train_model --config ...` with no `--resume` flag. This meant re-running the skill would restart training from step 0, discarding the 2200 steps already completed (~7 hours of GPU time).
+
+**Fix applied to Step 7b:** The skill now scans `adapters/{run_name}/` for `checkpoint-*` directories before launching training. If checkpoints exist, it sorts them numerically, finds the latest, and appends `--resume <path>` to the train command. If no checkpoints exist, it runs fresh as before. The idempotency check (`adapter_config.json`) still gates completed runs — only interrupted runs with checkpoints but no final adapter get the `--resume` treatment.
+
+This was a gap in the original skill design: it handled completed runs (skip) and fresh runs (start) but not the middle case — partially completed runs that should resume.
+
 ---
 
 ## 2026-03-31 — Run 2 commencing (40/60), adaptive resource planning working

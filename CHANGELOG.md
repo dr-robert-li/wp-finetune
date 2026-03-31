@@ -14,6 +14,7 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 - **OOM-aware adaptive planning (Step 8.5):** Detects OOM from telemetry (GPU idle + RAM >95% in final readings). OOM overrides thermal classification — skips scaling and jumps to memory backoff.
 - **Memory backoff step (8.5d-mem):** On OOM detection, restores last non-OOM config, steps workers down by 1, force-enables `dataloader_persistent_workers`.
 - **`dataloader_persistent_workers` support:** Passthrough added to `SFTConfig` in `train_model.py`. Workers stay alive between epochs instead of respawning, eliminating the sawtooth allocation spikes that caused Run 2's memory creep.
+- **Automatic checkpoint resume (Step 7b):** `/run-training` skill now detects existing `checkpoint-*` directories from interrupted runs and passes `--resume <path>` to `train_model.py`. Previously, re-running the skill after a crash would restart from step 0, discarding hours of completed training.
 
 ### Changed
 - **Adaptive headroom calculation uses peak RAM:** `effective_headroom_gb` uses peak RAM with 5 GB safety margin instead of average-based headroom. On unified memory, the peak spikes (10–20 GB above mean) are what trigger OOM.
