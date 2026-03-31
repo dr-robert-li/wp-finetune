@@ -837,36 +837,133 @@ if likely_oom:
     # Skip 8.5e entirely — go straight to 8.5f
 ```
 
-#### 8.5e: Utilization scaling (only if thermal zone is COOL or COLD, and `likely_oom` is False)
+#### 8.5e: Thermal exploitation ladder (only if thermal zone is COOL or COLD, and `likely_oom` is False)
 
-Scale based on GPU utilization headroom AND memory headroom. On unified memory systems, use `effective_headroom_gb` (peak-based with 5 GB safety margin) instead of `mem_headroom_gb`.
+When thermal and memory headroom exist, exploit them using a **prioritized ladder** that applies zero-memory changes first, then low-memory changes, and only touches batch size as a last resort. Each rung is applied independently — multiple rungs can fire in one planning step.
 
 ```python
 headroom = effective_headroom_gb if is_unified_memory else mem_headroom_gb
+reason_parts = []
+
+# Start with current config
+new_batch = batch_size
+new_accum = grad_accum
+new_prefetch = config["training"].get("dataloader_prefetch_factor", 2)
+new_save_steps = config["training"]["save_steps"]
+new_eval_steps = config["training"]["eval_steps"]
 ```
 
-**Batch size scaling** — only scale up if memory headroom permits:
+**Rung 1: `prefetch_factor`** (near-zero memory cost, ~200 MB per worker per increment)
 
+Increases how many batches each worker pre-loads into the queue. Directly addresses GPU idle gaps between batch consumption and next batch arrival. Cost: ~200 MB × num_workers per +1 increment.
+
+```python
+if avg_gpu_util < 80% and new_prefetch < 4:
+    new_prefetch = min(new_prefetch + 1, 4)  # cap at 4 — diminishing returns beyond this
+    reason_parts.append(f"prefetch_factor {config['training'].get('dataloader_prefetch_factor', 2)}→{new_prefetch} (reduce GPU idle gaps)")
 ```
-IF avg_gpu_util < 60% AND headroom > 25:
-    # Aggressive: double batch_size, halve grad_accum
-    new_batch = min(batch_size * 2, 8)  # cap at 8 (not 16 — unified memory is shared)
-    new_accum = max(eff_batch // new_batch, 1)
 
-ELIF avg_gpu_util < 75% AND headroom > 15:
-    # Moderate: increase batch_size by 1
-    new_batch = min(batch_size + 1, 8)
-    new_accum = max(eff_batch // new_batch, 1)
+**Rung 2: `save_steps`** (zero memory cost, reduces checkpoint write stalls)
 
-ELIF avg_gpu_util > 90%:
-    # Already well-utilized, hold steady
-    new_batch = batch_size
-    new_accum = grad_accum
+Each checkpoint save serializes ~3.3 GB adapter weights to disk, stalling the GPU for 30-60s (visible as 6-7% util dips in telemetry). The memory watchdog provides a safety net between checkpoints.
 
-ELSE:
-    # Reasonable utilization, no change
-    new_batch = batch_size
-    new_accum = grad_accum
+```python
+if avg_gpu_util < 80% and new_save_steps < 400:
+    new_save_steps = min(new_save_steps * 2, 400)  # cap at 400 — watchdog covers the gap
+    reason_parts.append(f"save_steps {config['training']['save_steps']}→{new_save_steps} (fewer checkpoint stalls)")
+```
+
+**Rung 3: `eval_steps`** (zero memory cost, reduces eval pauses)
+
+Eval runs the val set (~5K examples) in inference mode, pausing training. Less frequent eval means more training steps per hour. Loss is still logged every `logging_steps` (10) for monitoring.
+
+```python
+if avg_gpu_util < 80% and new_eval_steps < 200:
+    new_eval_steps = min(new_eval_steps * 2, 200)  # cap at 200
+    reason_parts.append(f"eval_steps {config['training']['eval_steps']}→{new_eval_steps} (fewer eval pauses)")
+```
+
+**Rung 4: Batch size +1** (last resort — model-scale-aware, requires warmup probe)
+
+Only attempted when rungs 1-3 are maxed out AND the model scale permits it. On unified memory (DGX Spark), a failed allocation can cause a driver-level deadlock (system freeze, no clean CUDA OOM), so batch scaling requires a **warmup probe** in Step 6 of the next run.
+
+**Model-scale-aware policy:**
+
+The practical batch ceiling depends on model size (from DGX Spark UGC):
+
+| Model Scale | Params | Batch Ceiling | Min Headroom | Notes |
+|---|---|---|---|---|
+| Small | ≤1B | 64 | 15% of total | I/O bound — batch freely |
+| Medium | 1B-13B | 16 | 20% of total | Balanced — room to explore |
+| Large | 13B-30B | 8 | 25% of total | Model dominates |
+| XL | 30B+ | 4 | 30% of total | At the cliff — batch increase rarely safe |
+
+The **85% memory ceiling rule** (stop before 85% of total memory) is the universal safety gate, but larger models need even more margin because their activation memory scales non-linearly with batch size.
+
+```python
+import re
+
+# Detect model scale from model name or param count
+model_name = config["model"]["name"]  # e.g., "Qwen/Qwen3-30B-A3B"
+# Extract param count from name (e.g., "30B" → 30)
+param_match = re.search(r"(\d+)[Bb]", model_name)
+param_billions = int(param_match.group(1)) if param_match else 0
+
+# Scale-aware ceilings
+if param_billions >= 30:
+    batch_ceiling = 4
+    min_headroom_pct = 0.30  # 30% of total memory must remain free
+    scale_label = "XL (30B+)"
+elif param_billions >= 13:
+    batch_ceiling = 8
+    min_headroom_pct = 0.25
+    scale_label = "Large (13-30B)"
+elif param_billions >= 1:
+    batch_ceiling = 16
+    min_headroom_pct = 0.20
+    scale_label = "Medium (1-13B)"
+else:
+    batch_ceiling = 64
+    min_headroom_pct = 0.15
+    scale_label = "Small (≤1B)"
+
+min_headroom_gb = mem_total_gb * min_headroom_pct
+mem_usage_pct = peak_ram_gb / mem_total_gb
+
+rungs_1_to_3_maxed = (new_prefetch >= 4 and new_save_steps >= 400 and new_eval_steps >= 200)
+below_ceiling = batch_size < batch_ceiling
+has_headroom = headroom > min_headroom_gb
+below_85pct = mem_usage_pct < 0.85
+gpu_underutilized = avg_gpu_util < 65%
+
+if rungs_1_to_3_maxed and below_ceiling and has_headroom and below_85pct and gpu_underutilized:
+    proposed_batch = min(batch_size + 1, batch_ceiling)
+    if proposed_batch != batch_size:
+        new_batch = proposed_batch
+        new_accum = max(eff_batch // new_batch, 1)
+        reason_parts.append(
+            f"batch_size {batch_size}→{new_batch} (scale={scale_label}, ceiling={batch_ceiling}, "
+            f"mem={mem_usage_pct:.0%}, headroom={headroom:.0f}/{min_headroom_gb:.0f} GB min, "
+            f"util={avg_gpu_util:.0f}%); REQUIRES warmup probe in Step 6"
+        )
+elif rungs_1_to_3_maxed and not below_ceiling:
+    reason_parts.append(
+        f"batch_size held at {batch_size} (AT CEILING for {scale_label} — "
+        f"UGC reports batch {batch_ceiling} is practical max for {param_billions}B model on Spark)"
+    )
+elif rungs_1_to_3_maxed and not has_headroom:
+    reason_parts.append(
+        f"batch_size held at {batch_size} (headroom {headroom:.0f} GB < {min_headroom_gb:.0f} GB min "
+        f"for {scale_label})"
+    )
+    # Flag for Step 6: run 1 real training step at new batch size, check memory survived
+    # If probe OOMs, revert to previous batch size and proceed
+```
+
+If no rungs fired (already well-utilized or no headroom):
+```python
+if not reason_parts:
+    reason_parts.append(f"hold config (util={avg_gpu_util:.0f}%, headroom={headroom:.0f} GB — no changes needed)")
 ```
 
 **Worker scaling** — adjust `dataloader_num_workers` conservatively:
@@ -883,12 +980,14 @@ else:
 
 if headroom < 10:
     new_workers = max(workers - 1, 2)
-    reason += f"; workers {workers}→{new_workers} (tight memory: {headroom:.0f} GB headroom)"
+    reason_parts.append(f"workers {workers}→{new_workers} (tight memory: {headroom:.0f} GB headroom)")
 elif avg_gpu_util < 70% and headroom > 15 and workers < max_workers:
     new_workers = workers + 1
-    reason += f"; workers {workers}→{new_workers} (GPU starving, headroom OK)"
+    reason_parts.append(f"workers {workers}→{new_workers} (GPU starving, headroom OK)")
 else:
     new_workers = workers
+
+reason = "; ".join(reason_parts)
 ```
 
 **Persistent workers** — always preserve the current setting. If `dataloader_persistent_workers` was enabled (especially after an OOM recovery), never disable it automatically:
@@ -907,11 +1006,17 @@ old_batch = base_config["training"]["per_device_train_batch_size"]
 old_accum = base_config["training"]["gradient_accumulation_steps"]
 old_workers = base_config["training"]["dataloader_num_workers"]
 old_persistent = base_config["training"].get("dataloader_persistent_workers", False)
+old_prefetch = base_config["training"].get("dataloader_prefetch_factor", 2)
+old_save = base_config["training"]["save_steps"]
+old_eval = base_config["training"]["eval_steps"]
 
 base_config["training"]["per_device_train_batch_size"] = new_batch
 base_config["training"]["gradient_accumulation_steps"] = new_accum
 base_config["training"]["dataloader_num_workers"] = new_workers
 base_config["training"]["dataloader_persistent_workers"] = new_persistent_workers
+base_config["training"]["dataloader_prefetch_factor"] = new_prefetch
+base_config["training"]["save_steps"] = new_save_steps
+base_config["training"]["eval_steps"] = new_eval_steps
 
 yaml.dump(base_config, open("config/train_config.yaml", "w"))
 
@@ -922,7 +1027,11 @@ adjustment_log = f"""
 - GPU util: avg={avg_gpu_util}%, peak={peak_gpu_util}%
 - Memory: peak={peak_ram_gb:.0f}/{mem_total_gb:.0f} GB, effective_headroom={effective_headroom_gb:.0f} GB [{'unified' if is_unified_memory else 'discrete VRAM'}]
 - OOM detected: {likely_oom}
-- batch_size: {old_batch} → {new_batch}
+- Thermal ladder applied:
+  - prefetch_factor: {old_prefetch} → {new_prefetch} (rung 1)
+  - save_steps: {old_save} → {new_save_steps} (rung 2)
+  - eval_steps: {old_eval} → {new_eval_steps} (rung 3)
+  - batch_size: {old_batch} → {new_batch} (rung 4 — last resort)
 - grad_accum: {old_accum} → {new_accum}
 - eff_batch: {old_batch * old_accum} → {new_batch * new_accum}
 - workers: {old_workers} → {new_workers}
@@ -934,6 +1043,28 @@ with open("telemetry/training/adaptive_adjustments.md", "a") as f:
     f.write(adjustment_log)
 print(adjustment_log)
 ```
+
+**If batch_size was increased (rung 4):** Flag the next run for a warmup probe in Step 6. The dry run (`--dry-run`) validates config but doesn't process a real batch. The warmup probe runs 1 actual training step and checks that memory survived:
+
+```python
+if new_batch > old_batch:
+    # Write a flag file that Step 6 checks
+    Path("telemetry/training/_warmup_probe_required").write_text(
+        f"batch_size increased {old_batch}→{new_batch} by adaptive planner\n"
+        f"Run 1 real training step and verify MemAvailable > {OOM_WATCHDOG_THRESHOLD_MB} MB\n"
+        f"If probe fails: revert to batch_size={old_batch}, grad_accum={old_accum}\n"
+    )
+    print(f"  ⚠ Warmup probe flagged for next run (batch {old_batch}→{new_batch})")
+```
+
+**Step 6 warmup probe** (added behavior when `_warmup_probe_required` exists):
+
+After the normal dry run succeeds, if the warmup probe flag exists:
+1. Run `python -m scripts.train_model --config <run_config> --max-steps 1` (1 real step)
+2. Read `/proc/meminfo` → check `MemAvailable > 2048 MB`
+3. If OK: delete the flag, proceed to Step 7
+4. If OOM or `MemAvailable < 2048 MB`: revert batch_size in config, delete the flag, re-run dry run, proceed with safe config
+5. Log probe result to `adaptive_adjustments.md`
 
 **Then regenerate the next ratio's config overlay** using the updated base config before proceeding to Step 1 of the next ratio.
 

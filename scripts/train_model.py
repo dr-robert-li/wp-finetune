@@ -348,6 +348,7 @@ def build_trainer(model, tokenizer, train_dataset, val_dataset, config: dict):
             gradient_checkpointing=train_cfg.get("gradient_checkpointing", False),
             dataloader_num_workers=train_cfg.get("dataloader_num_workers", 0),
             dataloader_persistent_workers=train_cfg.get("dataloader_persistent_workers", False),
+            dataloader_prefetch_factor=train_cfg.get("dataloader_prefetch_factor", 2),
             logging_steps=train_cfg["logging_steps"],
             eval_steps=train_cfg["eval_steps"],
             save_steps=train_cfg["save_steps"],
