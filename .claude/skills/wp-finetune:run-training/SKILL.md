@@ -970,7 +970,8 @@ if not reason_parts:
 - Only increase workers if `avg_gpu_util < 70%` AND `headroom > 15` — low GPU util with tight memory means workers are NOT the bottleneck
 - Increase by 1 at a time (not doubling)
 - **Hard cap**: `min(cpu_count // 2, 6)` on unified memory, `min(cpu_count // 2, 16)` on discrete GPU
-- If `headroom < 10`: **decrease** workers by 1 (min 2) — memory is tight regardless of GPU util
+- If `headroom < 5` for **2 consecutive runs**: **decrease** workers by 1 (min 2) — sustained memory pressure confirmed. A single run below 5 GB could be a transient spike; requiring 2 consecutive runs avoids unnecessary worker reduction that hurts GPU utilization.
+- The watchdog (2 GB threshold) handles acute within-run pressure — the planner handles structural cross-run trends.
 
 ```python
 if is_unified_memory:
@@ -978,9 +979,16 @@ if is_unified_memory:
 else:
     max_workers = min(os.cpu_count() // 2, 16)
 
-if headroom < 10:
+# Check for sustained memory pressure: headroom < 5 GB in last 2 consecutive runs
+recent_runs = history[-2:] if len(history) >= 2 else history
+sustained_pressure = (
+    len(recent_runs) >= 2 and
+    all(h.get("effective_headroom_gb", 999) < 5 for h in recent_runs)
+)
+
+if headroom < 5 and sustained_pressure:
     new_workers = max(workers - 1, 2)
-    reason_parts.append(f"workers {workers}→{new_workers} (tight memory: {headroom:.0f} GB headroom)")
+    reason_parts.append(f"workers {workers}→{new_workers} (sustained pressure: headroom <5 GB for 2 consecutive runs)")
 elif avg_gpu_util < 70% and headroom > 15 and workers < max_workers:
     new_workers = workers + 1
     reason_parts.append(f"workers {workers}→{new_workers} (GPU starving, headroom OK)")
