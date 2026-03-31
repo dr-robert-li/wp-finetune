@@ -484,13 +484,28 @@ Agent(
 )
 ```
 
-**7b: Execute training.**
+**7b: Detect existing checkpoints and execute training.**
+
+Check for existing checkpoints from a prior interrupted run. If found, pass `--resume` so training picks up from the latest checkpoint instead of restarting from scratch.
 
 ```python
+from pathlib import Path
+import re
+
+adapter_dir = Path(f"adapters/{run_name}")
+checkpoints = sorted(adapter_dir.glob("checkpoint-*"), key=lambda p: int(re.search(r"\d+", p.name).group())) if adapter_dir.exists() else []
+
+train_cmd = ["python", "-m", "scripts.train_model", "--config", f"config/train_config_{ratio}.yaml"]
+
+if checkpoints:
+    latest_ckpt = checkpoints[-1]
+    print(f"Found {len(checkpoints)} existing checkpoint(s), latest: {latest_ckpt.name}")
+    print(f"Resuming training from {latest_ckpt}")
+    train_cmd.extend(["--resume", str(latest_ckpt)])
+
 result = dgx.execute(
     "unsloth_studio",
-    "python", "-m", "scripts.train_model",
-    "--config", f"config/train_config_{ratio}.yaml",
+    *train_cmd,
     idempotency_check=f"adapters/{run_name}/adapter_config.json",
     timeout=None,  # No timeout — training takes 6-12 hours
 )
@@ -1100,7 +1115,7 @@ config/
 | Deps missing | `validate(["deps:unsloth_studio"])` fails | `ensure_ready()` installs them |
 | OOM | `validate(["memory:70"])` fails | Report top consumers, suggest `docker stop` |
 | Download interrupted | `execute()` returns non-zero | Re-run (resume support built in) |
-| Training interrupted | `execute()` returns non-zero | Re-run with `--resume` flag |
+| Training interrupted | `execute()` returns non-zero | Re-run skill — auto-detects checkpoints and passes `--resume` |
 | Merge fails | `execute()` returns non-zero | Adapter is safe, suggest `--lora-modules` fallback |
 | GPU not accessible | `validate(["gpu:unsloth_studio"])` fails | Check container has `--gpus all` |
 | Previous run exists | Idempotency check finds adapter | Skip to next ratio |
