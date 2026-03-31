@@ -60,6 +60,16 @@ Also added `dataloader_persistent_workers` passthrough in `scripts/train_model.p
 
 ### Mitigations — what was done, what was skipped
 
+The three implemented mitigations form layered defense in depth — they operate at different timescales and catch different failure modes:
+
+| Layer | When | Catches | Without it |
+|-------|------|---------|------------|
+| Peak-based headroom (8.5a/e) | Between runs (planning) | Prevents OOM by setting conservative config based on prior peak RAM | Next run starts with a config that will OOM again |
+| OOM-aware adaptive planner (8.5c/d-mem) | Between runs (post-mortem) | Detects that an OOM already happened, backs off harder than thermal scaling would | After a crash, the planner sees COOL thermals and scales back up to the config that just crashed |
+| Memory watchdog callback | During training (every step) | Unpredicted memory creep — fragmentation, dataloader accumulation, checkpoint spikes | Training crashes at 99.9% RAM with no checkpoint, losing hours of work |
+
+The first two are **preventive** — they configure the next run to avoid OOM. The watchdog is **reactive** — it saves the current run before it dies. Even with perfect between-run planning, memory can creep unpredictably mid-run (the telemetry showed a sawtooth pattern from worker respawns, 10–20 GB above the mean). The watchdog is the only layer that protects in-flight work.
+
 **Implemented:**
 
 - **Memory watchdog callback** (`scripts/train_model.py`) — `MemoryWatchdogCallback` reads `/proc/meminfo` every training step. When `MemAvailable` drops below 2 GB, it sets `should_save = True` and `should_training_stop = True`, triggering a clean checkpoint save before the OOM killer strikes. Fail-open: if `/proc/meminfo` can't be read, it returns a high value and never triggers. The 2 GB threshold leaves room for the checkpoint save itself (~1.2 GB for the LoRA adapter + optimizer state). This prevents the scenario from Run 2 where up to 200 steps of training were lost per OOM kill.
