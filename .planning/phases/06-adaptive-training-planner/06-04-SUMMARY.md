@@ -111,3 +111,11 @@ No blockers. Ready to invoke /run-training on DGX.
 ---
 *Phase: 06-adaptive-training-planner*
 *Completed: 2026-04-01*
+
+## Self-Check: PASSED
+
+- FOUND: .planning/phases/06-adaptive-training-planner/06-04-SUMMARY.md
+- FOUND: commit 522e8b4 (docs(06-04): complete cross-file verification and human review plan)
+- STATE.md updated: position advanced, decision recorded, session updated
+- ROADMAP.md updated: phase 6 marked Complete (4/4 plans with summaries)
+- Requirements: all 13 IDs already marked complete (ADPT-01 through PROB-03)

@@ -4,6 +4,82 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-04-01 — v1.1 Adaptive Training Infrastructure: from patch to milestone
+
+### Why this became a milestone
+
+When the adaptive planner first appeared in v1.0 (Step 8.5 of run-training, March 29), it was 40 lines of inline logic in a skill file: classify thermal zone, bump batch, done. It worked for exactly one run before Run 2's OOM crash exposed the fundamental design flaw — the planner treated the GPU as a single-axis optimisation problem (temperature), when the DGX Spark actually presents a two-axis problem with radically different risk profiles on each axis.
+
+The OOM investigation (March 31) was the turning point. The telemetry showed the system crashing at 119.6 GB / 119.7 GB total — 0.1 GB headroom — while GPU temperature was a comfortable 65°C. The adaptive planner had seen COOL zone, scaled up aggressively (batch 4→8, workers 4→8), and driven the system straight into the memory cliff. The asymmetry between thermal and memory risk on unified memory wasn't something a patch could address. It needed a proper engineering response: new abstractions, new signals, new safety layers, a config-driven threshold system, cross-project infrastructure, and peer review. That's a milestone, not a hotfix.
+
+Treating it as v1.1 rather than a v1.0 patch was the right call for three reasons. First, the scope is genuinely new capability — power-primary routing, a 5-rung thermal exploitation ladder, batch/grad_accum coupling, Unsloth override detection, warmup probes, failure classification, and anchor-based config history. None of this existed in v1.0's temperature-zone logic. Second, it has an external dependency (dgx-toolbox Phase 13 telemetry package) that belongs in a separate release cycle. Third, treating it as a milestone forced proper requirements definition (13 ADPT/BTCH/TELE/PROB requirements), cross-AI plan review, and phased execution — discipline that a "quick fix" would have skipped.
+
+### Research that shaped the design
+
+The design wasn't invented from first principles. It was synthesised from four distinct research threads:
+
+**Thread 1: The OOM post-mortem (March 31).** The debug investigation (`oom-training-dgx-spark.md`) established the core constraint: on DGX Spark's unified memory, CUDA allocation failures occur in the driver's internal path (NV_ERR_NO_MEMORY), below where PyTorch could catch them. The system freezes — no Python exception, no graceful recovery, no SSH. This is [pytorch/pytorch#174358](https://github.com/pytorch/pytorch/issues/174358), a known open issue. The investigation identified four compounding memory creep mechanisms: PyTorch caching allocator fragmentation (up to 43% waste reported in large-scale LLM training), checkpoint save spikes (serializing optimizer state temporarily pins ~14 GB), DataLoader worker accumulation (each subprocess gradually grows resident memory), and the sawtooth respawn pattern (workers killed and re-spawned allocate fresh buffers each cycle). This research directly produced the `persistent_workers=True` fix, the peak-based headroom calculation, and the requirement that the planner must treat memory as a separate budget from thermal.
+
+**Thread 2: Power vs temperature as the primary signal.** The v1.0 planner used temperature zones (COLD/COOL/WARM/HOT/CRITICAL). Research into the GB10's thermal behaviour showed this was backwards. Temperature is a lagging indicator — by the time the GPU is hot, you're already past the point where scaling decisions should have been made. GPU power draw (watts) is the leading indicator: it reflects current computational load immediately. The NVIDIA Developers Forum threads on GB10 thermal management confirmed that the OEM cooler handles 80-82°C sustained without throttling, meaning the v1.0 thresholds (80°C warning, 83°C critical) were too conservative and caused false triggers. This research produced the power-primary routing model (ADPT-01) where watts are the primary signal and temperature is demoted to a safety brake that only fires at ≥82°C.
+
+**Thread 3: Model-scale-aware batch ceilings.** After the OOM at batch=8, the question was: what batch sizes are actually safe for a 30B model on 128 GB unified memory? The answer couldn't come from this project alone — we'd only tested two configs (batch=4 safe, batch=8 crash). Research across NVIDIA Developers Forum community experience with various model scales on unified memory platforms produced the tiered ceiling model: Small (≤1B) can batch up to 64, Medium (1B-13B) up to 16, Large (13B-30B) up to 8, XL (30B+) capped at 4. These ceilings are conservative by design — the headroom requirements scale with model size because activation memory grows non-linearly with batch size for larger models. For Qwen3-30B-A3B (effective ~27.4B after MoE sparsity), this means the v1.0 batch=8 config was already at the Large-tier ceiling before accounting for the 85% universal safety rule.
+
+**Thread 4: Utilisation vs intensity — the thermal exploitation ladder.** The most surprising research finding was the distinction between GPU utilisation (fraction of time the GPU is working) and intensity (how hard it works per step). The v1.0 planner conflated these — any COOL reading triggered a batch increase, which increases both. But `prefetch_factor`, `save_steps`, and `eval_steps` can increase utilisation (by reducing idle gaps) without touching intensity or memory. The telemetry showed 49-62% GPU utilisation dips between batches (pipeline stalls waiting for data) and 6-7% drops during checkpoint writes (serialisation stalls). These are free wins — zero memory cost, pure pipeline efficiency. The reordered thermal ladder (ADPT-02) exploits this by exhausting all zero-memory optimisations (prefetch, save/eval interval, then workers) before touching the one lever (batch size) that crosses into memory risk territory.
+
+### Externalising to dgx-toolbox
+
+Five capabilities were externalised from this project into dgx-toolbox's new telemetry package (Phase 13):
+
+| Capability | Why External |
+|---|---|
+| `GPUSampler` (power/temp/util/mem sampling) | Any GPU training project needs this, not just WordPress fine-tuning |
+| `AnchorStore` (config history with cooldown + hard caps) | Reusable for any iterative hyperparameter tuning workflow |
+| `classify_failure` (NORMAL/OOM/HANG/THERMAL classification) | Every training run on DGX needs failure post-mortem |
+| `compute_effective_scale` (param count → tier → batch ceiling) | Model-scale awareness is hardware-specific, not project-specific |
+| `probe.py` (warmup probe runner) | Safe batch probing is a generic DGX capability |
+
+The decision criterion was clean: if the capability requires knowledge of WordPress code standards, rubric dimensions, or task tokens, it stays in wp-finetune. If it only requires knowledge of the GPU, the training loop, or the hardware platform, it belongs in dgx-toolbox. GPUSampler doesn't care what model is being trained — it samples `nvidia-smi` metrics. AnchorStore doesn't care what config keys are being tracked — it hashes and persists any dict. The failure classifier reads telemetry patterns (GPU idle + RAM >95% = OOM), not training-specific signals.
+
+This factoring has a practical benefit: when I fine-tune a different model on the same Spark (or a colleague uses theirs), the telemetry infrastructure is already there. The project-specific part — the routing logic, the ladder rung order, the threshold values — stays in `scripts/adaptive_planner.py` and `config/adaptive_planning.yaml`. The generic platform capabilities live in dgx-toolbox where they can evolve independently.
+
+The coupling point is `config/dgx_toolbox.yaml`, which declares the mount (`dgx_telemetry` → `~/dgx-toolbox/telemetry`) and the container PYTHONPATH injection. This keeps wp-finetune ignorant of dgx-toolbox's internal structure — it imports `from telemetry.sampler import GPUSampler` and the mount handles the rest.
+
+### Cross-AI review: what stuck, what was rejected
+
+Both Gemini and Codex reviewed the four plans before execution. Their consensus concerns directly shaped the implementation:
+
+**Accepted — logic in Python, not skill markdown (HIGH from both).** The original plan put the routing algorithm in the skill file. Both reviewers flagged this as untestable. The final implementation has the skill as a thin 7-step orchestration wrapper that calls `scripts/adaptive_planner.py` for every decision. The Python module has 28 unit tests. No algorithm logic lives in markdown.
+
+**Accepted — batch coupling uses `round()` not `//` (HIGH from Codex).** Codex caught that `max(1, effective_batch // new_batch)` doesn't preserve effective_batch for non-divisible changes (batch 4→5 gives accum=3, effective=15 not 16). The implementation uses `round()` and preferentially constrains batch sizes to divisors of effective_batch.
+
+**Accepted — no `sudo drop_caches` in train_model.py (HIGH from Codex).** Both reviewers flagged this as operationally dangerous in containers. Removed entirely — cache management is delegated to dgx-toolbox's UMAMemModel which handles it at the platform level.
+
+**Accepted — no `builtins.print` monkey-patching (HIGH from Codex).** The original plan intercepted Unsloth's banner by wrapping `print`. Both reviewers noted this was fragile and could break logging. The implementation reads `trainer.args` after `build_trainer()` returns — the actual batch/grad_accum values are already set by that point, no interception needed.
+
+**Rejected — Codex's MEDIUM-HIGH overall risk rating.** Codex rated the plans MEDIUM-HIGH overall, while Gemini rated LOW. The difference was focus: Codex evaluated implementation risk of the *original* plan (which had logic in markdown, drop_caches, and print patching), while Gemini evaluated architectural soundness. After the HIGH concerns were addressed in execution, the actual risk matched Gemini's assessment. The lesson: review concerns are most valuable as pre-execution fixlists, not as overall risk scores.
+
+### The three-layer architecture
+
+The final system has three cleanly separated layers:
+
+1. **Platform layer** (dgx-toolbox telemetry/) — Hardware-aware, project-agnostic. Samples GPU metrics, classifies failures, manages config history, runs warmup probes. Evolves with the hardware platform.
+
+2. **Decision layer** (scripts/adaptive_planner.py + config/adaptive_planning.yaml) — Project-specific routing logic. Classifies power zones, applies the thermal ladder, couples batch/grad_accum, computes scale-aware ceilings. Tested with 28 decision-table unit tests. Evolves with training strategy.
+
+3. **Orchestration layer** (adaptive-planner skill + run-training Step 8.5) — Skill-level glue. Reads telemetry, calls decision functions, writes config, manages probe flags between runs. Evolves with the skill system.
+
+Each layer can change independently. Raising the thermal brake from 82°C to 85°C is a one-line YAML edit. Adding a sixth ladder rung is a function addition plus config entry. Replacing GPUSampler with a different sampling backend is invisible to layers 2 and 3.
+
+### Reflection
+
+The v1.0 adaptive planner failed because it modelled the GPU as a single optimisation variable. The v1.1 rewrite succeeds (so far — Plan 04 verification still pending) because it correctly models the two-axis problem: thermal budget is safe to probe, memory budget is not. This asymmetry is structural to unified memory architectures and won't go away.
+
+The externalisation to dgx-toolbox felt like overhead when I started it, but in retrospect it was the forcing function that produced clean abstractions. When you have to explain what GPUSampler does to a different project, you strip away the WordPress-specific assumptions and discover the actual interface boundary. That boundary — "I sample hardware metrics and return numbers; you decide what to do with them" — is the right one.
+
+The 13 requirements for v1.1 (ADPT-01 through PROB-03) are all checked off after three plans. What remains is Plan 04: cross-file integration verification and the human review checkpoint before this goes into a real training run. The planner is code-complete but not battle-tested. Run 4 will be the real validation.
+
+---
+
 ## 2026-04-01 — Thermal budget exploitation without memory pressure
 
 ### Context
