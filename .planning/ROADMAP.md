@@ -1,8 +1,13 @@
 # Roadmap: wp-qwen3-moe
 
+## Milestones
+
+- 🚧 **v1.0 MVP** - Phases 1-5 (3 of 5 complete, eval + deployment remaining)
+- 📋 **v1.1 Adaptive Training Infrastructure** - Phase 6 (planned)
+
 ## Overview
 
-Four phases take the project from fragile pipeline scripts to a deployed dual-mode WordPress code model. Phase 1 hardens the pipeline and converts existing CSV source data into repos.yaml — no manual URL hunting required. Phase 2 executes that pipeline to produce ~13,500 clean training examples. Phase 3 converts the base model to MoE, writes the evaluation suite, and trains on DGX Spark. Phase 4 runs the quality gate and packages the passing model for deployment.
+Six phases take the project from fragile pipeline scripts to a deployed dual-mode WordPress code model with adaptive training infrastructure. Phases 1-3 built the data pipeline, prepared the model, and trained it. Phase 4 evaluates, Phase 5 deploys, and Phase 6 adds power-primary adaptive training that exploits DGX Spark thermal headroom for optimal throughput.
 
 ## Phases
 
@@ -12,13 +17,23 @@ Four phases take the project from fragile pipeline scripts to a deployed dual-mo
 
 Decimal phases appear between their surrounding integers in numeric order.
 
+<details>
+<summary>v1.0 MVP (Phases 1-3) - Complete</summary>
+
 - [x] **Phase 1: Pipeline Ready** - Harden all pipeline scripts and convert existing CSV data into repos.yaml before any data is generated
 - [x] **Phase 2: Dataset Production** - Execute all three pipeline phases to produce the final training dataset (completed 2026-03-29 via /run-data-pipeline skill)
 - [x] **Phase 3: Model Prep and Training** - Download Qwen3-30B-A3B, extend tokenizer, write eval suite, and fine-tune on DGX Spark (completed 2026-03-27)
+
+</details>
+
 - [ ] **Phase 4: Evaluation** - Run static eval suite + wp-bench, human review of results
 - [ ] **Phase 5: Packaging and Deployment** - Quantize, serve, and publish to HuggingFace
+- [ ] **Phase 6: Adaptive Training Planner** - Power-primary adaptive config engine with batch coupling, telemetry extensions, and warmup probes
 
 ## Phase Details
+
+<details>
+<summary>v1.0 MVP Phase Details (Phases 1-3)</summary>
 
 ### Phase 1: Pipeline Ready
 **Goal**: All pipeline scripts are safe to run at scale and repos.yaml is fully populated with quality-tiered sources, derived from the existing ranked CSVs at `/home/robert_li/Desktop/data/wp-finetune-data/`
@@ -73,6 +88,8 @@ Plans:
 - [x] 03-02-PLAN.md — Evaluation suite in eval/ directory (eval_gen.py PHPCS pass rate, eval_judge.py Spearman correlation, eval_gate.py quality gates, wp-bench config)
 - [ ] 03-03-PLAN.md — Training script and merge adapter (Unsloth LoRA config, DGX Spark run, W&B monitoring, adapter save, merge with verification)
 
+</details>
+
 ### Phase 4: Evaluation
 **Goal**: All quality gates pass (static eval + wp-bench) and human has reviewed the results before proceeding to packaging
 **Depends on**: Phase 3
@@ -107,15 +124,36 @@ Plans:
 - [ ] 05-02: Deployment (vLLM serve, Ollama serve, LiteLLM proxy, Open-WebUI demo)
 - [ ] 05-03: HuggingFace Hub upload (model card, benchmarks, download links, usage examples)
 
+---
+
+### v1.1 Adaptive Training Infrastructure
+
+**Milestone Goal:** Replace temperature-zone adaptive planner with power-primary decision engine that correctly exploits the DGX Spark GB10 thermal envelope, plus Unsloth override detection and extended warmup probes.
+
+**Dependency:** dgx-toolbox Phase 13 (telemetry/ package) must be complete before execution.
+
+### Phase 6: Adaptive Training Planner
+**Goal**: Training runs automatically adapt batch size, prefetch, workers, and save/eval intervals based on real-time GPU power telemetry, with correct batch/grad_accum coupling and Unsloth override detection
+**Depends on**: Phase 5 (v1.0 complete); dgx-toolbox Phase 13 (telemetry/ package)
+**Requirements**: ADPT-01, ADPT-02, ADPT-03, BTCH-01, BTCH-02, BTCH-03, TELE-01, TELE-02, TELE-03, TELE-04, PROB-01, PROB-02, PROB-03
+**Success Criteria** (what must be TRUE):
+  1. Running the adaptive-planner skill with GPU at 50W (UNDERUTILIZED zone) recommends batch increase as Rung 1 action, and at 95W+ (THROTTLED zone) recommends batch decrease to 1 -- with temperature only overriding at >=82C regardless of power zone
+  2. After any batch_size change, grad_accum is automatically recalculated so that batch_size * grad_accum equals the original effective_batch value (e.g., batch 4->8 causes grad_accum 4->2)
+  3. When Unsloth silently overrides batch_size or grad_accum (visible in its startup banner), the override is detected, written to telemetry/training/_unsloth_actuals.json, and all subsequent planner decisions use the Unsloth actual values instead of config values
+  4. MemoryWatchdogCallback writes GPU power_watts and mem_available_mb to canonical JSONL every 50 training steps, and a failed run is classified as NORMAL/OOM/HANG/THERMAL by the failure classifier
+  5. Warmup probe runs 3-5 real training steps (via dgx-toolbox probe.py) when batch is increased without a prior anchor, and the anchor store persists config+outcome history with cooldown tracking
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 1. Pipeline Ready | 2/2 | Complete | 2026-03-26 |
-| 2. Dataset Production | 6/7 | Complete    | 2026-03-29 |
-| 3. Model Prep and Training | 3/3 | Complete (scripts ready, awaiting DGX) | 2026-03-27 |
-| 4. Evaluation | 0/3 | Not started | - |
-| 5. Packaging and Deployment | 0/3 | Not started | - |
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 1. Pipeline Ready | v1.0 | 2/2 | Complete | 2026-03-26 |
+| 2. Dataset Production | v1.0 | 6/7 | Complete | 2026-03-29 |
+| 3. Model Prep and Training | v1.0 | 3/3 | Complete | 2026-03-27 |
+| 4. Evaluation | v1.0 | 0/3 | Not started | - |
+| 5. Packaging and Deployment | v1.0 | 0/3 | Not started | - |
+| 6. Adaptive Training Planner | v1.1 | 0/? | Not started | - |

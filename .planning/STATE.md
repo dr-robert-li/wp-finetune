@@ -2,35 +2,35 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Adaptive Training Infrastructure
-status: defining_requirements
-stopped_at: Milestone v1.1 started — defining requirements
-last_updated: "2026-03-31T22:00:00.000Z"
-last_activity: 2026-03-31 - Milestone v1.1 started (Adaptive Training Infrastructure)
+status: ready_to_plan
+stopped_at: Roadmap created for v1.1 — Phase 6 ready for planning
+last_updated: "2026-03-31T23:00:00.000Z"
+last_activity: 2026-03-31 - Roadmap created for v1.1 Adaptive Training Infrastructure
 progress:
-  total_phases: 5
-  completed_phases: 2
-  total_plans: 12
+  total_phases: 6
+  completed_phases: 3
+  total_plans: 18
   completed_plans: 11
-  percent: 60
+  percent: 61
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-26)
+See: .planning/PROJECT.md (updated 2026-03-31)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 3 — DGX Training (scripts ready, data exported at 5 ratios, eval suite rewritten)
+**Current focus:** Phase 6 — Adaptive Training Planner (v1.1, blocked on dgx-toolbox Phase 13)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: --
-Status: Defining requirements for v1.1 Adaptive Training Infrastructure
-Last activity: 2026-03-31 - Milestone v1.1 started
+Phase: 6 of 6 (Adaptive Training Planner)
+Plan: -- (not yet planned)
+Status: Ready to plan (pending dgx-toolbox Phase 13 completion)
+Last activity: 2026-03-31 - Roadmap created for v1.1
 
-Progress: [██████░░░░] 60%
+Progress: [██████░░░░] 61%
 
 ## Performance Metrics
 
@@ -68,50 +68,9 @@ Progress: [██████░░░░] 60%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [Init]: Download Qwen3-30B-A3B (native MoE) BEFORE tokenizer extension and fine-tuning
-- [Init]: Use Batch API for bulk judging (50% cost savings, required by PIPE-04)
-- [Init]: Eval scripts must be written before training completes (gate cannot function otherwise)
-- [Init]: Keep LoRA adapter separate from base model until all three eval thresholds pass
-- [01-02]: quality_tier=trusted requires zero total_known_vulns AND zero unpatched AND rating >= 90; otherwise assessed
-- [01-02]: active_installs '+' suffix stripped before int() conversion (e.g. '10000000+' -> 10000000)
-- [01-02]: github_url must start with 'https://github.com/' — git clone access required
-- [01-02]: If >100 repos pass filter, top 100 by active_installs retained
-- [01-02]: WordPress Core hardcoded as first entry with quality_tier=core — not sourced from CSV
-- [01-01]: Batch threshold hardcoded at 50 (BATCH_THRESHOLD constant) per PIPE-04 spec
-- [01-01]: Checkpoint uses phase name as key so multiple pipeline stages coexist without collision
-- [01-01]: preflight.py catches FileNotFoundError so tests pass on machines without php/phpcs
-- [Phase 02-01]: Judge PASS threshold raised from >= 7 to >= 8 — stricter quality bar required before any pipeline execution (Pitfall 1 from research)
-- [Phase 02-01]: Security auto-FAIL enforced in judge.py code (_apply_security_auto_fail function) — code-level gate not just config documentation
-- [Phase 02-01]: N/A scoring deflated to 7 (from 10) for i18n and accessibility dims — prevents inflation on functions with no relevant output
-- [Phase 02-01]: Rejection templates use 3 sub-keys (proactive_nonce, proactive_capability, proactive_escaping) in synthetic_prompts.yaml — aligned with security training taxonomy
-- [Phase 02-02]: PHPCS hard-fail guard added at module level in phase2_mutate.py — no silent fallback on FileNotFoundError from verify_mutation_detectable
-- [Phase 02-02]: batch results saved to disk immediately in phase2_judge_dataset after parse_batch_results (24h expiry protection, Pitfall 3)
-- [Phase 02-02]: security auto-FAIL enforced in _apply_security_auto_fail() in phase2_judge.py — score < 5 forces FAIL verdict
-- [Phase 02-03]: round() used instead of int() for gen/judge ratio calculation to avoid float precision truncation (0.60/0.40=1.4999... causes int to give 29 not 30)
-- [Phase 02-03]: utils.py checkpoints save every 100 examples in phase3_cot.py (authoritative resume); per-500 progress JSONL files kept for additional recovery
-- [Phase 02-03]: deduplicate() uses SHA-256 of assistant message content as reliable duplicate signal
-- [Phase 03-01]: load_in_4bit=False LOCKED in prepare_tokenizer.py — no QLoRA for MoE (Qwen3-30B-A3B is MoE, QLoRA destabilizes routing)
-- [Phase 03-01]: Mean embedding init: new token rows set to mean of existing embed_tokens rows (not random) for stable early training
-- [Phase 03-01]: Model saved back to local_dir after embedding resize — ensures model and tokenizer vocab sizes are consistent
-- [Phase 03-01]: All Phase 3 hyperparameters externalized in config/train_config.yaml (no hardcoded values in scripts)
-- [Phase 03-02]: Security pass rate uses WordPress.Security.* sniff prefix filter — matches PHPCS sniff taxonomy
-- [Phase 03-02]: PHPCS unavailability handled gracefully (passed=True with _phpcs_unavailable flag) to allow tests without binary
-- [Phase 03-02]: eval_gate.py falls back to _FALLBACK_THRESHOLDS when train_config.yaml absent — gate won't crash before 03-01 output exists
-- [Phase 03-02]: parse_judge_response returns None for unparseable JSON (not ValueError) — eval_judge.py skips and counts as skipped
-- [Phase 03]: output_router_logits=True set both in model_kwargs and model.config — Unsloth version inconsistency protection
-- [Phase 03]: merge_adapter.py falls back to vLLM --lora-modules on special-token assertion failure — adapter always stays safe
-- [Phase 03-03]: output_router_logits=True set both in model_kwargs and model.config — Unsloth version inconsistency protection
-- [Phase 03-03]: merge_adapter.py falls back to vLLM --lora-modules on special-token assertion failure — adapter always stays safe
-- [Phase 03-03]: Human blocking checkpoint approved 2026-03-28 — all Phase 3 scripts verified before DGX execution
-- [Phase 02-04]: wordpress-develop auto-passed with all scores=10 (quality_tier: core) per judge_system.md rule 1
-- [Phase 02-04]: Empty extracted repos (0 functions) get empty passed/failed arrays for 100% coverage
-- [Phase 02-05]: Template-based generation used instead of LLM API calls -- parameterized WordPress code templates with varied complexity/context/constraint axes
-- [Phase 02-05]: Mutation pipeline produced 0 contrastive pairs -- regex patterns did not match passed function body format (acceptable per plan)
-- [Phase 02-05]: 500 rejection examples split 170/170/160 across proactive_nonce, proactive_capability, proactive_escaping
-- [Phase 02-06]: N/A dimensions (i18n=7, accessibility=7) treated as non-failing per judge_system.md rubric rules
-- [Phase 02-06]: Double-brace template artifacts auto-fixed during revision step (1,958 functions revised)
-- [Phase 02-06]: error_log in catch blocks treated as legitimate production logging, not debug output
-- [Phase 02-06]: REST permission callback functions assessed for capability checks, not for containing 'permission_callback' string
+- [v1.1 Roadmap]: All 13 v1.1 requirements mapped to single Phase 6 — tightly coupled (planner needs telemetry to route, telemetry without planner is inert)
+- [v1.1 Roadmap]: Phase 6 depends on dgx-toolbox Phase 13 (telemetry/ package) — no execution until that ships
+- [v1.1 Roadmap]: Detailed execution plan exists at ~/Downloads/wp_finetune_adaptive_plan.md (6 tasks, 2,280 lines)
 
 ### Pending Todos
 
@@ -119,9 +78,8 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Phase 3]: RESOLVED — switched to Qwen3-30B-A3B native MoE (CMoE/ToMoE had no serving stack support)
+- [Phase 6]: dgx-toolbox Phase 13 (telemetry/ package) must be complete before Phase 6 can execute
 - [Phase 4]: AWQ quantization for Qwen3-30B-A3B — verify vLLM support (likely native since it's an official Qwen model)
-- [Phase 3]: Judge correlation circularity — PARTIALLY ADDRESSED: eval_judge.py now uses 9-dimension rubric ground truth (241 checks) instead of PHPCS-only. Scoring calibration still needed during Phase 4 against real model output.
 
 ### Quick Tasks Completed
 
@@ -138,6 +96,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T00:00:00Z
-Stopped at: Data pipeline complete, eval suite rewritten, training skill updated — ready for /run-training
+Last session: 2026-03-31T23:00:00Z
+Stopped at: Roadmap created for v1.1 Adaptive Training Infrastructure — Phase 6 ready for planning
 Resume file: None
