@@ -1,134 +1,186 @@
 # Technology Stack
 
-**Analysis Date:** 2026-03-26
+**Analysis Date:** 2026-03-31
 
 ## Languages
 
 **Primary:**
-- Python 3.10+ - Data pipeline orchestration, all phases of extraction, judging, generation, and export
-- PHP - Code analysis via PHP tokenizer for function extraction and PHPCS compliance checking
-- JSON - Structured data interchange between pipeline stages
-- YAML - Configuration files (repos, taxonomy, prompts, judge system)
+- Python 3.11+ - All pipeline scripts, training, evaluation, orchestration (uses `dict[str, Any]`, `X | None` syntax)
+- PHP - Code extraction (`scripts/php_extract_functions.php`), PHPCS/PHPStan evaluation targets
 
 **Secondary:**
-- Markdown - Documentation and system prompts
+- YAML - All configuration (`config/*.yaml`, 12 config files)
+- Jinja2 - Chat templates for tokenizer (`adapters/tokenizer/chat_template.jinja`)
+- Bash - DGX Toolbox container scripts (external, referenced via `config/dgx_toolbox.yaml`)
+- Markdown - System prompts (`config/judge_system.md`), documentation
 
 ## Runtime
 
 **Environment:**
-- Python 3.10+ (required by core scripts and SDK dependencies)
-- PHP CLI (required for tokenization and PHPCS execution)
-- Composer (for managing PHP_CodeSniffer dependencies)
+- Python 3.11+ (type hint syntax requires it)
+- NVIDIA DGX Spark (unified memory architecture, 128GB system RAM shared between CPU and GPU)
+- Docker containers managed by DGX Toolbox (`~/dgx-toolbox/`)
+- Container `unsloth-headless` is the primary training environment
 
 **Package Manager:**
-- pip (Python package manager)
-- Composer (PHP package manager)
+- pip (no `requirements.txt` or `pyproject.toml` in repo)
+- Dependencies pinned in `config/dgx_toolbox.yaml` under `pinned_versions`
+- Lockfile: missing (config-based pinning instead)
 
 ## Frameworks
 
-**Core:**
-- No traditional web frameworks - this is a data pipeline, not a web service
-- anthropic Python SDK - Claude API integration for code judging and generation
-- pyyaml - YAML configuration parsing
+**Core ML (Training):**
+- Unsloth (`FastLanguageModel`) - Model loading with MoE support, LoRA application, gradient checkpointing mode "unsloth"
+- HuggingFace Transformers 4.56.2 - `AutoTokenizer`, `AutoModelForCausalLM`, `TrainerCallback`
+- TRL 0.24.0 - `SFTTrainer`, `SFTConfig` for supervised fine-tuning
+- PEFT - `PeftModel` for LoRA adapter loading, merging via `merge_and_unload()`
+- PyTorch (bfloat16) - Tensor operations, model inference, gradient computation
 
-**Extraction & Analysis:**
-- PHP tokenizer extension (built-in to PHP) - function boundary detection, dependency extraction
-- PHP_CodeSniffer - WordPress Coding Standards compliance checking via `phpcs` CLI
-- WordPress-Coding-Standards (WPCS) - Rulesets for `phpcs`
+**Data:**
+- HuggingFace Datasets 4.3.0 - Dataset loading from JSONL files via `load_dataset("json", ...)`
+- HuggingFace Hub 0.34.1 - Model download via `snapshot_download()` with resume support
 
-**Build/Dev:**
-- Standard Python subprocess for Git operations and external tool execution
+**Evaluation:**
+- PHPCS (3 standards: WordPress, WordPressVIPMinimum, Security) - Static analysis via subprocess in `eval/rubric_scorer.py`
+- PHPStan (level 5) - Type analysis via subprocess in `eval/rubric_scorer.py`
+- scipy.stats.spearmanr - Spearman correlation for judge evaluation in `eval/eval_judge.py`
+- OpenAI Python client - Talks to local vLLM endpoint (not OpenAI servers)
+
+**Experiment Tracking:**
+- MLflow - Local SQLite store at `mlruns.db`, experiment name "wp-qwen3-moe", configured in `scripts/train_model.py`
+
+**Testing:**
+- pytest (inferred from `tests/test_*.py` structure)
 
 ## Key Dependencies
 
-**Critical (required):**
-- anthropic - Python SDK for Claude API access (`scripts/phase1_judge.py`, `phase2_generate.py`, `phase2_judge.py`, `phase2_judge_dataset.py`, `phase3_cot.py`)
-- pyyaml - YAML parsing for `config/repos.yaml`, `config/taxonomy.yaml`, `config/synthetic_prompts.yaml` (`scripts/phase1_clone.py`, `phase1_extract.py`, `phase1_judge.py`, `phase2_gap_analysis.py`, `phase2_generate.py`)
+**Critical (pinned in `config/dgx_toolbox.yaml`):**
+- `transformers==4.56.2` - Core model loading and tokenization
+- `trl==0.24.0` - SFTTrainer for fine-tuning
+- `datasets==4.3.0` - Training data loading
+- `bitsandbytes==0.48.0` - Quantization support (load_in_4bit is LOCKED to False for MoE)
+- `huggingface_hub==0.34.1` - Model download with resume
 
-**Infrastructure (external tools, not Python packages):**
-- git (shallow cloning of repositories in `scripts/phase1_clone.py`)
-- phpcs (PHP_CodeSniffer CLI for WPCS compliance checking in `scripts/phase1_judge.py`)
-- php (CLI executable with tokenizer extension enabled)
+**Infrastructure (installed as extra_deps in containers):**
+- `unsloth` - FastLanguageModel wrapper, gradient checkpointing; NOT version-pinned (container-provided)
+- `peft` - LoRA adapter management and merge
+- `mlflow` - Experiment tracking to local SQLite
+- `pyyaml` - Config file parsing (used in every script)
+- `python-dotenv` - `.env` file loading for API keys
+- `scipy` - Spearman correlation in eval
+- `hf_transfer` - Faster model downloads
+
+**Data Pipeline Only:**
+- `anthropic` - Claude API client for synthetic generation, judging (`scripts/utils.py`, `scripts/phase2_generate.py`)
+- `openai` - OpenAI-compatible client for vLLM inference endpoint (`eval/eval_gen.py`, `eval/eval_judge.py`)
 
 ## Configuration
 
 **Environment:**
-- ANTHROPIC_API_KEY - Required environment variable for Claude API access
-  - Set via shell before running scripts
-  - Used by `anthropic.Anthropic()` initialization in phase1_judge.py, phase2_generate.py, phase2_judge.py, phase2_judge_dataset.py, phase3_cot.py
+- `.env` file present - contains `ANTHROPIC_API_KEY` (for data pipeline phases, not training)
+- `.env.example` documents required variables
+- `DGX_TOOLBOX_PATH` env var - overrides toolbox location (default: `~/dgx-toolbox`)
 
-**Build:**
-- No traditional build system
-- Python scripts executed directly via `python scripts/phase*.py`
-- Installation of dependencies documented in README.md:
-  ```bash
-  pip install anthropic pyyaml
-  composer global require squizlabs/php_codesniffer wp-coding-standards/wpcs
-  ```
+**Training configs (ratio variants for ablation studies):**
+- `config/train_config.yaml` - Default training configuration (active)
+- `config/train_config_30_70.yaml` through `config/train_config_70_30.yaml` - Gen/judge ratio variants
+- All share identical LoRA and model settings; differ only in data paths, output_dir, and dataloader settings
+
+**Pipeline configs:**
+- `config/dgx_toolbox.yaml` - Container mapping, pinned versions, ports, validation paths, required imports
+- `config/repos.yaml` - WordPress repository list (core + plugins with quality tiers)
+- `config/taxonomy.yaml` - Training tag taxonomy and coverage minimums
+- `config/synthetic_prompts.yaml` - Prompt templates for synthetic generation
+- `config/judge_system.md` - 9-dimension judging rubric system prompt
+- `config/wp-bench.yaml` - wp-bench evaluation configuration (vLLM endpoint, grader config)
+
+## Model Specification
+
+**Base Model:**
+- Qwen3-30B-A3B (`Qwen/Qwen3-30B-A3B` on HuggingFace)
+- Native MoE architecture: ~30B total params, ~3B active per forward pass
+- 128 experts, top-8 routing
+- Stored at `models/Qwen3-30B-A3B/` (16 safetensors shards, ~60GB)
+- BF16 precision (load_in_4bit=False is LOCKED -- no QLoRA for MoE)
+- MoE load balancing: `output_router_logits=True` set on model.config
+
+**LoRA Configuration (from `config/train_config.yaml`):**
+- r=32, alpha=64, dropout=0.05
+- Target modules: `q_proj`, `k_proj`, `v_proj`, `o_proj`, `gate_up_proj`, `down_proj`
+- modules_to_save: `embed_tokens`, `lm_head` (LOCKED for custom token embeddings)
+- Gradient checkpointing: `use_gradient_checkpointing="unsloth"` mode
+- bias: "none"
+
+**Custom Tokens:**
+- `<wp_gen>` - Routes to code generation mode
+- `<wp_judge>` - Routes to structured critique/scoring mode
+- Mean-initialized from existing embedding average in `scripts/prepare_tokenizer.py`
+
+**Training Hyperparameters:**
+- SFT with cosine LR schedule, warmup_ratio=0.05
+- Effective batch size: 16 (per_device_batch=4 x gradient_accumulation=4)
+- Max sequence length: 4096
+- 2 epochs, learning_rate=2e-4
+- BF16 mixed precision (fp16=False explicitly)
+- Checkpoints saved every 400 steps, eval every 200 steps
+- Dataloader: 3 workers, persistent, prefetch_factor=3
+
+**Adapter Outputs:**
+- Training saves to `adapters/qwen3-wp/` (or ratio-specific dirs like `adapters/qwen3-30b-wp-40_60/`)
+- Checkpoints at `adapters/qwen3-wp/checkpoint-{N}/` (every save_steps)
+- Merged models at `models/qwen3-30b-wp-{ratio}-merged/`
+
+## Memory Management
+
+**MemoryWatchdogCallback** (`scripts/train_model.py` line 261):
+- Custom `TrainerCallback` that monitors `/proc/meminfo` every training step
+- Threshold: 2048 MB available RAM (OOM_WATCHDOG_THRESHOLD_MB)
+- On trigger: sets `control.should_save=True` and `control.should_training_stop=True`
+- Saves emergency checkpoint before OOM killer strikes
+- Critical for DGX Spark unified memory where GPU/CPU compete for same pool
+
+**Pre-training Memory Check** (`scripts/train_model.py` line 59):
+- Reads `/proc/meminfo` (fallback: psutil) before loading 63GB model
+- Minimum 70GB free required (MIN_FREE_MEMORY_GB)
+- Shows top memory consumers and Docker containers if insufficient
+- Exits with actionable suggestions if check fails
+
+## Telemetry System
+
+**Observer Agents** (documented in `docs/wp-finetune:observe-training.md`):
+- 6-agent team spawned as background Claude Code agents
+- GPU metrics, thermal/throttling, training metrics, disk I/O, checkpoint integrity, container monitor
+- Write to `telemetry/training/{timestamp}/` as Markdown files
+- 30-second polling intervals
+- Stop via `_stop` sentinel file
+
+**Review** (documented in `docs/wp-finetune:review-telemetry.md`):
+- Reads telemetry files and produces consolidated `_summary.md`
+- Extracts WARNING/CRITICAL flags, key metrics, timeline
 
 ## Platform Requirements
 
 **Development:**
-- Linux/macOS/Windows with Python 3.10+ and PHP 7.4+ (with tokenizer extension)
-- PHPCS and WordPress-Coding-Standards installed and accessible in PATH
-- 500MB+ disk space for cloned repositories (phase1_extraction/repos/)
-- Network access to GitHub for repository cloning
-- Network access to Anthropic API (api.anthropic.com)
+- Python 3.11+
+- PHP + PHPCS with WordPress-Extra, WordPressVIPMinimum, Security standards
+- PHPStan (optional, for full rubric scoring)
+- Docker (for DGX Toolbox container management)
+- ~60GB disk for base model, ~2GB per adapter checkpoint
 
-**Production (Target Infrastructure):**
-- DGX Spark (Blackwell GB10, 128GB unified memory) via DGX Toolbox
-- Runs data pipeline to generate training datasets for subsequent model training phases
-- No external service dependencies beyond Anthropic API during pipeline execution
+**Training (Production):**
+- NVIDIA DGX Spark with unified memory (128GB)
+- Docker with NVIDIA runtime
+- DGX Toolbox (`~/dgx-toolbox/`) for container orchestration
+- Minimum 70GB free system RAM before model loading
+- Container: `unsloth-headless` via `~/dgx-toolbox/containers/unsloth-headless-sync.sh`
+- Training duration: 6-12 hours per run
 
-## Data Formats
-
-**Input:**
-- YAML files for configuration (`config/repos.yaml`, `config/taxonomy.yaml`, `config/synthetic_prompts.yaml`)
-- Markdown for judge system instructions (`config/judge_system.md`)
-- PHP source code from cloned repositories
-
-**Intermediate (Pipeline States):**
-- JSON files for extracted functions (`phase1_extraction/output/extracted/`)
-- JSON files for assessment results (`phase1_extraction/output/passed/`, `phase1_extraction/output/failed/`)
-- JSON files for gap analysis (`phase2_synthetic/gap_report.json`)
-- JSON files for generated synthetic examples (`phase2_synthetic/output/generated/`)
-- JSON files for mutated code pairs (`phase2_synthetic/output/mutated/`)
-- JSON files for judge training data (`phase2_synthetic/output/judge_training/`)
-
-**Output:**
-- JSONL (line-delimited JSON) - Final training data with CoT (`final_dataset/wordpress_finetune.jsonl`)
-- JSONL (OpenAI format) - `final_dataset/openai_{train,val,test}.jsonl`
-- JSON (Alpaca format) - `final_dataset/alpaca_{train,val,test}.json`
-- JSONL (raw with metadata) - `final_dataset/raw_{train,val,test}.jsonl`
-- JSON metadata - `final_dataset/metadata.json`
-
-## API Clients & Endpoints
-
-**Anthropic Claude API:**
-- Endpoint: api.anthropic.com (implicit in SDK)
-- Models used:
-  - `claude-sonnet-4-6-20250514` - Most judgments, instruction synthesis, basic generation
-  - `claude-opus-4-6-20250514` - Chain-of-thought reasoning (more expensive, better quality)
-- Rate limiting: 40-50 requests per minute enforced in code via `REQUEST_INTERVAL = 60.0 / REQUESTS_PER_MINUTE`
-
-**Git (GitHub):**
-- Shallow clones from GitHub URLs specified in `config/repos.yaml`
-- Read-only access (no push/PR operations)
-- Uses git CLI via subprocess
-
-## Caching & Storage
-
-**Local Filesystem:**
-- `phase1_extraction/repos/` - Cloned source repositories
-- `phase1_extraction/output/` - Extracted and assessed functions
-- `phase2_synthetic/output/` - Generated, judged, and mutated code
-- `phase3_cot/output/` - CoT processing checkpoints (every 500 examples)
-- `final_dataset/` - Final training dataset in multiple formats
-
-**No Database:**
-- All data persisted as JSON/JSONL files
-- No SQL database, cache server, or external storage service
+**Inference (Production):**
+- vLLM server (via DGX Toolbox) on port 8020
+- LiteLLM proxy on port 4000 (optional)
+- OpenAI-compatible API endpoint
+- Supports both merged model and adapter-only serving (`--lora-modules` fallback)
 
 ---
 
-*Stack analysis: 2026-03-26*
+*Stack analysis: 2026-03-31*
