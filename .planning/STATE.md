@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: executing
-stopped_at: Completed 06-adaptive-training-planner/06-02-PLAN.md
-last_updated: "2026-04-01T05:29:53.953Z"
+stopped_at: Completed 06-adaptive-training-planner/06-03-PLAN.md
+last_updated: "2026-04-01T05:43:36.859Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 4
-  completed_plans: 2
+  completed_plans: 3
   percent: 61
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 ## Current Position
 
 Phase: 06 (adaptive-training-planner) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-04-01
 
@@ -64,6 +64,7 @@ Progress: [██████░░░░] 61%
 | Phase 02-dataset-production P06 | 5 | 2 tasks | 37 files |
 | Phase 06-adaptive-training-planner P01 | 18 | 2 tasks | 3 files |
 | Phase 06-adaptive-training-planner P02 | 8 | 2 tasks | 2 files |
+| Phase 06-adaptive-training-planner P03 | 8 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,8 @@ Recent decisions affecting current work:
 - [Phase 06-01]: IO bottleneck guard skips Rung 1 batch when gpu_util<30 AND watts<30 to avoid dataloader stall thrashing
 - [Phase 06-adaptive-training-planner]: Unsloth override detection via trainer.args inspection (post-build, pre-train) — safe and deterministic, no print monkey-patching
 - [Phase 06-adaptive-training-planner]: GPUSampler False sentinel in MemoryWatchdogCallback — prevents retry on every step when telemetry import fails
+- [Phase 06-adaptive-training-planner]: adaptive-planner skill is a thin wrapper: all decision logic stays in scripts/adaptive_planner.py (HIGH review concern addressed)
+- [Phase 06-adaptive-training-planner]: Canonical JSONL schema updated to GPUSampler fields (watts, temperature_c, gpu_util_pct, mem_available_gb) — old field names deprecated
 
 ### Pending Todos
 
@@ -106,6 +109,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T05:29:53.950Z
-Stopped at: Completed 06-adaptive-training-planner/06-02-PLAN.md
+Last session: 2026-04-01T05:43:36.855Z
+Stopped at: Completed 06-adaptive-training-planner/06-03-PLAN.md
 Resume file: None

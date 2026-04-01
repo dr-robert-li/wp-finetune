@@ -97,9 +97,9 @@ Requirements for power-primary adaptive planner. Depends on dgx-toolbox Phase 13
 
 ### Warmup and Anchors
 
-- [ ] **PROB-01**: Warmup probe runs 3-5 real training steps (via dgx-toolbox probe.py) when batch increased without anchor
-- [ ] **PROB-02**: Anchor store persists config+outcome history with config hashing, cooldown tracking, and hard caps
-- [ ] **PROB-03**: run-training Step 8.5 replaced with adaptive-planner skill invocation
+- [x] **PROB-01**: Warmup probe runs 3-5 real training steps (via dgx-toolbox probe.py) when batch increased without anchor
+- [x] **PROB-02**: Anchor store persists config+outcome history with config hashing, cooldown tracking, and hard caps
+- [x] **PROB-03**: run-training Step 8.5 replaced with adaptive-planner skill invocation
 
 ## v2 Requirements
 
@@ -184,9 +184,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TELE-02 | Phase 6 | Complete |
 | TELE-03 | Phase 6 | Complete |
 | TELE-04 | Phase 6 | Complete |
-| PROB-01 | Phase 6 | Pending |
-| PROB-02 | Phase 6 | Pending |
-| PROB-03 | Phase 6 | Pending |
+| PROB-01 | Phase 6 | Complete |
+| PROB-02 | Phase 6 | Complete |
+| PROB-03 | Phase 6 | Complete |
 
 **Coverage:**
 - v1 requirements: 37 total (37 complete)
