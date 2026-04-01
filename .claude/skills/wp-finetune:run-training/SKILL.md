@@ -76,6 +76,8 @@ Use AskUserQuestion for selection. Store as `$SELECTED_RATIOS` list.
 
 Choose which telemetry collectors to run. Both feed the same **canonical thermal log** — a single JSONL file per run that drives adaptive resource planning (Step 8.5).
 
+**Note:** Both telemetry modes also record power draw (watts) via `MemoryWatchdogCallback`, which calls `GPUSampler.append_jsonl` every 50 training steps. This provides a continuous within-run power draw record in the canonical JSONL even when external observe agents are not running. The adaptive planner uses `avg_watts` as the primary signal for zone classification when available.
+
 Use AskUserQuestion:
 - header: "Telemetry"
 - question: "Select telemetry mode. Both options write to the same canonical thermal log used by adaptive resource planning."
@@ -115,19 +117,23 @@ telemetry/training/{model_short}_{date}_{ratio}_thermal.jsonl
 - `{ratio}` = dataset ratio (e.g., `30_70`)
 - Example: `telemetry/training/qwen3-30b_20260330_30_70_thermal.jsonl`
 
-**JSONL schema** (one line per reading):
+**JSONL schema** (one line per reading) — GPUSampler output fields:
 
 ```jsonl
-{"ts": "2026-03-30T06:57:47Z", "gpu_util": 82, "temp": 65, "vram_used_mb": null, "sys_ram_used_mb": 109568, "sys_ram_total_mb": 122368, "source": "monitor"}
-{"ts": "2026-03-30T06:58:17Z", "gpu_util": 85, "temp": 66, "vram_used_mb": 92493, "sys_ram_used_mb": 109568, "sys_ram_total_mb": 122368, "source": "observe-agent"}
+{"ts": "2026-03-30T06:57:47Z", "watts": 62.5, "temperature_c": 65, "gpu_util_pct": 82, "mem_available_gb": 28.4, "page_cache_gb": 12.1, "mock": false}
+{"ts": "2026-03-30T06:58:17Z", "watts": 78.2, "temperature_c": 66, "gpu_util_pct": 85, "mem_available_gb": 26.8, "page_cache_gb": 11.9, "mock": false}
 ```
 
-**Memory fields:**
-- `vram_used_mb` — nvidia-smi `memory.used`. Reports `null` on unified memory systems (GB10/Grace Hopper).
-- `sys_ram_used_mb` — from `free -m` (total - available). Always available.
-- `sys_ram_total_mb` — from `free -m`. Always available.
-- On unified memory: `sys_ram_used_mb` IS the GPU memory — VRAM and system RAM share the same pool.
-- On discrete GPU: both fields are meaningful and tracked independently.
+**Field definitions (GPUSampler canonical schema):**
+- `watts` (float) — GPU power draw from nvidia-smi. `null` if power meter unavailable.
+- `temperature_c` (int) — GPU temperature in Celsius.
+- `gpu_util_pct` (int) — GPU utilization percentage.
+- `mem_available_gb` (float) — Available memory in GB (unified pool on DGX Spark).
+- `page_cache_gb` (float) — Page cache size in GB (from /proc/meminfo).
+- `mock` (bool) — True when sampler is in mock mode (no real hardware).
+- `ts` (str) — ISO 8601 timestamp.
+
+**Note:** The adaptive planner (`scripts/adaptive_planner.parse_telemetry_jsonl`) reads these exact field names. Observers must write this schema. The old field names (`gpu_util`, `temp`, `vram_used_mb`, `sys_ram_used_mb`) are deprecated.
 
 Store the canonical log path as `$THERMAL_LOG` for this run:
 ```python
@@ -356,7 +362,9 @@ result = dgx.execute(
 print(result.summary())
 ```
 
-### Step 6: Dry run (per-run config)
+### Step 6: Dry run and warmup probe (per-run config)
+
+**6a: Dry run** — validates config without processing real data:
 
 ```python
 result = dgx.execute(
@@ -372,7 +380,58 @@ if not result.ok:
     # STOP
 ```
 
-**Present dry run output to user.** If it shows errors, fix them. If valid, proceed.
+**Present dry run output to user.** If it shows errors, fix them. If valid, proceed to 6b.
+
+**6b: Warmup probe** — only runs if `telemetry/training/_warmup_probe_required` exists (written by Step 8.5 adaptive-planner when a batch size increase was proposed).
+
+On DGX Spark unified memory, a failed batch size allocation can cause a driver-level deadlock (system freeze, no clean CUDA OOM). The warmup probe runs a small number of real training steps at the proposed batch size to confirm memory survives before committing to the full run.
+
+```python
+probe_flag = Path("telemetry/training/_warmup_probe_required")
+if probe_flag.exists():
+    import json
+    probe_meta = json.loads(probe_flag.read_text())
+    probe_steps = 5  # from config/adaptive_planning.yaml probe.steps
+
+    print(f"Warmup probe flagged — running {probe_steps} steps at batch_size={probe_meta['proposed_batch']}")
+
+    # Run training with the probe config (3-5 real steps)
+    result = dgx.execute(
+        "unsloth_studio",
+        "python", "-m", "scripts.train_model",
+        "--config", probe_meta["probe_config_path"],
+        "--max-steps", str(probe_steps),
+        capture=True,
+    )
+
+    if result.ok:
+        # Write probe results for adaptive-planner to evaluate in next Step 8.5
+        import json
+        from pathlib import Path
+        # Record success telemetry — read current memory state
+        probe_results = {"status": "ok", "results_path": probe_meta["results_path"]}
+        Path("telemetry/training/_probe_results.json").write_text(
+            json.dumps(probe_results))
+        print(f"Probe PASSED — proceeding with batch_size={probe_meta['proposed_batch']}")
+    else:
+        # Probe failed — revert to rollback config
+        import shutil
+        shutil.copy(probe_meta["rollback_config_path"], "config/train_config.yaml")
+        print(f"Probe FAILED — reverted to previous batch size")
+        # Re-run dry run with reverted config before proceeding
+        dgx.execute("unsloth_studio", "python", "-m", "scripts.train_model",
+                    "--dry-run", "--config", f"config/train_config_{ratio}.yaml")
+
+    # Always delete the flag — consumed regardless of outcome
+    probe_flag.unlink()
+
+    # Log probe result
+    with open("telemetry/training/adaptive_adjustments.md", "a") as f:
+        status = "PASSED" if result.ok else "FAILED"
+        f.write(f"\n### Warmup probe ({status}) — {ratio}\n"
+                f"- Proposed batch: {probe_meta['proposed_batch']}\n"
+                f"- Outcome: {'committed' if result.ok else 'reverted to rollback config'}\n")
+```
 
 ### Step 7: Train (long-running, per-run isolated)
 
@@ -394,8 +453,8 @@ mkdir -p $TRAIN_TDIR
 Agent(
   description="Telemetry: GPU metrics",
   prompt="You are a GPU metrics observer. Write to {TRAIN_TDIR}/gpu-metrics.md.
-  ALSO append JSONL to {THERMAL_LOG} on each reading:
-    {\"ts\": \"...\", \"gpu_util\": N, \"temp\": N, \"vram_used_mb\": N_or_null, \"sys_ram_used_mb\": N, \"sys_ram_total_mb\": N, \"source\": \"observe-agent\"}
+  ALSO append JSONL to {THERMAL_LOG} on each reading (GPUSampler canonical schema):
+    {\"ts\": \"...\", \"watts\": N_or_null, \"temperature_c\": N, \"gpu_util_pct\": N, \"mem_available_gb\": N, \"page_cache_gb\": N, \"mock\": false}
   LOOP (30s):
     1. nvidia-smi --query-gpu=memory.used,memory.total,utilization.gpu,temperature.gpu --format=csv,noheader,nounits
     2. free -m | grep Mem → parse used and total system RAM
@@ -413,7 +472,7 @@ Agent(
 Agent(
   description="Telemetry: thermal/throttling",
   prompt="You are a GPU thermal observer. Write to {TRAIN_TDIR}/thermal-throttling.md.
-  LOOP (30s): nvidia-smi temp/power/throttle → append. WARNING > 80C. CRITICAL >= 83C → touch {TRAIN_TDIR}/_thermal_pause.
+  LOOP (30s): nvidia-smi temp/power/throttle → append. WARNING > 82C. CRITICAL >= 85C → touch {TRAIN_TDIR}/_thermal_pause.
   STOP: {TRAIN_TDIR}/_stop exists → write Final Summary → exit.",
   run_in_background=true
 )
@@ -619,9 +678,42 @@ print(f"Run {run_name} complete. Thermal log: {THERMAL_LOG}")
 
 ### Step 8.5: Adaptive resource planning (between runs)
 
-**After each run's merge completes and before the next ratio starts**, reassess GPU headroom using telemetry from the just-completed run and adjust training config for the next run.
+**After each run's merge completes and before the next ratio starts**, invoke the adaptive-planner skill to analyze telemetry and adjust config for the next run.
 
 **Requires `$TELEMETRY = true`.** If telemetry is disabled, skip this step entirely (config stays static across all runs).
+
+```
+Invoke skill: wp-finetune:adaptive-planner
+  Variables:
+    $THERMAL_LOG = {path to canonical JSONL for the completed run}
+    $RATIO = {current ratio just completed, e.g. "30_70"}
+    $TELEMETRY = $TELEMETRY
+```
+
+The adaptive-planner skill:
+1. Parses canonical JSONL telemetry via `scripts/adaptive_planner.parse_telemetry_jsonl`
+2. Classifies power zone (THROTTLED/CAPPED/TARGET/MODERATE/UNDERUTILIZED) via `classify_power_zone`
+3. Applies thermal exploitation ladder (batch > prefetch > workers > save_steps > eval_steps) via `apply_ladder`
+4. Writes updated `config/train_config.yaml` for next run
+5. Records config in AnchorStore for probe-backed batch decisions
+6. May flag a warmup probe requirement (see Step 6 below)
+
+If a warmup probe is required (`telemetry/training/_warmup_probe_required` exists after Step 8.5):
+- Step 6 of the NEXT run will execute 3-5 training steps to validate the new batch size
+- If probe passes: new batch size is committed for that run
+- If probe fails: config reverts to the pre-probe values and training proceeds safely
+
+**After Step 8.5**, regenerate the next ratio's config overlay using the updated base config before proceeding to Step 1 of the next ratio.
+
+> **Implementation note:** All decision logic (zone classification, ladder rungs, coupling, anchor lookups) lives in
+> `scripts/adaptive_planner.py` — a tested Python module created in Phase 06 Plan 01. The skill is a thin
+> orchestration wrapper. Do NOT re-implement the algorithm here.
+
+#### 8.5 historical reference (deprecated inline implementation)
+
+The sections below (8.5a through 8.5g) document the original inline algorithm that was replaced by the
+adaptive-planner skill invocation above. They are preserved for reference only and should NOT be used
+to implement new logic. The `scripts/adaptive_planner.py` module supersedes all of these sections.
 
 #### 8.5a: Collect metrics from canonical thermal log
 
@@ -747,8 +839,8 @@ history_file.write_text(json.dumps(history, indent=2))
 
 | Zone | Temp Range | Action |
 |------|-----------|--------|
-| CRITICAL | ≥ 83°C peak | **PAUSE.** Backoff to last WARM config (see 8.5d). Alert user. Wait for temp < 75°C before next run. |
-| HOT | 78-82°C peak | Reduce `batch_size` by 1 (min 1). Increase `grad_accum` to maintain eff_batch. Log warning. |
+| CRITICAL | ≥ 85°C peak | **PAUSE.** Backoff to last WARM config (see 8.5d). Alert user. Wait for temp < 75°C before next run. |
+| HOT | 78-84°C peak | Reduce `batch_size` by 1 (min 1). Increase `grad_accum` to maintain eff_batch. Log warning. |
 | WARM | 72-77°C peak | Hold current config. This is the target zone — no changes needed. |
 | COOL | 65-71°C avg | Headroom available. Proceed to utilization scaling (8.5e). |
 | COLD | < 65°C avg | Significant headroom. Aggressive scaling in 8.5e. |
@@ -1080,7 +1172,7 @@ After the normal dry run succeeds, if the warmup probe flag exists:
 
 During long-running training (Step 7), the telemetry observer agents should also implement a **live thermal guard**:
 
-- If any check sees GPU temp ≥ 83°C: immediately touch `telemetry/training/_thermal_pause`
+- If any check sees GPU temp ≥ 85°C: immediately touch `telemetry/training/_thermal_pause`
 - The orchestrator checks for `_thermal_pause` periodically (or after training completes)
 - If `_thermal_pause` exists when training ends (regardless of exit code):
   1. Record the thermal event in `thermal_history.json` and `adaptive_adjustments.md`
