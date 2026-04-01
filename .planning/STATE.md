@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: executing
-stopped_at: Completed 06-adaptive-training-planner/06-01-PLAN.md
-last_updated: "2026-04-01T05:19:49.613Z"
+stopped_at: Completed 06-adaptive-training-planner/06-02-PLAN.md
+last_updated: "2026-04-01T05:29:53.953Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 3
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 ## Current Position
 
 Phase: 06 (adaptive-training-planner) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-04-01
 
@@ -63,6 +63,7 @@ Progress: [██████░░░░] 61%
 | Phase 02-dataset-production P05 | 8 | 2 tasks | 28 files |
 | Phase 02-dataset-production P06 | 5 | 2 tasks | 37 files |
 | Phase 06-adaptive-training-planner P01 | 18 | 2 tasks | 3 files |
+| Phase 06-adaptive-training-planner P02 | 8 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,8 @@ Recent decisions affecting current work:
 - [Phase 06-01]: couple_batch_grad_accum uses round() not // to avoid float precision truncation (0.60/0.40=1.4999 bug)
 - [Phase 06-01]: classify_power_zone returns MODERATE only when BOTH has_batch_headroom AND has_mem_headroom are True
 - [Phase 06-01]: IO bottleneck guard skips Rung 1 batch when gpu_util<30 AND watts<30 to avoid dataloader stall thrashing
+- [Phase 06-adaptive-training-planner]: Unsloth override detection via trainer.args inspection (post-build, pre-train) — safe and deterministic, no print monkey-patching
+- [Phase 06-adaptive-training-planner]: GPUSampler False sentinel in MemoryWatchdogCallback — prevents retry on every step when telemetry import fails
 
 ### Pending Todos
 
@@ -103,6 +106,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T05:19:49.612Z
-Stopped at: Completed 06-adaptive-training-planner/06-01-PLAN.md
+Last session: 2026-04-01T05:29:53.950Z
+Stopped at: Completed 06-adaptive-training-planner/06-02-PLAN.md
 Resume file: None
