@@ -47,6 +47,7 @@ ladder:
   prefetch_cap: 4
   save_steps_cap: 400
   eval_steps_cap: 200
+  downscale_floor: 1     # minimum batch for CAPPED/THROTTLED downscale (SC1)
 
 # Anchor store
 anchors:

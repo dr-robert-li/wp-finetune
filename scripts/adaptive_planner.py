@@ -11,7 +11,7 @@ Functions
 classify_power_zone  — power-zone routing from telemetry
 couple_batch_grad_accum — batch/grad_accum coupling with round()
 compute_batch_ceiling — tier-based batch cap from effective_scale API
-apply_ladder         — thermal exploitation ladder (rungs 1-5)
+apply_ladder         — thermal exploitation ladder (rungs 1-5, plus downscale for CAPPED/THROTTLED)
 parse_telemetry_jsonl — canonical JSONL telemetry reader
 
 All threshold values come from a config dict parameter — none are hardcoded.
@@ -24,15 +24,9 @@ import warnings
 from pathlib import Path
 from typing import Any, Callable
 
-# Public re-export so tests can patch scripts.adaptive_planner._effective_scale_compute
 from telemetry.effective_scale import compute as _effective_scale_compute
 
 logger = logging.getLogger(__name__)
-
-
-# ---------------------------------------------------------------------------
-# Power-zone routing
-# ---------------------------------------------------------------------------
 
 def classify_power_zone(
     avg_watts: float | None,
@@ -78,23 +72,18 @@ def classify_power_zone(
     capped_min_watts: float = pz["capped_min_watts"]  # 80 W
     target_min_watts: float = pz["target_min_watts"]   # 50 W
 
-    # ---- 1. Thermal brake (highest priority) --------------------------------
     if peak_temp >= warning_temp:
         return "THROTTLED"
 
-    # ---- 2. Watts-based routing (primary signal) ----------------------------
     if avg_watts is not None:
         if avg_watts >= capped_min_watts:
             return "CAPPED"
         if avg_watts >= target_min_watts:
-            # Refine TARGET -> MODERATE when both headrooms available
             if has_batch_headroom and has_mem_headroom:
                 return "MODERATE"
             return "TARGET"
-        # Below target_min_watts
         return "UNDERUTILIZED"
 
-    # ---- 3. GPU util proxy (watts unavailable) ------------------------------
     if avg_gpu_util >= 90:
         return "CAPPED"
     if avg_gpu_util >= 70:
@@ -104,11 +93,6 @@ def classify_power_zone(
     if avg_gpu_util >= 30:
         return "TARGET"
     return "UNDERUTILIZED"
-
-
-# ---------------------------------------------------------------------------
-# Batch / grad-accum coupling
-# ---------------------------------------------------------------------------
 
 def couple_batch_grad_accum(
     effective_batch: int,
@@ -143,14 +127,11 @@ def couple_batch_grad_accum(
     if new_batch <= 0:
         raise ValueError(f"new_batch must be positive, got {new_batch}")
 
-    # Step 1: exact divisor check
     if effective_batch % new_batch == 0:
         return effective_batch // new_batch
 
-    # Step 2: round-based coupling (avoids float truncation e.g. 0.60/0.40=1.4999)
     grad_accum = max(1, round(effective_batch / new_batch))
 
-    # Step 3: drift check (soft)
     actual_effective = new_batch * grad_accum
     drift = abs(actual_effective - effective_batch)
     if drift > max_drift:
@@ -161,11 +142,6 @@ def couple_batch_grad_accum(
         )
 
     return grad_accum
-
-
-# ---------------------------------------------------------------------------
-# Batch ceiling from effective_scale API
-# ---------------------------------------------------------------------------
 
 def compute_batch_ceiling(
     model_config: dict,
@@ -209,14 +185,8 @@ def compute_batch_ceiling(
         "min_headroom_pct": result["tier"]["min_headroom_pct"],
     }
 
-
-# ---------------------------------------------------------------------------
-# Thermal exploitation ladder
-# ---------------------------------------------------------------------------
-
 _RUNG_NAMES = ["rung_1_batch", "rung_2_prefetch", "rung_3_workers",
                "rung_4_save_steps", "rung_5_eval_steps"]
-
 
 def apply_ladder(
     current_config: dict,
@@ -274,21 +244,39 @@ def apply_ladder(
     max_gb: float = wb_cfg["max_gb"]                       # 2.0
     hard_cap_uma: int = wb_cfg["hard_cap_uma"]             # 6
 
-    # Determine step_size: 1 for >13B effective tier (Qwen3-30B-A3B), 2 for <=13B
     step_size: int = ladder_cfg["step_size_large"]  # 1 (>13B)
 
     delta: dict[str, Any] = {"rungs_applied": []}
 
-    # Only climb when zone is MODERATE or UNDERUTILIZED
-    active_zones = ("MODERATE", "UNDERUTILIZED")
-    if power_zone not in active_zones:
+    # Downscale zones: reduce batch toward floor to shed thermal/power load
+    downscale_zones = ("CAPPED", "THROTTLED")
+    if power_zone in downscale_zones:
+        downscale_floor: int = ladder_cfg.get("downscale_floor", 1)
+        current_batch_ds: int = current_config.get("per_device_train_batch_size", 4)
+        current_grad_accum_ds: int = current_config.get("gradient_accumulation_steps", 4)
+        effective_batch_ds: int = current_batch_ds * current_grad_accum_ds
+
+        if current_batch_ds > downscale_floor:
+            new_batch_ds = downscale_floor
+            new_grad_accum_ds = couple_batch_grad_accum(effective_batch_ds, new_batch_ds)
+            delta["per_device_train_batch_size"] = new_batch_ds
+            delta["gradient_accumulation_steps"] = new_grad_accum_ds
+            delta["reason_batch"] = (
+                f"Downscale: batch {current_batch_ds} -> {new_batch_ds}, "
+                f"grad_accum {current_grad_accum_ds} -> {new_grad_accum_ds} "
+                f"(zone={power_zone}, effective_batch kept ~{effective_batch_ds})"
+            )
+            delta["rungs_applied"].append("rung_1_batch_downscale")
         return delta
 
-    # I/O Bottleneck Guard — skip Rung 1 (batch) when GPU is starved for data
+    # Only climb when zone is MODERATE or UNDERUTILIZED
+    upscale_zones = ("MODERATE", "UNDERUTILIZED")
+    if power_zone not in upscale_zones:
+        return delta
+
     io_bottleneck = (avg_gpu_util < io_util_thresh and
                      (avg_watts is None or avg_watts < io_watts_thresh))
 
-    # ---- Rung 1: Batch size -------------------------------------------------
     current_batch: int = current_config.get("per_device_train_batch_size", 4)
     current_grad_accum: int = current_config.get("gradient_accumulation_steps", 4)
     effective_batch: int = current_batch * current_grad_accum
@@ -305,7 +293,6 @@ def apply_ladder(
         )
         delta["rungs_applied"].append("rung_1_batch")
 
-    # ---- Rung 2: Prefetch factor --------------------------------------------
     current_prefetch: int = current_config.get("dataloader_prefetch_factor", 2)
     if current_prefetch < prefetch_cap:
         new_prefetch = current_prefetch + 1
@@ -315,7 +302,6 @@ def apply_ladder(
         )
         delta["rungs_applied"].append("rung_2_prefetch")
 
-    # ---- Rung 3: Workers ----------------------------------------------------
     current_workers: int = current_config.get("dataloader_num_workers", 2)
     used_prefetch = delta.get("dataloader_prefetch_factor", current_prefetch)
     worker_mem_gb = (current_workers + 1) * used_prefetch * avg_sample_mb / 1024
@@ -328,7 +314,6 @@ def apply_ladder(
         )
         delta["rungs_applied"].append("rung_3_workers")
 
-    # ---- Rung 4: save_steps (doubles, capped) --------------------------------
     current_save: int = current_config.get("save_steps", 200)
     if current_save < save_steps_cap:
         new_save = min(current_save * 2, save_steps_cap)
@@ -336,7 +321,6 @@ def apply_ladder(
         delta["reason_save_steps"] = f"Rung 4: save_steps {current_save} -> {new_save}"
         delta["rungs_applied"].append("rung_4_save_steps")
 
-    # ---- Rung 5: eval_steps (doubles, capped) --------------------------------
     current_eval: int = current_config.get("eval_steps", 100)
     if current_eval < eval_steps_cap:
         new_eval = min(current_eval * 2, eval_steps_cap)
@@ -344,17 +328,11 @@ def apply_ladder(
         delta["reason_eval_steps"] = f"Rung 5: eval_steps {current_eval} -> {new_eval}"
         delta["rungs_applied"].append("rung_5_eval_steps")
 
-    # ---- Sticky settings (UMA: pin_memory always False) ---------------------
     delta["dataloader_pin_memory"] = False
     if current_config.get("dataloader_persistent_workers", False):
         delta["dataloader_persistent_workers"] = True  # never reverts once True
 
     return delta
-
-
-# ---------------------------------------------------------------------------
-# Telemetry JSONL reader
-# ---------------------------------------------------------------------------
 
 def parse_telemetry_jsonl(jsonl_path: str | Path) -> dict | None:
     """Parse a canonical telemetry JSONL file into a summary dict.
@@ -394,7 +372,6 @@ def parse_telemetry_jsonl(jsonl_path: str | Path) -> dict | None:
             except json.JSONDecodeError:
                 logger.warning("parse_telemetry_jsonl: skipping invalid JSON line: %r", line)
 
-    # Skip first 2 readings (warm-up noise)
     records = records[2:]
 
     if len(records) < 3:
