@@ -104,6 +104,16 @@ None - no external service configuration required.
 - Config file at `config/adaptive_planning.yaml` provides canonical threshold source for all downstream consumers
 - Plan 02 should wire `parse_telemetry_jsonl` output to `classify_power_zone` and `apply_ladder` calls
 
+## Self-Check: PASSED
+- FOUND: scripts/adaptive_planner.py
+- FOUND: config/adaptive_planning.yaml
+- FOUND: tests/test_adaptive_planner.py
+- FOUND: .planning/phases/06-adaptive-training-planner/06-01-SUMMARY.md
+- FOUND commit: c631ce4 (TDD RED)
+- FOUND commit: 1ae4bbb (TDD GREEN)
+- FOUND commit: f8fe410 (Task 2 config)
+- FOUND commit: 1395c7a (metadata)
+
 ---
 *Phase: 06-adaptive-training-planner*
 *Completed: 2026-04-01*
