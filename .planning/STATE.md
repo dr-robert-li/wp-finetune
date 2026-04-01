@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Adaptive Training Infrastructure
-status: ready_to_plan
-stopped_at: Roadmap created for v1.1 — Phase 6 ready for planning
-last_updated: "2026-03-31T23:00:00.000Z"
-last_activity: 2026-03-31 - Roadmap created for v1.1 Adaptive Training Infrastructure
+milestone: v1.0
+milestone_name: MVP
+status: executing
+stopped_at: Completed 06-adaptive-training-planner/06-01-PLAN.md
+last_updated: "2026-04-01T05:19:49.613Z"
+last_activity: 2026-04-01
 progress:
-  total_phases: 6
-  completed_phases: 3
-  total_plans: 18
-  completed_plans: 11
+  total_phases: 3
+  completed_phases: 0
+  total_plans: 4
+  completed_plans: 2
   percent: 61
 ---
 
@@ -21,20 +21,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-31)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 6 — Adaptive Training Planner (v1.1, blocked on dgx-toolbox Phase 13)
+**Current focus:** Phase 06 — adaptive-training-planner
 
 ## Current Position
 
-Phase: 6 of 6 (Adaptive Training Planner)
-Plan: -- (not yet planned)
-Status: Ready to plan (pending dgx-toolbox Phase 13 completion)
-Last activity: 2026-03-31 - Roadmap created for v1.1
+Phase: 06 (adaptive-training-planner) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-04-01
 
 Progress: [██████░░░░] 61%
 
 ## Performance Metrics
 
 **Velocity:**
+
 - Total plans completed: 4
 - Average duration: 9 min
 - Total execution time: 0.62 hours
@@ -48,6 +49,7 @@ Progress: [██████░░░░] 61%
 | 03-model-prep-and-training | 2 | 34 min | 17 min |
 
 **Recent Trend:**
+
 - Last 5 plans: 03-02 (22 min), 03-01 (12 min), 01-02 (2 min), 01-01 (25 min)
 - Trend: steady
 
@@ -60,6 +62,7 @@ Progress: [██████░░░░] 61%
 | Phase 02-dataset-production P04 | 3 | 2 tasks | 98 files |
 | Phase 02-dataset-production P05 | 8 | 2 tasks | 28 files |
 | Phase 02-dataset-production P06 | 5 | 2 tasks | 37 files |
+| Phase 06-adaptive-training-planner P01 | 18 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -71,6 +74,10 @@ Recent decisions affecting current work:
 - [v1.1 Roadmap]: All 13 v1.1 requirements mapped to single Phase 6 — tightly coupled (planner needs telemetry to route, telemetry without planner is inert)
 - [v1.1 Roadmap]: Phase 6 depends on dgx-toolbox Phase 13 (telemetry/ package) — no execution until that ships
 - [v1.1 Roadmap]: Detailed execution plan exists at ~/Downloads/wp_finetune_adaptive_plan.md (6 tasks, 2,280 lines)
+- [Phase 06-01]: thermal_brake.warning_temp=82 (raised from 80C per empirical GB10/OEM cooler data)
+- [Phase 06-01]: couple_batch_grad_accum uses round() not // to avoid float precision truncation (0.60/0.40=1.4999 bug)
+- [Phase 06-01]: classify_power_zone returns MODERATE only when BOTH has_batch_headroom AND has_mem_headroom are True
+- [Phase 06-01]: IO bottleneck guard skips Rung 1 batch when gpu_util<30 AND watts<30 to avoid dataloader stall thrashing
 
 ### Pending Todos
 
@@ -96,6 +103,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-31T23:00:00Z
-Stopped at: Roadmap created for v1.1 Adaptive Training Infrastructure — Phase 6 ready for planning
+Last session: 2026-04-01T05:19:49.612Z
+Stopped at: Completed 06-adaptive-training-planner/06-01-PLAN.md
 Resume file: None
