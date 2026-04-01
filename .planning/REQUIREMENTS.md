@@ -91,7 +91,7 @@ Requirements for power-primary adaptive planner. Depends on dgx-toolbox Phase 13
 ### Telemetry
 
 - [x] **TELE-01**: MemoryWatchdogCallback samples GPU power via GPUSampler every 50 steps and writes to canonical JSONL
-- [x] **TELE-02**: Canonical JSONL schema includes power_watts and mem_available_mb fields
+- [x] **TELE-02**: Canonical JSONL schema includes watts and mem_available_gb fields (per GPUSampler API)
 - [x] **TELE-03**: Failure classifier categorizes run outcome as NORMAL/OOM/HANG/THERMAL from telemetry readings
 - [x] **TELE-04**: observe-training thresholds updated from 80C/83C to 82C/85C throughout
 

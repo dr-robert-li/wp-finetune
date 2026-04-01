@@ -60,7 +60,7 @@ extra_mounts:
 #       before the telemetry mount is available. The Python code handles ImportError
 #       gracefully (prints a clear message and exits).
 container_env:
-  PYTHONPATH: "/workspace/dgx-toolbox"
+  PYTHONPATH: "/workspace/dgx-toolbox:/workspace/wp-finetune"
 
 # Container working directory for exec commands
 container_workdir: /workspace/wp-finetune
