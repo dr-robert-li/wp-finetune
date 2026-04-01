@@ -1,280 +1,322 @@
 # Testing Patterns
 
-**Analysis Date:** 2026-03-26
+**Analysis Date:** 2026-03-31
 
 ## Test Framework
 
-**Status:** No automated testing framework detected
+**Runner:**
+- pytest (no version pinned -- installed via pip)
+- Config: No `pytest.ini`, `pyproject.toml`, or `setup.cfg` -- pytest discovers tests via naming convention
 
-**Found:**
-- No pytest, unittest, vitest, or similar test runner configuration
-- No `*_test.py`, `test_*.py`, or `*.spec.py` files in repository
-- No `pytest.ini`, `setup.cfg`, or test configuration files
-- No CI/CD pipeline configuration (no `.github/workflows/`, `.gitlab-ci.yml`, etc.)
+**Assertion Library:**
+- Built-in `assert` statements (pytest rewrites)
+- No additional assertion libraries (no `assertpy`, `hamcrest`, etc.)
 
-## Current Testing Approach
+**Run Commands:**
+```bash
+pytest tests/                    # Run all tests
+pytest tests/test_utils.py       # Run single module
+pytest -v tests/                 # Verbose output
+pytest -k "test_gate"            # Filter by name
+```
 
-All validation occurs **within the pipeline** as runtime quality gates:
+## Test File Organization
 
-### Phase 1: PHPCS Pre-filter
-**Location:** `scripts/phase1_judge.py`, lines 34-71
+**Location:**
+- All tests in `tests/` directory at project root (separate from source, not co-located)
 
+**Naming:**
+- Files: `test_{module_name}.py` matching source module
+- Classes: `TestPascalCase` grouping related tests
+- Functions: `test_descriptive_name` with snake_case
+
+**Structure:**
+```
+tests/
+├── __init__.py                    # Empty namespace package
+├── test_config.py                 # Config file correctness (judge rubric, thresholds)
+├── test_csv_to_repos.py           # CSV-to-repos conversion
+├── test_eval_gate.py              # Quality gate pass/fail logic
+├── test_eval_gen.py               # Generation evaluation (PHPCS, security)
+├── test_eval_judge.py             # Judge evaluation (Spearman, score inversion)
+├── test_export.py                 # Dataset export (ratios, dedup, weights)
+├── test_phase2_judge_dataset.py   # Judge dataset patterns (backoff, checkpoint usage)
+├── test_phase2_mutate.py          # PHPCS hard-fail guard
+├── test_pipeline_integration.py   # Phase 1 checkpoint skip behavior
+├── test_preflight.py              # Preflight check pass/fail
+├── test_prepare_tokenizer.py      # Special token addition, embedding init
+├── test_train_model.py            # Training config, dataset schema, model checks
+└── test_utils.py                  # JSON extraction, checkpoints, backoff, routing
+```
+
+**Fixtures directory:**
+- `tests/fixtures/` contains sample CSV data for `test_csv_to_repos.py`
+
+## Test Structure
+
+**Suite Organization:**
 ```python
-def phpcs_prefilter(code: str, max_errors_per_100_lines: float = 5.0) -> dict:
-    """Run PHPCS as a cheap pre-filter before sending to Claude."""
-    # Wrap bare function in <?php for PHPCS parsing.
-    if not code.strip().startswith("<?php"):
-        code = f"<?php\n{code}"
+# Class-based grouping (test_train_model.py):
+class TestLoraConfigParams:
+    """test_lora_config_params -- assert key hyperparameters are set correctly."""
 
-    try:
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".php", delete=False) as f:
-            f.write(code)
-            tmp_path = f.name
+    def test_lora_r(self):
+        cfg = load_train_config()
+        assert cfg["lora"]["r"] == 32
 
-        result = subprocess.run(
-            ["phpcs", "--standard=WordPress-Extra", "--report=json", tmp_path],
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
+    def test_bf16_enabled(self):
+        cfg = load_train_config()
+        assert cfg["training"]["bf16"] is True
 
-        report = json.loads(result.stdout)
-        file_report = list(report["files"].values())[0]
-        line_count = max(code.count("\n"), 1)
-        error_density = file_report["errors"] / line_count * 100
-
-        return {
-            "passed": error_density <= max_errors_per_100_lines,
-            "errors": file_report["errors"],
-            "warnings": file_report["warnings"],
-            "error_density": round(error_density, 2),
-        }
-    except (subprocess.TimeoutExpired, json.JSONDecodeError, FileNotFoundError):
-        # PHPCS not installed or failed — skip pre-filter, let Claude decide.
-        return {"passed": True, "errors": -1, "warnings": -1, "error_density": 0, "skipped": True}
-    finally:
-        Path(tmp_path).unlink(missing_ok=True)
+# Function-based (test_utils.py):
+def test_extract_json_raw():
+    """Strategy 1: raw JSON string."""
+    result = extract_json('{"verdict":"PASS"}')
+    assert result == {"verdict": "PASS"}
 ```
 
-**Purpose:** Reject high-error-density code before spending API tokens on Claude assessment
+**Patterns:**
+- **Wave 0 / TDD stubs:** Tests are written before implementation. Module docstrings explicitly state this: `"""Wave 0 tests for training config -- run before implementation."""`
+- **No shared setup/teardown:** Each test is self-contained. `tmp_path` fixture from pytest used for temp directories.
+- **Descriptive docstrings on every test:** Each test function has a docstring explaining what it validates.
 
-### Phase 1: Claude Judge Assessment
-**Location:** `scripts/phase1_judge.py`, lines 173-220 (sketch of call; full logic in `config/judge_system.md`)
+## Mocking
 
-Assesses code on 9 dimensions:
-1. WPCS (WordPress Coding Standards)
-2. SQL safety (prepared statements, escaping)
-3. Security (nonces, capability checks, output escaping, input sanitization)
-4. Performance (caching, query efficiency)
-5. WordPress API correctness
-6. Code quality (clarity, maintainability)
-7. Dependency management
-8. i18n (internationalization)
-9. Accessibility
+**Framework:** `unittest.mock` (stdlib)
 
-**Structure:** Returns JSON assessment:
-```json
-{
-  "verdict": "PASS|FAIL",
-  "scores": {
-    "wpcs": 95,
-    "sql_safety": 98,
-    "security": 99
-  },
-  "critical_failures": [],
-  "notes": "..."
-}
-```
+**Patterns:**
 
-### Phase 2: Synthetic Code Validation
-**Location:** `scripts/phase2_judge.py`, lines 29-53
-
-Same judge criteria as Phase 1. Failed synthetics get **one revision attempt**:
-
+1. **Subprocess mocking** (most common pattern, used in `test_preflight.py`, `test_eval_gen.py`, `test_phase2_mutate.py`):
 ```python
-if assessment.get("verdict") == "PASS":
-    example["training_tags"] = assessment.get("training_tags", [example["gap_tag"]])
-    passed.append(example)
-else:
-    # One revision attempt.
-    issues = assessment.get("critical_failures", []) + [assessment.get("notes", "")]
-    if issues:
-        revised_code = revise_with_feedback(example, issues, client)
-        time.sleep(REQUEST_INTERVAL)
-        re_assessment = judge_synthetic(revised_code, example["gap_tag"], client, judge_system)
+def _make_run(returncode=0, stdout=""):
+    result = MagicMock()
+    result.returncode = returncode
+    result.stdout = stdout
+    return result
 
-        if re_assessment.get("verdict") == "PASS":
-            example["body"] = revised_code
-            passed.append(example)
-        else:
-            failed.append(example)
-    else:
-        failed.append(example)
+def test_missing_phpcs():
+    def side_effect(cmd, **kwargs):
+        if "phpcs" in cmd:
+            return _make_run(returncode=1)
+        return _make_run(returncode=0)
+
+    with patch("subprocess.run", side_effect=side_effect):
+        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key"}):
+            with pytest.raises(SystemExit) as exc_info:
+                run_preflight()
+    assert exc_info.value.code == 1
 ```
 
-### Phase 2: Mutation Validation
-**Location:** `scripts/phase2_mutate.py`, lines 145-244+
-
-Mutations are verified to be detectable:
-- Apply mutation (e.g., remove `$wpdb->prepare()`)
-- Run PHPCS on mutated code
-- Verify it fails PHPCS
-- Store bad->good pair only if mutation is verifiably incorrect
-
-**Mutation Types:**
-- `sql_injection`: Remove `$wpdb->prepare()`, concatenate variables directly
-- `csrf`: Remove nonce verification
-- `xss`: Remove output escaping functions
-- `authorization`: Remove capability checks
-- `input_validation`: Remove sanitization functions
-- `i18n`: Remove translation wrappers
-- `performance`: Replace targeted SELECT with `SELECT *`
-
-### Phase 2: Judge Training Data Generation
-**Location:** `scripts/phase2_judge_dataset.py`
-
-Generates training data for `<wp_judge>` task:
-- Passed code: 100/100 quality score
-- Failed code: 0/100
-- Mutated code: Controlled quality (depends on mutation type)
-
-Rubric categories (6 dimensions):
-1. WPCS compliance
-2. SQL safety
-3. Security (escaping, nonces, capabilities)
-4. Performance
-5. API correctness
-6. Maintainability
-
-## Coverage & Validation
-
-**Manual Validation:**
-- Gap analysis (`phase2_gap_analysis.py`): Compares tag coverage against `config/taxonomy.yaml` minimums
-- Reports deficit in categories, drives synthetic generation targets
-- No automated test suite validates coverage programmatically
-
-**Example Gap Report Output:**
-
-```
-Phase 1 Coverage Report
-============================================================
-Total passed functions: 847
-Unique tags present: 34
-
-Tag                                  Have   Need    Gap    %
----------------------------------------- ------ ------ ------  ------
-sql:prepared_statements               45    50      5   90%
-security:output_escaping             123   150     27   82% <-- GAP
-perf:query_caching                    18    25      7   72% <-- GAP
-rest:permission_callbacks             12    20      8   60% <-- GAP
-```
-
-## Test Data Organization
-
-**Training Data Sources:**
-
-1. **Phase 1 Real Code:** `phase1_extraction/output/passed/` (JSON files, one per repo)
-2. **Phase 2 Synthetic:** `phase2_synthetic/output/judged/` (*_passed.json, *_failed.json)
-3. **Phase 2 Mutations:** `phase2_synthetic/output/mutated/contrastive_mutations.json`
-4. **Judge Training:** `phase2_synthetic/output/judge_training/judge_training.json`
-
-**Final Dataset Exports:**
-
-```
-final_dataset/
-├── openai_train.jsonl   # OpenAI format, 80%
-├── openai_val.jsonl     # Validation split, 10%
-├── openai_test.jsonl    # Test split, 10%
-├── alpaca_train.json    # Alpaca/Llama-MoE format
-├── alpaca_val.json
-├── alpaca_test.json
-├── raw_train.jsonl      # Metadata preserved
-├── raw_val.jsonl
-├── raw_test.jsonl
-└── metadata.json        # Statistics
-```
-
-**Split Strategy** (`scripts/export_dataset.py`, lines 114-132):
-
+2. **API client mocking** (`test_utils.py`):
 ```python
-random.seed(42)  # Deterministic split
-random.shuffle(dataset)
-
-n = len(dataset)
-train_end = int(n * TRAIN_SPLIT)           # 0.80
-val_end = train_end + int(n * VAL_SPLIT)   # 0.80 + 0.10
-
-train_set = dataset[:train_end]
-val_set = dataset[train_end:val_end]
-test_set = dataset[val_end:]
+def test_backoff_retries():
+    mock_client = MagicMock()
+    rate_limit_error = anthropic.RateLimitError(
+        message="rate limited",
+        response=MagicMock(status_code=429, headers={}),
+        body=None,
+    )
+    mock_client.messages.create.side_effect = [
+        rate_limit_error, rate_limit_error, rate_limit_error, success_response,
+    ]
+    with patch("time.sleep"):
+        result = call_with_backoff(mock_client, max_retries=5, ...)
+    assert mock_client.messages.create.call_count == 4
 ```
 
-## Defect Testing (Mutation Testing)
-
-**Pattern:** Intentional introduction of controlled defects to validate judge quality
-
-**From `phase2_mutate.py`:**
-
+3. **Module-level patching** for pipeline integration tests (`test_pipeline_integration.py`):
 ```python
-def mutate_remove_prepare(code: str) -> tuple[str, str]:
-    """Remove $wpdb->prepare() and inline values directly (SQL injection)."""
-    pattern = r'\$wpdb->prepare\(\s*(["\'])(.*?)\1\s*,\s*(.*?)\)'
-    match = re.search(pattern, code, re.DOTALL)
-    if not match:
-        return None, None
-
-    query_str = match.group(2)
-    vars_str = match.group(3)
-    vars_list = [v.strip() for v in vars_str.split(",")]
-    mutated_query = query_str
-    for var in vars_list:
-        mutated_query = re.sub(r'%[sdf]', f"' . {var} . '", mutated_query, count=1)
-
-    bad_code = code[:match.start()] + f'"{mutated_query}"' + code[match.end():]
-    return bad_code, "sql_injection: Removed $wpdb->prepare(), concatenating variables directly into SQL"
+with (
+    patch.object(clone_mod, "load_config", return_value=mock_config),
+    patch("scripts.phase1_clone.load_checkpoint", return_value=CHECKPOINT_COMPLETED),
+    patch("scripts.phase1_clone.save_checkpoint"),
+    patch("scripts.phase1_clone.clone_repo") as mock_clone,
+):
+    clone_mod.main()
+mock_clone.assert_not_called()  # Verify skipped
 ```
 
-**Verification Workflow:**
-1. Mutate real code (create intentional defect)
-2. Verify mutation is detected by PHPCS
-3. Store mutation in contrastive pair dataset
-4. Judge must score mutated code as lower quality than original
+4. **Tokenizer mocking** (`test_prepare_tokenizer.py`) -- custom fixture that simulates vocab behavior:
+```python
+@pytest.fixture()
+def small_tokenizer():
+    vocab = {f"tok{i}": i for i in range(100)}
+    tok = MagicMock()
+    def add_special_tokens(d: dict) -> int:
+        new_tokens = [t for t in d.get("additional_special_tokens", []) if t not in vocab]
+        for t in new_tokens:
+            vocab[t] = len(vocab)
+        return len(new_tokens)
+    tok.add_special_tokens.side_effect = add_special_tokens
+    return tok, vocab
+```
 
-## Quality Gates
+**What to Mock:**
+- External processes: `subprocess.run` (phpcs, php, docker)
+- API clients: `anthropic.Client`, `anthropic.RateLimitError`
+- Environment variables: `patch.dict(os.environ, ...)`
+- Heavy ML imports: Not mocked -- tests that need them use `pytest.mark.skipif`
+- `time.sleep`: Always mock in backoff tests
 
-**Phase 1 Real Code:**
-1. PHPCS pre-filter (error_density ≤ 5.0 per 100 lines)
-2. Claude judge assessment (9 dimensions, pass/fail)
+**What NOT to Mock:**
+- Pure functions: `extract_json()`, `batch_or_direct()`, `infer_task_type()`, `enforce_ratio()`
+- Config file reading: Tests read actual `config/train_config.yaml` for config validation tests
+- `pathlib.Path` operations: Use `tmp_path` fixture instead of mocking
 
-**Phase 2 Synthetic Code:**
-1. Claude judge assessment
-2. If failed: One revision attempt with feedback
-3. If still failed: Discard
+## Fixtures and Factories
 
-**Phase 2 Mutated Code:**
-1. Verify PHPCS detects mutation
-2. Store bad->good pair
+**Test Data:**
+```python
+# Factory functions (test_export.py):
+def _make_gen_example(idx: int) -> dict:
+    return {
+        "messages": [
+            {"role": "system", "content": "You are a WordPress expert."},
+            {"role": "user", "content": f"Write a WordPress function #{idx}."},
+            {"role": "assistant", "content": f"<?php function example_{idx}() {{ return {idx}; }}"},
+        ],
+        "metadata": {"source": "phase1_real", "task_type": "gen", "training_tags": []},
+    }
 
-**Phase 2 Judge Training:**
-1. Passed code: High score (100)
-2. Failed code: Low score (0)
-3. Mutated code: Controlled score (60-80 depending on mutation severity)
+def _make_judge_example(idx: int) -> dict:
+    return {
+        "messages": [
+            {"role": "system", "content": "You are a WordPress expert."},
+            {"role": "user", "content": f"Review this WordPress code #{idx}."},
+            {"role": "assistant", "content": f'{{"overall_score": 8, "verdict": "PASS"}}'},
+        ],
+        "metadata": {"source": "phase2_judge", "task_type": "judge", "training_tags": []},
+    }
+```
 
-## Missing Test Infrastructure
+**Location:**
+- Fixtures defined at module top or as pytest fixtures
+- CSV fixture files in `tests/fixtures/`
+- No shared conftest.py
 
-**Not Yet Implemented:**
-- Unit tests for helper functions (extraction, tokenization, tagging)
-- Integration tests for phase-to-phase data flow
-- Regression tests for judge consistency
-- Property-based testing (e.g., "all mutations must be detectable")
-- Performance benchmarks for API calls, PHPCS execution
+## Coverage
 
-**Recommended Future Testing:**
-- Pytest with fixtures for test data loading
-- Mocked Claude API responses for deterministic testing
-- PHPCS command mocking to test prefilter logic
-- Generator/judge correlation tests on held-out examples
+**Requirements:** None enforced (no coverage config or CI gate)
+
+**View Coverage:**
+```bash
+pytest --cov=scripts --cov=eval tests/   # Requires pytest-cov
+```
+
+## Test Types
+
+**Unit Tests (majority):**
+- Pure function testing: `extract_json()`, `batch_or_direct()`, `compute_pass_rate()`, `invert_phpcs_errors()`
+- Config validation: Verify YAML config has expected keys and values
+- Static analysis: Check source code contains required patterns (e.g., `output_router_logits=True` string present)
+
+**Integration Tests:**
+- Checkpoint skip behavior: `test_pipeline_integration.py` -- verifies that `main()` of clone/extract scripts skips already-completed repos
+- Pattern enforcement: `test_phase2_judge_dataset.py` -- verifies module uses `call_with_backoff` not `time.sleep(REQUEST_INTERVAL)`
+
+**Conditional/Skip Tests:**
+- Dataset-dependent tests use `@pytest.mark.skipif`:
+```python
+@pytest.mark.skipif(not TRAIN_JSONL.exists(), reason="openai_train.jsonl not present")
+def test_messages_key_present(self):
+    with open(TRAIN_JSONL) as f:
+        record = json.loads(f.readline().strip())
+    assert "messages" in record
+```
+
+**E2E Tests:** Not used (no end-to-end test framework)
+
+## Common Patterns
+
+**Async Testing:** Not used (no async code)
+
+**Error Testing:**
+```python
+# SystemExit testing (preflight, mutate):
+def test_missing_phpcs():
+    with patch("subprocess.run", side_effect=FileNotFoundError("phpcs not found")):
+        with pytest.raises(SystemExit):
+            _require_phpcs()
+
+# Return None for parse failures:
+def test_extract_json_failure_no_json():
+    result = extract_json('no json here at all')
+    assert result is None
+```
+
+**Config Assertion Pattern:**
+```python
+# Verify config files contain required content:
+def test_judge_threshold_v2():
+    text = JUDGE_SYSTEM_PATH.read_text()
+    assert ">= 8" in text, "judge_system.md must require ALL dimensions >= 8"
+
+def test_security_auto_fail():
+    text = JUDGE_SYSTEM_PATH.read_text()
+    assert "SECURITY AUTO-FAIL" in text
+    assert "< 5" in text
+```
+
+**Source Inspection Pattern** (behavioral enforcement via `inspect.getsource()`):
+```python
+def test_rate_limiting_uses_backoff():
+    source = inspect.getsource(jd)
+    assert "call_with_backoff" in source, (
+        "phase2_judge_dataset.py must use call_with_backoff for rate limiting"
+    )
+
+def test_no_time_sleep_request_interval_pattern():
+    source = inspect.getsource(jd)
+    assert "REQUEST_INTERVAL" not in source
+```
+
+**Temporary Path Pattern:**
+```python
+def test_checkpoint_roundtrip(tmp_path):
+    state = {"completed": ["a", "b"], "failed": ["c"], "batch_job_ids": []}
+    save_checkpoint("test", state, checkpoint_dir=tmp_path)
+    loaded = load_checkpoint("test", checkpoint_dir=tmp_path)
+    assert loaded["completed"] == ["a", "b"]
+```
+
+## Runtime Quality Gates (In-Pipeline)
+
+Beyond unit tests, the pipeline has runtime validation:
+
+**Pre-training gates:**
+- `scripts/preflight.py`: ANTHROPIC_API_KEY, php, phpcs, WordPress-Extra standard
+- `scripts/train_model.py:check_memory()`: Minimum 70 GB free RAM
+- `scripts/train_model.py:load_model_and_tokenizer()`: Special token verification via assertions
+
+**Post-training gates:**
+- `eval/eval_gate.py`: Reads thresholds from `config/train_config.yaml` eval section
+- Gates: overall_mean >= 75.0, overall_spearman >= 0.80, phpcs_pass >= 0.95, security_pass >= 0.98
+- Per-dimension gen targets: D2_security >= 0.95, D3_sql >= 0.90
+- Per-dimension judge targets: D2_security >= 0.75, D3_sql >= 0.75
+- Exits non-zero if any gate fails
+
+**Mutation verification:**
+- `scripts/phase2_mutate.py:verify_mutation_detectable()`: Every mutation must be PHPCS-detectable
+- `scripts/phase2_mutate.py:_require_phpcs()`: Hard exit if PHPCS unavailable (no silent fallback)
+
+**Adaptive resource monitoring:**
+- `MemoryWatchdogCallback`: Monitors `/proc/meminfo` every training step
+- Thermal telemetry: logged to `telemetry/training/*.jsonl` for adaptive planning between runs
+
+## Adding New Tests
+
+When adding a new pipeline script or utility:
+
+1. Create `tests/test_{module_name}.py`
+2. Add `sys.path.insert(0, str(Path(__file__).resolve().parent.parent))` at top
+3. Import the functions under test directly
+4. Write Wave 0 tests first (before implementation) using mocks
+5. Use `tmp_path` for any filesystem operations
+6. Mock `subprocess.run` for external tool calls
+7. Mock API clients with `MagicMock()` and `side_effect`
+8. Use `pytest.raises(SystemExit)` for hard-exit validation
+9. Use factory functions like `_make_gen_example()` for test data
 
 ---
 
-*Testing analysis: 2026-03-26*
+*Testing analysis: 2026-03-31*
