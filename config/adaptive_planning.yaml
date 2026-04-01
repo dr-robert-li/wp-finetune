@@ -1,0 +1,58 @@
+# Adaptive Planning Thresholds -- v4.0
+# Read by: scripts/adaptive_planner.py and .claude/skills/wp-finetune:adaptive-planner/SKILL.md
+# ALL v4.0 tunable thresholds. Do not hardcode in skills or scripts.
+
+# Power-zone routing (primary signal) -- ADPT-01
+power_zones:
+  capped_min_watts: 80
+  target_min_watts: 50
+  underutilized_max_watts: 50
+  io_util_threshold: 30
+  io_watts_threshold: 30
+
+# Thermal brake (secondary signal) -- ADPT-01
+# Empirical: GB10 runs 80-82C with no throttling across all OEM coolers
+# Sources: NVIDIA forums, StorageReview OEM thermal test
+thermal_brake:
+  warning_temp: 82       # was 80C -- raised per empirical data
+  emergency_temp: 85     # was 83C -- raised per empirical data
+  cooldown_target: 78
+
+# Memory model (UMA -- DGX Spark unified memory)
+memory:
+  jitter_margin_gb: 5
+  callback_threshold_mb: 2048
+  watchdog_threshold_mb: 3072
+  critical_threshold_mb: 1024
+
+# Warmup probe protocol -- PROB-01
+probe:
+  steps: 5
+  cooldown_runs: 2
+
+# Within-run monitor (MemoryWatchdogCallback sampling) -- TELE-01
+monitor:
+  sample_interval_steps: 50
+  consecutive_samples_for_trigger: 3
+
+# Worker budget formula
+worker_budget:
+  max_gb: 2
+  hard_cap_uma: 6
+
+# Thermal exploitation ladder -- ADPT-02
+ladder:
+  step_size_small: 2     # for <=13B effective tier
+  step_size_large: 1     # for >13B effective tier (current Qwen3-30B-A3B)
+  prefetch_cap: 4
+  save_steps_cap: 400
+  eval_steps_cap: 200
+
+# Anchor store
+anchors:
+  store_path: telemetry/training/anchors.json
+  expiry_on_config_change: true
+
+# Batch coupling -- BTCH-01
+coupling:
+  max_drift: 1           # max allowed effective_batch drift when round() used
