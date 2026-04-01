@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Data pipeline complete, eval suite rewritten, training skill updated — ready for /run-training
-last_updated: "2026-03-29T02:18:21.358Z"
+stopped_at: Completed 06-05-PLAN.md (batch downscale for CAPPED/THROTTLED zones)
+last_updated: "2026-04-01T07:09:46.430Z"
 last_activity: 2026-03-29 - Full data pipeline + eval rewrite + training skill update
 progress:
   total_phases: 5
@@ -35,6 +35,7 @@ Progress: [██████░░░░] 60%
 ## Performance Metrics
 
 **Velocity:**
+
 - Total plans completed: 4
 - Average duration: 9 min
 - Total execution time: 0.62 hours
@@ -48,6 +49,7 @@ Progress: [██████░░░░] 60%
 | 03-model-prep-and-training | 2 | 34 min | 17 min |
 
 **Recent Trend:**
+
 - Last 5 plans: 03-02 (22 min), 03-01 (12 min), 01-02 (2 min), 01-01 (25 min)
 - Trend: steady
 
@@ -60,6 +62,7 @@ Progress: [██████░░░░] 60%
 | Phase 02-dataset-production P04 | 3 | 2 tasks | 98 files |
 | Phase 02-dataset-production P05 | 8 | 2 tasks | 28 files |
 | Phase 02-dataset-production P06 | 5 | 2 tasks | 37 files |
+| Phase 06-adaptive-training-planner P05 | 8 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -112,6 +115,8 @@ Recent decisions affecting current work:
 - [Phase 02-06]: Double-brace template artifacts auto-fixed during revision step (1,958 functions revised)
 - [Phase 02-06]: error_log in catch blocks treated as legitimate production logging, not debug output
 - [Phase 02-06]: REST permission callback functions assessed for capability checks, not for containing 'permission_callback' string
+- [Phase 06-adaptive-training-planner]: apply_ladder() downscale to floor directly (not step-by-step) for CAPPED/THROTTLED — safety action not gradual tuning
+- [Phase 06-adaptive-training-planner]: rung_1_batch_downscale distinct from rung_1_batch — different semantics and audit trail in rungs_applied list
 
 ### Pending Todos
 
@@ -138,6 +143,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T00:00:00Z
-Stopped at: Data pipeline complete, eval suite rewritten, training skill updated — ready for /run-training
+Last session: 2026-04-01T07:09:46.428Z
+Stopped at: Completed 06-05-PLAN.md (batch downscale for CAPPED/THROTTLED zones)
 Resume file: None
