@@ -145,8 +145,8 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — Core adaptive planner Python module + config (routing, coupling, ladder with tests)
-- [ ] 06-02-PLAN.md — Extend train_model.py (power sampling via GPUSampler, Unsloth detection via trainer.args, failure classification) + observe-training 82/85C
+- [x] 06-01-PLAN.md — Core adaptive planner Python module + config (routing, coupling, ladder with tests)
+- [x] 06-02-PLAN.md — Extend train_model.py (power sampling via GPUSampler, Unsloth detection via trainer.args, failure classification) + observe-training 82/85C
 - [ ] 06-03-PLAN.md — Adaptive-planner skill wrapper + run-training Step 8.5 replacement + dgx_toolbox.yaml mount
 - [ ] 06-04-PLAN.md — Cross-file integration verification + human review checkpoint
 
@@ -162,4 +162,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 3. Model Prep and Training | v1.0 | 3/3 | Complete | 2026-03-27 |
 | 4. Evaluation | v1.0 | 0/3 | Not started | - |
 | 5. Packaging and Deployment | v1.0 | 0/3 | Not started | - |
-| 6. Adaptive Training Planner | v1.1 | 0/4 | Not started | - |
+| 6. Adaptive Training Planner | v1.1 | 2/4 | In Progress|  |
