@@ -52,6 +52,15 @@ shared_dirs:
 #   export EXTRA_MOUNTS="/path/to/wp-finetune:/workspace/wp-finetune"
 extra_mounts:
   wp_finetune: "{project_root}:/workspace/wp-finetune"
+  dgx_telemetry: "~/dgx-toolbox/telemetry:/workspace/dgx-toolbox/telemetry"
+
+# Container environment variables (prepended to existing env inside container)
+# Required for: from telemetry.sampler import GPUSampler (etc.)
+# NOTE: telemetry.* is NOT in required_imports — it would block container startup
+#       before the telemetry mount is available. The Python code handles ImportError
+#       gracefully (prints a clear message and exits).
+container_env:
+  PYTHONPATH: "/workspace/dgx-toolbox"
 
 # Container working directory for exec commands
 container_workdir: /workspace/wp-finetune
