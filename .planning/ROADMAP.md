@@ -142,7 +142,13 @@ Plans:
   3. When Unsloth silently overrides batch_size or grad_accum (visible in its startup banner), the override is detected, written to telemetry/training/_unsloth_actuals.json, and all subsequent planner decisions use the Unsloth actual values instead of config values
   4. MemoryWatchdogCallback writes GPU power_watts and mem_available_mb to canonical JSONL every 50 training steps, and a failed run is classified as NORMAL/OOM/HANG/THERMAL by the failure classifier
   5. Warmup probe runs 3-5 real training steps (via dgx-toolbox probe.py) when batch is increased without a prior anchor, and the anchor store persists config+outcome history with cooldown tracking
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — Create adaptive-planner skill + adaptive_planning.yaml config (new decision engine and centralised thresholds)
+- [ ] 06-02-PLAN.md — Extend train_model.py (power sampling, Unsloth banner parsing, page cache drop, extended probe)
+- [ ] 06-03-PLAN.md — Update run-training, observe-training, dgx_toolbox.yaml (skill integration, threshold alignment, container mount)
+- [ ] 06-04-PLAN.md — Cross-file integration verification + human review checkpoint
 
 ## Progress
 
@@ -156,4 +162,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 3. Model Prep and Training | v1.0 | 3/3 | Complete | 2026-03-27 |
 | 4. Evaluation | v1.0 | 0/3 | Not started | - |
 | 5. Packaging and Deployment | v1.0 | 0/3 | Not started | - |
-| 6. Adaptive Training Planner | v1.1 | 0/? | Not started | - |
+| 6. Adaptive Training Planner | v1.1 | 0/4 | Not started | - |
