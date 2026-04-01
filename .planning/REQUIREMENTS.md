@@ -72,6 +72,35 @@ Source data already exists at `/home/robert_li/Desktop/data/wp-finetune-data/`: 
 - [ ] **DPLT-06**: HuggingFace Hub upload with model card, benchmarks, and usage examples
 - [ ] **DPLT-07**: Interactive demo accessible via Open-WebUI (:12000)
 
+## v1.1 Requirements — Adaptive Training Infrastructure
+
+Requirements for power-primary adaptive planner. Depends on dgx-toolbox Phase 13 (telemetry/ package).
+
+### Adaptive Planner
+
+- [ ] **ADPT-01**: Adaptive planner routes by GPU power zone (THROTTLED/CAPPED/TARGET/MODERATE/UNDERUTILIZED) with temperature as safety brake only at >=82C
+- [ ] **ADPT-02**: Thermal exploitation ladder fires in v4.0 order: batch (Rung 1) > prefetch (Rung 2) > workers (Rung 3) > save_steps (Rung 4) > eval_steps (Rung 5)
+- [ ] **ADPT-03**: All thresholds read from config/adaptive_planning.yaml (no hardcoded values in skill logic)
+
+### Batch Coupling
+
+- [ ] **BTCH-01**: Every batch_size change auto-adjusts grad_accum to hold effective_batch constant
+- [ ] **BTCH-02**: Unsloth banner parsing detects silent batch/grad_accum overrides and writes actuals to telemetry/training/_unsloth_actuals.json
+- [ ] **BTCH-03**: Planner uses Unsloth actual values (not config values) as basis when override detected
+
+### Telemetry
+
+- [ ] **TELE-01**: MemoryWatchdogCallback samples GPU power via GPUSampler every 50 steps and writes to canonical JSONL
+- [ ] **TELE-02**: Canonical JSONL schema includes power_watts and mem_available_mb fields
+- [ ] **TELE-03**: Failure classifier categorizes run outcome as NORMAL/OOM/HANG/THERMAL from telemetry readings
+- [ ] **TELE-04**: observe-training thresholds updated from 80C/83C to 82C/85C throughout
+
+### Warmup and Anchors
+
+- [ ] **PROB-01**: Warmup probe runs 3-5 real training steps (via dgx-toolbox probe.py) when batch increased without anchor
+- [ ] **PROB-02**: Anchor store persists config+outcome history with config hashing, cooldown tracking, and hard caps
+- [ ] **PROB-03**: run-training Step 8.5 replaced with adaptive-planner skill invocation
+
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
@@ -145,11 +174,26 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DPLT-06 | Phase 5 | Pending |
 | DPLT-07 | Phase 5 | Pending |
 
+| ADPT-01 | Phase 6 | Pending |
+| ADPT-02 | Phase 6 | Pending |
+| ADPT-03 | Phase 6 | Pending |
+| BTCH-01 | Phase 6 | Pending |
+| BTCH-02 | Phase 6 | Pending |
+| BTCH-03 | Phase 6 | Pending |
+| TELE-01 | Phase 6 | Pending |
+| TELE-02 | Phase 6 | Pending |
+| TELE-03 | Phase 6 | Pending |
+| TELE-04 | Phase 6 | Pending |
+| PROB-01 | Phase 6 | Pending |
+| PROB-02 | Phase 6 | Pending |
+| PROB-03 | Phase 6 | Pending |
+
 **Coverage:**
-- v1 requirements: 37 total
-- Mapped to phases: 37
-- Unmapped: 0 ✓
+- v1 requirements: 37 total (37 complete)
+- v1.1 requirements: 13 total (0 complete)
+- Total mapped to phases: 50
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-26*
-*Last updated: 2026-03-26 — REPO-01 through REPO-04 updated to reflect existing CSV source data*
+*Last updated: 2026-03-31 — v1.1 Adaptive Training Infrastructure requirements added*
