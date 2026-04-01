@@ -1,11 +1,11 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: completed
-stopped_at: Data pipeline complete, eval suite rewritten, training skill updated — ready for /run-training
-last_updated: "2026-03-29T02:18:21.358Z"
-last_activity: 2026-03-29 - Full data pipeline + eval rewrite + training skill update
+milestone: v1.1
+milestone_name: Adaptive Training Infrastructure
+status: defining_requirements
+stopped_at: Milestone v1.1 started — defining requirements
+last_updated: "2026-03-31T22:00:00.000Z"
+last_activity: 2026-03-31 - Milestone v1.1 started (Adaptive Training Infrastructure)
 progress:
   total_phases: 5
   completed_phases: 2
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 
 ## Current Position
 
-Phase: 2 of 5 complete (Pipeline Ready + Dataset Production via /run-data-pipeline skill)
-Phase 3: Scripts written (train_model.py, merge_adapter.py), awaiting DGX execution
-Status: Data pipeline complete (236 repos, 134K judged, 29K CoT, 5 ratio exports). Eval suite rewritten with 241-check 9-dimension rubric. Training skill ready with multi-ratio + model selection.
-Last activity: 2026-03-29 - Full data pipeline + eval rewrite + training skill update
+Phase: Not started (defining requirements)
+Plan: --
+Status: Defining requirements for v1.1 Adaptive Training Infrastructure
+Last activity: 2026-03-31 - Milestone v1.1 started
 
 Progress: [██████░░░░] 60%
 

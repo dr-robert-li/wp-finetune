@@ -91,5 +91,40 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 | No one-off scripts in pipeline | Skills + pipeline_orchestrator.py, not throwaway agent scripts | ✓ Good |
 | dgx_toolbox.py project-agnostic | All project-specific couplings moved to config/dgx_toolbox.yaml | ✓ Good |
 
+## Current Milestone: v1.1 Adaptive Training Infrastructure
+
+**Goal:** Replace temperature-zone adaptive planner with power-primary decision engine that correctly exploits the DGX Spark GB10's thermal envelope, plus Unsloth override detection and extended warmup probes.
+
+**Target features:**
+- Power-primary routing (GPU watts as primary signal, temperature as safety brake only at >=82C)
+- Reordered thermal exploitation ladder (batch first for max thermal impact, then prefetch, workers, save/eval)
+- Batch/grad_accum coupling (auto-adjust grad_accum when batch changes to hold effective_batch constant)
+- Unsloth banner parsing (detect silent batch/grad_accum override, write actuals to telemetry)
+- Extended warmup probe (3-5 steps via dgx-toolbox probe.py, not 1-step MemAvailable check)
+- Failure classification (NORMAL/OOM/HANG/THERMAL via dgx-toolbox classify_failure)
+- Anchor store for config history with cooldown and hard caps
+- Within-run power telemetry via extended MemoryWatchdogCallback (GPU watts every 50 steps)
+
+**Dependency:** dgx-toolbox Phase 13 (telemetry/ package) must be complete before execution.
+
+**Detailed plan:** ~/Downloads/wp_finetune_adaptive_plan.md (2,280 lines, 6 tasks)
+
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd:transition`):
+1. Requirements invalidated? -> Move to Out of Scope with reason
+2. Requirements validated? -> Move to Validated with phase reference
+3. New requirements emerged? -> Add to Active
+4. Decisions to log? -> Add to Key Decisions
+5. "What This Is" still accurate? -> Update if drifted
+
+**After each milestone** (via `/gsd:complete-milestone`):
+1. Full review of all sections
+2. Core Value check -- still the right priority?
+3. Audit Out of Scope -- reasons still valid?
+4. Update Context with current state
+
 ---
-*Last updated: 2026-03-29 after data pipeline completion + eval rewrite*
+*Last updated: 2026-03-31 after milestone v1.1 started (Adaptive Training Infrastructure)*
