@@ -446,3 +446,152 @@ class TestParseTelemetryJsonl:
                     "avg_temp", "min_mem_available_gb"]
         for key in required:
             assert key in result, f"Missing key: {key}"
+
+
+# ---------------------------------------------------------------------------
+# apply_ladder downscale tests (CAPPED / THROTTLED zones)
+# ---------------------------------------------------------------------------
+
+class TestApplyLadderDownscale:
+    """Tests for CAPPED/THROTTLED batch downscale path in apply_ladder()."""
+
+    def _base_config(self):
+        return {
+            "per_device_train_batch_size": 4,
+            "gradient_accumulation_steps": 4,  # effective_batch = 16
+            "dataloader_prefetch_factor": 2,
+            "dataloader_num_workers": 2,
+            "save_steps": 200,
+            "eval_steps": 100,
+            "dataloader_persistent_workers": True,
+        }
+
+    def _capped_telemetry(self):
+        """Telemetry representing CAPPED zone: avg_watts=95, safe temp."""
+        return {
+            "avg_gpu_util": 90,
+            "avg_watts": 95,
+            "peak_temp": 75,
+            "avg_temp": 72,
+            "avg_sample_mb": 1.0,
+            "mem_available_gb": 20.0,
+            "min_mem_available_gb": 18.0,
+        }
+
+    def _throttled_telemetry(self):
+        """Telemetry representing THROTTLED zone: temp >= 82C."""
+        return {
+            "avg_gpu_util": 60,
+            "avg_watts": 60,
+            "peak_temp": 84,
+            "avg_temp": 82,
+            "avg_sample_mb": 1.0,
+            "mem_available_gb": 20.0,
+            "min_mem_available_gb": 18.0,
+        }
+
+    def test_apply_ladder_capped_downscale(self, thresholds):
+        """CAPPED zone: batch=4, grad_accum=4 (eff=16) -> batch=1, grad_accum=16, rung_1_batch_downscale."""
+        cfg = self._base_config()  # batch=4, grad_accum=4
+        telem = self._capped_telemetry()
+        result = adaptive_planner.apply_ladder(
+            current_config=cfg,
+            power_zone="CAPPED",
+            thresholds=thresholds,
+            telemetry_summary=telem,
+            batch_ceiling=8,
+        )
+        assert result["per_device_train_batch_size"] == 1
+        assert result["gradient_accumulation_steps"] == adaptive_planner.couple_batch_grad_accum(16, 1)
+        assert "rung_1_batch_downscale" in result["rungs_applied"]
+
+    def test_apply_ladder_throttled_downscale(self, thresholds):
+        """THROTTLED zone: batch=4, grad_accum=4 (eff=16) -> batch=1, grad_accum=16, rung_1_batch_downscale."""
+        cfg = self._base_config()  # batch=4, grad_accum=4
+        telem = self._throttled_telemetry()
+        result = adaptive_planner.apply_ladder(
+            current_config=cfg,
+            power_zone="THROTTLED",
+            thresholds=thresholds,
+            telemetry_summary=telem,
+            batch_ceiling=8,
+        )
+        assert result["per_device_train_batch_size"] == 1
+        assert result["gradient_accumulation_steps"] == adaptive_planner.couple_batch_grad_accum(16, 1)
+        assert "rung_1_batch_downscale" in result["rungs_applied"]
+
+    def test_apply_ladder_capped_already_at_floor(self, thresholds):
+        """CAPPED zone, batch already at downscale_floor=1 -> no rungs applied."""
+        cfg = self._base_config()
+        cfg["per_device_train_batch_size"] = 1
+        cfg["gradient_accumulation_steps"] = 16  # effective=16
+        telem = self._capped_telemetry()
+        result = adaptive_planner.apply_ladder(
+            current_config=cfg,
+            power_zone="CAPPED",
+            thresholds=thresholds,
+            telemetry_summary=telem,
+            batch_ceiling=8,
+        )
+        assert result["rungs_applied"] == []
+
+    def test_apply_ladder_target_no_downscale(self, thresholds):
+        """TARGET zone -> no downscale or upscale, empty rungs_applied."""
+        cfg = self._base_config()
+        telem = {
+            "avg_gpu_util": 70,
+            "avg_watts": 65,
+            "peak_temp": 75,
+            "avg_temp": 72,
+            "avg_sample_mb": 1.0,
+            "mem_available_gb": 20.0,
+            "min_mem_available_gb": 18.0,
+        }
+        result = adaptive_planner.apply_ladder(
+            current_config=cfg,
+            power_zone="TARGET",
+            thresholds=thresholds,
+            telemetry_summary=telem,
+            batch_ceiling=8,
+        )
+        assert result["rungs_applied"] == []
+
+    def test_apply_ladder_moderate_still_upscales(self, thresholds):
+        """MODERATE zone -> still returns rung_1_batch upscale (no regression)."""
+        cfg = self._base_config()  # batch=4, below ceiling=8
+        telem = {
+            "avg_gpu_util": 70,
+            "avg_watts": 65,
+            "peak_temp": 75,
+            "avg_temp": 72,
+            "avg_sample_mb": 1.0,
+            "mem_available_gb": 20.0,
+            "min_mem_available_gb": 18.0,
+        }
+        result = adaptive_planner.apply_ladder(
+            current_config=cfg,
+            power_zone="MODERATE",
+            thresholds=thresholds,
+            telemetry_summary=telem,
+            batch_ceiling=8,
+        )
+        assert "rung_1_batch" in result["rungs_applied"]
+        assert "rung_1_batch_downscale" not in result["rungs_applied"]
+
+    def test_apply_ladder_capped_downscale_coupling(self, thresholds):
+        """Effective batch preserved: batch=8, grad_accum=2 (eff=16) -> downscale to 1, grad_accum=16."""
+        cfg = self._base_config()
+        cfg["per_device_train_batch_size"] = 8
+        cfg["gradient_accumulation_steps"] = 2  # effective=16
+        telem = self._capped_telemetry()
+        result = adaptive_planner.apply_ladder(
+            current_config=cfg,
+            power_zone="CAPPED",
+            thresholds=thresholds,
+            telemetry_summary=telem,
+            batch_ceiling=8,
+        )
+        assert result["per_device_train_batch_size"] == 1
+        expected_grad_accum = adaptive_planner.couple_batch_grad_accum(16, 1)
+        assert result["gradient_accumulation_steps"] == expected_grad_accum
+        assert "rung_1_batch_downscale" in result["rungs_applied"]
