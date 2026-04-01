@@ -268,11 +268,32 @@ class MemoryWatchdogCallback(_TrainerCallback):
     up to save_steps worth of training.  This callback reads /proc/meminfo every
     step and, when available memory drops below the threshold, saves a checkpoint
     and exits cleanly.
+
+    Also samples GPU power telemetry via GPUSampler every sample_interval steps
+    and appends records to jsonl_path (TELE-01).
     """
 
-    def __init__(self, threshold_mb: int = OOM_WATCHDOG_THRESHOLD_MB):
+    def __init__(
+        self,
+        threshold_mb: int = OOM_WATCHDOG_THRESHOLD_MB,
+        sample_interval: int = 50,
+        jsonl_path: str | None = None,
+    ):
         self.threshold_mb = threshold_mb
         self._triggered = False
+        self._sample_interval = sample_interval
+        self._jsonl_path = jsonl_path
+        self._sampler = None  # lazy init
+
+    def _ensure_sampler(self):
+        """Lazily initialize GPUSampler on first use."""
+        if self._sampler is not None:
+            return
+        try:
+            from telemetry.sampler import GPUSampler  # noqa: PLC0415
+            self._sampler = GPUSampler()
+        except ImportError:
+            self._sampler = False  # sentinel: import failed, don't retry
 
     @staticmethod
     def _available_mb() -> int:
@@ -299,6 +320,12 @@ class MemoryWatchdogCallback(_TrainerCallback):
             )
             control.should_save = True
             control.should_training_stop = True
+
+        # Power sampling every sample_interval steps (TELE-01)
+        if self._jsonl_path and state.global_step % self._sample_interval == 0:
+            self._ensure_sampler()
+            if self._sampler and self._sampler is not False:
+                self._sampler.append_jsonl(self._jsonl_path)
 
 
 # ---------------------------------------------------------------------------
@@ -328,13 +355,19 @@ def build_trainer(model, tokenizer, train_dataset, val_dataset, config: dict):
         # Batch mode: messages is a list of lists
         return [tokenizer.apply_chat_template(m, tokenize=False) for m in messages]
 
+    # Determine JSONL path from environment or default (TELE-01)
+    import os  # noqa: PLC0415
+    jsonl_path = os.environ.get("ADAPTIVE_THERMAL_LOG")
+    if not jsonl_path:
+        jsonl_path = str(PROJECT_ROOT / "telemetry" / "training" / "canonical.jsonl")
+
     trainer = SFTTrainer(
         model=model,
         tokenizer=tokenizer,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
         formatting_func=formatting_func,
-        callbacks=[MemoryWatchdogCallback()],
+        callbacks=[MemoryWatchdogCallback(jsonl_path=jsonl_path)],
         args=SFTConfig(
             output_dir=output_dir,
             num_train_epochs=train_cfg["num_train_epochs"],
@@ -434,6 +467,31 @@ def train(args: argparse.Namespace) -> None:
     # Build trainer and train
     trainer = build_trainer(model, tokenizer, train_dataset, val_dataset, config)
 
+    # Detect Unsloth silent overrides via trainer.args inspection (BTCH-02)
+    # Inspect trainer.args directly after build — safe, no print monkey-patching needed.
+    actual_batch = trainer.args.per_device_train_batch_size
+    actual_accum = trainer.args.gradient_accumulation_steps
+    config_batch = config["training"]["per_device_train_batch_size"]
+    config_accum = config["training"]["gradient_accumulation_steps"]
+
+    if actual_batch != config_batch or actual_accum != config_accum:
+        print("WARNING: Unsloth overrode training args:")
+        if actual_batch != config_batch:
+            print(f"  batch_size: config={config_batch} -> actual={actual_batch}")
+        if actual_accum != config_accum:
+            print(f"  grad_accum: config={config_accum} -> actual={actual_accum}")
+        # Write actuals for adaptive planner (BTCH-03)
+        actuals_path = PROJECT_ROOT / "telemetry" / "training" / "_unsloth_actuals.json"
+        actuals_path.parent.mkdir(parents=True, exist_ok=True)
+        import json as _json  # noqa: PLC0415
+        actuals_path.write_text(_json.dumps({
+            "actual_batch": actual_batch,
+            "actual_grad_accum": actual_accum,
+            "config_batch": config_batch,
+            "config_grad_accum": config_accum,
+        }))
+        print(f"  Written to {actuals_path}")
+
     # Determine checkpoint to resume from
     resume_checkpoint = None
     if args.resume:
@@ -450,7 +508,43 @@ def train(args: argparse.Namespace) -> None:
             resume_checkpoint = args.resume
             print(f"Resuming from checkpoint: {resume_checkpoint}")
 
-    trainer.train(resume_from_checkpoint=resume_checkpoint)
+    # Run training, capturing completion status for failure classification (TELE-03)
+    training_completed = False
+    exit_code = 0
+    try:
+        trainer.train(resume_from_checkpoint=resume_checkpoint)
+        training_completed = True
+    except Exception as e:
+        exit_code = 1
+        print(f"Training failed: {e}")
+
+    # Failure classification (TELE-03)
+    try:
+        from telemetry.failure_classifier import classify_failure  # noqa: PLC0415
+        from telemetry.sampler import GPUSampler  # noqa: PLC0415
+        sampler = GPUSampler()
+        final = sampler.sample()
+        # Map GPUSampler output to failure_classifier input format
+        final_readings = {
+            "mem_available_gb": final["mem_available_gb"],
+            "gpu_util_pct": final["gpu_util_pct"],
+            "cpu_pct": 0,  # not available from GPUSampler
+            "temperature_c": final["temperature_c"],
+            "duration_at_state_s": 0,
+        }
+        result = classify_failure(final_readings, exit_code, training_completed)
+        print(f"Run classification: {result['classification']}")
+        # Write classification for adaptive planner
+        import json as _json  # noqa: F811,PLC0415
+        class_path = PROJECT_ROOT / "telemetry" / "training" / "_run_classification.json"
+        class_path.parent.mkdir(parents=True, exist_ok=True)
+        class_path.write_text(_json.dumps(result))
+    except ImportError:
+        print("Note: telemetry.failure_classifier not available -- skipping classification")
+
+    # Re-raise if training failed (after classification is written)
+    if not training_completed and exit_code != 0:
+        raise RuntimeError("Training failed — see output above for details.")
 
     # Post-training save (adapter only — defense-in-depth, trainer also saves)
     output_dir = str(resolve_path(config["training"]["output_dir"]))
