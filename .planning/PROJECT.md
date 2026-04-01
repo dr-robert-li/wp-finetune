@@ -127,4 +127,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-31 after milestone v1.1 started (Adaptive Training Infrastructure)*
+*Last updated: 2026-04-01 — Phase 6 complete: adaptive training planner with power-zone routing, batch coupling, telemetry extensions, and warmup probes*
