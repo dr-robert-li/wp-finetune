@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: MoE-Sieve Selective Training
-status: ready_to_plan
-stopped_at: v2.0 revised (Phases 7-9, pruning moved to v3.0 Phase 12), v3.0 added (Phases 10-14 GRPO + pruning + packaging)
-last_updated: "2026-04-01"
-last_activity: 2026-04-01
+milestone: v1.0
+milestone_name: MVP
+status: planning
+stopped_at: Phase 4 context gathered — profiling + eval + triage decisions captured
+last_updated: "2026-04-02T21:36:58.447Z"
+last_activity: 2026-04-01 — v2.0 revised to Phases 7-9 (eval only, no pruning); v3.0 Phases 10-14 added (GRPO + pruning + packaging)
 progress:
-  total_phases: 8
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_phases: 6
+  completed_phases: 1
+  total_plans: 6
+  completed_plans: 6
   percent: 0
 ---
 
@@ -113,6 +113,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01
-Stopped at: v2.0 revised (Phases 7-9, pruning/packaging deferred to v3.0), v3.0 Phases 10-14 added to ROADMAP.md and STATE.md
-Resume file: None
+Last session: 2026-04-02T21:36:58.445Z
+Stopped at: Phase 4 context gathered — profiling + eval + triage decisions captured
+Resume file: .planning/phases/04-evaluation/04-CONTEXT.md
