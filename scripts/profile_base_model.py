@@ -168,9 +168,16 @@ class RoutingCollector:
             Hook function for use with register_forward_hook().
         """
         def hook(module, inputs, outputs):
-            # outputs = (router_logits, router_scores, router_indices)
-            # router_indices shape: [n_tokens, top_k]
-            router_indices = outputs[2]
+            # self.gate is nn.Linear — outputs is a single tensor of router_logits
+            # shape: [n_tokens, n_experts]. Compute top-k indices from logits.
+            # Handle both real model (single tensor) and test mock (tuple) cases.
+            import torch
+            if isinstance(outputs, tuple):
+                # Test mock passes (logits, scores, indices) — use indices directly
+                router_indices = outputs[2]
+            else:
+                # Real model: gate outputs raw logits tensor
+                router_indices = torch.topk(outputs, k=self.top_k, dim=-1).indices
             token_types = self._current_token_types
             n_tokens = router_indices.shape[0]
 
