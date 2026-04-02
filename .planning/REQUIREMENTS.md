@@ -145,14 +145,17 @@ Requirements for GRPO reinforcement learning on the MoE-Sieve model, followed by
 - [ ] **GRPO-07**: RSPO router-shift stabilization — compute router-shift ratio between rollout and training phases, apply stop-gradient and floor, multiply into clipped importance ratio before aggregation
 - [ ] **GRPO-08**: Router-shift ratio monitored throughout training — log per-step shift metrics; halt training if shift exceeds stability threshold (routing collapse early warning)
 
-### LoRA Merge & Expert Pruning (REAP)
+### LoRA Merge & Expert Pruning (AIMER vs REAP)
 
-- [ ] **MERGE-01**: Merge MoE-Sieve + GRPO LoRA adapters into base model weights before pruning — REAP needs activation magnitudes from the unified model, not separate adapter
-- [ ] **PRUNE-01**: REAP pruning on merged model with WordPress calibration data (gen + judge), `reap` saliency scoring, test at 25%, 50%, and 75% compression ratios (WordPress domain narrowness may support aggressive pruning to ~8-12B total params)
-- [ ] **PRUNE-02**: Evaluate via gating mask before weight removal — check retention across all 9 eval dimensions
-- [ ] **PRUNE-03**: Select compression ratio with best dimension-level retention (especially D2_security), prefer higher compression at equivalent quality
-- [ ] **PRUNE-04**: If regression on any dimension, reduce compression ratio incrementally until clean
-- [ ] **PRUNE-05**: Final model has expert weights physically removed and router softmax re-normalized for removed expert slots; saved as HuggingFace-compatible checkpoint
+Sub-experiment: Does WordPress domain specialization create enough routing concentration for calibration-based pruning (REAP) to outperform weight-based pruning (AIMER)? Or is PHP/WordPress too close to general code for domain-aware pruning to differentiate?
+
+- [ ] **MERGE-01**: Merge MoE-Sieve + GRPO LoRA adapters into base model weights before pruning — REAP needs activation magnitudes from the unified model, AIMER needs final weight norms
+- [ ] **PRUNE-01**: Run AIMER pruning on merged model (weight-based, no calibration, ~1 second) at 25%, 50%, and 75% compression ratios — serves as task-agnostic baseline
+- [ ] **PRUNE-02**: Run REAP pruning on same merged model with WordPress calibration data (gen + judge examples), `reap` saliency scoring, at same 25%, 50%, 75% compression ratios — serves as domain-aware comparison
+- [ ] **PRUNE-03**: Evaluate both methods via gating mask before weight removal — compare retention across all 9 eval dimensions at each compression ratio (6 variants total: 2 methods × 3 ratios)
+- [ ] **PRUNE-04**: Analyze domain specificity signal: compare which experts each method retains/prunes — high overlap suggests WordPress isn't specialized enough for calibration-based advantage; low overlap suggests REAP is capturing domain-specific routing patterns AIMER misses
+- [ ] **PRUNE-05**: Select winning method + compression ratio with best dimension-level retention (especially D2_security), prefer higher compression at equivalent quality; if regression on any dimension, reduce compression incrementally until clean
+- [ ] **PRUNE-06**: Final model has expert weights physically removed and router softmax re-normalized for removed expert slots; saved as HuggingFace-compatible checkpoint; pruning methodology documented in model card
 
 ### Comparative Evaluation
 
@@ -164,7 +167,7 @@ Requirements for GRPO reinforcement learning on the MoE-Sieve model, followed by
 - [ ] **PKG-01**: Gate 1 — Eval pruned bf16 model: record size, inference speed, all 9 dimensions as quality baseline for subsequent compression
 - [ ] **PKG-02**: Gate 2 — Assess whether quantization is needed based on pruned model size, deployment constraints, and Gate 1 performance margins
 - [ ] **PKG-03**: If quantization warranted, test incrementally Q8→Q6→Q5→Q4, eval at each level, stop at lowest quantization holding within ±2pp of Gate 1 baseline
-- [ ] **PKG-04**: Model card + adapter uploaded to HuggingFace with full compression lineage (base → MoE-Sieve → GRPO → merge → REAP → quantization level, eval at each gate)
+- [ ] **PKG-04**: Model card + adapter uploaded to HuggingFace with full compression lineage (base → MoE-Sieve → GRPO → merge → AIMER/REAP winner → quantization level, eval at each gate) including AIMER vs REAP comparison results
 - [ ] **PKG-05**: E2E inference validation on final shipped format (both `<wp_gen>` and `<wp_judge>` prompts via target serving stack)
 
 ## v4 Requirements (deferred)
@@ -278,6 +281,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PRUNE-03 | Phase 12 | Pending |
 | PRUNE-04 | Phase 12 | Pending |
 | PRUNE-05 | Phase 12 | Pending |
+| PRUNE-06 | Phase 12 | Pending |
 | EVAL3-01 | Phase 13 | Pending |
 | EVAL3-02 | Phase 13 | Pending |
 | PKG-01 | Phase 14 | Pending |
@@ -290,7 +294,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 - v1 requirements: 37 total (32 complete, 5 eval pending)
 - v1.1 requirements: 13 total (13 complete)
 - v2.0 requirements: 11 total (0 complete) — PROF(4) + SIEVE(5) + EVAL2(2)
-- v3.0 requirements: 21 total (0 complete) — GRPO(8) + MERGE(1) + PRUNE(5) + EVAL3(2) + PKG(5)
+- v3.0 requirements: 22 total (0 complete) — GRPO(8) + MERGE(1) + PRUNE(6) + EVAL3(2) + PKG(5)
 - DPLT requirements: 7 total (deferred → v3.0 PKG/PRUNE)
 - Total mapped to phases: 82
 - Unmapped: 0
