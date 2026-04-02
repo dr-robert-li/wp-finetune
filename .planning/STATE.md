@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
-status: planning
-stopped_at: Phase 4 context gathered — profiling + eval + triage decisions captured
-last_updated: "2026-04-02T21:36:58.447Z"
-last_activity: 2026-04-01 — v2.0 revised to Phases 7-9 (eval only, no pruning); v3.0 Phases 10-14 added (GRPO + pruning + packaging)
+status: executing
+stopped_at: Completed 04-evaluation-02-PLAN.md -- eval orchestrator script created
+last_updated: "2026-04-02T22:32:59.317Z"
+last_activity: 2026-04-02
 progress:
-  total_phases: 6
+  total_phases: 11
   completed_phases: 1
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 9
+  completed_plans: 8
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-02)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** v2.0 Phase 7 — Router Profiling (blocked on Phase 4 Evaluation completing first)
+**Current focus:** Phase 04 — evaluation
 
 ## Current Position
 
-Phase: 7 of 14 (Router Profiling) — blocked on Phase 4
-Plan: — (not yet planned)
-Status: Ready to plan
-Last activity: 2026-04-01 — v2.0 revised to Phases 7-9 (eval only, no pruning); v3.0 Phases 10-14 added (GRPO + pruning + packaging)
+Phase: 04 (evaluation) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-04-02
 
 Progress: [░░░░░░░░░░] 0% (v2.0 + v3.0 phases)
 
@@ -66,6 +66,7 @@ Progress: [░░░░░░░░░░] 0% (v2.0 + v3.0 phases)
 | Phase 06-adaptive-training-planner P02 | 8 | 2 tasks | 2 files |
 | Phase 06-adaptive-training-planner P03 | 8 | 2 tasks | 3 files |
 | Phase 06-adaptive-training-planner P04 | 5 | 2 tasks | 0 files |
+| Phase 04-evaluation P02 | 6 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -85,6 +86,8 @@ Recent decisions affecting current work:
 - [Phase 06-adaptive-training-planner]: Human review checkpoint approved 2026-04-01 — all Phase 6 scripts verified before DGX execution
 - [Phase 06-adaptive-training-planner]: Canonical JSONL schema updated to GPUSampler fields (watts, temperature_c, gpu_util_pct, mem_available_gb)
 - [Phase 06-adaptive-training-planner]: adaptive-planner skill is a thin wrapper: all decision logic stays in scripts/adaptive_planner.py
+- [Phase 04-evaluation]: Task 2 execution deferred: CUDA unavailable in current Python env (cpu-only torch); GPU execution requires correct CUDA-enabled environment activation on DGX Spark
+- [Phase 04-evaluation]: run_eval_and_wpbench_for_ratio keeps vLLM alive between eval_gen, eval_judge, and wp-bench for same ratio to avoid restart overhead
 
 ### Pending Todos
 
@@ -113,6 +116,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-02T21:36:58.445Z
-Stopped at: Phase 4 context gathered — profiling + eval + triage decisions captured
-Resume file: .planning/phases/04-evaluation/04-CONTEXT.md
+Last session: 2026-04-02T22:32:59.315Z
+Stopped at: Completed 04-evaluation-02-PLAN.md -- eval orchestrator script created
+Resume file: None

@@ -56,10 +56,10 @@ Source data already exists at `/home/robert_li/Desktop/data/wp-finetune-data/`: 
 
 ### Evaluation
 
-- [ ] **EVAL-01**: Custom eval script measures PHPCS pass rate on 500 held-out generation tasks (target >95%)
-- [ ] **EVAL-02**: Custom eval script measures judge Spearman correlation on 500 held-out scored pairs (target >0.85)
-- [ ] **EVAL-03**: Security pass rate measured on held-out tasks (target >98%)
-- [ ] **EVAL-04**: Eval scripts run via DGX Toolbox eval-toolbox container
+- [x] **EVAL-01**: Custom eval script measures PHPCS pass rate on 500 held-out generation tasks (target >95%)
+- [x] **EVAL-02**: Custom eval script measures judge Spearman correlation on 500 held-out scored pairs (target >0.85)
+- [x] **EVAL-03**: Security pass rate measured on held-out tasks (target >98%)
+- [x] **EVAL-04**: Eval scripts run via DGX Toolbox eval-toolbox container
 - [x] **EVAL-05**: All three quality gates pass before proceeding to deployment
 
 ### Deployment (deferred to v2.0 Packaging)
