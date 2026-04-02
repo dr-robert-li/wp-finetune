@@ -112,7 +112,13 @@ Requirements for selective expert training and evaluation. Depends on Phase 4 ev
 - [ ] **PROF-01**: Router profiling runs gradient-free forward pass hooking `Qwen3MoeSparseMoeBlock` gating output, count-based ranking per layer
 - [ ] **PROF-02**: Profiling tags each expert's routing count by task token affinity (`<wp_gen>` vs `<wp_judge>`) separately, not just aggregate frequency
 - [ ] **PROF-03**: Profiling uses 10% subsample with Jaccard stability verification against full set (target ≥0.94)
-- [ ] **PROF-04**: Outputs routing concentration report: per-layer CV, cumulative coverage curve at each k, layer-depth skew analysis
+- [ ] **PROF-04**: Outputs routing concentration report: per-layer CV, cumulative coverage curve at each k, layer-depth skew analysis, and effective expert count E_eff = exp(entropy) per layer (mean, max, variance across layers) — E_eff directly predicts pruning headroom
+- [ ] **PROF-05**: Profile ALL surviving ratios from Phase 4 triage (not just the winner) — profiling is ~minutes per ratio and routing concentration is a critical decision signal for ratio selection
+
+### Ratio Selection Gate (Phase 7→8)
+
+- [ ] **GATE-01**: Decision matrix combining Phase 4 eval score (normalized 0-1) and Phase 7 routing concentration (mean E_eff, max E_eff, E_eff variance) per surviving ratio — select ratio with lowest E_eff at equivalent quality (within 2pp), preferring compressibility over marginal quality gains
+- [ ] **GATE-02**: Phase 4 triage uses high bar for elimination (only cut ratios that fail hard gates or are >5pp behind) and low bar for continuation — 1-2pp differences may invert after pruning if routing concentration differs
 
 ### Selective Training (MoE-Sieve)
 
@@ -260,6 +266,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PROF-02 | Phase 7 | Pending |
 | PROF-03 | Phase 7 | Pending |
 | PROF-04 | Phase 7 | Pending |
+| PROF-05 | Phase 7 | Pending |
+| GATE-01 | Phase 7 | Pending |
+| GATE-02 | Phase 4 | Pending |
 | SIEVE-01 | Phase 8 | Pending |
 | SIEVE-02 | Phase 8 | Pending |
 | SIEVE-03 | Phase 8 | Pending |
@@ -293,7 +302,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 **Coverage:**
 - v1 requirements: 37 total (32 complete, 5 eval pending)
 - v1.1 requirements: 13 total (13 complete)
-- v2.0 requirements: 11 total (0 complete) — PROF(4) + SIEVE(5) + EVAL2(2)
+- v2.0 requirements: 14 total (0 complete) — PROF(5) + GATE(2) + SIEVE(5) + EVAL2(2)
 - v3.0 requirements: 22 total (0 complete) — GRPO(8) + MERGE(1) + PRUNE(6) + EVAL3(2) + PKG(5)
 - DPLT requirements: 7 total (deferred → v3.0 PKG/PRUNE)
 - Total mapped to phases: 82
