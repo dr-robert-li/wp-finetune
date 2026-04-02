@@ -40,15 +40,18 @@ The judge returns structured scores across 9 dimensions: WPCS compliance, SQL sa
 
 ## Project Status
 
-| Phase | Description | Status |
-|-------|-------------|--------|
-| 1. Pipeline Ready | Harden scripts, generate repos.yaml from curated data | Complete |
-| 2. Dataset Production | Execute agent pipeline, produce training examples | Complete |
-| 3. Model Prep & Training | Tokenizer extension, BF16 LoRA SFT on DGX Spark | Training (5 runs) |
-| 4. Evaluation | wp-bench + 241-check rubric eval, quality gates | Not started |
-| 5. Packaging & Deployment | AWQ/GGUF quantization, HuggingFace Hub release | Not started |
+| Milestone | Phases | Status |
+|-----------|--------|--------|
+| v1.0 MVP | 1. Pipeline Ready | Complete |
+| | 2. Dataset Production (267K examples, 5 ratio exports) | Complete |
+| | 3. Model Prep & Training (5 LoRA runs on DGX Spark) | Complete |
+| | 4. Base-Model Profiling + Eval Triage (E_eff routing analysis, 193-check rubric, wp-bench) | **Next** |
+| | 5. Packaging & Deployment | Deferred to v3.0 |
+| v1.1 Adaptive Training | 6. Adaptive Training Planner (power-primary, memory watchdog) | Complete |
+| v2.0 MoE-Sieve | 7. Router Profiling + Ratio Selection (E_eff) → 8. Selective Training → 9. Eval | Planned |
+| v3.0 GRPO & Deploy | 10. Rewards → 11. GRPO → 12. Merge + Prune (AIMER vs REAP) → 13. Eval → 14. Package | Planned |
 
-**Current:** Phase 3 — 5 sequential LoRA training runs in progress on DGX Spark (ratios 30/70 through 70/30, ~30-60 hours total). Each produces an isolated adapter for A/B/C/D/E eval comparison. Run 1 (30/70) complete; Run 2 (40/60) resuming from checkpoint after OOM recovery.
+**Current:** Phase 4 is next — first, base-model profiling with all 5 ratio data distributions (~minutes) to check E_eff trend and decide whether to train 60/40 and 70/30. Then eval existing 3 adapters via vLLM + wp-bench in parallel with any new training. Survivors go to Phase 7 where fine-tuned adapter E_eff determines the final ratio for single-track MoE-Sieve/GRPO/pruning.
 
 **Building in public.** Read the [Engineering Journal](JOURNAL.md) for real-time decisions, tradeoffs, failures, and lessons learned as the project evolves.
 
@@ -133,7 +136,7 @@ wp-finetune/
 │   ├── phase3_cot.py, merge_dataset.py, export_dataset.py
 │   └── (+ csv_to_repos, preflight)
 ├── eval/
-│   ├── rubric_definitions.py       # 241 check IDs across 9 weighted dimensions
+│   ├── rubric_definitions.py       # 193 check IDs across 9 weighted dimensions
 │   ├── rubric_scorer.py            # 4-tool ground truth scoring engine
 │   ├── eval_gen.py                 # Generator eval (9-dimension rubric scoring)
 │   ├── eval_judge.py               # Judge eval (per-dimension Spearman correlation)

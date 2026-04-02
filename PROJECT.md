@@ -7,7 +7,6 @@ A single Qwen3-based Mixture-of-Experts model that both **generates** and **judg
 ## Architecture
 
 - **Base:** Qwen3-30B-A3B (native MoE, ~30B total params, ~3B active per forward pass, 128 experts, top-8 routing)
-- **Size:** ~8B total params, ~4B active per forward pass (top-2 routing, 8 experts)
 - **Modes:** `<wp_gen>` (code generation) and `<wp_judge>` (structured critique with rubric scoring)
 - **Compatibility:** HuggingFace `AutoModelForCausalLM`, standard transformers tooling
 - **Infrastructure:** DGX Toolbox — Unsloth Studio (fine-tuning), vLLM/Ollama (inference), eval-toolbox (benchmarks), safety harness (guardrails)
@@ -79,51 +78,65 @@ The data pipeline lives in this directory and produces the training dataset.
 
 ---
 
-### Phase B: Model Setup
+### Phase B: Model Setup & Training
 
-*Not yet implemented. Planned work:*
+*Complete. Implemented in Phases 3 and 6.*
 
-| Step | Description |
-|------|-------------|
-| B1 | Download Qwen3-30B-A3B base model (native MoE, no conversion needed) |
-| B2 | Extend tokenizer with `<wp_gen>`, `<wp_judge>` special tokens |
-| B3 | Resize model embeddings, initialize new token embeddings |
-| B4 | Configure MoE routing: 8 experts, top-2, load balancing + z-loss |
-| B5 | Set up training infrastructure via DGX Toolbox (Unsloth Studio for LoRA/QLoRA fine-tuning, W&B via eval-toolbox for tracking) |
+| Step | Description | Status |
+|------|-------------|--------|
+| B1 | Download Qwen3-30B-A3B base model (native MoE, no conversion needed) | Done |
+| B2 | Extend tokenizer with `<wp_gen>` (ID 151669), `<wp_judge>` (ID 151670), mean-initialised embeddings | Done |
+| B3 | BF16 LoRA SFT via Unsloth (not QLoRA — MoE router weights incompatible with BitsandBytes 4-bit). LoRA r=32, α=64, targeting q/k/v/o_proj + gate_up/down_proj. | Done |
+| B4 | 5 sequential training runs at gen/judge ratios 30/70 through 70/30, each producing isolated adapter in `adapters/qwen3-30b-wp-{ratio}/` | Done |
+| B5 | Memory pre-check (70GB minimum), memory watchdog callback, OOM-aware adaptive resource planning between runs | Done |
+| B6 | Power-primary adaptive training planner with batch coupling, Unsloth override detection, warmup probes (v1.1) | Done |
 
-### Phase C: Training
+### Phase C: Base-Model Profiling & Evaluation (Triage)
 
-*Not yet implemented. Planned work:*
+*Not yet started. Next milestone step.*
 
-| Step | Description |
-|------|-------------|
-| C1 | **Multi-task SFT via Unsloth Studio:** 50% `<wp_gen>`, 50% `<wp_judge>`, shuffled. LoRA r=64 targeting q_proj, v_proj, gate, experts. Cosine LR schedule, bf16. |
-| C2 | **Eval checkpoints** every 500 steps via eval-toolbox (lm-eval + W&B): PHPCS pass rate, security pass rate, judge correlation with ground truth |
-| C3 | **DPO refinement** (optional): generate N completions via vLLM batch inference, human-rank via Argilla/Label Studio, DPO to align |
+Phase 4 profiles the base model first (gates whether to train 60/40 and 70/30), then evaluates available adapters as a triage gate. Survivors are carried to Phase 7 where fine-tuned adapter routing concentration determines the final ratio selection.
 
-### Phase D: Evaluation & Validation
+The profiling step computes **routing entropy** and **effective expert count** per MoE layer:
 
-*Not yet implemented. Planned work:*
-
-| Step | Description |
-|------|-------------|
-| D1 | **Generator eval:** 500 held-out tasks, PHPCS pass rate (>95%), security pass rate (>98%) |
-| D2 | **Judge eval:** 500 held-out (code, scores) pairs, Spearman correlation (>0.85), classification precision (>0.90) |
-| D3 | **Integration test:** generate -> judge -> iterate -> validate in wp-playground |
-| D4 | **Adversarial test:** attempt to elicit insecure code, verify judge catches it |
-| D5 | **Cross-model validation:** compare judge scores with GPT-4 scores on same code (via LiteLLM unified API) |
-
-### Phase E: Packaging & Distribution
-
-*Not yet implemented. Planned work:*
+```
+H_l = -Σ p_{l,e} · log(p_{l,e})    (routing entropy, layer l, E=128 experts)
+E_eff_l = exp(H_l)                   (effective expert count — how many experts are meaningfully active)
+```
 
 | Step | Description |
 |------|-------------|
-| E1 | Model card, data card, license (Apache 2.0) |
-| E2 | HuggingFace Hub upload with benchmarks |
-| E3 | Quantized versions (GGUF for Ollama, AWQ for vLLM) — served via DGX Toolbox inference stack |
-| E4 | Example scripts: generate_plugin.py, judge_code.py, end_to_end.py |
-| E5 | Containerized serving via DGX Toolbox (vLLM :8020, LiteLLM :4000, Open-WebUI :12000, Triton/TensorRT-LLM for production) |
+| C1 | **Base-model profiling (~minutes):** Gradient-free forward pass with all 5 ratio data distributions, compute E_eff per layer per ratio. If E_eff trends down at 60/40 and 70/30 → start training in background (~2 days); if flat/up → skip. |
+| C2 | Serve existing adapters (30/70, 40/60, 50/50) via vLLM, run static eval suite per ratio — in parallel with any background training |
+| C3 | wp-bench execution and knowledge tests per ratio |
+| C4 | **Triage:** eliminate ratios that fail hard gates or are >5pp behind the best; carry all survivors to Phase 7 (high bar for elimination, low bar for continuation — 1-2pp differences may invert after pruning) |
+| C5 | Human review of eval results + E_eff profiling data, approve triage decisions |
+
+### Phase D: MoE-Sieve Selective Training (v2.0)
+
+*Planned. Depends on Phase C (surviving ratios with eval scores + base-model E_eff).*
+
+| Step | Description |
+|------|-------------|
+| D1 | **Fine-tuned adapter profiling (all survivors):** Gradient-free forward pass per surviving ratio's adapter (not base model — that was C1), per-task-token expert activation counts, E_eff per layer. Compared against base-model E_eff to quantify how LoRA shifted routing. |
+| D2 | **Ratio selection gate:** Decision matrix combining Phase C eval score + Phase D1 adapter E_eff (mean/max/variance) — lowest E_eff at equivalent quality (within 2pp) wins; single ratio from here |
+| D3 | **MoE-Sieve SFT:** LoRA on hot experts only (+ attention, routers, shared experts), task-aware data filtering, k-sweep at 10%/25%/50% expert budgets |
+| D4 | **Comparative eval:** A/B compare each k-sweep adapter against v1.0 full-LoRA on wp-bench and all 9 eval dimensions |
+
+### Phase E: GRPO & Production Deployment (v3.0)
+
+*Planned. Depends on Phase D (MoE-Sieve eval results).*
+
+| Step | Description |
+|------|-------------|
+| E1 | **Reward infrastructure:** Composite reward pipeline (70% verifiable / 30% frozen judge), security hard gate, MO-GRPO normalisation, VeRPO partial credit |
+| E2 | **GRPO training:** Gen-only GRPO on hot experts with RSPO router-shift stabilisation |
+| E3 | **LoRA merge:** Bake MoE-Sieve + GRPO adapters into base weights (required before pruning) |
+| E4 | **Pruning (AIMER vs REAP):** AIMER (~1 sec, no calibration, task-agnostic baseline) and REAP (~3 hrs, WordPress calibration data, domain-aware) both run at 25%/50%/75% — 6 variants evaluated via gating mask across all 9 dimensions; domain specificity analysis quantifies expert overlap per layer |
+| E5 | **Comparative eval:** A/B compare GRPO+pruned model against v2.0 SFT-only on all dimensions + speed delta + model size |
+| E6 | **Packaging:** Cascading compression gates (bf16 baseline → quantisation decision → HuggingFace upload → E2E inference validation) |
+
+See [ROADMAP.md](.planning/ROADMAP.md) for full phase details, requirements, and success criteria.
 
 ---
 
@@ -131,10 +144,14 @@ The data pipeline lives in this directory and produces the training dataset.
 
 | File | Purpose |
 |------|---------|
-| `config/repos.yaml` | Repository list with quality tiers, path filters |
+| `config/repos.yaml` | 236 repos (top + poor-quality plugins/themes) with quality tiers, path filters |
 | `config/judge_system.md` | Claude judge system instruction (9 dimensions + rubric) |
-| `config/taxonomy.yaml` | Concept taxonomy + minimum coverage targets per tag |
-| `config/synthetic_prompts.yaml` | Prompt templates for synthetic generation, keyed by gap tag |
+| `config/taxonomy.yaml` | 87 concept tags + minimum coverage targets per tag |
+| `config/synthetic_prompts.yaml` | Generation templates + rejection examples, keyed by gap tag |
+| `config/train_config.yaml` | Training hyperparameters (LoRA, scheduler, etc.) |
+| `config/adaptive_planning.yaml` | Power-primary adaptive planning thresholds and ladder |
+| `config/wp-bench.yaml` | Evaluation benchmark config |
+| `config/dgx_toolbox.yaml` | DGX Toolbox execution engine config (container defs, mounts, validation) |
 
 ## Directory Structure
 
@@ -142,67 +159,74 @@ The data pipeline lives in this directory and produces the training dataset.
 wp-finetune/
 ├── PROJECT.md                          # This file
 ├── README.md                           # Quick start guide
+├── JOURNAL.md                          # Engineering decisions log
+├── CHANGELOG.md                        # Version history
 ├── wp-moe.md                           # Full model specification
 ├── config/
-│   ├── repos.yaml                      # Curated repo list (YOU EDIT THIS)
+│   ├── repos.yaml                      # 236 repos (top + poor-quality plugins/themes)
 │   ├── judge_system.md                 # 9-dimension judge criteria
-│   ├── taxonomy.yaml                   # Concept tags + coverage minimums
-│   └── synthetic_prompts.yaml          # Generation templates by gap tag
+│   ├── taxonomy.yaml                   # 87 concept tags + coverage minimums
+│   ├── synthetic_prompts.yaml          # Generation templates + rejection examples
+│   ├── train_config.yaml               # Training hyperparameters (LoRA, scheduler)
+│   ├── adaptive_planning.yaml          # Power-primary adaptive planning config
+│   ├── wp-bench.yaml                   # Evaluation benchmark config
+│   └── dgx_toolbox.yaml               # DGX Toolbox execution engine config
 ├── scripts/
-│   ├── phase1_clone.py                 # Clone repos
-│   ├── phase1_extract.py              # Extract functions
-│   ├── php_extract_functions.php       # PHP tokenizer helper
-│   ├── phase1_judge.py                # PHPCS pre-filter + Claude judge
-│   ├── phase2_gap_analysis.py         # Coverage gap report
-│   ├── phase2_mutate.py               # Automated mutation contrastive pairs
-│   ├── phase2_generate.py             # Synthetic generation (gap fill)
-│   ├── phase2_judge.py                # Judge synthetic examples
-│   ├── phase2_judge_dataset.py        # Generate <wp_judge> training data
-│   ├── phase3_cot.py                  # CoT reasoning + merge all data
-│   └── export_dataset.py              # Task tokens + multi-format export
+│   ├── utils.py                        # Shared utilities (JSON parsing, backoff, checkpoints)
+│   ├── dgx_toolbox.py                  # Execution engine: validate → resolve → Docker exec
+│   ├── adaptive_planner.py             # Power-primary adaptive config engine
+│   ├── pipeline_orchestrator.py        # Pipeline state tracker + action planner
+│   ├── download_model.py               # Download base model from HuggingFace
+│   ├── prepare_tokenizer.py            # Extend tokenizer with <wp_gen>/<wp_judge>
+│   ├── train_model.py                  # BF16 LoRA SFT with memory watchdog + OOM recovery
+│   ├── merge_adapter.py                # Merge adapter with verification roundtrip
+│   ├── phase1_{clone,extract,judge}.py # Phase 1: clone, extract, PHPCS + Claude judge
+│   ├── phase2_{gap_analysis,mutate,generate,judge,judge_dataset}.py
+│   ├── phase3_cot.py, merge_dataset.py, export_dataset.py
+│   └── (+ csv_to_repos, preflight)
+├── eval/
+│   ├── rubric_definitions.py           # 193 check IDs across 9 weighted dimensions
+│   ├── rubric_scorer.py                # 4-tool ground truth scoring engine
+│   ├── eval_gen.py                     # Generator eval (9-dimension rubric scoring)
+│   ├── eval_judge.py                   # Judge eval (per-dimension Spearman correlation)
+│   └── eval_gate.py                    # Quality gate (pass/fail against thresholds)
+├── docs/
+│   ├── AGENT_PIPELINE.md               # Agent execution model and output format contracts
+│   ├── eval/                           # Rubric docs + research backing
+│   └── wp-finetune:*.md                # Skill definitions (pipeline, training, observe, etc.)
 ├── data/
-│   ├── phase1_extraction/
-│   │   ├── repos/                      # Cloned repositories
-│   │   └── output/
-│   │       ├── extracted/              # Raw extracted functions (JSON)
-│   │       ├── passed/                 # Quality-assessed passed functions
-│   │       └── failed/                 # Failed functions (kept for analysis)
-│   ├── phase2_synthetic/
-│   │   ├── gap_report.json             # Coverage analysis
-│   │   └── output/
-│   │       ├── generated/              # Raw synthetic examples
-│   │       ├── judged/                 # Judged synthetic (passed/failed)
-│   │       ├── mutated/                # Automated contrastive pairs
-│   │       └── judge_training/         # <wp_judge> rubric-scored data
-│   ├── phase3_cot/
-│   │   └── output/                     # CoT checkpoints
-│   ├── final_dataset/
-│   │   ├── metadata.json               # Dataset statistics
-│   │   ├── openai_{train,val,test}.jsonl  # OpenAI finetuning format
-│   │   ├── alpaca_{train,val,test}.json   # Qwen3-MoE / Unsloth / Axolotl format
-│   │   └── raw_{train,val,test}.jsonl     # Full metadata format
+│   ├── phase1_extraction/              # Cloned repos + extracted/passed/failed functions
+│   ├── phase2_synthetic/               # Gap reports + synthetic/mutated/judge training data
+│   ├── phase3_cot/                     # CoT reasoning checkpoints
+│   ├── final_dataset/                  # Train/val/test in OpenAI, Alpaca, Raw JSONL formats
 │   └── checkpoints/                    # Pipeline execution checkpoints
+├── adapters/                           # LoRA adapter checkpoints per ratio
+├── models/                             # Merged model checkpoints
+├── telemetry/                          # Training telemetry (thermal logs, agent reports)
+└── tests/                              # 75 tests (13 test files)
 ```
 
-## Target Dataset Composition
+## Dataset Composition (Actual)
 
-| Source | Est. Count | Task Token | Purpose |
-|--------|-----------|------------|---------|
-| WP Core (auto-passed) | ~2,000 | `<wp_gen>` | Reference patterns, conventions |
-| Plugins/themes (assessed, passed) | ~3,000 | `<wp_gen>` | Real-world diversity |
-| Synthetic gap-fill | ~2,000 | `<wp_gen>` | Long-tail patterns (multisite, batch ops) |
-| Synthetic contrastive (Claude) | ~500 | `<wp_gen>` | Bad->good with CoT explanation |
-| Automated mutation contrastive | ~2,000 | `<wp_gen>` | Bad->good from real code |
-| Judge training (high-quality) | ~1,500 | `<wp_judge>` | Rubric scoring on good code |
-| Judge training (low-quality) | ~1,000 | `<wp_judge>` | Rubric scoring on defective code |
-| Judge training (mutations) | ~1,500 | `<wp_judge>` | Rubric scoring on controlled defects |
-| **Total** | **~13,500** | **~50/50 split** | |
+267K merged examples (134K judged functions + 143K judge training + 29K CoT), exported at 5 gen/judge ratios after dedup:
+
+| Ratio | Gen | Judge | Total | Train (80%) |
+|-------|-----|-------|-------|-------------|
+| 30/70 | 13,071 | 30,498 | 43,569 | 34,855 |
+| 40/60 | 20,332 | 30,498 | 50,830 | 40,664 |
+| 50/50 | 30,498 | 30,498 | 60,996 | 48,796 |
+| 60/40 | 45,747 | 30,498 | 76,245 | 60,996 |
+| 70/30 | 71,162 | 30,498 | 101,660 | 81,328 |
+
+**Sources:** Top 1000 plugins + top 100 themes (high-quality generation data), 1000 poorly-rated plugins + 186 poorly-rated themes (negative judge data), plus WordPress Core as reference implementation.
+
+**4-way CoT split:** Gen pattern CoT, judge rubric CoT, judge contrastive CoT, shared security CoT — each with max(500, 10%) floor.
 
 ## Quality Gates
 
 Every code example in the final dataset passed at least one of:
 1. **WordPress Core origin** (auto-passed as reference implementation)
-2. **PHPCS pre-filter** (< 5 errors per 100 lines) **AND** Claude 9-dimension judge (all scores >= 7, no critical failures)
+2. **PHPCS pre-filter** (< 5 errors per 100 lines) **AND** Claude 9-dimension judge (threshold >= 8/10 per dimension, security auto-FAIL below 5)
 3. **Claude synthetic generation** + same judge criteria (with one revision attempt on failure)
 
 Judge training data is additionally sanity-checked: high-quality source code must score > 50 overall, low-quality must score < 95.
@@ -211,38 +235,36 @@ Judge training data is additionally sanity-checked: high-quality source code mus
 
 | Metric | Target | Measured At |
 |--------|--------|-------------|
-| Generator PHPCS pass rate | > 95% | Phase D1 |
-| Generator security pass rate | > 98% | Phase D1 |
-| Judge Spearman correlation | > 0.85 | Phase D2 |
-| Judge classification precision | > 0.90 | Phase D2 |
-| Model active parameters | ~4B (top-2 of 8 experts) | Phase B |
-| Inference latency (DGX Spark) | < 2s via vLLM | Phase E |
+| Generator PHPCS pass rate | > 95% | Phase C (Evaluation) |
+| Generator security pass rate | > 98% | Phase C (Evaluation) |
+| Judge Spearman correlation | > 0.85 | Phase C (Evaluation) |
+| Judge classification precision | > 0.90 | Phase C (Evaluation) |
+| Active parameters per inference | ~3B (top-8 of 128 experts) | Phase B (confirmed) |
+| Inference latency (DGX Spark) | < 2s via vLLM | Phase E (Packaging) |
 
 ## Current Status
 
-- [x] Phase A: Data pipeline — scripts complete, config ready
-- [ ] Phase A1.1: Repo curation — **waiting on curated repos.yaml**
-- [ ] Phase A1.2-A3.2: Pipeline execution
-- [ ] Phase B: Model setup
-- [ ] Phase C: Training
-- [ ] Phase D: Evaluation
-- [ ] Phase E: Packaging
+- [x] Phase A: Data pipeline — 267K examples, 5 ratio exports (v1.0 Phases 1-2)
+- [x] Phase B: Model setup & training — 5 LoRA runs complete on DGX Spark (v1.0 Phase 3)
+- [x] Adaptive training infrastructure — power-primary planner, memory watchdog (v1.1 Phase 6)
+- [ ] Phase C: Base-model profiling + evaluation triage — **next step** (v1.0 Phase 4)
+- [ ] Phase D: MoE-Sieve selective training (v2.0 Phases 7-9)
+- [ ] Phase E: GRPO + pruning + packaging (v3.0 Phases 10-14)
 
 ## Dependencies
 
 **Runtime:**
 - Python 3.10+
-- `anthropic` SDK (ANTHROPIC_API_KEY required)
-- `pyyaml`
+- `pyyaml`, `python-dotenv`
 - PHP CLI with `tokenizer` extension
 - PHP_CodeSniffer + WordPress-Coding-Standards
+- [Claude Code](https://claude.com/claude-code) (subscription) — all LLM pipeline steps run via agents
 
-**Training (Phase B-C) — via DGX Toolbox:**
-- Unsloth Studio (:8000) — interactive fine-tuning UI with LoRA/QLoRA
-- eval-toolbox container — lm-eval benchmarks, W&B tracking
-- data-toolbox container — dataset curation, deduplication, quality filtering
-- vLLM (:8020) — batch inference for DPO candidate generation
+**Training & Eval — via DGX Toolbox:**
+- Unsloth Studio — BF16 LoRA fine-tuning (not QLoRA — MoE router incompatibility)
+- eval-toolbox container — lm-eval benchmarks, MLflow tracking
+- vLLM (:8020) — model serving for eval + production inference
 - LiteLLM (:4000) — unified API for cross-model evaluation
-- Label Studio (:8081) / Argilla (:6900) — human annotation for DPO preference data
-- Safety harness (:5000) — guardrails, red-teaming, PII redaction
+- Ollama (:11434) — GGUF quantised local serving
+- Open-WebUI (:12000) — interactive demo/testing
 - Hardware: DGX Spark (Blackwell GB10, 128GB unified memory)

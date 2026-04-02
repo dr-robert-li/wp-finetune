@@ -4,6 +4,190 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-04-03 — Restructuring the evaluation-compression-packaging pipeline
+
+### The problem
+
+The original roadmap had Phase 4 picking a single winning gen/judge ratio, then sending that one ratio through MoE-Sieve → GRPO → pruning → packaging. This assumed the best pre-compression model is also the best post-compression model. That assumption is wrong.
+
+Each ratio will have different routing concentration — 30/70 (judge-heavy) likely activates different expert clusters than 50/50 (balanced). A ratio that scores slightly lower on raw eval might have sharper routing and compress to a smaller, faster model with equivalent quality after pruning. The metric that matters for production is **post-compression quality-per-VRAM**, not pre-compression quality.
+
+But carrying all ratios through the full pipeline is a combinatorial explosion: 3 ratios × 3 k-budgets × 3+ seeds = 27+ MoE-Sieve runs, weeks of GPU time for what amounts to hyperparameter search on a single variable.
+
+### The funnel architecture
+
+The solution is a two-stage funnel that collapses the search space at the cheapest possible decision points:
+
+```
+Phase 4 (Triage)          Phase 7 (Profile + Select)       Phase 8+ (Single-track)
+─────────────────         ──────────────────────────       ──────────────────────
+30/70 ──eval──┐           ┌──profile──E_eff=18──┐
+40/60 ──eval──┼─survive?──┼──profile──E_eff=14──┼─lowest E_eff──→ winner → MoE-Sieve → GRPO → prune
+50/50 ──eval──┘           └──profile──E_eff=22──┘  at ≡ quality
+```
+
+- **Phase 4 (triage):** ~hours of eval inference (cheap, parallelisable). High bar for elimination — only cut ratios that fail hard gates or are >5pp behind the best. A 1-2pp difference may invert after pruning if routing concentration differs.
+- **Phase 7 (profile all survivors):** ~minutes of gradient-free forward passes per ratio (essentially free). Compute E_eff per layer per ratio.
+- **Phase 7→8 gate:** Decision matrix combining eval score and E_eff. Lowest E_eff at equivalent quality wins.
+- **Phase 8+:** Single-track from there.
+
+### Routing concentration and effective expert count — the math
+
+For a given MoE layer `l` with `E` experts, the **routing entropy** measures how uniformly tokens are distributed across experts:
+
+```
+H_l = -Σ_{e=1}^{E} p_{l,e} · log(p_{l,e})
+```
+
+where `p_{l,e}` is the fraction of tokens routed to expert `e` in layer `l`. Lower entropy = sharper routing = more experts can be pruned safely. Bounds: `H = 0` (all tokens to one expert) to `H_max = log(E) ≈ 4.85` for `E = 128` (uniform distribution).
+
+But raw entropy doesn't capture tail shape — two distributions with identical entropy can have very different pruning profiles (10 hot + 118 dead vs 40 warm + 88 cool). The first prunes to 10 experts trivially; the second has no clean cutoff.
+
+The better scalar is **effective expert count** — the exponential of entropy:
+
+```
+E_eff_l = exp(H_l) = exp(-Σ_{e=1}^{E} p_{l,e} · log(p_{l,e}))
+```
+
+This directly gives the "effective number of experts" per layer. If `E_eff = 15` across layers, ~15 experts carry the load and the other 113 are pruning candidates. If `E_eff = 80`, routing is diffuse and aggressive pruning will hurt quality.
+
+For the REAP saliency scoring comparison, the per-expert importance is:
+
+```
+S_j = mean_{x ∈ active(j)}( g_j(x) · ‖f_j(x)‖₂ )
+```
+
+where `g_j(x)` is the gating score and `f_j(x)` is the expert output — computed only over tokens where expert `j` is actually active. REAP captures both frequency and impact; E_eff captures only frequency. The two signals are complementary — E_eff predicts pruning headroom, REAP scores which specific experts to remove.
+
+For AIMER, the weight-only scoring per expert is:
+
+```
+AIMER(expert) = P / √(N · Q)
+```
+
+where `P = Σ|w_i|` (L₁ norm), `N` = parameter count, `Q = Σ w_i²` (squared Frobenius norm) across gate/up/down projection matrices. Scale-invariant, bounded `[1/√N, 1]`, related to Hoyer sparsity.
+
+The decision matrix per surviving ratio:
+- **Eval score** (from Phase 4, normalised 0-1)
+- **Mean E_eff** across all MoE layers — overall routing concentration
+- **Max E_eff** across layers — worst-case bottleneck, constrains pruning ceiling
+- **E_eff variance** across layers — predicts whether uniform pruning ratio per layer works or layer-adaptive pruning is needed (low variance = uniform is fine)
+
+### Edge case: judge-activating general-knowledge experts
+
+If the best-quality ratio has significantly diffuse routing (E_eff > 30), that signals judge data is activating general-knowledge experts — experts that carry reasoning capabilities from pretraining that help evaluate code quality. Those experts are genuinely load-bearing for judge but irrelevant for gen. Since GRPO only refines gen (judge frozen from SFT), and the production model's judge quality is already fixed before pruning, this favours gen-weighted ratios that concentrate routing and compress cleanly.
+
+### Phase 12 now runs AIMER vs REAP as a sub-experiment
+
+Both pruning methods run on the same merged post-GRPO model:
+- **AIMER** (~1 sec per ratio, no calibration) at 25/50/75% — task-agnostic baseline
+- **REAP** (~3 hrs, WordPress calibration data) at 25/50/75% — domain-aware comparison
+- 6 variants total evaluated via gating mask across all 9 dimensions
+- Domain specificity analysis: expert overlap between methods quantified per layer — the key question is whether WordPress routing concentration is distinct enough from general code for REAP to differentiate
+
+The answer feeds directly into the model card (PKG-04) as a published finding.
+
+### Base-model profiling before eval — a further reordering
+
+A second insight emerged: we already have 3 ratios fully SFT'd (30/70, 40/60, 50/50) but not 60/40 or 70/30. Base-model profiling is cheaper than eval (~minutes vs hours) and answers a question that changes what Phase 4 even needs to do.
+
+If we profile the base model with all 5 ratio data distributions first, we can check whether E_eff trends downward as the gen fraction increases. If it does, that's a signal that gen-heavier ratios concentrate routing more sharply (fewer experts needed → better compression) and it's worth training 60/40 and 70/30 despite the ~60+ hours of GPU time each. If E_eff is flat or trending up, those ratios won't compress better and aren't worth the investment.
+
+The reordered execution flow:
+
+```
+Phase 4 Step 1: Base-model profile all 5 ratio data distributions (~minutes)
+         │
+         ├─ E_eff trending down at 60/40, 70/30? → Start training in background (~2 days)
+         │
+Phase 4 Step 2-3: Eval existing 30/70, 40/60, 50/50 adapters (in parallel with any training)
+         │
+Phase 4 Step 4: Triage — eliminate clear failures, carry survivors
+         │
+Phase 7: Profile fine-tuned ADAPTERS (routing shifted by LoRA — different signal than base-model)
+         │
+Phase 7→8 gate: Lowest adapter E_eff at equivalent quality → winner
+         │
+Phase 8+: Single-track MoE-Sieve → GRPO → prune → package
+```
+
+The key distinction: Phase 4 does base-model profiling (cheap, gates whether to train more ratios), Phase 7 does fine-tuned adapter profiling (captures how LoRA shifted routing, which is the actual signal for MoE-Sieve targeting). These are complementary — the base-model E_eff predicts compression potential before training, the adapter E_eff measures it after.
+
+### What changed in the roadmap
+
+| Phase | Before | After |
+|-------|--------|-------|
+| 4 | Pick single winner | Base-model profiling first (gates 60/40, 70/30 training), then eval triage on available adapters |
+| 7 | Profile winner only | Profile fine-tuned adapters of ALL survivors, compute adapter E_eff, select via decision matrix |
+| 7→8 | (implicit) | Explicit gate: lowest adapter E_eff at equivalent quality (within 2pp) |
+| 12 | REAP only | REAP + AIMER side-by-side, 6 variants, domain specificity analysis |
+
+New requirements: PROF-05 (profile all survivors), GATE-01 (decision matrix), GATE-02 (triage thresholds), PRUNE-06 (physical removal + model card).
+
+---
+
+## 2026-04-03 — AIMER: calibration-free pruning as a REAP alternative, and why we'll test both
+
+### The paper
+
+[AIMER: Calibration-Free Task-Agnostic MoE Pruning](https://arxiv.org/abs/2603.18492) (Liu et al., March 2026, Zhejiang/Westlake/MBZUAI) proposes a pruning method that ranks experts purely from pretrained weights — no calibration data, no forward pass, no routing traces. It scores each expert by computing a normalized weight statistic:
+
+```
+AIMER(expert) = P / √(N × Q)
+```
+
+where P = sum of L₁ norms across gate/up/down projections, N = parameter count, Q = sum of squared Frobenius norms. Experts with the *highest* scores (most distinctive weight distributions) are retained; lowest-scoring experts are pruned. The score is scale-invariant and bounded [1/√N, 1], related to the Hoyer sparsity metric applied at expert granularity.
+
+The key selling points vs REAP:
+
+| Property | AIMER | REAP |
+|----------|-------|------|
+| Calibration data | None | Yes (4.2M tokens from C4) |
+| Scoring time | 0.22–1.27 seconds | 0.75–2.96 hours |
+| Peak memory | 40–57 GB | 44–63 GB |
+| Input signal | Weight matrices only | Gate values × activation norms |
+| Sensitivity to data | None (deterministic) | Varies with calibration sample size |
+
+### Why it caught my attention
+
+AIMER's coding benchmark results on Qwen3-30B-A3B at 50% pruning are striking: code average 36.1% vs REAP's 4.6%. At 25% pruning on ERNIE-21B, it improves code average by 29.7pp over the strongest baseline (45.5% vs 15.8%). These are large margins on the exact model family and task domain we care about.
+
+The calibration sensitivity point is also significant. REAP's published results show that varying C4 sample size from 0.5M to 2.1M tokens produces substantially different pruning outcomes. For our use case, we'd be calibrating on WordPress data — a narrow distribution that may amplify this sensitivity. AIMER sidesteps the question entirely by ignoring activations.
+
+### Why it's not a slam dunk for us
+
+AIMER is explicitly **task-agnostic**. It identifies experts that are "distinctive" in weight space, not experts that are *useful for a specific task*. The paper acknowledges this: "For task-specific compression, calibration sets remain necessary."
+
+Our situation is unusual. After MoE-Sieve SFT + GRPO, the model's hot experts have been fine-tuned specifically for WordPress code. The routing distribution has shifted. The experts that matter most to us are the ones that fire on `<wp_gen>` and `<wp_judge>` prefixed inputs — a routing-driven signal that AIMER cannot see by construction. REAP's saliency scoring (gate_value × activation_magnitude on WordPress calibration data) directly measures what we care about: which experts contribute the most *when processing WordPress code*.
+
+The tension is:
+- **AIMER** may be better at preserving general expert quality (avoiding calibration-induced bias), but it's blind to our fine-tuned routing distribution
+- **REAP** directly measures task-relevant expert importance, but is sensitive to the calibration set and slower to compute
+
+For a domain-specialized model where we've deliberately concentrated routing onto a subset of experts, REAP's task-aware scoring *should* be more precise. But AIMER's massive coding benchmark advantage suggests its weight-based signal captures something REAP's activation traces miss — possibly structural redundancy patterns in the weight matrices themselves.
+
+### Decision: experiment with both
+
+REAP and AIMER are both cheap to run (REAP: a single calibration forward pass; AIMER: seconds of weight arithmetic). Neither involves training. Running both on the merged post-GRPO model and comparing pruning masks adds negligible time to the pipeline.
+
+The roadmap now includes both in Phase 12:
+- Run REAP with WordPress calibration data (as originally planned)
+- Run AIMER on the same merged model (weight-only, no calibration)
+- Compare pruning masks: Jaccard overlap, which experts each method retains/removes
+- Evaluate both pruned models on wp-bench and all 9 dimensions at 25%/50%/75% compression
+- Pick the winner empirically — or discover that a hybrid (AIMER for cold-expert identification + REAP for borderline experts) works best
+
+If the pruning masks diverge significantly, that itself is interesting data: it means weight-space distinctiveness and routing-space importance are measuring different things, and the right pruning criterion for domain-specialized MoE models is an open question.
+
+### Caveats from the paper
+
+- No formal theoretical justification for why the normalized scoring works — the authors speculate about preserving layer-wise signal statistics but acknowledge this needs rigorous analysis
+- Evaluation limited to models ≤30B params
+- Minor regressions on creative writing (-0.3%) and multiple-choice QA (-0.6%) relative to best baselines — not relevant to our use case but worth noting
+- The paper prunes *pretrained* models, not fine-tuned ones — our post-SFT/GRPO weight distributions may behave differently under AIMER scoring
+
+---
+
 ## 2026-04-02 — v2.0 MoE-Sieve & Expert Pruning: why selective training and structural pruning matter
 
 ### The goal

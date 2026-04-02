@@ -4,8 +4,32 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 
 ## [Unreleased]
 
-- Training in progress: 5 sequential LoRA runs on DGX Spark (Run 1 complete, Run 2 resuming)
-- Phase 4 (Evaluation) and Phase 5 (Packaging & Deployment) not started
+- Phase 4 restructured as "Base-Model Profiling & Evaluation (Triage)": profiles base model with all 5 ratio data distributions first (~minutes) to check E_eff trend and gate 60/40 + 70/30 training; then evals existing adapters in parallel with any new training
+- Phase 7 restructured as "Fine-Tuned Adapter Profiling & Ratio Selection": profiles surviving adapters (not base model), computes adapter E_eff, selects winner via decision matrix (lowest E_eff at equivalent quality within 2pp) — optimizes for post-compression quality-per-VRAM
+- Phase 12 runs AIMER vs REAP as side-by-side pruning experiment (6 variants: 2 methods × 3 compression ratios); domain specificity analysis published in model card
+- New requirements: PROF-05 (profile all survivors), GATE-01 (decision matrix), GATE-02 (triage thresholds), PRUNE-06 (physical removal + model card)
+
+## [0.6.0] - 2026-04-01 — Adaptive Training Planner (v1.1 Milestone Complete)
+
+### Added
+- **Power-primary adaptive planning engine (`scripts/adaptive_planner.py`):** Replaces temperature-zone heuristics with power-draw-based decision engine. Routes GPU state through UNDERUTILIZED/NOMINAL/ELEVATED/CAPPED/THROTTLED zones based on watts, with temperature override only at >=82°C.
+- **Batch coupling:** After any `batch_size` change, `gradient_accumulation_steps` is automatically recalculated so `batch_size * grad_accum` equals the original effective batch (e.g., batch 4→8 causes grad_accum 4→2).
+- **Unsloth override detection:** Detects when Unsloth silently overrides `batch_size` or `grad_accum` (visible in startup banner), writes actuals to `telemetry/training/_unsloth_actuals.json`, and all subsequent planner decisions use Unsloth actual values.
+- **GPU power sampling via `GPUSampler`:** `MemoryWatchdogCallback` writes GPU watts and `mem_available_gb` to canonical JSONL every 50 training steps.
+- **Failure classifier:** Classifies failed runs as NORMAL/OOM/HANG/THERMAL from telemetry patterns.
+- **Warmup probe support:** Runs 3-5 real training steps when batch is increased without a prior anchor, with persistent anchor store and cooldown tracking.
+- **Batch downscale path:** `apply_ladder()` correctly reduces batch size for CAPPED/THROTTLED power zones with configurable `downscale_floor`.
+- **`config/adaptive_planning.yaml`:** All thresholds, ladder rungs, and zone boundaries externalized.
+- **`/wp-finetune:adaptive-planner` skill:** Wrapper skill for standalone adaptive planning invocation.
+
+### Changed
+- **Run-training Step 8.5 replaced:** Inline thermal-zone heuristics replaced with `adaptive_planner.py` invocation.
+- **Observe-training thresholds updated:** 82°C/85°C (was 80°C/83°C) to match adaptive planner zones.
+- **`dgx_toolbox.yaml` updated:** PYTHONPATH mount added so `scripts/` imports resolve inside containers.
+
+### Fixed
+- **PYTHONPATH resolution in containers:** `wp-finetune` added to PYTHONPATH in `dgx_toolbox.yaml` so adaptive planner imports work from Unsloth container.
+- **TELE-02 field name docs:** Corrected field names in requirements to match `GPUSampler` output format.
 
 ## [0.5.3] - 2026-03-31 — OOM Recovery & Memory-Aware Adaptive Planning
 
