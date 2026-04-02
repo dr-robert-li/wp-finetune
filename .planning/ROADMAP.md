@@ -131,8 +131,8 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Base-model E_eff profiling script + triage decision script (RoutingCollector hooks, E_eff computation, GATE-02 elimination logic with unit tests)
-- [ ] 04-02-PLAN.md — Eval orchestrator + DGX execution (clone wp-bench, create run_eval_triage.py, execute profiling + sequential adapter eval + wp-bench + triage)
+- [x] 04-01-PLAN.md — Base-model E_eff profiling script + triage decision script (RoutingCollector hooks, E_eff computation, GATE-02 elimination logic with unit tests)
+- [x] 04-02-PLAN.md — Eval orchestrator + DGX execution (clone wp-bench, create run_eval_triage.py, execute profiling + sequential adapter eval + wp-bench + triage)
 - [ ] 04-03-PLAN.md — Human review checkpoint (inspect profiling E_eff + eval results + wp-bench scores, approve triage survivors for Phase 7)
 
 ### Phase 5: Packaging and Deployment
@@ -298,7 +298,7 @@ Note: Phase 12 MERGE-01 must complete before REAP runs — activation magnitudes
 | 1. Pipeline Ready | v1.0 | 2/2 | Complete | 2026-03-26 |
 | 2. Dataset Production | v1.0 | 6/7 | Complete | 2026-03-29 |
 | 3. Model Prep and Training | v1.0 | 3/3 | Complete | 2026-03-27 |
-| 4. Evaluation | v1.0 | 0/3 | Planned | - |
+| 4. Evaluation | v1.0 | 2/3 | In Progress|  |
 | 5. Packaging and Deployment | v1.0 | 0/3 | Deferred to v3.0 | - |
 | 6. Adaptive Training Planner | v1.1 | 6/6 | Complete | 2026-04-01 |
 | 7. Router Profiling | v2.0 | 0/? | Not started | - |
