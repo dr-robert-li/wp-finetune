@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: MoE-Sieve Selective Training
-status: ready_to_plan
-stopped_at: v2.0 revised (Phases 7-9, pruning moved to v3.0 Phase 12), v3.0 added (Phases 10-14 GRPO + pruning + packaging)
-last_updated: "2026-04-01"
-last_activity: 2026-04-01
+milestone: v1.0
+milestone_name: MVP
+status: planning
+stopped_at: "Completed 04-evaluation-04-01-PLAN.md: E_eff profiling and GATE-02 triage scripts"
+last_updated: "2026-04-02T22:23:31.627Z"
+last_activity: 2026-04-01 — v2.0 revised to Phases 7-9 (eval only, no pruning); v3.0 Phases 10-14 added (GRPO + pruning + packaging)
 progress:
-  total_phases: 8
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_phases: 11
+  completed_phases: 1
+  total_plans: 6
+  completed_plans: 7
   percent: 0
 ---
 
@@ -66,6 +66,7 @@ Progress: [░░░░░░░░░░] 0% (v2.0 + v3.0 phases)
 | Phase 06-adaptive-training-planner P02 | 8 | 2 tasks | 2 files |
 | Phase 06-adaptive-training-planner P03 | 8 | 2 tasks | 3 files |
 | Phase 06-adaptive-training-planner P04 | 5 | 2 tasks | 0 files |
+| Phase 04-evaluation P01 | 7 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -85,6 +86,8 @@ Recent decisions affecting current work:
 - [Phase 06-adaptive-training-planner]: Human review checkpoint approved 2026-04-01 — all Phase 6 scripts verified before DGX execution
 - [Phase 06-adaptive-training-planner]: Canonical JSONL schema updated to GPUSampler fields (watts, temperature_c, gpu_util_pct, mem_available_gb)
 - [Phase 06-adaptive-training-planner]: adaptive-planner skill is a thin wrapper: all decision logic stays in scripts/adaptive_planner.py
+- [Phase 04-evaluation]: E_eff zero-count returns float('nan') not n_experts -- NaN signals no data, excluded from NaN-safe aggregation
+- [Phase 04-evaluation]: All GATE-02 threshold comparisons use strict > (value AT threshold FAILS): PHPCS 0.95, Spearman 0.85, Security 0.98, 5pp rule
 
 ### Pending Todos
 
@@ -113,6 +116,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01
-Stopped at: v2.0 revised (Phases 7-9, pruning/packaging deferred to v3.0), v3.0 Phases 10-14 added to ROADMAP.md and STATE.md
+Last session: 2026-04-02T22:23:31.625Z
+Stopped at: Completed 04-evaluation-04-01-PLAN.md: E_eff profiling and GATE-02 triage scripts
 Resume file: None
