@@ -1,13 +1,13 @@
 ---
 gsd_state_version: 1.0
 milestone: v2.0
-milestone_name: MoE-Sieve & Expert Pruning
+milestone_name: MoE-Sieve Selective Training
 status: ready_to_plan
-stopped_at: v2.0 roadmap created — Phases 7-10 defined, ready to plan Phase 7
+stopped_at: v2.0 revised (Phases 7-9, pruning moved to v3.0 Phase 12), v3.0 added (Phases 10-14 GRPO + pruning + packaging)
 last_updated: "2026-04-01"
 last_activity: 2026-04-01
 progress:
-  total_phases: 4
+  total_phases: 8
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-04-02)
 
 ## Current Position
 
-Phase: 7 of 10 (Router Profiling) — blocked on Phase 4
+Phase: 7 of 14 (Router Profiling) — blocked on Phase 4
 Plan: — (not yet planned)
 Status: Ready to plan
-Last activity: 2026-04-01 — v2.0 roadmap created, Phases 7-10 defined
+Last activity: 2026-04-01 — v2.0 revised to Phases 7-9 (eval only, no pruning); v3.0 Phases 10-14 added (GRPO + pruning + packaging)
 
-Progress: [░░░░░░░░░░] 0% (v2.0 phases)
+Progress: [░░░░░░░░░░] 0% (v2.0 + v3.0 phases)
 
 ## Performance Metrics
 
@@ -74,8 +74,13 @@ Progress: [░░░░░░░░░░] 0% (v2.0 phases)
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [v2.0 Roadmap]: Phases 7-10 derived from PROF/SIEVE/PRUNE/EVAL2/PKG requirements; EVAL2 merged into Phase 9 (coarse granularity, natural gate boundary)
-- [v2.0 Roadmap]: Phase 5 (v1.0 Packaging) deferred — Phase 10 replaces it as the production packaging step after pruning
+- [v2.0 Revision]: Phase 9 reduced to EVAL2 only (EVAL2-01, EVAL2-02) — pruning moved to v3.0 Phase 12 because GRPO changes routing distribution and REAP must prune on final routing
+- [v2.0 Revision]: Old Phase 9 (Expert Pruning + Eval) and old Phase 10 (Packaging) removed from v2.0; v2.0 now Phases 7-9
+- [v3.0 Added]: Phases 10-14 cover GRPO reward infrastructure, GRPO training, LoRA merge + REAP pruning, comparative eval, and packaging
+- [v3.0 Sequencing]: Phase 12 MERGE-01 (LoRA merge) must precede REAP — activation magnitudes require unified model, not adapter-on-base
+- [v3.0 Sequencing]: Phase 9 gates Phase 10 — MoE-Sieve eval results must confirm readiness before GRPO begins
+- [v3.0 Pruning]: REAP tests 25%, 50%, 75% compression ratios; WordPress domain narrowness may support aggressive pruning to ~8-12B total params
+- [v3.0 Packaging]: Quantization is the final step in Phase 14, gated by cascading eval (Gate 1 bf16 baseline, Gate 2 quantization decision)
 - [v2.0 Roadmap]: Phase 7 execution blocked on Phase 4 completing (need winning gen/judge ratio for SIEVE-03)
 - [Phase 06-adaptive-training-planner]: Human review checkpoint approved 2026-04-01 — all Phase 6 scripts verified before DGX execution
 - [Phase 06-adaptive-training-planner]: Canonical JSONL schema updated to GPUSampler fields (watts, temperature_c, gpu_util_pct, mem_available_gb)
@@ -89,7 +94,9 @@ None yet.
 
 - [Phase 7]: Phase 4 (Evaluation) must complete before Phase 7 can execute — need winning gen/judge ratio
 - [Phase 6]: dgx-toolbox Phase 13 (telemetry/ package) must be complete before Phase 6 can execute
-- [Phase 10]: AWQ quantization for Qwen3-30B-A3B — verify vLLM support (likely native since it's an official Qwen model)
+- [Phase 10]: Phase 9 (MoE-Sieve comparative eval) must complete before Phase 10 (GRPO reward infra) begins
+- [Phase 12]: LoRA merge (MERGE-01) must complete before REAP pruning — this is strictly sequential within the phase
+- [Phase 14]: Quantization (PKG-03) is gated by Gate 2 decision — verify AWQ support for Qwen3-30B-A3B in vLLM (likely native)
 
 ### Quick Tasks Completed
 
@@ -107,5 +114,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-01
-Stopped at: v2.0 roadmap created — Phases 7-10 added to ROADMAP.md, STATE.md updated, REQUIREMENTS.md traceability extended
+Stopped at: v2.0 revised (Phases 7-9, pruning/packaging deferred to v3.0), v3.0 Phases 10-14 added to ROADMAP.md and STATE.md
 Resume file: None

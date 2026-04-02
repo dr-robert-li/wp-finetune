@@ -3,14 +3,17 @@
 ## Milestones
 
 - 🚧 **v1.0 MVP** - Phases 1-5 (3 of 5 complete, eval + deployment remaining)
-- 📋 **v1.1 Adaptive Training Infrastructure** - Phase 6 (planned)
-- 📋 **v2.0 MoE-Sieve & Expert Pruning** - Phases 7-10 (planned)
+- ✅ **v1.1 Adaptive Training Infrastructure** - Phase 6 (complete 2026-04-01)
+- 📋 **v2.0 MoE-Sieve Selective Training** - Phases 7-9 (planned)
+- 📋 **v3.0 GRPO & Production Deployment** - Phases 10-14 (planned)
 
 ## Overview
 
-Six phases take the project from fragile pipeline scripts to a deployed dual-mode WordPress code model with adaptive training infrastructure. Phases 1-3 built the data pipeline, prepared the model, and trained it. Phase 4 evaluates, Phase 5 deploys, and Phase 6 adds power-primary adaptive training that exploits DGX Spark thermal headroom for optimal throughput.
+Six phases take the project from fragile pipeline scripts to a trained dual-mode WordPress code model with adaptive training infrastructure. Phases 1-3 built the data pipeline, prepared the model, and trained it. Phase 4 evaluates quality gates, Phase 5 is deferred, and Phase 6 adds power-primary adaptive training exploiting DGX Spark thermal headroom.
 
-Phases 7-10 (v2.0) implement MoE-Sieve selective expert training and conservative REAP pruning to produce a smaller, faster model — then package it for production serving. Phase 4 must complete before Phase 7 can begin (need winning gen/judge ratio).
+Phases 7-9 (v2.0) implement MoE-Sieve selective expert training — profiling which experts each task token activates, then retraining only those experts with task-aware data routing and a k-sweep across three budgets. Phase 4 must complete before Phase 7 (need winning gen/judge ratio). Phase 9 gates Phase 10.
+
+Phases 10-14 (v3.0) apply GRPO reinforcement learning on the MoE-Sieve model, then merge the LoRA adapter into base weights, prune with REAP on the final routing distribution, evaluate against v2.0, and package for production. LoRA must be merged before REAP runs — activation magnitudes require the unified model.
 
 ## Phases
 
@@ -30,16 +33,26 @@ Decimal phases appear between their surrounding integers in numeric order.
 </details>
 
 - [ ] **Phase 4: Evaluation** - Run static eval suite + wp-bench, human review of results
-- [ ] **Phase 5: Packaging and Deployment** - Quantize, serve, and publish to HuggingFace (deferred to v2.0 — subsumed by Phase 10)
+- [ ] **Phase 5: Packaging and Deployment** - Quantize, serve, and publish to HuggingFace (deferred to v3.0 — subsumed by Phase 14)
 - [ ] **Phase 6: Adaptive Training Planner** - Power-primary adaptive config engine with batch coupling, telemetry extensions, and warmup probes
 
 <details>
-<summary>v2.0 MoE-Sieve & Expert Pruning (Phases 7-10) — Planned</summary>
+<summary>v2.0 MoE-Sieve Selective Training (Phases 7-9) — Planned</summary>
 
 - [ ] **Phase 7: Router Profiling** - Gradient-free profiling pass tagging expert routing counts by task token affinity, with stability verification and concentration report
 - [ ] **Phase 8: Selective Training (MoE-Sieve)** - Retrain with LoRA targeting only hot experts, using task-aware data filtering and k-sweep to find the optimal expert budget
-- [ ] **Phase 9: Expert Pruning and Comparative Evaluation** - REAP prune the coldest experts with gating-mask validation, then A/B compare against v1.0 full-LoRA on wp-bench
-- [ ] **Phase 10: Packaging** - Cascading compression gates (bf16 baseline → quantization decision → HuggingFace upload → E2E inference validation)
+- [ ] **Phase 9: Comparative Evaluation** - A/B compare each k-sweep MoE-Sieve adapter against v1.0 full-LoRA on wp-bench and all 9 eval dimensions
+
+</details>
+
+<details>
+<summary>v3.0 GRPO & Production Deployment (Phases 10-14) — Planned</summary>
+
+- [ ] **Phase 10: Reward Infrastructure** - Build composite reward pipeline (70% verifiable / 30% judge) with security hard gate, MO-GRPO normalization, and VeRPO partial credit
+- [ ] **Phase 11: GRPO Training** - Gen-only GRPO on hot experts with RSPO router-shift stabilization and collapse monitoring
+- [ ] **Phase 12: LoRA Merge & REAP Pruning** - Merge MoE-Sieve + GRPO adapters into base weights, then REAP prune at 25%/50%/75% compression with gating-mask validation
+- [ ] **Phase 13: Comparative Evaluation** - A/B compare GRPO+pruned model against v2.0 SFT-only on wp-bench, all 9 dimensions, speed delta, and model size
+- [ ] **Phase 14: Packaging** - Cascading compression gates (bf16 baseline → quantization decision → HuggingFace upload → E2E inference validation)
 
 </details>
 
@@ -167,9 +180,9 @@ Plans:
 
 ---
 
-### v2.0 MoE-Sieve & Expert Pruning
+### v2.0 MoE-Sieve Selective Training
 
-**Milestone Goal:** Maximize specialization and inference efficiency by training only WordPress-active experts with task-aware data filtering, then conservatively pruning the coldest experts. Produce a smaller, faster model that retains edge-case coverage, then package it for production.
+**Milestone Goal:** Train only WordPress-active experts via routing-guided LoRA selection with task-aware data filtering and k-sweep to find the optimal expert budget. Produces MoE-Sieve adapter for GRPO refinement in v3.0. Pruning deferred to v3.0 — GRPO changes routing distribution, must prune on final routing.
 
 **Dependency:** Phase 4 (Evaluation) must complete first — MoE-Sieve needs the winning gen/judge ratio.
 
@@ -180,7 +193,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. A profiling script runs a gradient-free forward pass hooking `Qwen3MoeSparseMoeBlock` gating outputs and produces per-layer routing count tables without modifying model weights
   2. The routing tables report separate expert activation counts for `<wp_gen>` and `<wp_judge>` prefixed inputs — not a single aggregate count — so hot experts can be identified per task
-  3. Profiling on a 10% subsample achieves Jaccard similarity ≥0.94 against the full-set ranking, confirming the subsample is stable enough to use for targeting decisions
+  3. Profiling on a 10% subsample achieves Jaccard similarity >=0.94 against the full-set ranking, confirming the subsample is stable enough to use for targeting decisions
   4. The output concentration report includes per-layer CV, cumulative coverage curves at each k value, and layer-depth skew analysis — sufficient to select an expert budget without re-running profiling
 **Plans**: TBD
 
@@ -193,38 +206,88 @@ Plans:
   2. Gen-hot experts receive only golden signal data (passed examples, synthetic good) while judge-hot experts receive the full spectrum (passed + failed + contrastive), verifiable by inspecting data routing assignments per expert group
   3. The training uses the best gen/judge ratio identified by Phase 4 eval, not a hardcoded ratio
   4. Three k-sweep runs complete at budgets of approximately 13, 32, and 64 active experts per layer, each producing a separate adapter checkpoint
-  5. The optimal k is declared as the smallest budget where wp-bench score falls within ±1pp of full-LoRA, verified by TOST equivalence test (ε=2pp) across 3+ seeds
+  5. The optimal k is declared as the smallest budget where wp-bench score falls within ±1pp of full-LoRA, verified by TOST equivalence test (epsilon=2pp) across 3+ seeds
 **Plans**: TBD
 
-### Phase 9: Expert Pruning and Comparative Evaluation
-**Goal**: The REAP pruner removes the coldest experts from the MoE-Sieve trained model, with gating-mask validation at each compression ratio before weight removal, and the final pruned model is A/B compared against v1.0 full-LoRA on all 9 eval dimensions
+### Phase 9: Comparative Evaluation
+**Goal**: Each k-sweep MoE-Sieve adapter is A/B compared against v1.0 full-LoRA on all 9 eval dimensions, producing the dimension-level report and seed variance analysis that gates v3.0 GRPO work
 **Depends on**: Phase 8
-**Requirements**: PRUNE-01, PRUNE-02, PRUNE-03, PRUNE-04, PRUNE-05, EVAL2-01, EVAL2-02
+**Requirements**: EVAL2-01, EVAL2-02
 **Success Criteria** (what must be TRUE):
-  1. REAP pruning runs on the MoE-Sieve trained model using WordPress calibration data and tests gating masks at both 25% and 50% compression ratios before any weights are physically removed
-  2. Evaluation via gating mask checks retention across all 9 eval dimensions for each compression ratio — the dimension-level report is visible before committing to physical removal
-  3. The selected compression ratio has no regression on any single eval dimension (especially D2_security), and if regression is found the ratio is reduced incrementally until clean
-  4. The final pruned checkpoint has expert weights physically removed and loads as a valid HuggingFace-compatible checkpoint with a smaller parameter count than the full model
-  5. An A/B comparison report shows each k-sweep MoE-Sieve adapter and the pruned model measured against v1.0 full-LoRA on wp-bench and the static eval suite, covering all 9 dimensions, inference speed delta, and seed variance
+  1. An A/B eval runs each k-sweep MoE-Sieve adapter (all three k budgets) against v1.0 full-LoRA on wp-bench and the static eval suite, with results recorded per adapter
+  2. The report covers all 9 eval dimensions per adapter, overall scores, inference speed delta, and seed variance — sufficient to identify the optimal k and confirm MoE-Sieve quality before proceeding to GRPO
 **Plans**: TBD
 
-### Phase 10: Packaging
-**Goal**: The pruned model passes cascading compression gates (bf16 baseline, quantization decision, format production) and is published to HuggingFace with full compression lineage, then validated end-to-end on the target serving stack
-**Depends on**: Phase 9
+---
+
+### v3.0 GRPO & Production Deployment
+
+**Milestone Goal:** Apply gen-only GRPO with composite verifiable rewards and RSPO router-shift stabilization, then merge LoRA, REAP prune on final routing distribution (25%/50%/75% compression), evaluate against v2.0, and package for production.
+
+**Dependencies:** Phase 9 (MoE-Sieve eval results) must complete before Phase 10. LoRA merge (Phase 12 MERGE-01) must complete before REAP runs — activation magnitudes require the unified model.
+
+### Phase 10: Reward Infrastructure
+**Goal**: A composite reward pipeline is built and validated end-to-end before any GRPO training begins — PHPCS anchor, security hard gate, VeRPO partial credit, and MO-GRPO normalization all verified independently
+**Depends on**: Phase 9 (MoE-Sieve eval results confirm readiness for GRPO)
+**Requirements**: GRPO-01, GRPO-02, GRPO-03, GRPO-04
+**Success Criteria** (what must be TRUE):
+  1. The composite reward pipeline produces a scalar reward for any generation: 70% from verifiable signals (PHPCS pass rate, security scan, WordPress standards checks) and 30% from frozen wp_judge score
+  2. A generation that fails the security scan receives total reward = 0 regardless of all other signal scores — verified by a test case where a secure-failing but otherwise high-quality generation scores zero
+  3. All reward signals pass through MO-GRPO normalization — each signal is normalized by within-group variance before combination, and a single dominant signal cannot inflate total reward
+  4. WordPress standards checks use VeRPO partial credit — each check is weighted by difficulty estimated from pass rate across group samples, and rarely-passed checks contribute more signal than common ones
+**Plans**: TBD
+
+### Phase 11: GRPO Training
+**Goal**: Gen-only GRPO refines the MoE-Sieve model's generation quality on hot experts, with RSPO router-shift stabilization ensuring experts do not drift from their established routing patterns
+**Depends on**: Phase 10
+**Requirements**: GRPO-05, GRPO-06, GRPO-07, GRPO-08
+**Success Criteria** (what must be TRUE):
+  1. GRPO training applies gradients only to `<wp_gen>` generation tasks — `<wp_judge>` capability is completely frozen from SFT and receives no gradient updates
+  2. GRPO gradients flow only to hot routed experts, attention layers, router gates, and shared experts — cold routed experts receive no updates, preserving structural stability
+  3. RSPO router-shift ratio is computed between rollout and training phases, applied as stop-gradient floor multiplied into the clipped importance ratio before aggregation, and logged per step
+  4. Training halts automatically if router-shift ratio exceeds the stability threshold — the halt is triggered by per-step monitoring, not a post-hoc check
+**Plans**: TBD
+
+### Phase 12: LoRA Merge & REAP Pruning
+**Goal**: MoE-Sieve and GRPO LoRA adapters are merged into base weights to produce a unified model, then REAP pruning tests three compression ratios with gating-mask validation before any weights are physically removed
+**Depends on**: Phase 11
+**Requirements**: MERGE-01, PRUNE-01, PRUNE-02, PRUNE-03, PRUNE-04, PRUNE-05
+**Success Criteria** (what must be TRUE):
+  1. Both LoRA adapters (MoE-Sieve + GRPO) are merged into base model weights before any pruning step — the merged checkpoint loads and produces identical outputs to the adapter-on-base configuration
+  2. REAP pruning runs on the merged model using WordPress calibration data and tests gating masks at 25%, 50%, and 75% compression ratios before any weights are physically removed
+  3. Gating-mask evaluation checks retention across all 9 eval dimensions at each compression ratio — the dimension-level report is visible and reviewed before committing to physical weight removal
+  4. The selected compression ratio shows no regression on any eval dimension (especially D2_security); if regression is found, compression is reduced incrementally until clean
+  5. The final pruned checkpoint has expert weights physically removed and router softmax re-normalized for removed slots — it loads as a valid HuggingFace-compatible checkpoint with a smaller parameter count (targeting ~8-12B total)
+**Plans**: TBD
+
+### Phase 13: Comparative Evaluation
+**Goal**: The GRPO+pruned model is A/B compared against v2.0 SFT-only (MoE-Sieve without GRPO), with inference speed delta and model size reduction measured alongside the 9-dimension quality report
+**Depends on**: Phase 12
+**Requirements**: EVAL3-01, EVAL3-02
+**Success Criteria** (what must be TRUE):
+  1. An A/B eval runs the GRPO+pruned model against v2.0 SFT-only (best k MoE-Sieve adapter) on wp-bench and the static eval suite, with all results recorded
+  2. The report covers all 9 eval dimensions, inference speed delta (expected significant improvement from pruning), model size reduction, and seed variance — sufficient to confirm the full v3.0 pipeline adds value before packaging
+**Plans**: TBD
+
+### Phase 14: Packaging
+**Goal**: The pruned model passes cascading compression gates (bf16 baseline, optional quantization, format production) and is published to HuggingFace with full compression lineage, then validated end-to-end on the target serving stack
+**Depends on**: Phase 13
 **Requirements**: PKG-01, PKG-02, PKG-03, PKG-04, PKG-05
 **Success Criteria** (what must be TRUE):
   1. Gate 1 completes — the pruned bf16 model's size, inference speed, and all 9 eval dimension scores are recorded as the quality baseline for subsequent compression decisions
   2. Gate 2 decision is documented — whether quantization is warranted based on pruned model size, deployment constraints, and Gate 1 performance margins, with reasoning recorded
-  3. If quantization is warranted, incremental testing at Q8→Q6→Q5→Q4 stops at the lowest level holding within ±2pp of the Gate 1 baseline, and no lower quantization is applied
-  4. The HuggingFace model card documents the full compression lineage (base → MoE-Sieve → REAP → quantization level) with eval scores at each gate and usage examples for both task tokens
+  3. If quantization is warranted, incremental testing at Q8->Q6->Q5->Q4 stops at the lowest level holding within ±2pp of the Gate 1 baseline; quantization is the final step and is never applied before Gate 2 confirms it is needed
+  4. The HuggingFace model card documents the full compression lineage (base -> MoE-Sieve -> GRPO -> merge -> REAP -> quantization level) with eval scores at each gate and usage examples for both task tokens
   5. E2E inference validation confirms both `<wp_gen>` and `<wp_judge>` prompts produce correct outputs via the final shipped format on the target serving stack (vLLM or Ollama)
 **Plans**: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
-Note: Phase 5 (Packaging/Deployment v1.0) is deferred — v2.0 Phase 10 replaces it as the production packaging step.
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13 -> 14
+Note: Phase 5 (Packaging/Deployment v1.0) is deferred — v3.0 Phase 14 replaces it as the production packaging step.
+Note: Phase 9 gates Phase 10 — MoE-Sieve eval results must confirm readiness before GRPO begins.
+Note: Phase 12 MERGE-01 must complete before REAP runs — activation magnitudes require the unified model.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -232,9 +295,13 @@ Note: Phase 5 (Packaging/Deployment v1.0) is deferred — v2.0 Phase 10 replaces
 | 2. Dataset Production | v1.0 | 6/7 | Complete | 2026-03-29 |
 | 3. Model Prep and Training | v1.0 | 3/3 | Complete | 2026-03-27 |
 | 4. Evaluation | v1.0 | 0/3 | Not started | - |
-| 5. Packaging and Deployment | v1.0 | 0/3 | Deferred to v2.0 | - |
+| 5. Packaging and Deployment | v1.0 | 0/3 | Deferred to v3.0 | - |
 | 6. Adaptive Training Planner | v1.1 | 6/6 | Complete | 2026-04-01 |
 | 7. Router Profiling | v2.0 | 0/? | Not started | - |
 | 8. Selective Training (MoE-Sieve) | v2.0 | 0/? | Not started | - |
-| 9. Expert Pruning and Comparative Evaluation | v2.0 | 0/? | Not started | - |
-| 10. Packaging | v2.0 | 0/? | Not started | - |
+| 9. Comparative Evaluation | v2.0 | 0/? | Not started | - |
+| 10. Reward Infrastructure | v3.0 | 0/? | Not started | - |
+| 11. GRPO Training | v3.0 | 0/? | Not started | - |
+| 12. LoRA Merge & REAP Pruning | v3.0 | 0/? | Not started | - |
+| 13. Comparative Evaluation | v3.0 | 0/? | Not started | - |
+| 14. Packaging | v3.0 | 0/? | Not started | - |
