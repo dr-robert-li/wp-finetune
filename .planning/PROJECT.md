@@ -40,7 +40,7 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 
 <!-- Explicit boundaries. Includes reasoning to prevent re-adding. -->
 
-- DPO/RLHF refinement — deferred to v2, SFT sufficient for initial release
+- GRPO reinforcement learning — deferred to v3, SFT + MoE-Sieve sufficient through v2
 - JavaScript/Gutenberg block code generation — PHP only for v1
 - Multi-lingual comment support — English only for v1
 - Mobile app or web UI — model served via DGX Toolbox inference stack (vLLM, Ollama, Open-WebUI)

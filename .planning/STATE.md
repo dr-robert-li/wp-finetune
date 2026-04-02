@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: MoE-Sieve & Expert Pruning
-status: defining_requirements
-stopped_at: Milestone v2.0 started — defining requirements
-last_updated: "2026-04-02"
-last_activity: 2026-04-02
+status: ready_to_plan
+stopped_at: v2.0 roadmap created — Phases 7-10 defined, ready to plan Phase 7
+last_updated: "2026-04-01"
+last_activity: 2026-04-01
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-02)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Defining v2.0 requirements — MoE-Sieve selective expert training + conservative pruning
+**Current focus:** v2.0 Phase 7 — Router Profiling (blocked on Phase 4 Evaluation completing first)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-04-02 — Milestone v2.0 started
+Phase: 7 of 10 (Router Profiling) — blocked on Phase 4
+Plan: — (not yet planned)
+Status: Ready to plan
+Last activity: 2026-04-01 — v2.0 roadmap created, Phases 7-10 defined
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [░░░░░░░░░░] 0% (v2.0 phases)
 
 ## Performance Metrics
 
@@ -74,18 +74,12 @@ Progress: [░░░░░░░░░░] 0%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [v1.1 Roadmap]: All 13 v1.1 requirements mapped to single Phase 6 — tightly coupled (planner needs telemetry to route, telemetry without planner is inert)
-- [v1.1 Roadmap]: Phase 6 depends on dgx-toolbox Phase 13 (telemetry/ package) — no execution until that ships
-- [v1.1 Roadmap]: Detailed execution plan exists at ~/Downloads/wp_finetune_adaptive_plan.md (6 tasks, 2,280 lines)
-- [Phase 06-01]: thermal_brake.warning_temp=82 (raised from 80C per empirical GB10/OEM cooler data)
-- [Phase 06-01]: couple_batch_grad_accum uses round() not // to avoid float precision truncation (0.60/0.40=1.4999 bug)
-- [Phase 06-01]: classify_power_zone returns MODERATE only when BOTH has_batch_headroom AND has_mem_headroom are True
-- [Phase 06-01]: IO bottleneck guard skips Rung 1 batch when gpu_util<30 AND watts<30 to avoid dataloader stall thrashing
-- [Phase 06-adaptive-training-planner]: Unsloth override detection via trainer.args inspection (post-build, pre-train) — safe and deterministic, no print monkey-patching
-- [Phase 06-adaptive-training-planner]: GPUSampler False sentinel in MemoryWatchdogCallback — prevents retry on every step when telemetry import fails
-- [Phase 06-adaptive-training-planner]: adaptive-planner skill is a thin wrapper: all decision logic stays in scripts/adaptive_planner.py (HIGH review concern addressed)
-- [Phase 06-adaptive-training-planner]: Canonical JSONL schema updated to GPUSampler fields (watts, temperature_c, gpu_util_pct, mem_available_gb) — old field names deprecated
+- [v2.0 Roadmap]: Phases 7-10 derived from PROF/SIEVE/PRUNE/EVAL2/PKG requirements; EVAL2 merged into Phase 9 (coarse granularity, natural gate boundary)
+- [v2.0 Roadmap]: Phase 5 (v1.0 Packaging) deferred — Phase 10 replaces it as the production packaging step after pruning
+- [v2.0 Roadmap]: Phase 7 execution blocked on Phase 4 completing (need winning gen/judge ratio for SIEVE-03)
 - [Phase 06-adaptive-training-planner]: Human review checkpoint approved 2026-04-01 — all Phase 6 scripts verified before DGX execution
+- [Phase 06-adaptive-training-planner]: Canonical JSONL schema updated to GPUSampler fields (watts, temperature_c, gpu_util_pct, mem_available_gb)
+- [Phase 06-adaptive-training-planner]: adaptive-planner skill is a thin wrapper: all decision logic stays in scripts/adaptive_planner.py
 
 ### Pending Todos
 
@@ -93,8 +87,9 @@ None yet.
 
 ### Blockers/Concerns
 
+- [Phase 7]: Phase 4 (Evaluation) must complete before Phase 7 can execute — need winning gen/judge ratio
 - [Phase 6]: dgx-toolbox Phase 13 (telemetry/ package) must be complete before Phase 6 can execute
-- [Phase 4]: AWQ quantization for Qwen3-30B-A3B — verify vLLM support (likely native since it's an official Qwen model)
+- [Phase 10]: AWQ quantization for Qwen3-30B-A3B — verify vLLM support (likely native since it's an official Qwen model)
 
 ### Quick Tasks Completed
 
@@ -111,6 +106,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T06:22:50.067Z
-Stopped at: Completed 06-adaptive-training-planner plan 04 — Phase 6 complete, adaptive planner v4.0 verified and human-approved
+Last session: 2026-04-01
+Stopped at: v2.0 roadmap created — Phases 7-10 added to ROADMAP.md, STATE.md updated, REQUIREMENTS.md traceability extended
 Resume file: None

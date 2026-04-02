@@ -4,10 +4,13 @@
 
 - 🚧 **v1.0 MVP** - Phases 1-5 (3 of 5 complete, eval + deployment remaining)
 - 📋 **v1.1 Adaptive Training Infrastructure** - Phase 6 (planned)
+- 📋 **v2.0 MoE-Sieve & Expert Pruning** - Phases 7-10 (planned)
 
 ## Overview
 
 Six phases take the project from fragile pipeline scripts to a deployed dual-mode WordPress code model with adaptive training infrastructure. Phases 1-3 built the data pipeline, prepared the model, and trained it. Phase 4 evaluates, Phase 5 deploys, and Phase 6 adds power-primary adaptive training that exploits DGX Spark thermal headroom for optimal throughput.
+
+Phases 7-10 (v2.0) implement MoE-Sieve selective expert training and conservative REAP pruning to produce a smaller, faster model — then package it for production serving. Phase 4 must complete before Phase 7 can begin (need winning gen/judge ratio).
 
 ## Phases
 
@@ -27,8 +30,18 @@ Decimal phases appear between their surrounding integers in numeric order.
 </details>
 
 - [ ] **Phase 4: Evaluation** - Run static eval suite + wp-bench, human review of results
-- [ ] **Phase 5: Packaging and Deployment** - Quantize, serve, and publish to HuggingFace
+- [ ] **Phase 5: Packaging and Deployment** - Quantize, serve, and publish to HuggingFace (deferred to v2.0 — subsumed by Phase 10)
 - [ ] **Phase 6: Adaptive Training Planner** - Power-primary adaptive config engine with batch coupling, telemetry extensions, and warmup probes
+
+<details>
+<summary>v2.0 MoE-Sieve & Expert Pruning (Phases 7-10) — Planned</summary>
+
+- [ ] **Phase 7: Router Profiling** - Gradient-free profiling pass tagging expert routing counts by task token affinity, with stability verification and concentration report
+- [ ] **Phase 8: Selective Training (MoE-Sieve)** - Retrain with LoRA targeting only hot experts, using task-aware data filtering and k-sweep to find the optimal expert budget
+- [ ] **Phase 9: Expert Pruning and Comparative Evaluation** - REAP prune the coldest experts with gating-mask validation, then A/B compare against v1.0 full-LoRA on wp-bench
+- [ ] **Phase 10: Packaging** - Cascading compression gates (bf16 baseline → quantization decision → HuggingFace upload → E2E inference validation)
+
+</details>
 
 ## Phase Details
 
@@ -152,10 +165,66 @@ Plans:
 - [ ] 06-05-PLAN.md — [GAP CLOSURE] Batch downscale for CAPPED/THROTTLED zones (apply_ladder + tests + config)
 - [ ] 06-06-PLAN.md — [GAP CLOSURE] PYTHONPATH fix + TELE-02 field name docs correction
 
+---
+
+### v2.0 MoE-Sieve & Expert Pruning
+
+**Milestone Goal:** Maximize specialization and inference efficiency by training only WordPress-active experts with task-aware data filtering, then conservatively pruning the coldest experts. Produce a smaller, faster model that retains edge-case coverage, then package it for production.
+
+**Dependency:** Phase 4 (Evaluation) must complete first — MoE-Sieve needs the winning gen/judge ratio.
+
+### Phase 7: Router Profiling
+**Goal**: A gradient-free profiling pass characterizes which experts each task token routes to, producing a per-task affinity map and concentration report that drives all subsequent expert targeting decisions
+**Depends on**: Phase 4 (winning gen/judge ratio from eval results); Phase 6 (adaptive training infrastructure)
+**Requirements**: PROF-01, PROF-02, PROF-03, PROF-04
+**Success Criteria** (what must be TRUE):
+  1. A profiling script runs a gradient-free forward pass hooking `Qwen3MoeSparseMoeBlock` gating outputs and produces per-layer routing count tables without modifying model weights
+  2. The routing tables report separate expert activation counts for `<wp_gen>` and `<wp_judge>` prefixed inputs — not a single aggregate count — so hot experts can be identified per task
+  3. Profiling on a 10% subsample achieves Jaccard similarity ≥0.94 against the full-set ranking, confirming the subsample is stable enough to use for targeting decisions
+  4. The output concentration report includes per-layer CV, cumulative coverage curves at each k value, and layer-depth skew analysis — sufficient to select an expert budget without re-running profiling
+**Plans**: TBD
+
+### Phase 8: Selective Training (MoE-Sieve)
+**Goal**: A LoRA-selective retrain applies adapters only to hot experts (per task affinity) plus shared components, with task-aware data routing and a k-sweep across three budgets to identify the smallest expert set matching full-LoRA quality
+**Depends on**: Phase 7
+**Requirements**: SIEVE-01, SIEVE-02, SIEVE-03, SIEVE-04, SIEVE-05
+**Success Criteria** (what must be TRUE):
+  1. The training run applies LoRA adapters to hot routed experts, all attention (Q/K/V/O), router gates, and 4 shared experts — and leaves cold routed experts frozen with no gradient flow
+  2. Gen-hot experts receive only golden signal data (passed examples, synthetic good) while judge-hot experts receive the full spectrum (passed + failed + contrastive), verifiable by inspecting data routing assignments per expert group
+  3. The training uses the best gen/judge ratio identified by Phase 4 eval, not a hardcoded ratio
+  4. Three k-sweep runs complete at budgets of approximately 13, 32, and 64 active experts per layer, each producing a separate adapter checkpoint
+  5. The optimal k is declared as the smallest budget where wp-bench score falls within ±1pp of full-LoRA, verified by TOST equivalence test (ε=2pp) across 3+ seeds
+**Plans**: TBD
+
+### Phase 9: Expert Pruning and Comparative Evaluation
+**Goal**: The REAP pruner removes the coldest experts from the MoE-Sieve trained model, with gating-mask validation at each compression ratio before weight removal, and the final pruned model is A/B compared against v1.0 full-LoRA on all 9 eval dimensions
+**Depends on**: Phase 8
+**Requirements**: PRUNE-01, PRUNE-02, PRUNE-03, PRUNE-04, PRUNE-05, EVAL2-01, EVAL2-02
+**Success Criteria** (what must be TRUE):
+  1. REAP pruning runs on the MoE-Sieve trained model using WordPress calibration data and tests gating masks at both 25% and 50% compression ratios before any weights are physically removed
+  2. Evaluation via gating mask checks retention across all 9 eval dimensions for each compression ratio — the dimension-level report is visible before committing to physical removal
+  3. The selected compression ratio has no regression on any single eval dimension (especially D2_security), and if regression is found the ratio is reduced incrementally until clean
+  4. The final pruned checkpoint has expert weights physically removed and loads as a valid HuggingFace-compatible checkpoint with a smaller parameter count than the full model
+  5. An A/B comparison report shows each k-sweep MoE-Sieve adapter and the pruned model measured against v1.0 full-LoRA on wp-bench and the static eval suite, covering all 9 dimensions, inference speed delta, and seed variance
+**Plans**: TBD
+
+### Phase 10: Packaging
+**Goal**: The pruned model passes cascading compression gates (bf16 baseline, quantization decision, format production) and is published to HuggingFace with full compression lineage, then validated end-to-end on the target serving stack
+**Depends on**: Phase 9
+**Requirements**: PKG-01, PKG-02, PKG-03, PKG-04, PKG-05
+**Success Criteria** (what must be TRUE):
+  1. Gate 1 completes — the pruned bf16 model's size, inference speed, and all 9 eval dimension scores are recorded as the quality baseline for subsequent compression decisions
+  2. Gate 2 decision is documented — whether quantization is warranted based on pruned model size, deployment constraints, and Gate 1 performance margins, with reasoning recorded
+  3. If quantization is warranted, incremental testing at Q8→Q6→Q5→Q4 stops at the lowest level holding within ±2pp of the Gate 1 baseline, and no lower quantization is applied
+  4. The HuggingFace model card documents the full compression lineage (base → MoE-Sieve → REAP → quantization level) with eval scores at each gate and usage examples for both task tokens
+  5. E2E inference validation confirms both `<wp_gen>` and `<wp_judge>` prompts produce correct outputs via the final shipped format on the target serving stack (vLLM or Ollama)
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
+Note: Phase 5 (Packaging/Deployment v1.0) is deferred — v2.0 Phase 10 replaces it as the production packaging step.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -163,5 +232,9 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 2. Dataset Production | v1.0 | 6/7 | Complete | 2026-03-29 |
 | 3. Model Prep and Training | v1.0 | 3/3 | Complete | 2026-03-27 |
 | 4. Evaluation | v1.0 | 0/3 | Not started | - |
-| 5. Packaging and Deployment | v1.0 | 0/3 | Not started | - |
-| 6. Adaptive Training Planner | v1.1 | 4/6 | Gaps found | - |
+| 5. Packaging and Deployment | v1.0 | 0/3 | Deferred to v2.0 | - |
+| 6. Adaptive Training Planner | v1.1 | 6/6 | Complete | 2026-04-01 |
+| 7. Router Profiling | v2.0 | 0/? | Not started | - |
+| 8. Selective Training (MoE-Sieve) | v2.0 | 0/? | Not started | - |
+| 9. Expert Pruning and Comparative Evaluation | v2.0 | 0/? | Not started | - |
+| 10. Packaging | v2.0 | 0/? | Not started | - |
