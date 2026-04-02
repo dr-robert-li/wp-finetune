@@ -91,27 +91,41 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 | No one-off scripts in pipeline | Skills + pipeline_orchestrator.py, not throwaway agent scripts | ✓ Good |
 | dgx_toolbox.py project-agnostic | All project-specific couplings moved to config/dgx_toolbox.yaml | ✓ Good |
 
-## Current Milestone: v2.0 MoE-Sieve & Expert Pruning
+## Current Milestone: v2.0 MoE-Sieve Selective Training
 
-**Goal:** Maximize specialization and inference efficiency by training only WordPress-active experts with task-aware data filtering, then conservatively pruning the coldest experts — producing a smaller, faster model that still handles edge cases.
+**Goal:** Train only WordPress-active experts via routing-guided LoRA selection with task-aware data filtering and k-sweep to find the optimal expert budget. Produces MoE-Sieve adapter for GRPO refinement in v3.0.
 
 **Target features:**
-- Router profiling pass with task-token affinity tagging (separate routing counts per `<wp_gen>` vs `<wp_judge>`, not just aggregate frequency)
-- Hot expert selection (top 25% per layer for LoRA targeting)
-- Selective LoRA training with task-aware data filtering (gen-hot experts get golden signal only; judge-hot experts get full spectrum)
-- Conservative expert pruning (bottom 10-15% near-zero routing only, preserve edge case coverage)
-- Pruning validation gate (eval must confirm no regression before finalizing)
-- Retrain best ratio from Phase 4 eval results
+- Router profiling pass with task-token affinity tagging (separate routing counts per `<wp_gen>` vs `<wp_judge>`)
+- Hot expert selection with k-sweep (3 budgets: ~13, 32, 64 per layer)
+- Selective LoRA training (gen-hot experts get golden signal only; judge-hot get full spectrum)
 - A/B eval against v1.0 full-LoRA on wp-bench
-- Packaging and deployment (package final pruned model — GGUF for Ollama, AWQ for vLLM, HuggingFace upload)
 
 **Key constraints:**
 - Depends on Phase 4 eval completing first (need winning gen/judge ratio)
-- Pruning threshold empirical, not hardcoded — safety over size
 - Profiling must tag expert sets by task token affinity, not just overall routing frequency
-- Phase 5 (Packaging) deferred from v1.0 into v2.0 as final step — package the production model, not the intermediate
+- Pruning deferred to v3.0 — GRPO changes routing distribution, must prune on final routing
 
-**Research basis:** MoE-Sieve (arxiv 2603.24044) — routing-guided LoRA selection matches full-LoRA within ±1pp, cuts params ~70%, wall-clock ~50%. Qwen3 router in `Qwen3MoeSparseMoeBlock`, PEFT PR #2638 or Unsloth fused MoE LoRA for per-expert targeting.
+**Research basis:** MoE-Sieve (arxiv 2603.24044) — routing-guided LoRA selection matches full-LoRA within ±1pp, cuts params ~70%, wall-clock ~50%.
+
+## Planned Milestone: v3.0 GRPO & Production Deployment
+
+**Goal:** Apply gen-only GRPO with composite verifiable rewards and RSPO router-shift stabilization, then merge LoRA, REAP prune on final routing, and package for production.
+
+**Target features:**
+- Composite reward: 70% verifiable (PHPCS + security gate + WP standards with VeRPO partial credit) / 30% frozen wp_judge (MO-GRPO normalized)
+- Gen-only GRPO on hot experts with RSPO router-shift stabilization
+- LoRA merge into base weights before pruning
+- REAP pruning on merged model (50-75% compression, targeting ~8-12B total params)
+- Cascading compression gates for packaging (bf16 → optional quantization Q8→Q4)
+
+**Key constraints:**
+- Security scanner hard gate: total reward = 0 on security failure (non-negotiable)
+- MO-GRPO normalization mandatory (prevents single-signal dominance)
+- Must merge LoRA before REAP (activation magnitudes need unified model)
+- RSPO tested on Qwen3-30B-A3B directly (low-complexity plug-in)
+
+**Research basis:** RSPO (Oct 2025) for MoE-specific GRPO stability, MO-GRPO (Sep 2025) for multi-signal normalization, VeRPO (Jan 2026) for verifiable reward grounding, REAP (Cerebras) for native Qwen3 pruning.
 
 ## Completed Milestones
 
@@ -136,4 +150,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-02 — Milestone v2.0 started: MoE-Sieve selective expert training + conservative pruning, packaging deferred to v2.0*
+*Last updated: 2026-04-02 — v2.0 revised (selective training only), v3.0 added (GRPO + pruning + packaging)*
