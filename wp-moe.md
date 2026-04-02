@@ -150,7 +150,7 @@ training:
   logging_steps: 10
   eval_steps: 100
   save_steps: 200
-  report_to: wandb (project: wp-qwen3-moe)
+  report_to: mlflow (local sqlite at mlruns.db)
 ```
 
 ### Loss Function
@@ -289,9 +289,46 @@ After v1 release, the fine-tuned 30B model can serve as a teacher to train small
 | Qwen3-4B (dense) | 4B | ~2GB |
 | Qwen3-1.7B (dense) | 1.7B | ~1GB |
 
-### Future: Expert Pruning
+### Planned: MoE-Sieve Selective Training (v2.0)
 
-Analyse which of the 128 experts fire on WordPress code during fine-tuning (W&B tracks this). Remove unused experts and merge similar ones. Could reduce from 128 → 32-64 experts, cutting total params from 30B → 10-15B while keeping ~3B active.
+Phase 4 profiles the base model first, then evaluates adapters as a triage gate. Survivors go to Phase 7 where fine-tuned adapter routing concentration determines the final ratio. The key metric is **effective expert count** — the exponential of per-layer routing entropy:
+
+```
+H_l = -Σ_{e=1}^{E} p_{l,e} · log(p_{l,e})       (routing entropy, layer l)
+E_eff_l = exp(H_l)                                 (effective expert count, layer l)
+```
+
+where `p_{l,e}` is the fraction of tokens routed to expert `e` in layer `l`, across `E = 128` routed experts. `E_eff` directly gives the number of meaningfully active experts per layer. Lower `E_eff` = sharper routing = more experts can be pruned. Bounds: `E_eff = 1` (all tokens to one expert) to `E_eff = 128` (uniform).
+
+The ratio selection decision matrix combines:
+- **Eval score** (Phase 4, normalised 0-1) — quality gate
+- **Mean E_eff** across layers — overall routing concentration
+- **Max E_eff** across layers — worst-case bottleneck, constrains pruning ceiling
+- **E_eff variance** — predicts whether uniform per-layer pruning works or layer-adaptive is needed
+
+The ratio with lowest E_eff at equivalent quality (within 2pp) wins, optimizing for post-compression quality-per-VRAM rather than pre-compression quality alone.
+
+After ratio selection, MoE-Sieve retrains only hot experts with task-aware data routing and a k-sweep across 10%/25%/50% expert budgets. See [ROADMAP.md](.planning/ROADMAP.md) Phases 7-9.
+
+### Planned: Expert Pruning (v3.0)
+
+After GRPO refinement and LoRA merge, two pruning methods are compared on the final merged model:
+
+**REAP** (Routing-Expert-Aware Pruning) — domain-aware, calibration-based (~3 hrs):
+```
+S_j = mean_{x ∈ active(j)}( g_j(x) · ‖f_j(x)‖₂ )
+```
+Scores each expert by the mean product of gating score and output norm, computed only over tokens where the expert is active. Captures both routing frequency and per-token impact. Calibrated on WordPress data.
+
+**AIMER** (Calibration-Free Task-Agnostic MoE Pruning) — weight-only, no calibration (~1 sec):
+```
+AIMER(expert) = P / √(N · Q)
+```
+where `P = Σ|w_i|` (L₁ norm), `N` = parameter count, `Q = Σ w_i²` (squared Frobenius norm) across gate/up/down projections. Scale-invariant, bounded `[1/√N, 1]`. Retains experts with highest scores (most distinctive weight distributions).
+
+Both run at 25%/50%/75% compression (6 variants total). Domain specificity analysis quantifies expert overlap between methods per layer — the key question is whether WordPress routing concentration is distinct enough for calibration-based pruning to outperform weight-based pruning. The answer is published in the model card.
+
+Target: reduce from 128 → 32-64 routed experts, cutting total params from ~30B → ~8-17B while keeping ~3B active. See [ROADMAP.md](.planning/ROADMAP.md) Phases 12-14.
 
 ---
 
@@ -421,6 +458,6 @@ overall = (D1×10 + D2×20 + D3×15 + D4×10 + D5×10 + D6×10 + D7×8 + D8×10 
 ---
 
 ## Document Version
-- Version: 2.0
-- Date: March 2026
-- Status: Phase 3 at checkpoint — training scripts ready, awaiting DGX execution
+- Version: 2.1
+- Date: April 2026
+- Status: v1.0 Phases 1-3 complete, v1.1 Phase 6 complete, Phase 4 (Evaluation) next
