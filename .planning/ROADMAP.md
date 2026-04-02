@@ -50,7 +50,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 10: Reward Infrastructure** - Build composite reward pipeline (70% verifiable / 30% judge) with security hard gate, MO-GRPO normalization, and VeRPO partial credit
 - [ ] **Phase 11: GRPO Training** - Gen-only GRPO on hot experts with RSPO router-shift stabilization and collapse monitoring
-- [ ] **Phase 12: LoRA Merge & REAP Pruning** - Merge MoE-Sieve + GRPO adapters into base weights, then REAP prune at 25%/50%/75% compression with gating-mask validation
+- [ ] **Phase 12: LoRA Merge & Expert Pruning (AIMER vs REAP)** - Merge adapters, run both AIMER (weight-based) and REAP (calibration-based) at 3 compression ratios, compare to determine if WordPress specialization benefits domain-aware pruning
 - [ ] **Phase 13: Comparative Evaluation** - A/B compare GRPO+pruned model against v2.0 SFT-only on wp-bench, all 9 dimensions, speed delta, and model size
 - [ ] **Phase 14: Packaging** - Cascading compression gates (bf16 baseline → quantization decision → HuggingFace upload → E2E inference validation)
 
@@ -248,16 +248,17 @@ Plans:
   4. Training halts automatically if router-shift ratio exceeds the stability threshold — the halt is triggered by per-step monitoring, not a post-hoc check
 **Plans**: TBD
 
-### Phase 12: LoRA Merge & REAP Pruning
-**Goal**: MoE-Sieve and GRPO LoRA adapters are merged into base weights to produce a unified model, then REAP pruning tests three compression ratios with gating-mask validation before any weights are physically removed
+### Phase 12: LoRA Merge & Expert Pruning (AIMER vs REAP)
+**Goal**: Merge LoRA adapters into base weights, then run both AIMER (task-agnostic, weight-based) and REAP (domain-aware, calibration-based) at three compression ratios to determine whether WordPress domain specialization creates enough routing concentration for calibration-based pruning to outperform generalized weight-based pruning
 **Depends on**: Phase 11
-**Requirements**: MERGE-01, PRUNE-01, PRUNE-02, PRUNE-03, PRUNE-04, PRUNE-05
+**Requirements**: MERGE-01, PRUNE-01, PRUNE-02, PRUNE-03, PRUNE-04, PRUNE-05, PRUNE-06
 **Success Criteria** (what must be TRUE):
-  1. Both LoRA adapters (MoE-Sieve + GRPO) are merged into base model weights before any pruning step — the merged checkpoint loads and produces identical outputs to the adapter-on-base configuration
-  2. REAP pruning runs on the merged model using WordPress calibration data and tests gating masks at 25%, 50%, and 75% compression ratios before any weights are physically removed
-  3. Gating-mask evaluation checks retention across all 9 eval dimensions at each compression ratio — the dimension-level report is visible and reviewed before committing to physical weight removal
-  4. The selected compression ratio shows no regression on any eval dimension (especially D2_security); if regression is found, compression is reduced incrementally until clean
-  5. The final pruned checkpoint has expert weights physically removed and router softmax re-normalized for removed slots — it loads as a valid HuggingFace-compatible checkpoint with a smaller parameter count (targeting ~8-12B total)
+  1. Both LoRA adapters (MoE-Sieve + GRPO) are merged into base model weights — merged checkpoint produces identical outputs to adapter-on-base configuration
+  2. AIMER runs on merged model at 25%, 50%, 75% compression (~1 second per ratio, no calibration needed) producing 3 pruning masks as task-agnostic baseline
+  3. REAP runs on same merged model with WordPress calibration data at same 25%, 50%, 75% compression producing 3 domain-aware pruning masks
+  4. All 6 variants (2 methods × 3 ratios) evaluated via gating mask across all 9 dimensions before any weight removal — comparison table visible before committing
+  5. Domain specificity analysis: expert overlap between AIMER and REAP retention sets quantified per layer — high overlap = WordPress isn't specialized enough for calibration advantage; low overlap = REAP captures domain routing AIMER misses
+  6. Winning method + ratio selected by dimension-level retention (especially D2_security), preferring higher compression at equivalent quality; final model physically pruned with router re-normalization
 **Plans**: TBD
 
 ### Phase 13: Comparative Evaluation
