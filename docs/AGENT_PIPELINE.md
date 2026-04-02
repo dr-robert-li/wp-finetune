@@ -81,6 +81,29 @@ These run as regular scripts, no LLM needed:
 - `phase2_mutate.py` — Automated contrastive mutations
 - `export_dataset.py` — Format conversion, splits, metadata
 
+#### 7. Base-Model E_eff Profiling (Phase 4)
+- **Script:** `scripts/profile_base_model.py`
+- **Input:** All 5 ratio data distributions from `data/final_dataset/ratio_{30_70..70_30}/openai_train.jsonl`
+- **Method:** Hooks 48 Qwen3MoeTopKRouter gate layers, captures per-expert routing counts split by `<wp_gen>` vs `<wp_judge>` tokens, computes E_eff via Shannon entropy
+- **Output:** `output/profiling/base_model_eeff.jsonl` + `output/profiling/base_model_eeff_summary.md`
+- **Duration:** ~10 minutes (all 5 ratios)
+- **No LLM needed** — pure forward-pass profiling
+
+#### 8. Eval Triage Orchestrator (Phase 4)
+- **Script:** `scripts/run_eval_triage.py`
+- **Input:** Trained adapters from `adapters/qwen3-30b-wp-{ratio}/`, base model, wp-bench
+- **Steps:** E_eff profiling → sequential vLLM LoRA serving per adapter → eval suite (eval_gen, eval_judge, eval_gate) → wp-bench → GATE-02 triage
+- **Output:** `output/eval_triage/ratio_{r}/` (per-ratio results) + `output/triage_decision.md`
+- **Duration:** ~30-45 minutes per adapter
+- **Idempotent:** `.complete` marker files per step, re-run resumes from last incomplete
+
+#### 9. GATE-02 Triage Decision (Phase 4)
+- **Script:** `scripts/triage_ratios.py`
+- **Input:** Per-ratio eval results from `output/eval_triage/`
+- **Elimination rules:** Hard gates (PHPCS >95%, Spearman >0.85, Security >98%) + 5pp rule (>5pp behind best = eliminated)
+- **Output:** Survivors list + elimination reasons → `output/triage_decision.md`
+- **No LLM needed** — deterministic scoring logic
+
 ## Output Format Contracts
 
 All agents must write output matching the exact JSON format of existing pipeline files. Read one example file before writing to verify structure.
