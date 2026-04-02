@@ -34,7 +34,7 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 - [ ] Extend tokenizer with `<wp_gen>` and `<wp_judge>` special tokens
 - [ ] Fine-tune via Unsloth Studio (LoRA r=32, multi-task SFT, multi-ratio training)
 - [ ] Evaluate model (9-dimension rubric: 241 checks, per-dimension Spearman correlation + wp-bench)
-- [ ] Package and deploy (GGUF for Ollama, AWQ for vLLM, HuggingFace upload)
+- [ ] Package and deploy (deferred to v2.0 — package after MoE-Sieve + pruning)
 
 ### Out of Scope
 
@@ -91,23 +91,32 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 | No one-off scripts in pipeline | Skills + pipeline_orchestrator.py, not throwaway agent scripts | ✓ Good |
 | dgx_toolbox.py project-agnostic | All project-specific couplings moved to config/dgx_toolbox.yaml | ✓ Good |
 
-## Current Milestone: v1.1 Adaptive Training Infrastructure
+## Current Milestone: v2.0 MoE-Sieve & Expert Pruning
 
-**Goal:** Replace temperature-zone adaptive planner with power-primary decision engine that correctly exploits the DGX Spark GB10's thermal envelope, plus Unsloth override detection and extended warmup probes.
+**Goal:** Maximize specialization and inference efficiency by training only WordPress-active experts with task-aware data filtering, then conservatively pruning the coldest experts — producing a smaller, faster model that still handles edge cases.
 
 **Target features:**
-- Power-primary routing (GPU watts as primary signal, temperature as safety brake only at >=82C)
-- Reordered thermal exploitation ladder (batch first for max thermal impact, then prefetch, workers, save/eval)
-- Batch/grad_accum coupling (auto-adjust grad_accum when batch changes to hold effective_batch constant)
-- Unsloth banner parsing (detect silent batch/grad_accum override, write actuals to telemetry)
-- Extended warmup probe (3-5 steps via dgx-toolbox probe.py, not 1-step MemAvailable check)
-- Failure classification (NORMAL/OOM/HANG/THERMAL via dgx-toolbox classify_failure)
-- Anchor store for config history with cooldown and hard caps
-- Within-run power telemetry via extended MemoryWatchdogCallback (GPU watts every 50 steps)
+- Router profiling pass with task-token affinity tagging (separate routing counts per `<wp_gen>` vs `<wp_judge>`, not just aggregate frequency)
+- Hot expert selection (top 25% per layer for LoRA targeting)
+- Selective LoRA training with task-aware data filtering (gen-hot experts get golden signal only; judge-hot experts get full spectrum)
+- Conservative expert pruning (bottom 10-15% near-zero routing only, preserve edge case coverage)
+- Pruning validation gate (eval must confirm no regression before finalizing)
+- Retrain best ratio from Phase 4 eval results
+- A/B eval against v1.0 full-LoRA on wp-bench
+- Packaging and deployment (package final pruned model — GGUF for Ollama, AWQ for vLLM, HuggingFace upload)
 
-**Dependency:** dgx-toolbox Phase 13 (telemetry/ package) must be complete before execution.
+**Key constraints:**
+- Depends on Phase 4 eval completing first (need winning gen/judge ratio)
+- Pruning threshold empirical, not hardcoded — safety over size
+- Profiling must tag expert sets by task token affinity, not just overall routing frequency
+- Phase 5 (Packaging) deferred from v1.0 into v2.0 as final step — package the production model, not the intermediate
 
-**Detailed plan:** ~/Downloads/wp_finetune_adaptive_plan.md (2,280 lines, 6 tasks)
+**Research basis:** MoE-Sieve (arxiv 2603.24044) — routing-guided LoRA selection matches full-LoRA within ±1pp, cuts params ~70%, wall-clock ~50%. Qwen3 router in `Qwen3MoeSparseMoeBlock`, PEFT PR #2638 or Unsloth fused MoE LoRA for per-expert targeting.
+
+## Completed Milestones
+
+### v1.1 Adaptive Training Infrastructure (Phase 6, completed 2026-04-01)
+Power-primary adaptive planner with batch coupling, telemetry extensions, warmup probes, and failure classification. All 13 requirements verified.
 
 ## Evolution
 
@@ -127,4 +136,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-01 — Phase 6 complete: adaptive training planner with power-zone routing, batch coupling, telemetry extensions, and warmup probes*
+*Last updated: 2026-04-02 — Milestone v2.0 started: MoE-Sieve selective expert training + conservative pruning, packaging deferred to v2.0*
