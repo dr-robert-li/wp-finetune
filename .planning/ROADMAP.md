@@ -116,16 +116,18 @@ Plans:
 
 </details>
 
-### Phase 4: Evaluation (Triage)
-**Goal**: Run all 3 ratio adapters (30/70, 40/60, 50/50) through quality gates and wp-bench to triage — eliminate ratios that clearly fail, carry survivors to Phase 7 profiling where routing concentration determines the final winner
+### Phase 4: Base-Model Profiling & Evaluation (Triage)
+**Goal**: First, profile the base model with all 5 ratio data distributions (~minutes) to determine whether 60/40 and 70/30 warrant training. Then eval existing adapters (30/70, 40/60, 50/50) through quality gates and wp-bench in parallel with any new training. Triage eliminates clearly failing ratios; survivors carried to Phase 7.
 **Depends on**: Phase 3
 **Requirements**: EVAL-01, EVAL-02, EVAL-03, EVAL-04, EVAL-05, GATE-02
 **Success Criteria** (what must be TRUE):
-  1. All 3 ratio adapters evaluated: PHPCS pass rate, judge Spearman correlation, security pass rate
-  2. At least one ratio exceeds all hard gates (PHPCS >95%, Spearman >0.85, Security >98%)
-  3. wp-bench execution and knowledge tests run for all 3 ratios with scores recorded
-  4. Triage decision: ratios that fail hard gates or are >5pp behind the best are eliminated; all others survive to Phase 7 profiling (high bar for elimination, low bar for continuation)
-  5. Human has reviewed all eval results and approved triage decisions
+  1. Base-model profiling runs gradient-free forward passes with all 5 ratio data distributions, producing E_eff per layer for each — determines whether 60/40 and 70/30 training is warranted (E_eff trending down = train, flat/up = skip)
+  2. If E_eff signal warrants, 60/40 (and optionally 70/30) training started in background while eval runs on existing 3 adapters
+  3. All available ratio adapters evaluated: PHPCS pass rate, judge Spearman correlation, security pass rate
+  4. At least one ratio exceeds all hard gates (PHPCS >95%, Spearman >0.85, Security >98%)
+  5. wp-bench execution and knowledge tests run for all evaluated ratios with scores recorded
+  6. Triage decision: ratios that fail hard gates or are >5pp behind the best are eliminated; all others survive to Phase 7 (high bar for elimination, low bar for continuation)
+  7. Human has reviewed all eval results and E_eff profiling data, approved triage decisions
 **Plans**: TBD
 
 Plans:
@@ -186,16 +188,16 @@ Plans:
 
 **Dependency:** Phase 4 (Evaluation) must complete first — MoE-Sieve needs the winning gen/judge ratio.
 
-### Phase 7: Router Profiling & Ratio Selection
-**Goal**: Profile ALL surviving ratios from Phase 4 triage (not just a single winner), producing per-task expert affinity maps and routing concentration reports with E_eff metrics, then select the optimal ratio for single-track MoE-Sieve training based on combined eval quality + routing compressibility
-**Depends on**: Phase 4 (surviving ratios from triage); Phase 6 (adaptive training infrastructure)
+### Phase 7: Fine-Tuned Adapter Profiling & Ratio Selection
+**Goal**: Profile surviving ratio ADAPTERS (not base model — that was Phase 4 step 1) to capture how fine-tuning shifted routing, producing per-task expert affinity maps with E_eff metrics. Combined with Phase 4 eval scores to select the optimal ratio for single-track MoE-Sieve training.
+**Depends on**: Phase 4 (surviving ratios with eval scores + base-model E_eff); Phase 6 (adaptive training infrastructure)
 **Requirements**: PROF-01, PROF-02, PROF-03, PROF-04, PROF-05, GATE-01
 **Success Criteria** (what must be TRUE):
-  1. A profiling script runs a gradient-free forward pass hooking `Qwen3MoeSparseMoeBlock` gating outputs and produces per-layer routing count tables for EACH surviving ratio — not just one
-  2. The routing tables report separate expert activation counts for `<wp_gen>` and `<wp_judge>` prefixed inputs per ratio
-  3. Profiling on a 10% subsample achieves Jaccard similarity >=0.94 against the full-set ranking per ratio
-  4. Concentration report per ratio includes: per-layer CV, cumulative coverage curves, layer-depth skew, and E_eff = exp(entropy) per layer with mean/max/variance summary — E_eff directly predicts pruning headroom
-  5. Decision matrix combining Phase 4 eval score and Phase 7 E_eff selects the ratio with lowest E_eff at equivalent quality (within 2pp) — a single ratio is chosen for all subsequent MoE-Sieve, GRPO, and pruning work
+  1. Profiling runs on each surviving ratio's fine-tuned adapter (not base model) hooking `Qwen3MoeSparseMoeBlock` gating outputs — captures how LoRA fine-tuning shifted routing relative to base-model profiling from Phase 4
+  2. Routing tables report separate expert activation counts for `<wp_gen>` and `<wp_judge>` per ratio
+  3. Profiling on 10% subsample achieves Jaccard similarity >=0.94 against full-set ranking per ratio
+  4. Concentration report per ratio: per-layer CV, cumulative coverage curves, layer-depth skew, E_eff per layer with mean/max/variance — compared against Phase 4 base-model E_eff to quantify fine-tuning routing shift
+  5. Decision matrix combining Phase 4 eval score and Phase 7 adapter E_eff selects the ratio with lowest E_eff at equivalent quality (within 2pp) — single ratio chosen for all subsequent work
 **Plans**: TBD
 
 ### Phase 8: Selective Training (MoE-Sieve)
