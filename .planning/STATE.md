@@ -1,36 +1,36 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: MVP
-status: verifying
-stopped_at: Completed 06-adaptive-training-planner plan 04 — Phase 6 complete, adaptive planner v4.0 verified and human-approved
-last_updated: "2026-04-01T07:15:17.642Z"
-last_activity: 2026-04-01
+milestone: v2.0
+milestone_name: MoE-Sieve & Expert Pruning
+status: defining_requirements
+stopped_at: Milestone v2.0 started — defining requirements
+last_updated: "2026-04-02"
+last_activity: 2026-04-02
 progress:
-  total_phases: 3
-  completed_phases: 1
-  total_plans: 6
-  completed_plans: 6
-  percent: 61
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-31)
+See: .planning/PROJECT.md (updated 2026-04-02)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 06 — adaptive-training-planner
+**Current focus:** Defining v2.0 requirements — MoE-Sieve selective expert training + conservative pruning
 
 ## Current Position
 
-Phase: 06
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-04-01
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-02 — Milestone v2.0 started
 
-Progress: [██████░░░░] 61%
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
