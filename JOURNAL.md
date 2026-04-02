@@ -4,6 +4,151 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-04-02 — v2.0 MoE-Sieve & Expert Pruning: why selective training and structural pruning matter
+
+### The goal
+
+After v1.0's full-LoRA fine-tune and v1.1's adaptive training infrastructure, the next question is: can we produce a WordPress-specialized model that is not only accurate but *small and fast enough to self-host on lightweight infrastructure*? A 30B MoE model is powerful but expensive to serve. If most of its 128 routed experts per layer are irrelevant to WordPress/PHP tasks, we're paying inference cost for dead weight.
+
+The v2.0 milestone chains two complementary techniques — MoE-Sieve (selective expert training) followed by REAP (structural expert pruning) — to produce a model that is maximally specialized for WordPress code generation and review, with a dramatically smaller footprint than the full model. The sequence matters: train only the experts that matter, then physically remove the ones that don't.
+
+### Why this matters for LLM research
+
+This implementation demonstrates several frontier techniques in combination that, to my knowledge, haven't been applied together in a published domain-specific fine-tuning pipeline:
+
+**1. Routing-guided selective LoRA on a production-scale MoE.** MoE-Sieve has been validated on OLMoE-1B-7B (64 experts) and Qwen1.5-MoE-A2.7B (60 experts). Applying it to Qwen3-30B-A3B (128 routed + 4 shared experts per layer) is a scale jump that tests whether the 25% expert budget holds at larger architectures — or whether domain concentration allows an even smaller budget. The k-sweep across 10%, 25%, and 50% budgets will produce the first published data point on MoE-Sieve scaling behavior at 128-expert layers.
+
+**2. Task-token-aware expert profiling.** The MoE-Sieve paper profiles experts per-task and confirms low cross-task overlap (Jaccard = 0.13 between MBPP and Wikitext). We extend this by profiling per *task token* within the same domain — `<wp_gen>` (code generation) vs `<wp_judge>` (code review) — and feeding different training data to each expert set. Gen-hot experts see only golden signal (high-quality code), while judge-hot experts see the full quality spectrum (passed + failed + contrastive pairs). This task-aware data filtering is a novel contribution: it treats the MoE router as a natural task decomposer and tailors the training signal accordingly.
+
+**3. Selective training → structural pruning pipeline.** MoE-Sieve identifies which experts are hot (worth training) and which are cold (frozen). REAP then scores those cold experts for structural removal. The combination is more principled than either technique alone: MoE-Sieve's routing profile provides a strong prior on which experts REAP should consider pruning, and REAP's saliency scoring (gate_value × output_norm) provides a more rigorous removal criterion than routing count alone.
+
+**4. Domain-specific MoE compression.** General-purpose MoE pruning (what REAP's published benchmarks test) must preserve broad capability across math, code, language, reasoning. Domain-specific pruning can be far more aggressive because the model only needs to excel at WordPress/PHP. This is the "specialist vs generalist" advantage: a WordPress expert doesn't need the experts that handle Japanese grammar or organic chemistry. The routing concentration for PHP/WordPress data should be sharper than any general benchmark, enabling higher compression ratios without quality loss.
+
+**5. Self-hostable specialist model.** The end state — a pruned, specialized MoE exported as GGUF/AWQ — demonstrates that frontier MoE architectures can be compressed into models runnable on modest hardware (single consumer GPU or small cloud instance) when the domain is narrow enough. This challenges the assumption that MoE models are inherently expensive to serve.
+
+### Research papers and how they shaped the design
+
+**MoE-Sieve: Routing-Guided Selective LoRA** (arXiv 2603.24044, March 2025)
+
+The foundational paper for this milestone. MoE-Sieve's core insight is that in Mixture-of-Experts models, expert activation is highly skewed — a small fraction of routed experts handle the vast majority of tokens for any given task. Training all experts equally via full LoRA wastes compute on cold experts that receive sparse, inconsistent gradient updates. These updates act as noise rather than signal, actually *destabilizing* training (seed-to-seed variance drops 41-64% when cold experts are excluded).
+
+Key findings that directly informed our requirements:
+
+- **25% budget sufficiency.** On both OLMoE and Qwen1.5-MoE, training only the top 25% most-routed experts per layer matched full-LoRA accuracy within ±1pp across Spider, GSM8K, and HellaSwag (5 of 6 conditions passed formal TOST equivalence testing at ε=2pp). This established our starting hypothesis, though the 25% threshold is validated only on 60-64 expert architectures — hence the k-sweep requirement for our 128-expert model.
+
+- **Count-based ranking preferred for Qwen.** The paper tested both count-based (how often an expert is selected) and mass-based (sum of gating weights) expert ranking. For Qwen architecture, Jaccard similarity between methods was 0.920 — nearly identical, but count-based is simpler and recommended. This determined PROF-01's specification.
+
+- **10% subsample stability.** Profiling on just 10% of training data produced expert rankings with Jaccard ≥ 0.94 vs the full dataset. This is critical for our setup: profiling 128 experts × 28 layers on the full WordPress training set would be expensive. The 10% subsample makes the profiling pass cheap.
+
+- **Per-layer selection, not global.** Routing skew amplifies ~2× from early to deep layers. Selecting experts per-layer (not a global top-k) preserves early-layer diversity while exploiting deep-layer concentration. This shaped PROF-04's layer-depth skew analysis requirement.
+
+- **Cross-task expert overlap is low** (Jaccard = 0.13 between MBPP and Wikitext). This is the empirical basis for profiling `<wp_gen>` and `<wp_judge>` tokens separately. If even unrelated tasks (code vs text) show low overlap, our two task types within the same domain will likely activate different expert subsets — justifying task-specific data filtering.
+
+- **Cold-expert noise hypothesis.** The paper's most counterintuitive finding: excluding cold experts doesn't just save compute — it *improves stability*. Cold experts receive too few gradient updates to learn meaningful patterns, and the sparse updates they do receive introduce variance. This validated our decision to freeze (not just down-weight) cold experts during MoE-Sieve training.
+
+- **Training hyperparameters.** The paper used LoRA r=32, α=64, dropout=0.05, which matches our existing v1.0 config exactly — no hyperparameter changes needed for MoE-Sieve, only the target module selection changes.
+
+**What MoE-Sieve doesn't address:** The paper focuses on *training* efficiency — which experts to adapt. It doesn't remove cold experts from the model. A MoE-Sieve-trained model still has all 128 experts per layer at inference time, paying full routing and memory costs. This is where REAP comes in.
+
+**REAP: Routing-Expert-Aware Pruning** (Cerebras Research, 2025)
+
+REAP addresses the complementary problem: after MoE-Sieve identifies which experts are hot vs cold, REAP provides a principled method to *physically remove* the cold ones, producing a genuinely smaller model.
+
+REAP was selected over EASY-EP (the other MoE pruning method initially considered) for three reasons:
+
+1. **Native Qwen3-30B-A3B support.** REAP's published results include Qwen3-30B-A3B with exact metrics: 95.9% accuracy retention at 50% expert pruning on EvalPlus, and model size reduced from 30.5B to 17.3B parameters. EASY-EP was designed for DeepSeek-R1 and would require architecture adaptation.
+
+2. **Saliency-based scoring.** REAP computes expert importance as S_j = mean(g_j(x) · ‖f_j(x)‖₂) — the average product of the gating score and output norm, computed only over tokens where the expert is actually active. This captures both *how often* an expert is selected (frequency) and *how much it contributes when selected* (impact). A rarely-routed expert that produces high-magnitude outputs when activated scores higher than a frequently-routed expert with negligible outputs. This matters for edge case preservation: a security-related expert might fire rarely but critically.
+
+3. **Pruning > merging for generative tasks.** REAP's key finding is that expert *merging* (combining cold experts into hot ones) hurts generative quality, even though it preserves more parameters. The information in cold expert weights is apparently noise for the tasks where hot experts dominate. This aligns with MoE-Sieve's cold-expert noise hypothesis and supports our approach of clean removal rather than knowledge distillation.
+
+**EASY-EP** (RUCAIBox, 2025) was the initial pruning candidate. It uses a similar gating score × output magnitude formula and a two-step mask-then-prune pipeline. However, its codebase targets DeepSeek-R1/V3 architectures natively, and adapting it to Qwen3's router structure would add engineering work without clear accuracy advantages over REAP's native Qwen3 support. EASY-EP remains a valid alternative if REAP produces unexpected results, but for v2.0 we're proceeding with REAP only to reduce scope.
+
+### The full pipeline: SFT → GRPO → Merge → REAP
+
+The techniques chain in a specific order, and that order matters. The critical insight is that REAP must come *after* GRPO, not before — because GRPO changes which experts matter.
+
+1. **Profile** (MoE-Sieve PROF-01 through PROF-04): Forward pass over WordPress data, hooking `Qwen3MoeSparseMoeBlock` gating outputs. Record per-layer, per-task-token expert activation counts. Output: routing heatmap with gen/judge affinity tags.
+
+2. **SFT with MoE-Sieve** (SIEVE-01 through SIEVE-05): Apply LoRA adapters only to hot experts (attention, routers, and shared experts always included). K-sweep at 10%, 25%, 50% budgets to find the accuracy plateau. Train with task-aware data filtering.
+
+3. **GRPO with hot-experts-only + RSPO stabilisation**: Refine `<wp_gen>` generation against verifiable rewards. LoRA targets remain the same hot expert set — router weights and attention are updated as part of the shared parameters being trained.
+
+4. **Merge LoRA into base weights**: Bake the adapter weights into the hot experts' base weights to produce a unified model. This is required before REAP because REAP measures activation magnitude of expert outputs — if the LoRA is still a separate adapter, activation norms won't reflect the true fine-tuned expert contributions.
+
+5. **REAP pruning on final merged model** (PRUNE-01 through PRUNE-05): Re-profile routing on WordPress calibration data (the routing distribution has shifted during GRPO). Score all experts by gate_value × activation_magnitude on the *post-GRPO, post-merge* model. Prune bottom 50-75% of routed experts. Brief router re-normalisation to adjust softmax for removed expert slots.
+
+6. **Validate** (EVAL-01, EVAL-02): A/B compare against v1.0 full-LoRA on wp-bench. Confirm no regression on any of the 9 evaluation dimensions, especially D2_security.
+
+7. **Package** (PKG-01 through PKG-05): Gated compression — eval pruned bf16 first, quantize only if deployment constraints require it.
+
+### Why REAP must follow GRPO, not precede it
+
+Deferring REAP until after GRPO is the correct ordering for a straightforward reason: GRPO will change which experts matter, and you want to prune based on the final routing distribution, not an intermediate one.
+
+**The routing distribution shifts during GRPO.** Even with hot-experts-only GRPO and RSPO stabilisation, the router weights still receive gradient updates — they're part of the attention/shared parameters being trained. This means the relative importance ranking among hot experts will shift during GRPO. An expert that was the 30th-most-routed during SFT profiling might become the 5th-most-important after GRPO discovers it's particularly useful for generating correct WordPress hook patterns. If you prune before GRPO, you risk removing experts that RL would have promoted.
+
+**REAP's scoring inputs change after GRPO.** REAP scores experts by S_j = mean(g_j(x) · ‖f_j(x)‖₂) on a calibration set. Both quantities change after GRPO:
+- Gate values shift because the router is updated during GRPO (it's not in the frozen cold-expert set)
+- Activation magnitudes shift because the hot experts' LoRA weights change their output distributions
+
+Pruning on pre-GRPO scores would be like measuring furniture before renovating the room.
+
+**REAP is designed for post-training anyway.** REAP is explicitly a one-shot, post-training method — you run it on a finished model with a small calibration set (25-100 samples) and prune in one pass. There's no training loop, no gradient computation. It takes minutes. There's zero benefit to doing it earlier, and real risk in doing so.
+
+**Don't prune before merge.** The LoRA adapter must be merged into the base weights before running REAP. REAP measures activation magnitude of expert outputs — if the LoRA is still a separate adapter, the activation norms won't reflect the true fine-tuned contributions. Merge first, then profile and prune on the unified model.
+
+### Expected compression
+
+REAP on Qwen3-Coder-480B achieved near-lossless compression at 50% expert pruning specifically on code generation tasks. Our WordPress model should compress even more aggressively than a general code model because the domain is narrower — WordPress is a strict subset of PHP/web development, so the routing concentration will be tighter. 60-75% pruning with minimal degradation is realistic, which would take the 30B total parameter count down to roughly 8-12B while maintaining the same ~3B active parameters per forward pass.
+
+### Key design decisions and their rationale
+
+**Task-aware data filtering (SIEVE-02/03).** This is the most novel requirement. The insight: `<wp_gen>` experts should only see high-quality code because their job is generation — exposure to failed examples teaches patterns we don't want generated. `<wp_judge>` experts must see the full quality spectrum because their job is discrimination — they need calibration on what bad code looks like. The MoE router naturally separates these expert populations (different tokens route differently), so we can tailor the training signal without manual expert assignment.
+
+**K-sweep instead of fixed 25% (SIEVE-04/05).** The MoE-Sieve paper's 25% finding comes from 60-64 expert models. Our 128-expert Qwen3-30B-A3B might plateau earlier (WordPress routing is likely more concentrated than general benchmarks) or later (scale effects). Rather than assume, we test 3 budgets and pick the smallest that matches full-LoRA. This produces a publishable data point on MoE-Sieve scaling.
+
+**REAP over EASY-EP.** Both methods use similar saliency formulas. REAP wins on native Qwen3 support (tested, published results) and the finding that pruning outperforms merging for generative tasks. Engineering pragmatism: use the tool that already works with your architecture.
+
+**Conservative pruning with dimension-level validation.** We don't hardcode a pruning ratio. REAP scores experts, we apply masks at multiple compression levels, and the eval suite (particularly D2_security) determines the final ratio. An expert that fires on 0.1% of tokens but catches SQL injection patterns is worth keeping. The saliency scoring helps here — such an expert would have high output magnitude when active, scoring above purely-dead experts.
+
+### Gated compression roadmap: why we don't blindly triple-compress
+
+There's a temptation to chain every compression technique available: MoE-Sieve (selective training, ±1pp) → REAP pruning (~4% loss at 50%) → quantization (~1-3% loss at Q4). Each is individually justified. But compounding them blindly risks stacking quality losses that individually pass eval gates but collectively degrade the model beyond acceptable thresholds.
+
+The solution is a **cascading gate architecture** where each compression stage earns its place independently, and the decision to proceed to the next stage is made *after* evaluating the current one — not assumed in advance.
+
+**Gate 1: Post-REAP pruned bf16.** After MoE-Sieve SFT, GRPO refinement, LoRA merge, and REAP pruning, evaluate the pruned bf16 model across all 9 dimensions and record model size, inference speed, and VRAM requirements. This is the quality baseline for everything that follows. With 60-75% REAP compression on Qwen3-30B-A3B (realistic given WordPress's narrow domain concentration), the model drops from ~30B to roughly 8-12B total parameters while maintaining ~3B active parameters per forward pass — already a dramatic size reduction. If the pruned bf16 model already fits within target deployment constraints (VRAM budget, throughput requirements, download size), there is no reason to quantize at all. Ship bf16.
+
+**Gate 2: Quantization necessity assessment.** Three factors determine whether quantization is warranted:
+- *Ollama distribution:* Users on consumer hardware (16-24 GB VRAM) may need GGUF Q4/Q5 even after pruning — pruned bf16 at ~8-12B params still requires ~16-24 GB in bf16 format, which may or may not fit depending on target hardware.
+- *vLLM throughput:* AWQ/FP8 on the serving infrastructure enables higher concurrent request throughput even when the pruned model fits in memory at bf16.
+- *HuggingFace download size:* Pruned + quantized is a friendlier download for the community.
+
+If none of these apply (e.g., the pruned model is small enough for target hardware at bf16), skip quantization entirely. The gate exists precisely to prevent unnecessary compression.
+
+**Gate 3: Incremental quantization testing.** If quantization is warranted, test from the lightest compression downward: Q8 → Q6 → Q5 → Q4. Evaluate each level against the Gate 1 bf16 baseline (not against v1.0 full-LoRA — the pruned bf16 model is the relevant reference). Stop at the lowest quantization level that holds within ±2pp of Gate 1 on all 9 dimensions. If Q8 is sufficient, never test Q4. If even Q8 regresses beyond threshold, ship pruned bf16 and let users quantize to their own tolerance.
+
+This gated approach has a research benefit beyond engineering prudence: it produces a **compression lineage** — eval results at each stage (full-LoRA → MoE-Sieve SFT → GRPO → merge → REAP pruned bf16 → quantized) showing exactly where quality degrades and by how much. This data is valuable for the community: anyone applying similar techniques to different domains can use our lineage to estimate their own compression budget.
+
+The model card on HuggingFace will document this full lineage: base model → MoE-Sieve selective training (k experts, which budget, eval results) → GRPO refinement (reward metrics, eval results) → LoRA merge → REAP pruning (compression ratio, eval results) → quantization level (if applied, eval results). Transparency about what was compressed and what it cost.
+
+### What this could demonstrate
+
+If successful, v2.0 produces a WordPress specialist model that:
+- Matches full-LoRA accuracy (±1pp on wp-bench)
+- Has ~70% fewer trainable parameters during fine-tuning (MoE-Sieve)
+- Is refined via GRPO against verifiable WordPress rewards before any structural changes
+- Has 60-75% fewer total parameters at inference (REAP pruning on the post-GRPO model, ~30B → 8-12B total, ~3B active unchanged)
+- May be further compressed via quantization if deployment constraints require it — but only through an eval-gated process, not by default
+- Runs on a single consumer-grade GPU or modest cloud instance
+- Preserves edge case handling (security, accessibility) through conservative pruning with dimension-level validation
+- Ships with a full compression lineage documenting quality at every stage
+
+This would be, to my knowledge, the first published example of chaining routing-guided selective LoRA, reinforcement learning (GRPO), and structural expert pruning (with optional quantization) for domain-specific MoE compression — demonstrating that frontier MoE models can be narrowed into efficient specialists without sacrificing quality on the target domain. The pipeline ordering (SFT → GRPO → merge → REAP → optional quantization) is itself a methodological contribution: it ensures pruning decisions are made on the final routing distribution, not an intermediate one. The gated compression roadmap provides a template for disciplined multi-stage model compression that other practitioners can adapt.
+
+---
+
 ## 2026-04-01 — v1.1 Adaptive Training Infrastructure: from patch to milestone
 
 ### Why this became a milestone
