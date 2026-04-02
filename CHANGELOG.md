@@ -4,10 +4,30 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 
 ## [Unreleased]
 
-- Phase 4 restructured as "Base-Model Profiling & Evaluation (Triage)": profiles base model with all 5 ratio data distributions first (~minutes) to check E_eff trend and gate 60/40 + 70/30 training; then evals existing adapters in parallel with any new training
-- Phase 7 restructured as "Fine-Tuned Adapter Profiling & Ratio Selection": profiles surviving adapters (not base model), computes adapter E_eff, selects winner via decision matrix (lowest E_eff at equivalent quality within 2pp) — optimizes for post-compression quality-per-VRAM
-- Phase 12 runs AIMER vs REAP as side-by-side pruning experiment (6 variants: 2 methods × 3 compression ratios); domain specificity analysis published in model card
-- New requirements: PROF-05 (profile all survivors), GATE-01 (decision matrix), GATE-02 (triage thresholds), PRUNE-06 (physical removal + model card)
+### Added
+- **`scripts/profile_base_model.py`:** E_eff routing concentration profiler — hooks Qwen3MoeTopKRouter gate, computes E_eff = exp(entropy) per layer with separate wp_gen/wp_judge tracking, NaN handling for zero-count layers, JSONL + markdown output
+- **`scripts/triage_ratios.py`:** GATE-02 elimination logic — named threshold constants (strict >), 5pp rule, NO_SURVIVORS contingency, wp-bench graceful skip
+- **`scripts/run_eval_triage.py`:** Full Phase 4 orchestrator — profiling + sequential adapter eval + triage with idempotent completion markers
+- **`/wp-finetune:run-evaluation` skill:** Autonomous eval pipeline following run-training pattern — profiles E_eff, serves adapters, runs eval suite, presents triage decision for human approval
+- **51 unit tests** (`tests/test_eeff.py`, `tests/test_triage.py`) — GPU-free, covering padding/truncation edge cases, threshold boundaries, NaN handling
+
+### Changed
+- Phase 4 restructured as "Base-Model Profiling & Evaluation (Triage)": profiles all 5 ratio distributions first to gate 60/40 + 70/30 training before spending GPU time
+- Phase 7 restructured as "Fine-Tuned Adapter Profiling & Ratio Selection": profiles surviving adapters, selects winner via decision matrix (lowest E_eff at equivalent quality within 2pp)
+- Phase 12 runs AIMER vs REAP as side-by-side pruning experiment (6 variants: 2 methods × 3 ratios)
+- v2.0 scope reduced to profiling + MoE-Sieve + eval (pruning/packaging deferred to v3.0 — GRPO changes routing, must prune on final distribution)
+- v3.0 added: GRPO (gen-only, RSPO-stabilized, composite verifiable rewards) → LoRA merge → REAP/AIMER pruning → cascading compression gates → packaging
+- DPO replaced with GRPO throughout (v3 deferred requirements renumbered to v4)
+
+### Fixed
+- **Router hook targeting:** `profile_base_model.py` hook on `self.gate` (nn.Linear) now computes top-k from raw logits instead of expecting pre-computed routing indices — the gate outputs logits, top-k selection happens in the parent MoeBlock
+- **Threshold semantics normalized:** All hard gates use strict `>` (not `>=`); named constants prevent drift across scripts
+
+### New Requirements
+- PROF-05 (profile all survivors), GATE-01 (decision matrix), GATE-02 (triage thresholds)
+- GRPO-01..08 (composite rewards, gen-only GRPO, RSPO stabilization)
+- MERGE-01, PRUNE-01..06 (LoRA merge + AIMER vs REAP comparison)
+- EVAL3-01..02, PKG-01..05 (post-GRPO eval + cascading packaging gates)
 
 ## [0.6.0] - 2026-04-01 — Adaptive Training Planner (v1.1 Milestone Complete)
 
