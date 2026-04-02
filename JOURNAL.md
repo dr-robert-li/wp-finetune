@@ -4,6 +4,55 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-04-03 — run-evaluation skill: autonomous eval with HITL only at the decision point
+
+### The design question
+
+The eval pipeline has multiple stages (E_eff profiling, adapter serving, static eval, wp-bench, triage) totalling ~2 hours of wall-clock time. The original approach required human involvement at several intermediate checkpoints. But most of these checkpoints are binary — the data either passes a hard gate or doesn't. The only genuinely subjective decision is *which surviving ratios to carry forward*, because that requires weighing E_eff (compression potential) against eval quality (task performance) against training loss curves — a multi-dimensional tradeoff where reasonable people could disagree.
+
+### The HITL placement principle
+
+Human-in-the-loop should sit at the **highest-leverage decision point**, not at every stage. For eval triage:
+
+- **Gate 1 (E_eff trend):** Numeric — is the trend downward as gen fraction increases? Binary, automatable.
+- **Gate 2 (hard thresholds):** PHPCS >95%, Spearman >0.85, Security >98%, plus 5pp rule — binary elimination, automatable.
+- **Human review (Gate 3):** Full comparison table with all signals — the human picks survivors. This is the gate that matters, because it encodes judgment about which quality-vs-compression tradeoff to take into Phase 7.
+
+Everything before Gate 3 is autonomous. Everything after Gate 3 (state update, next-steps routing) is autonomous. The human touches the pipeline exactly once, at the point where their judgment actually changes the outcome.
+
+### Skill architecture
+
+The skill follows the `run-training` pattern (6-step lifecycle, DGX Toolbox container management, idempotent completion markers):
+
+```
+Step 0:  Inventory + DGX validation                        [autonomous]
+Step 1:  Base-model E_eff profiling (5 ratio distributions) [autonomous]
+         → Decision Gate 1: trend check, gate 60/40 training
+Step 2:  Sequential adapter eval (vLLM serve → eval suite)  [autonomous]
+Step 3:  Automated triage (GATE-02 elimination)             [autonomous]
+Step 4:  ► HUMAN REVIEW — full comparison table             [STOP]
+         → Human picks survivors for Phase 7
+Step 5-6: State update + next steps routing                 [autonomous]
+```
+
+Each step writes a `.complete` marker. Re-running the skill resumes from the last incomplete step. `--force` bypasses all markers for a full re-run. This idempotency was critical — the first run hit a router hook bug (see below) and the retry needed to skip the inventory/validation steps that had already passed.
+
+### The router hook bug
+
+The profiling script hooks `model.layers[i].mlp.gate` — a `nn.Linear` that outputs raw router logits of shape `[n_tokens, n_experts]`. The original hook expected the output to be a tuple `(logits, scores, indices)` matching the parent `MoeBlock.forward()` signature. But `register_forward_hook` on the gate Linear receives only the Linear's own output (a single tensor), not the MoeBlock's post-processing.
+
+Fix: compute `top_k` from the raw logits inside the hook via `torch.topk(outputs, k=self.top_k, dim=-1).indices`. The hook now works at the correct abstraction level — it observes gate decisions, not post-gate routing.
+
+### Container dependency resolution
+
+The DGX Spark environment has a persistent friction point: the host Python has CPU-only torch (CUDA=False), so all GPU work must run inside Docker containers. The `unsloth-headless` container image ships without `transformers` pre-installed (the sync script installs deps at startup), and the NGC `pytorch:25.11-py3` base has a `keras_nlp` stub that conflicts with `transformers>=4.56`. Resolution: uninstall the keras stubs, then install the full dependency chain. This is fragile — a proper eval-toolbox Docker image with pre-baked deps would eliminate this class of startup failures.
+
+### Why triage, not winner selection
+
+Phase 4 deliberately does NOT pick a winner. A ratio with slightly lower eval score but sharper routing concentration (lower E_eff) may produce a better production model after MoE-Sieve + pruning in Phase 7-8. The triage preserves these candidates — it only eliminates ratios that are clearly non-viable (hard gate failures, >5pp behind). Phase 7 profiles the fine-tuned adapters (not the base model) and makes the final selection using both eval quality AND adapter E_eff, which captures how LoRA actually shifted routing.
+
+---
+
 ## 2026-04-03 — Restructuring the evaluation-compression-packaging pipeline
 
 ### The problem
