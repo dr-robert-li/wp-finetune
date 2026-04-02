@@ -149,7 +149,7 @@ Deferred to future release. Tracked but not in current roadmap.
 
 ### Extended Capabilities
 
-- **V3-01**: DPO/RLHF refinement using preference data from Argilla/Label Studio
+- **V3-01**: GRPO reinforcement learning refinement (Group Relative Policy Optimization) for reward-guided alignment
 - **V3-02**: JavaScript/Gutenberg block generation via `<wp_block>` task token
 - **V3-03**: Multi-lingual comment support (non-English PHPDoc/i18n)
 - **V3-04**: Safety harness integration for production guardrails and red-teaming
@@ -209,13 +209,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EVAL-03 | Phase 3 | Complete (03-02) |
 | EVAL-04 | Phase 3 | Complete (03-02) |
 | EVAL-05 | Phase 3 | Complete (03-02) |
-| DPLT-01 | Phase 5 | Pending |
-| DPLT-02 | Phase 5 | Pending |
-| DPLT-03 | Phase 5 | Pending |
-| DPLT-04 | Phase 5 | Pending |
-| DPLT-05 | Phase 5 | Pending |
-| DPLT-06 | Phase 5 | Pending |
-| DPLT-07 | Phase 5 | Pending |
+| DPLT-01 | Phase 5 | Deferred → v2.0 PRUNE-05 |
+| DPLT-02 | Phase 5 | Deferred → v2.0 PKG-03 |
+| DPLT-03 | Phase 5 | Deferred → v2.0 PKG-03 |
+| DPLT-04 | Phase 5 | Deferred → v2.0 PKG-05 |
+| DPLT-05 | Phase 5 | Deferred → v2.0 PKG-05 |
+| DPLT-06 | Phase 5 | Deferred → v2.0 PKG-04 |
+| DPLT-07 | Phase 5 | Deferred → v2.0 PKG-05 |
 
 | ADPT-01 | Phase 6 | Complete |
 | ADPT-02 | Phase 6 | Complete |
@@ -231,14 +231,36 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PROB-02 | Phase 6 | Complete |
 | PROB-03 | Phase 6 | Complete |
 
+| PROF-01 | Phase 7 | Pending |
+| PROF-02 | Phase 7 | Pending |
+| PROF-03 | Phase 7 | Pending |
+| PROF-04 | Phase 7 | Pending |
+| SIEVE-01 | Phase 8 | Pending |
+| SIEVE-02 | Phase 8 | Pending |
+| SIEVE-03 | Phase 8 | Pending |
+| SIEVE-04 | Phase 8 | Pending |
+| SIEVE-05 | Phase 8 | Pending |
+| PRUNE-01 | Phase 9 | Pending |
+| PRUNE-02 | Phase 9 | Pending |
+| PRUNE-03 | Phase 9 | Pending |
+| PRUNE-04 | Phase 9 | Pending |
+| PRUNE-05 | Phase 9 | Pending |
+| EVAL2-01 | Phase 9 | Pending |
+| EVAL2-02 | Phase 9 | Pending |
+| PKG-01 | Phase 10 | Pending |
+| PKG-02 | Phase 10 | Pending |
+| PKG-03 | Phase 10 | Pending |
+| PKG-04 | Phase 10 | Pending |
+| PKG-05 | Phase 10 | Pending |
+
 **Coverage:**
 - v1 requirements: 37 total (32 complete, 5 eval pending)
 - v1.1 requirements: 13 total (13 complete)
-- v2.0 requirements: 20 total (0 complete)
-- DPLT requirements: 7 total (deferred → v2.0 PKG)
-- Total mapped to phases: 50
-- Unmapped v2.0: 20 (pending roadmap)
+- v2.0 requirements: 21 total (0 complete) — PROF(4) + SIEVE(5) + PRUNE(5) + EVAL2(2) + PKG(5)
+- DPLT requirements: 7 total (deferred → v2.0 PKG/PRUNE, tracked above)
+- Total mapped to phases: 71
+- Unmapped v2.0: 0 (all 21 mapped to Phases 7-10)
 
 ---
 *Requirements defined: 2026-03-26*
-*Last updated: 2026-04-02 — v2.0 MoE-Sieve & Expert Pruning requirements added, DPLT deferred to v2.0 PKG*
+*Last updated: 2026-04-01 — v2.0 roadmap created, all 21 v2.0 requirements mapped to Phases 7-10*
