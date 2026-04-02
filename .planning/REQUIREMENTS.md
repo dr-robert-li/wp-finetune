@@ -62,15 +62,17 @@ Source data already exists at `/home/robert_li/Desktop/data/wp-finetune-data/`: 
 - [ ] **EVAL-04**: Eval scripts run via DGX Toolbox eval-toolbox container
 - [ ] **EVAL-05**: All three quality gates pass before proceeding to deployment
 
-### Deployment
+### Deployment (deferred to v2.0 Packaging)
 
-- [ ] **DPLT-01**: LoRA adapter merged into base model weights
-- [ ] **DPLT-02**: AWQ quantization produced for vLLM production serving
-- [ ] **DPLT-03**: GGUF quantization produced for Ollama local serving
-- [ ] **DPLT-04**: Model served via DGX Toolbox vLLM (:8020) and accessible through LiteLLM (:4000)
-- [ ] **DPLT-05**: Model served via DGX Toolbox Ollama (:11434)
-- [ ] **DPLT-06**: HuggingFace Hub upload with model card, benchmarks, and usage examples
-- [ ] **DPLT-07**: Interactive demo accessible via Open-WebUI (:12000)
+DPLT requirements moved to v2.0 PKG-01 through PKG-05 — package after MoE-Sieve + REAP pruning, not the intermediate full-LoRA model. Serving requirements (vLLM, Ollama, Open-WebUI) covered by PKG-05 E2E validation.
+
+- [ ] ~~**DPLT-01**: LoRA adapter merged into base model weights~~ → subsumed by v2.0 PRUNE-05
+- [ ] ~~**DPLT-02**: AWQ quantization produced for vLLM~~ → subsumed by v2.0 PKG-03 (if warranted by Gate 2)
+- [ ] ~~**DPLT-03**: GGUF quantization produced for Ollama~~ → subsumed by v2.0 PKG-03 (if warranted by Gate 2)
+- [ ] ~~**DPLT-04**: vLLM serving~~ → subsumed by v2.0 PKG-05
+- [ ] ~~**DPLT-05**: Ollama serving~~ → subsumed by v2.0 PKG-05
+- [ ] ~~**DPLT-06**: HuggingFace upload~~ → subsumed by v2.0 PKG-04
+- [ ] ~~**DPLT-07**: Open-WebUI demo~~ → subsumed by v2.0 PKG-05
 
 ## v1.1 Requirements — Adaptive Training Infrastructure
 
@@ -101,17 +103,58 @@ Requirements for power-primary adaptive planner. Depends on dgx-toolbox Phase 13
 - [x] **PROB-02**: Anchor store persists config+outcome history with config hashing, cooldown tracking, and hard caps
 - [x] **PROB-03**: run-training Step 8.5 replaced with adaptive-planner skill invocation
 
-## v2 Requirements
+## v2.0 Requirements — MoE-Sieve & Expert Pruning
+
+Requirements for selective expert training and conservative pruning. Depends on Phase 4 eval completing (need winning gen/judge ratio). Packaging (previously v1.0 Phase 5) moved here — package the final production model, not the intermediate.
+
+### Router Profiling
+
+- [ ] **PROF-01**: Router profiling runs gradient-free forward pass hooking `Qwen3MoeSparseMoeBlock` gating output, count-based ranking per layer
+- [ ] **PROF-02**: Profiling tags each expert's routing count by task token affinity (`<wp_gen>` vs `<wp_judge>`) separately, not just aggregate frequency
+- [ ] **PROF-03**: Profiling uses 10% subsample with Jaccard stability verification against full set (target ≥0.94)
+- [ ] **PROF-04**: Outputs routing concentration report: per-layer CV, cumulative coverage curve at each k, layer-depth skew analysis
+
+### Selective Training (MoE-Sieve)
+
+- [ ] **SIEVE-01**: LoRA r=32, α=64, dropout=0.05 applied to hot routed experts + all attention (Q/K/V/O) + router gates + 4 shared experts (always trained); cold routed experts frozen
+- [ ] **SIEVE-02**: Gen-hot experts trained on golden signal data only (passed examples, synthetic good); judge-hot experts trained on full spectrum (passed + failed + contrastive)
+- [ ] **SIEVE-03**: Retrain uses best gen/judge ratio determined by Phase 4 eval results
+- [ ] **SIEVE-04**: K-sweep at minimum 3 budgets (~13, 32, 64 experts per layer from 128 routed) to find accuracy plateau for Qwen3-30B-A3B on WordPress data
+- [ ] **SIEVE-05**: Optimal k is smallest budget matching full-LoRA within ±1pp on wp-bench (TOST equivalence test, ε=2pp, 3+ seeds)
+
+### Expert Pruning (REAP)
+
+- [ ] **PRUNE-01**: REAP pruning on Qwen3-30B-A3B with WordPress calibration data (gen + judge examples), `reap` saliency scoring, test at 25% and 50% compression ratios
+- [ ] **PRUNE-02**: Evaluate via gating mask before weight removal — check retention across all 9 eval dimensions
+- [ ] **PRUNE-03**: Select compression ratio with best dimension-level retention (especially D2_security), prefer higher compression at equivalent quality
+- [ ] **PRUNE-04**: If regression on any dimension, reduce compression ratio incrementally until clean
+- [ ] **PRUNE-05**: Final model has expert weights physically removed; saved as HuggingFace-compatible checkpoint
+
+### Comparative Evaluation
+
+- [ ] **EVAL2-01**: A/B eval of each k-sweep MoE-Sieve adapter against v1.0 full-LoRA on wp-bench and static eval suite
+- [ ] **EVAL2-02**: Report includes per-dimension comparison (all 9 dimensions), overall scores, inference speed delta, and seed variance comparison
+
+### Packaging (cascading compression gates)
+
+- [ ] **PKG-01**: Gate 1 — Eval pruned bf16 model: record size, inference speed, all 9 dimensions as quality baseline for subsequent compression
+- [ ] **PKG-02**: Gate 2 — Assess whether quantization is needed based on pruned model size, deployment constraints, and Gate 1 performance margins
+- [ ] **PKG-03**: If quantization warranted, test incrementally Q8→Q6→Q5→Q4, eval at each level, stop at lowest quantization holding within ±2pp of Gate 1 baseline
+- [ ] **PKG-04**: Model card + adapter uploaded to HuggingFace with full compression lineage (base → MoE-Sieve → REAP → quantization level, eval at each gate)
+- [ ] **PKG-05**: E2E inference validation on final shipped format (both `<wp_gen>` and `<wp_judge>` prompts via target serving stack)
+
+## v3 Requirements (deferred)
 
 Deferred to future release. Tracked but not in current roadmap.
 
 ### Extended Capabilities
 
-- **V2-01**: DPO/RLHF refinement using preference data from Argilla/Label Studio
-- **V2-02**: JavaScript/Gutenberg block generation via `<wp_block>` task token
-- **V2-03**: Multi-lingual comment support (non-English PHPDoc/i18n)
-- **V2-04**: Safety harness integration for production guardrails and red-teaming
-- **V2-05**: Triton/TensorRT-LLM optimized inference engine
+- **V3-01**: DPO/RLHF refinement using preference data from Argilla/Label Studio
+- **V3-02**: JavaScript/Gutenberg block generation via `<wp_block>` task token
+- **V3-03**: Multi-lingual comment support (non-English PHPDoc/i18n)
+- **V3-04**: Safety harness integration for production guardrails and red-teaming
+- **V3-05**: Triton/TensorRT-LLM optimized inference engine
+- **V3-06**: Dynamic routing adaptation (retrain router gates post-pruning)
 
 ## Out of Scope
 
@@ -189,11 +232,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PROB-03 | Phase 6 | Complete |
 
 **Coverage:**
-- v1 requirements: 37 total (37 complete)
-- v1.1 requirements: 13 total (0 complete)
+- v1 requirements: 37 total (32 complete, 5 eval pending)
+- v1.1 requirements: 13 total (13 complete)
+- v2.0 requirements: 20 total (0 complete)
+- DPLT requirements: 7 total (deferred → v2.0 PKG)
 - Total mapped to phases: 50
-- Unmapped: 0
+- Unmapped v2.0: 20 (pending roadmap)
 
 ---
 *Requirements defined: 2026-03-26*
-*Last updated: 2026-03-31 — v1.1 Adaptive Training Infrastructure requirements added*
+*Last updated: 2026-04-02 — v2.0 MoE-Sieve & Expert Pruning requirements added, DPLT deferred to v2.0 PKG*
