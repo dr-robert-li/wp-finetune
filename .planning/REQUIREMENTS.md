@@ -60,7 +60,7 @@ Source data already exists at `/home/robert_li/Desktop/data/wp-finetune-data/`: 
 - [ ] **EVAL-02**: Custom eval script measures judge Spearman correlation on 500 held-out scored pairs (target >0.85)
 - [ ] **EVAL-03**: Security pass rate measured on held-out tasks (target >98%)
 - [ ] **EVAL-04**: Eval scripts run via DGX Toolbox eval-toolbox container
-- [ ] **EVAL-05**: All three quality gates pass before proceeding to deployment
+- [x] **EVAL-05**: All three quality gates pass before proceeding to deployment
 
 ### Deployment (deferred to v2.0 Packaging)
 
@@ -118,7 +118,7 @@ Requirements for selective expert training and evaluation. Depends on Phase 4 ev
 ### Ratio Selection Gate (Phase 7→8)
 
 - [ ] **GATE-01**: Decision matrix combining Phase 4 eval score (normalized 0-1) and Phase 7 routing concentration (mean E_eff, max E_eff, E_eff variance) per surviving ratio — select ratio with lowest E_eff at equivalent quality (within 2pp), preferring compressibility over marginal quality gains
-- [ ] **GATE-02**: Phase 4 triage uses high bar for elimination (only cut ratios that fail hard gates or are >5pp behind) and low bar for continuation — 1-2pp differences may invert after pruning if routing concentration differs
+- [x] **GATE-02**: Phase 4 triage uses high bar for elimination (only cut ratios that fail hard gates or are >5pp behind) and low bar for continuation — 1-2pp differences may invert after pruning if routing concentration differs
 
 ### Selective Training (MoE-Sieve)
 
@@ -268,7 +268,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PROF-04 | Phase 7 | Pending |
 | PROF-05 | Phase 7 | Pending |
 | GATE-01 | Phase 7 | Pending |
-| GATE-02 | Phase 4 | Pending |
+| GATE-02 | Phase 4 | Complete |
 | SIEVE-01 | Phase 8 | Pending |
 | SIEVE-02 | Phase 8 | Pending |
 | SIEVE-03 | Phase 8 | Pending |
