@@ -131,6 +131,10 @@ wp-finetune/
 │   ├── prepare_tokenizer.py        # Extend tokenizer with <wp_gen>/<wp_judge>
 │   ├── train_model.py              # BF16 LoRA SFT with memory pre-check + OOM watchdog
 │   ├── merge_adapter.py            # Merge adapter with verification roundtrip
+│   ├── adaptive_planner.py         # Power-primary thermal exploitation ladder
+│   ├── profile_base_model.py       # E_eff routing concentration profiler (MoE-Sieve)
+│   ├── triage_ratios.py            # GATE-02 elimination logic for eval triage
+│   ├── run_eval_triage.py          # Phase 4 orchestrator: profiling + eval + triage
 │   ├── phase1_{clone,extract,judge}.py
 │   ├── phase2_{gap_analysis,mutate,generate,judge,judge_dataset}.py
 │   ├── phase3_cot.py, merge_dataset.py, export_dataset.py
@@ -157,7 +161,7 @@ wp-finetune/
 │   ├── phase3_cot/                 # CoT reasoning checkpoints
 │   ├── final_dataset/              # Train/val/test in OpenAI, Alpaca, Raw JSONL formats
 │   └── checkpoints/                # Pipeline execution checkpoints
-├── tests/                          # 75 tests (13 test files)
+├── tests/                          # 126 tests (15 test files, incl. 51 E_eff + triage)
 ├── PROJECT.md                      # Full project specification
 ├── JOURNAL.md                      # Engineering decisions log
 └── wp-moe.md                       # Model architecture specification
@@ -191,6 +195,7 @@ In Claude Code, type `/wp-finetune:` to see all available skills, or say:
 ```
 run the pipeline          # Data pipeline: clone, extract, judge, CoT, export
 run training              # Training: model selection, ratio selection, DGX execution
+run evaluation            # Eval triage: E_eff profiling, quality gates, wp-bench, triage
 ```
 
 Or check status first:
@@ -266,6 +271,26 @@ Step 9: Report (after all runs: cross-run comparison summary)
 
 **Confirmation gate:** Step 0d presents the full plan (model, LoRA config, hyperparameters, telemetry choice, estimated duration, disk requirements, output paths) and requires explicit confirmation before starting. No silent multi-hour training runs.
 
+### `/wp-finetune:run-evaluation` — Eval Triage Pipeline
+
+Runs the complete evaluation and triage pipeline. Profiles base model routing concentration (E_eff), evaluates all trained adapters through quality gates and wp-bench, then presents a structured triage decision for human approval.
+
+```
+Step 0:  Inventory adapters, datasets, DGX readiness
+Step 1:  Base-model E_eff profiling (all 5 ratio distributions, ~10 min)
+         → Decision Gate 1: E_eff trending down? → Train 60/40 in background
+Step 2:  Sequential adapter eval (30/70 → 40/60 → 50/50)
+         → Serve via vLLM, run eval_gen + eval_judge + eval_gate + wp-bench per adapter
+Step 3:  Automated triage (GATE-02: fail any gate OR >5pp behind = eliminated)
+Step 4:  ► HUMAN REVIEW — full comparison table with gates + wp-bench + E_eff
+         → Human picks survivors for Phase 7 (MoE-Sieve)
+Step 5:  Update STATE.md with triage decisions
+```
+
+**Idempotent:** Each step writes a `.complete` marker. Re-running resumes from last incomplete step. Use `--force` to re-run everything.
+
+**Key insight:** Phase 4 is triage, not winner selection. A ratio with slightly lower eval score but sharper routing concentration (lower E_eff) may produce a better production model after MoE-Sieve + pruning. The triage preserves these candidates — Phase 7 makes the final call using BOTH eval quality AND fine-tuned adapter E_eff.
+
 ### `/wp-finetune:observe-*` and `/wp-finetune:review-telemetry` — Embedded Telemetry
 
 Observe and review skills are **embedded within `/wp-finetune:run-training`** — they are spawned automatically at the right lifecycle points based on the telemetry mode selected in Step 0c. No need to invoke them separately during training.
@@ -279,7 +304,7 @@ They can still be invoked standalone for non-training operations (eval, inferenc
 | `observe-packaging` | 3 | Step 8 (merge) | observe only |
 | `review-telemetry` | — | Step 8d + 9b | observe only |
 | lightweight monitor | 1 | Step 7 (training) | monitor only |
-| `observe-evaluation` | 3 | Standalone (Phase 4) | — |
+| `observe-evaluation` | 3 | Step 2 of run-evaluation | embedded |
 | `observe-inference` | 5 | Standalone (Phase 5) | — |
 
 ```
