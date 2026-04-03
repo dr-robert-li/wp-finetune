@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-02)
 Phase: 04 (evaluation) — EXECUTING
 Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-04-02
+Last activity: 2026-04-03 - Completed quick task 260403-rut: Remove Unsloth dep from merge_adapter.py
 
 Progress: [░░░░░░░░░░] 0% (v2.0 + v3.0 phases)
 
