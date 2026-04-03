@@ -40,7 +40,8 @@ from typing import Any
 
 import yaml
 
-CONFIG_PATH = Path.cwd() / "config" / "dgx_toolbox.yaml"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+CONFIG_PATH = PROJECT_ROOT / "config" / "dgx_toolbox.yaml"
 
 
 # ─── Data classes ────────────────────────────────────────────────────────────
@@ -326,7 +327,7 @@ class DGXToolbox:
         cname = self._containers.get(name, {}).get("container_name", name)
         workdir = self._containers.get(name, {}).get("workdir", "/workspace")
         # Check critical imports
-        imports = self._config.get("required_imports", ["unsloth", "trl", "peft", "datasets", "mlflow", "yaml", "scipy", "dotenv"])
+        imports = self._config.get("required_imports", ["trl", "peft", "datasets", "mlflow", "yaml", "scipy", "dotenv"])
         check_script = "import " + ",".join(imports) + ";print('OK')"
         result = subprocess.run(
             ["docker", "exec", "-w", workdir, cname, "python", "-c", check_script],

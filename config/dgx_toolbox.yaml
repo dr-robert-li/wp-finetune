@@ -115,7 +115,6 @@ mount_check_file: config/train_config.yaml
 
 # Required Python imports to verify in container
 required_imports:
-  - unsloth
   - trl
   - peft
   - datasets
