@@ -5,7 +5,7 @@ milestone_name: MVP
 status: executing
 stopped_at: "Completed quick task 260403-vvg: Fix stale unsloth refs and config inconsistencies"
 last_updated: "2026-04-03T13:01:57.051Z"
-last_activity: "2026-04-03 - Completed quick task 260403-utp: Fix stale eval tests to match current API"
+last_activity: "2026-04-03 - Completed quick task 260403-vvg: Fix stale unsloth refs and config inconsistencies"
 progress:
   total_phases: 11
   completed_phases: 1
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-02)
 Phase: 04 (evaluation) — EXECUTING
 Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-04-03 - Completed quick task 260403-utp: Fix stale eval tests to match current API
+Last activity: 2026-04-03 - Completed quick task 260403-vvg: Fix stale unsloth refs and config inconsistencies
 
 Progress: [░░░░░░░░░░] 0% (v2.0 + v3.0 phases)
 
