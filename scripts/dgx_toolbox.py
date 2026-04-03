@@ -326,7 +326,7 @@ class DGXToolbox:
         cname = self._containers.get(name, {}).get("container_name", name)
         workdir = self._containers.get(name, {}).get("workdir", "/workspace")
         # Check critical imports
-        imports = self._config.get("required_imports", ["unsloth", "trl", "peft", "datasets", "mlflow", "yaml", "scipy"])
+        imports = self._config.get("required_imports", ["unsloth", "trl", "peft", "datasets", "mlflow", "yaml", "scipy", "dotenv"])
         check_script = "import " + ",".join(imports) + ";print('OK')"
         result = subprocess.run(
             ["docker", "exec", "-w", workdir, cname, "python", "-c", check_script],
@@ -413,7 +413,7 @@ class DGXToolbox:
             return
         # Build pip install command from pinned versions
         pkgs = [f"{pkg}=={ver}" for pkg, ver in versions.items()]
-        extras = self._config.get("extra_deps", ["pyyaml", "python-dotenv", "scipy", "mlflow", "peft", "hf_transfer"])
+        extras = self._config.get("extra_deps", ["python-dotenv"])
         cmd = ["docker", "exec", cname, "pip", "install", "--no-deps"] + pkgs
         subprocess.run(cmd, capture_output=True, text=True, timeout=300)
         # Install extras (with deps)

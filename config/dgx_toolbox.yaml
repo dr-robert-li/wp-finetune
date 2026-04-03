@@ -145,11 +145,7 @@ status_artifacts:
     path: data/final_dataset/openai_train.jsonl
     type: file
 
-# Extra pip packages to install in containers (beyond pinned_versions)
+# Extra pip packages to install in containers (beyond pinned_versions and base-toolbox)
+# NOTE: pyyaml, scipy, mlflow, peft, hf_transfer are in ~/dgx-toolbox/base-toolbox/Dockerfile
 extra_deps:
-  - pyyaml
   - python-dotenv
-  - scipy
-  - mlflow
-  - peft
-  - hf_transfer

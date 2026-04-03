@@ -4,6 +4,10 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 
 ## [Unreleased]
 
+### Changed
+- **`config/dgx_toolbox.yaml`** — Removed `pyyaml`, `scipy`, `mlflow`, `peft`, `hf_transfer` from `extra_deps` — already installed in `~/dgx-toolbox/base-toolbox/Dockerfile`. Only `python-dotenv` remains
+- **`scripts/dgx_toolbox.py`** — Updated hardcoded fallback lists for `extra_deps` and `required_imports` to match config
+
 ### Fixed
 - **`scripts/merge_adapter.py`** — Removed Unsloth dependency (`FastLanguageModel`), replaced with `AutoModelForCausalLM.from_pretrained(device_map="auto")`. Eliminates the pip-install-destroys-CUDA-torch problem in NGC containers. Removed broken `from scripts.dgx_toolbox import get_toolbox` import that caused `ModuleNotFoundError` when invoked as `python3 scripts/merge_adapter.py`. Script now runs in any container with `peft` + `transformers` (e.g., eval-toolbox)
 - **`scripts/train_model.py`** — `--config` path now resolved via `resolve_path()` (relative to `PROJECT_ROOT`) instead of bare `Path()` (relative to cwd). Fixes training failure when container workdir differs from project root
