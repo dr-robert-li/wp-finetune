@@ -9,6 +9,9 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 - **`scripts/dgx_toolbox.py`** — Updated hardcoded fallback lists for `extra_deps` and `required_imports` to match config
 
 ### Fixed
+- **`config/dgx_toolbox.yaml` / `scripts/dgx_toolbox.py`** -- Removed stale `unsloth` from `required_imports` list and hardcoded fallback. Eval-toolbox container does not have Unsloth installed
+- **`scripts/dgx_toolbox.py`** -- `CONFIG_PATH` now resolved via `Path(__file__)` instead of `Path.cwd()`, matching the fix already applied to `train_model.py`
+- **`config/train_config_30_70.yaml` / `config/train_config_40_60.yaml`** -- Added missing `dataloader_persistent_workers` and `dataloader_prefetch_factor` fields for consistency with other ratio configs
 - **`scripts/merge_adapter.py`** — Removed Unsloth dependency (`FastLanguageModel`), replaced with `AutoModelForCausalLM.from_pretrained(device_map="auto")`. Eliminates the pip-install-destroys-CUDA-torch problem in NGC containers. Removed broken `from scripts.dgx_toolbox import get_toolbox` import that caused `ModuleNotFoundError` when invoked as `python3 scripts/merge_adapter.py`. Script now runs in any container with `peft` + `transformers` (e.g., eval-toolbox)
 - **`scripts/train_model.py`** — `--config` path now resolved via `resolve_path()` (relative to `PROJECT_ROOT`) instead of bare `Path()` (relative to cwd). Fixes training failure when container workdir differs from project root
 - **`eval/eval_gen.py` / `eval/eval_judge.py`** — Model name no longer hardcoded as `"openai/qwen3-wp"`. Auto-detects from `/v1/models` endpoint with `--model` CLI override. Fixes mismatch when vLLM serves merged models under filesystem paths
