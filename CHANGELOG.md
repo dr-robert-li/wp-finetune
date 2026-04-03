@@ -4,6 +4,13 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 
 ## [Unreleased]
 
+### Fixed
+- **`eval/eval_gen.py` / `eval/eval_judge.py`** — Model name no longer hardcoded as `"openai/qwen3-wp"`. Auto-detects from `/v1/models` endpoint with `--model` CLI override. Fixes mismatch when vLLM serves merged models under filesystem paths
+- **`scripts/run_eval_triage.py`** — Passes detected model name from vLLM to eval scripts instead of relying on hardcoded match
+
+### Documented
+- **LoRA `modules_to_save` incompatibility** — Updated Pitfall 7 in 04-RESEARCH.md: vLLM does not support `modules_to_save` tensors in LoRA adapters (confirmed April 2026). Merge-and-serve fallback is mandatory, not optional
+
 ### Added
 - **`scripts/profile_base_model.py`:** E_eff routing concentration profiler — hooks Qwen3MoeTopKRouter gate, computes E_eff = exp(entropy) per layer with separate wp_gen/wp_judge tracking, NaN handling for zero-count layers, JSONL + markdown output
 - **`scripts/triage_ratios.py`:** GATE-02 elimination logic — named threshold constants (strict >), 5pp rule, NO_SURVIVORS contingency, wp-bench graceful skip

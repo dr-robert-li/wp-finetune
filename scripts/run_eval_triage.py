@@ -550,6 +550,9 @@ def run_eval_for_ratio(
         else:
             logger.info(f"Model name verified. Available: {available_models}")
 
+        # Resolve model name for eval scripts (auto-detect from vLLM)
+        resolved_model = available_models[0] if available_models else None
+
         abs_dataset = str(PROJECT_ROOT / dataset_path)
 
         # Run eval_gen with retry
@@ -561,6 +564,7 @@ def run_eval_for_ratio(
                 eval_gen.run_eval(
                     dataset_path=abs_dataset,
                     output_path=gen_output_path,
+                    model=resolved_model,
                 )
                 gen_success = True
                 break
@@ -585,6 +589,7 @@ def run_eval_for_ratio(
                 eval_judge.run_eval(
                     dataset_path=abs_dataset,
                     output_path=judge_output_path,
+                    model=resolved_model,
                 )
                 judge_success = True
                 break
@@ -771,6 +776,9 @@ def run_eval_and_wpbench_for_ratio(
                     f"Continuing anyway -- eval scripts use 'openai/qwen3-wp'."
                 )
 
+            # Resolve model name for eval scripts (auto-detect from vLLM)
+            resolved_model = available_models[0] if available_models else None
+
             abs_dataset = str(PROJECT_ROOT / dataset_path)
 
             # eval_gen with retry
@@ -782,6 +790,7 @@ def run_eval_and_wpbench_for_ratio(
                     eval_gen.run_eval(
                         dataset_path=abs_dataset,
                         output_path=gen_output_path,
+                        model=resolved_model,
                     )
                     gen_success = True
                     break
@@ -805,6 +814,7 @@ def run_eval_and_wpbench_for_ratio(
                     eval_judge.run_eval(
                         dataset_path=abs_dataset,
                         output_path=judge_output_path,
+                        model=resolved_model,
                     )
                     judge_success = True
                     break

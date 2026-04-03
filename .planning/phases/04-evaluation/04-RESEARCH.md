@@ -411,12 +411,17 @@ grading times out.
 ### Pitfall 7: `modules_to_save` Tensors in Adapter
 **What goes wrong:** vLLM fails to load the adapter because the adapter directory contains full
 `embed_tokens` and `lm_head` weight tensors (from `modules_to_save`), not standard LoRA diff
-tensors. Some vLLM versions reject this.
+tensors. vLLM's LoRA loading rejects these non-LoRA tensors.
 **Why it happens:** The adapters were trained with `modules_to_save=["embed_tokens", "lm_head"]`.
-**How to avoid:** Verify vLLM version supports `modules_to_save` in LoRA loading. vLLM ≥0.6.x
-handles this. If not supported, pre-merge the adapter before serving (use `scripts/merge_adapter.py`).
-**Warning signs:** `ValueError` or `KeyError` on adapter load, or model generates garbage for
-special tokens.
+**Runtime finding (2026-04-03):** Confirmed that vLLM (latest as of April 2026) does NOT support
+LoRA adapters with `modules_to_save` tensors. The error is explicit:
+`modules_to_save is not supported`. Additionally, LoRA rank 32 exceeds vLLM's default
+`max_lora_rank=16` (fixable with `--max-lora-rank 64`, but moot given the first error).
+**Mandatory workaround:** Pre-merge adapter into base model using `scripts/merge_adapter.py`, then
+serve the merged model directly (no `--enable-lora`). This is not optional — vLLM adapter-only
+serving is incompatible with our training config.
+**Warning signs:** `ValueError` on adapter load mentioning `modules_to_save`, or `max_lora_rank`
+errors.
 
 ## Code Examples
 
