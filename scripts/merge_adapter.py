@@ -2,7 +2,7 @@
 
 Strategy (defense-in-depth):
   1. Adapter already saved separately by train_model.py (safe even if merge fails)
-  2. Load base model via Unsloth FastLanguageModel (load_in_4bit=False)
+  2. Load base model via AutoModelForCausalLM (bfloat16, device_map=auto)
   3. Load adapter via PeftModel.from_pretrained
   4. Attempt merge_and_unload()
   5. Save merged model + tokenizer
@@ -10,9 +10,10 @@ Strategy (defense-in-depth):
   7. If verification fails: print vLLM --lora-modules fallback command and exit 1
 
 Usage:
-    python -m scripts.merge_adapter
-    python -m scripts.merge_adapter --adapter-dir ./adapters/qwen3-wp
-    python -m scripts.merge_adapter --adapter-dir ./adapters/qwen3-wp --output-dir ./models/Qwen3-30B-A3B-merged
+    python3 scripts/merge_adapter.py
+    python3 scripts/merge_adapter.py --adapter-dir ./adapters/qwen3-wp
+    python3 scripts/merge_adapter.py --adapter-dir ./adapters/qwen3-wp --output-dir ./models/Qwen3-30B-A3B-merged
+    python -m scripts.merge_adapter  (also works)
 """
 
 from __future__ import annotations
@@ -23,8 +24,6 @@ from pathlib import Path
 
 import torch
 import yaml
-
-from scripts.dgx_toolbox import get_toolbox  # noqa: F401 — DGX resolver pattern
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = PROJECT_ROOT / "config" / "train_config.yaml"
@@ -80,17 +79,15 @@ def merge_adapter(adapter_dir: str, output_dir: str, config: dict) -> None:
         except Exception:
             pass  # Fall through to re-merge
 
-    from unsloth import FastLanguageModel  # noqa: PLC0415
+    from transformers import AutoModelForCausalLM  # noqa: PLC0415
 
     local_dir = str(resolve_path(config["model"]["local_dir"]))
-    max_seq_length = config["model"]["max_seq_length"]
 
     print(f"Loading base model from {local_dir} ...")
-    model, _base_tok = FastLanguageModel.from_pretrained(
-        model_name=local_dir,
-        max_seq_length=max_seq_length,
-        load_in_4bit=False,  # LOCKED — no QLoRA for MoE
-        dtype=torch.bfloat16,
+    model = AutoModelForCausalLM.from_pretrained(
+        local_dir,
+        torch_dtype=torch.bfloat16,
+        device_map="auto",
     )
 
     # Load the LoRA adapter on top of the base model
@@ -156,7 +153,6 @@ def _verify_merged_model(merged_path: str, adapter_dir: str, config: dict) -> No
         print(f"MERGE VERIFICATION FAILED: {e}")
         print()
         print("Fallback: serve adapter directly with vLLM (no merge needed):")
-        dgx = get_toolbox()
         base_model = str(resolve_path(config["model"]["local_dir"]))
         print(f"  vllm serve {base_model} --lora-modules qwen3-wp={adapter_dir}")
         print()
