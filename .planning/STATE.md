@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: executing
-stopped_at: Completed 04-evaluation-02-PLAN.md -- eval orchestrator script created
-last_updated: "2026-04-02T22:32:59.317Z"
-last_activity: 2026-04-02
+stopped_at: "Phase 4: E_eff profiling COMPLETE (downward trend confirmed). Eval triage: 30/70 + 40/60 + 50/50 scored (Spearman needs full 597 examples). 60/40 training STARTED in background. 70/30 queued after 60/40."
+last_updated: "2026-04-03T11:36:25.619Z"
+last_activity: "2026-04-03 - Completed quick task 260403-rut: Remove Unsloth dep from merge_adapter.py"
 progress:
   total_phases: 11
   completed_phases: 1
@@ -117,6 +117,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-03T00:00:00.000Z
-Stopped at: Completed quick task 260403-rut -- merge_adapter.py de-Unslothed
-Resume file: None
+Last session: 2026-04-03T11:36:25.611Z
+Stopped at: Phase 4: E_eff profiling COMPLETE (downward trend confirmed). Eval triage: 30/70 + 40/60 + 50/50 scored (Spearman needs full 597 examples). 60/40 training STARTED in background. 70/30 queued after 60/40.
+Resume file: output/profiling/base_model_eeff_summary.md
