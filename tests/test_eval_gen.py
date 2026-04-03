@@ -1,182 +1,135 @@
-"""Tests for eval/eval_gen.py — Wave 0 (written before implementation).
+"""Tests for eval/eval_gen.py — updated to match current API surface.
 
-All tests use mocks — no GPU, no model, no phpcs binary needed.
+All tests are pure unit tests — no GPU, no vLLM, no external services.
+Tests exercise _extract_php_code and _compute_summary against the
+rubric-scorer-based implementation (rubric refactor, April 2026).
 """
-import json
 import sys
 from pathlib import Path
-from unittest.mock import patch, MagicMock
 
 import pytest
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from eval.eval_gen import (
-    run_phpcs,
-    compute_pass_rate,
-    classify_security,
-)
+from eval.eval_gen import _extract_php_code, _compute_summary
+from eval.rubric_scorer import RubricScore
 
 
 # ---------------------------------------------------------------------------
-# test_phpcs_eval_runs
+# Helpers: build mock RubricScore objects without calling score_code()
+# (avoids phpcs/phpstan subprocess calls in unit tests)
 # ---------------------------------------------------------------------------
 
-def test_phpcs_eval_runs():
-    """Mock subprocess.run for phpcs; assert eval counts pass/fail correctly.
+def _make_rubric_score(
+    overall: float,
+    grade: str = "Good",
+    d2_security: float = 8.0,
+) -> RubricScore:
+    """Return a minimal RubricScore with controllable overall and D2_security."""
+    dimension_scores = {
+        "D1_wpcs": 8.0,
+        "D2_security": d2_security,
+        "D3_sql": 8.0,
+        "D4_perf": 8.0,
+        "D5_wp_api": 8.0,
+        "D6_i18n": 8.0,
+        "D7_a11y": 8.0,
+        "D8_errors": 8.0,
+        "D9_structure": 8.0,
+    }
+    return RubricScore(
+        file_path="<test>",
+        dimension_scores=dimension_scores,
+        dimension_na=[],
+        overall=overall,
+        triggered_checks={},
+        check_evidence={},
+        grade=grade,
+        floor_rules_applied=[],
+        llm_checks_skipped=0,
+    )
 
-    Provides 3 sample PHP code strings:
-      - 1 clean (0 errors)  → pass
-      - 1 with errors (3 errors) → fail
-      - 1 with security issue (1 security error) → fail
-    """
-    clean_result = json.dumps({
-        "totals": {"errors": 0, "warnings": 0, "fixable": 0},
-        "files": {},
-    })
-    errors_result = json.dumps({
-        "totals": {"errors": 3, "warnings": 1, "fixable": 0},
-        "files": {
-            "/tmp/code.php": {
-                "errors": 3,
-                "warnings": 1,
-                "messages": [
-                    {"message": "Space after opening brace", "source": "WordPress.WhiteSpace.ControlStructureSpacing", "type": "ERROR"},
-                    {"message": "Expected capital letter", "source": "WordPress.NamingConventions.ValidFunctionName", "type": "ERROR"},
-                    {"message": "Missing nonce check", "source": "WordPress.Security.NonceVerification", "type": "ERROR"},
-                ],
-            }
-        },
-    })
-    security_result = json.dumps({
-        "totals": {"errors": 1, "warnings": 0, "fixable": 0},
-        "files": {
-            "/tmp/code.php": {
-                "errors": 1,
-                "warnings": 0,
-                "messages": [
-                    {"message": "Missing nonce verification", "source": "WordPress.Security.NonceVerification", "type": "ERROR"},
-                ],
-            }
-        },
-    })
 
-    phpcs_outputs = [clean_result, errors_result, security_result]
+# ---------------------------------------------------------------------------
+# test_extract_php_code
+# ---------------------------------------------------------------------------
 
-    def mock_phpcs_side_effect(*args, **kwargs):
-        mock = MagicMock()
-        mock.returncode = 0
-        mock.stdout = phpcs_outputs.pop(0)
-        mock.stderr = ""
-        return mock
+def test_extract_php_code():
+    """_extract_php_code handles fenced blocks and raw PHP text."""
+    # Fenced ```php block — most common model output format
+    php_fenced = "```php\n<?php echo esc_html($val); ?>\n```"
+    result = _extract_php_code(php_fenced)
+    assert result == "<?php echo esc_html($val); ?>"
 
-    sample_codes = [
-        "<?php function clean_function() { return esc_html($val); }",
-        "<?php function bad_function() { echo $val; }",
-        "<?php function handler() { update_option('key', $_POST['val']); }",
+    # Generic ``` fenced block (no language hint)
+    generic_fenced = "```\n<?php wp_enqueue_script('foo'); ?>\n```"
+    result_generic = _extract_php_code(generic_fenced)
+    assert result_generic == "<?php wp_enqueue_script('foo'); ?>"
+
+    # Raw PHP text with no fences — returned as-is (stripped)
+    raw_php = "<?php function hello() { return 'world'; } "
+    result_raw = _extract_php_code(raw_php)
+    assert result_raw == "<?php function hello() { return 'world'; }"
+
+    # Prefer ```php over generic ``` when both present (first match wins)
+    combined = "```php\n<?php // php block\n```\n```\n<?php // generic block\n```"
+    result_combined = _extract_php_code(combined)
+    assert "php block" in result_combined
+
+
+# ---------------------------------------------------------------------------
+# test_compute_summary_basic
+# ---------------------------------------------------------------------------
+
+def test_compute_summary_basic():
+    """_compute_summary aggregates RubricScores into a summary dict."""
+    # 5 scores: three above 80 (phpcs_pass proxy), two below
+    scores = [
+        _make_rubric_score(overall=85.0, grade="Good", d2_security=9.0),
+        _make_rubric_score(overall=90.0, grade="Excellent", d2_security=9.5),
+        _make_rubric_score(overall=82.0, grade="Good", d2_security=8.5),
+        _make_rubric_score(overall=60.0, grade="Acceptable", d2_security=6.0),
+        _make_rubric_score(overall=50.0, grade="Poor", d2_security=5.0),
     ]
 
-    with patch("subprocess.run", side_effect=mock_phpcs_side_effect):
-        results = [run_phpcs(code) for code in sample_codes]
+    summary = _compute_summary(scores)
 
-    # clean code: 0 errors → pass
-    assert results[0]["errors"] == 0
-    assert results[0]["passed"] is True
+    # Required keys
+    assert summary["total"] == 5
+    assert "overall_mean" in summary
+    assert "overall_median" in summary
+    assert "grade_distribution" in summary
+    assert "per_dimension" in summary
+    assert "floor_rules" in summary
+    assert "phpcs_pass_rate" in summary
+    assert "security_pass_rate" in summary
 
-    # code with errors: 3 errors → fail
-    assert results[1]["errors"] == 3
-    assert results[1]["passed"] is False
+    # overall_mean should be average of the 5 overall values
+    expected_mean = (85.0 + 90.0 + 82.0 + 60.0 + 50.0) / 5
+    assert abs(summary["overall_mean"] - round(expected_mean, 2)) < 1e-6
 
-    # security issue: 1 error → fail
-    assert results[2]["errors"] == 1
-    assert results[2]["passed"] is False
+    # overall_median of [85, 90, 82, 60, 50] sorted = [50, 60, 82, 85, 90] → median = 82
+    assert summary["overall_median"] == 82.0
 
+    # phpcs_pass_rate: fraction with overall >= 80 → 3/5 = 0.6
+    assert abs(summary["phpcs_pass_rate"] - 0.6) < 1e-6
 
-# ---------------------------------------------------------------------------
-# test_security_rate_detection
-# ---------------------------------------------------------------------------
+    # security_pass_rate: fraction with D2_security >= 8 → scores [9.0, 9.5, 8.5] pass,
+    # [6.0, 5.0] fail → 3/5 = 0.6
+    assert abs(summary["security_pass_rate"] - 0.6) < 1e-6
 
-def test_security_rate_detection():
-    """Assert security filter correctly classifies security sniff names.
-
-    Tests:
-      - PHP with missing nonce check → security fail
-      - PHP with missing escaping → security fail
-      - Clean code → security pass
-    """
-    # Missing nonce: WordPress.Security.NonceVerification sniff
-    phpcs_nonce = {
-        "totals": {"errors": 1},
-        "files": {
-            "/tmp/code.php": {
-                "errors": 1,
-                "messages": [{"source": "WordPress.Security.NonceVerification", "type": "ERROR"}],
-            }
-        },
-    }
-
-    # Missing escaping: WordPress.Security.EscapeOutput sniff
-    phpcs_escape = {
-        "totals": {"errors": 1},
-        "files": {
-            "/tmp/code.php": {
-                "errors": 1,
-                "messages": [{"source": "WordPress.Security.EscapeOutput", "type": "ERROR"}],
-            }
-        },
-    }
-
-    # Clean code: no security sniffs
-    phpcs_clean = {
-        "totals": {"errors": 0},
-        "files": {},
-    }
-
-    # Missing nonce → security violation detected
-    assert classify_security(phpcs_nonce) is True  # has security issue
-
-    # Missing escaping → security violation detected
-    assert classify_security(phpcs_escape) is True  # has security issue
-
-    # Clean → no security violation
-    assert classify_security(phpcs_clean) is False  # no security issue
+    # per_dimension should have all 9 dimension keys
+    assert "D1_wpcs" in summary["per_dimension"]
+    assert "D2_security" in summary["per_dimension"]
+    assert "D9_structure" in summary["per_dimension"]
 
 
 # ---------------------------------------------------------------------------
-# test_phpcs_pass_rate_calculation
+# test_compute_summary_empty
 # ---------------------------------------------------------------------------
 
-def test_phpcs_pass_rate_calculation():
-    """Assert pass_rate computation is correct given (code, phpcs_result) pairs.
-
-    Example: 8/10 = 0.80
-    """
-    # Build 10 results: 8 passes, 2 failures
-    results = []
-    for i in range(8):
-        results.append({
-            "errors": 0,
-            "passed": True,
-            "phpcs_output": {"totals": {"errors": 0}},
-        })
-    for i in range(2):
-        results.append({
-            "errors": 3,
-            "passed": False,
-            "phpcs_output": {"totals": {"errors": 3}},
-        })
-
-    rate = compute_pass_rate(results)
-    assert abs(rate - 0.80) < 1e-9, f"Expected 0.80 but got {rate}"
-
-    # Edge case: all pass
-    all_pass = [{"passed": True} for _ in range(5)]
-    assert compute_pass_rate(all_pass) == 1.0
-
-    # Edge case: none pass
-    none_pass = [{"passed": False} for _ in range(5)]
-    assert compute_pass_rate(none_pass) == 0.0
-
-    # Edge case: empty list
-    assert compute_pass_rate([]) == 0.0
+def test_compute_summary_empty():
+    """_compute_summary returns minimal dict for empty input."""
+    summary = _compute_summary([])
+    assert summary == {"total": 0}
