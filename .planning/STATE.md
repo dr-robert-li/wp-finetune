@@ -113,9 +113,10 @@ None yet.
 | 260329-gmf | README add observe and review-telemetry skill descriptions | 2026-03-29 | d31e013 | [260329-gmf-readme-add-observe-and-review-telemetry-](./quick/260329-gmf-readme-add-observe-and-review-telemetry-/) |
 | 260329-gre | Add telemetry opt-in Step 0c to run-training skill | 2026-03-29 | 09beab1 | [260329-gre-add-telemetry-opt-in-step-0c-to-run-trai](./quick/260329-gre-add-telemetry-opt-in-step-0c-to-run-trai/) |
 | 260329-gvs | Update README CHANGELOG with telemetry opt-in and training steps | 2026-03-29 | 9a99da8 | [260329-gvs-update-readme-changelog-with-telemetry-o](./quick/260329-gvs-update-readme-changelog-with-telemetry-o/) |
+| 260403-rut | Remove Unsloth and dgx_toolbox from merge_adapter.py; use AutoModelForCausalLM | 2026-04-03 | e8ae427 | [260403-rut-fix-container-dependency-hell-add-standa](./quick/260403-rut-fix-container-dependency-hell-add-standa/) |
 
 ## Session Continuity
 
-Last session: 2026-04-02T22:32:59.315Z
-Stopped at: Completed 04-evaluation-02-PLAN.md -- eval orchestrator script created
+Last session: 2026-04-03T00:00:00.000Z
+Stopped at: Completed quick task 260403-rut -- merge_adapter.py de-Unslothed
 Resume file: None
