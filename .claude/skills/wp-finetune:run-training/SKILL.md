@@ -78,15 +78,27 @@ Choose which telemetry collectors to run. Both feed the same **canonical thermal
 
 **Note:** Both telemetry modes also record power draw (watts) via `MemoryWatchdogCallback`, which calls `GPUSampler.append_jsonl` every 50 training steps. This provides a continuous within-run power draw record in the canonical JSONL even when external observe agents are not running. The adaptive planner uses `avg_watts` as the primary signal for zone classification when available.
 
+**⚠ Memory impact of telemetry modes (unified memory systems like DGX Spark):**
+
+| Mode | Processes | Memory overhead | Impact on training headroom |
+|------|-----------|----------------|---------------------------|
+| Observe | 6-8 Python agents | ~3-4 GB total (~0.4 GB each) | Significant — reduces headroom by 3-4 GB. On a 120 GB system with 25 GB free, this is 12-16% of available headroom. Can push into swap territory with aggressive batch sizes. |
+| Lightweight | 1 shell script | ~5 MB | Negligible |
+| None | 0 | 0 | None |
+
+**Recommendation for tight memory (<15 GB headroom):** Use lightweight monitor. The observe team provides richer diagnostics but its ~3-4 GB memory footprint competes directly with training on unified memory systems where GPU and CPU share the same pool. The lightweight monitor captures everything the adaptive planner needs (watts, temp, util, mem_available) with negligible overhead.
+
+**Recommendation for comfortable memory (>25 GB headroom):** Observe agents are safe and provide checkpoint integrity, loss tracking, and container health that the lightweight monitor cannot.
+
 Use AskUserQuestion:
 - header: "Telemetry"
 - question: "Select telemetry mode. Both options write to the same canonical thermal log used by adaptive resource planning."
 - multiSelect: false
 - options:
-  - "Observe agents (Recommended)" → set `$TELEMETRY_MODE = "observe"`
-    - description: "Full 6-agent team: GPU metrics, thermal/throttling, training loss, disk I/O, checkpoint integrity, container health. Richer data but heavier — 6 background agents running continuously."
-  - "Lightweight monitor" → set `$TELEMETRY_MODE = "monitor"`
-    - description: "Single background agent polling nvidia-smi every 10 minutes. Only GPU utilization and temperature are recorded — no loss tracking, checkpoint integrity, or container health. Sufficient for adaptive resource planning."
+  - "Observe agents" → set `$TELEMETRY_MODE = "observe"`
+    - description: "Full 6-agent team: GPU metrics, thermal/throttling, training loss, disk I/O, checkpoint integrity, container health. ⚠ Adds ~3-4 GB memory overhead (6-8 Python processes at ~0.4 GB each). Safe if headroom >25 GB."
+  - "Lightweight monitor (Recommended for DGX Spark)" �� set `$TELEMETRY_MODE = "monitor"`
+    - description: "Single background script polling nvidia-smi every 10 minutes. Records watts, temp, util, memory to canonical JSONL. ~5 MB overhead. Sufficient for adaptive resource planning."
   - "None" → set `$TELEMETRY_MODE = "none"`
 
 **If the user selects "None"**, show a warning via AskUserQuestion:

@@ -16,8 +16,16 @@ Skill (this file — intent + decision logic)
 
 ## Telemetry
 
-> **Embedded:** This skill spawns observe-evaluation (3 agents) during long-running eval steps.
-> Output: `telemetry/evaluation/{timestamp}/`
+> **Default: Lightweight monitor only.** The observe-evaluation agent team (3 agents, ~1.2 GB overhead) should NOT be spawned during eval if training is also running or memory headroom is <25 GB. On DGX Spark unified memory, every agent process (~0.4 GB each) competes directly with model serving for the same memory pool.
+>
+> The lightweight monitor captures watts, temp, util, and memory — sufficient for eval telemetry.
+> Only spawn full observe agents if eval is running standalone with >25 GB headroom.
+>
+> **Memory impact reference:**
+> | Mode | Processes | Memory | When to use |
+> |------|-----------|--------|-------------|
+> | Lightweight | 1 shell script | ~5 MB | Default — always safe |
+> | Observe | 3 Python agents | ~1.2 GB | Standalone eval, >25 GB headroom |
 
 ## Trigger
 
