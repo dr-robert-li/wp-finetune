@@ -434,7 +434,7 @@ def print_training_summary(config: dict, train_dataset, val_dataset) -> None:
 
 def train(args: argparse.Namespace) -> None:
     """Run the full training pipeline."""
-    config_path = Path(args.config) if args.config else CONFIG_PATH
+    config_path = resolve_path(args.config) if args.config else CONFIG_PATH
     config = load_config(config_path)
 
     # --- Idempotency check: skip if adapter already trained ---
