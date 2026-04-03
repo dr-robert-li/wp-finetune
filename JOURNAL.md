@@ -4,6 +4,24 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-04-03 — Phase 4 runtime findings: LoRA serving, model names, and Docker permissions
+
+Three issues surfaced during the first live eval run on DGX Spark:
+
+### 1. vLLM does not support `modules_to_save` in LoRA adapters (confirmed)
+
+Pitfall 7 in 04-RESEARCH.md predicted this risk but incorrectly stated "vLLM ≥0.6.x handles this." In practice, vLLM (latest image as of April 2026) explicitly rejects adapters with `modules_to_save` tensors (`embed_tokens`, `lm_head`). The merge-and-serve fallback documented in run_eval_triage.py is **mandatory**, not optional. All adapters must be pre-merged via `scripts/merge_adapter.py` before serving. LoRA adapter-only serving is incompatible with our training config.
+
+### 2. Hardcoded model name `"openai/qwen3-wp"` breaks with merged models
+
+When serving merged models (no LoRA), vLLM reports the model ID as the full filesystem path (e.g. `/workspace/wp-finetune/models/qwen3-30b-wp-30_70-merged`). The eval scripts had `model="openai/qwen3-wp"` hardcoded. Fix: eval_gen.py and eval_judge.py now auto-detect the model name from the `/v1/models` endpoint, with `--model` CLI override. run_eval_triage.py passes the detected name through.
+
+### 3. Docker containers create root-owned output directories
+
+vLLM containers (running as root) create directories on mounted volumes that the host user can't write to. This blocked eval script output. Fix: dgx-toolbox start-vllm scripts now use `--user "$(id -u):$(id -g)"` so container-created files match host ownership.
+
+---
+
 ## 2026-04-03 — run-evaluation skill: autonomous eval with HITL only at the decision point
 
 ### The design question

@@ -32,6 +32,20 @@ def _get_dgx():
     return _dgx
 
 
+DEFAULT_MODEL = "openai/qwen3-wp"
+
+
+def _detect_model(client: openai.OpenAI) -> str:
+    """Auto-detect the served model name from /v1/models endpoint."""
+    try:
+        models = client.models.list()
+        if models.data:
+            return models.data[0].id
+    except Exception:
+        pass
+    return DEFAULT_MODEL
+
+
 # ---------------------------------------------------------------------------
 # PHP extraction helper (kept from original)
 # ---------------------------------------------------------------------------
@@ -208,6 +222,7 @@ def run_eval(
     dataset_path: str = "data/final_dataset/openai_test.jsonl",
     limit: Optional[int] = None,
     output_path: str = "output/eval_gen_results.json",
+    model: Optional[str] = None,
 ) -> dict:
     """Run 9-dimension rubric evaluation on wp_gen examples.
 
@@ -226,6 +241,7 @@ def run_eval(
     """
     dgx = _get_dgx()
     client = openai.OpenAI(base_url=dgx.vllm_endpoint(), api_key="none")
+    resolved_model = model or _detect_model(client)
 
     # Load and filter wp_gen examples
     examples = []
@@ -260,7 +276,7 @@ def run_eval(
             # Query the model
             try:
                 response = client.chat.completions.create(
-                    model="openai/qwen3-wp",
+                    model=resolved_model,
                     messages=user_messages,
                     max_tokens=2048,
                     temperature=0.0,
@@ -334,12 +350,19 @@ def main():
         default="data/final_dataset/openai_test.jsonl",
         help="Path to OpenAI-format JSONL test dataset",
     )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default=None,
+        help="Model name for vLLM (auto-detected from /v1/models if omitted)",
+    )
     args = parser.parse_args()
 
     summary = run_eval(
         dataset_path=args.dataset,
         limit=args.limit,
         output_path=args.output,
+        model=args.model,
     )
 
     # Print JSON summary to stdout
