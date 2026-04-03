@@ -41,6 +41,7 @@ training:
   bf16: true
   dataloader_num_workers: 4
   dataloader_persistent_workers: true
+  dataloader_prefetch_factor: 2
   eval_steps: 100
   gradient_accumulation_steps: 4
   gradient_checkpointing: true
