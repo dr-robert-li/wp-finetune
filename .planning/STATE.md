@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: executing
-stopped_at: "Phase 4: E_eff profiling COMPLETE (downward trend confirmed). Eval triage: 30/70 + 40/60 + 50/50 scored (Spearman needs full 597 examples). 60/40 training STARTED in background. 70/30 queued after 60/40."
-last_updated: "2026-04-03T12:17:37Z"
+stopped_at: "Completed quick task 260403-vvg: Fix stale unsloth refs and config inconsistencies"
+last_updated: "2026-04-03T13:01:57.051Z"
 last_activity: "2026-04-03 - Completed quick task 260403-utp: Fix stale eval tests to match current API"
 progress:
   total_phases: 11
@@ -115,9 +115,10 @@ None yet.
 | 260329-gvs | Update README CHANGELOG with telemetry opt-in and training steps | 2026-03-29 | 9a99da8 | [260329-gvs-update-readme-changelog-with-telemetry-o](./quick/260329-gvs-update-readme-changelog-with-telemetry-o/) |
 | 260403-rut | Remove Unsloth and dgx_toolbox from merge_adapter.py; use AutoModelForCausalLM | 2026-04-03 | e8ae427 | [260403-rut-fix-container-dependency-hell-add-standa](./quick/260403-rut-fix-container-dependency-hell-add-standa/) |
 | 260403-utp | Fix stale eval tests to match current API (rubric refactor) | 2026-04-03 | 49ec4b6 | [260403-utp-fix-stale-eval-tests-to-match-current-ev](./quick/260403-utp-fix-stale-eval-tests-to-match-current-ev/) |
+| 260403-vvg | Fix stale unsloth refs in dgx_toolbox; fix CONFIG_PATH; add missing dataloader fields to 30_70/40_60 configs | 2026-04-03 | f340b22 | [260403-vvg-fix-stale-unsloth-refs-and-config-incons](./quick/260403-vvg-fix-stale-unsloth-refs-and-config-incons/) |
 
 ## Session Continuity
 
-Last session: 2026-04-03T11:36:25.611Z
-Stopped at: Phase 4: E_eff profiling COMPLETE (downward trend confirmed). Eval triage: 30/70 + 40/60 + 50/50 scored (Spearman needs full 597 examples). 60/40 training STARTED in background. 70/30 queued after 60/40.
-Resume file: output/profiling/base_model_eeff_summary.md
+Last session: 2026-04-03T13:01:57.037Z
+Stopped at: Completed quick task 260403-vvg: Fix stale unsloth refs and config inconsistencies
+Resume file: None
