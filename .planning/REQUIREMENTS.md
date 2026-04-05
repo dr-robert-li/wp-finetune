@@ -103,9 +103,36 @@ Requirements for power-primary adaptive planner. Depends on dgx-toolbox Phase 13
 - [x] **PROB-02**: Anchor store persists config+outcome history with config hashing, cooldown tracking, and hard caps
 - [x] **PROB-03**: run-training Step 8.5 replaced with adaptive-planner skill invocation
 
+## v1.2 Requirements — Judge Reasoning Fine-Tune
+
+Requirements for deep reasoning fine-tuning of the winning ratio adapter. Depends on Phase 4 eval triage completing (need winning ratio). Must complete before v2.0 MoE-Sieve (routing profile must reflect reasoning capability).
+
+### Data Generation
+
+- [ ] **DGEN-01**: Pilot validation generates 20-50 deep judge CoT examples and 20-50 critique-then-fix examples, reviewed for quality before bulk generation
+- [ ] **DGEN-02**: Deep judge CoT agent generates reasoning-enriched judge examples with dimension-by-dimension analysis, issue identification with line references, fix suggestions, and structured scores
+- [ ] **DGEN-03**: Critique-then-fix agent generates examples where defective code (from mutation pool) receives structured critique with severity per dimension, followed by the corrected version
+- [ ] **DGEN-04**: Score consistency validation rejects examples where reasoning text contradicts numeric scores before export
+- [ ] **DGEN-05**: Reasoning dataset is assembled with training mix: reasoning examples + 30% flat judge replay + 20% wp_gen replay examples
+
+### Reasoning Training
+
+- [ ] **RTRN-01**: Training config uses 5-10x lower learning rate than Phase 3 (max ~2e-5) with warmup, continuing from winning ratio adapter
+- [ ] **RTRN-02**: max_seq_length increased to 8192 to accommodate full reasoning chains
+- [ ] **RTRN-03**: MoE router weights are confirmed frozen during continued training (no routing shift)
+- [ ] **RTRN-04**: Training completes 1-2 epochs on combined reasoning dataset without OOM or loss divergence
+
+### Reasoning Evaluation
+
+- [ ] **REVL-01**: eval_judge.py Spearman correlation on reasoning adapter meets or exceeds winning ratio baseline
+- [ ] **REVL-02**: eval_gen.py PHPCS pass rate on reasoning adapter shows no regression (within 2pp of baseline)
+- [ ] **REVL-03**: Reasoning quality scoring measures dimension coverage (all 9 dimensions addressed) and score-reasoning consistency
+- [ ] **REVL-04**: wp-bench scores on reasoning adapter meet or exceed winning ratio baseline
+- [ ] **REVL-05**: Human reviews sample of reasoning outputs to confirm quality before declaring v1.2 complete
+
 ## v2.0 Requirements — MoE-Sieve Selective Training
 
-Requirements for selective expert training and evaluation. Depends on Phase 4 eval completing (need winning gen/judge ratio). Pruning and packaging deferred to v3.0 (must happen after GRPO to prune on final routing distribution).
+Requirements for selective expert training and evaluation. Depends on v1.2 completing (need reasoning-enhanced adapter). Pruning and packaging deferred to v3.0 (must happen after GRPO to prune on final routing distribution).
 
 ### Router Profiling
 
@@ -302,12 +329,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 **Coverage:**
 - v1 requirements: 37 total (32 complete, 5 eval pending)
 - v1.1 requirements: 13 total (13 complete)
+- v1.2 requirements: 14 total (0 complete) — DGEN(5) + RTRN(4) + REVL(5)
 - v2.0 requirements: 14 total (0 complete) — PROF(5) + GATE(2) + SIEVE(5) + EVAL2(2)
 - v3.0 requirements: 22 total (0 complete) — GRPO(8) + MERGE(1) + PRUNE(6) + EVAL3(2) + PKG(5)
 - DPLT requirements: 7 total (deferred → v3.0 PKG/PRUNE)
-- Total mapped to phases: 82
-- Unmapped: 0
+- Total mapped to phases: 82 + 14 v1.2 = 96
+- Unmapped: 14 (v1.2 — pending roadmap)
 
 ---
 *Requirements defined: 2026-03-26*
-*Last updated: 2026-04-02 — v2.0 revised (pruning/packaging moved to v3.0), v3.0 GRPO & Production Deployment requirements added*
+*Last updated: 2026-04-05 — v1.2 Judge Reasoning Fine-Tune requirements added (14 requirements)*
