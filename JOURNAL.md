@@ -4,6 +4,37 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-04-05 — 60:40 training complete; eval-first triage before reasoning fine-tune
+
+### Training status
+
+The 60:40 gen/judge ratio adapter has completed training. All four SFT adapters (30/70, 40/60, 50/50, 60/40) are now available for evaluation. The 70:30 ratio showed diminishing returns during training with the larger gen dataset — not worth the GPU time given the signal from 60:40.
+
+### Decision: eval triage → reasoning fine-tune → compression
+
+Rather than reasoning-fine-tuning all ratios first, the surviving ratio from Phase 4 eval triage will be the sole candidate for reasoning fine-tune. The logic:
+
+1. **Cost asymmetry.** Eval is hours of inference; reasoning fine-tune is days of training per ratio. Triage at the cheapest decision point first.
+2. **GRPO targets hot experts from MoE-Sieve.** Reasoning fine-tune (Phase 11) operates on the MoE-Sieve adapter, not raw SFT — running it before MoE-Sieve would train a different model than what gets compressed.
+3. **Diminishing returns on gen-heavy ratios.** The 70:30 signal suggests gen-heavy ratios may not justify the investment. Eval will quantify whether 60:40 actually improves over 50:50.
+
+### Revised pipeline: v1.2 Judge Reasoning Fine-Tune milestone
+
+A new milestone (v1.2) is inserted between Phase 4 eval and v2.0 MoE-Sieve. The winning ratio adapter gets deep reasoning fine-tuning before entering the compression pipeline:
+
+1. **Deep judge CoT data** — Regenerate judge training examples with full reasoning chains (dimension-by-dimension analysis → issue identification → fix suggestions → scores). Extends existing 30K judge + 29K CoT data.
+2. **Critique-then-fix data** — New training format: model sees defective code, produces structured critique (what's wrong, why, severity per dimension), then generates the corrected version. Source material from existing contrastive mutations (phase2_mutate.py).
+3. **Fine-tune winning ratio adapter** on combined reasoning dataset.
+4. **Re-evaluate** — Confirm judge dimension improvement (Spearman, reasoning quality) without gen regression.
+
+This ensures the model entering MoE-Sieve can articulate *why* code is bad, not just output rubric scores — a capability that strengthens the judge pathway before routing concentration locks in which experts handle it.
+
+### Next step
+
+Commence Phase 4 eval (run-evaluation skill) on all four available adapters: 30/70, 40/60, 50/50, 60/40.
+
+---
+
 ## 2026-04-03 — Phase 4 runtime findings: LoRA serving, model names, and Docker permissions
 
 Three issues surfaced during the first live eval run on DGX Spark:
