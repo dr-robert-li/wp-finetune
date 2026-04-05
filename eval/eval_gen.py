@@ -291,9 +291,12 @@ def run_eval(
             result = score_code(php_code)
             rubric_scores.append(result)
 
-            # Write per-example detail
+            # Write per-example detail (includes prompt + response for human review)
             detail = {
                 "example_idx": i,
+                "prompt": user_messages[0]["content"] if user_messages else "",
+                "response": generated,
+                "extracted_code": php_code,
                 "overall": result.overall,
                 "grade": result.grade,
                 "dimension_scores": result.dimension_scores,

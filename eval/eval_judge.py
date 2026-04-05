@@ -267,6 +267,9 @@ def run_eval(
         # Record per-dimension pairs
         pair_record: dict = {
             "index": i,
+            "prompt": user_msg_text,
+            "response": generated,
+            "code": code,
             "model_overall": float(model_overall),
             "gt_overall": float(gt.overall),
             "dimensions": {},

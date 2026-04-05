@@ -241,9 +241,14 @@ def run_gate(
         with gen_path.open() as f:
             gen_results = json.load(f)
         combined["overall_mean"] = gen_results.get("overall_mean", 0.0)
-        combined["gen_dimension_pass_rates"] = gen_results.get(
-            "dimension_pass_rates", {}
-        )
+        # Extract per-dimension pass rates from nested per_dimension dict
+        # eval_gen.py writes: per_dimension[dim] = {"mean": ..., "pass_rate_8": ..., "na_count": ...}
+        raw_per_dim = gen_results.get("per_dimension", {})
+        combined["gen_dimension_pass_rates"] = {
+            dim: info.get("pass_rate_8", 0.0)
+            for dim, info in raw_per_dim.items()
+            if isinstance(info, dict)
+        }
         # Legacy keys
         combined["phpcs_pass_rate"] = gen_results.get("phpcs_pass_rate", 0.0)
         combined["security_pass_rate"] = gen_results.get("security_pass_rate", 0.0)
@@ -257,10 +262,20 @@ def run_gate(
     if judge_path.exists():
         with judge_path.open() as f:
             judge_results = json.load(f)
-        combined["overall_spearman"] = judge_results.get("overall_spearman", 0.0)
-        combined["judge_dimension_correlations"] = judge_results.get(
-            "dimension_correlations", {}
-        )
+        # overall_spearman may be a dict {"corr": ..., "p_value": ..., "n_pairs": ...} or a float
+        raw_spearman = judge_results.get("overall_spearman", 0.0)
+        if isinstance(raw_spearman, dict):
+            combined["overall_spearman"] = raw_spearman.get("corr", 0.0)
+        else:
+            combined["overall_spearman"] = raw_spearman
+        # Extract per-dimension correlations from nested per_dimension dict
+        # eval_judge.py writes: per_dimension[dim] = {"corr": ..., "p_value": ..., "n_pairs": ...}
+        raw_per_dim_j = judge_results.get("per_dimension", {})
+        combined["judge_dimension_correlations"] = {
+            dim: info.get("corr", 0.0)
+            for dim, info in raw_per_dim_j.items()
+            if isinstance(info, dict)
+        }
         # Legacy key
         combined["spearman_corr"] = judge_results.get("spearman_corr", 0.0)
     else:
