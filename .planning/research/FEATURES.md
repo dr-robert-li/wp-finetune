@@ -120,6 +120,7 @@ The minimum to deliver the milestone goal: model can articulate why code is bad,
 ### Future Consideration (v2+)
 
 - [ ] Multi-turn self-refinement training — appropriate after GRPO is introduced in v3.0; the RL loop provides refinement signal without requiring explicit multi-turn SFT format
+- [ ] GRPO for judge reasoning quality — v3.0 GRPO currently scoped as gen-only (`<wp_gen>`); extending GRPO to refine judge reasoning quality using verifiable rewards (PHPCS/security scanner for critique-then-fix corrections, Nemotron-as-judge or score consistency checks for judge scoring) is a scope consideration for v3.0, deferred until gen-only GRPO results are evaluated
 - [ ] Pairwise reasoning preference data — requires human or stronger-model annotation; consider if Spearman correlation plateaus below 0.90 after v1.2 and v2.0
 
 ---

@@ -126,7 +126,7 @@ Requirements for deep reasoning fine-tuning of the winning ratio adapter. Depend
 
 - [ ] **REVL-01**: eval_judge.py Spearman correlation on reasoning adapter meets or exceeds winning ratio baseline
 - [ ] **REVL-02**: eval_gen.py PHPCS pass rate on reasoning adapter shows no regression (within 2pp of baseline)
-- [ ] **REVL-03**: Reasoning quality scoring measures dimension coverage (all 9 dimensions addressed) and score-reasoning consistency
+- [ ] **REVL-03**: Reasoning quality scoring measures dimension coverage (all 9 dimensions addressed), score-reasoning consistency, and Nemotron-as-judge coherence evaluation (Nemotron 3 Nano via ~/dgx-toolbox) on a representative sample
 - [ ] **REVL-04**: wp-bench scores on reasoning adapter meet or exceed winning ratio baseline
 - [ ] **REVL-05**: Human reviews sample of reasoning outputs to confirm quality before declaring v1.2 complete
 
@@ -173,7 +173,7 @@ Requirements for GRPO reinforcement learning on the MoE-Sieve model, followed by
 
 ### GRPO Training
 
-- [ ] **GRPO-05**: Gen-only GRPO — `<wp_gen>` generation quality improved via RL; `<wp_judge>` capability completely frozen from SFT
+- [ ] **GRPO-05**: Gen-only GRPO — `<wp_gen>` generation quality improved via RL; `<wp_judge>` capability completely frozen from SFT. **Note:** GRPO could also be extended to refine judge reasoning quality using verifiable rewards (PHPCS/security scanner for critique-then-fix corrections, Nemotron-as-judge or score consistency checks for judge scoring). This is a scope consideration for v3.0, not currently planned.
 - [ ] **GRPO-06**: Hot experts only — GRPO gradients flow to hot routed experts + attention + router gates + shared experts; cold routed experts frozen (structural stability anchor)
 - [ ] **GRPO-07**: RSPO router-shift stabilization — compute router-shift ratio between rollout and training phases, apply stop-gradient and floor, multiply into clipped importance ratio before aggregation
 - [ ] **GRPO-08**: Router-shift ratio monitored throughout training — log per-step shift metrics; halt training if shift exceeds stability threshold (routing collapse early warning)
