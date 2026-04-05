@@ -1,8 +1,23 @@
 # Feature Research
 
-**Domain:** WordPress-specific code generation and judgment language model
-**Researched:** 2026-03-26
-**Confidence:** HIGH (model's feature spec is defined by the existing pipeline; confirmed against WPCS docs, CodeWP analysis, and LLM-as-judge research)
+**Domain:** Judge reasoning fine-tuning for code quality models (WordPress PHP)
+**Researched:** 2026-04-04
+**Confidence:** HIGH (core reasoning formats), MEDIUM (evaluation metrics), LOW (WordPress-specific judge benchmarks)
+
+---
+
+## Context: What Already Exists
+
+This is a subsequent-milestone research document. The following are **already built** and are not in scope:
+
+- 30K judge training examples with JSON scores and short explanations
+- 4-way CoT split: `gen_pattern`, `judge_rubric`, `judge_contrastive`, `security`
+- Contrastive mutation engine with 7 mutation types (SQL injection, CSRF, XSS, authorization, input_validation, i18n, performance)
+- Multi-format export pipeline (OpenAI, Alpaca, Raw JSONL with task tokens)
+- 9-dimension eval suite (241 checks, Spearman correlation)
+- `phase2_mutate.py` producing verified bad→good contrastive pairs
+
+New features must integrate with this pipeline and use the existing mutation engine output as raw material.
 
 ---
 
@@ -10,193 +25,159 @@
 
 ### Table Stakes (Users Expect These)
 
-Features the model must demonstrate to be considered usable for WordPress development.
-Missing any of these = model is worse than a general-purpose code LLM with a system prompt.
+Features that any competitive judge reasoning fine-tune must have. Missing these means the v1.2 adapter produces reasoning that is structurally incomplete or untrustworthy.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| PHPCS-passing PHP output | All serious WP tooling enforces WPCS; generated code that fails PHPCS is immediately rejected by CI pipelines | MEDIUM | Pipeline enforces this as a training quality gate — the trained model must internalize it, not rely on post-processing |
-| Correct `$wpdb->prepare()` usage | SQL injection is the top WordPress plugin vulnerability class (Patchstack 2025 report); unprepared queries are an instant trust-breaker | HIGH | Must handle `%s`/`%d`/`%f` placeholders, typed correctly; `%1$s` positional usage also required |
-| Nonce generation and verification | CSRF protection via nonces is WordPress convention; missing nonces on state-changing handlers is a common critical vulnerability | MEDIUM | Must know `wp_nonce_field()`, `wp_verify_nonce()`, `check_ajax_referer()`, `check_admin_referer()` |
-| Capability checks before privileged operations | `current_user_can()` gating is WPCS mandatory pattern; missing capability checks are exploited constantly (Q3 2025 Patchstack data) | MEDIUM | Must understand capability hierarchy: `manage_options`, `edit_posts`, `delete_users`, etc. |
-| Context-appropriate output escaping | `esc_html()`, `esc_attr()`, `esc_url()`, `wp_kses()` — wrong escaping function for context is a functional bug, not just style | MEDIUM | Model must select the right escape function based on output context |
-| WP_Query over raw SQL for post queries | Using raw SQL for post queries is a WPCS critical failure; WP_Query is the canonical API | MEDIUM | Includes meta_query, tax_query, date_query construction |
-| Hook registration with correct signature | `add_action`/`add_filter` with wrong argument count is a silent runtime bug; priority management affects load order across plugins | LOW | Must match `$accepted_args` to callback signature |
-| `register_rest_route()` with `permission_callback` | REST routes missing `permission_callback` is a critical security gap (WPCS critical failure); exposed in 2025 WP security tooling | MEDIUM | Must never omit permission_callback, even for public routes (use `__return_true` explicitly) |
-| PHPDoc blocks on public functions | WPCS requires `@param`, `@return`, `@since` on public API functions; required for WP.org plugin submission | LOW | Must know when PHPDoc is required vs optional (private helpers) |
-| i18n wrapping for user-facing strings | Translation wrappers (`__()`, `_e()`, `esc_html__()`, `_n()`) are mandatory for WP.org-hosted plugins | LOW | Late-escaping pattern (`esc_html__()`) preferred over chaining |
+| Dimension-by-dimension reasoning in judge output | Every rubric-scored judge model (Prometheus, JudgeLM, Auto-J) produces per-criterion reasoning before scores; outputting scores without per-dimension rationale is widely considered a defective judge format | MEDIUM | Requires regenerating existing 30K judge examples with expanded reasoning; existing `judge_system.md` rubric provides the 9-dimension frame |
+| Verdict-after-reasoning ordering | Prometheus research established that generating feedback THEN score outperforms score-first formats; the model uses its written reasoning as context when assigning the numeric score — reversing this order degrades score accuracy | LOW | Structural requirement in data generation prompts; add a `[RESULT]` or equivalent separator token between reasoning and score |
+| Issue identification with location reference | Reasoning chains that name the specific line/pattern causing the defect (e.g., "line 14: direct variable concatenation in SQL query") produce judges that generalize better than vague category labels | MEDIUM | Claude agents can identify line-level patterns; mutation engine already tags mutation type and line context |
+| Score consistency across reasoning | The reasoning text must logically support the numeric score; a chain concluding "critical SQL injection present" followed by security score 8 is a reasoning hallucination — the most common failure mode in fine-tuned judges | MEDIUM | Training data validation step: reject examples where written severity contradicts final score |
+| Structured output schema (JSON or tagged fields) | Required for reliable inference-time parsing; unstructured free-text reasoning cannot be reliably parsed downstream | LOW | Existing pipeline already exports JSON; extend schema to include `reasoning` field alongside `scores` and `explanation` |
 
 ### Differentiators (Competitive Advantage)
 
-Features that distinguish wp-qwen3-moe from "ChatGPT with a WordPress system prompt."
+Features that go beyond standard judge fine-tuning and are specific to this use case.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Dual-mode via task tokens (`<wp_gen>` / `<wp_judge>`) | Single model does both generation AND rubric scoring; eliminates two-model workflow for code review pipelines | HIGH | Enabled by MoE routing — specialized expert pathways per task type. Core differentiator from CodeWP (generation-only) |
-| 9-dimension structured judgment output | Returns JSON with per-dimension scores (wpcs_compliance, sql_safety, security, performance, wp_api_usage, code_quality, dependency_integrity, i18n, accessibility) plus critical_failures list and training_tags | HIGH | Actionable at dimension level, not just pass/fail. Enables targeted remediation. Research shows structured rubric output outperforms holistic scoring for code quality (ICLR 2025 RocketEval) |
-| Contrastive defect explanation | Given a mutation pair (bad → good), explains exactly what changed and why — not just "this is wrong" | HIGH | Trained on Phase 2 mutation data with CoT annotations; enables use as an automated code-review explainer |
-| Chain-of-thought reasoning for complex patterns | Explains why a pattern is correct (e.g., why a transient is used here over object cache, why this specific WP_Query arg avoids an N+1) | HIGH | Phase 3 CoT examples cover SQL, performance, and architecture patterns. Distinguishes from models that generate correct code without explainability |
-| Taxonomy-grounded coverage across WP concept space | Covers all 12 taxonomy categories (sql_patterns, security, hooks_and_filters, data_modeling, rest_api, admin, theme_patterns, performance, plugin_architecture, multisite, cron, i18n, accessibility) with minimum example counts enforced | HIGH | General-purpose models trained on GitHub have uneven WP coverage; multisite and cron patterns are particularly underrepresented in general corpora |
-| Multisite awareness | Generates code that correctly handles `switch_to_blog()`, per-site table prefixes, network options vs site options | HIGH | Multisite patterns are nearly absent from general code model training data; common pain point for WP hosting companies and WP VIP developers |
-| Security-aware generation with violation detection | Generates code that avoids the five mutation categories (stripped prepare(), removed nonces, stripped escaping, removed capability checks, injected SELECT *) AND can flag those violations in existing code | HIGH | Pipeline trains on controlled mutation data — model learns both the correct pattern and the characteristic shape of violations |
-| Style anchoring to real plugin conventions | Generation matches conventions of real, high-quality WordPress plugins rather than abstract best practices | MEDIUM | Achieved via few-shot style anchors from Phase 1 passed code during synthetic generation; output "feels like" WooCommerce/Jetpack, not textbook PHP |
+| Critique-then-fix format (defective code → critique → corrected code) | Combines judge capability with generative repair in a single inference call; no comparable open judge model for WordPress PHP produces corrections; directly exploits the existing mutation engine which already has verified bad→good pairs | HIGH | Core new format for v1.2; uses `phase2_mutate.py` output directly; each bad→good pair becomes one `(bad_code, structured_critique, good_code)` triple |
+| Severity-tagged issue list within critique | Each identified issue gets `severity: critical/high/medium/low` plus `dimension: [security/performance/...]`; enables downstream tooling to triage review comments by severity; Critique-Coder and SRR-Judge both show that structured severity labels improve downstream task transfer | MEDIUM | Addable to the critique template without fundamental architecture change |
+| Fix-rationale field in corrected output | The corrected code section includes a brief "what changed and why" explanation, not just the fixed code; this produces judges that can articulate regressions in code review rather than just flagging pass/fail | MEDIUM | Adds 2-3 sentences to each fix section; distill from Claude agents using the existing agent pipeline |
+| TRACT-style two-phase training: CoT generation then regression-aware fine-tune | TRACT (ACL 2025) shows that combining CE loss for reasoning with regression-aware loss for numeric score prediction significantly outperforms CE-only fine-tuning; directly applicable to the 9-dimension scoring task | HIGH | Requires modifying Unsloth training config to use a custom loss; may be deferred if Unsloth Studio does not expose custom loss heads |
+| WordPress-specific security reasoning templates | Generic judge models do not know that `$wpdb->prepare()` absence is SQL injection, or that `check_ajax_referer()` absence is CSRF; embedding WP-specific pattern names in reasoning templates produces a judge that speaks the vocabulary WordPress developers use | LOW | Template enrichment in Claude agent prompts; no architecture change required |
+| Contrastive reasoning pair with causal "intent vs. effect" explanation | The contrastive `judge_contrastive` CoT type already exists but uses short explanations; expanding it to include "here is what the developer probably intended vs. what actually happens" improves the model's ability to reason about subtle authorization bugs | MEDIUM | Regenerate `judge_contrastive` examples with deeper causal reasoning; source material from existing mutation engine output |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
-Features that seem like good ideas but should be explicitly excluded from v1.
-
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| JavaScript / Gutenberg block generation | Gutenberg/React blocks are a large part of modern WP dev | Entirely different training domain (JS/React/block.json); mixing PHP and JS training without separate expert pathways dilutes both | Explicitly out of scope for v1 per PROJECT.md; address in v2 with a separate `<wp_block>` task token and dedicated JS training data |
-| General PHP framework generation (Laravel, Symfony) | Developers want one model for all PHP | WordPress PHP patterns actively conflict with framework patterns (DI containers, PSR autoloading vs `require`, ActiveRecord vs `$wpdb`) — training contamination degrades WP-specific behavior | Model is intentionally WordPress-scoped; use a general PHP model for framework code |
-| Real-time PHPCS correction loop at inference | Users want the model to auto-fix generated code | Inference-time PHPCS toolchain creates hard infrastructure dependency; increases latency; creates false confidence when PHPCS passes but logic is wrong | Train the model to generate PHPCS-passing code on the first attempt; the judge mode can flag remaining issues |
-| Binary PASS/FAIL judgment without scores | Seems simpler for downstream consumers | Binary output discards dimension-level signal; a function that fails only on i18n needs different remediation than one failing on SQL safety | Always return full 9-dimension scores; consumer can reduce to binary by checking `verdict` field if needed |
-| Explanation of WordPress core internals | Developers ask "how does WP_Query work internally?" | Question-answering about WP internals is a documentation retrieval task, not code generation or judgment; optimizing for it dilutes the code-focused training signal | Defer to WP documentation search or a general-purpose model for conceptual questions |
-| DPO/RLHF preference optimization | Users want a "better" model post-SFT | RLHF requires a separate reward model and PPO training loop; DPO requires preference pairs beyond the SFT dataset; both are v2 concerns that SFT alone addresses adequately for initial release | Evaluate PHPCS pass rate and judge correlation at v1; if metrics satisfy thresholds (>95% PHPCS, >0.85 correlation), SFT is sufficient |
-| Multi-lingual comment generation | International WP developers want native language comments | Multi-lingual requires separate training data curation, translation validation, and language-specific PHPDoc conventions; out of scope per PROJECT.md | English-only for v1; i18n wrapping of user-facing strings (a separate concern) is in scope |
+| Free-form "think out loud" reasoning with no structure | Seems more natural; closer to GPT-o1 style extended thinking | Produces reasoning chains where the model can rationalize any score; training data quality degrades because there is no schema to validate consistency between reasoning and score; faithfulness hallucination rate is high for unstructured CoT (ProcessBench reports 51.8% invalid-trace-but-correct-answer rate on challenging problems) | Use structured reasoning with labeled sections (dimension analysis, issue list, fix plan, scores) — constrains the generation space and enables automated consistency checking during data validation |
+| Iterative self-refinement (model critiques its own output, then re-critiques) | Appealing for quality; Self-Refine shows 21-32pp improvement on unit test correctness | For a 30B MoE in SFT fine-tuning context, multi-turn refinement loops during training require 2-3x data volume and complicate the training format significantly; also introduces position bias (later critique always appears "more thoughtful") | Single-pass critique-then-fix is sufficient for v1.2; multi-turn self-refinement is appropriate for v3.0 GRPO where the RL loop provides the refinement signal |
+| Pairwise preference format for reasoning quality (A vs B) | RLHF-style comparison seems principled for teaching reasoning quality | Requires human labelers or a stronger model to judge which reasoning chain is better; circularity problem — the model being trained cannot reliably self-evaluate reasoning quality; DPO on reasoning pairs tends to shorten reasoning rather than improve it | Use pointwise scoring with consistency validation (score matches reasoning conclusion); Prometheus 2 demonstrated that 40K SFT examples with pointwise format match pairwise RLHF judge quality |
+| Exhaustive deep reasoning for every training example including trivial passes | More training data with deeper reasoning should always help | Simple high-quality functions (score 9-10 on all dimensions) produce trivial reasoning chains ("no issues found, well-formed code"); training on these dilutes the signal and inflates the dataset without improving judge capability; TRACT and Prometheus both use difficulty-adaptive reasoning depth | Reserve deep reasoning for examples with score variance (at least one dimension < 8); apply short-form reasoning or skip for uniformly high-quality examples |
+| Separate reasoning model from scoring model | Clean architecture; reasoning and scoring as distinct heads | For a LoRA fine-tune on a single MoE model, adding a separate head requires architecture changes incompatible with Unsloth LoRA; increases serving complexity for what is essentially a format choice | Single-model output with tagged sections; use structured output parsing at inference time |
 
 ---
 
 ## Feature Dependencies
 
 ```
-[PHPCS-passing output]
-    └──requires──> [WPCS naming, spacing, formatting internalized from training data]
+[Deep judge CoT with dimension reasoning]
+    └──required by──> [Critique-then-fix format]
+                          (critique sections map to the same 9 dimensions)
 
-[SQL safety]
-    └──requires──> [wpdb->prepare() with typed placeholders]
-                       └──requires──> [placeholder type selection logic (%s vs %d)]
+[Existing contrastive mutation engine (phase2_mutate.py)]
+    └──provides source material──> [Critique-then-fix training pairs]
+                                       (bad→good pairs become critique triples)
 
-[Security (nonces + capability checks)]
-    └──requires──> [nonce API knowledge]
-    └──requires──> [capability hierarchy knowledge]
+[Existing 30K judge examples (short explanation)]
+    └──regenerated as──> [Deep judge CoT examples (long reasoning chains)]
 
-[wp_judge task token mode]
-    └──requires──> [wp_gen task token mode] (judge evaluates generation output)
-    └──requires──> [9-dimension rubric internalized from Phase 2 judge training data]
-    └──requires──> [structured JSON output format]
+[Severity-tagged issue list]
+    └──required by──> [Fix-rationale field]
+                          (fix rationale must reference which severities it resolves)
 
-[Contrastive defect explanation]
-    └──requires──> [wp_judge mode]
-    └──requires──> [mutation pair CoT annotations from Phase 2/3 training data]
-    └──enhances──> [wp_judge mode] (explains WHY a score is low)
+[Verdict-after-reasoning ordering]
+    └──required by──> [Score consistency validation]
+                          (validation step requires reasoning text to precede score)
 
-[Chain-of-thought reasoning]
-    └──requires──> [Phase 3 CoT training examples]
-    └──enhances──> [wp_gen mode] (explains generated code)
-    └──enhances──> [wp_judge mode] (explains judgment rationale)
+[TRACT-style regression-aware loss]
+    └──requires──> [Unsloth custom loss support]
+                       (dependency on training infrastructure — may block)
 
-[Taxonomy-grounded coverage]
-    └──requires──> [Phase 2 gap analysis + synthetic generation complete]
-    └──enables──> [multisite awareness] (multisite is a taxonomy category with min coverage)
-    └──enables──> [cron pattern generation]
-    └──enables──> [REST API generation with permission_callback]
-
-[Dual-mode task tokens]
-    └──requires──> [MoE conversion + tokenizer extension with <wp_gen>/<wp_judge>]
-    └──requires──> [50/50 gen/judge training data split]
-    └──conflicts──> [single-task fine-tuning] (task tokens meaningless without routing)
+[Deep judge CoT data] ──parallel with──> [Critique-then-fix data]
+    (both produced in same agent generation pass; same model, different prompt templates)
 ```
 
 ### Dependency Notes
 
-- **wp_judge requires wp_gen training first:** The judge mode evaluates code quality; without strong generation training, the model has no quality baseline to judge against. The 50/50 dataset split ensures both pathways are trained simultaneously.
-- **Structured JSON output requires rubric internalization:** The 9-dimension JSON format is only reliable if the model has seen hundreds of rubric-scored examples during training. Phase 2 judge_dataset.py provides these.
-- **Multisite depends on taxonomy gap analysis completing:** Multisite patterns have minimum coverage requirements in taxonomy.yaml (60 examples for `multisite:per_site_tables`). If Phase 2 generation is skipped or incomplete, multisite coverage will be absent.
-- **Contrastive explanation conflicts with binary-only judgment:** If the judge mode is trained only on PASS/FAIL labels without mutation metadata and CoT, defect explanation capability is lost. Phase 3 CoT annotations for mutation pairs must not be skipped.
+- **Critique-then-fix requires deep judge CoT:** The critique sections in the fix format are the same dimension-by-dimension reasoning as in standalone judge CoT. Build judge CoT format first and reuse the template for critique sections.
+- **Mutation engine provides critique-then-fix source material:** `phase2_mutate.py` already produces verified `(bad_code, mutation_type, good_code)` triples for all 7 mutation types. These become the raw material for `(bad_code, structured_critique, good_code)` triples — the critique is generated by Claude agents who know the mutation type and can reason about it explicitly.
+- **Regression-aware loss is optional in v1.2:** TRACT-style loss is a differentiator, not table stakes. If Unsloth Studio does not expose custom loss heads, standard CE loss on the full sequence (reasoning + scores) is acceptable. Flag for v2.0.
+- **Score consistency validation must precede training:** Training on examples where reasoning contradicts scores is actively harmful. Build a validation step that rejects examples with logical inconsistency before export.
 
 ---
 
 ## MVP Definition
 
-### Launch With (v1)
+### Launch With (v1.2)
 
-These are the minimum capabilities for the model to be useful and trustworthy.
+The minimum to deliver the milestone goal: model can articulate why code is bad, score with dimension-level justification, and generate corrected versions.
 
-- [ ] PHPCS-passing PHP generation (WPCS compliance) — without this, the model is less useful than PHPCS itself
-- [ ] SQL safety (`$wpdb->prepare()` usage) — the highest-severity WordPress vulnerability class; non-negotiable
-- [ ] Nonce verification and capability check patterns — table-stakes security for any plugin code
-- [ ] Output escaping with context-appropriate function selection — prevents XSS in generated code
-- [ ] WP_Query, hook registration, REST API route generation — the three most common WP-specific coding tasks
-- [ ] `<wp_judge>` mode returning 9-dimension JSON with scores, verdict, and critical_failures — the core differentiator that doesn't exist in any competitor tool
-- [ ] CoT reasoning for SQL and security patterns — makes the model explainable, not just generative
+- [ ] Deep judge CoT data: Regenerate judge training examples with full reasoning chains — dimension-by-dimension analysis, specific issue identification with WP pattern names, per-dimension scores — sourced from existing 30K judge examples regenerated via Claude agents
+- [ ] Critique-then-fix data: For each mutation-engine output triple `(bad_code, mutation_type, good_code)`, generate `(bad_code, structured_critique_with_severity, good_code_with_fix_rationale)` using Claude agents
+- [ ] Score consistency validation: Automated check that rejects training examples where written severity labels contradict numeric scores (e.g., "critical SQL injection" + security score 7)
+- [ ] Verdict-after-reasoning format with separator token: Reasoning text comes first, `[/REASONING]` or equivalent separator, then JSON score block — enforced in data generation prompts and validated in export
+- [ ] Fine-tune winning ratio adapter on combined deep reasoning dataset: Standard SFT with CE loss; LoRA r=32 same as v1.0
 
 ### Add After Validation (v1.x)
 
-- [ ] Contrastive defect explanation with mutation pair annotation — add when judge correlation metric confirms rubric alignment (>0.85 threshold)
-- [ ] Multisite-specific pattern generation — add when base security and SQL patterns are validated; multisite is specialized enough that early errors here damage trust less than core security errors
-- [ ] Admin UI generation (settings pages, meta boxes, list table columns) — high developer demand but lower security criticality; validate core generation first
+- [ ] TRACT-style regression-aware loss — add if Unsloth Studio supports custom loss heads and v1.2 eval shows score calibration gaps (Spearman below 0.85)
+- [ ] Difficulty-adaptive reasoning depth — skip deep reasoning for uniformly high-quality examples (all dimensions >= 9) once dataset volume is confirmed sufficient without them
+- [ ] Contrastive reasoning expansion with causal "intent vs. effect" — add if v1.2 eval shows authorization dimension underperforming
 
 ### Future Consideration (v2+)
 
-- [ ] DPO/RLHF preference optimization — defer until SFT metrics plateau; requires new training infrastructure
-- [ ] JavaScript/Gutenberg block generation via `<wp_block>` task token — requires entirely new training data domain
-- [ ] Multi-lingual comment support — requires translation validation pipeline
-- [ ] WooCommerce-specific expert pathway (`<wc_gen>`) — WooCommerce has its own conventions (CRUD, hooks, templates); warrants separate task token and training data
+- [ ] Multi-turn self-refinement training — appropriate after GRPO is introduced in v3.0; the RL loop provides refinement signal without requiring explicit multi-turn SFT format
+- [ ] Pairwise reasoning preference data — requires human or stronger-model annotation; consider if Spearman correlation plateaus below 0.90 after v1.2 and v2.0
 
 ---
 
 ## Feature Prioritization Matrix
 
-| Feature | User Value | Implementation Cost | Priority |
-|---------|------------|---------------------|----------|
-| PHPCS-passing generation | HIGH | MEDIUM (training data quality gate already enforced) | P1 |
-| SQL safety (`$wpdb->prepare()`) | HIGH | HIGH (must correctly handle all placeholder types) | P1 |
-| Nonce + capability checks | HIGH | MEDIUM | P1 |
-| Output escaping (context-correct) | HIGH | MEDIUM | P1 |
-| WP_Query / hooks / REST API generation | HIGH | HIGH (broad coverage required) | P1 |
-| `<wp_judge>` 9-dimension JSON output | HIGH | HIGH (requires Phase 2 judge dataset complete) | P1 |
-| PHPDoc generation | MEDIUM | LOW | P1 |
-| i18n wrapping | MEDIUM | LOW | P1 |
-| CoT reasoning for complex patterns | HIGH | HIGH (Phase 3 required) | P1 |
-| Contrastive defect explanation | HIGH | HIGH (Phase 2 mutation pairs + CoT required) | P2 |
-| Multisite patterns | MEDIUM | HIGH (specialized training data, Phase 2 gap fill) | P2 |
-| Admin UI generation (meta boxes, settings) | MEDIUM | MEDIUM | P2 |
-| Cron / scheduled event patterns | LOW | MEDIUM | P2 |
-| Plugin architecture patterns (activation, uninstall) | MEDIUM | LOW | P2 |
-| WooCommerce-specific generation | HIGH (for WC devs) | HIGH (separate task token + training data) | P3 |
-| Gutenberg block generation | HIGH (modern WP) | VERY HIGH (entirely different domain) | P3 |
-| DPO/RLHF refinement | MEDIUM | VERY HIGH (new infra required) | P3 |
+| Feature | Model Value | Implementation Cost | Priority |
+|---------|-------------|---------------------|----------|
+| Dimension-by-dimension reasoning in judge output | HIGH | MEDIUM | P1 |
+| Verdict-after-reasoning ordering with separator token | HIGH | LOW | P1 |
+| Critique-then-fix format (bad → critique → fixed) | HIGH | HIGH | P1 |
+| Score consistency validation (reject contradictory examples) | HIGH | LOW | P1 |
+| Severity-tagged issue list | MEDIUM | MEDIUM | P1 |
+| WordPress-specific security reasoning templates | HIGH | LOW | P1 |
+| Fix-rationale field in corrected output | MEDIUM | MEDIUM | P2 |
+| Contrastive reasoning with causal "intent vs. effect" | MEDIUM | MEDIUM | P2 |
+| Difficulty-adaptive reasoning depth | MEDIUM | LOW | P2 |
+| TRACT regression-aware loss | HIGH | HIGH | P3 |
+| Multi-turn self-refinement training | LOW | HIGH | P3 |
 
 **Priority key:**
-- P1: Must have for launch
-- P2: Should have, add when possible
-- P3: Nice to have, future consideration
+- P1: Required for v1.2 milestone goal
+- P2: Add if agent generation capacity permits or eval shows gap
+- P3: Deferred to v2.0/v3.0 or requires infrastructure prerequisites
 
 ---
 
-## Competitor Feature Analysis
+## Competitor Feature Analysis (Judge Model Landscape)
 
-| Feature | CodeWP | GitHub Copilot / General LLMs | wp-qwen3-moe approach |
-|---------|--------|-------------------------------|----------------------|
-| WP-specific code generation | Yes — trained on WP core + popular plugins | Partial — general GitHub training with WP patterns present but inconsistent (Gemini mixes WP/Drupal/Laravel) | Yes — trained exclusively on curated PHPCS-passing WP code |
-| WPCS compliance enforcement | Partial — generates WP-style code but no formal WPCS guarantee | No — requires post-hoc PHPCS run | Yes — PHPCS pass rate >95% is evaluation target; baked into training data quality gate |
-| Code quality judgment / review | No — generation only | Partial — can critique code but without WP-specific rubric | Yes — `<wp_judge>` mode with 9-dimension structured rubric |
-| Structured JSON judgment output | No | No | Yes — JSON with per-dimension scores, critical_failures, training_tags |
-| Security-specific defect detection | No formal mechanism | Ad hoc — depends on prompt engineering | Yes — trained on controlled mutation pairs; knows the shape of nonce removal, unprepared queries, etc. |
-| Contrastive explanation (bad→good) | No | No | Yes — Phase 2 mutation pairs with CoT annotations |
-| Chain-of-thought reasoning | No | Partial (general reasoning, not WP-grounded) | Yes — Phase 3 CoT specifically for WP patterns |
-| Multisite awareness | Unknown / limited | Very limited | Yes — taxonomy-enforced minimum coverage |
-| Dual-mode single model (gen + judge) | No — separate products/prompts | No — separate calls to different models | Yes — single model, task token routes to MoE expert pathway |
-| Open model / self-hostable | No (SaaS) | No (SaaS/enterprise) | Yes — GGUF for Ollama, AWQ for vLLM; runs on DGX Toolbox |
+| Feature | Prometheus 2 | JudgeLM / Auto-J | Our v1.2 Approach |
+|---------|--------------|------------------|-------------------|
+| Reasoning format | Feedback text then `[RESULT]` score | Score + justification | Dimension sections then `[/REASONING]` then JSON scores |
+| Per-dimension scoring | Rubric-guided, 1-5 Likert | Single overall quality score | 9-dimension, 1-10 each, security auto-fail |
+| Code repair output | None | None | Critique-then-fix with corrected PHP |
+| Domain specialization | General (language quality) | General | WordPress PHP (WPCS, security patterns, WP APIs) |
+| Training data scale | 100K (GPT-4 generated) | 33K-100K | ~30K regenerated + mutation engine triples |
+| Score calibration approach | CE loss on full sequence | CE loss | CE loss (TRACT as P3 upgrade) |
+| Mutation-based contrastive pairs | No | Some DPO pairs | Yes, 7 mutation types, PHPCS-verified |
+
+**Key differentiator:** No open judge model produces WP-specific PHP repair suggestions. The mutation engine's verified bad→good pairs are a unique data source that generic judge models cannot replicate.
 
 ---
 
 ## Sources
 
-- [CodeWP AI capabilities analysis](https://deepgram.com/ai-apps/codewp) — MEDIUM confidence (third-party summary)
-- [Best WordPress AI tools 2026 (Varun Dubey)](https://vapvarun.com/ai-tools-wordpress-plugin-development/) — MEDIUM confidence (practitioner assessment)
-- [State of WordPress Security 2025 — Patchstack](https://patchstack.com/whitepaper/state-of-wordpress-security-in-2025/) — HIGH confidence (primary security research)
-- [Q3 2025 Most Exploited WP Vulnerabilities — Patchstack](https://patchstack.com/articles/q3-2025s-most-exploited-wordpress-vulnerabilities-and-how-patchstacks-rapidmitigate-blocked-them/) — HIGH confidence
-- [LLM-as-a-Judge complete guide — Evidently AI](https://www.evidentlyai.com/llm-guide/llm-as-a-judge) — HIGH confidence
-- [Benchmarking Correctness and Security in Multi-Turn Code Generation — OpenReview](https://openreview.net/forum?id=zH9aX65Zyi) — HIGH confidence (peer-reviewed)
-- [Fine-tuning LLMs for secure code generation — Springer/ESE](https://link.springer.com/article/10.1007/s10664-026-10803-9) — HIGH confidence (peer-reviewed 2026)
-- [Qwen3 Technical Report](https://arxiv.org/html/2505.09388v1) — HIGH confidence (official)
-- [Unsloth Qwen3 fine-tuning documentation](https://unsloth.ai/docs/models/qwen3-how-to-run-and-fine-tune) — HIGH confidence (official tooling docs)
-- [WordPress Namespaces and Coding Standards 2025 — WP Developer Blog](https://developer.wordpress.org/news/2025/09/implementing-namespaces-and-coding-standards-in-wordpress-plugin-development/) — HIGH confidence (official WP docs)
-- Project pipeline: `config/judge_system.md` and `config/taxonomy.yaml` — HIGH confidence (primary source)
+- [TRACT: Regression-Aware Fine-tuning Meets Chain-of-Thought Reasoning for LLM-as-a-Judge (ACL 2025)](https://arxiv.org/abs/2503.04381) — MEDIUM confidence; two-stage CE + regression loss for judge fine-tuning
+- [Prometheus: Inducing Fine-grained Evaluation Capability in Language Models](https://arxiv.org/abs/2310.08491) — HIGH confidence; feedback-before-score format, `[RESULT]` separator, rubric-guided training
+- [Prometheus 2 (May 2024)](https://arxiv.org/html/2405.01535v2) — HIGH confidence; 40K SFT examples sufficient for SOTA pointwise judge; supports absolute and pairwise grading
+- [Critique-Coder: Enhancing Coder Models by Critique Reinforcement Learning](https://arxiv.org/abs/2509.22824) — MEDIUM confidence; CRL with 20% critique mix ratio outperforms RL-only; structured critique judgment labels
+- [Fine-Tuning with Divergent Chains of Thought Boosts Reasoning Through Self-Correction](https://arxiv.org/abs/2407.03181) — MEDIUM confidence; comparing multiple chains before verdict improves reasoning consistency
+- [LLMs-as-Judges: A Comprehensive Survey on LLM-based Evaluation Methods](https://arxiv.org/html/2412.05579v2) — HIGH confidence; position bias, length bias, scoring bias mitigation approaches
+- [Evaluating Step-by-step Reasoning Traces: A Survey](https://arxiv.org/html/2502.12289v1) — MEDIUM confidence; faithfulness metrics, hallucinated reasoning detection
+- [Stop Rewarding Hallucinated Steps: Faithfulness-Aware Step-Level RL](https://arxiv.org/html/2602.05897) — LOW confidence (training data context, not direct applicability); faithfulness hallucination rate data point
+- [CYCLE: Learning to Self-Refine the Code Generation](https://dl.acm.org/doi/full/10.1145/3649825) — MEDIUM confidence; iterative refinement training; confirms multi-turn is disproportionately costly for SFT
+- [Finetuning LLM Judges for Evaluation (Cameron Wolfe)](https://cameronrwolfe.substack.com/p/finetuned-judge) — MEDIUM confidence; practitioner summary of JudgeLM, Auto-J, Prometheus training patterns
+- Existing codebase: `scripts/phase2_mutate.py`, `scripts/phase3_cot.py`, `scripts/phase2_judge_dataset.py` — HIGH confidence; verified source material and pipeline integration points
 
 ---
 
-*Feature research for: wp-qwen3-moe WordPress code generation and judgment model*
-*Researched: 2026-03-26*
+*Feature research for: wp-qwen3-moe v1.2 judge reasoning fine-tune*
+*Researched: 2026-04-04*

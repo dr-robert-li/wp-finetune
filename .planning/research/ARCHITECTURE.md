@@ -1,464 +1,454 @@
 # Architecture Research
 
-**Domain:** ML fine-tuning pipeline — data pipeline execution through model training, evaluation, and deployment
-**Researched:** 2026-03-26
-**Confidence:** HIGH (pipeline architecture from existing codebase), MEDIUM (MoE conversion and DGX Toolbox integration), LOW (DGX eval-toolbox specifics)
+**Domain:** ML fine-tuning pipeline — v1.2 Judge Reasoning Fine-Tune integration
+**Researched:** 2026-04-04
+**Confidence:** HIGH (based on direct codebase inspection, existing data, and known pipeline behavior)
 
-## Standard Architecture
+## Context: What Exists vs What v1.2 Adds
 
-### System Overview
+This document is scoped to **milestone v1.2** — adding deep judge CoT and critique-then-fix capabilities to the winning ratio adapter. The existing v1.0/v1.1 architecture (Phase 1-4 data pipeline, multi-ratio training, eval triage) is complete. This file focuses exclusively on the integration question.
+
+### Current State (post-Phase 4 triage)
+
+- Phase 1-3 data pipeline fully executed: 267K merged training examples, 5-ratio exports in `data/final_dataset/`
+- Four trained LoRA adapters: `adapters/qwen3-30b-wp-{30_70,40_60,50_50,60_40}/`
+- Winning ratio will be determined by Phase 4 eval triage (`scripts/run_eval_triage.py` + `scripts/triage_ratios.py`)
+- Existing judge training format: flat rubric scores with a short `explanation` field
+- Existing CoT format: 4 types (gen_pattern, judge_rubric, judge_contrastive, security), 29,020 total in `data/phase3_cot/output/`
+
+### What v1.2 Adds
+
+1. **Deep judge CoT data** — new `<wp_judge>` training examples where the response is a full reasoning chain (dimension-by-dimension analysis → issue identification → fix suggestions → final scores), not just the score JSON
+2. **Critique-then-fix data** — new format where the model sees defective code, produces a structured per-dimension critique, then outputs a corrected version; uses phase2 mutations as source material
+3. **v1.2 reasoning dataset** — merged file combining deep judge CoT + critique-then-fix, formatted for SFT on the winning adapter
+4. **Reasoning fine-tune run** — single LoRA training pass on winning adapter using reasoning dataset
+5. **Eval verification** — re-run eval_judge (Spearman) and eval_gen (PHPCS) on the reasoning-enhanced adapter to confirm judge improvement without gen regression
+
+## System Overview: v1.2 Integration Points
 
 ```
+EXISTING PIPELINE (complete, read-only for v1.2)
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        DATA PIPELINE LAYER                          │
-│                    (Python scripts, existing)                        │
-├──────────────────┬──────────────────┬───────────────────────────────┤
-│   Phase 1        │   Phase 2        │   Phase 3                     │
-│   Extraction     │   Synthesis      │   CoT + Export                │
-│                  │                  │                               │
-│  repos.yaml ──>  │  gap_report.json │  phase1/ + phase2/            │
-│  clone/extract   │  mutate/generate │  cot reasoning                │
-│  PHPCS + judge   │  judge dataset   │  task token tagging           │
-│                  │                  │  multi-format export          │
-│  phase1_         │  phase2_         │  final_dataset/               │
-│  extraction/     │  synthetic/      │  {openai,alpaca,raw}          │
-│  passed/ failed/ │  output/         │  _{train,val,test}.*          │
-└──────────────────┴──────────────────┴───────────────────────────────┘
-                               │
-                               ▼  final_dataset/ (13,500 examples)
-┌─────────────────────────────────────────────────────────────────────┐
-│                     MODEL PREPARATION LAYER                         │
-│                    (offline, one-time conversion)                    │
-├─────────────────────────────────────────────────────────────────────┤
-│  Qwen3-8B (dense HF checkpoint)                                     │
-│       │                                                             │
-│       ▼  dense-to-MoE upcycling (LLaMA-MoE / upcycling method)     │
-│  Qwen3-8B-MoE (8 experts, top-2 routing)                           │
-│       │                                                             │
-│       ▼  tokenizer extension                                        │
-│  Extended tokenizer (<wp_gen>, <wp_judge> special tokens)           │
-│       │                                                             │
-│       ▼  embedding resize (new token embeddings initialized)        │
-│  MoE model + extended tokenizer (HF format, ready for training)     │
-└─────────────────────────────────────────────────────────────────────┘
-                               │
+│ data/phase1_extraction/output/passed/   (93,904 passed functions)   │
+│ data/phase2_synthetic/output/mutated/   (contrastive mutation pairs)│
+│ data/phase2_synthetic/output/judge_training/  (143K judge examples) │
+│ data/phase3_cot/output/                 (29,020 CoT examples)       │
+│ adapters/qwen3-30b-wp-{winning}/        (winning ratio adapter)     │
+└──────────────────────────────┬──────────────────────────────────────┘
+                               │  read-only sources
                                ▼
+NEW DATA GENERATION LAYER (v1.2, new scripts)
 ┌─────────────────────────────────────────────────────────────────────┐
-│                       TRAINING LAYER                                │
-│                 (Unsloth Studio on DGX Spark)                       │
-├─────────────────────────────────────────────────────────────────────┤
-│  Unsloth Studio (Docker container on DGX Spark)                     │
-│       │                                                             │
-│       ├── Input: MoE model + extended tokenizer                     │
-│       ├── Input: final_dataset/openai_train.jsonl                   │
-│       ├── Config: LoRA r=64, target all linear layers               │
-│       │   (q_proj, k_proj, v_proj, o_proj, gate_proj,               │
-│       │    up_proj, down_proj — router layers frozen)               │
-│       │                                                             │
-│       ├── Training: Multi-task SFT over <wp_gen> + <wp_judge>       │
-│       │   examples, 128GB unified memory constraint                 │
-│       │                                                             │
-│       └── Output: LoRA adapter checkpoints + merged model           │
-└─────────────────────────────────────────────────────────────────────┘
-                               │
-                               ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                      EVALUATION LAYER                               │
-│               (DGX Toolbox eval-toolbox + custom)                   │
-├─────────────────────────────────────────────────────────────────────┤
-│  ┌──────────────────────┐   ┌───────────────────────────────────┐   │
-│  │  Domain Evaluation   │   │   Standard Benchmarks             │   │
-│  │                      │   │                                   │   │
-│  │  PHPCS pass rate:    │   │  EleutherAI lm-eval-harness or    │   │
-│  │  model-generated PHP │   │  bigcode-evaluation-harness       │   │
-│  │  run through WPCS    │   │  (HumanEval-PHP, MBPP)            │   │
-│  │  target >95%         │   │                                   │   │
-│  │                      │   │  Baseline: Qwen3-8B dense         │   │
-│  │  Judge correlation:  │   │  Target: no regression from       │   │
-│  │  model rubric scores │   │  base model on general code       │   │
-│  │  vs Claude reference │   │                                   │   │
-│  │  target >0.85 Pearson│   │                                   │   │
-│  └──────────────────────┘   └───────────────────────────────────┘   │
 │                                                                     │
-│  Eval dataset: final_dataset/openai_test.jsonl (10%, ~1,350 ex.)   │
-└─────────────────────────────────────────────────────────────────────┘
-                               │
-                               ▼  (if metrics pass)
+│  ┌───────────────────────────────┐  ┌───────────────────────────┐  │
+│  │  phase4_deep_judge_cot.py     │  │  phase4_critique_fix.py   │  │
+│  │  (NEW SCRIPT)                 │  │  (NEW SCRIPT)             │  │
+│  │                               │  │                           │  │
+│  │  Input: passed/ + failed/     │  │  Input: mutated/          │  │
+│  │    (or judge_training/)       │  │    (contrastive pairs)    │  │
+│  │                               │  │                           │  │
+│  │  Agent: regenerate judge      │  │  Agent: given defective   │  │
+│  │  training with full reasoning │  │  code + mutation type,    │  │
+│  │  chain per dimension before   │  │  produce structured       │  │
+│  │  emitting score JSON          │  │  critique then corrected  │  │
+│  │                               │  │  version                  │  │
+│  │  Output:                      │  │  Output:                  │  │
+│  │  data/phase4_reasoning/       │  │  data/phase4_reasoning/   │  │
+│  │    deep_judge_cot/            │  │    critique_fix/          │  │
+│  └───────────────────────────────┘  └───────────────────────────┘  │
+│                                                                     │
+└──────────────────────────┬──────────────────────────────────────────┘
+                           │
+                           ▼
+MERGE + FORMAT LAYER (v1.2, new or extended script)
 ┌─────────────────────────────────────────────────────────────────────┐
-│                     PACKAGING + DEPLOYMENT LAYER                    │
-│                      (DGX Toolbox serving stack)                    │
-├─────────────────────────────────────────────────────────────────────┤
-│  Merged model (FP16/BF16 HF format)                                 │
-│       │                                                             │
-│       ├──> AWQ 4-bit quantization ──> vLLM on DGX Spark            │
-│       │    (primary GPU inference path, ~741 tok/s)                 │
-│       │                                                             │
-│       ├──> GGUF quantization ──> Ollama on DGX Spark               │
-│       │    (local chat/tool use via Open-WebUI)                     │
-│       │                                                             │
-│       └──> HuggingFace Hub upload (full BF16 + AWQ variant)        │
+│  merge_reasoning_dataset.py  (NEW SCRIPT or extend merge_dataset.py)│
+│                                                                     │
+│  Combines:                                                          │
+│    data/phase4_reasoning/deep_judge_cot/   → task_type: wp_judge   │
+│    data/phase4_reasoning/critique_fix/     → task_type: wp_judge   │
+│                                                                     │
+│  Outputs: data/reasoning_dataset/                                   │
+│    openai_train.jsonl  (SFT format with <wp_judge> task token)      │
+│    openai_val.jsonl    (10% held-out split)                         │
+│    metadata.json       (counts, source breakdown)                   │
+└──────────────────────────┬──────────────────────────────────────────┘
+                           │
+                           ▼
+TRAINING LAYER (v1.2, new config + existing train_model.py)
+┌─────────────────────────────────────────────────────────────────────┐
+│  train_model.py  (EXISTING — load with new config)                  │
+│                                                                     │
+│  Config: config/train_config_reasoning.yaml  (NEW)                  │
+│    base: adapters/qwen3-30b-wp-{winning}/    (start from adapter)   │
+│    data: data/reasoning_dataset/openai_train.jsonl                  │
+│    run_name: qwen3-30b-wp-{winning}-reasoning                       │
+│    lr: lower (1e-5 vs 2e-4) — fine-tuning on fine-tune             │
+│    epochs: fewer (1-2 vs 3) — small dataset, avoid forgetting       │
+│                                                                     │
+│  Output: adapters/qwen3-30b-wp-{winning}-reasoning/                 │
+└──────────────────────────┬──────────────────────────────────────────┘
+                           │
+                           ▼
+EVALUATION LAYER (v1.2, existing eval scripts + new reasoning metric)
+┌─────────────────────────────────────────────────────────────────────┐
+│  eval_judge.py    (EXISTING — re-run, verify Spearman stable/up)    │
+│  eval_gen.py      (EXISTING — re-run, confirm PHPCS no regression)  │
+│  eval_gate.py     (EXISTING — gate check on both)                   │
+│                                                                     │
+│  eval_reasoning.py  (NEW — optional)                                │
+│    Checks: does judge response contain reasoning structure?          │
+│    Checks: are dimension-level rationales present before scores?     │
+│    Metric: reasoning_present_rate (% of responses with chain)       │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### Component Responsibilities
+## Component Breakdown: New vs Modified vs Unchanged
 
-| Component | Responsibility | Implementation |
-|-----------|----------------|----------------|
-| Data Pipeline (Phase 1-3) | Produce 13,500 training examples with task tokens and train/val/test splits | 10 Python scripts, existing and tested |
-| MoE Converter | Transform Qwen3-8B dense FFN layers into 8-expert MoE layers with top-2 routing | LLaMA-MoE / upcycling script (to be written) |
-| Tokenizer Extender | Add `<wp_gen>` and `<wp_judge>` special tokens and resize model embeddings | HuggingFace `add_special_tokens` + `resize_token_embeddings` (to be written) |
-| Unsloth Trainer | Execute LoRA SFT on DGX Spark within memory budget, produce merged checkpoint | Unsloth Studio Docker + Jupyter notebook |
-| Domain Evaluator | Measure PHPCS pass rate and judge correlation against project thresholds | Custom Python eval scripts (to be written) |
-| Standard Benchmarks | Verify no regression on general PHP code generation | lm-eval-harness or bigcode-eval-harness |
-| AWQ Packager | Quantize merged model to 4-bit for vLLM serving | llm-compressor / AutoAWQ |
-| GGUF Packager | Quantize merged model for Ollama local use | llama.cpp quantize or Unsloth export |
-| vLLM Server | High-throughput GPU inference on DGX Spark | DGX Toolbox vLLM container |
-| Ollama Server | Local interactive inference and Open-WebUI integration | DGX Toolbox Ollama container |
+### New Scripts (must be created)
 
-## Recommended Project Structure
+| Script | Location | Purpose | Inputs | Outputs |
+|--------|----------|---------|--------|---------|
+| `phase4_deep_judge_cot.py` | `scripts/` | Generate judge training with full reasoning chains | `passed/`, `failed/`, or `judge_training/` | `data/phase4_reasoning/deep_judge_cot/*.json` |
+| `phase4_critique_fix.py` | `scripts/` | Generate critique-then-fix pairs from mutations | `data/phase2_synthetic/output/mutated/` | `data/phase4_reasoning/critique_fix/*.json` |
+| `merge_reasoning_dataset.py` | `scripts/` | Merge + format new reasoning data for SFT | `data/phase4_reasoning/` | `data/reasoning_dataset/` |
+| `eval_reasoning.py` | `eval/` | Verify reasoning structure quality (optional) | Model inference output | Reasoning-present rate metric |
 
-```
-wp-finetune/
-├── scripts/                    # Existing data pipeline (Phase 1-3)
-│   ├── phase1_*.py
-│   ├── phase2_*.py
-│   ├── phase3_cot.py
-│   ├── export_dataset.py
-│   └── php_extract_functions.php
-├── config/                     # Existing configuration
-│   ├── repos.yaml
-│   ├── taxonomy.yaml
-│   ├── synthetic_prompts.yaml
-│   └── judge_system.md
-├── model_prep/                 # NEW — MoE conversion + tokenizer extension
-│   ├── convert_to_moe.py       # Dense-to-MoE upcycling script
-│   ├── extend_tokenizer.py     # Add <wp_gen>/<wp_judge>, resize embeddings
-│   └── verify_moe.py           # Smoke test: routing, token IDs, forward pass
-├── training/                   # NEW — Unsloth training config + notebook
-│   ├── train_config.yaml       # LoRA hyperparameters, dataset paths
-│   └── train.ipynb             # Unsloth Studio notebook for DGX Spark
-├── eval/                       # NEW — evaluation scripts
-│   ├── eval_phpcs.py           # Generate PHP → run PHPCS → measure pass rate
-│   ├── eval_judge_correlation.py  # Compare model rubric vs Claude reference
-│   └── eval_benchmarks.sh      # lm-eval-harness wrapper for standard benchmarks
-├── packaging/                  # NEW — quantization + upload scripts
-│   ├── quantize_awq.py         # AWQ 4-bit quantization for vLLM
-│   ├── quantize_gguf.sh        # GGUF export via llama.cpp for Ollama
-│   └── upload_hf.py            # Push to HuggingFace Hub with model card
-├── phase1_extraction/          # Phase 1 outputs (gitignored)
-├── phase2_synthetic/           # Phase 2 outputs (gitignored)
-├── phase3_cot/                 # Phase 3 outputs (gitignored)
-└── final_dataset/              # Training-ready dataset (gitignored unless small)
-    ├── openai_{train,val,test}.jsonl
-    ├── alpaca_{train,val,test}.json
-    └── raw_{train,val,test}.jsonl
-```
+### Modified Scripts (light changes)
 
-### Structure Rationale
+| Script | Change Required | Why |
+|--------|----------------|-----|
+| `train_model.py` | Accept `--config` flag pointing to new YAML | Already supports this via `CONFIG_PATH` override; verify it works with adapter-as-base loading pattern |
+| `pipeline_orchestrator.py` | Add Phase 4 awareness | Track `data/phase4_reasoning/` counts, add v1.2 plan action items |
+| `docs/AGENT_PIPELINE.md` | Add Phase 4 agent type entries | Document new agent batch patterns for deep judge CoT and critique-then-fix |
 
-- **model_prep/:** Separates the one-time conversion steps from ongoing training; these scripts run once and produce an artifact that training depends on.
-- **training/:** Keeps Unsloth-specific config together; the notebook is the interface with DGX Spark's Jupyter environment.
-- **eval/:** Domain evaluation is custom and project-specific; kept separate from standard benchmark tooling.
-- **packaging/:** Deployment artifacts (AWQ, GGUF, HF upload) are post-training; separating them prevents confusion about what's a prerequisite vs. a deliverable.
+### New Configuration (must be created)
 
-## Architectural Patterns
+| File | Location | Purpose |
+|------|----------|---------|
+| `train_config_reasoning.yaml` | `config/` | Training config for reasoning fine-tune: lower LR, fewer epochs, reasoning dataset path, winning adapter as base |
 
-### Pattern 1: Quality-Gated Sequential Pipeline
+### Unchanged (use as-is)
 
-**What:** Each pipeline stage produces output that is explicitly classified as passed or failed before feeding into the next stage. Nothing advances unless it clears the current stage's quality gate.
-**When to use:** Any time training data quality must be enforced; the downstream training cost of bad data exceeds the cost of aggressive filtering.
-**Trade-offs:** Reduces yield (fewer examples than naively collected) but prevents quality degradation from propagating; resumable because checkpoints are JSON files per stage.
+| Component | Used By v1.2 How |
+|-----------|-----------------|
+| `eval_judge.py` | Re-run against reasoning adapter; compare Spearman to baseline |
+| `eval_gen.py` | Re-run to confirm PHPCS pass rate not regressed |
+| `eval_gate.py` | Gate check on combined metrics |
+| `scripts/merge_adapter.py` | Merge reasoning adapter into base if eval passes |
+| `adapters/qwen3-30b-wp-{winning}/` | Starting point for reasoning fine-tune |
+| `data/phase2_synthetic/output/mutated/` | Source material for critique-then-fix |
+| `data/phase1_extraction/output/{passed,failed}/` | Source material for deep judge CoT |
+| `config/judge_system.md` | System prompt for deep judge CoT generation (same rubric, different response format) |
 
-```
-extracted/ ──PHPCS pre-filter──> candidates/ ──Claude 9-dim judge──> passed/ + failed/
-                                                                         │
-                                                                     Only passed/ feeds next stage
+## Data Format Specifications
+
+### Deep Judge CoT Format
+
+The existing judge training format emits flat scores + brief explanation:
+
+```json
+{
+  "task_type": "wp_judge",
+  "instruction": "<wp_judge> Evaluate this WordPress code:\n\n[body]",
+  "response": {
+    "overall_score": 82,
+    "wpcs_compliance": 85,
+    "security": 90,
+    "explanation": "Good security but minor WPCS issues."
+  },
+  "quality_tier": "high"
+}
 ```
 
-### Pattern 2: Upcycling-then-Fine-tune (Two-Stage Model Preparation)
+The v1.2 deep judge CoT format adds a reasoning chain before the scores. The response becomes a multi-section text, not a raw JSON object, because the reasoning chain precedes the scores:
 
-**What:** The dense model is structurally converted to MoE first (FFN layers replicated N times, routers inserted), then fine-tuning is applied to the already-converted architecture. The two stages are cleanly separated: conversion produces a new HF checkpoint, fine-tuning consumes that checkpoint.
-**When to use:** When the task requires specialized routing to expert subnetworks (here: generation vs. judgment routing via task tokens). Avoids re-pretraining from scratch.
-**Trade-offs:** Conversion adds ~1 hour of compute; initial routing weights are random and must be stabilized by the subsequent SFT pass. Router fine-tuning is disabled by default in Unsloth for MoE stability — this is correct behavior, not a limitation.
-
-```python
-# Step 1: Convert
-model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen3-8B")
-moe_model = upcycle_to_moe(model, num_experts=8, top_k=2)
-moe_model.save_pretrained("./qwen3-8b-moe-base")
-
-# Step 2: Extend tokenizer BEFORE fine-tuning
-tokenizer.add_special_tokens({"additional_special_tokens": ["<wp_gen>", "<wp_judge>"]})
-moe_model.resize_token_embeddings(len(tokenizer))
-
-# Step 3: Fine-tune on the converted model
+```json
+{
+  "task_type": "wp_judge",
+  "instruction": "<wp_judge> Evaluate this WordPress code:\n\n[body]",
+  "response": "## Dimension Analysis\n\n**WPCS Compliance:** The function follows lowercase_with_underscores naming... [3-5 sentences per dimension]\n\n**Security:** Nonce verification present via check_ajax_referer()... [3-5 sentences]\n\n**Performance:** Uses transient caching correctly...\n\n## Issues Identified\n\n1. Missing @param in PHPDoc — prevents static analysis from inferring types\n2. SELECT * on meta join — should target specific columns\n\n## Fix Suggestions\n\n1. Add @param string $post_id and @return array to the docblock\n2. Replace SELECT * with SELECT p.ID, p.post_title\n\n## Scores\n\n```json\n{\"overall_score\": 82, \"wpcs_compliance\": 85, ...}\n```",
+  "quality_tier": "high",
+  "source": "deep_judge_cot"
+}
 ```
 
-### Pattern 3: Multi-Task Routing via Special Tokens
+Key design decisions:
+- Reasoning chain is part of the `response` field, not a separate `cot_reasoning` field — the model should learn to produce reasoning inline as part of judging, not as a metadata field
+- Score JSON embedded at end of response in a fenced block — consistent with existing `parse_judge_response()` in `eval_judge.py` which already handles fenced JSON extraction
+- Task token `<wp_judge>` remains in the instruction — routing behavior unchanged
 
-**What:** Task identity is encoded at the start of each user message via a special token (`<wp_gen>` or `<wp_judge>`). During inference, the same prefix steers which expert pathways activate for that forward pass.
-**When to use:** When a single model must serve two distinct task types that benefit from specialized internal representations but share a common vocabulary and base knowledge.
-**Trade-offs:** Requires the training data to be consistently token-tagged (handled by `export_dataset.py`); inference callers must prepend the correct task token or they get undefined routing behavior.
+### Critique-Then-Fix Format
+
+```json
+{
+  "task_type": "wp_judge",
+  "instruction": "<wp_judge> This WordPress code has a defect. Identify the problem, explain why it is dangerous, and provide the corrected version:\n\n```php\n[defective_body]\n```",
+  "response": "## Critique\n\n**Defect category:** SQL injection\n**Dimension affected:** SQL Safety (D2), Security (D3)\n**Severity:** Critical\n\n**What is wrong:** The query concatenates `$user_id` directly into the SQL string without using `$wpdb->prepare()`. An attacker who can control this input can execute arbitrary SQL.\n\n**Why it is dangerous:** [2-3 sentences on exploitation vector]\n\n## Corrected Version\n\n```php\n[corrected_body]\n```\n\n**Changes made:** Replaced direct concatenation with `$wpdb->prepare( '... WHERE id = %d', $user_id )`. The `%d` placeholder enforces integer casting before the query executes.",
+  "quality_tier": "critique_fix",
+  "mutation_type": "sql_injection",
+  "source_function": "function_name",
+  "source": "critique_fix"
+}
+```
+
+Key design decisions:
+- Task token is `<wp_judge>`, not `<wp_gen>` — critique-then-fix is a judge capability (analyze defects), not a generation capability
+- Instruction explicitly states "defect present" — this trains the model to produce a critique when it knows something is wrong, not to guess
+- Corrected version is the original passed function from phase2_mutate.py (already available in `mutated/` alongside the defective version)
+- Mutation type metadata enables filtering by defect category for targeted evaluation
+
+### Reasoning Dataset Merge
+
+The `data/reasoning_dataset/` directory is analogous to `data/final_dataset/` but scoped to reasoning-only examples:
 
 ```
-User: "<wp_gen> Write a secure WP_Query with meta_query..."
-        │
-        └──> top-2 routing activates generation-specialized experts
-             ──> output: PHP code
-
-User: "<wp_judge> Rate this function: [code snippet]"
-        │
-        └──> top-2 routing activates judgment-specialized experts
-             ──> output: rubric scores + reasoning
+data/reasoning_dataset/
+├── openai_train.jsonl    (80% split, SFT format)
+├── openai_val.jsonl      (20% split — larger val for quality monitoring)
+└── metadata.json         {
+                            "total": N,
+                            "deep_judge_cot": N,
+                            "critique_fix": N,
+                            "split": "80/20",
+                            "source_adapter": "qwen3-30b-wp-{winning}"
+                          }
 ```
 
-### Pattern 4: Threshold-Gated Deployment
-
-**What:** Packaging and deployment steps are blocked by explicit numeric thresholds from evaluation: PHPCS pass rate >95% AND judge correlation >0.85. If thresholds are not met, the model is not packaged.
-**When to use:** When a model has a clear operational contract and shipping a substandard model is worse than shipping nothing.
-**Trade-offs:** Requires custom domain evaluation scripts rather than relying solely on standard benchmarks; those scripts must be written alongside the eval phase.
+Intentionally 80/20 (vs 80/10/10 for main dataset) — the reasoning dataset is smaller, so a larger val slice gives more reliable perplexity tracking during the fine-tune.
 
 ## Data Flow
 
-### End-to-End Pipeline Flow
+### v1.2 End-to-End Flow
 
 ```
-GitHub repos (WordPress Core, plugins, themes)
-    │
-    ▼  phase1_clone.py
-phase1_extraction/repos/  (shallow git clones)
-    │
-    ▼  phase1_extract.py + php_extract_functions.php
-phase1_extraction/output/extracted/  (raw function JSON, one file per repo)
-    │
-    ▼  phase1_judge.py  [PHPCS gate → Claude gate]
-    ├──> phase1_extraction/output/passed/   (training-ready real code)
-    └──> phase1_extraction/output/failed/   (analysis only, no training use)
-
-phase1 passed/ ──────────────────────────────────┐
-    │                                             │
-    ▼  phase2_gap_analysis.py                     │
-phase2_synthetic/gap_report.json                  │ (style anchors)
-    │                                             │
-    ├──> phase2_generate.py ◄────────────────────┘
-    │    (synthetic examples grounded in real code style)
-    │    ──> phase2_synthetic/output/generated/
-    │
-    ├──> phase2_mutate.py ◄── phase1 passed/
-    │    (bad→good contrastive pairs via deterministic mutations)
-    │    ──> phase2_synthetic/output/mutated/
-    │
-    ▼  phase2_judge.py  [same PHPCS + Claude gates as Phase 1]
-    ├──> phase2_synthetic/output/judged/passed/
-    └──> phase2_synthetic/output/judged/failed/  (1 revision attempt, then discard)
-
-    ▼  phase2_judge_dataset.py
-phase2_synthetic/output/judge_training/  (<wp_judge> rubric-scored examples)
-
-All Phase 1 passed + Phase 2 passed + Phase 2 judge training
-    │
-    ▼  phase3_cot.py  [instruction synthesis + CoT reasoning]
-phase3_cot/output/  (checkpoints with reasoning added)
-    │
-    ▼  export_dataset.py  [task token tagging + format conversion + split]
-final_dataset/
-    ├── openai_{train,val,test}.jsonl   (primary training format)
-    ├── alpaca_{train,val,test}.json    (alternative format)
-    └── raw_{train,val,test}.jsonl      (with full metadata)
+Phase 2 mutations (existing)               Phase 1 passed + failed (existing)
+data/phase2_synthetic/output/mutated/       data/phase1_extraction/output/{passed,failed}/
+        │                                              │
+        ▼                                              ▼
+phase4_critique_fix.py               phase4_deep_judge_cot.py
+(agents: given defective+good pair,  (agents: given code + existing scores,
+ write critique and fix)              regenerate response with reasoning chain)
+        │                                              │
+        ▼                                              ▼
+data/phase4_reasoning/critique_fix/  data/phase4_reasoning/deep_judge_cot/
+        │                                              │
+        └──────────────────┬────────────────────────────┘
+                           ▼
+                merge_reasoning_dataset.py
+                (format as SFT messages, split 80/20, write metadata)
+                           │
+                           ▼
+                data/reasoning_dataset/
+                openai_train.jsonl + openai_val.jsonl
+                           │
+                           ▼
+                train_model.py --config config/train_config_reasoning.yaml
+                (LoRA SFT on winning adapter, lower LR, 1-2 epochs)
+                           │
+                           ▼
+                adapters/qwen3-30b-wp-{winning}-reasoning/
+                           │
+                    ┌──────┴──────┐
+                    ▼             ▼
+               eval_judge.py  eval_gen.py
+               (Spearman)     (PHPCS pass rate)
+                    │             │
+                    └──────┬──────┘
+                           ▼
+                      eval_gate.py
+                (gate: Spearman >= baseline, PHPCS >= baseline)
+                           │
+                  PASS ────┘──── FAIL → investigate forgetting
+                   │
+                   ▼
+            merge_adapter.py
+            models/qwen3-30b-wp-{winning}-reasoning-merged/
 ```
 
-### Model Preparation Flow
+## Build Order for v1.2
+
+Dependencies flow strictly: data generation must complete before merge, merge before training, training before eval.
 
 ```
-HuggingFace Hub: Qwen/Qwen3-8B
-    │
-    ▼  model_prep/convert_to_moe.py
-./qwen3-8b-moe-base/  (8 experts, top-2 routing, router weights random)
-    │
-    ▼  model_prep/extend_tokenizer.py
-./qwen3-8b-moe-tokenized/  (+ <wp_gen>, <wp_judge>; embeddings resized)
-    │
-    ▼  model_prep/verify_moe.py  (sanity check before investing in training)
-    └── smoke test: token IDs exist, forward pass completes, expert routing fires
+Step 1: Identify winning adapter
+   Run: scripts/run_eval_triage.py + scripts/triage_ratios.py
+   Output: output/triage_decision.md (identifies winning ratio)
+   Gate: must complete before Step 2 (determines which adapter to fine-tune)
+
+Step 2a: Generate deep judge CoT data (parallel with 2b)
+   Run: scripts/phase4_deep_judge_cot.py
+   Inputs: data/phase1_extraction/output/{passed,failed}/
+   Output: data/phase4_reasoning/deep_judge_cot/
+   Agent pattern: same spawn-until-target as existing pipeline
+   Target: ~5,000-10,000 examples (10% of judge_training pool with reasoning)
+
+Step 2b: Generate critique-then-fix data (parallel with 2a)
+   Run: scripts/phase4_critique_fix.py
+   Inputs: data/phase2_synthetic/output/mutated/
+   Output: data/phase4_reasoning/critique_fix/
+   Agent pattern: 1 agent per mutation type batch
+   Target: ~1,000-2,000 examples (bounded by mutation pool size)
+
+Step 3: Merge reasoning dataset
+   Run: scripts/merge_reasoning_dataset.py
+   Inputs: data/phase4_reasoning/deep_judge_cot/ + critique_fix/
+   Output: data/reasoning_dataset/
+   Gate: requires steps 2a and 2b complete
+
+Step 4: Reasoning fine-tune
+   Run: python -m scripts.train_model --config config/train_config_reasoning.yaml
+   Inputs: adapters/qwen3-30b-wp-{winning}/ + data/reasoning_dataset/openai_train.jsonl
+   Output: adapters/qwen3-30b-wp-{winning}-reasoning/
+   Gate: requires step 3 complete
+
+Step 5: Eval verification
+   Run: python -m eval.eval_judge + python -m eval.eval_gen + python -m eval.eval_gate
+   Inputs: adapters/qwen3-30b-wp-{winning}-reasoning/ (via vLLM LoRA serving)
+   Gate: Spearman >= baseline (from phase 4 triage), PHPCS >= 95%
+
+Step 6: Merge adapter (if eval passes)
+   Run: python -m scripts.merge_adapter
+   Output: models/qwen3-30b-wp-{winning}-reasoning-merged/
 ```
 
-### Training and Artifact Flow
+Steps 2a and 2b are the only parallel steps. All others are sequential with hard gates.
 
-```
-./qwen3-8b-moe-tokenized/ + final_dataset/openai_train.jsonl
-    │
-    ▼  Unsloth Studio (DGX Spark, Docker)
-    │   LoRA r=64, all linear layers, router frozen
-    │   Multi-task SFT, 128GB unified memory
-    │   Validation on final_dataset/openai_val.jsonl
-    │
-./checkpoints/  (LoRA adapters, saved periodically)
-    │
-    ▼  merge LoRA into base MoE model
-./wp-qwen3-8b-moe-merged/  (full BF16 merged model)
-```
+## Integration Points with Existing Pipeline
 
-### Evaluation Flow
+### What Phase 4 Data Generation Inherits Unchanged
 
-```
-./wp-qwen3-8b-moe-merged/
-    │
-    ├──> eval/eval_phpcs.py
-    │    Prompt model → generate PHP → run PHPCS+WPCS
-    │    Measure pass rate on eval_test.jsonl generation examples
-    │    Target: >95% pass rate
-    │
-    ├──> eval/eval_judge_correlation.py
-    │    Prompt model for rubric scores → compare to Claude reference
-    │    Pearson correlation on eval_test.jsonl judgment examples
-    │    Target: >0.85 correlation
-    │
-    └──> eval/eval_benchmarks.sh
-         lm-eval-harness: HumanEval-PHP or bigcode-eval-harness PHP tasks
-         Baseline: Qwen3-8B dense (pre-conversion score)
-         Target: no significant regression
-    │
-    ▼  (metrics pass)
-[DEPLOYMENT GATE CLEARED]
-```
+| Existing mechanism | How phase4_deep_judge_cot.py uses it |
+|-------------------|--------------------------------------|
+| `config/judge_system.md` | Same rubric definitions and 9 dimensions; only the response format changes |
+| `scripts/utils.py` | `extract_json`, `call_with_backoff`, `load_checkpoint`, `save_checkpoint` — all reusable |
+| Agent spawn-until-target pattern | Same pattern from `docs/AGENT_PIPELINE.md` — agents read batch, write JSON, orchestrator checks targets |
+| `<wp_judge>` task token | Unchanged; all new examples tagged with `<wp_judge>` |
+| Mutation catalog from phase2_mutate.py | critique_fix.py reads `mutated/` directory; mutation type is stored in each file entry |
 
-### Deployment Flow
+### What phase4_deep_judge_cot.py Must NOT Inherit
 
-```
-./wp-qwen3-8b-moe-merged/  (gated by evaluation thresholds)
-    │
-    ├──> packaging/quantize_awq.py
-    │    llm-compressor / AutoAWQ → 4-bit AWQ
-    │    ./wp-qwen3-8b-moe-awq/
-    │    ──> DGX Toolbox vLLM server (primary production path)
-    │
-    ├──> packaging/quantize_gguf.sh
-    │    llama.cpp convert + quantize (Q4_K_M or Q5_K_M)
-    │    ./wp-qwen3-8b-moe.gguf
-    │    ──> DGX Toolbox Ollama server (Open-WebUI, local tooling)
-    │
-    └──> packaging/upload_hf.py
-         Push BF16 + AWQ variants to HuggingFace Hub
-         Include model card with PHPCS/correlation metrics
-```
+| Pattern | Why to break it |
+|---------|----------------|
+| `response` field as dict (scores only) | v1.2 response is a multi-section text string; storing as dict breaks the reasoning chain |
+| `explanation` field as 2-3 sentences | Deep CoT replaces the short explanation with full dimension-by-dimension reasoning — must not fall back to short form |
+| Same judge system prompt from `judge_system.md` | The prompt instructs Claude to produce a JSON response; v1.2 needs a different prompt that elicits the reasoning-first format |
 
-## Component Boundaries
+### train_model.py Adapter-as-Base Pattern
 
-| Boundary | Communication | Notes |
-|----------|---------------|-------|
-| Data Pipeline → Model Prep | File system: `final_dataset/openai_train.jsonl` | Pipeline writes, model prep does not read pipeline scripts |
-| Model Prep → Training | File system: `./qwen3-8b-moe-tokenized/` directory | Unsloth Studio loads from local path |
-| Training → Evaluation | File system: `./wp-qwen3-8b-moe-merged/` directory | Eval scripts load merged model |
-| Evaluation → Packaging | Human gate: metrics must pass thresholds before running packaging | No automated coupling; deliberate manual checkpoint |
-| Packaging → DGX Serving | DGX Toolbox container volume mounts | AWQ model dir → vLLM; GGUF file → Ollama |
-| Evaluation ↔ PHPCS | CLI subprocess: `phpcs --standard=WordPress` | PHP + WPCS must be installed in eval environment |
-| Data Pipeline ↔ Anthropic API | HTTPS: `ANTHROPIC_API_KEY` env var, rate-limited | 40-50 req/min across all phases |
+Existing `train_model.py` always starts from `models/Qwen3-30B-A3B/` (the base model). For v1.2, it must start from the winning ratio adapter. Two patterns are viable:
 
-## Integration Points
+**Option A — Continue training on the existing adapter (preferred):** Load the base model, apply the existing LoRA adapter, then start a new LoRA training pass. The new LoRA is initialized randomly on top of the frozen base + existing adapter. This preserves the original adapter as a checkpoint.
 
-### External Services
+**Option B — Train on the merged model:** Merge the winning adapter first (`merge_adapter.py`), then train the merged model as the new "base". This avoids nested LoRA but burns the clean merge checkpoint.
 
-| Service | Integration Pattern | Notes |
-|---------|---------------------|-------|
-| Anthropic API (Claude) | REST via `anthropic` Python SDK, env var auth | Rate limit 40-50 req/min; primary cost driver in pipeline |
-| HuggingFace Hub | `huggingface_hub` Python SDK, HF token | Download Qwen3-8B base; upload final model |
-| GitHub (WordPress repos) | `git clone --depth=1` via subprocess | Only needed during Phase 1 cloning |
-| PHP CLI + PHPCS + WPCS | Local subprocess calls | Must be installed on the machine running Phase 1 and eval |
+Option A is preferred because it keeps the original adapter intact for rollback and is how continued fine-tuning is typically done with PEFT. The `train_config_reasoning.yaml` must specify:
+- `base_model`: path to merged model or adapter (clarify with Unsloth docs — Unsloth may require merged weights for continued training)
+- `lora_r`: 16 or 32 (smaller than v1.0 r=32 is fine for a narrow capability addition)
+- `learning_rate`: 1e-5 (10x lower than typical first fine-tune, to avoid catastrophic forgetting)
+- `num_epochs`: 1-2 (reasoning dataset is small; more epochs risk overfitting)
 
-### DGX Toolbox Services
+### eval_judge.py Compatibility
 
-| Service | Role | Notes |
-|---------|------|-------|
-| Unsloth Studio | Fine-tuning (training layer) | Docker container, Jupyter interface |
-| vLLM server | Production inference (AWQ model) | DGX Toolbox managed container |
-| Ollama server | Local/chat inference (GGUF model) | DGX Toolbox managed container, feeds Open-WebUI |
-| eval-toolbox | Standard benchmarks (may be available) | Specifics unconfirmed; fallback is lm-eval-harness directly |
+`eval_judge.py` already handles fenced JSON extraction in `parse_judge_response()` — it tries raw JSON, then ` ```json ``` ` blocks, then generic ` ``` ``` ` blocks, then regex JSON extraction. The deep judge CoT format embeds scores in a fenced block at the end of the response. This is compatible with existing parsing without modification.
 
-## Build Order (Phase Dependencies)
+The Spearman correlation computed by `eval_judge.py` depends only on the extracted numeric scores, not on the reasoning text. No changes needed to the eval script.
 
-The build order is strictly determined by data + artifact dependencies:
+## Architectural Patterns for v1.2
 
-```
-1. Data Pipeline Execution (Phase 1 → Phase 2 → Phase 3)
-   No model prep can start until final_dataset/ exists.
-   Phase 2 requires Phase 1 passed/ as input.
-   Phase 3 requires both Phase 1 and Phase 2 outputs.
+### Pattern 1: Reasoning-First Response Format
 
-2. Model Preparation (MoE conversion → tokenizer extension → verification)
-   Can start in parallel with data pipeline if desired (independent inputs).
-   In practice, run sequentially to avoid context-switching.
-   Must complete before training starts.
+**What:** Training examples for judge capability use a structured text response where reasoning precedes scores. The model learns to articulate analysis before committing to numbers.
+**When to use:** When the downstream use case requires explainability (code reviews, developer feedback) rather than just a score.
+**Trade-offs:** Longer responses increase token cost at inference time. The response format is harder to parse than raw JSON — mitigation is that `parse_judge_response()` already handles embedded JSON extraction.
 
-3. Training
-   Requires: final_dataset/openai_train.jsonl + ./qwen3-8b-moe-tokenized/
-   Both must exist before Unsloth training can begin.
+### Pattern 2: Mutation Reuse for Critique-Then-Fix
 
-4. Evaluation
-   Requires: ./wp-qwen3-8b-moe-merged/ + final_dataset/openai_test.jsonl
-   Runs after training completes.
+**What:** The phase2 contrastive mutations (7 mutation types: sql_injection, csrf, xss, authorization, input_validation, i18n, performance) are re-used as source material for critique-then-fix. The defective code and the original correct code are already paired in `mutated/`.
+**When to use:** When generating realistic defective code is expensive — mutations provide controlled, verifiable defects at zero additional generation cost.
+**Trade-offs:** The mutation catalog is limited to 7 programmatic patterns. Real-world defects are more varied. Mitigation: supplement with a small number of agent-generated defect examples targeting complex multi-dimension failures not covered by single mutations.
 
-5. Packaging + Deployment
-   Requires: evaluation metrics pass thresholds
-   AWQ and GGUF packaging can run in parallel.
-   HF upload is last (after both quantized variants are verified).
-```
+### Pattern 3: Narrow Dataset + Lower Learning Rate
+
+**What:** The reasoning dataset is intentionally small (6,000-12,000 examples vs 43K-102K for v1.0) and trained with a lower learning rate on top of an existing adapter.
+**When to use:** When adding a focused capability to a model that already performs well on the base task. The goal is capability addition, not capability replacement.
+**Trade-offs:** Small dataset + low LR risks the model not fully generalizing the reasoning format. Mitigation: monitor val perplexity closely; if it plateaus early, stop training to avoid the SFT forgetting curve. Larger reasoning datasets are better if generation budget allows.
 
 ## Anti-Patterns
 
-### Anti-Pattern 1: Training on the Dense Model Then Converting
+### Anti-Pattern 1: Mixing Reasoning and Non-Reasoning Judge Examples in One Dataset
 
-**What people do:** Fine-tune Qwen3-8B dense first, then attempt to convert the fine-tuned model to MoE.
-**Why it's wrong:** The fine-tuned weights are distributed across the full FFN; splitting them into experts post-hoc produces experts that are all identical copies of the fine-tuned FFN, defeating the purpose of specialization. The routing gate trains on random initialization after fine-tuning has baked in dense representations.
-**Do this instead:** Convert dense to MoE first, then fine-tune. The SFT pass trains the routing gate alongside the expert weights, enabling genuine task-token-driven routing to emerge.
+**What people do:** Combine the new deep judge CoT examples with the existing ~143K flat judge training examples and re-train from scratch.
+**Why it is wrong:** The existing flat judge examples (response = short JSON) and the new reasoning examples (response = multi-section text) have incompatible response formats. A model trained on both will learn to produce either format unpredictably. The existing training already produced a well-calibrated judge; the v1.2 goal is capability addition, not replacement.
+**Do this instead:** The reasoning dataset (`data/reasoning_dataset/`) is separate from the main dataset (`data/final_dataset/`). The fine-tune starts from the winning adapter, not from scratch. The two datasets never merge.
 
-### Anti-Pattern 2: Skipping the MoE Verification Step
+### Anti-Pattern 2: Using `<wp_gen>` Token for Critique-Then-Fix
 
-**What people do:** Convert the model, immediately start training without a smoke test.
-**Why it's wrong:** Dense-to-MoE conversion can silently produce a model that loads without error but fails forward passes due to shape mismatches after tokenizer embedding resize. Discovering this after a 6-hour training run wastes compute and debugging time.
-**Do this instead:** Run `model_prep/verify_moe.py` — a short script that: (a) checks the two new token IDs exist in the tokenizer, (b) runs a forward pass with a `<wp_gen>`-prefixed prompt, (c) confirms all 8 experts fire at least once over a small batch.
+**What people do:** Tag critique-then-fix examples as `<wp_gen>` because the output contains code.
+**Why it is wrong:** Critique-then-fix is fundamentally a judging task — the model must analyze defects before generating the fix. Using `<wp_gen>` puts this capability in the wrong expert routing pathway and prevents it from being strengthened by v2.0 MoE-Sieve judge-expert selection.
+**Do this instead:** Use `<wp_judge>` for all critique-then-fix examples. The corrected code is the conclusion of the critique, not a standalone generation.
 
-### Anti-Pattern 3: Single Format for All Downstream Uses
+### Anti-Pattern 3: Regenerating All 143K Judge Training Examples
 
-**What people do:** Export only in one format (e.g., only OpenAI JSONL) and then manually reformat when a different tool needs a different format.
-**Why it's wrong:** Unsloth, vLLM, Ollama, and evaluation harnesses all expect different formats; manual reformatting introduces transcription errors and is not reproducible.
-**Do this instead:** The existing `export_dataset.py` already exports three formats simultaneously. Preserve all three in `final_dataset/` and use the format-specific file as the entry point for each downstream system.
+**What people do:** Re-run phase2_judge_dataset.py over all 143K examples with a new prompt that elicits reasoning chains.
+**Why it is wrong:** This replicates 40+ hours of agent work to produce data that already exists in flat form. The v1.2 goal is targeted capability addition on a representative subset, not full regeneration.
+**Do this instead:** Sample a representative subset (10% of the judge training pool, ~14,000 examples) for deep CoT generation. Use percentage-based targets consistent with the existing pipeline design philosophy (decision: "Percentage-based pipeline targets" in PROJECT.md).
 
-### Anti-Pattern 4: Evaluating Only on the Validation Split During Training
+### Anti-Pattern 4: Training the Reasoning Fine-Tune for Too Many Epochs
 
-**What people do:** Report validation loss from Unsloth training as the quality signal and skip running the domain evaluation scripts.
-**Why it's wrong:** Validation loss does not measure PHPCS pass rate or judge correlation — the actual deployment criteria. A model can have low validation loss and still fail PHPCS >40% of the time due to prompt format issues or tokenizer edge cases.
-**Do this instead:** Always run `eval_phpcs.py` and `eval_judge_correlation.py` on the held-out test split after training, using the two numeric thresholds (>95%, >0.85) as the deployment gate.
+**What people do:** Apply the same epoch count used for the v1.0 fine-tune (3 epochs).
+**Why it is wrong:** The reasoning dataset is 5-20x smaller than the v1.0 training data. At 3 epochs on a small dataset, the model will overfit to the reasoning format and lose calibration on the underlying judge scores — exactly the regression that eval_judge.py will catch.
+**Do this instead:** Train for 1-2 epochs maximum. Monitor validation perplexity and stop early if it stops decreasing. The eval gate (eval_judge.py Spearman + eval_gen.py PHPCS) will catch any regression before the adapter is merged.
 
-### Anti-Pattern 5: Merging LoRA Before Evaluation
+### Anti-Pattern 5: Skipping eval_gen.py After Reasoning Fine-Tune
 
-**What people do:** Merge the LoRA adapter into the base model immediately after training, discard the adapter.
-**Why it's wrong:** If evaluation fails, the unmerged adapter can be discarded and a new run started from the base MoE model without re-converting. Merging early destroys this rollback capability.
-**Do this instead:** Keep the LoRA adapter and the base MoE model as separate artifacts until evaluation passes. Merge only after thresholds are met.
+**What people do:** Only run eval_judge.py after the reasoning fine-tune, since the focus is on judge capability.
+**Why it is wrong:** Catastrophic forgetting in SFT is not dimension-specific — fine-tuning on judge reasoning data can degrade generation quality if the learning rate is too high or epochs too many. Generation regression may not be visible in eval_judge.py output.
+**Do this instead:** Always run both eval_judge.py and eval_gen.py after any fine-tune. The eval_gate.py script already gates on both. This is a hard requirement for v1.2.
 
-## Scaling Considerations
+## File System Layout (v1.2 Additions)
 
-This is a single-run pipeline on fixed hardware, not a user-serving system. "Scaling" concerns are about data volume and memory budget, not traffic:
+```
+wp-finetune/
+├── scripts/
+│   ├── phase4_deep_judge_cot.py     NEW — deep judge CoT generation
+│   ├── phase4_critique_fix.py       NEW — critique-then-fix generation
+│   └── merge_reasoning_dataset.py   NEW — merge + format reasoning data
+├── eval/
+│   └── eval_reasoning.py            NEW (optional) — reasoning structure check
+├── config/
+│   └── train_config_reasoning.yaml  NEW — reasoning fine-tune hyperparameters
+├── data/
+│   ├── phase4_reasoning/            NEW OUTPUT DIR
+│   │   ├── deep_judge_cot/          deep judge CoT JSON batches
+│   │   └── critique_fix/            critique-then-fix JSON batches
+│   └── reasoning_dataset/           NEW OUTPUT DIR
+│       ├── openai_train.jsonl        SFT-ready training split
+│       ├── openai_val.jsonl          validation split
+│       └── metadata.json
+└── adapters/
+    └── qwen3-30b-wp-{winning}-reasoning/   NEW ADAPTER
+```
 
-| Concern | Current Approach | If Scaling |
-|---------|-----------------|------------|
-| Claude API cost | PHPCS pre-filter cuts ~60% of calls | Increase pre-filter stringency; batch requests; use haiku for initial filter pass |
-| Training memory | LoRA r=64, 128GB unified memory | Reduce LoRA rank; use gradient checkpointing; reduce sequence length |
-| Dataset size | ~13,500 examples, fits in RAM | Streaming dataloaders if >100K examples |
-| Evaluation latency | Sequential generation + PHPCS subprocess | Batch generation; parallel PHPCS processes |
+## Confidence Assessment
+
+| Area | Confidence | Basis |
+|------|------------|-------|
+| Integration points | HIGH | Direct codebase inspection; existing format contracts verified |
+| Data format compatibility | HIGH | `parse_judge_response()` handles fenced JSON; task tokens unchanged |
+| Build order dependencies | HIGH | Standard pipeline dependency graph; no external unknowns |
+| Training config for adapter-on-adapter | MEDIUM | Unsloth PEFT stacking behavior on Qwen3 MoE needs verification; Option A (load merged) vs Option B (load adapter) requires testing |
+| Target example counts | MEDIUM | Derived from existing pool sizes and percentage-based design philosophy; exact counts depend on mutation pool verification |
+| Catastrophic forgetting risk | MEDIUM | General SFT forgetting literature supports concern; actual severity on Qwen3-30B-A3B with LoRA at low LR is not directly verified |
 
 ## Sources
 
-- [LLaMA-MoE: Building Mixture-of-Experts from LLaMA (EMNLP 2024)](https://github.com/pjlab-sys4nlp/llama-moe) — HIGH confidence, official project
-- [Llama 3 Meets MoE: Efficient Upcycling (arXiv 2412.09952)](https://arxiv.org/abs/2412.09952) — HIGH confidence, peer-reviewed
-- [ToMoE: Converting Dense LLMs to MoE through Dynamic Structural Pruning (arXiv 2501.15316)](https://arxiv.org/abs/2501.15316) — HIGH confidence, peer-reviewed
-- [Fine-tuning LLMs with NVIDIA DGX Spark and Unsloth](https://unsloth.ai/docs/blog/fine-tuning-llms-with-nvidia-dgx-spark-and-unsloth) — HIGH confidence, official Unsloth docs
-- [Unsloth Studio introduction](https://unsloth.ai/docs/new/studio) — HIGH confidence, official docs
-- [Qwen3 Fine-tuning with Unsloth](https://unsloth.ai/docs/models/qwen3-how-to-run-and-fine-tune) — HIGH confidence, official docs
-- [vLLM AWQ quantization](https://docs.vllm.ai/projects/llm-compressor/en/latest/examples/awq/) — HIGH confidence, official vLLM docs
-- [GGUF in vLLM](https://docs.vllm.ai/en/latest/features/quantization/gguf/) — HIGH confidence, official vLLM docs; note: GGUF in vLLM is experimental; Ollama is preferred path for GGUF
-- [bigcode-evaluation-harness](https://github.com/bigcode-project/bigcode-evaluation-harness) — HIGH confidence, official GitHub; supports PHP evaluation tasks
-- [Adding Special Tokens to HuggingFace Models](https://medium.com/@coldstart_coder/adding-custom-tokens-to-huggingface-models-1981f114efc1) — MEDIUM confidence, community article
+- Existing codebase: `scripts/phase2_mutate.py`, `scripts/phase2_judge_dataset.py`, `scripts/phase3_cot.py`, `scripts/merge_dataset.py`, `eval/eval_judge.py`, `docs/AGENT_PIPELINE.md` — HIGH confidence, direct inspection
+- `data/phase3_cot/output/` file listing — confirms existing CoT types and batch structure
+- `data/final_dataset/` structure — confirms merge output format
+- `adapters/` listing — confirms winning ratio candidates
+- `PROJECT.md` v1.2 milestone spec — defines deep judge CoT and critique-then-fix requirements
 
 ---
-*Architecture research for: wp-qwen3-moe end-to-end training pipeline*
-*Researched: 2026-03-26*
+*Architecture research for: wp-qwen3-moe v1.2 Judge Reasoning Fine-Tune integration*
+*Researched: 2026-04-04*

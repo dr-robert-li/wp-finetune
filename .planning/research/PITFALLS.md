@@ -1,8 +1,8 @@
 # Pitfalls Research
 
 **Domain:** LLM fine-tuning pipeline — WordPress code, MoE conversion, LoRA SFT, API data pipelines
-**Researched:** 2026-03-26
-**Confidence:** HIGH (pitfalls 1-7 grounded in codebase analysis), MEDIUM (pitfalls 8-12 from community research)
+**Researched:** 2026-03-26 (v1.0); 2026-04-04 appended (v1.2 reasoning fine-tune)
+**Confidence:** HIGH (pitfalls 1-7 grounded in codebase analysis), MEDIUM (pitfalls 8-12 from community research), MEDIUM–HIGH (pitfalls 13-21 reasoning/continued-training section)
 
 ---
 
@@ -261,6 +261,194 @@ Change N/A handling: track inapplicable dimensions separately with a flag, exclu
 
 ---
 
+## v1.2 Reasoning Fine-Tune Pitfalls
+
+*These pitfalls apply specifically to the v1.2 milestone: adding deep judge CoT reasoning and critique-then-fix capabilities to an already-trained Qwen3-30B-A3B adapter (60:40 ratio, 43hr training, loss 0.29). The base adapter already has MoE routing shaped by phase 1 SFT and the structured JSON judge format baked in.*
+
+---
+
+### Pitfall 13: Continued Training Learning Rate Destroys the Existing Adapter
+
+**What goes wrong:**
+Resuming LoRA training with the same learning rate used in the initial run (`2e-4` from train_config_60_40.yaml) causes an immediate loss spike. The optimizer state is reset on checkpoint load (confirmed by Unsloth docs), so the cosine scheduler starts from scratch at a high LR against adapter weights that have already converged. The first few hundred steps overwrite useful weights before the LR decays to a safe range.
+
+**Why it happens:**
+Initial training uses a 5% warmup ratio to ramp from 0 to `2e-4`. When continued training starts fresh, the optimizer again ramps from 0 to `2e-4` — but the adapter is no longer freshly initialized. The weights are already near a local minimum, and a full-LR update at that point is too large, causing destructive gradient steps that unlearn what phase 1 trained.
+
+**How to avoid:**
+Use a starting LR of 2–5x lower than the initial run for continued training. A practical rule: if phase 1 used `2e-4`, use `4e-5` to `1e-4` for phase 2. Keep the warmup ratio at 5% or lower. Use a cosine schedule with the same total-steps calculation but clamp peak LR to the reduced value. Confirm that phase 1 performance metrics (judge Spearman, PHPCS pass rate) on the phase 1 validation set do not degrade after the first 200 continued-training steps.
+
+**Warning signs:**
+- Training loss spikes above phase 1 final loss in the first 100 steps
+- Judge Spearman correlation drops measurably at first checkpoint vs. pre-training eval
+- Gradient norms spike to >10 in early steps (they should be ~1–3 in stable training)
+
+**Phase to address:** v1.2 training setup (before the continued training run begins)
+
+---
+
+### Pitfall 14: Format Collapse — Reasoning Chains Overwrite JSON Structure
+
+**What goes wrong:**
+The existing adapter outputs valid structured JSON (`{"verdict": ..., "scores": {...}, ...}`) for judge tasks. After continued training on reasoning data where the target output is a long chain-of-thought narrative followed by scores, the model loses the JSON format. It starts producing free-text reasoning with embedded score mentions but without parseable JSON structure. The judge pipeline breaks entirely — nothing can extract scores from the output.
+
+**Why it happens:**
+The model encounters a new training signal: long reasoning traces where the structured JSON is a small tail at the end of a large free-text block. With enough examples of this format, the attention heads that anchor the JSON structure get overwritten by weights that expect to produce natural-language prose. The effect is accelerated by the fact that reasoning examples are much longer (more tokens) than the original compact JSON examples, giving them disproportionate gradient influence per batch.
+
+**How to avoid:**
+Two mitigations work together:
+1. Keep the original structured judge examples (no reasoning) in the continued training mix at a ratio of at least 30%. This prevents the model from forgetting the compact format. Use an approximate ratio of 30% original judge examples / 40% deep CoT examples / 30% critique-then-fix examples.
+2. Enforce a consistent output template in the reasoning training data: the JSON block must always appear at the end of the reasoning trace, inside a clearly delimited section (e.g., `<judge_output>...</judge_output>` tags). Train the model to always end reasoning with the canonical JSON structure.
+
+**Warning signs:**
+- Inference samples from the continued-training model produce well-reasoned text but no parseable JSON
+- The `}` final bracket of the judge JSON is truncated or missing
+- Parse failure rate on judge examples climbs above 5% at any checkpoint
+
+**Phase to address:** v1.2 data generation (reasoning template design) and training data mixing
+
+---
+
+### Pitfall 15: Reasoning Length Explosion at Inference
+
+**What goes wrong:**
+After reasoning fine-tuning, the model generates correct scores but produces 1,500–4,000 token reasoning traces for every judge call. The existing judge pipeline is designed for compact outputs (~150 tokens). Inference latency triples and memory pressure increases significantly during serving on DGX Spark. Batch scoring of 100 functions that previously took 2 minutes now takes 12+ minutes.
+
+**Why it happens:**
+SFT on reasoning data teaches the model to reason fully for every query — it does not learn to calibrate reasoning depth to query difficulty. The model has seen many examples of full-length reasoning chains and none of compact reasoning, so it defaults to maximum length even for trivial functions. This is the "overthinking" pattern documented extensively in 2025 reasoning research.
+
+**How to avoid:**
+Include a distribution of reasoning lengths in training data. For simple functions (PHPCS pass, few security concerns), include short reasoning traces (3–5 sentences per dimension). For complex or failing functions, use full-length traces. Target a 40/60 split of short-form vs. long-form reasoning examples. Add a system prompt hint at inference: "Use concise reasoning proportional to code complexity." Enforce an output length cap in the inference configuration (max_new_tokens for judge calls should be set to a reasonable ceiling, e.g., 800 tokens for compact mode, 2000 for deep mode).
+
+**Warning signs:**
+- First 10 inference samples from the reasoning model all exceed 1,000 tokens
+- Batch scoring time increases by >3x vs. the phase 1 model
+- Reasoning traces for trivially simple functions are as long as traces for complex ones
+
+**Phase to address:** v1.2 data generation (include short-form reasoning examples) and inference configuration
+
+---
+
+### Pitfall 16: MoE Routing Distribution Shifts After Reasoning Data Injection
+
+**What goes wrong:**
+The phase 1 SFT run shaped the Qwen3-30B-A3B routing distribution around WordPress PHP patterns. Reasoning data has a fundamentally different token distribution: long natural-language chains, analytical vocabulary, hedging phrases, dimension-by-dimension structured prose. Adding this data shifts which experts handle judge tokens. The routing that v2.0 MoE-Sieve relies on (profiling for hot expert selection) was measured on the phase 1 adapter. If v1.2 significantly shifts routing, the MoE-Sieve profiling must be re-run on the v1.2 adapter, not reused from v1.0 profiling data.
+
+**Why it happens:**
+Qwen3's top-8 routing from 128 experts means ~10% of experts activate per token. Reasoning data introduces a new token distribution that activates different experts. With SFT on reasoning data, the router's input features shift because the attention hidden states (router inputs) for reasoning tokens differ from PHP code tokens. After fine-tuning, the routing is no longer what was measured before.
+
+**How to avoid:**
+Do not treat v1.0 routing profiles as valid for v1.2. After v1.2 training completes, run a fresh routing profiling pass before any MoE-Sieve work. Explicitly freeze the router during v1.2 training (Qwen3 MoE fine-tuning disables router layer fine-tuning by default — confirm this is active in Unsloth config). Freezing the router prevents routing shifts while still letting attention and FFN adapters learn the reasoning patterns.
+
+**Warning signs:**
+- Router layer gradients are non-zero in training logs (router is being fine-tuned when it should not be)
+- Per-expert token distribution at v1.2 checkpoint differs by >15% from v1.0 distribution on the same validation set
+- `<wp_judge>` token routing affinity changes significantly between v1.0 and v1.2 adapters
+
+**Phase to address:** v1.2 training config (freeze router before run) and v2.0 planning (require fresh profiling after v1.2)
+
+---
+
+### Pitfall 17: Critique-Then-Fix Format — Model Learns to Skip the Fix
+
+**What goes wrong:**
+The critique-then-fix format has two parts: a structured critique identifying issues (what/why/severity per dimension), followed by a corrected version of the code. After training, the model reliably produces the critique section but frequently truncates or skips the corrected code block. Prompts that ask for `<corrected_code>` get the analysis but not the fix. The critique-only behavior is a shortcut: it minimizes output length and closely mirrors the existing judge training format.
+
+**Why it happens:**
+The model has 143K judge training examples that produce critique-style analysis without any code. The critique-then-fix examples are a new, smaller dataset. When gradients compete, the existing judge behavior (critique only) is a stronger attractor because it has far more training support. The fix section requires generating PHP code after a long reasoning trace — a distribution the model has not been trained on end-to-end.
+
+**How to avoid:**
+Increase the weight of the fix section in the loss calculation. Use response-masking to compute loss only on the corrected code section (not the critique) for a subset of training examples, forcing the model to attend to the fix quality independently. Structure the training data so the correct code always appears in a clearly delimited block (e.g., `<corrected_code>...(PHP)...</corrected_code>`) that the model can learn to produce as a distinct unit. Include examples that are "easy fixes" (single-line security patch) and "complex fixes" (refactor entire function) so the model learns to produce fixes of varying scope.
+
+**Warning signs:**
+- Inference samples contain `<critique>` block but empty `<corrected_code>` block
+- Corrected code in training data examples is shorter than critique by a large margin (check token counts — if critique is consistently 5x longer, loss is dominated by critique tokens)
+- Model produces critique-only output even when explicitly prompted to "also provide the corrected version"
+
+**Phase to address:** v1.2 data generation (critique-then-fix template) and training loss configuration
+
+---
+
+### Pitfall 18: Score Calibration Drift — Reasoning Changes What Scores Mean
+
+**What goes wrong:**
+The phase 1 adapter was calibrated to produce dimension scores correlated with the Claude judge (target Spearman 0.85). After reasoning fine-tuning, the model's scores shift systematically. Scores may inflate (the model justifies higher scores after reasoning through the code more thoroughly), or deflate (the model surfaces issues it previously missed). The Spearman correlation with the ground-truth Claude judge may actually improve — but the score absolute values drift, breaking downstream systems that threshold on specific score values (e.g., the security auto-fail at <5).
+
+**Why it happens:**
+Reasoning chains cause the model to reconsider its initial impression of code quality. This is the "reflection changing verdict" effect: models that reason about a problem often produce different outputs than models that answer immediately. This is desirable for judgment quality but breaks metric continuity if calibration assumptions carry over from phase 1.
+
+**How to avoid:**
+Re-run the full evaluation suite on the v1.2 adapter using the same held-out validation set used for v1.0. Compare absolute score distributions (histogram), not just Spearman correlation. Flag any dimension where the mean score shifts by more than 0.5 points vs. v1.0 on the same examples. If security dimension scores shift downward significantly, re-check the security auto-fail threshold — it may need to be lowered from <5 if the model is now more conservative.
+
+**Warning signs:**
+- Security dimension mean score drops by >0.5 points vs. v1.0 on the same validation set
+- Any dimension's score distribution shifts bimodally (model now produces extreme scores, fewer mid-range scores)
+- PASS/FAIL classification accuracy vs. ground-truth changes significantly despite improved Spearman
+
+**Phase to address:** v1.2 evaluation (mandatory recalibration check before declaring v1.2 complete)
+
+---
+
+### Pitfall 19: Generation Task Regression From Reasoning Data Contamination
+
+**What goes wrong:**
+The `<wp_gen>` pathway regresses after reasoning fine-tuning. Generated code starts including reasoning traces in the output — the model begins prefixing PHP code with analytical text because it has seen many examples where text precedes the important output. Alternatively, generated PHP code quality (PHPCS pass rate, security scores) drops because the training mix reduced the density of clean generation examples relative to the total dataset.
+
+**Why it happens:**
+Continued training on judge-only reasoning data shifts the overall distribution. The generation task was trained on compact PHP code examples. If the continued training mix is 100% judge+reasoning data with no generation examples, the model's generation capability degrades through forgetting. The effect is similar to the catastrophic forgetting between SFT and RL documented in literature: each new training phase overwrites the previous task if not explicitly included.
+
+**How to avoid:**
+Include a replay buffer of generation examples in the v1.2 training mix. A 20–30% inclusion of original `<wp_gen>` examples from the phase 1 training set is sufficient to prevent regression. Do not train v1.2 on judge-only data. Run the full PHPCS + judge correlation evaluation on generation samples (not just judge samples) after v1.2 training and compare to v1.0 baseline.
+
+**Warning signs:**
+- v1.2 model generates PHP code prefixed with explanatory text when `<wp_gen>` is used
+- PHPCS pass rate on generated functions drops by >3 percentage points vs. v1.0
+- Security dimension score on generated functions drops below the auto-fail threshold more frequently than v1.0
+
+**Phase to address:** v1.2 training data assembly (include generation replay examples before the run)
+
+---
+
+### Pitfall 20: Reasoning Data Quality Circular Dependency
+
+**What goes wrong:**
+The reasoning data for v1.2 is generated by Claude Code agents using the existing judge system. If the agent-generated reasoning chains contain errors (wrong dimension analysis, false critical failure claims, incorrect fix suggestions), those errors become training signal. The model learns to reproduce the errors confidently, since they appear in the training data with no quality signal differentiating them from correct reasoning.
+
+**Why it happens:**
+The pipeline for generating reasoning data uses the same agents and prompts as the original data pipeline. At scale (regenerating judge training examples with reasoning chains means tens of thousands of examples), spot-checking is impractical. Errors in Claude's reasoning about PHP code are systematic, not random — for example, Claude may consistently misidentify a `sanitize_text_field()` usage as insufficient sanitization, and that systematic error propagates to all examples involving that pattern.
+
+**How to avoid:**
+Do not generate reasoning data in bulk without validation sampling. Sample 1% of generated reasoning examples (minimum 50) and manually review for correctness before proceeding. Focus review on the security dimension (highest stakes) and SQL safety dimension (most rule-specific). Add a "reasoning self-consistency" check: for any function where the reasoning chain concludes differently from the original phase 1 verdict, flag it for manual review before including in training. Use stricter prompts that require the agent to cite specific line numbers and pattern names when flagging issues.
+
+**Warning signs:**
+- Reasoning chains for PASS functions frequently mention "potential issues" that the phase 1 judge found none of (false positives proliferating)
+- The reasoning for FAIL functions cites different critical failures than the original phase 1 judgment
+- Any pattern appears in >20% of reviewed reasoning chains that was not in the original judge's reported critical failures
+
+**Phase to address:** v1.2 data generation (validation sampling before bulk generation committed to training)
+
+---
+
+### Pitfall 21: Unsloth Optimizer State Reset Breaks LoRA Initialization
+
+**What goes wrong:**
+Unsloth resets the optimizer state when loading a saved LoRA adapter for continued training. This is documented behavior: the optimizer history (momentum, variance estimates) from phase 1 is discarded. This has two consequences. First, Adam's variance estimates that stabilized the late-phase-1 training are gone — the optimizer starts as if training from step 0, with no warm gradient statistics to guide step sizes. Second, if the LR scheduler uses the step counter to determine the LR, it starts from step 0 again, meaning it will ramp back up through the full warmup phase even though the model is already trained.
+
+**Why it happens:**
+Saving and loading adapters saves only the weight deltas (LoRA A and B matrices), not the optimizer state. This is by design in most PEFT implementations — the optimizer state is often as large as the model itself and not worth preserving for short fine-tuning runs. For continued training with a different objective (reasoning), this becomes a problem because the optimizer "forgets" that this adapter is already trained.
+
+**How to avoid:**
+Set a conservative initial LR (see Pitfall 13). Use a flat LR or very short warmup (1–2%) rather than the 5% warmup used in phase 1. Consider using AdaFactor instead of AdamW for continued training — AdaFactor's adaptive per-parameter LR is less sensitive to missing optimizer history. Monitor gradient norms in the first 100 steps: they should be in the same range as late-phase-1 gradient norms (<2), not the high norms seen in early-phase-1 training (5–10).
+
+**Warning signs:**
+- Gradient norms in the first 50 steps of continued training are higher than the final gradient norms from phase 1
+- Loss is higher at step 100 of phase 2 than at the final step of phase 1
+- The LR schedule plot shows a full warmup ramp despite loading a trained adapter
+
+**Phase to address:** v1.2 training configuration (optimizer and scheduler settings before continued training run)
+
+---
+
 ## Technical Debt Patterns
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
@@ -271,6 +459,9 @@ Change N/A handling: track inapplicable dimensions separately with a flag, exclu
 | Fixed `time.sleep(REQUEST_INTERVAL)` without retry | Simple to implement | Pipeline dies on first 429 instead of recovering | Acceptable for initial testing only; add backoff before production runs |
 | Batch API skipped in favor of realtime | Simpler response handling | 2x cost on all generation/judge calls | Acceptable for <500 examples; unacceptable at 13,500 example scale |
 | No pre-run environment validation | Faster startup | Fails hours in on first PHPCS/API call; wasted compute | Never — add `verify_setup.py` before first full run |
+| Reusing phase 1 LR config for continued training | No config changes needed | Loss spike in first 200 steps overwrites phase 1 weights | Never — reduce LR by 2-5x for any continued training run |
+| 100% judge+reasoning data in v1.2 mix | Maximum reasoning signal | Generation pathway regresses; PHPCS pass rate drops | Never — include 20-30% generation replay examples |
+| Bulk reasoning data generation without sampling | Faster data generation | Systematic errors from Claude propagate to training | Never — always sample 1% minimum before committing bulk generation |
 
 ---
 
@@ -286,6 +477,9 @@ Change N/A handling: track inapplicable dimensions separately with a flag, exclu
 | Unsloth LoRA + special tokens | Default LoRA config freezes embed_tokens | Explicitly add `modules_to_save=["embed_tokens","lm_head"]` before training |
 | vLLM + GGUF | Testing GGUF performance in vLLM | GGUF is experimental in vLLM; use AWQ with Marlin kernel for production throughput |
 | GGUF export + MoE | Using standard GGUF export tools | Verify tool supports MoE routing tables before assuming export is correct |
+| Unsloth continued training | Using same LR as initial run | Reduce LR 2-5x; confirm optimizer state is reset and warmup does not overshoot |
+| Qwen3 MoE router in fine-tuning | Accidentally training router layer | Router fine-tuning is disabled by default in Unsloth; confirm it remains disabled in continued training config |
+| Reasoning training data + JSON format | Training on free-text reasoning only | Always include structured JSON tail in every reasoning example; keep 30% compact-format judge examples in mix |
 
 ---
 
@@ -298,6 +492,8 @@ Change N/A handling: track inapplicable dimensions separately with a flag, exclu
 | No `--sample N` flag for pipeline testing | Full pipeline run required to test any change | Add sample flag before first full run | Every development iteration |
 | Opus for all CoT regardless of function length | Phase 3 costs 3x more than estimated | Use Sonnet for <50-line functions; Opus for complex/long functions only | At full 13,500 example dataset |
 | Single-threaded git clone in Phase 1 | Cloning 10+ repos takes minutes serially | Parallelize with `asyncio` or thread pool | At >10 repos in `repos.yaml` |
+| Max sequence length unchanged for reasoning data | Reasoning traces exceed 4096 token limit; truncated mid-reasoning | Increase max_seq_length to 6144-8192 for v1.2 training run | At any reasoning example longer than 4096 tokens |
+| Reasoning inference without length cap | Batch scoring takes 5-10x longer post-v1.2 | Set max_new_tokens for judge calls; use compact mode for routine scoring | Immediately after v1.2 deployment |
 
 ---
 
@@ -310,6 +506,8 @@ Change N/A handling: track inapplicable dimensions separately with a flag, exclu
 | Task type inferred from metadata with silent default to "gen" | Judge examples mislabeled as generation examples | Require explicit `metadata.task_type`; fail export if absent; never default |
 | Taxonomy coverage not enforced post-generation | Final dataset misses concept coverage despite planning | Run coverage check in `export_dataset.py`; fail if any tag below minimum threshold |
 | No PHP validity check on exported code examples | Syntactically broken PHP in training set | Parse 100% of code blocks in export validation using `php -l` (lint only, no execution) |
+| Reasoning data generated from the same functions as phase 1 training | Model memorizes code-reasoning pairs rather than learning to reason | Use separate held-out function set for reasoning data generation, not the phase 1 training set |
+| Critique-then-fix pairs where original code is too easy | Model learns trivial fix patterns; cannot handle novel defect combinations | Include fix examples across all 9 dimensions and all severity levels; reject examples where the fix is a single token change |
 
 ---
 
@@ -326,6 +524,12 @@ Before declaring any phase complete:
 - [ ] **Dataset export:** Confirm no PHP code block appears in both train and validation splits
 - [ ] **Deployment:** Confirm GGUF → Ollama and AWQ+Marlin → vLLM, not GGUF in both
 - [ ] **Evaluation:** Confirm evaluation uses both PHPCS and judge correlation, not PHPCS alone
+- [ ] **v1.2 training config:** Confirm LR is 2-5x lower than phase 1; confirm router layer is frozen
+- [ ] **v1.2 training mix:** Confirm generation replay examples are included (20-30% of mix)
+- [ ] **v1.2 data quality:** Confirm 1% sample of reasoning data reviewed before bulk commit
+- [ ] **v1.2 format:** Confirm every reasoning example ends with parseable JSON in canonical structure
+- [ ] **v1.2 eval:** Re-run full evaluation suite on generation AND judge tasks; compare absolute score distributions to v1.0 baseline
+- [ ] **v1.2 length:** Confirm max_seq_length increased to accommodate reasoning traces; no training examples are being truncated mid-reasoning
 
 ---
 
@@ -341,6 +545,11 @@ Before declaring any phase complete:
 | Train/val leakage detected | MEDIUM | Re-export dataset with deduplication; re-evaluate; check if checkpoint metrics were inflated |
 | GGUF exported but MoE routing weights missing | MEDIUM | Re-export with correct tool; verify routing table presence in exported weights before serving |
 | API cost shock from Opus | LOW | No data recovery needed; add cost estimator and `--max-cot` flag before next run |
+| v1.2 LR too high, adapter damaged | HIGH | Roll back to phase 1 checkpoint; restart v1.2 with reduced LR; 43hr wall-clock penalty |
+| v1.2 format collapse (no JSON in output) | HIGH | Retrain with corrected data mix (30% compact judge examples); enforce JSON tail template in all reasoning examples |
+| v1.2 generation regression detected | MEDIUM | Check if generation replay examples were included; if not, retrain with corrected mix; if replay was included, increase replay ratio to 40% |
+| v1.2 reasoning length explosion | LOW | No retraining needed; add max_new_tokens cap in inference config; optionally retrain with short-form reasoning examples to internalize brevity |
+| v1.2 score calibration drift | LOW | Document new calibration baseline; update thresholds in eval config if needed; does not require retraining unless PASS/FAIL accuracy degrades |
 
 ---
 
@@ -360,6 +569,15 @@ Before declaring any phase complete:
 | Opus cost shock | Phase 3 pre-run | Dry-run estimate displayed and confirmed before execution |
 | GGUF in vLLM | Deployment packaging | AWQ+Marlin throughput >700 tok/s on vLLM; GGUF only in Ollama |
 | N/A score inflation | Judge dataset export | No dimension scored exactly 10 via N/A; proportional averaging confirmed |
+| v1.2 LR destruction of adapter | v1.2 training config | LR set to ≤1e-4; gradient norms <3 in first 50 steps |
+| v1.2 format collapse | v1.2 data generation template + training mix | Parse success rate ≥95% on judge samples from v1.2 model |
+| v1.2 reasoning length explosion | v1.2 data generation + inference config | P90 judge output length ≤800 tokens in batch scoring |
+| v1.2 MoE routing shift | v1.2 training config (freeze router) | Router layer gradients = 0 in training logs |
+| v1.2 critique skips fix | v1.2 data template + loss masking | ≥95% of critique-then-fix inference samples contain non-empty `<corrected_code>` block |
+| v1.2 score calibration drift | v1.2 evaluation | Score distribution histogram vs. v1.0 baseline; security mean shift <0.5 |
+| v1.2 generation regression | v1.2 training mix (include gen replay) | PHPCS pass rate on gen samples within 3pp of v1.0 baseline |
+| v1.2 reasoning data errors | v1.2 data generation validation | 1% sample reviewed; error rate <5% before bulk generation proceeds |
+| v1.2 optimizer state reset | v1.2 training config | Gradient norms at step 50 comparable to late-phase-1 norms; no loss spike above phase 1 final loss |
 
 ---
 
@@ -371,6 +589,7 @@ Before declaring any phase complete:
 - [Practical Tips for Finetuning LLMs Using LoRA — Sebastian Raschka](https://magazine.sebastianraschka.com/p/practical-tips-for-finetuning-llms) (MEDIUM confidence — expert practitioner)
 - [How to Add Special Tokens to LLMs Safely](https://langcopilot.com/posts/2025-09-23-how-to-add-special-tokens-llms) (MEDIUM confidence — community, verified against Unsloth docs)
 - [Unsloth Qwen3 Fine-tune Documentation](https://docs.unsloth.ai/models/qwen3-how-to-run-and-fine-tune) (HIGH confidence — official tool docs)
+- [Unsloth Continued Pretraining Documentation](https://unsloth.ai/docs/basics/continued-pretraining) (HIGH confidence — official; optimizer state reset confirmed)
 - [ToMoE: Converting Dense LLMs to MoE via Dynamic Structural Pruning](https://arxiv.org/abs/2501.15316) (HIGH confidence — peer-reviewed 2025)
 - [Stabilizing MoE RL by Aligning Training and Inference Routers](https://arxiv.org/abs/2510.11370) (MEDIUM confidence — routing collapse research)
 - [Towards Catastrophic Forgetting-Free Multi-Domain MoE](https://aclanthology.org/2025.emnlp-main.932.pdf) (MEDIUM confidence — EMNLP 2025)
@@ -378,8 +597,15 @@ Before declaring any phase complete:
 - [vLLM Quantization Performance — GPUStack](https://docs.gpustack.ai/2.0/performance-lab/references/the-impact-of-quantization-on-vllm-inference-performance/) (MEDIUM confidence — benchmark data)
 - [Which Quantization Method is Right for You? — Maarten Grootendorst](https://newsletter.maartengrootendorst.com/p/which-quantization-method-is-right) (MEDIUM confidence — practitioner comparison)
 - [Qwen3 not stopping generation after LoRA fine-tuning — LlamaFactory Issue #7943](https://github.com/hiyouga/LlamaFactory/issues/7943) (MEDIUM confidence — real-world issue report)
+- [Qwen3-MoE Fine-tuning Best Practices — QwenLM GitHub Discussion #1301](https://github.com/QwenLM/Qwen3/discussions/1301) (MEDIUM confidence — official team discussion; loss-to-zero issue documented)
+- [ESFT: Expert-Specialized Fine-Tuning for Sparse Architectural LLMs](https://arxiv.org/abs/2407.01906) (HIGH confidence — EMNLP 2024; routing distribution task-concentration finding)
+- [Mitigating Forgetting Between SFT and RL — arxiv 2510.04454](https://arxiv.org/html/2510.04454v1) (MEDIUM confidence — SFT-RL forgetting dynamics)
+- [On the Limitations of Fine-tuned Judge Models](https://arxiv.org/html/2403.02839v2) (HIGH confidence — peer-reviewed; fine-tuned judge format collapse documented)
+- [Stop Overthinking: Survey on Efficient Reasoning for LLMs](https://arxiv.org/pdf/2503.16419) (HIGH confidence — TMLR 2025; overthinking/length explosion documented)
+- [LoRA Learns Less and Forgets Less](https://arxiv.org/html/2405.09673v2) (HIGH confidence — LoRA forgetting properties in continued training)
+- [SMoLoRA: Dual Catastrophic Forgetting in Continual Learning — ICCV 2025](https://openaccess.thecvf.com/content/ICCV2025/papers/Wang_SMoLoRA_Exploring_and_Defying_Dual_Catastrophic_Forgetting_in_Continual_Visual_ICCV_2025_paper.pdf) (MEDIUM confidence — ICCV 2025; LoRA continual forgetting dynamics)
 
 ---
 
-*Pitfalls research for: WordPress code fine-tuning MoE — execution and training phase*
-*Researched: 2026-03-26*
+*Pitfalls research for: WordPress code fine-tuning MoE — v1.0 execution/training phase + v1.2 reasoning fine-tune*
+*Researched: 2026-03-26 (original); 2026-04-04 (v1.2 reasoning section appended)*
