@@ -25,6 +25,7 @@ import argparse
 import gc
 import json
 import logging
+import os
 import subprocess
 import sys
 import time
@@ -400,7 +401,11 @@ def _start_vllm_with_lora(ratio: str) -> subprocess.Popen:
     logger.info(f"Starting vLLM via DGX Toolbox for ratio {ratio}")
     logger.debug(f"vLLM cmd: {' '.join(cmd)}")
 
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    # Set EXTRA_MOUNTS so start-vllm.sh mounts the project directory
+    env = os.environ.copy()
+    env["EXTRA_MOUNTS"] = f"{PROJECT_ROOT}:/workspace/wp-finetune"
+
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env)
     return proc
 
 
@@ -474,7 +479,10 @@ def _fallback_merge_and_serve(ratio: str) -> Optional[subprocess.Popen]:
     cmd = [str(vllm_script), container_merged_path] + extra_args
     logger.info(f"Serving merged model for ratio {ratio} via DGX Toolbox")
 
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    env = os.environ.copy()
+    env["EXTRA_MOUNTS"] = f"{PROJECT_ROOT}:/workspace/wp-finetune"
+
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env)
     return proc
 
 
