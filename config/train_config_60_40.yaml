@@ -39,17 +39,17 @@ tokenizer:
   - <wp_judge>
 training:
   bf16: true
-  dataloader_num_workers: 3
+  dataloader_num_workers: 4
   dataloader_persistent_workers: true
-  dataloader_prefetch_factor: 3
+  dataloader_prefetch_factor: 4
   eval_steps: 200
-  gradient_accumulation_steps: 4
+  gradient_accumulation_steps: 3
   gradient_checkpointing: true
   learning_rate: 0.0002
   logging_steps: 10
   lr_scheduler_type: cosine
   num_train_epochs: 2
   output_dir: ./adapters/qwen3-30b-wp-60_40
-  per_device_train_batch_size: 4
+  per_device_train_batch_size: 5
   save_steps: 400
   warmup_ratio: 0.05
