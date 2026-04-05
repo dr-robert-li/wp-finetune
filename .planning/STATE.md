@@ -2,35 +2,34 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Judge Reasoning Fine-Tune
-status: defining-requirements
-stopped_at: "Milestone v1.2 started"
-last_updated: "2026-04-05"
-last_activity: "2026-04-05 - Milestone v1.2 started (Judge Reasoning Fine-Tune)"
+status: executing
+stopped_at: v1.2 roadmap created — Phases 4.1-4.4 defined; Phase 4 triage must complete before Phase 4.1 begins
+last_updated: "2026-04-05T00:00:00.000Z"
+last_activity: 2026-04-05 -- v1.2 roadmap phases inserted (4.1-4.4)
 progress:
-  total_phases: 11
-  completed_phases: 1
+  total_phases: 18
+  completed_phases: 6
   total_plans: 9
   completed_plans: 8
-  percent: 0
+  percent: 33
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-02)
+See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Milestone v1.2 — Judge Reasoning Fine-Tune (defining requirements)
+**Current focus:** Phase 04 — evaluation (triage must complete before v1.2 work begins)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements for v1.2
-Last activity: 2026-04-05 — Milestone v1.2 started (Judge Reasoning Fine-Tune)
+Phase: 04 (evaluation) — EXECUTING (plan 3 of 3 pending)
+Next phase: 4.1 (Reasoning Data Generation) — blocked on Phase 4 triage completing
+Status: Phase 4 triage is a hard prerequisite for all v1.2 phases
 
-Progress: [░░░░░░░░░░] 0% (v2.0 + v3.0 phases)
+Progress: [██░░░░░░░░] 33% (phases 1, 2, 3, 4 partial, 6 complete vs 18 total)
 
 ## Performance Metrics
 
@@ -75,6 +74,13 @@ Progress: [░░░░░░░░░░] 0% (v2.0 + v3.0 phases)
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [v1.2 Roadmap 2026-04-05]: Phases 4.1-4.4 inserted as decimal phases between Phase 4 and Phase 5; covers all 14 v1.2 requirements (DGEN-01-05, RTRN-01-04, REVL-01-05)
+- [v1.2 Roadmap 2026-04-05]: Phase 4.1 requires pilot validation (20-50 examples per stream) before bulk generation — pilot confirms WP-specific citation quality
+- [v1.2 Roadmap 2026-04-05]: Phase 4.2 score consistency validation is a hard gate — examples where reasoning contradicts numeric scores are rejected before training mix assembly
+- [v1.2 Roadmap 2026-04-05]: Training mix: reasoning examples + 30% flat judge replay + 20% wp_gen replay — prevents format collapse and generation regression
+- [v1.2 Roadmap 2026-04-05]: Phase 4.3 LR must be ≤2e-5 (5-10x lower than Phase 3's 2e-4); router weights confirmed frozen before training
+- [v1.2 Roadmap 2026-04-05]: Phase 4.4 human sign-off required before adapter merge — adapter written to models/ only after human approval
+- [v1.2 Roadmap 2026-04-05]: Phase 7 dependency updated to Phase 4.4 (v1.2 reasoning adapter) — v1.2 must complete before MoE-Sieve profiling; fresh routing profile required even though router was frozen during v1.2
 - [v2.0 Revision]: Phase 9 reduced to EVAL2 only (EVAL2-01, EVAL2-02) — pruning moved to v3.0 Phase 12 because GRPO changes routing distribution and REAP must prune on final routing
 - [v2.0 Revision]: Old Phase 9 (Expert Pruning + Eval) and old Phase 10 (Packaging) removed from v2.0; v2.0 now Phases 7-9
 - [v3.0 Added]: Phases 10-14 cover GRPO reward infrastructure, GRPO training, LoRA merge + REAP pruning, comparative eval, and packaging
@@ -82,7 +88,7 @@ Recent decisions affecting current work:
 - [v3.0 Sequencing]: Phase 9 gates Phase 10 — MoE-Sieve eval results must confirm readiness before GRPO begins
 - [v3.0 Pruning]: REAP tests 25%, 50%, 75% compression ratios; WordPress domain narrowness may support aggressive pruning to ~8-12B total params
 - [v3.0 Packaging]: Quantization is the final step in Phase 14, gated by cascading eval (Gate 1 bf16 baseline, Gate 2 quantization decision)
-- [v2.0 Roadmap]: Phase 7 execution blocked on Phase 4 completing (need winning gen/judge ratio for SIEVE-03)
+- [v2.0 Roadmap]: Phase 7 execution blocked on Phase 4.4 completing (need reasoning-enhanced adapter; fresh routing profile required)
 - [Phase 06-adaptive-training-planner]: Human review checkpoint approved 2026-04-01 — all Phase 6 scripts verified before DGX execution
 - [Phase 06-adaptive-training-planner]: Canonical JSONL schema updated to GPUSampler fields (watts, temperature_c, gpu_util_pct, mem_available_gb)
 - [Phase 06-adaptive-training-planner]: adaptive-planner skill is a thin wrapper: all decision logic stays in scripts/adaptive_planner.py
@@ -91,14 +97,19 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-None yet.
+- Complete Phase 4 plan 3 (human review checkpoint: inspect E_eff + eval results + wp-bench scores, approve triage survivors)
+- After Phase 4 triage completes: begin Phase 4.1 (pilot 20-50 examples per stream before bulk generation)
+- Verify mutation pool size at `data/phase2_synthetic/output/mutated/` before setting Phase 4.1 critique-then-fix targets
+- Resolve Unsloth PEFT stacking question before Phase 4.3: Option A (nested LoRA on adapter) vs Option B (LoRA on merged model) — blocking question for training setup
 
 ### Blockers/Concerns
 
-- [Phase 7]: Phase 4 (Evaluation) must complete before Phase 7 can execute — need winning gen/judge ratio
+- [Phase 4.1]: Phase 4 triage must complete (winning adapter identified) before Phase 4.1 can begin — hard prerequisite
+- [Phase 4.3]: Unsloth PEFT stacking on Qwen3 MoE unresolved — Option A vs B needs a fresh Unsloth docs fetch before training begins
+- [Phase 7]: Phase 4.4 (v1.2 complete — adapter merged) must complete before Phase 7 can execute
 - [Phase 6]: dgx-toolbox Phase 13 (telemetry/ package) must be complete before Phase 6 can execute
 - [Phase 10]: Phase 9 (MoE-Sieve comparative eval) must complete before Phase 10 (GRPO reward infra) begins
-- [Phase 12]: LoRA merge (MERGE-01) must complete before REAP pruning — this is strictly sequential within the phase
+- [Phase 12]: LoRA merge (MERGE-01) must complete before REAP pruning — strictly sequential within the phase
 - [Phase 14]: Quantization (PKG-03) is gated by Gate 2 decision — verify AWQ support for Qwen3-30B-A3B in vLLM (likely native)
 
 ### Quick Tasks Completed
@@ -120,5 +131,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-05
-Stopped at: Milestone v1.2 started — defining requirements
+Stopped at: v1.2 roadmap created — Phases 4.1-4.4 inserted; waiting for Phase 4 triage to complete before Phase 4.1 begins
 Resume file: None
