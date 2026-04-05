@@ -483,27 +483,37 @@ def _fallback_merge_and_serve(ratio: str) -> Optional[subprocess.Popen]:
     merged_model_path = PROJECT_ROOT / "models" / f"merged-{ratio}"
 
     if not merged_model_path.exists():
-        # Run merge_adapter.py
-        merge_script = PROJECT_ROOT / "scripts" / "merge_adapter.py"
-        if not merge_script.exists():
-            logger.error("merge_adapter.py not found -- cannot fall back to merged serving")
-            return None
+        # Run merge_adapter.py inside the training container (peft version must match training)
+        container_adapter = f"/workspace/wp-finetune/adapters/qwen3-30b-wp-{ratio}"
+        container_output = f"/workspace/wp-finetune/models/merged-{ratio}"
 
-        adapter_path = PROJECT_ROOT / "adapters" / f"qwen3-30b-wp-{ratio}"
+        logger.info(f"Running merge inside unsloth-headless container ...")
         result = subprocess.run(
             [
-                sys.executable,
-                str(merge_script),
-                "--adapter-dir", str(adapter_path),
-                "--output-dir", str(merged_model_path),
+                "docker", "exec", "unsloth-headless",
+                "python3", "/workspace/wp-finetune/scripts/merge_adapter.py",
+                "--adapter-dir", container_adapter,
+                "--output-dir", container_output,
             ],
             capture_output=True,
             text=True,
-            cwd=str(PROJECT_ROOT),
+            timeout=600,  # 10 min max for merge
         )
         if result.returncode != 0:
             logger.error(f"merge_adapter.py failed: {result.stderr[:1000]}")
-            return None
+            # Try HOST as fallback (may work with compatible peft)
+            logger.info("Retrying merge on HOST ...")
+            merge_script = PROJECT_ROOT / "scripts" / "merge_adapter.py"
+            adapter_path = PROJECT_ROOT / "adapters" / f"qwen3-30b-wp-{ratio}"
+            result = subprocess.run(
+                [sys.executable, str(merge_script),
+                 "--adapter-dir", str(adapter_path),
+                 "--output-dir", str(merged_model_path)],
+                capture_output=True, text=True, cwd=str(PROJECT_ROOT),
+            )
+            if result.returncode != 0:
+                logger.error(f"merge_adapter.py failed on HOST too: {result.stderr[:500]}")
+                return None
 
         # Warn about disk usage
         logger.warning(
