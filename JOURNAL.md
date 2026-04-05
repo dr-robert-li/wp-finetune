@@ -4,19 +4,33 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
-## 2026-04-05 — Eval pipeline operational; triage commenced
+## 2026-04-06 — First eval run killed; restarting after fixes
 
-### Conceptual learnings
+### What happened
 
-1. **CPU merge is strictly better on DGX Spark.** Adapter merge is weight arithmetic, not inference — no GPU needed. With 128GB unified RAM, CPU merge completes in ~4s. GPU merge competes with vLLM for memory, takes ~6 min, and risks OOM when model + LoRA exceed what `device_map="auto"` can fit. Default to CPU for all future merges on this hardware.
+The first eval run (30/70 ratio, ~2 of 10,166 examples completed) was killed because four issues would have made the results unusable:
 
-2. **Merge-and-serve is the canonical path, not a fallback.** The eval pipeline was designed with LoRA hot-loading as primary and merge as fallback. In practice, any adapter with `modules_to_save` (which all ours have) *requires* merge. The mental model should be inverted: merge is the default serving path; LoRA hot-loading is an optimization available only for pure-LoRA adapters without embedding modifications.
+- **eval_gen.py** — JSONL output was missing `prompt`, `response`, and `extracted_code` fields. The 7-field records are useless for human review — you can't inspect what the model actually generated.
+- **eval_judge.py** — Same missing fields. Judge hadn't started yet but would have inherited the problem.
+- **eval_gate.py** — Per-dimension gates referenced nonexistent keys, so the gate would silently pass everything (dead code). Also, `overall_spearman` dict handling would crash or produce wrong correlations.
 
-3. **Crash-loop detection saves more time than generous timeouts.** When a container fails on startup (e.g. incompatible adapter), it restart-loops silently. A long health timeout masks this — you wait 15 minutes to learn what was knowable in 60 seconds. Checking restart count and fatal log patterns is a better primitive than extending timeouts. Applies to any container health gate, not just vLLM.
+All stale telemetry and completion markers cleared. Clean slate for rerun.
+
+### Learnings
+
+1. **The orchestrator had no `--limit` passthrough.** `eval_gen.py` supports `--limit N` but `run_eval_triage.py` never exposes or passes it. Without a limit, the pipeline runs all 10,166 test examples per ratio. At ~355 examples/hour, that's ~29h per stage per ratio — **~237 hours (10 days) for all 4 ratios**. The previous test run used n=50 only because it was invoked manually. Triage needs a sample size parameter; statistical significance for Spearman and per-dimension gates doesn't require 10K samples.
+
+2. **Eval output schema must be validated before long runs, not after.** The missing-fields bug was immediately visible in the first JSONL line but wasn't caught because nothing checks output schema at startup. A 1-example dry-run with schema assertion would have caught this in seconds instead of wasting a full run cycle.
+
+3. **CPU merge is strictly better on DGX Spark.** Adapter merge is weight arithmetic, not inference — no GPU needed. With 128GB unified RAM, CPU merge completes in ~4s. GPU merge competes with vLLM for memory, takes ~6 min, and risks OOM. Default to CPU for all future merges on this hardware.
+
+4. **Merge-and-serve is the canonical path, not a fallback.** Any adapter with `modules_to_save` (all of ours) *requires* merge. The mental model should be inverted: merge is default; LoRA hot-loading is an optimization available only for pure-LoRA adapters without embedding modifications.
+
+5. **Crash-loop detection saves more time than generous timeouts.** When a container fails on startup, it restart-loops silently. Checking restart count and fatal log patterns is a better primitive than extending timeouts — knowable in 60 seconds vs waiting 15 minutes.
 
 ### Status
 
-Eval triage is now running across all four adapters (30/70, 40/60, 50/50, 60/40). The pipeline is autonomous through Gate 2; human review at Gate 3 selects survivors for v1.2 reasoning fine-tune.
+Eval pipeline fixed and verified. Restarting eval across all 4 ratios (30/70, 40/60, 50/50, 60/40) with `--limit` passthrough to control sample size. Zero containers or stale data remain.
 
 ---
 
