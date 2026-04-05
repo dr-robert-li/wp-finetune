@@ -1,229 +1,213 @@
 # Project Research Summary
 
-**Project:** wp-qwen3-moe
-**Domain:** WordPress-specific code generation and judgment LLM via LoRA fine-tuning + dense-to-MoE conversion on DGX Spark
-**Researched:** 2026-03-26
-**Confidence:** MEDIUM-HIGH (stack and features HIGH; MoE conversion MEDIUM due to research-paper-stage tooling)
+**Project:** wp-qwen3-moe v1.2 — Judge Reasoning Fine-Tune
+**Domain:** LLM fine-tuning pipeline — WordPress PHP code quality, MoE SFT, judge reasoning with critique-then-fix
+**Researched:** 2026-04-04
+**Confidence:** HIGH (stack and architecture verified against codebase), MEDIUM (reasoning quality metrics, training dynamics)
+
+---
 
 ## Executive Summary
 
-This project fine-tunes a Qwen3-8B model to produce a dual-mode WordPress code specialist that can both generate PHPCS-compliant PHP and act as a structured 9-dimension code judge — capabilities that no existing tool (CodeWP, GitHub Copilot) combines in a single self-hostable model. The recommended expert consensus approach is: run the existing 3-phase data pipeline to produce ~13,500 training examples, convert the dense Qwen3-8B checkpoint to an 8-expert MoE architecture via CMoE (training-free, ~5 minutes), extend the tokenizer with `<wp_gen>` and `<wp_judge>` task tokens, and then apply Unsloth LoRA SFT on DGX Spark inside NVIDIA's official Docker container. Deployment targets two backends: AWQ quantization for vLLM high-throughput serving and GGUF for Ollama developer access. The pipeline, training stack, and serving stack all have official NVIDIA DGX Spark playbooks, which substantially reduces integration risk.
+This project adds deep reasoning capability to an already-trained WordPress PHP judge model (Qwen3-30B-A3B, 60:40 ratio, LoRA r=32). The v1.0 pipeline produced a well-calibrated judge that scores PHP code across 9 dimensions with Spearman correlation tracking. The v1.2 milestone has a focused goal: the judge should articulate *why* code is good or bad (dimension-by-dimension reasoning chains) and generate a corrected version alongside its critique. Research confirms this is achievable through continued SFT on a narrow reasoning dataset (~6,000-12,000 examples) using the existing Unsloth + TRL stack — no new training infrastructure is required.
 
-The key risk is data pipeline fragility, not model architecture. The existing pipeline code has several critical bugs that will silently corrupt the training dataset at production scale: a brittle JSON parser that substitutes stub objects on Claude response format variations, missing checkpointing that requires full restarts from scratch on any failure, a PHPCS silent-degradation bug that accepts unverifiable mutations when the tool is unavailable, and no rate-limiting in `phase2_judge_dataset.py`. These must be fixed before the first full pipeline run. A secondary risk is the MoE conversion: CMoE is research code (arxiv:2502.04416), not a production library, and the conversion-then-fine-tune ordering is non-negotiable — fine-tuning the dense model first and converting afterward defeats the entire specialization purpose.
+The recommended approach is a two-stream data generation pass: (1) regenerate a representative 10% sample (~14,000) of existing judge training examples with full dimension-by-dimension reasoning chains using Claude Code agents, and (2) convert existing phase2 mutation pairs into critique-then-fix triples using the same agent pattern. Both streams feed a separate `data/reasoning_dataset/` that never mixes with the original `data/final_dataset/`. Continued training starts from the winning ratio adapter at 5-10x lower learning rate for 1-2 epochs. The key risk is format collapse: the model forgetting the compact JSON judge format and producing reasoning-only output that breaks the parsing pipeline. This is mitigated by keeping 30% original judge examples in the training mix and enforcing a canonical output template.
 
-The project has a clear quality gate strategy: PHPCS pass rate >95% and judge correlation >0.85 (Pearson) against a Claude reference on a held-out test set. These thresholds block packaging and deployment, preventing a substandard model from being published. The evaluation suite must be designed and written before training starts, not after — otherwise the metrics cannot be used as a blocking gate.
+Three additional risks need active management: catastrophic forgetting of generation capability (mitigated by 20-30% generation replay in the training mix), reasoning length explosion at inference (mitigated by including short-form reasoning examples in training data), and score calibration drift after reasoning changes the model's analytical depth (mitigated by re-running the full eval suite and comparing absolute score distributions, not just Spearman correlation). The existing eval infrastructure (eval_judge.py, eval_gen.py, eval_gate.py) handles post-training verification without modification.
+
+---
 
 ## Key Findings
 
 ### Recommended Stack
 
-The training stack is dictated by NVIDIA's official DGX Spark playbooks, which pins key dependencies: `nvcr.io/nvidia/pytorch:25.11-py3` base container (do not install torch separately), `transformers==4.56.2`, `trl==0.26.1`, `bitsandbytes==0.48.0`, `datasets==4.3.0`. Deviating from these pins on Blackwell hardware risks silent Flash Attention fallback or crashes. Unsloth is the officially supported fine-tuning framework for DGX Spark and provides verified Qwen3-8B + MoE support. The dense-to-MoE conversion uses CMoE (arxiv:2502.04416) — training-free, ~5 minutes on a single GPU, targeting S2A2E8 (2 shared + 2 active of 8 total experts). Inference is split: vLLM >=0.9.0 with AWQ+Marlin kernel for production (741 tok/s), Ollama for developer access (GGUF Q4_K_M). The data pipeline uses Claude API with a critical model split: `claude-sonnet-4-6` for bulk judging in phases 1-2, `claude-opus-4-6` for chain-of-thought generation in phase 3 only (3x the cost — must have a pre-run cost estimate and `--max-cot` cap).
+The v1.0 stack (Unsloth 2026.3.5, TRL 0.24.0, transformers 5.3.0, Qwen3-30B-A3B, DGX Spark) is unchanged for v1.2. The only net-new dependency is `bert-score==0.3.13` for reasoning quality evaluation; it requires only the already-installed `torch`. TRL v1.0 released 2026-03-31 — do NOT upgrade mid-milestone; v0.24.0 handles all required training formats. The one required config change is `max_seq_length: 4096 → 8192` because deep judge CoT chains routinely exceed 4096 tokens across 9 dimensions.
 
 **Core technologies:**
-- Unsloth (2026.3.x): LoRA SFT on DGX Spark — official NVIDIA playbook, 2x faster + 70% less VRAM than vanilla HuggingFace training
-- TRL SFTTrainer (0.26.1): supervised fine-tuning framework — required by Unsloth DGX playbook, handles chat template and dataset formatting
-- CMoE (arxiv:2502.04416): dense-to-MoE conversion — training-free, 5 minutes, 8-expert config matching project spec; only MEDIUM confidence as research code
-- vLLM (>=0.9.0): production inference with AWQ+Marlin — native Qwen3+Qwen3MoE support, 741 tok/s on DGX Spark
-- PHP_CodeSniffer + WPCS 3.x: code quality pre-filter — Composer-only install (WPCS 3.x breaking change from 2.x); must be present before any data pipeline run
-- Anthropic Python SDK (>=0.50.0): Claude API for judging and generation — `claude-sonnet-4-6` for bulk, `claude-opus-4-6` for CoT only
+- **Unsloth 2026.3.5**: LoRA SFT accelerator — confirmed installed; handles 8192 token sequences at LoRA r=32 within DGX Spark 128GB unified memory
+- **TRL 0.24.0**: SFTTrainer — native support for conversational prompt-completion format; no upgrade needed for v1.2 reasoning chain training
+- **anthropic SDK >=0.50.0**: Claude Code agent spawn pattern — existing spawn-until-target pattern reused for both new data generation scripts; no new agent framework needed
+- **bert-score==0.3.13**: Reasoning quality evaluation — BERTScore F1 shows 59% vs BLEU's 47% human alignment on reasoning tasks (ACL 2025); only new install required
+- **nltk 3.9.3**: Already installed; used for dimension coverage checks and keyword specificity metrics
+
+**Training data format decision:** Reasoning goes in the `response` field as structured prose, not in a `<think>` block. Qwen3's `enable_thinking` is left enabled at inference, but training data must use visible reasoning so users can read the dimension-by-dimension critique. Using TRL v1.0's `"thinking"` field would produce hidden `<think>` blocks — the reasoning IS the product for v1.2, not scaffolding.
 
 ### Expected Features
 
-The model's core value proposition is its dual-mode capability with structured judgment output — a capability gap confirmed against all identified competitors.
+**Must have (v1.2 table stakes):**
+- Dimension-by-dimension reasoning in judge output — every rubric-scored judge model (Prometheus, JudgeLM, Auto-J) produces per-criterion reasoning before scores; scores-only output is a structurally defective judge format
+- Verdict-after-reasoning ordering with separator token — Prometheus research establishes that generating feedback then score outperforms score-first; `[/REASONING]` separator followed by JSON scores block is the structural requirement
+- Critique-then-fix format — defective code to structured critique with severity tags to corrected version in one inference call; no comparable open judge for WordPress PHP produces corrections
+- Score consistency validation before training — reject examples where written severity contradicts numeric scores (e.g., "critical SQL injection" with security score 7); training on contradictory examples is actively harmful
+- WordPress-specific reasoning templates — `$wpdb->prepare()`, `wp_verify_nonce()`, `check_ajax_referer()`, `esc_html()` must appear by name in reasoning chains; generic patterns do not transfer to WP developers
 
-**Must have (table stakes):**
-- PHPCS-passing PHP generation (WPCS compliance) — generated code that fails PHPCS is immediately rejected by CI pipelines; the model is worse than PHPCS itself without this
-- SQL safety via `$wpdb->prepare()` with typed placeholders — top WordPress plugin vulnerability class (Patchstack 2025); non-negotiable trust signal
-- Nonce generation/verification and capability checks — CSRF and privilege escalation prevention; missing these patterns in generated code is an instant trust-breaker
-- Context-appropriate output escaping (`esc_html`, `esc_attr`, `esc_url`, `wp_kses`) — wrong function for context is a functional bug, not just style
-- WP_Query for post queries, hook registration with correct signature, `register_rest_route()` with `permission_callback` — the three most common WP-specific coding tasks
-- `<wp_judge>` mode returning 9-dimension JSON (wpcs_compliance, sql_safety, security, performance, wp_api_usage, code_quality, dependency_integrity, i18n, accessibility) with verdict and critical_failures — the primary differentiator; no competitor has this
-- CoT reasoning for SQL and security patterns — makes the model explainable, not just generative
-
-**Should have (competitive):**
-- Contrastive defect explanation (bad → good mutation pairs with CoT annotations) — trained on Phase 2 mutation data; enables automated code-review use case
-- Multisite awareness (switch_to_blog, per-site table prefixes, network vs site options) — nearly absent from general code model training data
-- Taxonomy-grounded coverage across all 12 WP concept categories — enforces minimum coverage of underrepresented patterns (multisite, cron)
-- Admin UI generation (settings pages, meta boxes, list table columns) — high developer demand
+**Should have (v1.2 differentiators):**
+- Severity-tagged issue list in critique — `severity: critical/high/medium/low` plus `dimension` tag per issue; enables downstream triage; shown to improve task transfer in Critique-Coder research
+- Fix-rationale field — "what changed and why" explanation alongside corrected code; produces a judge that articulates regressions, not just pass/fail verdicts
 
 **Defer (v2+):**
-- DPO/RLHF preference optimization — requires new training infrastructure; SFT alone is sufficient for v1 if PHPCS >95% and correlation >0.85
-- JavaScript/Gutenberg block generation (`<wp_block>` task token) — entirely different domain; mixing JS/React training dilutes WP PHP quality
-- WooCommerce-specific expert pathway (`<wc_gen>`) — warrants separate task token and dedicated training data
-- Multi-lingual comment support — requires translation validation pipeline
+- TRACT-style regression-aware loss — requires custom loss head on top of Unsloth SFTTrainer; flag for v2.0 if Spearman plateaus below 0.85
+- Multi-turn self-refinement training — appropriate after GRPO is introduced in v3.0; the RL loop provides refinement signal without multi-turn SFT format complexity
+- Pairwise preference data for reasoning quality — requires human or stronger-model annotation; consider if Spearman plateaus post-v2.0
 
 ### Architecture Approach
 
-The system is a strictly sequential 5-layer pipeline: data pipeline (phases 1-3) produces training data, model preparation (CMoE conversion + tokenizer extension) produces the base MoE model, training (Unsloth SFT) produces LoRA adapters and a merged checkpoint, evaluation (custom domain scripts + standard benchmarks) gates deployment, and packaging (AWQ + GGUF + HF upload) produces serving artifacts. Component communication is entirely via file system handoffs — no network APIs between layers. The critical build constraint is ordering: convert dense to MoE first, then extend tokenizer, then fine-tune. Model preparation can run in parallel with data pipeline execution (independent inputs) but must complete before training begins. The evaluation-to-packaging boundary is a deliberate manual human gate, not an automated trigger.
+The v1.2 integration treats the existing pipeline as strictly read-only and adds a parallel new data generation layer feeding a separate reasoning dataset. Four new scripts are required (`phase4_deep_judge_cot.py`, `phase4_critique_fix.py`, `merge_reasoning_dataset.py`, and optionally `eval_reasoning.py`), one new training config (`train_config_reasoning.yaml`), and two new output directories (`data/phase4_reasoning/`, `data/reasoning_dataset/`). The existing `train_model.py`, all eval scripts, and `merge_adapter.py` are used without modification. The reasoning dataset uses an intentionally larger 80/20 train/val split (vs 80/10/10 for the main dataset) because the smaller dataset needs a larger val slice for reliable perplexity tracking.
 
 **Major components:**
-1. Data Pipeline (Phase 1-3) — 10 existing Python scripts producing ~13,500 training examples across gen/judge/CoT formats; needs bug fixes before first full run
-2. Model Preparation (model_prep/) — CMoE conversion script + tokenizer extension + smoke-test verification; all scripts to be written
-3. Training (training/) — Unsloth Studio Docker notebook on DGX Spark; LoRA r=64, all-linear targets, router frozen, `modules_to_save=["embed_tokens","lm_head"]`
-4. Evaluation (eval/) — custom PHPCS pass rate and judge correlation scripts + lm-eval-harness standard benchmarks; scripts to be written
-5. Packaging + Deployment — AWQ quantization for vLLM, GGUF for Ollama, HF Hub upload; all scripts to be written
+1. **Phase 4 data generation layer** — two parallel agent scripts; `phase4_deep_judge_cot.py` sources from `data/phase1_extraction/output/{passed,failed}/`; `phase4_critique_fix.py` sources from `data/phase2_synthetic/output/mutated/`; both use the existing Claude Code agent spawn-until-target pattern
+2. **Merge and format layer** — `merge_reasoning_dataset.py` combines both streams, enforces the output template, validates score consistency, and exports SFT-ready JSONL
+3. **Continued training layer** — `train_model.py` loaded with `train_config_reasoning.yaml`; starts from the winning ratio adapter; 5-10x lower LR than phase 1; 1-2 epochs maximum; training mix of 40% deep CoT + 30% critique-then-fix + 30% original flat judge examples + 20% generation replay woven in
+4. **Evaluation layer** — existing `eval_judge.py` (Spearman), `eval_gen.py` (PHPCS), `eval_gate.py` (gate check); `parse_judge_response()` already handles fenced JSON embedded at the end of reasoning traces; no eval script changes needed
 
 ### Critical Pitfalls
 
-1. **Silent JSON parse failures poison training data** — Replace brittle `split("```json")` pattern across all three judge scripts with a multi-strategy extractor (JSON fence with hint, bare fence, regex for outermost `{...}`, raw `json.loads`). Hard-reject on all-strategy failure; abort if >2% of responses fail. Never substitute stub objects.
+**v1.2-specific (highest priority):**
 
-2. **No pipeline checkpointing makes multi-hour runs unrecoverable** — Add checkpoint JSON every 100 examples across `phase1_judge.py`, `phase2_generate.py`, and `phase3_cot.py`. Add `--sample N` flag before first full run; this is also required for cheap end-to-end pipeline testing.
+1. **Continued training LR destroys the existing adapter** — optimizer state resets on adapter load; using the same LR as phase 1 (`2e-4`) causes a loss spike that overwrites phase 1 weights. Use 4e-5 to 1e-4; monitor gradient norms in the first 100 steps (should stay below 2-3, not the 5-10 seen in early phase 1).
 
-3. **PHPCS silent degradation corrupts mutation training data** — `phase2_mutate.py` returns `True` (mutation accepted) when PHPCS is unavailable. Add a `verify_phpcs_available()` pre-flight check that hard-exits on failure. Never accept mutations silently.
+2. **Format collapse — reasoning chains overwrite JSON structure** — after continued training the model produces well-reasoned text but no parseable JSON, breaking the judge pipeline entirely. Keep 30% original flat judge examples in the training mix; enforce that all reasoning training examples end with a clearly delimited JSON block inside `<judge_output>` tags; monitor parse failure rate at every checkpoint (abort if >5%).
 
-4. **Special token embeddings stay randomly initialized unless explicitly trained** — LoRA freezes `embed_tokens` by default; new `<wp_gen>` and `<wp_judge>` rows receive zero gradient updates. Set `modules_to_save=["embed_tokens","lm_head"]` in LoRA config before training. Verify embedding norms are non-zero after first 100 steps.
+3. **Critique-then-fix model learns to skip the fix** — 143K existing judge-only examples create a strong attractor toward critique-without-code output. Structure corrected code in a clearly delimited block (`<corrected_code>...</corrected_code>`); use response-masking to compute loss on the fix section independently; include both easy (single-line patch) and complex (function refactor) fix examples.
 
-5. **MoE routing collapse renders conversion useless** — Without load balancing loss, the top-2 router collapses to always routing to 1-2 experts. Keep auxiliary load balancing loss active during SFT (reduced coefficient, not zeroed). Monitor per-expert token distribution at each checkpoint; abort and adjust if any expert exceeds 30% of tokens.
+4. **Generation task regression from reasoning data** — `<wp_gen>` pathway degrades when training mix is 100% judge+reasoning data; PHPCS pass rate can drop measurably. Include 20-30% generation replay examples from phase 1 training set in the v1.2 mix; always run `eval_gen.py` after any continued fine-tune, not just `eval_judge.py`.
+
+5. **Reasoning data quality circular dependency** — Claude agent-generated reasoning chains can contain systematic errors that propagate to training. Sample 1% of generated reasoning (minimum 50 examples) and manually review before bulk generation is committed; flag any function where the reasoning chain contradicts the original phase 1 verdict.
+
+**Carry-forward from v1.0 (still applicable):**
+
+6. **Training data poisoned by silent parse failures** — use multi-strategy JSON extraction (fence with language hint, bare fence, regex, raw parse) with hard rejection and failure counter; abort pipeline if >2% of responses fail parsing.
+
+7. **Score inflation from N/A dimensions** — backend PHP functions receiving score 10 on inapplicable dimensions inflates averages; exclude N/A dimensions from average entirely using proportional weighting over applicable dimensions only.
+
+---
 
 ## Implications for Roadmap
 
-Based on the strict sequential dependency structure and identified bugs, the recommended phase structure is as follows. The data pipeline must be fixed and validated before any model work begins. Model preparation and training must be instrumented before execution to avoid costly recoveries.
+The v1.2 milestone has a clear six-step sequential flow with one parallel fork.
 
-### Phase 1: Data Pipeline Hardening and Execution
+### Phase 1: Eval Triage — Identify Winning Adapter
 
-**Rationale:** The existing pipeline scripts have critical bugs (JSON parse failures, missing checkpoints, PHPCS silent degradation, missing rate limiting in `phase2_judge_dataset.py`) that will corrupt the training dataset at scale. These must be fixed first because downstream phases (model prep, training) are worthless if trained on bad data. The data pipeline is also the primary cost driver via Claude API calls — fixing it before running saves money and time.
+**Rationale:** All subsequent phases depend on knowing which adapter to continue training from. This step (`scripts/run_eval_triage.py` + `scripts/triage_ratios.py`) is already in progress but must complete before any v1.2 work begins.
+**Delivers:** `output/triage_decision.md` identifying the winning ratio; confirmed adapter path for all downstream phases.
+**Avoids:** Building on the wrong adapter (unrecoverable sunk cost if wrong adapter is fine-tuned for 4+ hours).
+**Research flag:** No additional research needed — standard eval triage pattern using existing scripts.
 
-**Delivers:** ~13,500 clean, PHPCS-validated, Claude-judged training examples in `final_dataset/` with train/val/test splits in three formats (OpenAI JSONL, Alpaca JSON, raw JSONL); N/A dimension scoring fixed; no train/val code leakage; taxonomy coverage verified.
+### Phase 2a + 2b: Parallel Data Generation
 
-**Addresses:** All P1 generation features depend on training data quality; structured 9-dimension judge training data for `<wp_judge>` mode; CoT examples for complex patterns.
+**Rationale:** The two data generation streams are independent and run in parallel. Phase 2a (deep judge CoT) is larger and slower; phase 2b (critique-then-fix) is bounded by the mutation pool size. Both must complete before Phase 3.
+**Delivers:**
+- `data/phase4_reasoning/deep_judge_cot/` — 5,000-14,000 judge training examples with full dimension-by-dimension reasoning chains
+- `data/phase4_reasoning/critique_fix/` — 1,000-2,000 critique-then-fix triples from existing mutation pairs
+**Addresses:** Dimension-by-dimension reasoning (P1), critique-then-fix format (P1), WordPress-specific reasoning templates (P1), severity-tagged issues (P1), fix-rationale field (P2).
+**Avoids:** Pitfall 20 (reasoning data quality) — sample 1% of output and manually review before proceeding; apply score consistency validation at generation time to reject contradictory examples immediately.
+**Research flag:** Phase 2a needs a validated Claude agent prompt for deep judge CoT before bulk generation. The existing `judge_system.md` instructs Claude to output compact JSON — a v1.2 variant must elicit dimension-by-dimension structured reasoning with line-number specificity and WP-specific pattern names. Develop and validate on 20-50 pilot examples before bulk generation.
 
-**Avoids:** Pitfalls 1 (parse failures), 2 (rate limit crashes), 3 (no checkpointing), 4 (PHPCS silent degradation), 9 (train/val leakage), 10 (Opus cost shock), 12 (N/A score inflation).
+### Phase 3: Merge and Format Reasoning Dataset
 
-**Research flag:** Standard patterns — existing scripts are the source of truth. No additional research needed; the CONCERNS.md codebase audit already identifies all issues.
+**Rationale:** Depends on both 2a and 2b completing. Enforces the canonical output template, validates score consistency, and assembles the training mix.
+**Delivers:** `data/reasoning_dataset/openai_train.jsonl` + `openai_val.jsonl` + `metadata.json`; 80/20 split.
+**Uses:** `merge_reasoning_dataset.py` (new script, extends `merge_dataset.py` pattern).
+**Addresses:** Score consistency validation (P1), verdict-after-reasoning format (P1), format collapse prevention.
+**Avoids:** Pitfall 14 (format collapse) — enforce `<judge_output>` delimited JSON block in all reasoning examples; Pitfall 19 (generation regression) — include generation replay examples from phase 1 training set in the assembled mix.
+**Research flag:** No additional research needed — extends existing merge pattern; no novel integration.
 
-### Phase 2: Model Preparation (MoE Conversion + Tokenizer Extension)
+### Phase 4: Reasoning Fine-Tune
 
-**Rationale:** Model preparation is an independent prerequisite for training. It can be developed in parallel with Phase 1 data pipeline work but must complete before training begins. The conversion-then-fine-tune ordering is non-negotiable; reversing it defeats specialization. The smoke-test verification step is mandatory before investing in a training run.
+**Rationale:** Depends on Phase 3 dataset being complete and quality-validated. Continued SFT on the winning adapter using the reasoning dataset.
+**Delivers:** `adapters/qwen3-30b-wp-{winning}-reasoning/`
+**Uses:** `train_model.py` + `train_config_reasoning.yaml` (new config; lower LR, fewer epochs, reasoning dataset path, winning adapter as base).
+**Avoids:**
+- Pitfall 13 (LR destroys adapter) — use LR 4e-5 to 1e-4; monitor gradient norms first 100 steps
+- Pitfall 21 (optimizer state reset) — flat LR or 1-2% warmup; consider AdaFactor
+- Pitfall 16 (MoE routing shift) — confirm router layer is frozen in Unsloth config before training begins
+- Pitfall 15 (reasoning length explosion) — training data must include 40/60 short-form/long-form reasoning split
+**Research flag:** Needs validation of Unsloth PEFT stacking behavior on Qwen3 MoE before training begins. Specifically: does Unsloth require the base merged weights (Option B) or can it stack a second LoRA on top of a saved adapter (Option A)? Unsloth docs returned partial content during initial research. This is a blocking question — resolve before the training run.
 
-**Delivers:** `./qwen3-8b-moe-tokenized/` — an 8-expert Qwen3-8B-MoE checkpoint with `<wp_gen>` and `<wp_judge>` tokens added, embeddings resized, and routing verified via a forward-pass smoke test confirming all 8 experts fire.
+### Phase 5: Eval Verification
 
-**Uses:** CMoE (arxiv:2502.04416) for training-free conversion; HuggingFace `add_special_tokens` + `resize_token_embeddings` for tokenizer extension; `nvcr.io/nvidia/pytorch:25.11-py3` container.
+**Rationale:** Hard gate before adapter merge. Run all three existing eval scripts against the reasoning adapter.
+**Delivers:** Spearman correlation (must be >= v1.0 baseline), PHPCS pass rate (must be >= 95%), `eval_gate.py` pass.
+**Addresses:** Score calibration drift (Pitfall 18) — compare absolute score distributions and flag any dimension with mean shift >0.5 points vs v1.0; this is a regression test, not just a Spearman check.
+**Avoids:** Pitfall 5 (skipping eval_gen.py) — generation regression may be invisible in judge metrics alone; both evals are mandatory.
+**Research flag:** No additional research needed — `parse_judge_response()` already handles fenced JSON embedded in reasoning traces; existing eval scripts are verified compatible.
 
-**Implements:** Model Preparation architecture layer (model_prep/ directory — all scripts to be written).
+### Phase 6: Adapter Merge
 
-**Avoids:** Architecture anti-pattern of training dense then converting; pitfall of skipping smoke test; pitfall 5 (special token embeddings untrained) by designing the LoRA config correctly from the start.
-
-**Research flag:** Needs research during planning — CMoE is research code, not a production library. Verify the exact API, confirm Qwen3-8B is a tested architecture for CMoE, and identify whether ToMoE is a safer fallback if CMoE activation profiling produces poor routing on PHP code inputs.
-
-### Phase 3: Evaluation Suite Design (Before Training)
-
-**Rationale:** The evaluation scripts must be written before training begins, not after. The deployment gate (PHPCS >95%, judge correlation >0.85) is only meaningful if the evaluation scripts are ready to measure it. Writing eval scripts post-training means the gate cannot function as designed. This phase is short but has a hard ordering dependency: it must precede training.
-
-**Delivers:** `eval/eval_phpcs.py`, `eval/eval_judge_correlation.py`, `eval/eval_benchmarks.sh` — all three runnable against any merged model checkpoint. Baseline Qwen3-8B dense scores captured before conversion for regression comparison.
-
-**Uses:** PHP_CodeSniffer + WPCS (must be installed in eval environment), lm-eval-harness or bigcode-evaluation-harness, `final_dataset/openai_test.jsonl` as the held-out test set.
-
-**Avoids:** Pitfall 7 (PHPCS-only evaluation metric overfitting); architecture anti-pattern of evaluating only on validation loss during training.
-
-**Research flag:** Partially standard — lm-eval-harness is well-documented. The judge correlation script is custom and needs a decision on whether to use the same Claude model as training judge or a different model to avoid circularity. This should be resolved before training starts.
-
-### Phase 4: Fine-Tuning on DGX Spark
-
-**Rationale:** Training is gated on both the training dataset (Phase 1) and the model checkpoint (Phase 2) being ready, and on the evaluation suite (Phase 3) being in place to measure results. This is the most compute-intensive phase and the one with the highest recovery cost if setup is wrong.
-
-**Delivers:** LoRA adapter checkpoints + merged `./wp-qwen3-8b-moe-merged/` in BF16 — the primary model artifact.
-
-**Uses:** Unsloth Studio Docker on DGX Spark; `nvcr.io/nvidia/pytorch:25.11-py3` base; TRL SFTTrainer; LoRA r=64, `target_modules="all-linear"`, router layers frozen, `modules_to_save=["embed_tokens","lm_head"]`; 50/50 gen/judge training split; wandb for loss curve monitoring.
-
-**Implements:** Training architecture layer (training/ directory — Jupyter notebook + train_config.yaml).
-
-**Avoids:** Pitfall 5 (modules_to_save), pitfall 6 (MoE routing collapse via load balancing loss monitoring), pitfall 8 (multi-task interference via per-task loss tracking), STACK.md "What NOT to Use" items (QLoRA on MoE, bare-metal install, transformers version override).
-
-**Research flag:** Partially standard — Unsloth DGX Spark playbook is well-documented and official. Needs validation during planning on: (a) whether to fine-tune the dense model first then convert vs. convert then fine-tune (research confirms convert-first, but verify with Unsloth MoE LoRA docs); (b) load balancing loss coefficient for SFT (not pretraining scale); (c) optimal LoRA rank for MoE vs. dense (r=64 is a starting point, not validated for this MoE config).
-
-### Phase 5: Evaluation and Quality Gate
-
-**Rationale:** Evaluation must occur on the held-out test split using the scripts from Phase 3. Both thresholds (PHPCS >95%, correlation >0.85) must pass before packaging begins. If either fails, the recovery path is to resume training from the last checkpoint with adjusted hyperparameters — which requires the LoRA adapter to still exist separately from the base model (do not merge early).
-
-**Delivers:** Numeric eval results confirming or blocking deployment; regression comparison against Qwen3-8B dense baseline; decision on whether to proceed to packaging.
-
-**Avoids:** Pitfall 7 (PHPCS-only metric); architecture anti-pattern of merging LoRA before evaluation passes; architecture anti-pattern of validating only on training loss.
-
-**Research flag:** Standard patterns — eval scripts are custom but the evaluation methodology is well-defined in the project spec.
-
-### Phase 6: Packaging and Deployment
-
-**Rationale:** Packaging is downstream of evaluation passing. AWQ and GGUF quantization can run in parallel. HuggingFace Hub upload is last. GGUF goes to Ollama; AWQ+Marlin goes to vLLM. These must not be mixed — GGUF in vLLM is experimental and ~8x slower than AWQ+Marlin.
-
-**Delivers:** `./wp-qwen3-8b-moe-awq/` for vLLM production serving; `./wp-qwen3-8b-moe.gguf` for Ollama developer access; HuggingFace Hub release with model card including eval metrics.
-
-**Uses:** llm-compressor or AutoAWQ for AWQ quantization; llama.cpp for GGUF; huggingface-cli for upload; DGX Toolbox vLLM and Ollama containers.
-
-**Avoids:** Pitfall 11 (GGUF in vLLM); architecture anti-pattern of using GGUF in vLLM for performance benchmarking.
-
-**Research flag:** Needs partial research — AWQ+Marlin for MoE models must be verified; not all quantization tools support MoE routing tables. Confirm AutoAWQ or llm-compressor produces valid quantized weights for Qwen3MoE architecture before committing to this path.
+**Rationale:** Final step, conditional on Phase 5 gate passing. Uses existing `merge_adapter.py` unchanged.
+**Delivers:** `models/qwen3-30b-wp-{winning}-reasoning-merged/`
+**Avoids:** Pitfall 11 (GGUF in vLLM) — use AWQ with Marlin kernel for vLLM deployment; verify Unsloth export tools support Qwen3 MoE routing tables before export.
+**Note for v2.0:** MoE routing profiles from v1.0 are invalidated after v1.2 training even if the router was frozen during training; fresh profiling pass is required before any MoE-Sieve work at v2.0.
+**Research flag:** No additional research needed for the merge itself.
 
 ### Phase Ordering Rationale
 
-- **Data pipeline before everything else:** Training data quality is the primary determinant of model quality; fixing and running the pipeline is the critical path. All other phases depend on it.
-- **Model prep can overlap Phase 1:** CMoE conversion and tokenizer extension scripts can be written and tested (on a small model) while the full data pipeline run is in progress, reducing elapsed time.
-- **Eval suite before training:** The deployment gate is only meaningful if eval scripts exist before training outputs are produced. The temptation to write eval "later" must be resisted.
-- **Don't merge LoRA early:** Keep adapter and base model separate until evaluation passes. This is a recovery-cost decision, not a technical one.
-- **Phase 3 and 4 can partially overlap:** Eval suite can be written during the training run setup period, as long as it is complete before the training run produces a merged checkpoint.
+- Phase 1 is a hard prerequisite — all adapter-specific work depends on knowing the winning ratio.
+- Phases 2a and 2b are the only parallel steps; sequential execution would add 2-4 hours of wall time unnecessarily.
+- Phase 3 must gate on both 2a and 2b completing; it can be scripted to begin as soon as both directories reach target example counts.
+- Phase 4 must follow Phase 3 because training mix assembly in Phase 3 is what prevents format collapse and generation regression.
+- Phase 5 and 6 are strictly sequential with a hard gate between them; never merge an adapter that has not passed eval_gate.py.
 
-### Research Flags
+### Research Flags Summary
 
-Phases likely needing deeper research during planning:
-- **Phase 2 (Model Preparation):** CMoE is research code; need to verify Qwen3-8B is a tested architecture, confirm the exact Python API, and identify ToMoE as a validated fallback.
-- **Phase 4 (Fine-Tuning):** Need to confirm load balancing loss coefficient recommendations for SFT-scale fine-tuning (not pretraining); verify Unsloth MoE LoRA documentation for router-freezing behavior.
-- **Phase 6 (Packaging):** AWQ quantization support for Qwen3MoE architecture must be verified; MoE routing table preservation in quantized weights is not guaranteed by all tools.
+**Phases needing deeper research during planning:**
+- **Phase 2a (deep judge CoT agent prompts):** Develop and validate a v1.2-specific Claude agent prompt that elicits dimension-by-dimension structured reasoning with WP-specific line-level pattern citations. Do not proceed to bulk generation without a 20-50 example pilot.
+- **Phase 4 (Unsloth continued training with PEFT stacking):** Verify whether Option A (stack second LoRA on top of saved adapter) or Option B (train LoRA on merged model) is required by Unsloth for Qwen3 MoE. This is a blocking unknown.
 
-Phases with standard patterns (skip research-phase):
-- **Phase 1 (Data Pipeline):** All issues are already identified in CONCERNS.md; fixes are implementation work, not research.
-- **Phase 3 (Evaluation Suite):** Evaluation methodology is defined in PROJECT.md; the judge correlation circularity question should be resolved in requirements, not research.
-- **Phase 5 (Evaluation + Gate):** Straightforward execution of Phase 3 scripts against Phase 4 outputs.
+**Phases with standard patterns (skip additional research):**
+- **Phase 1:** Existing eval triage scripts; no new territory.
+- **Phase 3:** Extends existing merge pattern; no novel integration.
+- **Phase 5:** Existing eval scripts confirmed compatible with new response format.
+- **Phase 6:** Existing merge_adapter.py; no changes required.
+
+---
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Core training stack (Unsloth, TRL, transformers versions) verified against official NVIDIA DGX Spark playbooks. vLLM Qwen3MoE support confirmed from official docs. Only CMoE is MEDIUM (research paper, not production library). |
-| Features | HIGH | Feature spec is grounded in the existing pipeline config files (judge_system.md, taxonomy.yaml) as primary source. Competitor analysis confirmed against multiple practitioner sources. Security claims backed by Patchstack 2025 primary research. |
-| Architecture | HIGH (pipeline), MEDIUM (MoE) | Pipeline architecture is directly from existing codebase — highest confidence. MoE conversion approach is confirmed in principle from multiple peer-reviewed papers but the specific CMoE implementation is research code. DGX eval-toolbox specifics remain LOW — fallback to lm-eval-harness is the safe path. |
-| Pitfalls | HIGH (pipeline bugs), MEDIUM (training pitfalls) | Pipeline bugs (pitfalls 1-7) are grounded in direct codebase audit (CONCERNS.md). Training pitfalls (8-12) are from community research and peer-reviewed MoE literature. Routing collapse and task interference are real documented phenomena. |
+| Stack | HIGH | All installed versions confirmed via `pip show` on DGX Spark; only new dependency is bert-score which has no compatibility risk; official TRL and Unsloth docs verified (Unsloth fetch was partial — gap noted) |
+| Features | HIGH (core format), MEDIUM (metrics) | Reasoning format decisions grounded in Prometheus, Critique-Coder, TRACT research; reasoning quality metrics based on ACL 2025 and preprint evidence |
+| Architecture | HIGH | Based on direct codebase inspection; all integration points verified; `parse_judge_response()` compatibility confirmed against the new response format |
+| Pitfalls | HIGH (v1.0 pitfalls from code inspection), MEDIUM-HIGH (v1.2 reasoning pitfalls from SFT literature) | v1.2 reasoning pitfalls derived from continued training and format collapse literature; exact severity on Qwen3-30B-A3B specifically not directly measured |
 
 **Overall confidence:** MEDIUM-HIGH
 
 ### Gaps to Address
 
-- **CMoE implementation availability:** CMoE is a research paper (Feb 2025); its Python implementation may not have a stable public release. Validate the repository and API before committing to CMoE over ToMoE. If CMoE has no public code, ToMoE (arxiv:2501.15316, tested on Qwen-2.5) is the validated fallback.
-- **AWQ quantization for Qwen3MoE:** AutoAWQ and llm-compressor support for MoE models with routing tables needs explicit verification before the packaging phase begins. Quantization tools may silently drop routing weights.
-- **Judge correlation circularity:** The judge correlation metric compares the fine-tuned model's scores against a Claude reference. If the same Claude model was used during training data generation, the metric is circular. Decide during requirements whether to use a different Claude model or a human-scored subset for the correlation evaluation.
-- **DGX eval-toolbox specifics:** Whether the DGX Spark eval-toolbox container includes bigcode-evaluation-harness or requires manual lm-eval-harness setup is unconfirmed. Default to installing lm-eval-harness directly in the eval environment.
-- **Load balancing loss during SFT:** Pretraining-scale MoE load balancing coefficients (typically 0.01) may be too high or too low for a narrow-domain SFT pass. The right coefficient for this use case is not documented in the tooling; needs empirical validation during training.
+- **Unsloth PEFT stacking on Qwen3 MoE:** Whether Option A (nested LoRA on adapter) or Option B (LoRA on merged model) is required needs a fresh Unsloth docs fetch before Phase 4. Flag as a blocking research question in the Phase 4 plan.
+- **Deep judge CoT agent prompt template:** The v1.2-specific Claude agent prompt needs to be developed and validated on a 20-50 example pilot before bulk generation in Phase 2a. Do not run bulk generation without this validation step.
+- **Mutation pool exact size:** The critique-then-fix target volume (1,000-2,000 examples) assumes the mutation pool in `data/phase2_synthetic/output/mutated/` is large enough. Verify the actual count across all 7 mutation types before setting Phase 2b targets.
+- **Training mix ratio feasibility:** The recommended mix (40% deep CoT + 30% critique-then-fix + 30% original judge + 20% generation replay) requires validation that dataset volumes support these ratios without oversampling. Adjust if either generation stream produces fewer than 3,000 examples.
+
+---
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [NVIDIA DGX Spark Playbooks — Unsloth](https://github.com/NVIDIA/dgx-spark-playbooks/tree/main/nvidia/unsloth) — dependency pin versions, Docker image, Flash Attention build requirements
-- [Unsloth Qwen3 Fine-tune Guide](https://unsloth.ai/docs/models/qwen3-how-to-run-and-fine-tune) — LoRA configuration, MoE router notes, special token handling
-- [Unsloth DGX Spark Guide](https://unsloth.ai/docs/blog/fine-tuning-llms-with-nvidia-dgx-spark-and-unsloth) — Docker container setup, Jupyter integration
-- [HuggingFace Qwen3-8B model card](https://huggingface.co/Qwen/Qwen3-8B) — architecture (36 layers, 8.2B params), transformers>=4.51.0, Apache 2.0 license
-- [vLLM Qwen3 support](https://github.com/vllm-project/vllm/issues/17327) — Qwen3+Qwen3MoE support from v0.8.4, AWQ+Marlin 741 tok/s
-- [TRL SFTTrainer Docs](https://huggingface.co/docs/trl/sft_trainer) — LoraConfig parameters, modules_to_save
-- [WordPress-Coding-Standards GitHub](https://github.com/WordPress/WordPress-Coding-Standards) — WPCS 3.x Composer-only install
-- [State of WordPress Security 2025 — Patchstack](https://patchstack.com/whitepaper/state-of-wordpress-security-in-2025/) — vulnerability class rankings
-- [Anthropic Models Overview](https://platform.claude.com/docs/en/about-claude/models/overview) — current model IDs and pricing
-- [Anthropic Rate Limits Documentation](https://platform.claude.com/docs/en/api/rate-limits) — RPM/TPM/OTPM limits
-- Codebase audit: `.planning/codebase/CONCERNS.md` — pipeline bug analysis
-- Project config: `config/judge_system.md`, `config/taxonomy.yaml` — feature spec ground truth
-- [LLaMA-MoE GitHub (EMNLP 2024)](https://github.com/pjlab-sys4nlp/llama-moe) — upcycling methodology
-- [bigcode-evaluation-harness](https://github.com/bigcode-project/bigcode-evaluation-harness) — PHP evaluation tasks
+- Confirmed `pip show` output from DGX Spark: Unsloth 2026.3.5, TRL 0.24.0, transformers 5.3.0, nltk 3.9.3
+- [TRL Dataset Formats](https://huggingface.co/docs/trl/main/dataset_formats) — conversational prompt-completion format, reasoning field options
+- [TRL v1.0 Blog Post](https://huggingface.co/blog/trl-v1) — v1.0 release 2026-03-31; minimal migration from 0.x confirmed
+- [Qwen-3 Chat Template Deep Dive](https://huggingface.co/blog/qwen-3-chat-template-deep-dive) — enable_thinking behavior, think tag implications for training data
+- [bert-score PyPI](https://pypi.org/project/bert-score/) — v0.3.13 current, torch-only dependency
+- Codebase direct inspection: `eval/eval_judge.py`, `scripts/phase2_mutate.py`, `scripts/phase2_judge_dataset.py`, `scripts/merge_dataset.py`, `data/phase3_cot/output/`, `data/final_dataset/`, `adapters/` listing
 
 ### Secondary (MEDIUM confidence)
-- [CMoE Paper (arxiv:2502.04416)](https://arxiv.org/abs/2502.04416) — training-free conversion methodology, S2A2E8 config, 5-min conversion; MEDIUM because research paper, not production library
-- [ToMoE Paper (arxiv:2501.15316)](https://arxiv.org/abs/2501.15316) — alternative MoE conversion, tested on Qwen-2.5; MEDIUM, peer-reviewed but not a production release
-- [Llama 3 Meets MoE (arXiv 2412.09952)](https://arxiv.org/abs/2412.09952) — upcycling patterns
-- [Stabilizing MoE RL by Aligning Training and Inference Routers (arxiv:2510.11370)](https://arxiv.org/abs/2510.11370) — routing collapse research
-- [LLM-as-a-Judge complete guide — Evidently AI](https://www.evidentlyai.com/llm-guide/llm-as-a-judge) — structured rubric design
-- [Fine-tuning LLMs for secure code generation — Springer/ESE](https://link.springer.com/article/10.1007/s10664-026-10803-9) — peer-reviewed 2026, code security training
-- [vLLM Quantization Performance — GPUStack](https://docs.gpustack.ai/2.0/performance-lab/references/the-impact-of-quantization-on-vllm-inference-performance/) — AWQ vs GGUF throughput comparison
-- [Practical Tips for Finetuning LLMs Using LoRA — Sebastian Raschka](https://magazine.sebastianraschka.com/p/practical-tips-for-finetuning-llms) — LoRA configuration guidance
+- [Prometheus: Inducing Fine-grained Evaluation Capability in Language Models](https://arxiv.org/abs/2310.08491) — feedback-before-score format, `[RESULT]` separator, rubric-guided training
+- [Prometheus 2](https://arxiv.org/html/2405.01535v2) — 40K SFT pointwise format sufficient for SOTA judge quality
+- [TRACT (ACL 2025)](https://arxiv.org/abs/2503.04381) — CE + regression-aware loss for judge fine-tuning; difficulty-adaptive reasoning depth
+- [Critique-Coder](https://arxiv.org/abs/2509.22824) — structured severity labels improve downstream task transfer; CRL with 20% critique mix
+- [J1: Incentivizing Thinking in LLM-as-a-Judge](https://arxiv.org/abs/2505.10320) — training judges to reason; 32B judge matching 671B on structured tasks
+- [Training an LLM-as-a-Judge: Pipeline, Insights, Practical Lessons](https://arxiv.org/html/2502.02988v1) — dimension-level scoring format, MAE + Agr(2,2) eval metrics
+- [LLM Evaluation 2025: Smarter Metrics](https://www.techrxiv.org/users/927947/articles/1304989) — BERTScore 59% vs BLEU 47% alignment on reasoning tasks (preprint)
+- [Unsloth Qwen3 Docs](https://unsloth.ai/docs/models/qwen3-how-to-run-and-fine-tune) — 75%/25% reasoning/non-reasoning mix; enable_thinking inference config (partial content retrieved — gap)
+- [The Art of Repair](https://arxiv.org/abs/2505.02931) — (Instruction, Input, Output) format for code repair instruction tuning
 
 ### Tertiary (LOW confidence)
-- [DGX eval-toolbox specifics] — availability of bigcode-eval-harness in DGX container is unconfirmed; use lm-eval-harness as fallback
-- [CMoE public implementation] — paper published Feb 2025; production-ready Python library status unverified; needs validation before Phase 2 begins
+- [Stop Rewarding Hallucinated Steps](https://arxiv.org/html/2602.05897) — faithfulness hallucination rate; not directly applicable to SFT training data context
+- [Fine-Tuning with Divergent Chains of Thought](https://arxiv.org/abs/2407.03181) — comparing multiple chains before verdict improves reasoning consistency (SFT context only)
 
 ---
-*Research completed: 2026-03-26*
+
+*Research completed: 2026-04-04*
 *Ready for roadmap: yes*

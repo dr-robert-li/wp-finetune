@@ -1,100 +1,176 @@
 # Stack Research
 
-**Domain:** LLM fine-tuning pipeline — WordPress code data + dense-to-MoE conversion on DGX Spark
-**Researched:** 2026-03-26
-**Confidence:** MEDIUM-HIGH (DGX Toolbox integration verified; MoE conversion approach is MEDIUM due to evolving tooling)
+**Domain:** LLM fine-tuning pipeline — WordPress code data + MoE fine-tuning on DGX Spark (v1.2 addendum: deep judge CoT + critique-then-fix)
+**Researched:** 2026-04-04 (v1.2 milestone update; original 2026-03-26)
+**Confidence:** HIGH for data generation additions (Claude API patterns verified), MEDIUM for reasoning quality eval metrics (no single authoritative source), HIGH for training format changes (TRL docs verified)
 
 ---
 
-## Recommended Stack
+## v1.2 Milestone Scope
 
-### Core Technologies
+This document extends the original stack with additions specific to the v1.2 Judge Reasoning Fine-Tune milestone. The existing stack (Unsloth 2026.3.x, TRL 0.24.0, transformers 5.3.0, Qwen3-30B-A3B, DGX Spark infrastructure) is **unchanged**. Only new or modified components are described below.
 
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| Python | 3.10+ (3.11 preferred) | Pipeline orchestration, training scripts | DGX Spark playbooks tested against 3.11; Unsloth requires 3.10+; 3.13 supported via uv |
-| Unsloth | 2026.3.x (latest) | LoRA fine-tuning of Qwen3-8B on DGX Spark | Official DGX Spark integration via `nvidia/dgx-spark-playbooks`; 2x faster than standard HuggingFace training; 70% less VRAM; verified Qwen3-8B support |
-| TRL (HuggingFace) | >=0.26.1 | SFTTrainer for supervised fine-tuning | Required by Unsloth DGX playbook (`trl==0.26.1`); SFTTrainer handles chat template formatting and multi-format dataset ingestion |
-| Transformers (HuggingFace) | >=4.56.2 (pinned at 4.56.2 in DGX playbook) | Model loading, tokenizer, Qwen3 architecture | Qwen3 requires `>=4.51.0`; DGX playbook pins at 4.56.2 for Blackwell stability |
-| PEFT (HuggingFace) | >=0.14.0 | LoRA adapter management | Required by Unsloth for LoraConfig; integrates with SFTTrainer natively |
-| CMoE | Research code (arxiv:2502.04416) | Dense-to-MoE conversion of Qwen3-8B | Training-free conversion in under 5 minutes on a single GPU; analytically constructs router from activation statistics; no continual pre-training required; supports 8-expert configurations matching project spec |
-| vLLM | >=0.9.0 | Production inference serving (AWQ) | Native Qwen3 + Qwen3MoE support from v0.9.0; AWQ+Marlin kernel delivers 741 tok/s; official DGX Spark vLLM playbook available |
-| Ollama | Latest (>=0.6.x) | Local GGUF serving for developer access | One-command serving: `ollama run hf.co/Qwen/Qwen3-8B-GGUF:Q8_0`; fits within DGX Toolbox inference stack |
-
-### Supporting Libraries
-
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| anthropic (Python SDK) | >=0.50.0 | Claude API integration for judging and generation | All pipeline phases that call Claude (phase1_judge, phase2_generate, phase2_judge, phase3_cot); use `claude-sonnet-4-6` for bulk judging, `claude-opus-4-6` for CoT reasoning |
-| pyyaml | >=6.0 | YAML config parsing | Reading `repos.yaml`, `taxonomy.yaml`, `synthetic_prompts.yaml` |
-| bitsandbytes | 0.48.0 (pinned by DGX playbook) | 4-bit/8-bit quantization during fine-tuning | QLoRA training path; enables 4-bit loading to reduce VRAM to ~20GB for Qwen3-8B |
-| datasets (HuggingFace) | 4.3.0 (pinned by DGX playbook) | Dataset loading and formatting for SFTTrainer | Convert JSONL training data to HuggingFace Dataset format before passing to Unsloth SFTTrainer |
-| lm-evaluation-harness | >=0.4.5 | Model evaluation (HumanEval, code benchmarks) | Post-training evaluation; part of DGX eval-toolbox; supports HumanEval for PHP code quality proxy |
-| torch | From container (nvcr.io/nvidia/pytorch:25.11-py3) | GPU compute backbone | Do NOT install separately — use NVIDIA's PyTorch container which is patched for Blackwell |
-| flash-attn | Built from source for Blackwell (Triton + xFormers) | Flash Attention 2/3 for memory-efficient attention | Required for Qwen3 context lengths beyond 4k; Blackwell requires source build, not pip wheel |
-| accelerate | >=1.0.0 | Distributed training orchestration | Single-GPU on DGX Spark; needed for gradient accumulation and mixed precision |
-| sentencepiece / tiktoken | >=0.2.0 | Tokenizer backend for Qwen3 | Qwen3 uses tiktoken-based tokenizer; required for adding `<wp_gen>` and `<wp_judge>` special tokens |
-
-### Data Pipeline Tools (External Executables)
-
-| Tool | Version | Purpose | Notes |
-|------|---------|---------|-------|
-| PHP CLI | 8.1+ (with tokenizer extension) | Function extraction from WordPress source | PHP 8.1+ recommended; `php-tokenizer` extension must be enabled; verify with `php -m | grep tokenizer` |
-| PHP_CodeSniffer (phpcs) | >=3.9.0 | WPCS compliance pre-filtering | Install via Composer only (pip not available); `squizlabs/php_codesniffer` |
-| WordPress-Coding-Standards | >=3.1.0 | PHPCS ruleset for WordPress conventions | Install via `composer require --dev wp-coding-standards/wpcs:"^3.0"`; Composer auto-registers rulesets |
-| git | >=2.30 | Shallow repo cloning | Used via subprocess in `phase1_clone.py`; `--depth=1` clones only |
-
-### Development Tools
-
-| Tool | Purpose | Notes |
-|------|---------|-------|
-| Docker (NVIDIA Container Runtime) | Isolates Unsloth + PyTorch environment on DGX Spark | Use `nvcr.io/nvidia/pytorch:25.11-py3` base; launch with `--gpus=all --ulimit memlock=-1 --ipc=host` |
-| Composer | PHP dependency management | Required for PHPCS + WPCS; global install with `composer global require` |
-| Jupyter Notebook | Interactive training session management | Launched inside Docker container per DGX Spark Unsloth playbook |
-| wandb / W&B | Training metrics logging | Optional but strongly recommended for LoRA loss curves and VRAM tracking |
-| huggingface_hub CLI | HuggingFace model upload and download | Final packaging step; `huggingface-cli upload` for public release |
+**What v1.2 adds to the pipeline:**
+1. Deep judge CoT data generation — regenerate judge training examples with full dimension-by-dimension reasoning chains
+2. Critique-then-fix data generation — new training format: defective code → structured critique (what/why/severity per dimension) → corrected version
+3. Reasoning quality evaluation — measure whether reasoning chains are substantive, not just syntactically valid
 
 ---
 
-## Installation
+## Recommended Stack — New Components Only
+
+### Data Generation
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| anthropic (Python SDK) | >=0.50.0 (already installed) | Generate deep reasoning chains via Claude Code agents | Already in use for phase1-3; extend same agent spawn pattern for v1.2 generation; no new dependency |
+| claude-sonnet-4-6 | current | Deep judge CoT generation — dimension-by-dimension analysis | Sonnet sufficient for structured reasoning chains at this complexity level; reserve Opus only if chain quality is inadequate after spot-check |
+
+**Data generation approach:** Use the existing Claude Code agent spawn pattern (see `docs/AGENT_PIPELINE.md`) to generate both deep judge CoT and critique-then-fix pairs. No new LLM tooling is needed. The existing `phase2_judge_dataset.py` agent loop is the template.
+
+### Training Format Changes (No New Libraries)
+
+The existing TRL SFTTrainer handles both new formats natively. What changes is the **JSONL schema** of training examples, not the trainer.
+
+**Deep judge CoT format** — conversational prompt-completion with reasoning embedded in assistant content:
+
+```jsonc
+{
+  "prompt": [
+    {"role": "system", "content": "<wp_judge> system prompt..."},
+    {"role": "user", "content": "Score this WordPress PHP code:\n```php\n{code}\n```"}
+  ],
+  "completion": [
+    {
+      "role": "assistant",
+      "content": "**Dimension Analysis:**\n\n**D1 (WPCS Compliance):** [reasoning about specific violations found] → score: 72\n**D2 (Security):** [reasoning: nonce check missing on line 14, $wpdb->prepare absent] → score: 30\n...\n**D9 (Documentation):** [reasoning] → score: 85\n\n**Verdict:** FAIL. Security dimension score 30 is below auto-fail threshold of 50. Must fix: [list]\n\n```json\n{\"wpcs_compliance\": 72, \"security_score\": 30, ...}\n```"
+    }
+  ]
+}
+```
+
+**Critique-then-fix format** — single assistant turn combining critique and corrected code:
+
+```jsonc
+{
+  "prompt": [
+    {"role": "system", "content": "<wp_judge> critique and fix system prompt..."},
+    {"role": "user", "content": "Review this WordPress PHP code and provide a corrected version:\n```php\n{defective_code}\n```\nMutation type: {mutation_description}"}
+  ],
+  "completion": [
+    {
+      "role": "assistant",
+      "content": "**Critique:**\n\n- D2 (Security) CRITICAL: SQL injection via unparameterized $wpdb->query on line 8. Direct variable interpolation bypasses WordPress's prepared statement API.\n- D1 (WPCS) MODERATE: Missing @param/@return PHPDoc blocks reduce maintainability.\n\n**Corrected code:**\n```php\n{fixed_code}\n```\n\n**What changed:** Replaced direct $wpdb->query with $wpdb->prepare() using %d placeholder. Added PHPDoc blocks."
+    }
+  ]
+}
+```
+
+**Key format decisions:**
+- Reasoning goes inside the `content` field as structured prose — **not** in a `<think>` block. Qwen3's `enable_thinking` is left at default (enabled) for inference, but training data uses plain-text reasoning so the model learns to output visible critiques, not hidden deliberation.
+- Do NOT use the `"thinking"` field in assistant messages (supported by TRL v1.0 format). Visible critique text is the product — users need to read the reasoning. Hidden `<think>` blocks would train the model to reason privately then emit only scores, defeating the purpose.
+- Source material for critique-then-fix: existing contrastive pairs from `phase2_mutate.py` (7 mutation types already produce defective→good pairs). Claude agents expand the reasoning annotation on top of existing mutations.
+
+### Reasoning Quality Evaluation — New Script
+
+A new evaluation script (`eval_reasoning_quality.py`) is needed to measure whether generated reasoning chains are substantive. This uses **only already-installed or trivially-added libraries**.
+
+| Library | Version | Purpose | Why |
+|---------|---------|---------|-----|
+| bert-score | 0.3.13 | Semantic similarity between generated reasoning and reference reasoning | Lightweight proxy for reasoning richness; correlates better with human judgment than BLEU/ROUGE for reasoning tasks (per 2025 ACL findings); no GPU required, uses DeBERTa by default |
+| nltk | 3.9.3 (already installed) | Tokenization for reasoning chain length metrics | Already present; used for token count, sentence count, coverage of expected keywords (e.g., "nonce", "escape", "prepare") |
+
+**What NOT to use for reasoning quality eval:**
+- BLEU/ROUGE — designed for translation/summarization; punishes valid paraphrases of the same reasoning; 47% human alignment vs BERTScore's 59% (ACL 2025)
+- BLEURT — requires a trained checkpoint download (~1.4GB); overkill for this task; limited to Google's hosted checkpoint
+- LLM-as-judge for reasoning quality — circular; we're training the judge, we can't use it to evaluate itself
+
+**Reasoning quality metrics (implemented in `eval_reasoning_quality.py`):**
+1. **Dimension coverage** — does the chain mention all 9 dimensions by name? (exact string match, no model needed)
+2. **Issue specificity** — does the chain cite specific line numbers, function names, or WordPress API violations? (regex over known patterns: `line \d+`, `$wpdb->`, `wp_verify_nonce`, etc.)
+3. **BERTScore F1** vs reference chains — semantic richness compared to a curated set of 50 reference judge completions
+4. **Fix presence rate** (critique-then-fix only) — does the corrected code actually contain `$wpdb->prepare`, `wp_verify_nonce`, `esc_html`, etc. that the original was missing? (PHPCS + regex; no model required)
+
+**Primary gate:** Dimension coverage >=9/9 AND issue specificity rate >=60% of examples cite at least one specific violation. BERTScore is secondary signal, not a hard gate.
+
+### Supporting Scripts — New Files in `scripts/`
+
+No new libraries. New Python scripts that extend existing patterns:
+
+| Script | Purpose | Extends |
+|--------|---------|---------|
+| `phase4_deep_judge_cot.py` | Regenerate judge training examples with full dimension-by-dimension reasoning chains | `phase2_judge_dataset.py` agent loop pattern |
+| `phase4_critique_fix.py` | Generate critique-then-fix pairs from `phase2_mutate.py` outputs | `generate_cot_real.py` structure + `phase2_mutate.py` source data |
+| `eval_reasoning_quality.py` | Measure dimension coverage, issue specificity, BERTScore F1 on generated chains | Standalone; uses bert-score + nltk |
+
+---
+
+## Recommended Stack — Existing Components (Confirmed Unchanged)
+
+The full v1 stack remains valid. Key confirmed versions from the DGX Spark environment:
+
+| Technology | Version (confirmed) | Status |
+|------------|---------------------|--------|
+| Unsloth | 2026.3.5 | Confirmed installed |
+| TRL | 0.24.0 | Confirmed installed; v1.0 released 2026-03-31 — do NOT upgrade mid-milestone |
+| transformers | 5.3.0 | Confirmed installed |
+| Python | 3.11 | Per DGX playbook |
+| anthropic SDK | >=0.50.0 | In use across phases 1-3 |
+| nltk | 3.9.3 | Confirmed installed |
+
+**TRL version note:** TRL v1.0 (released 2026-03-31) is a stability release — "migration from last 0.x version is minimal." Do NOT upgrade to v1.0 mid-milestone without validating against `train_model.py`. The 0.24.0 installed version handles all v1.2 training format requirements (standard prompt-completion conversational format; no new TRL features required).
+
+---
+
+## Training Configuration Changes
+
+The existing `train_config_*.yaml` files require **one change** for v1.2: max sequence length increase to accommodate longer reasoning chains.
+
+| Parameter | v1.0 Value | v1.2 Value | Reason |
+|-----------|-----------|-----------|--------|
+| `max_seq_length` | 4096 | 8192 | Deep judge CoT chains (dimension analysis × 9 + issue list + JSON) routinely exceed 4096 tokens; Qwen3-30B-A3B supports 128K context; DGX Spark 128GB handles 8192 at LoRA r=32 |
+| `per_device_train_batch_size` | (current) | Reduce by 50% or keep with gradient checkpointing | Longer sequences increase activation memory; use adaptive planner's existing batch coupling to maintain effective batch size |
+| LoRA r | 32 (v1.2 config) | 32 | No change; consistent with v1.2 plan ("only winning ratio gets this treatment") |
+
+**Memory estimate:** At 8192 token sequences with LoRA r=32 on Qwen3-30B-A3B (128GB unified memory), batch_size=1 with gradient_accumulation=16 is the conservative baseline. The existing adaptive planner handles batch tuning.
+
+---
+
+## Data Sourcing Strategy for v1.2
+
+| Data Type | Source | Volume Target | Generation Method |
+|-----------|--------|---------------|-------------------|
+| Deep judge CoT | All 134K phase1 judged functions (passed + failed) + 2,720 synthetic passed | Sample 10-20K for reasoning annotation | Claude Code agents; same spawn pattern as phase2_judge_dataset.py |
+| Critique-then-fix | Existing mutated pairs from `data/phase2_synthetic/output/mutated/` (7 mutation types) | All available mutated pairs (~estimated 5-10K) | Claude Code agents add critique + verified fix annotation |
+
+**Source material decision:** The existing `phase2_mutate.py` contrastive pairs are ideal for critique-then-fix because the mutation type is known (sql_injection, csrf, xss, etc.) — Claude agents can be prompted with the mutation label to produce precise, dimension-targeted critiques instead of generic ones.
+
+---
+
+## Installation — New Dependencies Only
 
 ```bash
-# 1. Pull NVIDIA PyTorch base container (Blackwell-patched)
-docker pull nvcr.io/nvidia/pytorch:25.11-py3
+# Reasoning quality evaluation (bert-score not yet installed)
+pip install bert-score==0.3.13
 
-# 2. Inside container: install Python dependencies
-pip install unsloth unsloth_zoo
-pip install "transformers==4.56.2" "trl==0.26.1" "datasets==4.3.0"
-pip install "bitsandbytes==0.48.0" --no-deps
-pip install peft accelerate sentencepiece
-pip install "anthropic>=0.50.0" pyyaml
-
-# 3. Build Triton + xFormers from source for Blackwell Flash Attention
-# (follow nvidia/dgx-spark-playbooks Dockerfile)
-
-# 4. PHP data pipeline dependencies
-composer global require --dev wp-coding-standards/wpcs:"^3.0"
-# Installs phpcs + WPCS; registers rulesets automatically
-
-# 5. Verify setup
-php -m | grep tokenizer        # must print "tokenizer"
-phpcs --version                # must print PHP_CodeSniffer >= 3.9.x
-python -c "import unsloth; print('unsloth ok')"
+# Verify against existing stack — bert-score requires torch (already present)
+python -c "import bert_score; print('bert_score ok')"
 ```
+
+Everything else (anthropic SDK, nltk, TRL, Unsloth, transformers) is already installed.
 
 ---
 
 ## Alternatives Considered
 
-| Recommended | Alternative | When to Use Alternative |
-|-------------|-------------|-------------------------|
-| CMoE (training-free conversion) | LLaMA-MoE (continual pre-training) | If you need higher post-conversion quality and have 200B token training budget; LLaMA-MoE recovers more capability but requires days of GPU time vs 5 minutes for CMoE |
-| CMoE (training-free conversion) | ToMoE (dynamic structural pruning) | ToMoE has slightly better structural pruning quality and was tested on Qwen-2.5; valid alternative if CMoE activation profiling produces poor routing for PHP code tasks |
-| Unsloth + TRL SFTTrainer | Axolotl | Axolotl has broader config file support but no DGX Spark official playbook; Unsloth is the officially supported path for DGX Spark |
-| Unsloth + TRL SFTTrainer | LLaMA-Factory | LLaMA-Factory supports more training paradigms (DPO, RLHF) but adds complexity not needed for SFT-only v1; revisit for v2 DPO refinement |
-| vLLM + AWQ (production serving) | llama.cpp + GGUF | llama.cpp is better for CPU-only or offline scenarios; on DGX Spark with A100/GB10, vLLM+AWQ+Marlin is 10x faster; use GGUF only for Ollama developer access |
-| claude-sonnet-4-6 for bulk judging | claude-opus-4-6 for bulk judging | Opus is 5x more expensive ($25/MTok output vs $15/MTok); reserve Opus for chain-of-thought generation (phase3_cot) where reasoning depth matters; Sonnet sufficient for 9-dimension scoring |
-| PHP_CodeSniffer + WPCS 3.x | WPCS 2.x | WPCS 3.x changed installation (Composer-only); ruleset naming changed; if an existing global install shows WPCS 2.x, upgrade — 2.x is unmaintained |
+| Recommended | Alternative | Why Not |
+|-------------|-------------|---------|
+| Plain-text reasoning in `content` field | Hidden `<think>` blocks via Qwen3 enable_thinking=True training data | The reasoning IS the product for v1.2 — users need to see dimension-by-dimension critiques; hidden thinking trains covert deliberation not visible output; also requires enable_thinking flag management at inference time |
+| Visible reasoning in assistant `content` | TRL v1.0 `"thinking"` field in assistant messages | The "thinking" field renders as hidden `<think>` blocks in Qwen3 chat template — same problem as above; also requires TRL upgrade mid-milestone |
+| BERTScore for reasoning quality | LLM-as-judge eval of reasoning | Circular dependency during development; BERTScore + regex coverage is faster, cheaper, and sufficient for a quality signal |
+| Extend `phase2_judge_dataset.py` pattern | New agent framework (LangChain, DSPy) | Zero new dependencies; existing Claude Code agent spawn pattern already validated through 143K examples in v1.0 |
+| Regenerate from all 134K judged functions | Generate from scratch with new prompts | Reusing existing judged data guarantees the reasoning annotations cover real-world code, not just synthetic; mutation type labels from phase2_mutate.py provide critique anchors |
+| claude-sonnet-4-6 for reasoning generation | claude-opus-4-6 | Sonnet is sufficient for structured multi-dimension reasoning at this complexity; upgrade to Opus only after spot-checking chain quality; 40% cost difference |
 
 ---
 
@@ -102,91 +178,67 @@ python -c "import unsloth; print('unsloth ok')"
 
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
-| `pip install torch` inside DGX container | Overwrites NVIDIA's Blackwell-patched PyTorch; Flash Attention will silently fall back to slow path or crash | Use `nvcr.io/nvidia/pytorch:25.11-py3` container; torch is pre-installed and patched |
-| QLoRA 4-bit on MoE models after conversion | Unsloth documentation explicitly states "MoE QLoRA 4-bit is not recommended due to BitsandBytes limitations"; training on the converted MoE with QLoRA may produce corrupted gradients | Fine-tune the dense Qwen3-8B with LoRA FIRST, then convert to MoE; or use full-precision LoRA on MoE |
-| Bare-metal Unsloth install (no Docker) | DGX Spark Blackwell GPUs require custom Triton and xFormers builds; bare-metal pip install will not get Flash Attention working correctly | Use the NVIDIA DGX Spark Docker container approach |
-| WPCS 2.x / global phpcs without Composer plugin | WPCS 3.0+ changed ruleset registration; the dealerdirect Composer installer plugin is required; manual PATH tricks from pre-3.0 guides will fail | `composer config allow-plugins.dealerdirect/phpcodesniffer-composer-installer true` then `composer require wp-coding-standards/wpcs:"^3.0"` |
-| `transformers > 4.56.2` during DGX training | DGX Spark playbook pins at 4.56.2 for compatibility; later versions may break bitsandbytes 0.48.0 or TRL 0.26.1 integration | Pin to `transformers==4.56.2` in the training container |
-| GGUF with vLLM for production serving | vLLM documentation shows GGUF inference at 93 tok/s vs AWQ+Marlin at 741 tok/s; GGUF is designed for llama.cpp, not vLLM | Use `Qwen/Qwen3-8B-AWQ` with vLLM; keep GGUF only for Ollama developer access |
-| LLaMA-MoE for dense-to-MoE if no extra compute budget | LLaMA-MoE requires 200B token continual pre-training to recover performance; impractical on a single DGX Spark for this project | Use CMoE (training-free, 5 min on single GPU) |
+| Qwen3 `<think>` blocks in training data | Trains hidden reasoning, not visible critique; inference-time users need to see the reasoning | Embed reasoning directly in assistant `content` as structured prose |
+| TRL v1.0 upgrade mid-milestone | Released 2026-03-31; migration risk during active training; v0.24.0 handles all required formats | Stay on 0.24.0; evaluate upgrade at v2.0 milestone start |
+| max_seq_length=4096 for v1.2 training data | Deep judge CoT chains exceed 4096 tokens routinely; truncation silently destroys reasoning quality | Set max_seq_length=8192; validate 95th percentile token length of generated chains before training |
+| BLEU/ROUGE for reasoning quality | Designed for translation; penalizes valid paraphrases; 47% human alignment vs BERTScore 59% on reasoning tasks (ACL 2025) | BERTScore F1 + dimension coverage + issue specificity regex |
+| Separate "fix" and "critique" as two training examples | Creates two-call inference pattern; model needs to learn single-pass critique-then-fix | Combine critique + corrected code in one assistant turn |
+| New external data for critique-then-fix | Introduces distribution shift from existing training data | Use `phase2_mutate.py` outputs — same mutation types, same code distribution, same quality filters already applied |
 
 ---
 
-## Stack Patterns by Phase
+## Stack Patterns by Phase — v1.2 Additions
 
-**Phase 1-3 (Data Pipeline Execution):**
-- Pure Python + PHP subprocess + Claude API — no GPU required
-- Rate-limit Claude API calls to 40-50 RPM
-- Use `claude-sonnet-4-6` for judging, `claude-opus-4-6` for phase3_cot only
-- PHPCS pre-filter runs before any Claude API call to reduce cost ~60%
+**Phase 4a (Deep Judge CoT Generation):**
+- Claude Code agents (subscription); spawn-until-target pattern
+- Prompt template: system = `<wp_judge>` judge role + dimension rubric; user = code sample; expected output = dimension-by-dimension prose analysis + JSON scores
+- Quality gate: dimension coverage check (all 9 mentioned) + BERTScore vs reference set >=0.75 F1
+- Output: `data/phase4_reasoning/deep_judge_cot.jsonl`
 
-**MoE Conversion (post data pipeline):**
-- Run CMoE conversion script against downloaded `Qwen/Qwen3-8B` checkpoint
-- Use 8-sample WikiText-2 calibration for activation profiling
-- Target configuration: S2A2E8 (2 shared + 2 active / 8 total experts, 50% activation) or S1A1E8 for maximum sparsity
-- Conversion completes in ~5 minutes; validate with perplexity check before fine-tuning
+**Phase 4b (Critique-then-Fix Generation):**
+- Claude Code agents; source = `data/phase2_synthetic/output/mutated/` existing pairs
+- Prompt template: system = `<wp_judge>` critique role; user = defective code + mutation_type label; expected output = critique (what/why/severity) + corrected code
+- Quality gate: PHPCS pass on corrected code + fix-presence check (mutation-specific security functions restored)
+- Output: `data/phase4_reasoning/critique_fix.jsonl`
 
-**Fine-tuning (Unsloth + TRL SFTTrainer):**
-- Use converted MoE checkpoint OR fine-tune dense Qwen3-8B first (safer; see What NOT to Use)
-- LoRA configuration: `r=64`, `lora_alpha=128`, `target_modules="all-linear"` (excluding router layers), `task_type="CAUSAL_LM"`
-- Add `<wp_gen>` and `<wp_judge>` to tokenizer BEFORE training; save `embed_tokens` and `lm_head` in `modules_to_save`
-- Max sequence length: 4096 for training (covers typical WordPress function + docstring + instructions)
-- Disable thinking mode in training: training data should not include `<think>...</think>` blocks for SFT
-- Multi-task: interleave `<wp_gen>` and `<wp_judge>` examples (50/50 split) in dataset shuffle
+**Phase 4c (Reasoning Quality Evaluation):**
+- `eval_reasoning_quality.py`: dimension coverage, issue specificity, BERTScore F1
+- Run before training; fail fast if <80% of chains pass dimension coverage gate
+- Output: `telemetry/reasoning_quality_report.json`
 
-**Evaluation:**
-- PHPCS pass rate: pipe model outputs through `phpcs` CLI, measure `>95%` target
-- Judge correlation: compare model judge scores vs Claude baseline on held-out set, target `>0.85` Pearson
-- lm-evaluation-harness for standard code benchmarks (HumanEval as proxy)
-
-**Packaging and Deployment:**
-- GGUF: convert via `llama.cpp` `convert_hf_to_gguf.py`, Q4_K_M quantization, deploy via Ollama
-- AWQ: use `autoawq` library to quantize to 4-bit, serve via `vllm serve Qwen3-8B-AWQ`
-- HuggingFace: `huggingface-cli upload` adapter + merged checkpoint
+**Phase 4d (Fine-tuning on Combined Reasoning Dataset):**
+- Same Unsloth + TRL SFTTrainer; same DGX Spark infrastructure
+- Dataset: merge deep_judge_cot.jsonl + critique_fix.jsonl + winning-ratio existing data
+- Config change: max_seq_length=8192; adaptive planner handles batch sizing
+- Adaptive planner already handles sequence-length-driven memory pressure
 
 ---
 
-## Key Version Compatibility
+## Version Compatibility — v1.2 Additions
 
 | Package | Compatible With | Notes |
 |---------|-----------------|-------|
-| unsloth-2026.3.x | transformers>=4.57.1, trl>=0.25.0 | Latest Unsloth relaxes pins; DGX playbook pins older |
-| trl==0.26.1 | transformers==4.56.2, peft>=0.14.0 | Per NVIDIA DGX Spark playbook (updated 2025-12-15) |
-| bitsandbytes==0.48.0 | torch from nvcr.io container, CUDA 13.0 | DGX playbook pins this; later versions may conflict |
-| datasets==4.3.0 | transformers==4.56.2 | DGX playbook pin; dataset API is stable at this version |
-| vllm>=0.9.0 | Qwen3 dense + MoE, AWQ, FP8 | v0.8.4 is minimum for Qwen3 support; 0.9.0 adds FP8 Marlin |
-| PHP_CodeSniffer>=3.9.0 | WordPress-Coding-Standards>=3.1.0 | WPCS 3.x requires PHPCS 3.x; the Composer installer handles this |
-| Qwen3-8B | transformers>=4.51.0 | Model architecture not recognized in older versions |
-
----
-
-## Claude API Model Names (Current)
-
-The pipeline scripts reference model strings directly. Use these verified current IDs:
-
-| Use Case | Model ID | Cost (output) |
-|----------|----------|---------------|
-| Bulk judging (phases 1-2) | `claude-sonnet-4-6` | $15/MTok |
-| Chain-of-thought generation (phase 3) | `claude-opus-4-6` | $25/MTok |
-| (Legacy — existing scripts) | `claude-sonnet-4-6-20250514` | Still valid alias |
+| bert-score==0.3.13 | torch (from container), transformers>=4.x | Uses DeBERTa for scoring by default; no GPU required for eval |
+| max_seq_length=8192 | unsloth 2026.3.5, Qwen3-30B-A3B | Qwen3 supports 128K context; 8192 is well within Unsloth's tested range |
+| TRL 0.24.0 | prompt-completion conversational format | Standard format; no upgrade needed for v1.2 reasoning chain training |
 
 ---
 
 ## Sources
 
-- [Unsloth Qwen3 Fine-tune Guide](https://unsloth.ai/docs/models/qwen3-how-to-run-and-fine-tune) — Qwen3-8B LoRA configuration, MoE router notes (HIGH confidence)
-- [Unsloth DGX Spark Guide](https://unsloth.ai/docs/blog/fine-tuning-llms-with-nvidia-dgx-spark-and-unsloth) — Docker image, pinned dependency versions (HIGH confidence)
-- [NVIDIA DGX Spark Playbooks — Unsloth](https://github.com/NVIDIA/dgx-spark-playbooks/tree/main/nvidia/unsloth) — `nvcr.io/nvidia/pytorch:25.11-py3` image, exact dependency pins (HIGH confidence)
-- [CMoE Paper (arxiv:2502.04416)](https://arxiv.org/abs/2502.04416) — Training-free conversion methodology, S1A1E8 / S2A2E8 configs, 5-min conversion time (MEDIUM confidence — research paper, not production library)
-- [ToMoE Paper (arxiv:2501.15316)](https://arxiv.org/abs/2501.15316) — Alternative MoE conversion method tested on Qwen-2.5 (MEDIUM confidence)
-- [LLaMA-MoE Paper (arxiv:2406.16554)](https://arxiv.org/abs/2406.16554) — Continual pre-training methodology (HIGH confidence for methodology; LOW confidence for this project given compute constraints)
-- [vLLM Qwen3 Usage Guide](https://github.com/vllm-project/vllm/issues/17327) — v0.8.4+ Qwen3 support, AWQ+Marlin 741 tok/s (HIGH confidence)
-- [HuggingFace Qwen3-8B model card](https://huggingface.co/Qwen/Qwen3-8B) — Architecture (36 layers, 8.2B params), transformers>=4.51.0 requirement, Apache 2.0 license (HIGH confidence)
-- [Anthropic Models Overview](https://platform.claude.com/docs/en/about-claude/models/overview) — Current model IDs: claude-sonnet-4-6, claude-opus-4-6 (HIGH confidence)
-- [WordPress-Coding-Standards GitHub](https://github.com/WordPress/WordPress-Coding-Standards) — WPCS 3.x Composer-only install, `^3.0` requirement (HIGH confidence)
-- [TRL SFTTrainer Docs](https://huggingface.co/docs/trl/sft_trainer) — LoraConfig parameters, `modules_to_save` for special tokens (HIGH confidence)
+- [TRL Dataset Formats](https://huggingface.co/docs/trl/main/dataset_formats) — conversational prompt-completion format, reasoning field options (HIGH confidence; official docs)
+- [TRL v1.0 Blog Post](https://huggingface.co/blog/trl-v1) — v1.0 release date 2026-03-31, minimal migration from 0.x (HIGH confidence)
+- [Qwen-3 Chat Template Deep Dive](https://huggingface.co/blog/qwen-3-chat-template-deep-dive) — enable_thinking behavior, think tag format, implications for training data (HIGH confidence)
+- [Unsloth Qwen3 Docs](https://unsloth.ai/docs/models/qwen3-how-to-run-and-fine-tune) — 75%/25% reasoning/non-reasoning dataset mix recommendation; enable_thinking config for inference (MEDIUM confidence; docs fetch returned partial content)
+- [J1: Incentivizing Thinking in LLM-as-a-Judge](https://arxiv.org/abs/2505.10320) — training judges to reason with verifiable rewards; 32B judge matches 671B DeepSeek-R1 on some benchmarks (MEDIUM confidence; research paper)
+- [Training an LLM-as-a-Judge: Pipeline, Insights, Practical Lessons](https://arxiv.org/html/2502.02988v1) — dimension-level scoring format, MAE + Agr(2,2) as eval metrics (MEDIUM confidence; research paper)
+- [Improve LLM-as-a-Judge as General Ability](https://aclanthology.org/2025.emnlp-main.712.pdf) — jCoT (reasoning process) + jres (judge result) training format (MEDIUM confidence; peer-reviewed)
+- [LLM Evaluation 2025: Smarter Metrics](https://www.techrxiv.org/users/927947/articles/1304989) — BERTScore 59% vs BLEU 47% alignment with human judgment on reasoning tasks; BLEURT/BERTScore weak on medical reasoning (MEDIUM confidence; preprint)
+- [bert-score PyPI](https://pypi.org/project/bert-score/) — v0.3.13 current (HIGH confidence)
+- [The Art of Repair: Optimizing Iterative Program Repair](https://arxiv.org/abs/2505.02931) — (Instruction, Input, Output) format for code repair instruction tuning; buggy code + fix template + corrected code structure (MEDIUM confidence; research paper)
+- Confirmed installed versions via `pip show` on DGX Spark: TRL 0.24.0, transformers 5.3.0, unsloth 2026.3.5, nltk 3.9.3 (HIGH confidence; direct verification)
 
 ---
 
-*Stack research for: wp-qwen3-moe (WordPress fine-tuning + MoE conversion on DGX Spark)*
-*Researched: 2026-03-26*
+*Stack research for: wp-qwen3-moe v1.2 (Deep Judge CoT + Critique-then-Fix)*
+*Researched: 2026-04-04*
