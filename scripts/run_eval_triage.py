@@ -66,7 +66,7 @@ PROFILING_DIR = OUTPUT_DIR / "profiling"
 EVAL_TRIAGE_DIR = OUTPUT_DIR / "eval_triage"
 WP_BENCH_DIR = PROJECT_ROOT / "wp-bench"
 
-VLLM_HEALTH_TIMEOUT_S = 600   # 10 minutes (30B MoE loads ~8 min)
+VLLM_HEALTH_TIMEOUT_S = 600   # default: 10 minutes (30B MoE loads ~8 min)
 VLLM_HEALTH_POLL_S = 5
 EVAL_RETRY_DELAY_S = 30
 
@@ -724,6 +724,7 @@ def run_eval_and_wpbench_for_ratio(
     dataset_path: str = "data/final_dataset/openai_test.jsonl",
     skip_wpbench: bool = False,
     force: bool = False,
+    health_timeout: int = VLLM_HEALTH_TIMEOUT_S,
 ) -> bool:
     """Run eval + wp-bench for a ratio, keeping vLLM alive between them.
 
@@ -759,7 +760,7 @@ def run_eval_and_wpbench_for_ratio(
                 return False
 
             # Wait for vLLM
-            if not _wait_for_vllm(endpoint, timeout_s=VLLM_HEALTH_TIMEOUT_S):
+            if not _wait_for_vllm(endpoint, timeout_s=health_timeout):
                 logger.warning(
                     f"vLLM failed to start for ratio {ratio}. "
                     f"Attempting merge-and-serve fallback ..."
@@ -769,10 +770,10 @@ def run_eval_and_wpbench_for_ratio(
                 if vllm_proc is None:
                     logger.error(f"Fallback also failed for ratio {ratio}. Skipping.")
                     return False
-                if not _wait_for_vllm(endpoint, timeout_s=VLLM_HEALTH_TIMEOUT_S):
+                if not _wait_for_vllm(endpoint, timeout_s=health_timeout):
                     raise RuntimeError(
                         f"vLLM (merged fallback) failed for ratio {ratio} within "
-                        f"{VLLM_HEALTH_TIMEOUT_S}s. Check: docker logs vllm | tail -100"
+                        f"{health_timeout}s. Check: docker logs vllm | tail -100"
                     )
 
             # Verify model name (Pitfall 3)
@@ -858,7 +859,7 @@ def run_eval_and_wpbench_for_ratio(
             if not skip_wpbench and not wpbench_already_done:
                 try:
                     vllm_proc = _start_vllm_with_lora(ratio)
-                    if not _wait_for_vllm(endpoint, timeout_s=VLLM_HEALTH_TIMEOUT_S):
+                    if not _wait_for_vllm(endpoint, timeout_s=health_timeout):
                         logger.warning(f"vLLM failed to start for wp-bench on ratio {ratio}. Skipping wp-bench.")
                         return eval_succeeded
                 except Exception as e:
@@ -1000,6 +1001,7 @@ def run_full_triage(
     model_path: str = "models/Qwen3-30B-A3B",
     tokenizer_path: str = "adapters/tokenizer",
     dataset_path: str = "data/final_dataset/openai_test.jsonl",
+    health_timeout: int = VLLM_HEALTH_TIMEOUT_S,
 ) -> None:
     """Run the full Phase 4 pipeline: profiling -> eval -> triage.
 
@@ -1011,6 +1013,7 @@ def run_full_triage(
         model_path: Path to base model (relative to project root).
         tokenizer_path: Path to extended tokenizer (relative to project root).
         dataset_path: Path to test dataset (relative to project root).
+        health_timeout: Seconds to wait for vLLM health check.
     """
     if eval_ratios is None:
         eval_ratios = ALL_EVAL_RATIOS
@@ -1051,6 +1054,7 @@ def run_full_triage(
             dataset_path=dataset_path,
             skip_wpbench=skip_wpbench,
             force=force,
+            health_timeout=health_timeout,
         )
         if not success:
             eval_failures.append(ratio)
@@ -1124,6 +1128,13 @@ Examples:
         help="Path to test dataset (relative to project root).",
     )
     parser.add_argument(
+        "--health-timeout",
+        type=int,
+        default=VLLM_HEALTH_TIMEOUT_S,
+        help=f"Seconds to wait for vLLM health check (default: {VLLM_HEALTH_TIMEOUT_S}). "
+             "Increase for larger models, decrease for smaller ones.",
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         help="Enable DEBUG logging.",
@@ -1145,6 +1156,7 @@ Examples:
         model_path=args.model_path,
         tokenizer_path=args.tokenizer_path,
         dataset_path=args.dataset,
+        health_timeout=args.health_timeout,
     )
 
 
