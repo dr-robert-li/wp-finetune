@@ -379,7 +379,7 @@ def _start_vllm_with_lora(ratio: str) -> subprocess.Popen:
 
     Returns the process handle. Caller is responsible for stopping it via _stop_vllm.
 
-    Tries DGX Toolbox first; falls back to direct docker run if unavailable.
+    Uses direct docker run (vLLM image must run as root — --user breaks it).
     """
     adapter_path = f"/workspace/wp-finetune/adapters/qwen3-30b-wp-{ratio}"
     model_path = "/workspace/wp-finetune/models/Qwen3-30B-A3B"
@@ -392,19 +392,6 @@ def _start_vllm_with_lora(ratio: str) -> subprocess.Popen:
         "--gpu-memory-utilization=0.92",
     ]
 
-    # Try DGX Toolbox first
-    try:
-        from scripts.dgx_toolbox import get_toolbox
-        dgx = get_toolbox()
-        vllm_script = dgx.resolve("vllm")
-        cmd = [str(vllm_script), model_path] + vllm_extra_args
-        logger.info(f"Starting vLLM via DGX Toolbox for ratio {ratio}: {' '.join(cmd)}")
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-        return proc
-    except Exception as e:
-        logger.info(f"DGX Toolbox unavailable ({e}), falling back to direct docker run")
-
-    # Fallback: docker run directly
     # Clean up any existing vllm container
     subprocess.run(["docker", "rm", "-f", "vllm"], capture_output=True, timeout=10)
 
@@ -412,7 +399,6 @@ def _start_vllm_with_lora(ratio: str) -> subprocess.Popen:
     cmd = [
         "docker", "run", "--rm", "--name", "vllm",
         "--gpus", "all", "--ipc=host",
-        "--user", f"{subprocess.check_output(['id', '-u']).decode().strip()}:{subprocess.check_output(['id', '-g']).decode().strip()}",
         "-p", "0.0.0.0:8020:8000",
         "-v", f"{PROJECT_ROOT}:/workspace/wp-finetune",
         "-v", f"{home}/.cache/huggingface:/root/.cache/huggingface",
@@ -422,7 +408,7 @@ def _start_vllm_with_lora(ratio: str) -> subprocess.Popen:
         "--port", "8000",
     ] + vllm_extra_args
 
-    logger.info(f"Starting vLLM via docker run for ratio {ratio}")
+    logger.info(f"Starting vLLM for ratio {ratio}")
     logger.debug(f"Docker cmd: {' '.join(cmd)}")
 
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
@@ -492,19 +478,6 @@ def _fallback_merge_and_serve(ratio: str) -> Optional[subprocess.Popen]:
         "--gpu-memory-utilization=0.92",
     ]
 
-    # Try DGX Toolbox first
-    try:
-        from scripts.dgx_toolbox import get_toolbox
-        dgx = get_toolbox()
-        vllm_script = dgx.resolve("vllm")
-        cmd = [str(vllm_script), container_merged_path] + extra_args
-        logger.info(f"Serving merged model for ratio {ratio} via DGX Toolbox: {' '.join(cmd)}")
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-        return proc
-    except Exception as e:
-        logger.info(f"DGX Toolbox unavailable ({e}), using direct docker run for merged model")
-
-    # Fallback: docker run directly
     subprocess.run(["docker", "rm", "-f", "vllm"], capture_output=True, timeout=10)
 
     home = Path.home()
@@ -520,7 +493,7 @@ def _fallback_merge_and_serve(ratio: str) -> Optional[subprocess.Popen]:
         "--port", "8000",
     ] + extra_args
 
-    logger.info(f"Serving merged model for ratio {ratio} via docker run")
+    logger.info(f"Serving merged model for ratio {ratio}")
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     return proc
 
