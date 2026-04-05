@@ -87,7 +87,7 @@ def merge_adapter(adapter_dir: str, output_dir: str, config: dict) -> None:
     model = AutoModelForCausalLM.from_pretrained(
         local_dir,
         dtype=torch.bfloat16,
-        device_map="auto",
+        device_map="cpu",  # merge is weight arithmetic, no GPU needed
     )
 
     # Load the LoRA adapter on top of the base model
