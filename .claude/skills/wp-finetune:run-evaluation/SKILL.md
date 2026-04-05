@@ -68,15 +68,11 @@ python3 -c "import torch; print(torch.cuda.is_available())"  # CUDA available?
 ls models/Qwen3-30B-A3B/config.json 2>/dev/null  # Base model present?
 ```
 
-If no CUDA: tell user to run this skill inside the DGX container:
-```
-docker exec -it <container> python3 -c "from scripts.run_eval_triage import main; main()"
-```
-Or via dgx_toolbox:
-```python
-from scripts.dgx_toolbox import get_toolbox
-dgx = get_toolbox()
-dgx.execute("unsloth", "python3", "/workspace/wp-finetune/scripts/run_eval_triage.py")
+If no CUDA: that's expected. The orchestrator runs from the **HOST** (not inside a container). It uses DGX Toolbox to launch vLLM as a separate Docker container, and eval scripts communicate via HTTP to `localhost:8020`. Only profiling (Step 1) needs CUDA directly — skip it with `--skip-profiling` if already complete.
+
+```bash
+# Run from HOST — DGX Toolbox manages the vLLM container
+python3 scripts/run_eval_triage.py --skip-profiling --ratios 30_70,40_60,50_50,60_40
 ```
 
 #### 0d. Check wp-bench availability
@@ -173,30 +169,27 @@ gc.collect()
 
 **Purpose:** Run each trained adapter through the full eval suite + wp-bench. Sequential because DGX Spark 128GB is too tight for parallel 30B vLLM instances.
 
-**Duration:** ~30-45 minutes per adapter (static eval ~15 min + wp-bench ~15-30 min)
+**Duration:** ~25-40 minutes per adapter (vLLM startup ~10 min + merge ~5 min if LoRA fails + eval ~15 min + wp-bench ~15 min)
 
-**For each adapter (30/70, 40/60, 50/50):**
+**For each adapter** (detected in Step 0a — typically 30/70, 40/60, 50/50, 60/40):
 
 #### 2a. Serve adapter via vLLM
 
-```python
-dgx = get_toolbox()
-dgx.run("vllm", extra_args=[
-    "--model", "/workspace/wp-finetune/models/Qwen3-30B-A3B",
-    "--lora-modules", f"qwen3-wp=/workspace/wp-finetune/adapters/qwen3-30b-wp-{ratio}",
-    "--port", "8020"
-])
+The orchestrator (`run_eval_triage.py`) handles vLLM lifecycle automatically:
+1. Starts vLLM container via DGX Toolbox with `EXTRA_MOUNTS` for project directory
+2. Polls health endpoint every 5s (configurable via `--health-timeout`, default 600s)
+3. If LoRA loading fails (expected — `modules_to_save` incompatibility, Pitfall 7), automatically merges adapter and serves merged model
+
+```bash
+# The orchestrator handles this — no manual vLLM management needed
+python3 scripts/run_eval_triage.py --ratios 30_70,40_60,50_50,60_40 --health-timeout 900
 ```
 
-**LoRA fallback:** If vLLM fails to load adapter (modules_to_save incompatibility):
-```python
-# Merge adapter into base first
-python3 scripts/merge_adapter.py --adapter adapters/qwen3-30b-wp-{ratio} --output models/qwen3-30b-wp-{ratio}-merged
-# Then serve merged model
-dgx.run("vllm", extra_args=["--model", f"/workspace/wp-finetune/models/qwen3-30b-wp-{ratio}-merged"])
-```
-
-Health check: poll `http://localhost:8020/v1/models` every 30s for up to 5 minutes.
+**What happens under the hood:**
+- vLLM tries LoRA serving first (~10 min startup). For Qwen3-30B-A3B, LoRA will fail due to `modules_to_save` tensors
+- Fallback: `scripts/merge_adapter.py --adapter-dir adapters/qwen3-30b-wp-{ratio} --output-dir models/merged-{ratio}` (~5-10 min, ~60GB per merged model)
+- Merged model served without `--enable-lora` (~10 min startup)
+- Health check: polls `http://localhost:8020/health` every 5s for up to `--health-timeout` seconds
 
 Verify model name: `GET /v1/models` → extract model name string for eval scripts.
 
@@ -437,16 +430,34 @@ Update STATE.md Accumulated Context:
 /clear first → fresh context window
 ```
 
+## CLI Reference
+
+```bash
+python3 scripts/run_eval_triage.py [options]
+
+--skip-profiling      Skip E_eff profiling (use existing results)
+--skip-wpbench        Skip wp-bench (static gates only)
+--ratios RATIOS       Comma-separated ratios (default: 30_70,40_60,50_50)
+--force               Clear all completion markers, re-run everything
+--health-timeout SEC  vLLM health check timeout (default: 600). Use 900 for
+                      30B MoE with LoRA fallback (merge adds ~10 min)
+--model-path PATH     Base model dir relative to project root
+--tokenizer-path PATH Extended tokenizer dir relative to project root
+--dataset PATH        Test dataset JSONL relative to project root
+--verbose             DEBUG logging
+```
+
 ## Error Handling
 
 | Error | Recovery |
 |-------|----------|
-| CUDA not available | Tell user to run inside GPU container |
-| vLLM fails to load adapter | Merge adapter first, serve merged model |
+| CUDA not available on HOST | Expected — orchestrator runs from HOST, vLLM runs in container. Only profiling needs CUDA (use `--skip-profiling` if done) |
+| vLLM health timeout | Increase `--health-timeout`. 30B MoE: ~10 min load + ~2 min CUDA graphs. With LoRA fallback + merge: add ~15 min |
+| vLLM LoRA load fails (modules_to_save) | Expected for Qwen3 adapters (Pitfall 7). Orchestrator auto-falls back to merge-and-serve |
+| vLLM container missing project mount | Set `EXTRA_MOUNTS` env var (orchestrator does this automatically). DGX Toolbox `start-vllm.sh` must source `lib.sh` |
 | wp-bench clone/setup fails | Continue without wp-bench, note in results |
 | eval script crashes | Log error, skip to next ratio, include in triage as "EVAL_FAILED" |
 | All ratios fail gates | Present NO_SURVIVORS options (A-D), human decides |
-| 60/40 training OOM | Log, continue triage on existing 3 ratios |
 | Completion marker exists | Skip step (idempotent), use `--force` to override |
 
 ## Idempotency
@@ -454,6 +465,6 @@ Update STATE.md Accumulated Context:
 Each major step writes a completion marker (`.complete` file):
 - `output/profiling/.complete` — profiling done
 - `output/eval_triage/ratio_{r}/.complete` — ratio eval done
-- `output/eval_triage/.triage_complete` — triage done
+- `output/.triage_complete` — triage done
 
 Re-running the skill resumes from the last incomplete step. Use `--force` to re-run everything.

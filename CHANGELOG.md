@@ -4,6 +4,9 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 
 ## [Unreleased]
 
+### Changed
+- **`wp-finetune:run-evaluation` skill** — Updated to reflect operational learnings: orchestrator runs from HOST (not container), LoRA fallback is the expected path for Qwen3 (not exception), corrected merge_adapter.py CLI args, added `--health-timeout` CLI reference, updated duration estimates and error handling table
+
 ### Fixed
 - **`scripts/run_eval_triage.py`** — Added `PROJECT_ROOT` to `sys.path` so the `eval` package is importable regardless of working directory (previously caused `ModuleNotFoundError` when run inside containers)
 - **`scripts/run_eval_triage.py`** — Set `EXTRA_MOUNTS` env var when launching vLLM via DGX Toolbox so the project directory is bind-mounted into the vLLM container. Without this, vLLM could not access the model or adapters at `/workspace/wp-finetune/`
