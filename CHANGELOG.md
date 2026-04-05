@@ -4,6 +4,13 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 
 ## [Unreleased]
 
+### Fixed
+- **`scripts/run_eval_triage.py`** — Added `PROJECT_ROOT` to `sys.path` so the `eval` package is importable regardless of working directory (previously caused `ModuleNotFoundError` when run inside containers)
+- **`scripts/run_eval_triage.py`** — Set `EXTRA_MOUNTS` env var when launching vLLM via DGX Toolbox so the project directory is bind-mounted into the vLLM container. Without this, vLLM could not access the model or adapters at `/workspace/wp-finetune/`
+- **`scripts/run_eval_triage.py`** — Added `docker rm -f vllm` to `_stop_vllm()` for resilient container cleanup
+- **`scripts/triage_ratios.py`** — `load_eval_results()` now handles `overall_spearman` being a dict `{"corr": float, "p_value": float, ...}` instead of a bare float. Extracts `.corr` field, fixing `TypeError: '<=' not supported between instances of 'dict' and 'float'` in gate comparison
+- **`dgx-toolbox/inference/start-vllm.sh`** — Added `source lib.sh` and `$(build_extra_mounts)` to docker run, matching the pattern already used by container scripts. Without this, vLLM could only serve models from `~/.cache/huggingface` or `~/eval/models`
+
 ### Changed
 - **`config/dgx_toolbox.yaml`** — Removed `pyyaml`, `scipy`, `mlflow`, `peft`, `hf_transfer` from `extra_deps` — already installed in `~/dgx-toolbox/base-toolbox/Dockerfile`. Only `python-dotenv` remains
 - **`scripts/dgx_toolbox.py`** — Updated hardcoded fallback lists for `extra_deps` and `required_imports` to match config
