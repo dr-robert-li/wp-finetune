@@ -289,6 +289,21 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PROB-02 | Phase 6 | Complete |
 | PROB-03 | Phase 6 | Complete |
 
+| DGEN-01 | Phase 4.1 | Pending |
+| DGEN-02 | Phase 4.1 | Pending |
+| DGEN-03 | Phase 4.1 | Pending |
+| DGEN-04 | Phase 4.2 | Pending |
+| DGEN-05 | Phase 4.2 | Pending |
+| RTRN-01 | Phase 4.3 | Pending |
+| RTRN-02 | Phase 4.3 | Pending |
+| RTRN-03 | Phase 4.3 | Pending |
+| RTRN-04 | Phase 4.3 | Pending |
+| REVL-01 | Phase 4.4 | Pending |
+| REVL-02 | Phase 4.4 | Pending |
+| REVL-03 | Phase 4.4 | Pending |
+| REVL-04 | Phase 4.4 | Pending |
+| REVL-05 | Phase 4.4 | Pending |
+
 | PROF-01 | Phase 7 | Pending |
 | PROF-02 | Phase 7 | Pending |
 | PROF-03 | Phase 7 | Pending |
@@ -329,13 +344,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 **Coverage:**
 - v1 requirements: 37 total (32 complete, 5 eval pending)
 - v1.1 requirements: 13 total (13 complete)
-- v1.2 requirements: 14 total (0 complete) — DGEN(5) + RTRN(4) + REVL(5)
+- v1.2 requirements: 14 total (0 complete) — DGEN-01/02/03 → Phase 4.1; DGEN-04/05 → Phase 4.2; RTRN-01/02/03/04 → Phase 4.3; REVL-01/02/03/04/05 → Phase 4.4
 - v2.0 requirements: 14 total (0 complete) — PROF(5) + GATE(2) + SIEVE(5) + EVAL2(2)
 - v3.0 requirements: 22 total (0 complete) — GRPO(8) + MERGE(1) + PRUNE(6) + EVAL3(2) + PKG(5)
 - DPLT requirements: 7 total (deferred → v3.0 PKG/PRUNE)
-- Total mapped to phases: 82 + 14 v1.2 = 96
-- Unmapped: 14 (v1.2 — pending roadmap)
+- Total mapped to phases: 96 (all requirements mapped, 0 unmapped)
 
 ---
 *Requirements defined: 2026-03-26*
-*Last updated: 2026-04-05 — v1.2 Judge Reasoning Fine-Tune requirements added (14 requirements)*
+*Last updated: 2026-04-05 — v1.2 traceability added (14 requirements mapped to Phases 4.1-4.4)*

@@ -4,12 +4,15 @@
 
 - 🚧 **v1.0 MVP** - Phases 1-5 (3 of 5 complete, eval + deployment remaining)
 - ✅ **v1.1 Adaptive Training Infrastructure** - Phase 6 (complete 2026-04-01)
+- 🚧 **v1.2 Judge Reasoning Fine-Tune** - Phases 4.1-4.4 (inserted after Phase 4, before Phase 7)
 - 📋 **v2.0 MoE-Sieve Selective Training** - Phases 7-9 (planned)
 - 📋 **v3.0 GRPO & Production Deployment** - Phases 10-14 (planned)
 
 ## Overview
 
 Six phases take the project from fragile pipeline scripts to a trained dual-mode WordPress code model with adaptive training infrastructure. Phases 1-3 built the data pipeline, prepared the model, and trained it. Phase 4 evaluates quality gates, Phase 5 is deferred, and Phase 6 adds power-primary adaptive training exploiting DGX Spark thermal headroom.
+
+Phases 4.1-4.4 (v1.2) add deep judge reasoning capability to the winning ratio adapter — generating reasoning-enriched judge data and critique-then-fix pairs, continued fine-tuning at lower LR, and re-evaluating before proceeding. Phase 4 triage (identifying the winning adapter) is a hard prerequisite. The v1.2 reasoning adapter must be complete before Phase 7 because MoE-Sieve routing profiles must reflect the final reasoning capability.
 
 Phases 7-9 (v2.0) implement MoE-Sieve selective expert training — profiling which experts each task token activates, then retraining only those experts with task-aware data routing and a k-sweep across three budgets. Phase 4 must complete before Phase 7 (need winning gen/judge ratio). Phase 9 gates Phase 10.
 
@@ -35,6 +38,16 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 4: Evaluation** - Run static eval suite + wp-bench, human review of results
 - [ ] **Phase 5: Packaging and Deployment** - Quantize, serve, and publish to HuggingFace (deferred to v3.0 — subsumed by Phase 14)
 - [ ] **Phase 6: Adaptive Training Planner** - Power-primary adaptive config engine with batch coupling, telemetry extensions, and warmup probes
+
+<details>
+<summary>v1.2 Judge Reasoning Fine-Tune (Phases 4.1-4.4) — INSERTED — depends on Phase 4 triage completing</summary>
+
+- [ ] **Phase 4.1: Reasoning Data Generation** - Pilot-validate then run parallel deep judge CoT and critique-then-fix data generation streams
+- [ ] **Phase 4.2: Dataset Assembly** - Score consistency validation, training mix assembly, and export of the reasoning dataset
+- [ ] **Phase 4.3: Reasoning Fine-Tune** - Continued SFT on winning ratio adapter at lower LR with frozen router and 8192-token sequences
+- [ ] **Phase 4.4: Reasoning Eval & Merge** - Verify reasoning adapter meets all quality gates; human review; merge adapter
+
+</details>
 
 <details>
 <summary>v2.0 MoE-Sieve Selective Training (Phases 7-9) — Planned</summary>
@@ -135,6 +148,63 @@ Plans:
 - [x] 04-02-PLAN.md — Eval orchestrator + DGX execution (clone wp-bench, create run_eval_triage.py, execute profiling + sequential adapter eval + wp-bench + triage)
 - [ ] 04-03-PLAN.md — Human review checkpoint (inspect profiling E_eff + eval results + wp-bench scores, approve triage survivors for Phase 7)
 
+---
+
+### v1.2 Judge Reasoning Fine-Tune — INSERTED
+
+**Milestone Goal:** Fine-tune the winning ratio adapter on deep reasoning data so the judge articulates dimension-by-dimension analysis, score justification, and corrected versions — not just numeric rubric output.
+
+**Dependency:** Phase 4 triage must complete first — all v1.2 phases start from the winning ratio adapter identified by Phase 4.
+
+**Note for v2.0:** Even with the MoE router frozen during v1.2 training, routing profiles from the v1.0 adapter are invalidated by continued fine-tuning. Phase 7 must run a fresh profiling pass on the v1.2 reasoning adapter, not the v1.0 adapter.
+
+### Phase 4.1: Reasoning Data Generation — INSERTED
+**Goal**: Pilot-validated Claude Code agents generate two parallel streams of reasoning training data — deep judge CoT examples (dimension-by-dimension analysis with WP-specific line citations) and critique-then-fix triples (structured critique with severity tags followed by corrected code) — before bulk generation is committed
+**Depends on**: Phase 4 (winning ratio identified via triage decision)
+**Requirements**: DGEN-01, DGEN-02, DGEN-03
+**Success Criteria** (what must be TRUE):
+  1. A pilot batch of 20-50 deep judge CoT examples and 20-50 critique-then-fix examples is generated and manually reviewed before bulk generation starts — pilot confirms WP-specific pattern citations (e.g., `$wpdb->prepare()`, `wp_verify_nonce()`, `esc_html()`) appear by name in reasoning chains and that dimension coverage spans all 9 rubric dimensions
+  2. Bulk deep judge CoT agent generates reasoning-enriched examples where each response contains dimension-by-dimension analysis with line references, issue identification, fix suggestions, and structured scores — sourced from `data/phase1_extraction/output/{passed,failed}/`
+  3. Bulk critique-then-fix agent generates examples from the existing mutation pool (`data/phase2_synthetic/output/mutated/`) where each triple contains the defective code, a structured critique with severity per dimension (critical/high/medium/low), and the corrected version in a clearly delimited `<corrected_code>` block
+  4. Both generation streams reach their target example counts without >2% parse failure rate (measured by multi-strategy JSON extraction with hard rejection)
+**Plans**: TBD
+
+### Phase 4.2: Reasoning Dataset Assembly — INSERTED
+**Goal**: Both generation streams are merged into a quality-validated training dataset with score consistency enforcement, canonical output template compliance, and the correct training mix (reasoning examples + 30% flat judge replay + 20% wp_gen replay) — ready for continued fine-tuning
+**Depends on**: Phase 4.1 (both generation streams complete)
+**Requirements**: DGEN-04, DGEN-05
+**Success Criteria** (what must be TRUE):
+  1. Score consistency validation rejects any example where the written reasoning contradicts the numeric scores (e.g., reasoning describes a critical SQL injection vulnerability but the security dimension score is ≥7) — rejection rate and example count logged to metadata.json
+  2. All retained reasoning examples conform to the canonical output template: dimension-by-dimension analysis prose followed by `[/REASONING]` separator followed by a JSON scores block inside `<judge_output>` tags — no example deviates from this structure
+  3. The assembled training mix contains: reasoning examples (deep CoT + critique-then-fix) plus 30% flat judge replay examples from the original phase 1/2 judge training data plus 20% wp_gen replay examples from the phase 1 training set — actual counts and percentages recorded in metadata.json
+  4. `data/reasoning_dataset/openai_train.jsonl` and `openai_val.jsonl` are exported with an 80/20 split (larger val slice than main dataset due to smaller total size)
+**Plans**: TBD
+
+### Phase 4.3: Reasoning Fine-Tune — INSERTED
+**Goal**: The winning ratio adapter is continued-fine-tuned on the assembled reasoning dataset at a 5-10x lower learning rate than Phase 3, with MoE router weights confirmed frozen, producing a reasoning adapter that does not suffer format collapse, generation regression, or loss divergence
+**Depends on**: Phase 4.2 (reasoning dataset assembled and validated)
+**Requirements**: RTRN-01, RTRN-02, RTRN-03, RTRN-04
+**Success Criteria** (what must be TRUE):
+  1. `train_config_reasoning.yaml` specifies a learning rate at most 2e-5 (5-10x lower than Phase 3's 2e-4) with warmup, and the training run starts from the winning ratio adapter checkpoint — gradient norms in the first 100 steps stay below 3 (not the 5-10 seen in early Phase 3)
+  2. `max_seq_length` is set to 8192 in the training config, and the training run processes examples longer than 4096 tokens without truncation errors or OOM
+  3. MoE router layer weights are confirmed frozen in the Unsloth PEFT config before training begins — training log shows router parameters excluded from the optimizer parameter count
+  4. Training completes 1-2 epochs on the combined reasoning dataset without OOM or loss divergence, and parse failure rate on checkpoint eval outputs stays below 5% throughout (abort condition if exceeded)
+**Plans**: TBD
+
+### Phase 4.4: Reasoning Eval & Adapter Merge — INSERTED
+**Goal**: The reasoning adapter passes all existing quality gates (Spearman, PHPCS pass rate, wp-bench) with no regression versus the winning ratio baseline, human reviews a sample of reasoning outputs to confirm quality, and the adapter is merged into base weights
+**Depends on**: Phase 4.3 (reasoning fine-tune complete)
+**Requirements**: REVL-01, REVL-02, REVL-03, REVL-04, REVL-05
+**Success Criteria** (what must be TRUE):
+  1. `eval_judge.py` Spearman correlation on the reasoning adapter meets or exceeds the winning ratio baseline — absolute score distributions per dimension are compared and any dimension with mean shift >0.5 points vs baseline is flagged
+  2. `eval_gen.py` PHPCS pass rate on the reasoning adapter is within 2pp of the winning ratio baseline — generation regression is not masked by improved judge metrics
+  3. Reasoning quality scoring confirms all 9 rubric dimensions are addressed in a representative sample of outputs, and dimension coverage rate plus score-reasoning consistency rate are both recorded
+  4. wp-bench scores on the reasoning adapter meet or exceed the winning ratio baseline
+  5. Human reviews a sample of reasoning outputs (deep judge CoT and critique-then-fix) and explicitly approves quality before the adapter merge runs — `models/qwen3-30b-wp-{winning}-reasoning-merged/` is written only after human sign-off
+**Plans**: TBD
+
+---
+
 ### Phase 5: Packaging and Deployment
 **Goal**: Model is quantized, served on all DGX Toolbox endpoints, and published to HuggingFace Hub
 **Depends on**: Phase 4 (human-approved eval results)
@@ -186,11 +256,11 @@ Plans:
 
 **Milestone Goal:** Train only WordPress-active experts via routing-guided LoRA selection with task-aware data filtering and k-sweep to find the optimal expert budget. Produces MoE-Sieve adapter for GRPO refinement in v3.0. Pruning deferred to v3.0 — GRPO changes routing distribution, must prune on final routing.
 
-**Dependency:** Phase 4 (Evaluation) must complete first — MoE-Sieve needs the winning gen/judge ratio.
+**Dependency:** Phase 4.4 (v1.2 complete — reasoning adapter merged) must complete before Phase 7. Phase 7 profiles the v1.2 reasoning adapter, not the v1.0 adapter.
 
 ### Phase 7: Fine-Tuned Adapter Profiling & Ratio Selection
 **Goal**: Profile surviving ratio ADAPTERS (not base model — that was Phase 4 step 1) to capture how fine-tuning shifted routing, producing per-task expert affinity maps with E_eff metrics. Combined with Phase 4 eval scores to select the optimal ratio for single-track MoE-Sieve training.
-**Depends on**: Phase 4 (surviving ratios with eval scores + base-model E_eff); Phase 6 (adaptive training infrastructure)
+**Depends on**: Phase 4.4 (v1.2 reasoning adapter complete); Phase 6 (adaptive training infrastructure)
 **Requirements**: PROF-01, PROF-02, PROF-03, PROF-04, PROF-05, GATE-01
 **Success Criteria** (what must be TRUE):
   1. Profiling runs on each surviving ratio's fine-tuned adapter (not base model) hooking `Qwen3MoeSparseMoeBlock` gating outputs — captures how LoRA fine-tuning shifted routing relative to base-model profiling from Phase 4
@@ -288,8 +358,10 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13 -> 14
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.1 -> 4.2 -> 4.3 -> 4.4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13 -> 14
+Note: Phase 4.1-4.4 (v1.2) insert between Phase 4 and Phase 5 — Phase 4 triage is a hard prerequisite for Phase 4.1.
 Note: Phase 5 (Packaging/Deployment v1.0) is deferred — v3.0 Phase 14 replaces it as the production packaging step.
+Note: Phase 7 profiles the v1.2 reasoning adapter (from Phase 4.4), not the v1.0 adapter — v1.2 must complete before Phase 7 begins.
 Note: Phase 9 gates Phase 10 — MoE-Sieve eval results must confirm readiness before GRPO begins.
 Note: Phase 12 MERGE-01 must complete before REAP runs — activation magnitudes require the unified model.
 
@@ -299,6 +371,10 @@ Note: Phase 12 MERGE-01 must complete before REAP runs — activation magnitudes
 | 2. Dataset Production | v1.0 | 6/7 | Complete | 2026-03-29 |
 | 3. Model Prep and Training | v1.0 | 3/3 | Complete | 2026-03-27 |
 | 4. Evaluation | v1.0 | 2/3 | In Progress|  |
+| 4.1. Reasoning Data Generation | v1.2 | 0/? | Not started | - |
+| 4.2. Reasoning Dataset Assembly | v1.2 | 0/? | Not started | - |
+| 4.3. Reasoning Fine-Tune | v1.2 | 0/? | Not started | - |
+| 4.4. Reasoning Eval & Merge | v1.2 | 0/? | Not started | - |
 | 5. Packaging and Deployment | v1.0 | 0/3 | Deferred to v3.0 | - |
 | 6. Adaptive Training Planner | v1.1 | 6/6 | Complete | 2026-04-01 |
 | 7. Router Profiling | v2.0 | 0/? | Not started | - |
