@@ -92,13 +92,19 @@ def load_eval_results(eval_triage_dir: str) -> dict:
         gen_data = json.loads(gen_path.read_text())
         judge_data = json.loads(judge_path.read_text())
 
-        # Extract spearman -- support multiple key names
-        spearman = (
+        # Extract spearman -- support multiple key names and formats
+        raw_spearman = (
             judge_data.get("overall_spearman")
+            or judge_data.get("spearman_corr")
             or judge_data.get("spearman")
             or judge_data.get("spearman_overall")
             or 0.0
         )
+        # overall_spearman may be a dict {"corr": float, "p_value": float, ...}
+        if isinstance(raw_spearman, dict):
+            spearman = float(raw_spearman.get("corr", 0.0))
+        else:
+            spearman = float(raw_spearman)
 
         # wp-bench score (optional)
         wpbench_score = None
