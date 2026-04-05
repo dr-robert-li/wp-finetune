@@ -4,6 +4,41 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-04-05 — Eval pipeline operational; triage commenced
+
+### 11 fixes to reach a working eval pipeline
+
+The eval triage pipeline required 11 commits to go from "first run attempt" to "running reliably." The fixes fell into three categories:
+
+**Container vs. host environment mismatches (4 fixes)**
+- `merge_adapter.py` must run inside the unsloth-headless container, not on HOST — HOST peft (different version) rejects adapters trained under container peft 0.18.1 (`ParamWrapper` + `lora_dropout` error).
+- `torch_dtype` → `dtype` in all `from_pretrained()` calls — Transformers 5.x (HOST) deprecated the old kwarg; `dtype` works across both container (4.56+) and HOST (5.x).
+- `device_map="cpu"` for merge — merge is weight arithmetic, not inference. `device_map="auto"` caused accelerate OOM when model + LoRA exceeded GPU memory (layers 45-47 offloaded without `offload_dir`). CPU merge loads in ~4s with 128GB unified RAM vs ~6 min on GPU.
+
+**vLLM serving issues (5 fixes)**
+- LoRA serving is **incompatible** with our adapters (vLLM rejects `modules_to_save` tensors). The merge-and-serve fallback is the expected path, not the exception. All adapters must be pre-merged before serving.
+- Direct `docker run` failed without DGX Toolbox (GPU passthrough). Reverted to DGX Toolbox and fixed `EXTRA_MOUNTS` for volume access.
+- `--user` flag breaks DGX Toolbox containers — removed.
+- Health check timeout was too short for 30B model loading on unified memory. Added `--health-timeout` flag (default 900s).
+- Crash-loop detection: when LoRA loading fails, the container restart-loops and the health check burned the full timeout (~15 min). Now checks `RestartCount >= 1` and fatal log patterns every 60s, cutting wasted wait to ~1 min.
+
+**Eval script issues (2 fixes)**
+- Hardcoded model name `"openai/qwen3-wp"` broke with merged models (vLLM reports full filesystem path). Auto-detect from `/v1/models` endpoint now.
+- `--model` override threading through the triage orchestrator.
+
+### Lessons learned
+
+1. **LoRA serving compatibility must be validated during training config design, not at eval time.** The `modules_to_save` incompatibility was predictable from vLLM docs but wasn't caught until runtime. Future: add a pre-flight check to the training skill that flags serving-incompatible configs.
+2. **Host/container library version mismatches are a recurring class of bug.** Any script that touches model weights should declare which environment it runs in. The merge script silently succeeded on HOST with wrong peft, producing corrupt weights.
+3. **Health check timeouts should be adaptive, not fixed.** A 30B model on unified memory loads differently than on discrete GPU. The crash-loop detection pattern (check restart count + fatal logs) is reusable for any container health gate.
+4. **CPU merge is strictly better for our hardware.** DGX Spark's 128GB unified RAM makes CPU merge trivial. GPU merge competes with vLLM for memory and is 90x slower. Default to CPU for all future merges.
+
+### Status
+
+Eval triage is now running across all four adapters (30/70, 40/60, 50/50, 60/40). The pipeline is autonomous through Gate 2; human review at Gate 3 selects survivors for v1.2 reasoning fine-tune.
+
+---
+
 ## 2026-04-05 — 60:40 training complete; eval-first triage before reasoning fine-tune
 
 ### Training status
