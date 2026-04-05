@@ -66,7 +66,7 @@ PROFILING_DIR = OUTPUT_DIR / "profiling"
 EVAL_TRIAGE_DIR = OUTPUT_DIR / "eval_triage"
 WP_BENCH_DIR = PROJECT_ROOT / "wp-bench"
 
-VLLM_HEALTH_TIMEOUT_S = 300   # 5 minutes
+VLLM_HEALTH_TIMEOUT_S = 600   # 10 minutes (30B MoE loads ~8 min)
 VLLM_HEALTH_POLL_S = 5
 EVAL_RETRY_DELAY_S = 30
 
@@ -448,8 +448,8 @@ def _fallback_merge_and_serve(ratio: str) -> Optional[subprocess.Popen]:
             [
                 sys.executable,
                 str(merge_script),
-                "--adapter-path", str(adapter_path),
-                "--output-path", str(merged_model_path),
+                "--adapter-dir", str(adapter_path),
+                "--output-dir", str(merged_model_path),
             ],
             capture_output=True,
             text=True,
