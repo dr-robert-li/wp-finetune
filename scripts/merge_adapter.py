@@ -86,7 +86,7 @@ def merge_adapter(adapter_dir: str, output_dir: str, config: dict) -> None:
     print(f"Loading base model from {local_dir} ...")
     model = AutoModelForCausalLM.from_pretrained(
         local_dir,
-        torch_dtype=torch.bfloat16,
+        dtype=torch.bfloat16,
         device_map="auto",
     )
 

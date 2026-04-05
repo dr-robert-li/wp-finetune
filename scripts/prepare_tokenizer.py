@@ -165,7 +165,7 @@ def prepare_tokenizer(skip_download: bool = False, smoke_only: bool = False) -> 
         tokenizer = AutoTokenizer.from_pretrained(str(save_dir))
         model = AutoModelForCausalLM.from_pretrained(
             str(local_dir),
-            torch_dtype=torch.bfloat16,
+            dtype=torch.bfloat16,
             device_map="auto",
         )
         run_smoke_test(tokenizer, model)

@@ -250,7 +250,7 @@ def run_profiling(
 
     model = AutoModelForCausalLM.from_pretrained(
         str(abs_model_path),
-        torch_dtype=torch.bfloat16,
+        dtype=torch.bfloat16,
         device_map="auto",
     )
 
