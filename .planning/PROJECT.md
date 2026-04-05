@@ -91,7 +91,22 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 | No one-off scripts in pipeline | Skills + pipeline_orchestrator.py, not throwaway agent scripts | ✓ Good |
 | dgx_toolbox.py project-agnostic | All project-specific couplings moved to config/dgx_toolbox.yaml | ✓ Good |
 
-## Current Milestone: v2.0 MoE-Sieve Selective Training
+## Current Milestone: v1.2 Judge Reasoning Fine-Tune
+
+**Goal:** Fine-tune the winning ratio adapter on deep reasoning data so the model can articulate why code is bad, score with dimension-level justification, and generate corrected versions — not just output rubric scores.
+
+**Target features:**
+- Deep judge CoT data: Regenerate judge training examples with full reasoning chains (dimension-by-dimension analysis → issue identification → fix suggestions → scores)
+- Critique-then-fix data: New format where model sees defective code, produces structured critique (what, why, severity per dimension), then generates the corrected version
+- Fine-tune winning ratio adapter on combined reasoning dataset
+- Re-evaluate: confirm judge dimension improvement (Spearman, reasoning quality) without gen regression
+
+**Key constraints:**
+- Only the winning ratio (determined by Phase 4 eval) gets this treatment
+- Existing contrastive mutations (phase2_mutate.py) provide source material for critique-then-fix pairs
+- Must complete before v2.0 MoE-Sieve (Phase 7 needs the strengthened adapter)
+
+## Planned Milestone: v2.0 MoE-Sieve Selective Training
 
 **Goal:** Train only WordPress-active experts via routing-guided LoRA selection with task-aware data filtering and k-sweep to find the optimal expert budget. Produces MoE-Sieve adapter for GRPO refinement in v3.0.
 
@@ -102,7 +117,7 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 - A/B eval against v1.0 full-LoRA on wp-bench
 
 **Key constraints:**
-- Depends on Phase 4 eval completing first (need winning gen/judge ratio)
+- Depends on v1.2 completing first (need reasoning-enhanced adapter)
 - Profiling must tag expert sets by task token affinity, not just overall routing frequency
 - Pruning deferred to v3.0 — GRPO changes routing distribution, must prune on final routing
 
@@ -132,6 +147,11 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 ### v1.1 Adaptive Training Infrastructure (Phase 6, completed 2026-04-01)
 Power-primary adaptive planner with batch coupling, telemetry extensions, warmup probes, and failure classification. All 13 requirements verified.
 
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| Deep judge CoT + critique-then-fix combined | Strongest reasoning coverage — model needs to analyze independently AND remediate, not just compare pairs | — Pending |
+| Only winning ratio gets reasoning fine-tune | Avoid 43+ hours GPU time per ratio; eval determines which adapter to invest in | — Pending |
+
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
@@ -150,4 +170,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-02 — v2.0 revised (selective training only), v3.0 added (GRPO + pruning + packaging)*
+*Last updated: 2026-04-05 — v1.2 added (Judge Reasoning Fine-Tune), v2.0 dependency updated to v1.2*
