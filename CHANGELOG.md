@@ -7,13 +7,15 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 ### Added
 - **Milestone v1.2: Judge Reasoning Fine-Tune** — 4 new phases (4.1-4.4) adding deep judge CoT reasoning and critique-then-fix capability to winning ratio adapter. 17 requirements defined across data generation, training, and evaluation
 - **Per-example logging** (EVAL-06) — `eval_gen.py` and `eval_judge.py` now persist input prompt, raw model response, and extracted code in per-example JSONL alongside scores. Enables human review, debugging, and future GRPO reward signals
+- **`--limit N` flag for `run_eval_triage.py`** — Passes through to `eval_gen.run_eval()` and `eval_judge.run_eval()`. Without it, eval runs all 10,166 test examples (~58h per ratio). Use `--limit 500` for triage (~4h per ratio). Does not affect wp-bench (always runs full canonical suite)
 
 ### Fixed
 - **`eval/eval_gate.py` per-dimension gates** (EVAL-07) — `run_gate()` was reading `dimension_pass_rates` and `dimension_correlations` from eval JSON but scripts write `per_dimension` with nested dicts (`{mean, pass_rate_8, na_count}` for gen, `{corr, p_value, n_pairs}` for judge). Per-dimension gates were silently passing on empty dicts. Now correctly extracts `pass_rate_8` and `corr` from nested structure
 - **`eval/eval_gate.py` overall_spearman extraction** — `overall_spearman` from eval_judge.py is a dict `{"corr": ..., "p_value": ..., "n_pairs": ...}`, not a float. Now extracts `.corr` field correctly
+- **`wp-finetune:run-evaluation` skill** — Fixed 9 critical inaccuracies: wrong CLI flags for eval_gen/eval_judge (`--model-url`→`--model`, `--test-file`→`--dataset`, `--output-dir`→`--output`), fabricated function signatures (`load_model_and_tokenizer`, `profile_ratio`, `RoutingCollector(model)`), wrong triage_ratios kwargs, nonexistent `dgx.stop()` method, nonexistent `--profiling-only` flag
 
 ### Changed
-- **`wp-finetune:run-evaluation` skill** — Updated to reflect operational learnings: orchestrator runs from HOST (not container), LoRA fallback is the expected path for Qwen3 (not exception), corrected merge_adapter.py CLI args, added `--health-timeout` CLI reference, updated duration estimates and error handling table
+- **`wp-finetune:run-evaluation` skill** — Updated adapter inventory (60/40 complete), next steps route to v1.2 Phase 4.1, added `--limit` guidance with time estimates, added per-example JSONL and per-dimension gate notes
 - **README** — Updated project status with v1.2 milestone, 60/40 training completion
 
 ### Fixed

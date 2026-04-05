@@ -551,6 +551,7 @@ def run_eval_for_ratio(
     ratio: str,
     dataset_path: str = "data/final_dataset/openai_test.jsonl",
     force: bool = False,
+    limit: int = None,
 ) -> bool:
     """Start vLLM, run eval_gen + eval_judge + eval_gate, stop vLLM.
 
@@ -626,6 +627,7 @@ def run_eval_for_ratio(
                 logger.info(f"Running eval_gen (attempt {attempt + 1}) ...")
                 eval_gen.run_eval(
                     dataset_path=abs_dataset,
+                    limit=limit,
                     output_path=gen_output_path,
                     model=resolved_model,
                 )
@@ -651,6 +653,7 @@ def run_eval_for_ratio(
                 logger.info(f"Running eval_judge (attempt {attempt + 1}) ...")
                 eval_judge.run_eval(
                     dataset_path=abs_dataset,
+                    limit=limit,
                     output_path=judge_output_path,
                     model=resolved_model,
                 )
@@ -781,6 +784,7 @@ def run_eval_and_wpbench_for_ratio(
     skip_wpbench: bool = False,
     force: bool = False,
     health_timeout: int = VLLM_HEALTH_TIMEOUT_S,
+    limit: int = None,
 ) -> bool:
     """Run eval + wp-bench for a ratio, keeping vLLM alive between them.
 
@@ -853,6 +857,7 @@ def run_eval_and_wpbench_for_ratio(
                     logger.info(f"Running eval_gen for ratio {ratio} (attempt {attempt + 1}) ...")
                     eval_gen.run_eval(
                         dataset_path=abs_dataset,
+                        limit=limit,
                         output_path=gen_output_path,
                         model=resolved_model,
                     )
@@ -877,6 +882,7 @@ def run_eval_and_wpbench_for_ratio(
                     logger.info(f"Running eval_judge for ratio {ratio} (attempt {attempt + 1}) ...")
                     eval_judge.run_eval(
                         dataset_path=abs_dataset,
+                        limit=limit,
                         output_path=judge_output_path,
                         model=resolved_model,
                     )
@@ -1058,6 +1064,7 @@ def run_full_triage(
     tokenizer_path: str = "adapters/tokenizer",
     dataset_path: str = "data/final_dataset/openai_test.jsonl",
     health_timeout: int = VLLM_HEALTH_TIMEOUT_S,
+    limit: int = None,
 ) -> None:
     """Run the full Phase 4 pipeline: profiling -> eval -> triage.
 
@@ -1070,6 +1077,7 @@ def run_full_triage(
         tokenizer_path: Path to extended tokenizer (relative to project root).
         dataset_path: Path to test dataset (relative to project root).
         health_timeout: Seconds to wait for vLLM health check.
+        limit: Max examples for eval_gen/eval_judge (None = all). Does not affect wp-bench.
     """
     if eval_ratios is None:
         eval_ratios = ALL_EVAL_RATIOS
@@ -1111,6 +1119,7 @@ def run_full_triage(
             skip_wpbench=skip_wpbench,
             force=force,
             health_timeout=health_timeout,
+            limit=limit,
         )
         if not success:
             eval_failures.append(ratio)
@@ -1191,6 +1200,14 @@ Examples:
              "Increase for larger models, decrease for smaller ones.",
     )
     parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Max examples for eval_gen/eval_judge per ratio (default: all). "
+             "Use 500 for a representative sample (~2.8h per ratio instead of ~58h). "
+             "Does not affect wp-bench (always runs full suite).",
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         help="Enable DEBUG logging.",
@@ -1213,6 +1230,7 @@ Examples:
         tokenizer_path=args.tokenizer_path,
         dataset_path=args.dataset,
         health_timeout=args.health_timeout,
+        limit=args.limit,
     )
 
 

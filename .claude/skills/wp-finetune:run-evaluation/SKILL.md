@@ -73,7 +73,8 @@ If no CUDA: that's expected. The orchestrator runs from the **HOST** (not inside
 
 ```bash
 # Run from HOST — DGX Toolbox manages the vLLM container
-python3 scripts/run_eval_triage.py --skip-profiling --ratios 30_70,40_60,50_50,60_40
+# --limit 500 recommended for triage (representative sample, ~4h/ratio)
+python3 scripts/run_eval_triage.py --skip-profiling --ratios 30_70,40_60,50_50,60_40 --limit 500
 ```
 
 #### 0d. Check wp-bench availability
@@ -93,25 +94,16 @@ If not cloned, note that wp-bench will be cloned during Step 2. If clone fails, 
 
 **Duration:** ~10 minutes total (all 5 ratios)
 
-```python
-python3 scripts/run_eval_triage.py --profiling-only
+```bash
+# Profiling is handled by the orchestrator (no separate --profiling-only flag)
+# To run profiling + eval together:
+python3 scripts/run_eval_triage.py --ratios 30_70,40_60,50_50,60_40
+
+# To skip profiling (if already complete):
+python3 scripts/run_eval_triage.py --skip-profiling --ratios 30_70,40_60,50_50,60_40
 ```
 
-Or via orchestrator:
-```python
-from scripts.run_eval_triage import run_profiling
-from scripts.profile_base_model import load_model_and_tokenizer, profile_ratio, write_profiling_jsonl, write_summary_md
-
-model, tokenizer = load_model_and_tokenizer("models/Qwen3-30B-A3B", "adapters/tokenizer")
-collector = RoutingCollector(model)
-
-for ratio in ["30_70", "40_60", "50_50", "60_40", "70_30"]:
-    data_path = f"data/final_dataset/ratio_{ratio}/openai_train.jsonl"
-    profile_ratio(collector, tokenizer, data_path, ratio, subsample_frac=0.10)
-
-write_profiling_jsonl(collector, "output/profiling/base_model_eeff.jsonl")
-write_summary_md(collector, "output/profiling/base_model_eeff_summary.md")
-```
+Profiling is handled internally by `run_eval_triage.py` which calls `profile_base_model.py`. Output lands in `output/profiling/`.
 
 **Decision Gate 1: E_eff Training Signal**
 
@@ -153,18 +145,12 @@ Use AskUserQuestion:
   - "Abort — investigate profiling data first" → exit skill
 
 If training warranted, start in background via run-training skill pattern:
-```python
-dgx = get_toolbox()
-dgx.execute("unsloth", "python3", "/workspace/wp-finetune/scripts/train_model.py",
-            f"config/train_config_60_40.yaml")
+```bash
+docker exec -d unsloth-headless python3 /workspace/wp-finetune/scripts/train_model.py \
+  --config /workspace/wp-finetune/config/train_config_60_40.yaml
 ```
 
-**Reclaim GPU memory** before proceeding:
-```python
-del model
-torch.cuda.empty_cache()
-gc.collect()
-```
+**Reclaim GPU memory** before proceeding — the orchestrator handles this internally between profiling and vLLM serving.
 
 ### Step 2: Sequential Adapter Evaluation
 
@@ -212,29 +198,27 @@ Agent(
 >
 > **Per-dimension gates (EVAL-07):** `eval_gate.py` now correctly extracts `pass_rate_8` and `corr` from nested `per_dimension` dicts. Per-dimension gen and judge gates are functional when `gen_dimension_targets` / `judge_dimension_targets` are set in config.
 
-```python
+```bash
 mkdir -p output/eval_triage/ratio_{ratio}
 
-# PHPCS pass rate (EVAL-01)
-python3 -m eval.eval_gen --model-url http://localhost:8020/v1 \
-  --test-file data/final_dataset/openai_test.jsonl \
-  --output-dir output/eval_triage/ratio_{ratio}/
+# PHPCS pass rate + per-dimension rubric scoring (EVAL-01)
+# Note: vLLM endpoint resolved internally via dgx.vllm_endpoint(), not a CLI flag
+python3 -m eval.eval_gen \
+  --dataset data/final_dataset/openai_test.jsonl \
+  --output output/eval_triage/ratio_{ratio}/eval_gen_results.json \
+  --model <detected-model-name>
 
 # Judge Spearman correlation (EVAL-02)
-python3 -m eval.eval_judge --model-url http://localhost:8020/v1 \
-  --test-file data/final_dataset/openai_test.jsonl \
-  --output-dir output/eval_triage/ratio_{ratio}/
+python3 -m eval.eval_judge \
+  --dataset data/final_dataset/openai_test.jsonl \
+  --output output/eval_triage/ratio_{ratio}/eval_judge_results.json \
+  --model <detected-model-name>
 
-# Quality gates (EVAL-05)
+# Quality gates (EVAL-05) — per-dimension gates now functional (EVAL-07)
 python3 -m eval.eval_gate --results-dir output/eval_triage/ratio_{ratio}/
 ```
 
-Read results:
-```python
-import json
-gen_results = json.load(open(f"output/eval_triage/ratio_{ratio}/eval_gen_results.json"))
-judge_results = json.load(open(f"output/eval_triage/ratio_{ratio}/eval_judge_results.json"))
-```
+The orchestrator (`run_eval_triage.py`) handles all of this automatically — including model name detection from `/v1/models`.
 
 #### 2d. Run wp-bench (if available)
 
@@ -254,11 +238,7 @@ If wp-bench setup fails: set `wpbench_available=False`, continue without. wp-ben
 
 #### 2e. Stop vLLM, reclaim memory
 
-```python
-dgx.stop("vllm")
-# Wait for port to be released
-time.sleep(10)
-```
+The orchestrator's internal `_stop_vllm()` handles container cleanup (`docker rm -f vllm`) and port release between ratios.
 
 #### 2f. Present per-ratio results
 
@@ -288,16 +268,14 @@ After each adapter completes, display inline:
 **Purpose:** Apply GATE-02 elimination logic to determine which ratios survive to Phase 7.
 
 ```python
-from scripts.triage_ratios import triage_ratios, write_triage_decision
+from scripts.triage_ratios import load_eval_results, triage_ratios, write_triage_decision
 
-result = triage_ratios(
-    eval_dir="output/eval_triage",
-    profiling_summary="output/profiling/base_model_eeff_summary.md",
-    ratios=["30_70", "40_60", "50_50"]  # + 60_40/70_30 if trained
-)
-
-write_triage_decision(result, "output/triage_decision.md")
+eval_results = load_eval_results("output/eval_triage")
+result = triage_ratios(eval_results)
+write_triage_decision(result, None, "output/triage_decision.md")
 ```
+
+The orchestrator (`run_eval_triage.py`) calls this automatically after all adapters are evaluated.
 
 **Elimination rules (GATE-02):**
 - Fail ANY hard gate (PHPCS ≤95%, Spearman ≤0.85, Security ≤98%) → **ELIMINATED**
@@ -449,6 +427,9 @@ python3 scripts/run_eval_triage.py [options]
 --skip-profiling      Skip E_eff profiling (use existing results)
 --skip-wpbench        Skip wp-bench (static gates only)
 --ratios RATIOS       Comma-separated ratios (default: 30_70,40_60,50_50)
+--limit N             Max examples for eval_gen/eval_judge per ratio (default: all).
+                      Does NOT affect wp-bench (always runs full canonical suite).
+                      Recommended: 500 for triage (~2.8h/ratio), full for final eval.
 --force               Clear all completion markers, re-run everything
 --health-timeout SEC  vLLM health check timeout (default: 600). Use 900 for
                       30B MoE with LoRA fallback (merge adds ~10 min)
@@ -457,6 +438,16 @@ python3 scripts/run_eval_triage.py [options]
 --dataset PATH        Test dataset JSONL relative to project root
 --verbose             DEBUG logging
 ```
+
+**Time estimates by --limit:**
+
+| --limit | eval_gen | eval_judge | wp-bench | Total/ratio | x4 ratios |
+|---------|----------|------------|----------|-------------|-----------|
+| 500 | ~1.4h | ~1.4h | ~1h | ~4h | ~16h |
+| 1000 | ~2.8h | ~2.8h | ~1h | ~6.6h | ~26h |
+| (all 10,166) | ~29h | ~29h | ~1h | ~59h | ~237h |
+
+**Recommendation:** Use `--limit 500` for triage (statistically representative at 5% of test set). Run full eval only on the winning ratio after triage.
 
 ## Error Handling
 
