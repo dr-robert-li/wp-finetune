@@ -15,6 +15,7 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 - **`scripts/run_eval_triage.py`** — Increased `VLLM_HEALTH_TIMEOUT_S` default from 300s to 600s. Added `--health-timeout` CLI flag so it can be tuned per model size
 - **`scripts/run_eval_triage.py`** — Added crash-loop detection in `_wait_for_vllm()`: checks RestartCount and scans docker logs for fatal errors (LoRA validation, OOM). Short-circuits health wait after ~60s instead of burning the full timeout when LoRA loading is guaranteed to fail
 - **`scripts/merge_adapter.py`, `profile_base_model.py`, `run_eval_triage.py`, `prepare_tokenizer.py`** — Replaced deprecated `torch_dtype=` with `dtype=` in `from_pretrained()` calls. Transformers 5.x on HOST errors on `torch_dtype`; `dtype` works on both 4.56+ and 5.x
+- **`scripts/run_eval_triage.py`** — `_fallback_merge_and_serve()` now runs merge inside the `unsloth-headless` container via `docker exec` instead of HOST. HOST peft (newer) is incompatible with adapters trained under container peft 0.18.1 (`lora_dropout != 0` error)
 - **`scripts/run_eval_triage.py`** — Fixed `_fallback_merge_and_serve()` CLI args: `--adapter-path`/`--output-path` → `--adapter-dir`/`--output-dir` to match `merge_adapter.py`'s actual interface
 - **`dgx-toolbox/inference/start-vllm.sh`** — Added `source lib.sh` and `$(build_extra_mounts)` to docker run, matching the pattern already used by container scripts. Without this, vLLM could only serve models from `~/.cache/huggingface` or `~/eval/models`
 
