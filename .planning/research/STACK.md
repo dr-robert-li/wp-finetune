@@ -73,25 +73,26 @@ The existing TRL SFTTrainer handles both new formats natively. What changes is t
 
 ### Reasoning Quality Evaluation — New Script
 
-A new evaluation script (`eval_reasoning_quality.py`) is needed to measure whether generated reasoning chains are substantive. This uses **only already-installed or trivially-added libraries**.
+A new evaluation script (`eval_reasoning_quality.py`) is needed to measure whether generated reasoning chains are substantive. This uses regex-based fast checks as primary gates plus Nemotron 3 Nano (available on the DGX Spark via `~/dgx-toolbox`) as a secondary quality signal for reasoning coherence evaluation.
 
-| Library | Version | Purpose | Why |
-|---------|---------|---------|-----|
-| bert-score | 0.3.13 | Semantic similarity between generated reasoning and reference reasoning | Lightweight proxy for reasoning richness; correlates better with human judgment than BLEU/ROUGE for reasoning tasks (per 2025 ACL findings); no GPU required, uses DeBERTa by default |
+| Tool | Location | Purpose | Why |
+|------|----------|---------|-----|
+| Nemotron 3 Nano (as judge) | `~/dgx-toolbox` (already available on DGX Spark) | Evaluate reasoning chain quality: coherence, dimension coverage depth, score-reasoning consistency | Nemotron-as-judge provides actual reasoning quality assessment (coherence, logical consistency) rather than text similarity; avoids circularity because Nemotron is a different model family than the Qwen3 judge being trained; zero additional dependency — already deployed on DGX Spark |
 | nltk | 3.9.3 (already installed) | Tokenization for reasoning chain length metrics | Already present; used for token count, sentence count, coverage of expected keywords (e.g., "nonce", "escape", "prepare") |
 
 **What NOT to use for reasoning quality eval:**
-- BLEU/ROUGE — designed for translation/summarization; punishes valid paraphrases of the same reasoning; 47% human alignment vs BERTScore's 59% (ACL 2025)
+- BLEU/ROUGE — designed for translation/summarization; punishes valid paraphrases of the same reasoning
 - BLEURT — requires a trained checkpoint download (~1.4GB); overkill for this task; limited to Google's hosted checkpoint
-- LLM-as-judge for reasoning quality — circular; we're training the judge, we can't use it to evaluate itself
+- BERTScore — text similarity metric, not a reasoning quality evaluator; measures surface-level semantic overlap between texts, cannot assess whether a reasoning chain is logically coherent, covers all dimensions substantively, or has score-reasoning consistency
+- LLM-as-judge using the model being trained — circular; we're training the judge, we can't use it to evaluate itself (Nemotron is a separate model family, so no circularity)
 
 **Reasoning quality metrics (implemented in `eval_reasoning_quality.py`):**
 1. **Dimension coverage** — does the chain mention all 9 dimensions by name? (exact string match, no model needed)
 2. **Issue specificity** — does the chain cite specific line numbers, function names, or WordPress API violations? (regex over known patterns: `line \d+`, `$wpdb->`, `wp_verify_nonce`, etc.)
-3. **BERTScore F1** vs reference chains — semantic richness compared to a curated set of 50 reference judge completions
+3. **Nemotron-as-judge coherence score** — Nemotron 3 Nano evaluates a sample of reasoning chains for: (a) logical coherence of the reasoning flow, (b) whether dimension analyses substantively address the code rather than being generic filler, (c) consistency between written reasoning severity and final numeric scores
 4. **Fix presence rate** (critique-then-fix only) — does the corrected code actually contain `$wpdb->prepare`, `wp_verify_nonce`, `esc_html`, etc. that the original was missing? (PHPCS + regex; no model required)
 
-**Primary gate:** Dimension coverage >=9/9 AND issue specificity rate >=60% of examples cite at least one specific violation. BERTScore is secondary signal, not a hard gate.
+**Primary gate:** Dimension coverage >=9/9 AND issue specificity rate >=60% of examples cite at least one specific violation. Nemotron-as-judge coherence is a secondary quality signal evaluated on a representative sample (~100-200 examples), not run on every example.
 
 ### Supporting Scripts — New Files in `scripts/`
 
@@ -101,7 +102,7 @@ No new libraries. New Python scripts that extend existing patterns:
 |--------|---------|---------|
 | `phase4_deep_judge_cot.py` | Regenerate judge training examples with full dimension-by-dimension reasoning chains | `phase2_judge_dataset.py` agent loop pattern |
 | `phase4_critique_fix.py` | Generate critique-then-fix pairs from `phase2_mutate.py` outputs | `generate_cot_real.py` structure + `phase2_mutate.py` source data |
-| `eval_reasoning_quality.py` | Measure dimension coverage, issue specificity, BERTScore F1 on generated chains | Standalone; uses bert-score + nltk |
+| `eval_reasoning_quality.py` | Measure dimension coverage, issue specificity, Nemotron-as-judge coherence on generated chains | Standalone; uses nltk + Nemotron 3 Nano via ~/dgx-toolbox |
 
 ---
 
@@ -149,15 +150,9 @@ The existing `train_config_*.yaml` files require **one change** for v1.2: max se
 
 ## Installation — New Dependencies Only
 
-```bash
-# Reasoning quality evaluation (bert-score not yet installed)
-pip install bert-score==0.3.13
+No new Python package dependencies for v1.2. Nemotron 3 Nano is already available on the DGX Spark via `~/dgx-toolbox` and is accessed as a local inference endpoint, not a Python library import.
 
-# Verify against existing stack — bert-score requires torch (already present)
-python -c "import bert_score; print('bert_score ok')"
-```
-
-Everything else (anthropic SDK, nltk, TRL, Unsloth, transformers) is already installed.
+Everything required (anthropic SDK, nltk, TRL, Unsloth, transformers) is already installed.
 
 ---
 
@@ -167,7 +162,7 @@ Everything else (anthropic SDK, nltk, TRL, Unsloth, transformers) is already ins
 |-------------|-------------|---------|
 | Plain-text reasoning in `content` field | Hidden `<think>` blocks via Qwen3 enable_thinking=True training data | The reasoning IS the product for v1.2 — users need to see dimension-by-dimension critiques; hidden thinking trains covert deliberation not visible output; also requires enable_thinking flag management at inference time |
 | Visible reasoning in assistant `content` | TRL v1.0 `"thinking"` field in assistant messages | The "thinking" field renders as hidden `<think>` blocks in Qwen3 chat template — same problem as above; also requires TRL upgrade mid-milestone |
-| BERTScore for reasoning quality | LLM-as-judge eval of reasoning | Circular dependency during development; BERTScore + regex coverage is faster, cheaper, and sufficient for a quality signal |
+| Nemotron-as-judge for reasoning quality | BERTScore (text similarity) | BERTScore measures surface-level semantic overlap, not reasoning quality; Nemotron 3 Nano (available via ~/dgx-toolbox on DGX Spark) can evaluate coherence, dimension coverage depth, and score-reasoning consistency — actual reasoning quality signals; no circularity because Nemotron is a different model family than the Qwen3 judge being trained |
 | Extend `phase2_judge_dataset.py` pattern | New agent framework (LangChain, DSPy) | Zero new dependencies; existing Claude Code agent spawn pattern already validated through 143K examples in v1.0 |
 | Regenerate from all 134K judged functions | Generate from scratch with new prompts | Reusing existing judged data guarantees the reasoning annotations cover real-world code, not just synthetic; mutation type labels from phase2_mutate.py provide critique anchors |
 | claude-sonnet-4-6 for reasoning generation | claude-opus-4-6 | Sonnet is sufficient for structured multi-dimension reasoning at this complexity; upgrade to Opus only after spot-checking chain quality; 40% cost difference |
@@ -181,7 +176,7 @@ Everything else (anthropic SDK, nltk, TRL, Unsloth, transformers) is already ins
 | Qwen3 `<think>` blocks in training data | Trains hidden reasoning, not visible critique; inference-time users need to see the reasoning | Embed reasoning directly in assistant `content` as structured prose |
 | TRL v1.0 upgrade mid-milestone | Released 2026-03-31; migration risk during active training; v0.24.0 handles all required formats | Stay on 0.24.0; evaluate upgrade at v2.0 milestone start |
 | max_seq_length=4096 for v1.2 training data | Deep judge CoT chains exceed 4096 tokens routinely; truncation silently destroys reasoning quality | Set max_seq_length=8192; validate 95th percentile token length of generated chains before training |
-| BLEU/ROUGE for reasoning quality | Designed for translation; penalizes valid paraphrases; 47% human alignment vs BERTScore 59% on reasoning tasks (ACL 2025) | BERTScore F1 + dimension coverage + issue specificity regex |
+| BLEU/ROUGE/BERTScore for reasoning quality | Designed for text similarity, not reasoning quality; BERTScore measures semantic overlap, not logical coherence or score-reasoning consistency | Nemotron-as-judge coherence (sample-based) + dimension coverage + issue specificity regex |
 | Separate "fix" and "critique" as two training examples | Creates two-call inference pattern; model needs to learn single-pass critique-then-fix | Combine critique + corrected code in one assistant turn |
 | New external data for critique-then-fix | Introduces distribution shift from existing training data | Use `phase2_mutate.py` outputs — same mutation types, same code distribution, same quality filters already applied |
 
@@ -192,7 +187,7 @@ Everything else (anthropic SDK, nltk, TRL, Unsloth, transformers) is already ins
 **Phase 4a (Deep Judge CoT Generation):**
 - Claude Code agents (subscription); spawn-until-target pattern
 - Prompt template: system = `<wp_judge>` judge role + dimension rubric; user = code sample; expected output = dimension-by-dimension prose analysis + JSON scores
-- Quality gate: dimension coverage check (all 9 mentioned) + BERTScore vs reference set >=0.75 F1
+- Quality gate: dimension coverage check (all 9 mentioned) + issue specificity >=60% + Nemotron-as-judge coherence on pilot sample
 - Output: `data/phase4_reasoning/deep_judge_cot.jsonl`
 
 **Phase 4b (Critique-then-Fix Generation):**
@@ -202,7 +197,7 @@ Everything else (anthropic SDK, nltk, TRL, Unsloth, transformers) is already ins
 - Output: `data/phase4_reasoning/critique_fix.jsonl`
 
 **Phase 4c (Reasoning Quality Evaluation):**
-- `eval_reasoning_quality.py`: dimension coverage, issue specificity, BERTScore F1
+- `eval_reasoning_quality.py`: dimension coverage, issue specificity, Nemotron-as-judge coherence (sample-based)
 - Run before training; fail fast if <80% of chains pass dimension coverage gate
 - Output: `telemetry/reasoning_quality_report.json`
 
@@ -218,7 +213,7 @@ Everything else (anthropic SDK, nltk, TRL, Unsloth, transformers) is already ins
 
 | Package | Compatible With | Notes |
 |---------|-----------------|-------|
-| bert-score==0.3.13 | torch (from container), transformers>=4.x | Uses DeBERTa for scoring by default; no GPU required for eval |
+| Nemotron 3 Nano (~/dgx-toolbox) | DGX Spark local inference | Already deployed; accessed as local endpoint for reasoning quality eval on sample batches |
 | max_seq_length=8192 | unsloth 2026.3.5, Qwen3-30B-A3B | Qwen3 supports 128K context; 8192 is well within Unsloth's tested range |
 | TRL 0.24.0 | prompt-completion conversational format | Standard format; no upgrade needed for v1.2 reasoning chain training |
 
@@ -233,8 +228,7 @@ Everything else (anthropic SDK, nltk, TRL, Unsloth, transformers) is already ins
 - [J1: Incentivizing Thinking in LLM-as-a-Judge](https://arxiv.org/abs/2505.10320) — training judges to reason with verifiable rewards; 32B judge matches 671B DeepSeek-R1 on some benchmarks (MEDIUM confidence; research paper)
 - [Training an LLM-as-a-Judge: Pipeline, Insights, Practical Lessons](https://arxiv.org/html/2502.02988v1) — dimension-level scoring format, MAE + Agr(2,2) as eval metrics (MEDIUM confidence; research paper)
 - [Improve LLM-as-a-Judge as General Ability](https://aclanthology.org/2025.emnlp-main.712.pdf) — jCoT (reasoning process) + jres (judge result) training format (MEDIUM confidence; peer-reviewed)
-- [LLM Evaluation 2025: Smarter Metrics](https://www.techrxiv.org/users/927947/articles/1304989) — BERTScore 59% vs BLEU 47% alignment with human judgment on reasoning tasks; BLEURT/BERTScore weak on medical reasoning (MEDIUM confidence; preprint)
-- [bert-score PyPI](https://pypi.org/project/bert-score/) — v0.3.13 current (HIGH confidence)
+- [LLM Evaluation 2025: Smarter Metrics](https://www.techrxiv.org/users/927947/articles/1304989) — comparison of automated metrics on reasoning tasks; text similarity metrics (BERTScore, BLEU, BLEURT) have limited alignment with human judgment on reasoning quality evaluation (MEDIUM confidence; preprint)
 - [The Art of Repair: Optimizing Iterative Program Repair](https://arxiv.org/abs/2505.02931) — (Instruction, Input, Output) format for code repair instruction tuning; buggy code + fix template + corrected code structure (MEDIUM confidence; research paper)
 - Confirmed installed versions via `pip show` on DGX Spark: TRL 0.24.0, transformers 5.3.0, unsloth 2026.3.5, nltk 3.9.3 (HIGH confidence; direct verification)
 

@@ -21,13 +21,13 @@ Three additional risks need active management: catastrophic forgetting of genera
 
 ### Recommended Stack
 
-The v1.0 stack (Unsloth 2026.3.5, TRL 0.24.0, transformers 5.3.0, Qwen3-30B-A3B, DGX Spark) is unchanged for v1.2. The only net-new dependency is `bert-score==0.3.13` for reasoning quality evaluation; it requires only the already-installed `torch`. TRL v1.0 released 2026-03-31 — do NOT upgrade mid-milestone; v0.24.0 handles all required training formats. The one required config change is `max_seq_length: 4096 → 8192` because deep judge CoT chains routinely exceed 4096 tokens across 9 dimensions.
+The v1.0 stack (Unsloth 2026.3.5, TRL 0.24.0, transformers 5.3.0, Qwen3-30B-A3B, DGX Spark) is unchanged for v1.2. No new Python package dependencies are required. Reasoning quality evaluation uses Nemotron 3 Nano as a judge model (already available on DGX Spark via `~/dgx-toolbox`) instead of text similarity metrics like BERTScore. TRL v1.0 released 2026-03-31 — do NOT upgrade mid-milestone; v0.24.0 handles all required training formats. The one required config change is `max_seq_length: 4096 → 8192` because deep judge CoT chains routinely exceed 4096 tokens across 9 dimensions.
 
 **Core technologies:**
 - **Unsloth 2026.3.5**: LoRA SFT accelerator — confirmed installed; handles 8192 token sequences at LoRA r=32 within DGX Spark 128GB unified memory
 - **TRL 0.24.0**: SFTTrainer — native support for conversational prompt-completion format; no upgrade needed for v1.2 reasoning chain training
 - **anthropic SDK >=0.50.0**: Claude Code agent spawn pattern — existing spawn-until-target pattern reused for both new data generation scripts; no new agent framework needed
-- **bert-score==0.3.13**: Reasoning quality evaluation — BERTScore F1 shows 59% vs BLEU's 47% human alignment on reasoning tasks (ACL 2025); only new install required
+- **Nemotron 3 Nano (~/dgx-toolbox)**: Reasoning quality evaluation — Nemotron-as-judge evaluates coherence, dimension coverage depth, and score-reasoning consistency on a sample of generated reasoning chains; already available on DGX Spark, no new install required
 - **nltk 3.9.3**: Already installed; used for dimension coverage checks and keyword specificity metrics
 
 **Training data format decision:** Reasoning goes in the `response` field as structured prose, not in a `<think>` block. Qwen3's `enable_thinking` is left enabled at inference, but training data must use visible reasoning so users can read the dimension-by-dimension critique. Using TRL v1.0's `"thinking"` field would produce hidden `<think>` blocks — the reasoning IS the product for v1.2, not scaffolding.
@@ -48,6 +48,7 @@ The v1.0 stack (Unsloth 2026.3.5, TRL 0.24.0, transformers 5.3.0, Qwen3-30B-A3B,
 **Defer (v2+):**
 - TRACT-style regression-aware loss — requires custom loss head on top of Unsloth SFTTrainer; flag for v2.0 if Spearman plateaus below 0.85
 - Multi-turn self-refinement training — appropriate after GRPO is introduced in v3.0; the RL loop provides refinement signal without multi-turn SFT format complexity
+- GRPO for judge reasoning quality — v3.0 GRPO currently targets gen-only (`<wp_gen>`), but could also refine judge reasoning quality using verifiable rewards (PHPCS/security scanner verify critique-then-fix corrections; Nemotron-as-judge or score consistency checks verify judge scoring quality); deferred as a v3.0 scope consideration
 - Pairwise preference data for reasoning quality — requires human or stronger-model annotation; consider if Spearman plateaus post-v2.0
 
 ### Architecture Approach
@@ -166,7 +167,7 @@ The v1.2 milestone has a clear six-step sequential flow with one parallel fork.
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All installed versions confirmed via `pip show` on DGX Spark; only new dependency is bert-score which has no compatibility risk; official TRL and Unsloth docs verified (Unsloth fetch was partial — gap noted) |
+| Stack | HIGH | All installed versions confirmed via `pip show` on DGX Spark; no new Python dependencies (Nemotron 3 Nano already available via ~/dgx-toolbox); official TRL and Unsloth docs verified (Unsloth fetch was partial — gap noted) |
 | Features | HIGH (core format), MEDIUM (metrics) | Reasoning format decisions grounded in Prometheus, Critique-Coder, TRACT research; reasoning quality metrics based on ACL 2025 and preprint evidence |
 | Architecture | HIGH | Based on direct codebase inspection; all integration points verified; `parse_judge_response()` compatibility confirmed against the new response format |
 | Pitfalls | HIGH (v1.0 pitfalls from code inspection), MEDIUM-HIGH (v1.2 reasoning pitfalls from SFT literature) | v1.2 reasoning pitfalls derived from continued training and format collapse literature; exact severity on Qwen3-30B-A3B specifically not directly measured |
@@ -189,7 +190,7 @@ The v1.2 milestone has a clear six-step sequential flow with one parallel fork.
 - [TRL Dataset Formats](https://huggingface.co/docs/trl/main/dataset_formats) — conversational prompt-completion format, reasoning field options
 - [TRL v1.0 Blog Post](https://huggingface.co/blog/trl-v1) — v1.0 release 2026-03-31; minimal migration from 0.x confirmed
 - [Qwen-3 Chat Template Deep Dive](https://huggingface.co/blog/qwen-3-chat-template-deep-dive) — enable_thinking behavior, think tag implications for training data
-- [bert-score PyPI](https://pypi.org/project/bert-score/) — v0.3.13 current, torch-only dependency
+- Nemotron 3 Nano available on DGX Spark via ~/dgx-toolbox — confirmed accessible for local inference
 - Codebase direct inspection: `eval/eval_judge.py`, `scripts/phase2_mutate.py`, `scripts/phase2_judge_dataset.py`, `scripts/merge_dataset.py`, `data/phase3_cot/output/`, `data/final_dataset/`, `adapters/` listing
 
 ### Secondary (MEDIUM confidence)
@@ -199,7 +200,7 @@ The v1.2 milestone has a clear six-step sequential flow with one parallel fork.
 - [Critique-Coder](https://arxiv.org/abs/2509.22824) — structured severity labels improve downstream task transfer; CRL with 20% critique mix
 - [J1: Incentivizing Thinking in LLM-as-a-Judge](https://arxiv.org/abs/2505.10320) — training judges to reason; 32B judge matching 671B on structured tasks
 - [Training an LLM-as-a-Judge: Pipeline, Insights, Practical Lessons](https://arxiv.org/html/2502.02988v1) — dimension-level scoring format, MAE + Agr(2,2) eval metrics
-- [LLM Evaluation 2025: Smarter Metrics](https://www.techrxiv.org/users/927947/articles/1304989) — BERTScore 59% vs BLEU 47% alignment on reasoning tasks (preprint)
+- [LLM Evaluation 2025: Smarter Metrics](https://www.techrxiv.org/users/927947/articles/1304989) — comparison of automated metrics on reasoning tasks (preprint)
 - [Unsloth Qwen3 Docs](https://unsloth.ai/docs/models/qwen3-how-to-run-and-fine-tune) — 75%/25% reasoning/non-reasoning mix; enable_thinking inference config (partial content retrieved — gap)
 - [The Art of Repair](https://arxiv.org/abs/2505.02931) — (Instruction, Input, Output) format for code repair instruction tuning
 

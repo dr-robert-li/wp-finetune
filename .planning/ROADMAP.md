@@ -198,7 +198,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. `eval_judge.py` Spearman correlation on the reasoning adapter meets or exceeds the winning ratio baseline — absolute score distributions per dimension are compared and any dimension with mean shift >0.5 points vs baseline is flagged
   2. `eval_gen.py` PHPCS pass rate on the reasoning adapter is within 2pp of the winning ratio baseline — generation regression is not masked by improved judge metrics
-  3. Reasoning quality scoring confirms all 9 rubric dimensions are addressed in a representative sample of outputs, and dimension coverage rate plus score-reasoning consistency rate are both recorded
+  3. Reasoning quality scoring confirms all 9 rubric dimensions are addressed in a representative sample of outputs — dimension coverage rate, issue specificity rate, score-reasoning consistency rate, and Nemotron-as-judge coherence evaluation (Nemotron 3 Nano via ~/dgx-toolbox) are all recorded
   4. wp-bench scores on the reasoning adapter meet or exceed the winning ratio baseline
   5. Human reviews a sample of reasoning outputs (deep judge CoT and critique-then-fix) and explicitly approves quality before the adapter merge runs — `models/qwen3-30b-wp-{winning}-reasoning-merged/` is written only after human sign-off
 **Plans**: TBD
@@ -311,7 +311,7 @@ Plans:
 **Plans**: TBD
 
 ### Phase 11: GRPO Training
-**Goal**: Gen-only GRPO refines the MoE-Sieve model's generation quality on hot experts, with RSPO router-shift stabilization ensuring experts do not drift from their established routing patterns
+**Goal**: Gen-only GRPO refines the MoE-Sieve model's generation quality on hot experts, with RSPO router-shift stabilization ensuring experts do not drift from their established routing patterns. **Scope note:** GRPO could also refine judge reasoning quality using verifiable rewards (PHPCS/security scanner verify critique-then-fix corrections; Nemotron-as-judge or score consistency checks verify judge scoring). This is a v3.0 scope decision — evaluate after gen-only GRPO results are available.
 **Depends on**: Phase 10
 **Requirements**: GRPO-05, GRPO-06, GRPO-07, GRPO-08
 **Success Criteria** (what must be TRUE):
