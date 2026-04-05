@@ -45,9 +45,10 @@ Build adapter inventory:
 ```
 | # | Ratio | Adapter Path | Final Loss | Status |
 |---|-------|-------------|-----------|--------|
-| 1 | 30/70 | adapters/qwen3-30b-wp-30_70/ | ? | Ready |
-| 2 | 40/60 | adapters/qwen3-30b-wp-40_60/ | ? | Ready (OOM run, validated) |
-| 3 | 50/50 | adapters/qwen3-30b-wp-50_50/ | 0.296 | Ready |
+| 1 | 30/70 | adapters/qwen3-30b-wp-30_70/ | ? | Partial (800 steps) |
+| 2 | 40/60 | adapters/qwen3-30b-wp-40_60/ | ? | Partial (800 steps) |
+| 3 | 50/50 | adapters/qwen3-30b-wp-50_50/ | 0.296 | Partial (800 steps) |
+| 4 | 60/40 | adapters/qwen3-30b-wp-60_40/ | 0.277 | Complete (8134 steps, 43h) |
 ```
 
 Read each adapter's `trainer_state.json` (last checkpoint) for final loss if available.
@@ -205,6 +206,12 @@ Agent(
 
 #### 2c. Run static eval suite
 
+> **Per-example logging (EVAL-06):** Both eval scripts now persist prompt, raw model response, and extracted code in per-example JSONL alongside scores. This enables human review of individual examples without re-running the model.
+> - `eval_gen_results.jsonl`: includes `prompt`, `response`, `extracted_code` per example
+> - `eval_judge_results.pairs.jsonl`: includes `prompt`, `response`, `code` per example
+>
+> **Per-dimension gates (EVAL-07):** `eval_gate.py` now correctly extracts `pass_rate_8` and `corr` from nested `per_dimension` dicts. Per-dimension gen and judge gates are functional when `gen_dimension_targets` / `judge_dimension_targets` are set in config.
+
 ```python
 mkdir -p output/eval_triage/ratio_{ratio}
 
@@ -313,7 +320,7 @@ write_triage_decision(result, "output/triage_decision.md")
   30/70  │ {val}% │ {val}    │ {val}%   │ {P/F}  │ {val}   │ {SURVIVE/ELIM}
   40/60  │ {val}% │ {val}    │ {val}%   │ {P/F}  │ {val}   │ {SURVIVE/ELIM}
   50/50  │ {val}% │ {val}    │ {val}%   │ {P/F}  │ {val}   │ {SURVIVE/ELIM}
-  {60/40}│ {if trained}                                     │
+  60/40  │ {val}% │ {val}    │ {val}%   │ {P/F}  │ {val}   │ {SURVIVE/ELIM}
   {70/30}│ {if trained}                                     │
 
 ## wp-bench Differentiation (among gate-passers only)
@@ -409,25 +416,29 @@ Update STATE.md Accumulated Context:
  EVAL ► PHASE 4 TRIAGE COMPLETE ✓
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Survivors: {list} → Phase 7 (Router Profiling)
+  Survivors: {list} → v1.2 Phase 4.1 (Judge Reasoning Data Gen)
+  Winning ratio: {ratio} (highest overall score among survivors)
   Eliminated: {list}
   E_eff trend: {down/flat/up}
-  {If 60/40 training started: "60/40 training in progress — eval when complete"}
 
   Artifacts:
   - output/profiling/base_model_eeff_summary.md
   - output/eval_triage/ratio_{r}/  (per-ratio results)
+  - output/eval_triage/ratio_{r}/eval_gen_results.jsonl  (per-example: prompt, response, code, scores)
+  - output/eval_triage/ratio_{r}/eval_judge_results.pairs.jsonl  (per-example: prompt, response, code, model vs GT scores)
   - output/triage_decision.md (automated + human verdict)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ## ▶ Next Steps
 
-**Phase 7: Router Profiling** — profile fine-tuned adapter routing for survivors
+**v1.2 Phase 4.1: Reasoning Data Generation** — pilot 20-50 examples per stream, then bulk deep judge CoT + critique-then-fix generation on winning ratio adapter
 
-/gsd:plan-phase 7
+/gsd:discuss-phase 4.1
 
 /clear first → fresh context window
+
+Note: Phase 7 (Router Profiling) is blocked until v1.2 completes (Phases 4.1-4.4).
 ```
 
 ## CLI Reference
