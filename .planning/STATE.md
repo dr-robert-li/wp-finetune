@@ -1,11 +1,11 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: MVP
-status: executing
-stopped_at: "Completed quick task 260403-vvg: Fix stale unsloth refs and config inconsistencies"
-last_updated: "2026-04-03T13:01:57.051Z"
-last_activity: "2026-04-03 - Completed quick task 260403-vvg: Fix stale unsloth refs and config inconsistencies"
+milestone: v1.2
+milestone_name: Judge Reasoning Fine-Tune
+status: defining-requirements
+stopped_at: "Milestone v1.2 started"
+last_updated: "2026-04-05"
+last_activity: "2026-04-05 - Milestone v1.2 started (Judge Reasoning Fine-Tune)"
 progress:
   total_phases: 11
   completed_phases: 1
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-02)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 04 — evaluation
+**Current focus:** Milestone v1.2 — Judge Reasoning Fine-Tune (defining requirements)
 
 ## Current Position
 
-Phase: 04 (evaluation) — EXECUTING
-Plan: 2 of 3
-Status: Ready to execute
-Last activity: 2026-04-03 - Completed quick task 260403-vvg: Fix stale unsloth refs and config inconsistencies
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements for v1.2
+Last activity: 2026-04-05 — Milestone v1.2 started (Judge Reasoning Fine-Tune)
 
 Progress: [░░░░░░░░░░] 0% (v2.0 + v3.0 phases)
 
@@ -119,6 +119,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-03T13:01:57.037Z
-Stopped at: Completed quick task 260403-vvg: Fix stale unsloth refs and config inconsistencies
+Last session: 2026-04-05
+Stopped at: Milestone v1.2 started — defining requirements
 Resume file: None
