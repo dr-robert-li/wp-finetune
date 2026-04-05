@@ -129,7 +129,7 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 
 **Target features:**
 - Composite reward: 70% verifiable (PHPCS + security gate + WP standards with VeRPO partial credit) / 30% frozen wp_judge (MO-GRPO normalized)
-- Gen-only GRPO on hot experts with RSPO router-shift stabilization (note: GRPO scope may extend to judge reasoning quality using verifiable rewards — PHPCS/security scanner for critique-then-fix, Nemotron-as-judge for scoring consistency — as a v3.0 scope decision)
+- Gen-only GRPO on hot experts with RSPO router-shift stabilization (note: GRPO scope may extend to judge reasoning quality using verifiable rewards — PHPCS/security scanner for critique-then-fix, separately spawned Claude evaluator agent for scoring consistency — as a v3.0 scope decision)
 - LoRA merge into base weights before pruning
 - REAP pruning on merged model (50-75% compression, targeting ~8-12B total params)
 - Cascading compression gates for packaging (bf16 → optional quantization Q8→Q4)

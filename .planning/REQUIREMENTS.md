@@ -61,6 +61,8 @@ Source data already exists at `/home/robert_li/Desktop/data/wp-finetune-data/`: 
 - [x] **EVAL-03**: Security pass rate measured on held-out tasks (target >98%)
 - [x] **EVAL-04**: Eval scripts run via DGX Toolbox eval-toolbox container
 - [x] **EVAL-05**: All three quality gates pass before proceeding to deployment
+- [ ] **EVAL-06**: Per-example logging — eval_gen.py and eval_judge.py persist input prompt, raw model response, and extracted code alongside scores in per-example JSONL (enables human review, debugging, and GRPO reward signals)
+- [ ] **EVAL-07**: eval_gate.py per-dimension gates read correct field names from eval output — currently reads `dimension_pass_rates`/`dimension_correlations` but scripts write `per_dimension` (dead code fix)
 
 ### Deployment (deferred to v2.0 Packaging)
 
@@ -126,9 +128,12 @@ Requirements for deep reasoning fine-tuning of the winning ratio adapter. Depend
 
 - [ ] **REVL-01**: eval_judge.py Spearman correlation on reasoning adapter meets or exceeds winning ratio baseline
 - [ ] **REVL-02**: eval_gen.py PHPCS pass rate on reasoning adapter shows no regression (within 2pp of baseline)
-- [ ] **REVL-03**: Reasoning quality scoring measures dimension coverage (all 9 dimensions addressed), score-reasoning consistency, and Nemotron-as-judge coherence evaluation (Nemotron 3 Nano via ~/dgx-toolbox) on a representative sample
+- [ ] **REVL-03**: Reasoning quality evaluated by separately spawned Claude evaluator agent (independent context window, receives only generated code + reasoning as opaque inputs, no shared state with model under test) measuring dimension coverage (all 9 dimensions addressed) and score-reasoning consistency
 - [ ] **REVL-04**: wp-bench scores on reasoning adapter meet or exceed winning ratio baseline
 - [ ] **REVL-05**: Human reviews sample of reasoning outputs to confirm quality before declaring v1.2 complete
+- [ ] **REVL-06**: Fix correctness — critique-then-fix corrected code verified through PHPCS + security scanner to confirm the fix actually resolves the identified issue
+- [ ] **REVL-07**: Classification accuracy — confusion matrix (TP/TN/FP/FN) computed at score thresholds from eval_judge.py per-example data, measuring whether the model correctly distinguishes good from bad code
+- [ ] **REVL-08**: Reasoning length distribution — reasoning chains are neither truncated nor exploding; median, p95, and max token counts recorded and reviewed against expected range
 
 ## v2.0 Requirements — MoE-Sieve Selective Training
 
@@ -173,7 +178,7 @@ Requirements for GRPO reinforcement learning on the MoE-Sieve model, followed by
 
 ### GRPO Training
 
-- [ ] **GRPO-05**: Gen-only GRPO — `<wp_gen>` generation quality improved via RL; `<wp_judge>` capability completely frozen from SFT. **Note:** GRPO could also be extended to refine judge reasoning quality using verifiable rewards (PHPCS/security scanner for critique-then-fix corrections, Nemotron-as-judge or score consistency checks for judge scoring). This is a scope consideration for v3.0, not currently planned.
+- [ ] **GRPO-05**: Gen-only GRPO — `<wp_gen>` generation quality improved via RL; `<wp_judge>` capability completely frozen from SFT. **Note:** GRPO could also be extended to refine judge reasoning quality using verifiable rewards (PHPCS/security scanner for critique-then-fix corrections, separately spawned Claude evaluator agent for scoring consistency, PHPCS/security scanner for fix correctness verification). This is a scope consideration for v3.0, not currently planned.
 - [ ] **GRPO-06**: Hot experts only — GRPO gradients flow to hot routed experts + attention + router gates + shared experts; cold routed experts frozen (structural stability anchor)
 - [ ] **GRPO-07**: RSPO router-shift stabilization — compute router-shift ratio between rollout and training phases, apply stop-gradient and floor, multiply into clipped importance ratio before aggregation
 - [ ] **GRPO-08**: Router-shift ratio monitored throughout training — log per-step shift metrics; halt training if shift exceeds stability threshold (routing collapse early warning)
@@ -267,6 +272,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EVAL-03 | Phase 3 | Complete (03-02) |
 | EVAL-04 | Phase 3 | Complete (03-02) |
 | EVAL-05 | Phase 3 | Complete (03-02) |
+| EVAL-06 | Phase 4 | Pending |
+| EVAL-07 | Phase 4 | Pending |
 | DPLT-01 | Phase 5 | Deferred → v2.0 PRUNE-05 |
 | DPLT-02 | Phase 5 | Deferred → v2.0 PKG-03 |
 | DPLT-03 | Phase 5 | Deferred → v2.0 PKG-03 |
@@ -303,6 +310,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REVL-03 | Phase 4.4 | Pending |
 | REVL-04 | Phase 4.4 | Pending |
 | REVL-05 | Phase 4.4 | Pending |
+| REVL-06 | Phase 4.4 | Pending |
+| REVL-07 | Phase 4.4 | Pending |
+| REVL-08 | Phase 4.4 | Pending |
 
 | PROF-01 | Phase 7 | Pending |
 | PROF-02 | Phase 7 | Pending |
@@ -342,9 +352,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PKG-05 | Phase 14 | Pending |
 
 **Coverage:**
-- v1 requirements: 37 total (32 complete, 5 eval pending)
+- v1 requirements: 39 total (32 complete, 7 eval pending)
 - v1.1 requirements: 13 total (13 complete)
-- v1.2 requirements: 14 total (0 complete) — DGEN-01/02/03 → Phase 4.1; DGEN-04/05 → Phase 4.2; RTRN-01/02/03/04 → Phase 4.3; REVL-01/02/03/04/05 → Phase 4.4
+- v1.2 requirements: 17 total (0 complete) — DGEN-01/02/03 → Phase 4.1; DGEN-04/05 → Phase 4.2; RTRN-01/02/03/04 → Phase 4.3; REVL-01/02/03/04/05/06/07/08 → Phase 4.4
 - v2.0 requirements: 14 total (0 complete) — PROF(5) + GATE(2) + SIEVE(5) + EVAL2(2)
 - v3.0 requirements: 22 total (0 complete) — GRPO(8) + MERGE(1) + PRUNE(6) + EVAL3(2) + PKG(5)
 - DPLT requirements: 7 total (deferred → v3.0 PKG/PRUNE)
@@ -352,4 +362,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-03-26*
-*Last updated: 2026-04-05 — v1.2 traceability added (14 requirements mapped to Phases 4.1-4.4)*
+*Last updated: 2026-04-04 — EVAL-06/07 added to Phase 4; REVL-03 updated, REVL-06/07/08 added to Phase 4.4; GRPO-05 note updated (Claude evaluator replaces Nemotron)*

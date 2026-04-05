@@ -132,7 +132,7 @@ Plans:
 ### Phase 4: Base-Model Profiling & Evaluation (Triage)
 **Goal**: First, profile the base model with all 5 ratio data distributions (~minutes) to determine whether 60/40 and 70/30 warrant training. Then eval existing adapters (30/70, 40/60, 50/50) through quality gates and wp-bench in parallel with any new training. Triage eliminates clearly failing ratios; survivors carried to Phase 7.
 **Depends on**: Phase 3
-**Requirements**: EVAL-01, EVAL-02, EVAL-03, EVAL-04, EVAL-05, GATE-02
+**Requirements**: EVAL-01, EVAL-02, EVAL-03, EVAL-04, EVAL-05, EVAL-06, EVAL-07, GATE-02
 **Success Criteria** (what must be TRUE):
   1. Base-model profiling runs gradient-free forward passes with all 5 ratio data distributions, producing E_eff per layer for each — determines whether 60/40 and 70/30 training is warranted (E_eff trending down = train, flat/up = skip)
   2. If E_eff signal warrants, 60/40 (and optionally 70/30) training started in background while eval runs on existing 3 adapters
@@ -141,6 +141,8 @@ Plans:
   5. wp-bench execution and knowledge tests run for all evaluated ratios with scores recorded
   6. Triage decision: ratios that fail hard gates or are >5pp behind the best are eliminated; all others survive to Phase 7 (high bar for elimination, low bar for continuation)
   7. Human has reviewed all eval results and E_eff profiling data, approved triage decisions
+  8. eval_gen.py and eval_judge.py persist input prompt, raw model response, and extracted code in per-example JSONL — not just aggregate scores
+  9. eval_gate.py per-dimension gates use correct field names matching eval script output (field name mismatch fix verified by unit test)
 **Plans**: 3 plans
 
 Plans:
@@ -194,13 +196,16 @@ Plans:
 ### Phase 4.4: Reasoning Eval & Adapter Merge — INSERTED
 **Goal**: The reasoning adapter passes all existing quality gates (Spearman, PHPCS pass rate, wp-bench) with no regression versus the winning ratio baseline, human reviews a sample of reasoning outputs to confirm quality, and the adapter is merged into base weights
 **Depends on**: Phase 4.3 (reasoning fine-tune complete)
-**Requirements**: REVL-01, REVL-02, REVL-03, REVL-04, REVL-05
+**Requirements**: REVL-01, REVL-02, REVL-03, REVL-04, REVL-05, REVL-06, REVL-07, REVL-08
 **Success Criteria** (what must be TRUE):
   1. `eval_judge.py` Spearman correlation on the reasoning adapter meets or exceeds the winning ratio baseline — absolute score distributions per dimension are compared and any dimension with mean shift >0.5 points vs baseline is flagged
   2. `eval_gen.py` PHPCS pass rate on the reasoning adapter is within 2pp of the winning ratio baseline — generation regression is not masked by improved judge metrics
-  3. Reasoning quality scoring confirms all 9 rubric dimensions are addressed in a representative sample of outputs — dimension coverage rate, issue specificity rate, score-reasoning consistency rate, and Nemotron-as-judge coherence evaluation (Nemotron 3 Nano via ~/dgx-toolbox) are all recorded
+  3. Reasoning quality evaluated by separately spawned Claude evaluator agent (independent context, opaque inputs only): dimension coverage rate, score-reasoning consistency rate, and coherence assessment on representative sample — recorded alongside Nemotron-free automated checks (regex dimension coverage, issue specificity)
   4. wp-bench scores on the reasoning adapter meet or exceed the winning ratio baseline
   5. Human reviews a sample of reasoning outputs (deep judge CoT and critique-then-fix) and explicitly approves quality before the adapter merge runs — `models/qwen3-30b-wp-{winning}-reasoning-merged/` is written only after human sign-off
+  6. Fix correctness: critique-then-fix corrected code passes PHPCS + security scanner, confirming fixes actually resolve identified issues — pass rate recorded
+  7. Classification accuracy: confusion matrix (TP/TN/FP/FN) at score thresholds derived from eval_judge.py per-example data — precision, recall, F1 recorded per dimension
+  8. Reasoning length distribution: median, p95, max token counts recorded and reviewed against expected range (flag if p95 > 6000 tokens or median < 500)
 **Plans**: TBD
 
 ---
@@ -311,7 +316,7 @@ Plans:
 **Plans**: TBD
 
 ### Phase 11: GRPO Training
-**Goal**: Gen-only GRPO refines the MoE-Sieve model's generation quality on hot experts, with RSPO router-shift stabilization ensuring experts do not drift from their established routing patterns. **Scope note:** GRPO could also refine judge reasoning quality using verifiable rewards (PHPCS/security scanner verify critique-then-fix corrections; Nemotron-as-judge or score consistency checks verify judge scoring). This is a v3.0 scope decision — evaluate after gen-only GRPO results are available.
+**Goal**: Gen-only GRPO refines the MoE-Sieve model's generation quality on hot experts, with RSPO router-shift stabilization ensuring experts do not drift from their established routing patterns. **Scope note:** GRPO could also refine judge reasoning quality using verifiable rewards (PHPCS/security scanner verify critique-then-fix corrections; separately spawned Claude evaluator agent for scoring consistency checks). This is a v3.0 scope decision — evaluate after gen-only GRPO results are available.
 **Depends on**: Phase 10
 **Requirements**: GRPO-05, GRPO-06, GRPO-07, GRPO-08
 **Success Criteria** (what must be TRUE):
