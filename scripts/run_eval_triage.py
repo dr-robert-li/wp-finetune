@@ -338,10 +338,47 @@ def _vllm_health_check(endpoint: str) -> bool:
         return False
 
 
+def _is_vllm_crash_looping() -> bool:
+    """Return True if the vLLM container has crashed and restarted.
+
+    Checks RestartCount >= 1 (container already failed once) or docker logs
+    contain known fatal errors like LoRA validation failures.
+    """
+    try:
+        # Check restart count
+        result = subprocess.run(
+            ["docker", "inspect", "--format", "{{.State.Status}} {{.RestartCount}}", "vllm"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if result.returncode == 0:
+            parts = result.stdout.strip().split()
+            if len(parts) >= 2:
+                status, restart_count = parts[0], int(parts[1])
+                if status == "restarting" or restart_count >= 1:
+                    logger.info(f"vLLM container status={status} restarts={restart_count}")
+                    return True
+
+        # Check logs for known fatal errors (LoRA validation, OOM)
+        logs = subprocess.run(
+            ["docker", "logs", "--tail", "50", "vllm"],
+            capture_output=True, text=True, timeout=10,
+        )
+        if logs.returncode == 0:
+            output = logs.stdout + logs.stderr
+            fatal_patterns = ["peft_helper.validate_legal", "modules_to_save", "CUDA out of memory"]
+            for pattern in fatal_patterns:
+                if pattern in output:
+                    logger.info(f"vLLM fatal error detected in logs: {pattern}")
+                    return True
+    except Exception:
+        pass
+    return False
+
+
 def _wait_for_vllm(endpoint: str, timeout_s: int = VLLM_HEALTH_TIMEOUT_S) -> bool:
     """Poll vLLM health endpoint until ready or timeout.
 
-    Returns True if vLLM is ready, False on timeout.
+    Returns True if vLLM is ready, False on timeout or crash-loop detection.
     """
     deadline = time.time() + timeout_s
     attempt = 0
@@ -351,6 +388,15 @@ def _wait_for_vllm(endpoint: str, timeout_s: int = VLLM_HEALTH_TIMEOUT_S) -> boo
             return True
         attempt += 1
         logger.debug(f"Waiting for vLLM at {endpoint} (attempt {attempt}) ...")
+
+        # Check for crash-loop every 12 attempts (~60s)
+        if attempt % 12 == 0 and _is_vllm_crash_looping():
+            logger.error(
+                "vLLM container is crash-looping (restarting repeatedly). "
+                "Likely LoRA adapter incompatibility. Aborting health wait."
+            )
+            return False
+
         time.sleep(VLLM_HEALTH_POLL_S)
 
     logger.error(
