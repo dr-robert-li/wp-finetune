@@ -11,7 +11,7 @@
 
 This project adds deep reasoning capability to an already-trained WordPress PHP judge model (Qwen3-30B-A3B, 60:40 ratio, LoRA r=32). The v1.0 pipeline produced a well-calibrated judge that scores PHP code across 9 dimensions with Spearman correlation tracking. The v1.2 milestone has a focused goal: the judge should articulate *why* code is good or bad (dimension-by-dimension reasoning chains) and generate a corrected version alongside its critique. Research confirms this is achievable through continued SFT on a narrow reasoning dataset (~6,000-12,000 examples) using the existing Unsloth + TRL stack — no new training infrastructure is required.
 
-The recommended approach is a two-stream data generation pass: (1) regenerate a representative 10% sample (~14,000) of existing judge training examples with full dimension-by-dimension reasoning chains using Claude Code agents, and (2) convert existing phase2 mutation pairs into critique-then-fix triples using the same agent pattern. Both streams feed a separate `data/reasoning_dataset/` that never mixes with the original `data/final_dataset/`. Continued training starts from the winning ratio adapter at 5-10x lower learning rate for 1-2 epochs. The key risk is format collapse: the model forgetting the compact JSON judge format and producing reasoning-only output that breaks the parsing pipeline. This is mitigated by keeping 30% original judge examples in the training mix and enforcing a canonical output template.
+The recommended approach is a two-stream data generation pass: (1) regenerate a representative 10% sample (~14,000) of existing judge training examples with full dimension-by-dimension reasoning chains using Claude Code agents, and (2) convert existing phase2 mutation pairs into critique-then-fix triples using the same agent pattern. Both streams feed a separate `data/reasoning_dataset/` that never mixes with the original `data/final_dataset/`. Continued training starts from the winning ratio adapter at 5-10x lower learning rate for 1-2 epochs. The key risk is format collapse: the model forgetting the compact JSON judge format and producing reasoning-only output that breaks the parsing pipeline. This is mitigated by keeping 30% original judge examples in the training mix and enforcing a canonical output template. Reasoning quality evaluation uses a separately spawned Claude evaluator agent (independent context window, opaque inputs) instead of Nemotron, mitigating circularity through isolation.
 
 Three additional risks need active management: catastrophic forgetting of generation capability (mitigated by 20-30% generation replay in the training mix), reasoning length explosion at inference (mitigated by including short-form reasoning examples in training data), and score calibration drift after reasoning changes the model's analytical depth (mitigated by re-running the full eval suite and comparing absolute score distributions, not just Spearman correlation). The existing eval infrastructure (eval_judge.py, eval_gen.py, eval_gate.py) handles post-training verification without modification.
 
@@ -21,13 +21,13 @@ Three additional risks need active management: catastrophic forgetting of genera
 
 ### Recommended Stack
 
-The v1.0 stack (Unsloth 2026.3.5, TRL 0.24.0, transformers 5.3.0, Qwen3-30B-A3B, DGX Spark) is unchanged for v1.2. No new Python package dependencies are required. Reasoning quality evaluation uses Nemotron 3 Nano as a judge model (already available on DGX Spark via `~/dgx-toolbox`) instead of text similarity metrics like BERTScore. TRL v1.0 released 2026-03-31 — do NOT upgrade mid-milestone; v0.24.0 handles all required training formats. The one required config change is `max_seq_length: 4096 → 8192` because deep judge CoT chains routinely exceed 4096 tokens across 9 dimensions.
+The v1.0 stack (Unsloth 2026.3.5, TRL 0.24.0, transformers 5.3.0, Qwen3-30B-A3B, DGX Spark) is unchanged for v1.2. No new Python package dependencies are required. Reasoning quality evaluation uses a separately spawned Claude evaluator agent (independent context window, opaque inputs only) instead of text similarity metrics like BERTScore — the isolation principle (no shared state with model under test) mitigates circularity concerns. TRL v1.0 released 2026-03-31 — do NOT upgrade mid-milestone; v0.24.0 handles all required training formats. The one required config change is `max_seq_length: 4096 → 8192` because deep judge CoT chains routinely exceed 4096 tokens across 9 dimensions.
 
 **Core technologies:**
 - **Unsloth 2026.3.5**: LoRA SFT accelerator — confirmed installed; handles 8192 token sequences at LoRA r=32 within DGX Spark 128GB unified memory
 - **TRL 0.24.0**: SFTTrainer — native support for conversational prompt-completion format; no upgrade needed for v1.2 reasoning chain training
 - **anthropic SDK >=0.50.0**: Claude Code agent spawn pattern — existing spawn-until-target pattern reused for both new data generation scripts; no new agent framework needed
-- **Nemotron 3 Nano (~/dgx-toolbox)**: Reasoning quality evaluation — Nemotron-as-judge evaluates coherence, dimension coverage depth, and score-reasoning consistency on a sample of generated reasoning chains; already available on DGX Spark, no new install required
+- **Separately spawned Claude evaluator agent (subscription)**: Reasoning quality evaluation — Claude evaluator agent (independent context window, opaque inputs only) evaluates coherence, dimension coverage depth, and score-reasoning consistency on a sample of generated reasoning chains; $0 cost via subscription, no new install required
 - **nltk 3.9.3**: Already installed; used for dimension coverage checks and keyword specificity metrics
 
 **Training data format decision:** Reasoning goes in the `response` field as structured prose, not in a `<think>` block. Qwen3's `enable_thinking` is left enabled at inference, but training data must use visible reasoning so users can read the dimension-by-dimension critique. Using TRL v1.0's `"thinking"` field would produce hidden `<think>` blocks — the reasoning IS the product for v1.2, not scaffolding.
@@ -48,7 +48,7 @@ The v1.0 stack (Unsloth 2026.3.5, TRL 0.24.0, transformers 5.3.0, Qwen3-30B-A3B,
 **Defer (v2+):**
 - TRACT-style regression-aware loss — requires custom loss head on top of Unsloth SFTTrainer; flag for v2.0 if Spearman plateaus below 0.85
 - Multi-turn self-refinement training — appropriate after GRPO is introduced in v3.0; the RL loop provides refinement signal without multi-turn SFT format complexity
-- GRPO for judge reasoning quality — v3.0 GRPO currently targets gen-only (`<wp_gen>`), but could also refine judge reasoning quality using verifiable rewards (PHPCS/security scanner verify critique-then-fix corrections; Nemotron-as-judge or score consistency checks verify judge scoring quality); deferred as a v3.0 scope consideration
+- GRPO for judge reasoning quality — v3.0 GRPO currently targets gen-only (`<wp_gen>`), but could also refine judge reasoning quality using verifiable rewards (PHPCS/security scanner verify critique-then-fix corrections; separately spawned Claude evaluator agent for scoring consistency checks); deferred as a v3.0 scope consideration
 - Pairwise preference data for reasoning quality — requires human or stronger-model annotation; consider if Spearman plateaus post-v2.0
 
 ### Architecture Approach
@@ -167,7 +167,7 @@ The v1.2 milestone has a clear six-step sequential flow with one parallel fork.
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All installed versions confirmed via `pip show` on DGX Spark; no new Python dependencies (Nemotron 3 Nano already available via ~/dgx-toolbox); official TRL and Unsloth docs verified (Unsloth fetch was partial — gap noted) |
+| Stack | HIGH | All installed versions confirmed via `pip show` on DGX Spark; no new Python dependencies (Claude evaluator agent uses existing subscription); official TRL and Unsloth docs verified (Unsloth fetch was partial — gap noted) |
 | Features | HIGH (core format), MEDIUM (metrics) | Reasoning format decisions grounded in Prometheus, Critique-Coder, TRACT research; reasoning quality metrics based on ACL 2025 and preprint evidence |
 | Architecture | HIGH | Based on direct codebase inspection; all integration points verified; `parse_judge_response()` compatibility confirmed against the new response format |
 | Pitfalls | HIGH (v1.0 pitfalls from code inspection), MEDIUM-HIGH (v1.2 reasoning pitfalls from SFT literature) | v1.2 reasoning pitfalls derived from continued training and format collapse literature; exact severity on Qwen3-30B-A3B specifically not directly measured |
@@ -190,7 +190,7 @@ The v1.2 milestone has a clear six-step sequential flow with one parallel fork.
 - [TRL Dataset Formats](https://huggingface.co/docs/trl/main/dataset_formats) — conversational prompt-completion format, reasoning field options
 - [TRL v1.0 Blog Post](https://huggingface.co/blog/trl-v1) — v1.0 release 2026-03-31; minimal migration from 0.x confirmed
 - [Qwen-3 Chat Template Deep Dive](https://huggingface.co/blog/qwen-3-chat-template-deep-dive) — enable_thinking behavior, think tag implications for training data
-- Nemotron 3 Nano available on DGX Spark via ~/dgx-toolbox — confirmed accessible for local inference
+- Claude evaluator agent via subscription — separately spawned with independent context window for reasoning quality evaluation
 - Codebase direct inspection: `eval/eval_judge.py`, `scripts/phase2_mutate.py`, `scripts/phase2_judge_dataset.py`, `scripts/merge_dataset.py`, `data/phase3_cot/output/`, `data/final_dataset/`, `adapters/` listing
 
 ### Secondary (MEDIUM confidence)
