@@ -7,6 +7,7 @@ Breaking changes from Wave-0 tests:
   - Thresholds dict must include ALL _FALLBACK_THRESHOLDS keys
   - Results dict must include all keys that check_gates reads
 """
+import json
 import sys
 import tempfile
 from pathlib import Path
@@ -179,3 +180,128 @@ eval:
         f"Expected gate to pass with custom thresholds but got failures: "
         f"{[r for r in gate_rows if not r['passed']]}"
     )
+
+
+# ---------------------------------------------------------------------------
+# test_per_dimension_gen_gates
+# ---------------------------------------------------------------------------
+
+def test_per_dimension_gen_gates():
+    """Per-dimension gen pass rate gates correctly fail when below target."""
+    thresholds = _full_thresholds(overrides={
+        "gen_dimension_targets": {"D1_standards": 0.80, "D2_security": 0.90},
+    })
+    # D1 passes (0.85 >= 0.80), D2 fails (0.70 < 0.90)
+    results = _full_results(overrides={
+        "gen_dimension_pass_rates": {"D1_standards": 0.85, "D2_security": 0.70},
+    })
+    passed, gate_rows = check_gates(results, thresholds)
+    assert passed is False
+    d2_rows = [r for r in gate_rows if "D2_security" in r["gate"]]
+    assert len(d2_rows) == 1
+    assert d2_rows[0]["passed"] is False
+    assert d2_rows[0]["actual"] == 0.70
+    d1_rows = [r for r in gate_rows if "D1_standards" in r["gate"]]
+    assert len(d1_rows) == 1
+    assert d1_rows[0]["passed"] is True
+
+
+# ---------------------------------------------------------------------------
+# test_per_dimension_judge_gates
+# ---------------------------------------------------------------------------
+
+def test_per_dimension_judge_gates():
+    """Per-dimension judge correlation gates correctly fail when below target."""
+    thresholds = _full_thresholds(overrides={
+        "judge_dimension_targets": {"D1_standards": 0.70, "D3_performance": 0.75},
+    })
+    # D1 passes (0.80 >= 0.70), D3 fails (0.60 < 0.75)
+    results = _full_results(overrides={
+        "judge_dimension_correlations": {"D1_standards": 0.80, "D3_performance": 0.60},
+    })
+    passed, gate_rows = check_gates(results, thresholds)
+    assert passed is False
+    d3_rows = [r for r in gate_rows if "D3_performance" in r["gate"]]
+    assert len(d3_rows) == 1
+    assert d3_rows[0]["passed"] is False
+
+
+# ---------------------------------------------------------------------------
+# test_run_gate_extracts_per_dimension_from_eval_output
+# ---------------------------------------------------------------------------
+
+def test_run_gate_extracts_per_dimension_from_eval_output(tmp_path):
+    """run_gate() correctly extracts nested per_dimension fields from eval JSON.
+
+    This tests the field name mapping fix: eval scripts write 'per_dimension'
+    with nested dicts, but check_gates expects flat pass_rate/corr values.
+    run_gate() must bridge the gap.
+    """
+    # Simulate eval_gen output format (per_dimension[dim] = {mean, pass_rate_8, na_count})
+    gen_results = {
+        "overall_mean": 80.0,
+        "per_dimension": {
+            "D1_standards": {"mean": 8.5, "pass_rate_8": 0.85, "na_count": 0},
+            "D2_security": {"mean": 9.0, "pass_rate_8": 0.95, "na_count": 0},
+        },
+        "phpcs_pass_rate": 0.97,
+        "security_pass_rate": 0.99,
+    }
+    # Simulate eval_judge output format (per_dimension[dim] = {corr, p_value, n_pairs})
+    judge_results = {
+        "overall_spearman": {"corr": 0.90, "p_value": 0.001, "n_pairs": 100},
+        "per_dimension": {
+            "D1_standards": {"corr": 0.85, "p_value": 0.01, "n_pairs": 100},
+            "D2_security": {"corr": 0.75, "p_value": 0.02, "n_pairs": 100},
+        },
+        "spearman_corr": 0.90,
+    }
+
+    (tmp_path / "eval_gen_results.json").write_text(json.dumps(gen_results))
+    (tmp_path / "eval_judge_results.json").write_text(json.dumps(judge_results))
+
+    # Config with per-dimension targets
+    config_content = """
+eval:
+  overall_mean_target: 75.0
+  overall_spearman_target: 0.80
+  gen_dimension_targets:
+    D1_standards: 0.80
+    D2_security: 0.90
+  judge_dimension_targets:
+    D1_standards: 0.70
+    D2_security: 0.80
+  phpcs_pass_target: 0.95
+  spearman_target: 0.85
+  security_pass_target: 0.98
+"""
+    config_path = tmp_path / "train_config.yaml"
+    config_path.write_text(config_content)
+
+    from eval.eval_gate import run_gate
+    passed, gate_rows = run_gate(
+        results_dir=str(tmp_path),
+        config_path=str(config_path),
+    )
+
+    # Find the per-dim gen gate rows
+    d1_gen = [r for r in gate_rows if r["gate"] == "gen_pass_rate/D1_standards"]
+    assert len(d1_gen) == 1
+    assert d1_gen[0]["actual"] == 0.85  # extracted from per_dimension nested dict
+
+    d2_gen = [r for r in gate_rows if r["gate"] == "gen_pass_rate/D2_security"]
+    assert len(d2_gen) == 1
+    assert d2_gen[0]["actual"] == 0.95
+
+    # Find the per-dim judge gate rows
+    d1_judge = [r for r in gate_rows if r["gate"] == "judge_corr/D1_standards"]
+    assert len(d1_judge) == 1
+    assert d1_judge[0]["actual"] == 0.85  # extracted from per_dimension nested dict
+
+    d2_judge = [r for r in gate_rows if r["gate"] == "judge_corr/D2_security"]
+    assert len(d2_judge) == 1
+    assert d2_judge[0]["actual"] == 0.75
+    assert d2_judge[0]["passed"] is False  # 0.75 < 0.80 target
+
+    # Overall should fail because D2 judge corr is below target
+    assert passed is False
