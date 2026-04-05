@@ -379,12 +379,16 @@ def _start_vllm_with_lora(ratio: str) -> subprocess.Popen:
 
     Returns the process handle. Caller is responsible for stopping it via _stop_vllm.
 
-    Uses direct docker run (vLLM image must run as root — --user breaks it).
+    Uses DGX Toolbox start-vllm.sh which handles container setup, mounts, and GPU config.
     """
+    from scripts.dgx_toolbox import get_toolbox
+
+    dgx = get_toolbox()
     adapter_path = f"/workspace/wp-finetune/adapters/qwen3-30b-wp-{ratio}"
     model_path = "/workspace/wp-finetune/models/Qwen3-30B-A3B"
 
-    vllm_extra_args = [
+    vllm_script = dgx.resolve("vllm")
+    extra_args = [
         "--enable-lora",
         f"--lora-modules=qwen3-wp={adapter_path}",
         "--max-lora-rank=64",
@@ -392,24 +396,9 @@ def _start_vllm_with_lora(ratio: str) -> subprocess.Popen:
         "--gpu-memory-utilization=0.92",
     ]
 
-    # Clean up any existing vllm container
-    subprocess.run(["docker", "rm", "-f", "vllm"], capture_output=True, timeout=10)
-
-    home = Path.home()
-    cmd = [
-        "docker", "run", "--rm", "--name", "vllm",
-        "--gpus", "all", "--ipc=host",
-        "-p", "0.0.0.0:8020:8000",
-        "-v", f"{PROJECT_ROOT}:/workspace/wp-finetune",
-        "-v", f"{home}/.cache/huggingface:/root/.cache/huggingface",
-        "vllm/vllm-openai:latest",
-        "--model", model_path,
-        "--host", "0.0.0.0",
-        "--port", "8000",
-    ] + vllm_extra_args
-
-    logger.info(f"Starting vLLM for ratio {ratio}")
-    logger.debug(f"Docker cmd: {' '.join(cmd)}")
+    cmd = [str(vllm_script), model_path] + extra_args
+    logger.info(f"Starting vLLM via DGX Toolbox for ratio {ratio}")
+    logger.debug(f"vLLM cmd: {' '.join(cmd)}")
 
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     return proc
@@ -478,22 +467,13 @@ def _fallback_merge_and_serve(ratio: str) -> Optional[subprocess.Popen]:
         "--gpu-memory-utilization=0.92",
     ]
 
-    subprocess.run(["docker", "rm", "-f", "vllm"], capture_output=True, timeout=10)
+    from scripts.dgx_toolbox import get_toolbox
+    dgx = get_toolbox()
+    vllm_script = dgx.resolve("vllm")
 
-    home = Path.home()
-    cmd = [
-        "docker", "run", "--rm", "--name", "vllm",
-        "--gpus", "all", "--ipc=host",
-        "-p", "0.0.0.0:8020:8000",
-        "-v", f"{PROJECT_ROOT}:/workspace/wp-finetune",
-        "-v", f"{home}/.cache/huggingface:/root/.cache/huggingface",
-        "vllm/vllm-openai:latest",
-        "--model", container_merged_path,
-        "--host", "0.0.0.0",
-        "--port", "8000",
-    ] + extra_args
+    cmd = [str(vllm_script), container_merged_path] + extra_args
+    logger.info(f"Serving merged model for ratio {ratio} via DGX Toolbox")
 
-    logger.info(f"Serving merged model for ratio {ratio}")
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     return proc
 
