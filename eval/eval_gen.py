@@ -118,17 +118,24 @@ def _compute_summary(
         na_count = sum(
             1 for r in rubric_scores if r.dimension_scores.get(dim_key) is None
         )
+        na_rate = na_count / n
         if dim_vals:
             dim_mean = statistics.mean(dim_vals)
+            # pass_rate_8: among applicable examples only (excludes N/A)
             pass_rate_8 = sum(1 for v in dim_vals if v >= 8.0) / len(dim_vals)
+            # pass_rate_8_inclusive: treats N/A as failing (denominator = total examples)
+            pass_rate_8_inclusive = sum(1 for v in dim_vals if v >= 8.0) / n
         else:
             dim_mean = 0.0
             pass_rate_8 = 0.0
+            pass_rate_8_inclusive = 0.0
 
         per_dimension[dim_key] = {
             "mean": round(dim_mean, 2),
             "pass_rate_8": round(pass_rate_8, 4),
+            "pass_rate_8_inclusive": round(pass_rate_8_inclusive, 4),
             "na_count": na_count,
+            "na_rate": round(na_rate, 4),
         }
 
     # Floor rule trigger rates
@@ -154,9 +161,29 @@ def _compute_summary(
         if r.dimension_scores.get("D2_security") is not None
     ]
     if security_vals:
-        security_pass_rate = sum(1 for v in security_vals if v >= 8.0) / len(security_vals)
+        security_pass_rate: Optional[float] = sum(
+            1 for v in security_vals if v >= 8.0
+        ) / len(security_vals)
     else:
-        security_pass_rate = 1.0
+        # No security-applicable examples — report null rather than perfect 1.0
+        security_pass_rate = None
+
+    # phpcs_pass_rate: overall >= 80 proxy (all examples have an overall score)
+    # Report null only if somehow no applicable examples (practically can't happen
+    # since overall is always computed, but be consistent)
+    phpcs_applicable = [r for r in rubric_scores if r.overall is not None]
+    if phpcs_applicable:
+        phpcs_pass_rate_val: Optional[float] = round(phpcs_pass_rate, 4)
+    else:
+        phpcs_pass_rate_val = None
+
+    # n_applicable_dims: per-example average of how many dimensions were not N/A
+    # Summarised as the mean count across examples for transparency
+    n_applicable_dims_per_example = [
+        len(DIMENSION_KEYS) - len(r.dimension_na)
+        for r in rubric_scores
+    ]
+    n_applicable_dims_mean = round(statistics.mean(n_applicable_dims_per_example), 2)
 
     return {
         "total": n,
@@ -165,9 +192,12 @@ def _compute_summary(
         "grade_distribution": grade_dist,
         "per_dimension": per_dimension,
         "floor_rules": floor_rules,
+        "n_applicable_dims_mean": n_applicable_dims_mean,
         # Backward compat
-        "phpcs_pass_rate": round(phpcs_pass_rate, 4),
-        "security_pass_rate": round(security_pass_rate, 4),
+        "phpcs_pass_rate": phpcs_pass_rate_val,
+        "security_pass_rate": (
+            round(security_pass_rate, 4) if security_pass_rate is not None else None
+        ),
     }
 
 
@@ -194,11 +224,16 @@ def _print_summary_table(summary: dict, file=sys.stderr) -> None:
 
     # Per-dimension table
     print("\n  Per-Dimension Scores:", file=file)
-    print(f"    {'Dimension':<16s} {'Mean':>6s} {'Pass@8':>7s} {'N/A':>5s}", file=file)
-    print(f"    {'-'*16} {'-'*6} {'-'*7} {'-'*5}", file=file)
+    print(
+        f"    {'Dimension':<16s} {'Mean':>6s} {'Pass@8':>7s} {'Incl@8':>7s} {'N/A':>5s} {'NA%':>6s}",
+        file=file,
+    )
+    print(f"    {'-'*16} {'-'*6} {'-'*7} {'-'*7} {'-'*5} {'-'*6}", file=file)
     for dim_key, metrics in summary.get("per_dimension", {}).items():
         print(
-            f"    {dim_key:<16s} {metrics['mean']:>6.2f} {metrics['pass_rate_8']:>6.1%} {metrics['na_count']:>5d}",
+            f"    {dim_key:<16s} {metrics['mean']:>6.2f} {metrics['pass_rate_8']:>6.1%}"
+            f" {metrics['pass_rate_8_inclusive']:>6.1%} {metrics['na_count']:>5d}"
+            f" {metrics['na_rate']:>5.1%}",
             file=file,
         )
 
@@ -207,9 +242,18 @@ def _print_summary_table(summary: dict, file=sys.stderr) -> None:
     for rule_key, rate in summary.get("floor_rules", {}).items():
         print(f"    {rule_key:<24s} {rate:>6.1%}", file=file)
 
-    # Backward compat
-    print(f"\n  phpcs_pass_rate (overall>=80): {summary['phpcs_pass_rate']:.1%}", file=file)
-    print(f"  security_pass_rate (D2>=8):    {summary['security_pass_rate']:.1%}", file=file)
+    # Transparency metrics
+    n_applicable = summary.get("n_applicable_dims_mean")
+    if n_applicable is not None:
+        print(f"\n  Avg applicable dims / example: {n_applicable:.1f} / {len(summary.get('per_dimension', {}))}", file=file)
+
+    # Backward compat (None = not applicable)
+    phpcs_rate = summary.get("phpcs_pass_rate")
+    sec_rate = summary.get("security_pass_rate")
+    phpcs_str = f"{phpcs_rate:.1%}" if phpcs_rate is not None else "N/A (no applicable examples)"
+    sec_str = f"{sec_rate:.1%}" if sec_rate is not None else "N/A (no security-applicable examples)"
+    print(f"\n  phpcs_pass_rate (overall>=80): {phpcs_str}", file=file)
+    print(f"  security_pass_rate (D2>=8):    {sec_str}", file=file)
     print("=" * 60 + "\n", file=file)
 
 
