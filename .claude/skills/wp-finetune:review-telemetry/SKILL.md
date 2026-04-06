@@ -13,8 +13,13 @@ User says: "review telemetry", "telemetry summary", "how is training going", "ch
 ### 1. Find Available Telemetry Runs
 
 ```bash
+# Timestamped run directories (from observe agents)
 ls -dt telemetry/*/20* 2>/dev/null | head -10
+# Also check for standalone telemetry files (from lightweight monitor)
+ls telemetry/training/*_thermal.jsonl telemetry/training/monitor*.log 2>/dev/null
 ```
+
+If no telemetry directories or files exist, report "No telemetry found. Run /observe-training or /observe-evaluation first, or start the lightweight monitor via run-training."
 
 If multiple runs exist, show the list and ask the user which to review. Default to the most recent.
 

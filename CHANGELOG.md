@@ -20,7 +20,9 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 - **`wp-finetune:observe-evaluation` skill** — Fixed 5 issues: all output paths `eval/output/` → `output/eval_triage/ratio_*/`, wp-bench path, process detection `eval_gen` → `run_eval_triage`, spearman field name, removed nonexistent `precision` field, added review-telemetry reference
 - **`wp-finetune:observe-inference` skill** — Fixed hardcoded model name `wp-qwen3-moe` → dynamic discovery from `/v1/models` endpoint
 - **`wp-finetune:observe-packaging` skill** — Fixed `merged_model/` → `models/*-merged/`
-- **`wp-finetune:review-telemetry` skill** — Added monitor.log parsing support (lightweight monitor output) and canonical thermal JSONL reading (`*_thermal.jsonl` with GPUSampler schema)
+- **`wp-finetune:review-telemetry` skill** — Added monitor.log parsing support (lightweight monitor output), canonical thermal JSONL reading (`*_thermal.jsonl` with GPUSampler schema), and explicit "no telemetry found" message
+- **`wp-finetune:observe-data-pipeline` skill** — Added checkpoint resume state monitoring (`data/checkpoints/*.json`) and passed/failed count split for synthetic judged examples
+- **`wp-finetune:observe-inference` skill** — Clarified that ollama/litellm containers are optional (may not be running)
 - **README** — Updated project status with v1.2 milestone, 60/40 training completion
 
 ### Fixed
