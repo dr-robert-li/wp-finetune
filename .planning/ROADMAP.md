@@ -42,7 +42,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 <details>
 <summary>v1.2 Judge Reasoning Fine-Tune (Phases 4.1-4.4) — INSERTED — depends on Phase 4 triage completing</summary>
 
-- [ ] **Phase 4.1: Reasoning Data Generation** - Pilot-validate then run parallel deep judge CoT and critique-then-fix data generation streams
+- [ ] **Phase 4.1: Reasoning Data Generation** - Curate human-annotated seeds, then pilot-validate and run parallel deep judge CoT and critique-then-fix data generation streams
 - [ ] **Phase 4.2: Dataset Assembly** - Score consistency validation, training mix assembly, and export of the reasoning dataset
 - [ ] **Phase 4.3: Reasoning Fine-Tune** - Continued SFT on winning ratio adapter at lower LR with frozen router and 8192-token sequences
 - [ ] **Phase 4.4: Reasoning Eval & Merge** - Verify reasoning adapter meets all quality gates; human review; merge adapter
@@ -161,14 +161,15 @@ Plans:
 **Note for v2.0:** Even with the MoE router frozen during v1.2 training, routing profiles from the v1.0 adapter are invalidated by continued fine-tuning. Phase 7 must run a fresh profiling pass on the v1.2 reasoning adapter, not the v1.0 adapter.
 
 ### Phase 4.1: Reasoning Data Generation — INSERTED
-**Goal**: Pilot-validated Claude Code agents generate two parallel streams of reasoning training data — deep judge CoT examples (dimension-by-dimension analysis with WP-specific line citations) and critique-then-fix triples (structured critique with severity tags followed by corrected code) — before bulk generation is committed
+**Goal**: Curate human-annotated seed examples, then use them as few-shot exemplars for Claude Code agents generating two parallel streams of reasoning training data — deep judge CoT examples (dimension-by-dimension analysis with WP-specific line citations) and critique-then-fix triples (structured critique with severity tags followed by corrected code)
 **Depends on**: Phase 4 (winning ratio identified via triage decision)
 **Requirements**: DGEN-01, DGEN-02, DGEN-03
 **Success Criteria** (what must be TRUE):
-  1. A pilot batch of 20-50 deep judge CoT examples and 20-50 critique-then-fix examples is generated and manually reviewed before bulk generation starts — pilot confirms WP-specific pattern citations (e.g., `$wpdb->prepare()`, `wp_verify_nonce()`, `esc_html()`) appear by name in reasoning chains and that dimension coverage spans all 9 rubric dimensions
-  2. Bulk deep judge CoT agent generates reasoning-enriched examples where each response contains dimension-by-dimension analysis with line references, issue identification, fix suggestions, and structured scores — sourced from `data/phase1_extraction/output/{passed,failed}/`
-  3. Bulk critique-then-fix agent generates examples from the existing mutation pool (`data/phase2_synthetic/output/mutated/`) where each triple contains the defective code, a structured critique with severity per dimension (critical/high/medium/low), and the corrected version in a clearly delimited `<corrected_code>` block
-  4. Both generation streams reach their target example counts without >2% parse failure rate (measured by multi-strategy JSON extraction with hard rejection)
+  1. 50-100 human-annotated seed examples curated — focused on boundary cases (subtle defects, context-dependent issues) with dimension-specific contrastive reasoning. Seeds drawn from existing mutation pairs (phase2_mutate.py). These seeds serve triple duty: few-shot exemplars for agent generation, validated test set for Phase 4.4 eval, and threshold calibration anchors
+  2. A pilot batch of 20-50 deep judge CoT examples and 20-50 critique-then-fix examples is generated using human seeds as few-shot and manually reviewed before bulk generation starts — pilot confirms WP-specific pattern citations (e.g., `$wpdb->prepare()`, `wp_verify_nonce()`, `esc_html()`) appear by name in reasoning chains and that dimension coverage spans all 9 rubric dimensions
+  3. Bulk deep judge CoT agent generates reasoning-enriched examples where each response contains dimension-by-dimension analysis with line references, issue identification, fix suggestions, and structured scores — sourced from `data/phase1_extraction/output/{passed,failed}/`
+  4. Bulk critique-then-fix agent generates examples from the existing mutation pool (`data/phase2_synthetic/output/mutated/`) where each triple contains the defective code, a structured critique with severity per dimension (critical/high/medium/low), and the corrected version in a clearly delimited `<corrected_code>` block
+  5. Both generation streams reach their target example counts without >2% parse failure rate (measured by multi-strategy JSON extraction with hard rejection)
 **Plans**: TBD
 
 ### Phase 4.2: Reasoning Dataset Assembly — INSERTED
