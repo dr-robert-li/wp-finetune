@@ -41,9 +41,7 @@ User says: "run evaluation", "evaluate the model", "run eval triage", "/run-eval
 ls adapters/qwen3-30b-wp-*/adapter_config.json 2>/dev/null
 ```
 
-Build adapter inventory from `trainer_state.json` (last checkpoint) for each adapter.
-
-Read each adapter's `trainer_state.json` (last checkpoint) for final loss if available.
+Build adapter inventory. Read each adapter's `trainer_state.json` (last checkpoint) for final loss if available.
 
 #### 0b. Detect available ratio data distributions (for profiling)
 
@@ -111,7 +109,7 @@ After profiling completes, present the E_eff summary:
   30/70  │ {val}      │ {val}     │ {val}     │ {judge-heavy}
   40/60  │ {val}      │ {val}     │ {val}     │
   50/50  │ {val}      │ {val}     │ {val}     │
-  60/40  │ {val}      │ {val}     │ {val}     │ {gen-heavy, no adapter}
+  60/40  │ {val}      │ {val}     │ {val}     │ {gen-heavy}
   70/30  │ {val}      │ {val}     │ {val}     │ {gen-heavy, no adapter}
 
   Trend: {downward / flat / upward} as gen% increases
@@ -136,11 +134,7 @@ Use AskUserQuestion:
   - "Skip — evaluate existing 3 adapters only" → continue to Step 2
   - "Abort — investigate profiling data first" → exit skill
 
-If training warranted, start in background via run-training skill pattern:
-```bash
-docker exec -d unsloth-headless python3 /workspace/wp-finetune/scripts/train_model.py \
-  --config /workspace/wp-finetune/config/train_config_60_40.yaml
-```
+If training warranted, start via the `/wp-finetune:run-training` skill (handles container lifecycle and config).
 
 **Reclaim GPU memory** before proceeding — the orchestrator handles this internally between profiling and vLLM serving.
 
@@ -148,7 +142,7 @@ docker exec -d unsloth-headless python3 /workspace/wp-finetune/scripts/train_mod
 
 **Purpose:** Run each trained adapter through the full eval suite + wp-bench. Sequential because DGX Spark 128GB is too tight for parallel 30B vLLM instances.
 
-**Duration:** ~25-40 minutes per adapter (vLLM startup ~10 min + merge ~5 min if LoRA fails + eval ~15 min + wp-bench ~15 min)
+**Duration:** ~25-40 minutes per adapter (vLLM startup ~10 min + eval ~15 min + wp-bench ~15 min). Pre-merge runs once upfront before the eval loop.
 
 **For each adapter** (detected in Step 0a — typically 30/70, 40/60, 50/50, 60/40):
 
@@ -230,7 +224,7 @@ If wp-bench setup fails: set `wpbench_available=False`, continue without. wp-ben
 
 #### 2e. Stop vLLM, reclaim memory
 
-The orchestrator's internal `_stop_vllm()` handles container cleanup (`docker rm -f vllm`) and port release between ratios.
+The orchestrator's internal `_stop_vllm()` handles container cleanup (container name resolved from `dgx_toolbox.yaml`) and port release between ratios.
 
 #### 2f. Present per-ratio results
 
@@ -424,7 +418,7 @@ python3 scripts/run_eval_triage.py [options]
                       Recommended: 500 for triage (~2.8h/ratio), full for final eval.
 --force               Clear all completion markers, re-run everything
 --health-timeout SEC  vLLM health check timeout (default: 600). Use 900 for
-                      30B MoE with LoRA fallback (merge adds ~10 min)
+                      30B MoE (model load ~10 min + CUDA graphs ~2 min)
 --model-path PATH     Base model dir relative to project root
 --tokenizer-path PATH Extended tokenizer dir relative to project root
 --dataset PATH        Test dataset JSONL relative to project root
@@ -445,7 +439,7 @@ python3 scripts/run_eval_triage.py [options]
 
 | Error | Recovery |
 |-------|----------|
-| CUDA not available on HOST | Expected — orchestrator runs from HOST, vLLM runs in container. Pre-merge uses `device_map=cpu` (no GPU needed). Only profiling needs CUDA (use `--skip-profiling` if done) |
+| CUDA not available on HOST | Expected — orchestrator runs from HOST, vLLM runs in container. Pre-merge uses `device_map=auto` (GPU if available, CPU fallback). Only profiling needs CUDA (use `--skip-profiling` if done) |
 | vLLM health timeout | Increase `--health-timeout`. 30B MoE: ~10 min load + ~2 min CUDA graphs |
 | Pre-merge fails | Check `peft` and `transformers` versions on HOST match training container. Merge uses `device_map=auto` (GPU if available, CPU fallback). Failed ratios are automatically skipped |
 | vLLM container missing project mount | Set `EXTRA_MOUNTS` env var (orchestrator does this automatically). DGX Toolbox `start-vllm.sh` must source `lib.sh` |
