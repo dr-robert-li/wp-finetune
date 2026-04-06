@@ -108,7 +108,7 @@ for (( i=1; i<=MAX_CHECKS; i++ )); do
     echo "{\"ts\": \"$ts\", \"watts\": $watts, \"temperature_c\": $temp, \"gpu_util_pct\": $gpu_util, \"mem_available_gb\": $mem_available_gb, \"vllm_status\": $vllm_status, \"vllm_latency_s\": $vllm_latency, \"ttft_s\": $ttft, \"model\": \"$model_name\", \"error_count\": $error_count, \"source\": \"monitor\"}" >> "$JSONL"
     echo "$ts Check $i/$MAX_CHECKS | temp=${temp}C gpu=${gpu_util}% ram=${mem_available_gb}GB | vllm=$vllm_status latency=${vllm_latency}s ttft=${ttft}s errors=$error_count"
 
-    (( i < MAX_CHECKS )) && sleep 30
+    [[ $i -lt $MAX_CHECKS ]] && sleep 30 || true
 done
 ```
 

@@ -107,7 +107,7 @@ for (( i=1; i<=MAX_CHECKS; i++ )); do
     echo "$ts Check $i/$MAX_CHECKS | temp=${temp}C gpu=${gpu_util}% ram=${mem_available_gb}GB disk=${disk_free}GB | merged=${merged_size}GB awq=${quantized_awq}GB q4=${quantized_q4}GB q8=${quantized_q8}GB procs=$quant_procs"
 
     (( temp >= 85 )) && touch "${TDIR}/_thermal_pause" && echo "$ts CRITICAL: temp=${temp}C >= 85"
-    (( i < MAX_CHECKS )) && sleep 120
+    [[ $i -lt $MAX_CHECKS ]] && sleep 120 || true
 done
 ```
 
