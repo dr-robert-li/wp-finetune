@@ -100,6 +100,39 @@ def clear_marker(marker_path: str) -> None:
         logger.info(f"Cleared marker: {marker_path}")
 
 
+def _clean_stale_results(eval_ratios: list[str]) -> None:
+    """Remove stale result files and markers so --force starts genuinely fresh.
+
+    Clears per-ratio result files (JSON, JSONL, markers, tmp configs) and the
+    triage decision. Profiling results are NOT cleared (they're expensive and
+    ratio-independent).
+    """
+    logger.info("--force: cleaning stale result files ...")
+    cleaned = 0
+
+    # Per-ratio result files
+    for ratio in eval_ratios:
+        ratio_dir = EVAL_TRIAGE_DIR / f"ratio_{ratio}"
+        if ratio_dir.exists():
+            for f in ratio_dir.iterdir():
+                f.unlink()
+                cleaned += 1
+
+    # Triage decision
+    triage_md = OUTPUT_DIR / "triage_decision.md"
+    if triage_md.exists():
+        triage_md.unlink()
+        cleaned += 1
+
+    # Triage completion marker
+    triage_marker = Path(COMPLETION_MARKERS["triage"])
+    if triage_marker.exists():
+        triage_marker.unlink()
+        cleaned += 1
+
+    logger.info(f"--force: removed {cleaned} stale files")
+
+
 # ---------------------------------------------------------------------------
 # Step 0: Setup
 # ---------------------------------------------------------------------------
@@ -1176,6 +1209,10 @@ def run_full_triage(
     logger.info(f"Force re-run: {force}")
 
     start_time = time.time()
+
+    # Force: clean stale result files so monitors and idempotency checks start fresh
+    if force:
+        _clean_stale_results(eval_ratios)
 
     # Step 0: Setup
     setup_output_dirs(eval_ratios)
