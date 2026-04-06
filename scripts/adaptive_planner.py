@@ -233,7 +233,7 @@ def apply_ladder(
     avg_gpu_util: float = telemetry_summary.get("avg_gpu_util", 50.0)
     avg_watts: float | None = telemetry_summary.get("avg_watts")
     avg_sample_mb: float = telemetry_summary.get("avg_sample_mb", 1.0)
-    mem_available_gb: float = telemetry_summary.get("mem_available_gb", 20.0)
+    mem_available_gb: float = telemetry_summary.get("min_mem_available_gb", 20.0)
 
     io_util_thresh: float = pz_cfg["io_util_threshold"]   # 30%
     io_watts_thresh: float = pz_cfg["io_watts_threshold"]  # 30 W

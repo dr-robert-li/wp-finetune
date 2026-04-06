@@ -153,6 +153,7 @@ The orchestrator pre-merges all adapters on HOST before the eval loop begins. Th
 **Pre-merge step (Step 1.5, runs automatically):**
 - Calls `scripts/merge_adapter.py` on HOST with `device_map=auto` — uses GPU when available, falls back to CPU. No training container required
 - Idempotent: skips already-merged models after verifying special tokens
+- Merged models written to `models/merged-{ratio}/` (e.g., `models/merged-30_70/`). Note: this differs from the run-training skill's merge path (`models/qwen3-30b-wp-{ratio}-merged/`). The orchestrator always uses its own path and does not reuse training's merged output
 - Each merged model is ~60GB; check disk space before running all 4 ratios
 - If a merge fails, that ratio is removed from the eval list
 

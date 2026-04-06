@@ -31,7 +31,9 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 - **`wp-finetune:review-telemetry` skill** — Replaced stale `classification precision` reference with actual eval metrics (Spearman, PHPCS, security)
 - **`wp-finetune:observe-training` skill** — Fixed duplicate step numbering (7,8,9,8,9 → 7,8,9,10,11) in container-monitor agent; added container name provenance note (`unsloth-headless` from `dgx_toolbox.yaml`)
 - **`wp-finetune:run-training` skill** — Fixed lightweight monitor JSONL template: deprecated field names (`gpu_util`, `temp`, `vram_used_mb`) replaced with canonical GPUSampler schema (`watts`, `temperature_c`, `gpu_util_pct`, `mem_available_gb`); fixed Checkpoint Storage example adapter names (`qwen3-wp-*` → `qwen3-30b-wp-*`)
+- **`wp-finetune:run-evaluation` skill** — Documented merged model path naming: orchestrator uses `models/merged-{ratio}/`, distinct from training's `models/qwen3-30b-wp-{ratio}-merged/`
 - **`wp-finetune:run-data-pipeline` skill** — Replaced stale project name `wp-qwen3-moe` with current description
+- **`scripts/adaptive_planner.py`** — Fixed `apply_ladder` reading `mem_available_gb` (absent) instead of `min_mem_available_gb` from telemetry summary; worker memory budget was silently defaulting to 20GB
 - **README** — Updated project status with v1.2 milestone, 60/40 training completion
 
 ### Fixed

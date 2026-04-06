@@ -117,10 +117,10 @@ Agent(
      - Router aux loss: {aux or N/A}
      - Epoch: {epoch}
      - Throughput: {samples/sec or tokens/sec if available}
-  6. Flag WARNING if loss increases for 3+ consecutive readings
-  7. Flag CRITICAL if loss > 10 or grad_norm > 100 (divergence/explosion)
-  8. Check {TDIR}/_stop -- if so, write ## Final Summary (final loss, min loss, total steps, loss trend) and exit
-  9. Sleep 60 seconds, repeat
+  5. Flag WARNING if loss increases for 3+ consecutive readings
+  6. Flag CRITICAL if loss > 10 or grad_norm > 100 (divergence/explosion)
+  7. Check {TDIR}/_stop -- if so, write ## Final Summary (final loss, min loss, total steps, loss trend) and exit
+  8. Sleep 60 seconds, repeat
 
   STOP CONDITIONS: _stop file exists OR no new training log output for 15+ minutes",
   run_in_background=true
