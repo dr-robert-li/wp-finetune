@@ -104,6 +104,7 @@ def test_compute_summary_basic():
     assert "floor_rules" in summary
     assert "phpcs_pass_rate" in summary
     assert "security_pass_rate" in summary
+    assert "n_applicable_dims_mean" in summary
 
     # overall_mean should be average of the 5 overall values
     expected_mean = (85.0 + 90.0 + 82.0 + 60.0 + 50.0) / 5
@@ -123,6 +124,105 @@ def test_compute_summary_basic():
     assert "D1_wpcs" in summary["per_dimension"]
     assert "D2_security" in summary["per_dimension"]
     assert "D9_structure" in summary["per_dimension"]
+
+    # per_dimension should have new transparency fields
+    dim_info = summary["per_dimension"]["D1_wpcs"]
+    assert "pass_rate_8_inclusive" in dim_info, "pass_rate_8_inclusive must be present"
+    assert "na_rate" in dim_info, "na_rate must be present"
+    assert "na_count" in dim_info
+
+    # n_applicable_dims_mean: all 9 dimensions applicable (no N/A in _make_rubric_score)
+    assert summary["n_applicable_dims_mean"] == 9.0
+
+
+def test_compute_summary_na_transparency():
+    """N/A dimensions are correctly reflected in pass_rate_8_inclusive and na_rate."""
+
+    def _make_score_with_na(overall: float, na_dims: list) -> RubricScore:
+        """Build a RubricScore where specified dimensions are None (N/A)."""
+        dimension_scores = {
+            "D1_wpcs": None if "D1_wpcs" in na_dims else 8.0,
+            "D2_security": None if "D2_security" in na_dims else 8.0,
+            "D3_sql": None if "D3_sql" in na_dims else 8.0,
+            "D4_perf": None if "D4_perf" in na_dims else 8.0,
+            "D5_wp_api": None if "D5_wp_api" in na_dims else 8.0,
+            "D6_i18n": None if "D6_i18n" in na_dims else 8.0,
+            "D7_a11y": None if "D7_a11y" in na_dims else 8.0,
+            "D8_errors": None if "D8_errors" in na_dims else 8.0,
+            "D9_structure": None if "D9_structure" in na_dims else 8.0,
+        }
+        return RubricScore(
+            file_path="<test>",
+            dimension_scores=dimension_scores,
+            dimension_na=na_dims,
+            overall=overall,
+            triggered_checks={},
+            check_evidence={},
+            grade="Good",
+            floor_rules_applied=[],
+            llm_checks_skipped=0,
+        )
+
+    # 4 examples: D2_security is N/A for 3, applicable for 1 (scores >= 8)
+    scores = [
+        _make_score_with_na(overall=85.0, na_dims=["D2_security"]),
+        _make_score_with_na(overall=82.0, na_dims=["D2_security"]),
+        _make_score_with_na(overall=78.0, na_dims=["D2_security"]),
+        _make_score_with_na(overall=90.0, na_dims=[]),  # D2 applicable, score=8.0
+    ]
+
+    summary = _compute_summary(scores)
+    d2 = summary["per_dimension"]["D2_security"]
+
+    # na_count = 3, na_rate = 3/4 = 0.75
+    assert d2["na_count"] == 3
+    assert abs(d2["na_rate"] - 0.75) < 1e-6
+
+    # pass_rate_8: among applicable only (1 example with score=8.0) → 1/1 = 1.0
+    assert abs(d2["pass_rate_8"] - 1.0) < 1e-6
+
+    # pass_rate_8_inclusive: treats N/A as failing → 1 pass out of 4 total = 0.25
+    assert abs(d2["pass_rate_8_inclusive"] - 0.25) < 1e-6
+
+    # n_applicable_dims_mean: 3 examples have 8 dims, 1 example has 9 dims
+    # mean = (8+8+8+9)/4 = 33/4 = 8.25
+    assert abs(summary["n_applicable_dims_mean"] - 8.25) < 1e-6
+
+
+def test_compute_summary_security_null_when_all_na():
+    """security_pass_rate is None when all examples have D2_security=N/A."""
+
+    def _make_score_no_security(overall: float) -> RubricScore:
+        dimension_scores = {
+            "D1_wpcs": 8.0,
+            "D2_security": None,
+            "D3_sql": 8.0,
+            "D4_perf": 8.0,
+            "D5_wp_api": 8.0,
+            "D6_i18n": 8.0,
+            "D7_a11y": 8.0,
+            "D8_errors": 8.0,
+            "D9_structure": 8.0,
+        }
+        return RubricScore(
+            file_path="<test>",
+            dimension_scores=dimension_scores,
+            dimension_na=["D2_security"],
+            overall=overall,
+            triggered_checks={},
+            check_evidence={},
+            grade="Good",
+            floor_rules_applied=[],
+            llm_checks_skipped=0,
+        )
+
+    scores = [_make_score_no_security(80.0), _make_score_no_security(85.0)]
+    summary = _compute_summary(scores)
+
+    # security_pass_rate must be None (not 1.0) when no applicable examples
+    assert summary["security_pass_rate"] is None, (
+        f"Expected None when no security-applicable examples, got {summary['security_pass_rate']}"
+    )
 
 
 # ---------------------------------------------------------------------------

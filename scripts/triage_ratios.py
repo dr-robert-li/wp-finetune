@@ -48,7 +48,16 @@ RATIO_ORDER = ["30_70", "40_60", "50_50", "60_40", "70_30"]
 
 TriageResult = namedtuple(
     "TriageResult",
-    ["survivors", "eliminated", "best_ratio", "status", "wpbench_available", "triage_table"],
+    [
+        "survivors",
+        "eliminated",
+        "best_ratio",
+        "status",
+        "wpbench_available",
+        "triage_table",
+        "gen_quality_scores",   # dict[ratio, float] — (phpcs + security) / 2
+        "judge_calibrations",   # dict[ratio, float] — spearman correlation
+    ],
 )
 
 # ---------------------------------------------------------------------------
@@ -132,13 +141,27 @@ def load_eval_results(eval_triage_dir: str) -> dict:
 # ---------------------------------------------------------------------------
 
 
+def compute_gen_quality_score(phpcs_rate: float, security_rate: float) -> float:
+    """Compute generation quality score from two proportion metrics.
+
+    Both inputs are proportions (0.0-1.0), so averaging them is well-defined.
+    This score is used for the 5pp elimination rule.
+
+    Args:
+        phpcs_rate: PHPCS pass rate (0.0-1.0).
+        security_rate: Security pass rate (0.0-1.0).
+
+    Returns:
+        Generation quality score (0.0-1.0).
+    """
+    return (phpcs_rate + security_rate) / 2
+
+
 def compute_overall_score(phpcs_rate: float, security_rate: float, spearman: float) -> float:
-    """Compute gen-weighted overall score per D-11.
+    """Deprecated: blended score mixing proportions and correlation.
 
-    Formula: 0.6 * ((phpcs_rate + security_rate) / 2) + 0.4 * spearman
-
-    PHPCS + security get more weight (gen quality is user-facing).
-    Spearman is judge calibration (refined later via GRPO).
+    Kept for backward compatibility. New code should use compute_gen_quality_score()
+    for generation quality ranking and treat spearman as a separate axis.
 
     Args:
         phpcs_rate: PHPCS pass rate (0.0-1.0).
@@ -146,7 +169,7 @@ def compute_overall_score(phpcs_rate: float, security_rate: float, spearman: flo
         spearman: Overall Spearman correlation (0.0-1.0).
 
     Returns:
-        Weighted overall score (0.0-1.0).
+        Blended score (0.0-1.0). Do not use for ranking — use gen_quality_score instead.
     """
     return 0.6 * ((phpcs_rate + security_rate) / 2) + 0.4 * spearman
 
@@ -192,7 +215,11 @@ def triage_ratios(
     """
     survivors = []
     eliminated = []
-    gate_passers = {}  # ratio -> overall_score
+    # gate_passers: ratio -> gen_quality_score (proportion, used for 5pp elimination)
+    gate_passers = {}
+    # Track both axes for all gate-passing ratios
+    gen_quality_scores_all: dict = {}   # ratio -> gen_quality_score
+    judge_calibrations_all: dict = {}   # ratio -> spearman
 
     # Check hard gates
     for ratio, data in eval_results.items():
@@ -231,11 +258,14 @@ def triage_ratios(
             })
             continue
 
-        # Passed all hard gates
-        score = compute_overall_score(phpcs, security, spearman)
-        gate_passers[ratio] = score
+        # Passed all hard gates — track both axes independently
+        gen_q = compute_gen_quality_score(phpcs, security)
+        gate_passers[ratio] = gen_q
+        gen_quality_scores_all[ratio] = gen_q
+        judge_calibrations_all[ratio] = spearman
 
-    # 5pp elimination rule among gate-passers
+    # 5pp elimination rule among gate-passers — uses gen_quality_score only
+    # (proportions are comparable; spearman is a separate axis)
     if gate_passers:
         best_score = max(gate_passers.values())
         best_ratio = max(gate_passers, key=lambda r: gate_passers[r])
@@ -246,8 +276,8 @@ def triage_ratios(
                 eliminated.append({
                     "ratio": ratio,
                     "reason": (
-                        f"5pp elimination: {diff:.4f} behind best ({best_ratio}) "
-                        f"overall score. Threshold: strictly > {ELIMINATION_PP}"
+                        f"5pp elimination: gen_quality_score {diff:.4f} behind best ({best_ratio}). "
+                        f"Threshold: strictly > {ELIMINATION_PP}"
                     ),
                 })
             else:
@@ -272,6 +302,8 @@ def triage_ratios(
     triage_table = _build_triage_table(
         eval_results=eval_results,
         gate_passers=gate_passers,
+        gen_quality_scores=gen_quality_scores_all,
+        judge_calibrations=judge_calibrations_all,
         survivors=survivors,
         eliminated=eliminated,
         best_ratio=best_ratio,
@@ -287,6 +319,8 @@ def triage_ratios(
         status=status,
         wpbench_available=wpbench_available,
         triage_table=triage_table,
+        gen_quality_scores=gen_quality_scores_all,
+        judge_calibrations=judge_calibrations_all,
     )
 
 
@@ -298,6 +332,8 @@ def triage_ratios(
 def _build_triage_table(
     eval_results: dict,
     gate_passers: dict,
+    gen_quality_scores: dict,
+    judge_calibrations: dict,
     survivors: list,
     eliminated: list,
     best_ratio: Optional[str],
@@ -335,13 +371,15 @@ def _build_triage_table(
         )
 
     if gate_passers:
-        formula = "0.6 * ((phpcs + security) / 2) + 0.4 * spearman"
         lines += [
             "",
-            f"### Overall Score Ranking ({formula})",
+            "### Generation Quality Ranking — Axis 1: gen_quality_score = (phpcs + security) / 2",
             "",
-            "| Ratio | Overall Score | Behind Best | Verdict |",
-            "|-------|---------------|-------------|---------|",
+            "Both phpcs_rate and security_rate are proportions (0–1); averaging is well-defined.",
+            "The 5pp elimination rule applies to this axis only.",
+            "",
+            "| Ratio | Gen Quality Score | Behind Best | Verdict |",
+            "|-------|-------------------|-------------|---------|",
         ]
         best_score = max(gate_passers.values()) if gate_passers else 0.0
         for ratio in sorted(gate_passers, key=lambda r: gate_passers[r], reverse=True):
@@ -353,6 +391,20 @@ def _build_triage_table(
             lines.append(
                 f"| {ratio} | {score:.4f} | {diff:.4f} | {verdict} |"
             )
+
+        lines += [
+            "",
+            "### Judge Calibration Ranking — Axis 2: Spearman correlation",
+            "",
+            "Spearman measures judge-GT agreement (rank correlation), not a proportion.",
+            "Reported as a separate axis; not mixed into gen_quality_score.",
+            "",
+            "| Ratio | Spearman |",
+            "|-------|----------|",
+        ]
+        for ratio in sorted(judge_calibrations, key=lambda r: judge_calibrations[r], reverse=True):
+            spearman_val = judge_calibrations[ratio]
+            lines.append(f"| {ratio} | {spearman_val:.4f} |")
 
     lines += [
         "",
