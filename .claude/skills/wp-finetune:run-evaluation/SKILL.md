@@ -235,16 +235,17 @@ After each adapter completes, display inline:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   PHPCS pass rate:     {val}% {✓ PASS / ✗ FAIL} (gate: >95%)
+  Security pass rate:  {val}% or null {✓ PASS / ✗ FAIL / N/A} (gate: >98%)
   Judge Spearman:      {val}  {✓ PASS / ✗ FAIL} (gate: >0.85)
-  Security pass rate:  {val}% {✓ PASS / ✗ FAIL} (gate: >98%)
 
-  Overall gate:        {PASS / FAIL}
+  Gen quality score:   {avg(phpcs, security)} (used for 5pp elimination)
+  Judge calibration:   {spearman} (separate axis, not blended)
 
-  wp-bench code gen:   {val} {or "skipped"}
-  wp-bench knowledge:  {val} {or "skipped"}
+  N/A transparency:    {n_applicable_dims_mean}/9 dims tested
+  Hard gates:          {PASS / FAIL}
 
+  wp-bench:            {val} {or "skipped"}
   Training loss:       {final_loss}
-  Training duration:   {hours}h
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -264,7 +265,7 @@ The orchestrator (`run_eval_triage.py`) calls this automatically after all adapt
 
 **Elimination rules (GATE-02):**
 - Fail ANY hard gate (PHPCS ≤95%, Spearman ≤0.85, Security ≤98%) → **ELIMINATED**
-- Overall score >5pp behind best ratio → **ELIMINATED**
+- Gen quality score >5pp behind best ratio → **ELIMINATED** (gen quality = avg of PHPCS + security pass rates; Spearman is a separate axis, not blended)
 - Everything else → **SURVIVES** (high bar for elimination, low bar for continuation)
 
 ### Step 4: Decision Gate 2 — Triage Review (Human)
@@ -278,13 +279,16 @@ The orchestrator (`run_eval_triage.py`) calls this automatically after all adapt
 
 ## Quality Gate Results
 
-  Ratio  │ PHPCS  │ Spearman │ Security │ Gates  │ Overall │ Status
-  ───────┼────────┼──────────┼──────────┼────────┼─────────┼───────────
-  30/70  │ {val}% │ {val}    │ {val}%   │ {P/F}  │ {val}   │ {SURVIVE/ELIM}
-  40/60  │ {val}% │ {val}    │ {val}%   │ {P/F}  │ {val}   │ {SURVIVE/ELIM}
-  50/50  │ {val}% │ {val}    │ {val}%   │ {P/F}  │ {val}   │ {SURVIVE/ELIM}
-  60/40  │ {val}% │ {val}    │ {val}%   │ {P/F}  │ {val}   │ {SURVIVE/ELIM}
-  {70/30}│ {if trained}                                     │
+  Ratio  │ PHPCS  │ Security │ Gen Quality │ Spearman │ Gates  │ Status
+  ───────┼────────┼──────────┼─────────────┼──────────┼────────┼───────────
+  30/70  │ {val}% │ {val}%   │ {avg}       │ {val}    │ {P/F}  │ {SURVIVE/ELIM}
+  40/60  │ {val}% │ {val}%   │ {avg}       │ {val}    │ {P/F}  │ {SURVIVE/ELIM}
+  50/50  │ {val}% │ {val}%   │ {avg}       │ {val}    │ {P/F}  │ {SURVIVE/ELIM}
+  60/40  │ {val}% │ {val}%   │ {avg}       │ {val}    │ {P/F}  │ {SURVIVE/ELIM}
+  {70/30}│ {if trained}                                        │
+
+  Gen Quality = avg(PHPCS, Security) — used for 5pp elimination
+  Spearman = judge calibration — separate ranking axis, not blended
 
 ## wp-bench Differentiation (among gate-passers only)
 
@@ -315,7 +319,8 @@ The orchestrator (`run_eval_triage.py`) calls this automatically after all adapt
 | Signal | What it tells you | Weight |
 |--------|------------------|--------|
 | Hard gates (PHPCS, Spearman, Security) | Minimum quality floor — non-negotiable | Binary (pass/fail) |
-| Overall score | Gen-weighted quality (60% gen, 40% judge) | Eliminates >5pp behind |
+| Gen quality score | avg(PHPCS, Security) — code generation quality | Eliminates >5pp behind best |
+| Judge calibration (Spearman) | How well model scores match GT — separate axis | Ranked independently |
 | wp-bench | Real-world WordPress task performance | Differentiates among gate-passers |
 | E_eff mean | Routing concentration → pruning headroom | Informational for Phase 7 |
 | E_eff max | Worst-case layer → pruning ceiling | Informational for Phase 7 |
