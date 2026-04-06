@@ -4,6 +4,31 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-04-07 — Human-annotated seed data folded into Phase 4.1
+
+### Decision: human seeds as Phase 4.1 blocking first task
+
+Rather than inserting a new Phase 4.0, human-annotated seed data curation becomes the first task of Phase 4.1 (Reasoning Data Generation). This blocks the rest of 4.1 — Claude agents can't generate reasoning at scale until the seeds exist as few-shot exemplars.
+
+### Why blocking is acceptable
+
+The seeds serve triple duty:
+1. **Few-shot exemplars** for Claude agents generating reasoning chains at scale (Phase 4.1)
+2. **Validated test set** for Phase 4.4 eval — Spearman calibration, TP/TN/FP/FN, reasoning quality scoring all need ground truth that doesn't come from the same synthetic pipeline
+3. **Threshold calibration anchor** — the "arbitrary thresholds, subject to human override" problem from Phase 4 triage can't be solved data-driven without a validated reference set
+
+### What gets annotated
+
+~50-100 examples, focused on:
+- **Reasoning quality over code pairs.** The synthetic mutation pipeline (phase2_mutate.py) already produces (good, bad) pairs. The gap is in *contrastive explanation quality* — human annotators write dimension-specific reasoning ("the mutation removes `wp_nonce_field()` from the form handler, creating a CSRF vector") rather than vague pattern-matching.
+- **Boundary cases over clear-cut ones.** Subtle defects (missing nonce in specific plugin context, performance issue only at scale) where LLM-generated reasoning is weakest and human signal is densest. Trivially bad mutations (delete all escaping) are handled fine by agents.
+
+### What this changes in 4.1
+
+Phase 4.1's existing "pilot-validate 20-50 examples" step becomes: curate human seeds first, then use them as few-shot for the pilot, then scale. The rest of 4.1 (generation at scale, parse validation, <2% failure rate) is unchanged.
+
+---
+
 ## 2026-04-06 — First eval run killed; restarting after fixes
 
 ### What happened
