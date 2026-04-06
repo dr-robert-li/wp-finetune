@@ -113,6 +113,103 @@ def setup_output_dirs(eval_ratios: list[str]) -> None:
     logger.info(f"Output directories ready: {OUTPUT_DIR}")
 
 
+def _get_training_container_name() -> str:
+    """Resolve the training container name from dgx_toolbox.yaml.
+
+    Falls back to 'unsloth-headless' if config lookup fails.
+    """
+    try:
+        from scripts.dgx_toolbox import get_toolbox
+        dgx = get_toolbox()
+        return dgx._containers.get("unsloth_studio", {}).get("container_name", "unsloth-headless")
+    except Exception:
+        return "unsloth-headless"
+
+
+def _get_vllm_container_name() -> str:
+    """Resolve the vLLM container name from dgx_toolbox.yaml.
+
+    Falls back to 'vllm' if config lookup fails.
+    """
+    try:
+        from scripts.dgx_toolbox import get_toolbox
+        dgx = get_toolbox()
+        return dgx._containers.get("vllm", {}).get("container_name", "vllm")
+    except Exception:
+        return "vllm"
+
+
+def pre_merge_adapters(eval_ratios: list[str]) -> dict[str, bool]:
+    """Pre-merge all adapters on HOST before the eval loop.
+
+    LoRA serving always fails for Qwen3-30B-A3B due to modules_to_save tensors.
+    Instead of failing per-ratio inside the eval loop, merge all adapters upfront
+    using device_map=cpu (no GPU or container required).
+
+    Returns dict mapping ratio -> success bool.
+    """
+    logger.info("=" * 60)
+    logger.info("PRE-MERGE: Merging adapters for all eval ratios")
+    logger.info("=" * 60)
+
+    merge_script = PROJECT_ROOT / "scripts" / "merge_adapter.py"
+    results = {}
+
+    for ratio in eval_ratios:
+        merged_path = PROJECT_ROOT / "models" / f"merged-{ratio}"
+        adapter_path = PROJECT_ROOT / "adapters" / f"qwen3-30b-wp-{ratio}"
+
+        # Check if already merged and verified
+        if (merged_path / "config.json").exists():
+            logger.info(f"  {ratio}: merged model already exists at {merged_path}, verifying ...")
+            # Quick token verification via merge_adapter.py idempotency check
+            result = subprocess.run(
+                [sys.executable, str(merge_script),
+                 "--adapter-dir", str(adapter_path),
+                 "--output-dir", str(merged_path)],
+                capture_output=True, text=True, cwd=str(PROJECT_ROOT),
+                timeout=120,
+            )
+            if result.returncode == 0:
+                logger.info(f"  {ratio}: verified OK")
+                results[ratio] = True
+                continue
+            else:
+                logger.warning(f"  {ratio}: verification failed, re-merging ...")
+
+        # Check adapter exists
+        if not (adapter_path / "adapter_config.json").exists():
+            logger.error(f"  {ratio}: adapter not found at {adapter_path}")
+            results[ratio] = False
+            continue
+
+        logger.info(f"  {ratio}: merging {adapter_path} -> {merged_path} (HOST, device_map=cpu) ...")
+        result = subprocess.run(
+            [sys.executable, str(merge_script),
+             "--adapter-dir", str(adapter_path),
+             "--output-dir", str(merged_path)],
+            capture_output=True, text=True, cwd=str(PROJECT_ROOT),
+            timeout=1200,  # 20 min max per merge (30B model is large)
+        )
+        if result.returncode == 0:
+            logger.info(f"  {ratio}: merge succeeded")
+            results[ratio] = True
+        else:
+            logger.error(f"  {ratio}: merge FAILED: {result.stderr[:500]}")
+            if result.stdout:
+                logger.error(f"  {ratio}: stdout: {result.stdout[:500]}")
+            results[ratio] = False
+
+    # Summary
+    succeeded = [r for r, ok in results.items() if ok]
+    failed = [r for r, ok in results.items() if not ok]
+    logger.info(f"Pre-merge complete: {len(succeeded)} succeeded, {len(failed)} failed")
+    if failed:
+        logger.warning(f"Failed merges: {failed} — these ratios will be skipped during eval")
+
+    return results
+
+
 def setup_wpbench() -> bool:
     """Clone and set up wp-bench.
 
@@ -344,10 +441,11 @@ def _is_vllm_crash_looping() -> bool:
     Checks RestartCount >= 1 (container already failed once) or docker logs
     contain known fatal errors like LoRA validation failures.
     """
+    cname = _get_vllm_container_name()
     try:
         # Check restart count
         result = subprocess.run(
-            ["docker", "inspect", "--format", "{{.State.Status}} {{.RestartCount}}", "vllm"],
+            ["docker", "inspect", "--format", "{{.State.Status}} {{.RestartCount}}", cname],
             capture_output=True, text=True, timeout=5,
         )
         if result.returncode == 0:
@@ -360,7 +458,7 @@ def _is_vllm_crash_looping() -> bool:
 
         # Check logs for known fatal errors (LoRA validation, OOM)
         logs = subprocess.run(
-            ["docker", "logs", "--tail", "50", "vllm"],
+            ["docker", "logs", "--tail", "50", cname],
             capture_output=True, text=True, timeout=10,
         )
         if logs.returncode == 0:
@@ -399,9 +497,10 @@ def _wait_for_vllm(endpoint: str, timeout_s: int = VLLM_HEALTH_TIMEOUT_S) -> boo
 
         time.sleep(VLLM_HEALTH_POLL_S)
 
+    cname = _get_vllm_container_name()
     logger.error(
         f"vLLM did not become healthy within {timeout_s}s. "
-        f"Check: docker logs vllm | tail -50"
+        f"Check: docker logs {cname} | tail -50"
     )
     return False
 
@@ -469,57 +568,38 @@ def _stop_vllm(proc: Optional[subprocess.Popen]) -> None:
             proc.kill()
             proc.wait()
     # Also clean up the docker container in case it's still running
-    subprocess.run(["docker", "rm", "-f", "vllm"], capture_output=True, timeout=15)
+    cname = _get_vllm_container_name()
+    subprocess.run(["docker", "rm", "-f", cname], capture_output=True, timeout=15)
     logger.info("vLLM process stopped")
 
 
 def _fallback_merge_and_serve(ratio: str) -> Optional[subprocess.Popen]:
-    """Fallback: merge adapter and serve merged model without LoRA.
+    """Fallback: serve pre-merged model without LoRA.
 
-    Used when vLLM fails to load adapter (e.g., modules_to_save tensors).
+    Pre-merge step (run at pipeline start) should have already merged all adapters.
+    If merged model doesn't exist, attempts HOST merge as last resort.
+
     Returns vLLM process handle for merged model, or None on failure.
     """
-    logger.info(f"LoRA fallback: merging adapter for ratio {ratio} ...")
+    logger.info(f"LoRA fallback: serving merged model for ratio {ratio} ...")
     merged_model_path = PROJECT_ROOT / "models" / f"merged-{ratio}"
 
     if not merged_model_path.exists():
-        # Run merge_adapter.py inside the training container (peft version must match training)
-        container_adapter = f"/workspace/wp-finetune/adapters/qwen3-30b-wp-{ratio}"
-        container_output = f"/workspace/wp-finetune/models/merged-{ratio}"
-
-        logger.info(f"Running merge inside unsloth-headless container ...")
+        # Pre-merge should have handled this, but attempt HOST merge as last resort
+        logger.warning(f"Merged model not found at {merged_model_path} — attempting HOST merge ...")
+        merge_script = PROJECT_ROOT / "scripts" / "merge_adapter.py"
+        adapter_path = PROJECT_ROOT / "adapters" / f"qwen3-30b-wp-{ratio}"
         result = subprocess.run(
-            [
-                "docker", "exec", "unsloth-headless",
-                "python3", "/workspace/wp-finetune/scripts/merge_adapter.py",
-                "--adapter-dir", container_adapter,
-                "--output-dir", container_output,
-            ],
-            capture_output=True,
-            text=True,
-            timeout=600,  # 10 min max for merge
+            [sys.executable, str(merge_script),
+             "--adapter-dir", str(adapter_path),
+             "--output-dir", str(merged_model_path)],
+            capture_output=True, text=True, cwd=str(PROJECT_ROOT),
+            timeout=1200,
         )
         if result.returncode != 0:
-            logger.error(f"merge_adapter.py failed: {result.stderr[:1000]}")
-            # Try HOST as fallback (may work with compatible peft)
-            logger.info("Retrying merge on HOST ...")
-            merge_script = PROJECT_ROOT / "scripts" / "merge_adapter.py"
-            adapter_path = PROJECT_ROOT / "adapters" / f"qwen3-30b-wp-{ratio}"
-            result = subprocess.run(
-                [sys.executable, str(merge_script),
-                 "--adapter-dir", str(adapter_path),
-                 "--output-dir", str(merged_model_path)],
-                capture_output=True, text=True, cwd=str(PROJECT_ROOT),
-            )
-            if result.returncode != 0:
-                logger.error(f"merge_adapter.py failed on HOST too: {result.stderr[:500]}")
-                return None
-
-        # Warn about disk usage
-        logger.warning(
-            f"Merged checkpoint created at {merged_model_path}. "
-            f"Note: merged checkpoints are ~60GB each. Check disk usage."
-        )
+            logger.error(f"HOST merge failed for ratio {ratio}: {result.stderr[:500]}")
+            return None
+        logger.info(f"HOST merge succeeded for ratio {ratio}")
 
     # Serve merged model as full model (no --lora-modules)
     container_merged_path = f"/workspace/wp-finetune/models/merged-{ratio}"
@@ -755,10 +835,17 @@ def run_wpbench_for_ratio(
         )
 
         if result.returncode != 0:
-            logger.warning(f"wp-bench returned non-zero for ratio {ratio}: {result.stderr[:500]}")
+            error_detail = result.stderr[:500] if result.stderr else result.stdout[:500]
+            logger.warning(
+                f"wp-bench returned non-zero for ratio {ratio} (exit={result.returncode}): "
+                f"{error_detail}"
+            )
             logger.warning(f"Continuing without wp-bench for ratio {ratio}.")
-            # Write a None score placeholder
-            wp_bench_output.write_text(json.dumps({"wpbench_score": None, "error": "non-zero exit"}))
+            wp_bench_output.write_text(json.dumps({
+                "wpbench_score": None,
+                "error": f"exit code {result.returncode}",
+                "detail": error_detail,
+            }))
             return False
 
         logger.info(f"wp-bench completed for ratio {ratio}: {wp_bench_output}")
@@ -1108,6 +1195,17 @@ def run_full_triage(
         )
     else:
         logger.info("Skipping profiling (--skip-profiling flag set)")
+
+    # Step 1.5: Pre-merge all adapters (LoRA serving always fails for Qwen3-30B-A3B)
+    merge_results = pre_merge_adapters(eval_ratios)
+    merge_failures = [r for r, ok in merge_results.items() if not ok]
+    if merge_failures:
+        logger.warning(f"Pre-merge failures: {merge_failures} — these ratios will be skipped")
+        # Remove failed ratios from eval list
+        eval_ratios = [r for r in eval_ratios if merge_results.get(r, False)]
+        if not eval_ratios:
+            logger.error("All adapter merges failed. Cannot proceed with eval.")
+            sys.exit(1)
 
     # Step 2: Sequential adapter eval + wp-bench
     eval_failures = []
