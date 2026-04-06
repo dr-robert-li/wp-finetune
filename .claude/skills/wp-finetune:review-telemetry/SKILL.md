@@ -33,6 +33,11 @@ For each `.md` file in the directory (excluding `_summary.md`):
 3. Extract the `## Final Summary` section if present
 4. Extract key numeric values (memory, temperature, loss, latency, etc.)
 
+Also check for lightweight monitor logs:
+- `ls telemetry/*/monitor*.log 2>/dev/null` -- pipe-delimited format from lightweight monitor
+- Parse: GPU util, temperature, request counts, alive status
+- Include in summary if present
+
 ### 3. Produce Consolidated Summary
 
 Write `{TDIR}/_summary.md` with this structure:
@@ -74,6 +79,9 @@ Print the full summary to the conversation. Highlight any CRITICAL alerts promin
 - Peak temperature, throttle events
 - Checkpoint count, final adapter size
 - Container uptime, OOM events
+- Check for canonical thermal JSONL: `ls telemetry/training/*_thermal.jsonl 2>/dev/null`
+  - Fields: watts, temperature_c, gpu_util_pct, mem_available_gb (GPUSampler schema)
+  - Summarize: avg/peak watts, avg/peak temp, min mem_available_gb
 
 **Data Pipeline:**
 - Current file counts vs targets

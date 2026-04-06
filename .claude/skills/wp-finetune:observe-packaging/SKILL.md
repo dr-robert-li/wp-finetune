@@ -92,7 +92,7 @@ Agent(
   prompt="You are a model size tracking observer. Write observations to {TDIR}/size-tracking.md.
 
   LOOP (every 2 minutes):
-  1. Run: du -sh merged_model/ 2>/dev/null (BF16 baseline)
+  1. Run: du -sh models/*-merged/ 2>/dev/null (BF16 baseline)
   2. Run: du -sh quantized/awq/ quantized/gguf-q4/ quantized/gguf-q8/ 2>/dev/null
   3. Run: df -h /home/robert_li/Desktop/projects/wp-finetune
   4. Calculate compression ratios vs BF16 baseline

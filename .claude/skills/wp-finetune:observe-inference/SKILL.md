@@ -39,8 +39,9 @@ Agent(
   1. Probe vLLM health: curl -s -o /dev/null -w '%{time_total}' http://localhost:8020/health 2>/dev/null
   2. Probe LiteLLM health: curl -s -o /dev/null -w '%{time_total}' http://localhost:4000/health 2>/dev/null
   3. Probe Ollama: curl -s -o /dev/null -w '%{time_total}' http://localhost:11434/api/tags 2>/dev/null
-  4. If vLLM is up, send a minimal completion and measure TTFT:
-     time curl -s http://localhost:8020/v1/completions -d '{\"model\":\"wp-qwen3-moe\",\"prompt\":\"<wp_gen> \",\"max_tokens\":1}' 2>/dev/null
+  4. If vLLM is up, discover the model name and send a minimal completion to measure TTFT:
+     MODEL=$(curl -s http://localhost:8020/v1/models | python3 -c \"import json,sys; print(json.load(sys.stdin)['data'][0]['id'])\" 2>/dev/null || echo \"unknown\")
+     time curl -s http://localhost:8020/v1/completions -d \"{\\\"model\\\":\\\"$MODEL\\\",\\\"prompt\\\":\\\"<wp_gen> \\\",\\\"max_tokens\\\":1}\" 2>/dev/null
   5. Append to {TDIR}/request-latency.md:
      ### {HH:MM:SS}
      - vLLM health: {latency}ms ({status})
