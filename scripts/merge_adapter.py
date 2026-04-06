@@ -87,14 +87,21 @@ def merge_adapter(adapter_dir: str, output_dir: str, config: dict) -> None:
     model = AutoModelForCausalLM.from_pretrained(
         local_dir,
         dtype=torch.bfloat16,
-        device_map="auto",
+        device_map="cpu",  # MoE models can't auto-offload to disk; 30B bf16 fits in 128GB unified RAM
     )
 
     # Load the LoRA adapter on top of the base model
-    from peft import PeftModel  # noqa: PLC0415
+    from peft import PeftModel, PeftConfig  # noqa: PLC0415
+
+    # Zero out lora_dropout before loading — dropout is training-only and
+    # newer peft versions reject non-zero dropout on ParamWrapper (modules_to_save).
+    peft_config = PeftConfig.from_pretrained(adapter_dir)
+    if getattr(peft_config, "lora_dropout", 0) != 0:
+        print(f"  Zeroing lora_dropout ({peft_config.lora_dropout} → 0) for merge compatibility")
+        peft_config.lora_dropout = 0
 
     print(f"Loading LoRA adapter from {adapter_dir} ...")
-    model = PeftModel.from_pretrained(model, adapter_dir)
+    model = PeftModel.from_pretrained(model, adapter_dir, config=peft_config)
 
     # Attempt merge
     print("Merging adapter into base model ...")
