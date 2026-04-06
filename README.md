@@ -45,14 +45,14 @@ The judge returns structured scores across 9 dimensions: WPCS compliance, SQL sa
 | v1.0 MVP | 1. Pipeline Ready | Complete |
 | | 2. Dataset Production (267K examples, 5 ratio exports) | Complete |
 | | 3. Model Prep & Training (60/40 LoRA complete, 43h on DGX Spark) | Complete |
-| | 4. Base-Model Profiling + Eval Triage (E_eff routing analysis, 9-dim rubric, wp-bench) | **Next** |
+| | 4. Base-Model Profiling + Eval Triage (E_eff routing analysis, 9-dim rubric, wp-bench) | **In Progress** |
 | | 5. Packaging & Deployment | Deferred to v3.0 |
 | v1.1 Adaptive Training | 6. Adaptive Training Planner (power-primary, memory watchdog) | Complete |
-| v1.2 Judge Reasoning | 4.1 Data Gen → 4.2 Dataset Assembly → 4.3 Reasoning Fine-Tune → 4.4 Eval & Merge | Defined |
+| v1.2 Judge Reasoning | 4.1 Seed Curation + Data Gen → 4.2 Dataset Assembly → 4.3 Reasoning Fine-Tune → 4.4 Eval & Merge | Defined |
 | v2.0 MoE-Sieve | 7. Router Profiling + Ratio Selection (E_eff) → 8. Selective Training → 9. Eval | Planned |
 | v3.0 GRPO & Deploy | 10. Rewards → 11. GRPO → 12. Merge + Prune (AIMER vs REAP) → 13. Eval → 14. Package | Planned |
 
-**Current:** Phase 4 eval triage is next — profile base model E_eff, eval adapters via 9-dimension rubric + wp-bench, triage survivors. The 60/40 training run completed (43h, loss 0.29). After triage, v1.2 adds deep judge reasoning (CoT + critique-then-fix) to the winning adapter before MoE-Sieve.
+**Current:** Phase 4 eval triage running — evaluating all 4 adapters (30/70, 40/60, 50/50, 60/40) via 9-dimension rubric + wp-bench, two-axis triage (gen quality + judge calibration). After triage, v1.2 begins with human-annotated seed curation (~50-100 boundary-case examples) before Claude agents generate reasoning data at scale.
 
 **Building in public.** Read the [Engineering Journal](JOURNAL.md) for real-time decisions, tradeoffs, failures, and lessons learned as the project evolves.
 
