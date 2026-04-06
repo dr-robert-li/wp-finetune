@@ -18,6 +18,7 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 - **`run_eval_triage.py` wp-bench error reporting** — Non-zero wp-bench exits now capture both stderr and stdout in error detail, and write failure reason to result JSON
 - **`merge_adapter.py` device_map=auto fails on MoE** — `device_map="auto"` triggers disk offload for Qwen3-30B-A3B MoE weights which fails without explicit `offload_folder`. Reverted to `device_map="cpu"` — 30B bf16 (~60GB) fits in DGX Spark 128GB unified RAM
 - **`merge_adapter.py` lora_dropout incompatibility** — peft 0.18+ rejects `lora_dropout != 0` on `ParamWrapper` (modules_to_save). Now zeros dropout before loading since it's training-only and irrelevant for merge
+- **`run_eval_triage.py` --force leaves stale result files** — `--force` cleared completion markers but left previous result JSONs, JSONLs, gate results, wp-bench results, and triage_decision.md. Monitors and idempotency checks saw ghost data from prior runs. Now `_clean_stale_results()` removes all per-ratio result files and triage decision (profiling preserved)
 - **`wp-finetune:run-evaluation` skill** — Fixed 9 critical inaccuracies: wrong CLI flags for eval_gen/eval_judge (`--model-url`→`--model`, `--test-file`→`--dataset`, `--output-dir`→`--output`), fabricated function signatures (`load_model_and_tokenizer`, `profile_ratio`, `RoutingCollector(model)`), wrong triage_ratios kwargs, nonexistent `dgx.stop()` method, nonexistent `--profiling-only` flag
 
 ### Changed
