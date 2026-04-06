@@ -29,7 +29,9 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 - **`wp-finetune:observe-inference` skill** — Clarified that ollama/litellm containers are optional; model discovery fallback now skips TTFT probe instead of sending request with `"model":"unknown"`
 - **`wp-finetune:observe-packaging` skill** — Added note that `quantized/` paths are aspirational (v3.0 Phase 14 not yet implemented)
 - **`wp-finetune:review-telemetry` skill** — Replaced stale `classification precision` reference with actual eval metrics (Spearman, PHPCS, security)
-- **`wp-finetune:observe-training` skill** — Fixed duplicate step numbering (7,8,9,8,9 → 7,8,9,10,11) in container-monitor agent
+- **`wp-finetune:observe-training` skill** — Fixed duplicate step numbering (7,8,9,8,9 → 7,8,9,10,11) in container-monitor agent; added container name provenance note (`unsloth-headless` from `dgx_toolbox.yaml`)
+- **`wp-finetune:run-training` skill** — Fixed lightweight monitor JSONL template: deprecated field names (`gpu_util`, `temp`, `vram_used_mb`) replaced with canonical GPUSampler schema (`watts`, `temperature_c`, `gpu_util_pct`, `mem_available_gb`); fixed Checkpoint Storage example adapter names (`qwen3-wp-*` → `qwen3-30b-wp-*`)
+- **`wp-finetune:run-data-pipeline` skill** — Replaced stale project name `wp-qwen3-moe` with current description
 - **README** — Updated project status with v1.2 milestone, 60/40 training completion
 
 ### Fixed
