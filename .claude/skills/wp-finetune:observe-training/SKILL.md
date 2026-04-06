@@ -12,6 +12,8 @@ Spawn background observer agents to monitor DGX Spark training. Writes telemetry
 > - Has checkpoints? Yes -> checkpoint-integrity included
 > - Has progress metric? Yes -> training-metrics included
 
+> **Container name:** Agents reference `unsloth-headless` which is resolved from `config/dgx_toolbox.yaml -> containers.unsloth_studio.container_name`. If the container name changes in config, update the agent prompts below.
+
 ## Trigger
 
 User says: "observe training", "monitor training", "/observe-training"

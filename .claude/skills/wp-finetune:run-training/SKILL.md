@@ -540,13 +540,13 @@ Agent(
   can lose NVML access on long-running containers while the host nvidia-smi stays reliable.
 
   LOOP (every 600 seconds):
-  1. Run: nvidia-smi --query-gpu=utilization.gpu,memory.used,temperature.gpu --format=csv,noheader,nounits  (HOST, not docker exec)
+  1. Run: nvidia-smi --query-gpu=power.draw,temperature.gpu,utilization.gpu --format=csv,noheader,nounits  (HOST, not docker exec)
   2. Run: free -m | grep Mem → parse total, used, available system RAM (HOST)
-  3. Parse gpu_util, temp from nvidia-smi. Set vram_used_mb from memory.used (null if [N/A]).
-  4. Compute sys_ram_used_mb = total - available, sys_ram_total_mb = total
+  3. Parse watts from power.draw, temperature_c from temperature.gpu, gpu_util_pct from utilization.gpu.
+  4. Compute mem_available_gb = available / 1024, page_cache_gb from /proc/meminfo Cached / 1024 / 1024
   5. Append one JSONL line to {THERMAL_LOG}:
-     {\"ts\": \"YYYY-MM-DDTHH:MM:SSZ\", \"gpu_util\": N, \"temp\": N, \"vram_used_mb\": N_or_null, \"sys_ram_used_mb\": N, \"sys_ram_total_mb\": N, \"source\": \"monitor\"}
-  6. If temp >= 83: also touch telemetry/training/_thermal_pause
+     {\"ts\": \"YYYY-MM-DDTHH:MM:SSZ\", \"watts\": N, \"temperature_c\": N, \"gpu_util_pct\": N, \"mem_available_gb\": N, \"page_cache_gb\": N, \"mock\": false}
+  6. If temperature_c >= 83: also touch telemetry/training/_thermal_pause
   7. Check if telemetry/training/_stop exists → exit
   8. Sleep 600 seconds, repeat
 
@@ -745,11 +745,11 @@ if not readings:
     print(f"WARNING: No thermal data in {THERMAL_LOG} — skipping adaptive planning")
     # Skip to next ratio
 
-gpu_utils = [r["gpu_util"] for r in readings]
-gpu_temps = [r["temp"] for r in readings]
-vram_readings = [r["vram_used_mb"] for r in readings if r.get("vram_used_mb")]
-sys_ram_readings = [r["sys_ram_used_mb"] for r in readings if r.get("sys_ram_used_mb")]
-sys_ram_totals = [r["sys_ram_total_mb"] for r in readings if r.get("sys_ram_total_mb")]
+gpu_utils = [r["gpu_util_pct"] for r in readings]
+gpu_temps = [r["temperature_c"] for r in readings]
+mem_available = [r["mem_available_gb"] for r in readings if r.get("mem_available_gb")]
+page_cache = [r["page_cache_gb"] for r in readings if r.get("page_cache_gb")]
+watts_readings = [r["watts"] for r in readings if r.get("watts")]
 ```
 
 Compute:
@@ -760,20 +760,15 @@ Compute:
 - `num_readings = len(readings)`
 - `sources = set(r.get("source", "unknown") for r in readings)`
 
-Memory (supports both discrete GPU and unified memory systems):
-- `vram_used_gb = max(vram_readings) / 1024 if vram_readings else None`
-- `sys_ram_used_gb = max(sys_ram_readings) / 1024 if sys_ram_readings else 0`
-- `sys_ram_total_gb = max(sys_ram_totals) / 1024 if sys_ram_totals else 0`
-- `is_unified_memory = (vram_used_gb is None)` — True on GB10/Grace Hopper
-- If unified memory: `mem_used_gb = sys_ram_used_gb`, `mem_total_gb = sys_ram_total_gb`
-- If discrete GPU: `mem_used_gb = vram_used_gb`, `mem_total_gb` from nvidia-smi
-- `mem_headroom_gb = mem_total_gb - mem_used_gb`
+Memory (uses canonical GPUSampler schema — `mem_available_gb` from free -m):
+- `min_available_gb = min(mem_available) if mem_available else 0`
+- `avg_available_gb = sum(mem_available) / len(mem_available) if mem_available else 0`
+- `avg_page_cache_gb = sum(page_cache) / len(page_cache) if page_cache else 0`
+- `mem_headroom_gb = min_available_gb` — available memory IS headroom on unified memory
 
 **Peak RAM with safety margin** (unified memory only — dataloader workers cause transient spikes between samples):
-- `peak_ram_gb = max(sys_ram_readings) / 1024 if sys_ram_readings else 0`
-- `p95_ram_gb = sorted(sys_ram_readings)[int(len(sys_ram_readings) * 0.95)] / 1024 if sys_ram_readings else 0`
-- `safe_headroom_gb = mem_total_gb - peak_ram_gb`
-- On unified memory, **`safe_headroom_gb` is used for all scaling decisions** (not `mem_headroom_gb` which uses averages)
+- `safe_headroom_gb = min_available_gb`
+- On unified memory, **`safe_headroom_gb` is used for all scaling decisions**
 - The 10-min sample interval misses sub-minute spikes from worker buffer refills, so apply a **5 GB safety margin** on unified memory: `effective_headroom_gb = safe_headroom_gb - 5`
 
 **OOM detection** — check if the run died before completing:
@@ -781,11 +776,11 @@ Memory (supports both discrete GPU and unified memory systems):
 # Check if training completed or was OOM-killed
 # Signs of OOM: GPU util drops to <10% in final readings while RAM is >95%
 final_readings = readings[-5:] if len(readings) >= 5 else readings
-final_gpu_utils = [r["gpu_util"] for r in final_readings]
-final_ram_pcts = [r["sys_ram_used_mb"] / r["sys_ram_total_mb"] * 100 for r in final_readings if r.get("sys_ram_total_mb")]
+final_gpu_utils = [r["gpu_util_pct"] for r in final_readings]
+final_mem_available = [r["mem_available_gb"] for r in final_readings if r.get("mem_available_gb")]
 likely_oom = (
     any(u < 10 for u in final_gpu_utils) and
-    any(p > 95 for p in final_ram_pcts)
+    any(a < 2.0 for a in final_mem_available)  # less than 2 GB available = likely OOM
 )
 ```
 If `likely_oom` is True, treat as a **memory CRITICAL** event — apply memory backoff (8.5d-mem) regardless of thermal zone.
@@ -1318,13 +1313,13 @@ Each training run produces isolated artifacts:
 
 ```
 adapters/
-  qwen3-wp-30_70/           # LoRA adapter for 30/70 ratio
+  qwen3-30b-wp-30_70/       # LoRA adapter for 30/70 ratio
     adapter_config.json
     adapter_model.safetensors
     checkpoint-200/          # Intermediate checkpoints
     checkpoint-400/
     ...
-  qwen3-wp-50_50/           # LoRA adapter for 50/50 ratio
+  qwen3-30b-wp-50_50/       # LoRA adapter for 50/50 ratio
     adapter_config.json
     adapter_model.safetensors
     ...
@@ -1332,8 +1327,8 @@ adapters/
 
 models/
   Qwen3-30B-A3B/             # Shared base model (not per-run)
-  qwen3-wp-30_70-merged/     # Merged model for 30/70 ratio
-  qwen3-wp-50_50-merged/     # Merged model for 50/50 ratio
+  qwen3-30b-wp-30_70-merged/  # Merged model for 30/70 ratio
+  qwen3-30b-wp-50_50-merged/  # Merged model for 50/50 ratio
   ...
 
 config/
@@ -1345,7 +1340,7 @@ config/
 
 **Why isolated:** Each ratio produces a different model. Keeping them separate lets you:
 - Run eval on each to find the best ratio
-- Serve any model via vLLM (`--model models/qwen3-wp-50_50-merged/`)
+- Serve any model via vLLM (`--model models/qwen3-30b-wp-50_50-merged/`)
 - Roll back to any ratio without retraining
 - Compare MLflow runs side-by-side (`mlflow ui --backend-store-uri mlruns/`)
 

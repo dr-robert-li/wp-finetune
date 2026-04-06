@@ -42,7 +42,7 @@ Agent(
   5. Count files: ls data/phase2_synthetic/output/judge_training/*.json 2>/dev/null | wc -l
   6. Count files: ls data/phase3_cot/output/*.json 2>/dev/null | wc -l
   7. Check exports: ls data/final_dataset/*.jsonl 2>/dev/null | wc -l
-  7. Append to {TDIR}/pipeline-progress.md:
+  8. Append to {TDIR}/pipeline-progress.md:
      ### {HH:MM:SS}
      - Phase: {current phase from status}
      - Passed repos: {N} (+{delta})
