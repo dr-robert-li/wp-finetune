@@ -36,9 +36,9 @@ Agent(
   prompt="You are an evaluation progress observer. Write observations to {TDIR}/eval-progress.md.
 
   LOOP (every 2 minutes):
-  1. Check running eval processes: ps aux | grep -E 'eval_gen|eval_judge|eval_gate|wp-bench' | grep -v grep
-  2. Check eval output files: ls -la eval/output/ 2>/dev/null
-  3. Check wp-bench results: ls -la eval/wp-bench-results/ 2>/dev/null
+  1. Check running eval processes: ps aux | grep -E 'run_eval_triage|vllm|wp-bench' | grep -v grep
+  2. Check eval output files: ls -la output/eval_triage/ 2>/dev/null
+  3. Check wp-bench results: ls -la output/eval_triage/ratio_*/wp_bench_results.json 2>/dev/null
   4. Check git log for eval commits: git log --oneline -5 | grep -i eval
   5. Append to {TDIR}/eval-progress.md:
      ### {HH:MM:SS}
@@ -87,15 +87,14 @@ Agent(
   prompt="You are an eval result tracking observer. Write observations to {TDIR}/result-tracking.md.
 
   LOOP (every 2 minutes):
-  1. Read eval_gen results if they exist: cat eval/output/eval_gen_results.json 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); print(f\"PHPCS pass: {d.get(\"phpcs_pass_rate\", \"N/A\")}, Security: {d.get(\"security_pass_rate\", \"N/A\")}\")' 2>/dev/null
-  2. Read eval_judge results: cat eval/output/eval_judge_results.json 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); print(f\"Spearman: {d.get(\"spearman\", \"N/A\")}, Precision: {d.get(\"precision\", \"N/A\")}\")' 2>/dev/null
-  3. Read eval_gate results: cat eval/output/eval_gate_results.json 2>/dev/null
+  1. Read eval_gen results if they exist: cat output/eval_triage/ratio_*/eval_gen_results.json 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); print(f\"PHPCS pass: {d.get(\"phpcs_pass_rate\", \"N/A\")}, Security: {d.get(\"security_pass_rate\", \"N/A\")}\")' 2>/dev/null
+  2. Read eval_judge results: cat output/eval_triage/ratio_*/eval_judge_results.json 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); print(f\"Spearman: {d.get(\"spearman_corr\", \"N/A\")}\")' 2>/dev/null
+  3. Read eval_gate results: cat output/eval_triage/ratio_*/eval_gate_results.json 2>/dev/null
   4. Append to {TDIR}/result-tracking.md:
      ### {HH:MM:SS}
      - Generator PHPCS pass rate: {value or pending}
      - Generator security pass rate: {value or pending}
      - Judge Spearman correlation: {value or pending}
-     - Judge classification precision: {value or pending}
      - Quality gate: {PASS / FAIL / pending}
   5. Flag WARNING if any metric below target (PHPCS < 95%, Spearman < 0.85, security < 98%)
   6. Flag CRITICAL if quality gate = FAIL
@@ -109,7 +108,7 @@ Agent(
 
 ### 5. Report
 
-Tell the user: "Evaluation telemetry active with 3 observers. Output: {TDIR}/. Say 'stop observing' or touch {TDIR}/_stop to end."
+Tell the user: "Evaluation telemetry active with 3 observers. Output: {TDIR}/. Say 'stop observing' or touch {TDIR}/_stop to end. Run /review-telemetry to consolidate results."
 
 ## Stopping Observers
 

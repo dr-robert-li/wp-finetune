@@ -105,10 +105,9 @@ Agent(
 
   LOOP (every 60 seconds):
   1. Run: docker logs --tail 30 unsloth-headless 2>&1 | grep -i 'loss\|step\|epoch\|lr\|grad'
-  2. Check for trainer state: docker exec unsloth-headless cat /workspace/outputs/trainer_state.json 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); print(json.dumps(d[\"log_history\"][-3:], indent=2))' 2>/dev/null || true
-  3. Check MLflow logs: docker exec unsloth-headless ls -la /workspace/wp-finetune/mlruns/ 2>/dev/null || true
-  4. Check TensorBoard: docker exec unsloth-headless find /workspace -name 'events.out.tfevents*' -newer /tmp/.last_tb_check 2>/dev/null || true
-  5. Parse and append to {TDIR}/training-metrics.md:
+  2. Check for trainer state: docker exec unsloth-headless find /workspace/wp-finetune/adapters -name trainer_state.json -type f 2>/dev/null | sort -t- -k2 -n | tail -1 | xargs cat 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); print(json.dumps(d["log_history"][-3:], indent=2))' 2>/dev/null || true
+  3. Check MLflow logs: docker exec unsloth-headless ls -la /workspace/wp-finetune/mlruns.db 2>/dev/null || true
+  4. Parse and append to {TDIR}/training-metrics.md:
      ### {HH:MM:SS} -- Step {N}/{total}
      - Loss: {loss} (delta: {change from last})
      - Learning rate: {lr}
@@ -137,7 +136,7 @@ Agent(
   1. Run: iostat -x 1 1 2>/dev/null || cat /proc/diskstats | head -10
   2. Run: sar -u 1 1 2>/dev/null || vmstat 1 2 | tail -1
   3. Run: df -h /home/robert_li/Desktop/projects/wp-finetune
-  4. Run: du -sh adapters/ merged_model/ 2>/dev/null || true
+  4. Run: du -sh adapters/ models/*-merged/ 2>/dev/null || true
   5. Run: docker stats --no-stream --format '{{.Name}}: Block I/O {{.BlockIO}}' unsloth-headless 2>/dev/null
   6. Append to {TDIR}/disk-io.md:
      ### {HH:MM:SS}
@@ -164,13 +163,13 @@ Agent(
   prompt="You are a checkpoint integrity observer. Write observations to {TDIR}/checkpoint-integrity.md.
 
   LOOP (every 5 minutes):
-  1. List checkpoints: ls -ltd adapters/qwen3-wp/checkpoint-*/ 2>/dev/null || docker exec unsloth-headless ls -ltd /workspace/adapters/qwen3-wp/checkpoint-*/ 2>/dev/null
+  1. List checkpoints: ls -ltd adapters/qwen3-30b-wp-*/checkpoint-*/ 2>/dev/null || docker exec unsloth-headless ls -ltd /workspace/adapters/qwen3-30b-wp-*/checkpoint-*/ 2>/dev/null
   2. For latest checkpoint, verify:
      - adapter_config.json exists and is valid JSON (python3 -c 'import json; json.load(open(\"...\"))')
      - adapter_model.safetensors exists and size > 0
      - optimizer.pt or optimizer.safetensors present
   3. Check tokenizer: ls adapters/tokenizer/ 2>/dev/null | grep -c 'tokenizer\|special_tokens'
-  4. Check for merged model: ls merged_model/*.safetensors 2>/dev/null | wc -l
+  4. Check for merged model: ls models/*-merged/*.safetensors 2>/dev/null | wc -l
   5. Append to {TDIR}/checkpoint-integrity.md:
      ### {HH:MM:SS}
      - Checkpoints found: {N}
