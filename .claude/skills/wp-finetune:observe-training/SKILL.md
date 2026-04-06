@@ -211,8 +211,8 @@ Agent(
   7. Flag WARNING if unsloth-headless is not running
   8. Flag WARNING if system RAM available < 10GB
   9. Flag CRITICAL if OOM killer detected in dmesg
-  8. Check {TDIR}/_stop -- if so, write ## Final Summary (uptime, peak container memory, OOM count) and exit
-  9. Sleep 60 seconds, repeat
+  10. Check {TDIR}/_stop -- if so, write ## Final Summary (uptime, peak container memory, OOM count) and exit
+  11. Sleep 60 seconds, repeat
 
   STOP CONDITIONS: _stop file exists OR container stopped for 10+ minutes",
   run_in_background=true

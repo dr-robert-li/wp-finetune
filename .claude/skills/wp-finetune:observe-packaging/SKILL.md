@@ -12,6 +12,8 @@ Spawn background observer agents to monitor model packaging (quantization, GGUF 
 > - Has checkpoints? No (quantization is atomic per format)
 > - Has progress metric? Yes -> quantization-progress tracks format completion
 > - Produces final artifacts? Yes -> file-integrity is critical
+>
+> **Note:** Packaging (v3.0 Phase 14) has not been implemented yet. The `quantized/` directory structure referenced below is aspirational — actual output paths will be defined when the packaging scripts are written. All `quantized/` checks use `2>/dev/null` and will gracefully report nothing until packaging runs.
 
 ## Trigger
 
