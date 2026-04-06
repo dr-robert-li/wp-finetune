@@ -1,8 +1,9 @@
 """Tests for eval/eval_judge.py — updated to match current API surface.
 
 All tests are pure unit tests — no GPU, no vLLM, no external services.
-Tests exercise parse_judge_response and _safe_spearman against the
-current implementation (rubric refactor, April 2026).
+Tests exercise parse_judge_response, _safe_spearman, and
+_extract_gt_from_assistant against the current implementation
+(GT source fix, April 2026).
 
 Removed: test_score_inversion (tested nonexistent invert_phpcs_errors).
 """
@@ -15,7 +16,7 @@ import pytest
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from eval.eval_judge import parse_judge_response, _safe_spearman
+from eval.eval_judge import _extract_gt_from_assistant, _safe_spearman, parse_judge_response
 
 
 # ---------------------------------------------------------------------------
@@ -98,6 +99,78 @@ def test_judge_output_parsing():
 # ---------------------------------------------------------------------------
 # test_safe_spearman_edge_cases
 # ---------------------------------------------------------------------------
+
+def test_extract_gt_from_assistant():
+    """_extract_gt_from_assistant extracts GT scores from the assistant response.
+
+    Tests:
+      - Well-formed assistant response with all fields -> correct overall and dim scores
+      - Assistant response missing overall_score -> returns None
+      - Non-JSON assistant response -> returns None
+      - No assistant message -> returns None
+      - dimension_scores only contains fields in _GT_FIELD_TO_DIM (not documentation_score)
+    """
+    gt_response = {
+        "overall_score": 45,
+        "wpcs_compliance": 55,
+        "security_score": 10,
+        "performance_score": 80,
+        "i18n_score": 55,
+        "accessibility_score": 65,
+        "documentation_score": 50,  # should be ignored (no dim_key)
+        "must_fix_issues": [],
+    }
+
+    messages_with_gt = [
+        {"role": "user", "content": "<wp_judge> Evaluate this WordPress code:\n<?php echo 'hi'; ?>"},
+        {"role": "assistant", "content": json.dumps(gt_response)},
+    ]
+
+    result = _extract_gt_from_assistant(messages_with_gt)
+    assert result is not None
+    assert result["overall"] == 45.0
+    assert result["dimension_scores"]["D1_wpcs"] == 55.0
+    assert result["dimension_scores"]["D2_security"] == 10.0
+    assert result["dimension_scores"]["D4_perf"] == 80.0
+    assert result["dimension_scores"]["D6_i18n"] == 55.0
+    assert result["dimension_scores"]["D7_a11y"] == 65.0
+    # documentation_score has no dim_key — must not appear
+    assert "documentation_score" not in result["dimension_scores"]
+    # Dimensions not in GT fields must not appear
+    for absent_dim in ("D3_sql", "D5_wp_api", "D8_errors", "D9_structure"):
+        assert absent_dim not in result["dimension_scores"]
+
+    # Missing overall_score -> None
+    no_overall = {"wpcs_compliance": 80}
+    messages_no_overall = [
+        {"role": "user", "content": "code"},
+        {"role": "assistant", "content": json.dumps(no_overall)},
+    ]
+    assert _extract_gt_from_assistant(messages_no_overall) is None
+
+    # Non-JSON assistant response -> None
+    messages_non_json = [
+        {"role": "user", "content": "code"},
+        {"role": "assistant", "content": "I cannot evaluate this."},
+    ]
+    assert _extract_gt_from_assistant(messages_non_json) is None
+
+    # No assistant message -> None
+    messages_no_assistant = [
+        {"role": "user", "content": "code"},
+    ]
+    assert _extract_gt_from_assistant(messages_no_assistant) is None
+
+    # JSON in markdown code fence -> should be parsed (uses parse_judge_response)
+    fenced_content = "```json\n" + json.dumps(gt_response) + "\n```"
+    messages_fenced = [
+        {"role": "user", "content": "code"},
+        {"role": "assistant", "content": fenced_content},
+    ]
+    result_fenced = _extract_gt_from_assistant(messages_fenced)
+    assert result_fenced is not None
+    assert result_fenced["overall"] == 45.0
+
 
 def test_safe_spearman_edge_cases():
     """_safe_spearman handles degenerate inputs gracefully."""
