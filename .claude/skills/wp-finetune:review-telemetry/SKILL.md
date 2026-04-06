@@ -14,7 +14,7 @@ User says: "review telemetry", "telemetry summary", "how is training going", "ch
 
 ```bash
 # Timestamped run directories (from observe agents or lightweight monitors)
-ls -dt telemetry/*/20* 2>/dev/null | head -10
+ls -dt telemetry/*/* 2>/dev/null | head -10
 ```
 
 If no telemetry directories exist, report "No telemetry found. Run /observe-training, /observe-evaluation, /observe-inference, /observe-data-pipeline, or /observe-packaging first."
