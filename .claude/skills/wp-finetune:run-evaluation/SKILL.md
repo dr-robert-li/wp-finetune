@@ -157,7 +157,7 @@ docker exec -d unsloth-headless python3 /workspace/wp-finetune/scripts/train_mod
 The orchestrator pre-merges all adapters on HOST before the eval loop begins. This avoids the LoRA `modules_to_save` incompatibility that always causes vLLM LoRA serving to fail for Qwen3-30B-A3B.
 
 **Pre-merge step (Step 1.5, runs automatically):**
-- Calls `scripts/merge_adapter.py` on HOST with `device_map=cpu` — no GPU or training container required
+- Calls `scripts/merge_adapter.py` on HOST with `device_map=auto` — uses GPU when available, falls back to CPU. No training container required
 - Idempotent: skips already-merged models after verifying special tokens
 - Each merged model is ~60GB; check disk space before running all 4 ratios
 - If a merge fails, that ratio is removed from the eval list
@@ -447,7 +447,7 @@ python3 scripts/run_eval_triage.py [options]
 |-------|----------|
 | CUDA not available on HOST | Expected — orchestrator runs from HOST, vLLM runs in container. Pre-merge uses `device_map=cpu` (no GPU needed). Only profiling needs CUDA (use `--skip-profiling` if done) |
 | vLLM health timeout | Increase `--health-timeout`. 30B MoE: ~10 min load + ~2 min CUDA graphs |
-| Pre-merge fails | Check `peft` and `transformers` versions on HOST match training container. Merge runs with `device_map=cpu` so no GPU needed. Failed ratios are automatically skipped |
+| Pre-merge fails | Check `peft` and `transformers` versions on HOST match training container. Merge uses `device_map=auto` (GPU if available, CPU fallback). Failed ratios are automatically skipped |
 | vLLM container missing project mount | Set `EXTRA_MOUNTS` env var (orchestrator does this automatically). DGX Toolbox `start-vllm.sh` must source `lib.sh` |
 | wp-bench clone/setup fails | Continue without wp-bench, note in results |
 | eval script crashes | Log error, skip to next ratio, include in triage as "EVAL_FAILED" |
