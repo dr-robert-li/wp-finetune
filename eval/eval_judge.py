@@ -1,6 +1,16 @@
 """Per-dimension Spearman correlation evaluation for judge mode.
 
-Compares model's <wp_judge> dimension scores against rubric_scorer ground truth.
+Compares model's <wp_judge> dimension scores against ground truth scores
+extracted from the test dataset's assistant response JSON.
+
+Ground truth source: The test set's assistant response already contains
+scored judge output (overall_score, wpcs_compliance, security_score, etc.)
+with real variance (min=10, max=100, stdev≈14). Using rubric_scorer as GT
+produces near-zero variance (stdev≈0.4), making Spearman meaningless.
+
+rubric_scorer is retained as a fallback for dimensions not covered by the
+test set's GT fields, and for examples whose assistant response cannot be
+parsed.
 
 Usage:
     python -m eval.eval_judge [--limit N] [--output PATH]
@@ -54,6 +64,26 @@ _MODEL_FIELD_TO_DIM: dict[str, str] = {
     field: dim_key
     for field, dim_key in DIM_NAME_MAP.items()
     if not field.startswith("D")  # only field->dim direction
+}
+
+# ---------------------------------------------------------------------------
+# GT field -> dimension key mapping
+# ---------------------------------------------------------------------------
+
+# The test dataset's assistant response uses a different (simpler) set of
+# field names than the model output fields in DIM_NAME_MAP.  Only the
+# dimensions that are present in the GT response are listed here; the
+# remaining dimensions (D3_sql, D5_wp_api, D8_errors, D9_structure) are not
+# scored in the GT and will use rubric_scorer as a fallback when needed.
+#
+# NOTE: documentation_score exists in the GT but has no corresponding rubric
+# dimension — it is intentionally omitted.
+_GT_FIELD_TO_DIM: dict[str, str] = {
+    "wpcs_compliance": "D1_wpcs",
+    "security_score": "D2_security",
+    "performance_score": "D4_perf",
+    "i18n_score": "D6_i18n",
+    "accessibility_score": "D7_a11y",
 }
 
 
@@ -129,6 +159,55 @@ def _extract_code_from_judge_prompt(user_message: str) -> str:
     return text.strip()
 
 
+def _extract_gt_from_assistant(messages: list[dict]) -> Optional[dict]:
+    """Extract ground truth scores from the test example's assistant response.
+
+    The test dataset's assistant response contains a JSON object with scored
+    judge output, e.g.::
+
+        {
+            "overall_score": 45,
+            "wpcs_compliance": 55,
+            "security_score": 10,
+            "performance_score": 80,
+            "i18n_score": 55,
+            "accessibility_score": 65,
+            "documentation_score": 55,
+            ...
+        }
+
+    Returns a dict with keys ``overall`` (float) and ``dimension_scores``
+    (dict[str, float]) using internal dimension keys (D1_wpcs, etc.), or
+    ``None`` if the assistant response cannot be parsed or does not contain
+    ``overall_score``.
+
+    Only dimensions present in _GT_FIELD_TO_DIM are included; dimensions not
+    covered by the GT (D3_sql, D5_wp_api, D8_errors, D9_structure) are absent
+    from the returned dict.
+    """
+    assistant_content = next(
+        (m["content"] for m in messages if m["role"] == "assistant"), None
+    )
+    if not assistant_content:
+        return None
+
+    parsed = parse_judge_response(assistant_content)
+    if parsed is None or "overall_score" not in parsed:
+        return None
+
+    overall = parsed.get("overall_score")
+    if not isinstance(overall, (int, float)):
+        return None
+
+    dim_scores: dict[str, float] = {}
+    for gt_field, dim_key in _GT_FIELD_TO_DIM.items():
+        val = parsed.get(gt_field)
+        if isinstance(val, (int, float)):
+            dim_scores[dim_key] = float(val)
+
+    return {"overall": float(overall), "dimension_scores": dim_scores}
+
+
 # ---------------------------------------------------------------------------
 # Spearman helper
 # ---------------------------------------------------------------------------
@@ -166,12 +245,18 @@ def run_eval(
     model: Optional[str] = None,
 ) -> dict:
     """Compute per-dimension Spearman correlation between model judge scores
-    and rubric_scorer ground truth.
+    and ground truth scores from the test dataset.
 
     Loads wp_judge examples from the test dataset, queries the served model via
     vLLM endpoint (resolved from DGX Toolbox), parses dimension scores from
-    judge responses, runs rubric_scorer.score_code() on the same code, and
-    computes per-dimension + overall Spearman correlations.
+    judge responses, extracts GT scores from the test example's assistant
+    response JSON, and computes per-dimension + overall Spearman correlations.
+
+    GT source priority:
+    1. Test dataset's assistant response JSON (real variance, preferred).
+    2. rubric_scorer.score_code() fallback — used only when the assistant
+       response cannot be parsed, or for rubric dimensions not covered by the
+       GT fields (D3_sql, D5_wp_api, D8_errors, D9_structure).
 
     Args:
         dataset_path: Path to OpenAI-format JSONL test dataset.
@@ -257,33 +342,79 @@ def run_eval(
             skipped += 1
             continue
 
-        # Ground truth via rubric_scorer
-        gt = score_code(code)
+        # Ground truth: extract from test example's assistant response.
+        # The test dataset already contains scored judge output with real
+        # variance (min=10, max=100, stdev≈14).  Using rubric_scorer as GT
+        # produces near-zero variance (stdev≈0.4) and meaningless Spearman.
+        gt_from_dataset = _extract_gt_from_assistant(messages)
+
+        if gt_from_dataset is None:
+            # Fallback: re-score via rubric_scorer (logs a warning so the
+            # operator knows GT provenance for this example).
+            print(
+                f"  [{i}] WARNING: GT not in assistant response; "
+                "falling back to rubric_scorer",
+                file=sys.stderr,
+            )
+            gt_rubric = score_code(code)
+            gt_overall_val = gt_rubric.overall
+            gt_dim_scores = {
+                k: v
+                for k, v in gt_rubric.dimension_scores.items()
+                if v is not None
+            }
+            gt_source = "rubric_scorer"
+        else:
+            gt_overall_val = gt_from_dataset["overall"]
+            gt_dim_scores = gt_from_dataset["dimension_scores"]
+            gt_source = "dataset"
 
         # Record overall pair
         overall_model.append(float(model_overall))
-        overall_gt.append(float(gt.overall))
+        overall_gt.append(float(gt_overall_val))
 
-        # Record per-dimension pairs
+        # Record per-dimension pairs.
+        # For dimensions covered by the GT dataset fields, use dataset GT.
+        # For dimensions not in the GT (D3_sql, D5_wp_api, D8_errors,
+        # D9_structure), fall back to rubric_scorer if we already have it,
+        # otherwise skip (to avoid running rubric_scorer just for fallback dims).
         pair_record: dict = {
             "index": i,
             "prompt": user_msg_text,
             "response": generated,
             "code": code,
             "model_overall": float(model_overall),
-            "gt_overall": float(gt.overall),
+            "gt_overall": float(gt_overall_val),
+            "gt_source": gt_source,
             "dimensions": {},
         }
 
+        # Lazy rubric fallback — only run score_code() once if needed for
+        # dimensions not covered by the GT dataset.  When gt_from_dataset is
+        # None we already ran score_code() above; reuse that result.  When
+        # gt_from_dataset is present we start as None and score lazily only if
+        # a per-dimension lookup misses.
+        _rubric_fallback: Optional[object] = (
+            gt_rubric if gt_from_dataset is None else None  # type: ignore[possibly-undefined]
+        )
+
         for model_field, dim_key in _MODEL_FIELD_TO_DIM.items():
             model_val = parsed.get(model_field)
-            gt_val = gt.dimension_scores.get(dim_key)
+            if model_val is None or not isinstance(model_val, (int, float)):
+                continue
 
-            if (
-                model_val is not None
-                and isinstance(model_val, (int, float))
-                and gt_val is not None
-            ):
+            # Try dataset GT first
+            gt_val = gt_dim_scores.get(dim_key)
+
+            if gt_val is None:
+                # Dimension not covered by dataset GT; try rubric_scorer fallback
+                if _rubric_fallback is None:
+                    _rubric_fallback = score_code(code)
+                rb_val = _rubric_fallback.dimension_scores.get(dim_key)  # type: ignore[union-attr]
+                if rb_val is not None:
+                    gt_val = float(rb_val)
+
+            if gt_val is not None:
                 dim_model_scores[dim_key].append(float(model_val))
                 dim_gt_scores[dim_key].append(float(gt_val))
                 pair_record["dimensions"][dim_key] = {
