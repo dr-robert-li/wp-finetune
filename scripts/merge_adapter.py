@@ -2,7 +2,7 @@
 
 Strategy (defense-in-depth):
   1. Adapter already saved separately by train_model.py (safe even if merge fails)
-  2. Load base model via AutoModelForCausalLM (bfloat16, device_map=auto)
+  2. Load base model via AutoModelForCausalLM (bfloat16, device_map=cpu)
   3. Load adapter via PeftModel.from_pretrained
   4. Attempt merge_and_unload()
   5. Save merged model + tokenizer
