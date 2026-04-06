@@ -41,15 +41,7 @@ User says: "run evaluation", "evaluate the model", "run eval triage", "/run-eval
 ls adapters/qwen3-30b-wp-*/adapter_config.json 2>/dev/null
 ```
 
-Build adapter inventory:
-```
-| # | Ratio | Adapter Path | Final Loss | Status |
-|---|-------|-------------|-----------|--------|
-| 1 | 30/70 | adapters/qwen3-30b-wp-30_70/ | ? | Partial (800 steps) |
-| 2 | 40/60 | adapters/qwen3-30b-wp-40_60/ | ? | Partial (800 steps) |
-| 3 | 50/50 | adapters/qwen3-30b-wp-50_50/ | 0.296 | Partial (800 steps) |
-| 4 | 60/40 | adapters/qwen3-30b-wp-60_40/ | 0.277 | Complete (8134 steps, 43h) |
-```
+Build adapter inventory from `trainer_state.json` (last checkpoint) for each adapter.
 
 Read each adapter's `trainer_state.json` (last checkpoint) for final loss if available.
 
@@ -160,25 +152,25 @@ docker exec -d unsloth-headless python3 /workspace/wp-finetune/scripts/train_mod
 
 **For each adapter** (detected in Step 0a — typically 30/70, 40/60, 50/50, 60/40):
 
-#### 2a. Serve adapter via vLLM
+#### 2a. Pre-merge adapters and serve via vLLM
 
-The orchestrator (`run_eval_triage.py`) handles vLLM lifecycle automatically:
-1. Starts vLLM container via DGX Toolbox with `EXTRA_MOUNTS` for project directory
-2. Polls health endpoint every 5s (configurable via `--health-timeout`, default 600s)
-3. If LoRA loading fails (expected — `modules_to_save` incompatibility, Pitfall 7), automatically merges adapter and serves merged model
+The orchestrator pre-merges all adapters on HOST before the eval loop begins. This avoids the LoRA `modules_to_save` incompatibility that always causes vLLM LoRA serving to fail for Qwen3-30B-A3B.
+
+**Pre-merge step (Step 1.5, runs automatically):**
+- Calls `scripts/merge_adapter.py` on HOST with `device_map=cpu` — no GPU or training container required
+- Idempotent: skips already-merged models after verifying special tokens
+- Each merged model is ~60GB; check disk space before running all 4 ratios
+- If a merge fails, that ratio is removed from the eval list
+
+**Per-ratio vLLM serving:**
+- Serves pre-merged model directly (no `--enable-lora`)
+- Container name resolved from `dgx_toolbox.yaml` (not hardcoded)
+- Health check polls every 5s for up to `--health-timeout` seconds (default 600s, use 900 for safety)
 
 ```bash
-# The orchestrator handles this — no manual vLLM management needed
+# The orchestrator handles all of this — no manual vLLM management needed
 python3 scripts/run_eval_triage.py --ratios 30_70,40_60,50_50,60_40 --health-timeout 900
 ```
-
-**What happens under the hood:**
-- vLLM tries LoRA serving first (~10 min startup). For Qwen3-30B-A3B, LoRA will fail due to `modules_to_save` tensors
-- Fallback: `scripts/merge_adapter.py --adapter-dir adapters/qwen3-30b-wp-{ratio} --output-dir models/merged-{ratio}` (~5-10 min, ~60GB per merged model)
-- Merged model served without `--enable-lora` (~10 min startup)
-- Health check: polls `http://localhost:8020/health` every 5s for up to `--health-timeout` seconds
-
-Verify model name: `GET /v1/models` → extract model name string for eval scripts.
 
 #### 2b. Spawn observe-evaluation (if telemetry enabled)
 
@@ -453,9 +445,9 @@ python3 scripts/run_eval_triage.py [options]
 
 | Error | Recovery |
 |-------|----------|
-| CUDA not available on HOST | Expected — orchestrator runs from HOST, vLLM runs in container. Only profiling needs CUDA (use `--skip-profiling` if done) |
-| vLLM health timeout | Increase `--health-timeout`. 30B MoE: ~10 min load + ~2 min CUDA graphs. With LoRA fallback + merge: add ~15 min |
-| vLLM LoRA load fails (modules_to_save) | Expected for Qwen3 adapters (Pitfall 7). Orchestrator auto-falls back to merge-and-serve |
+| CUDA not available on HOST | Expected — orchestrator runs from HOST, vLLM runs in container. Pre-merge uses `device_map=cpu` (no GPU needed). Only profiling needs CUDA (use `--skip-profiling` if done) |
+| vLLM health timeout | Increase `--health-timeout`. 30B MoE: ~10 min load + ~2 min CUDA graphs |
+| Pre-merge fails | Check `peft` and `transformers` versions on HOST match training container. Merge runs with `device_map=cpu` so no GPU needed. Failed ratios are automatically skipped |
 | vLLM container missing project mount | Set `EXTRA_MOUNTS` env var (orchestrator does this automatically). DGX Toolbox `start-vllm.sh` must source `lib.sh` |
 | wp-bench clone/setup fails | Continue without wp-bench, note in results |
 | eval script crashes | Log error, skip to next ratio, include in triage as "EVAL_FAILED" |
