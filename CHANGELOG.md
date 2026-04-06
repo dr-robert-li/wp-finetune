@@ -16,6 +16,11 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 
 ### Changed
 - **`wp-finetune:run-evaluation` skill** — Updated adapter inventory (60/40 complete), next steps route to v1.2 Phase 4.1, added `--limit` guidance with time estimates, added per-example JSONL and per-dimension gate notes
+- **`wp-finetune:observe-training` skill** — Fixed 7 issues: checkpoint path `adapters/qwen3-wp/` → `adapters/qwen3-30b-wp-*/`, trainer_state.json path to scan checkpoint subdirs, MLflow `mlruns/` → `mlruns.db`, removed TensorBoard check (never configured), fixed `merged_model/` → `models/*-merged/`
+- **`wp-finetune:observe-evaluation` skill** — Fixed 5 issues: all output paths `eval/output/` → `output/eval_triage/ratio_*/`, wp-bench path, process detection `eval_gen` → `run_eval_triage`, spearman field name, removed nonexistent `precision` field, added review-telemetry reference
+- **`wp-finetune:observe-inference` skill** — Fixed hardcoded model name `wp-qwen3-moe` → dynamic discovery from `/v1/models` endpoint
+- **`wp-finetune:observe-packaging` skill** — Fixed `merged_model/` → `models/*-merged/`
+- **`wp-finetune:review-telemetry` skill** — Added monitor.log parsing support (lightweight monitor output) and canonical thermal JSONL reading (`*_thermal.jsonl` with GPUSampler schema)
 - **README** — Updated project status with v1.2 milestone, 60/40 training completion
 
 ### Fixed
