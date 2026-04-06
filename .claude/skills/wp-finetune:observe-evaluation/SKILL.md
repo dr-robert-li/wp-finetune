@@ -1,8 +1,8 @@
 # Skill: wp-finetune:observe-evaluation
 
-Spawn background observer agents to monitor model evaluation. Writes telemetry to `telemetry/evaluation/{timestamp}/`.
+Spawn background monitoring for model evaluation. Writes telemetry to `telemetry/evaluation/{timestamp}/`.
 
-**Agent team assessment:** Evaluation runs GPU inference (wp-bench, PHPCS eval), produces result files, and has a quality gate. Requires 3-agent team: eval-progress, gpu-metrics, result-tracking.
+**Agent team assessment:** Evaluation runs GPU inference (wp-bench, PHPCS eval), produces result files, and has a quality gate. Full agent team uses 3 Sonnet agents: eval-progress, gpu-metrics, result-tracking.
 
 > When creating new skills that involve evaluation, assess whether this agent team needs modification:
 > - Uses GPU? Yes -> gpu-metrics included
@@ -19,8 +19,38 @@ User says: "observe evaluation", "monitor eval", "/observe-evaluation"
 
 ## Process
 
-### 1. Create Run Directory
+### 1. Create or Resume Run Directory
 
+**Self-recovery:** Check for an existing active monitor before creating a new directory.
+
+```bash
+# Check for running lightweight monitor from a previous session
+ACTIVE_PID=""
+ACTIVE_DIR=""
+for pidfile in telemetry/evaluation/*/monitor.pid; do
+    [ -f "$pidfile" ] || continue
+    pid=$(cat "$pidfile")
+    dir=$(dirname "$pidfile")
+    if kill -0 "$pid" 2>/dev/null && [ ! -f "$dir/_stop" ]; then
+        ACTIVE_PID="$pid"
+        ACTIVE_DIR="$dir"
+        break
+    fi
+done
+```
+
+**If active monitor found:** Use AskUserQuestion:
+- header: "Monitor found"
+- question: "Active monitor detected at ${ACTIVE_DIR} (PID ${ACTIVE_PID}). What do you want to do?"
+- options:
+  - "Keep it running" -- Monitor is healthy, just report its location
+  - "Restart in same directory" -- Kill and restart (appends to existing JSONL)
+  - "Start fresh" -- New timestamped directory
+
+**If no active monitor but an incomplete run exists** (TDIR with monitor.jsonl but no `_stop` and dead PID -- monitor crashed):
+- Offer to **restart** in the same directory (appends to existing JSONL, no data loss)
+
+**If no previous monitor:** Create fresh:
 ```bash
 TIMESTAMP=$(date +%Y-%m-%d_%H%M%S)
 TDIR="telemetry/evaluation/${TIMESTAMP}"
@@ -28,10 +58,74 @@ mkdir -p "${TDIR}"
 echo "Telemetry directory: ${TDIR}"
 ```
 
-### 2. Spawn Eval Progress Observer
+Save TDIR for use in all steps below.
+
+### 2. Choose Monitoring Mode
+
+Use AskUserQuestion:
+- header: "Monitor mode"
+- question: "Which monitoring level for this evaluation run?"
+- options:
+  - "Lightweight (Recommended)" -- Single bash script, ~5MB, writes JSONL. Safe on DGX Spark with tight memory
+  - "Full agent team" -- 3 Sonnet agents writing detailed markdown reports. Adds ~1.2GB memory overhead. Use only with >25GB headroom
+
+### 3a. Lightweight Monitor (default)
+
+Generate and write the following script to `{TDIR}/monitor.sh`, then start it:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+TDIR="$1"
+JSONL="${TDIR}/monitor.jsonl"
+MAX_CHECKS=${2:-252}  # 252 * 60s = 4.2 hours
+
+for (( i=1; i<=MAX_CHECKS; i++ )); do
+    [[ -f "${TDIR}/_stop" ]] && echo "Stop signal. Exiting after $((i-1)) checks." && exit 0
+
+    gpu_raw=$(nvidia-smi --query-gpu=utilization.gpu,temperature.gpu,power.draw --format=csv,noheader,nounits 2>/dev/null || echo "0, 0, 0")
+    gpu_util=$(echo "$gpu_raw" | awk -F', ' '{print int($1)}')
+    temp=$(echo "$gpu_raw" | awk -F', ' '{print int($2)}')
+    watts=$(echo "$gpu_raw" | awk -F', ' '{printf "%.1f", $3}')
+    mem_line=$(free -m | grep Mem)
+    available=$(echo "$mem_line" | awk '{print $7}')
+    mem_available_gb=$(awk "BEGIN {printf \"%.1f\", $available / 1024}")
+
+    # Eval-specific: check which ratios have results
+    eval_gen_done=$(ls output/eval_triage/ratio_*/eval_gen_results.json 2>/dev/null | wc -l || echo "0")
+    eval_judge_done=$(ls output/eval_triage/ratio_*/eval_judge_results.json 2>/dev/null | wc -l || echo "0")
+    wpbench_done=$(ls output/eval_triage/ratio_*/wp_bench_results.json 2>/dev/null | wc -l || echo "0")
+    triage_done=$([[ -f output/triage_decision.md ]] && echo "true" || echo "false")
+    # Check vLLM
+    vllm_status=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8020/health 2>/dev/null || echo "000")
+
+    ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    echo "{\"ts\": \"$ts\", \"watts\": $watts, \"temperature_c\": $temp, \"gpu_util_pct\": $gpu_util, \"mem_available_gb\": $mem_available_gb, \"eval_gen_done\": $eval_gen_done, \"eval_judge_done\": $eval_judge_done, \"wpbench_done\": $wpbench_done, \"triage_done\": $triage_done, \"vllm_status\": $vllm_status, \"source\": \"monitor\"}" >> "$JSONL"
+    echo "$ts Check $i/$MAX_CHECKS | temp=${temp}C gpu=${gpu_util}% ram=${mem_available_gb}GB | gen=$eval_gen_done judge=$eval_judge_done wpbench=$wpbench_done triage=$triage_done vllm=$vllm_status"
+
+    (( i < MAX_CHECKS )) && sleep 60
+done
+```
+
+Start the monitor:
+
+```bash
+chmod +x {TDIR}/monitor.sh
+nohup bash {TDIR}/monitor.sh "{TDIR}" > {TDIR}/monitor.log 2>&1 &
+echo $! > {TDIR}/monitor.pid
+```
+
+Report: "Evaluation lightweight monitor active. PID: {pid}. Output: {TDIR}/monitor.jsonl. Touch {TDIR}/_stop to end. Run /review-telemetry to consolidate results."
+
+### 3b. Full Agent Team (optional, sonnet only)
+
+Spawn agents with EXPLICIT `model="sonnet"` parameter. This is critical -- haiku agents do not persist loops.
+
+#### Eval Progress Observer
 
 ```
 Agent(
+  model="sonnet",
   description="Telemetry: eval progress",
   prompt="You are an evaluation progress observer. Write observations to {TDIR}/eval-progress.md.
 
@@ -56,10 +150,11 @@ Agent(
 )
 ```
 
-### 3. Spawn GPU Metrics Observer
+#### GPU Metrics Observer
 
 ```
 Agent(
+  model="sonnet",
   description="Telemetry: GPU metrics (eval)",
   prompt="You are a GPU metrics observer during evaluation. Write observations to {TDIR}/gpu-metrics.md.
 
@@ -79,10 +174,11 @@ Agent(
 )
 ```
 
-### 4. Spawn Result Tracking Observer
+#### Result Tracking Observer
 
 ```
 Agent(
+  model="sonnet",
   description="Telemetry: result tracking",
   prompt="You are an eval result tracking observer. Write observations to {TDIR}/result-tracking.md.
 
@@ -106,12 +202,24 @@ Agent(
 )
 ```
 
-### 5. Report
-
-Tell the user: "Evaluation telemetry active with 3 observers. Output: {TDIR}/. Say 'stop observing' or touch {TDIR}/_stop to end. Run /review-telemetry to consolidate results."
+Report: "Evaluation telemetry active with 3 Sonnet observers. Output: {TDIR}/. Touch {TDIR}/_stop to end. Run /review-telemetry to consolidate results."
 
 ## Stopping Observers
 
+To stop all observers (both lightweight and agent team):
 ```bash
 touch {TDIR}/_stop
 ```
+Each agent checks for this file on every cycle and will write a Final Summary before exiting. The lightweight monitor also checks each cycle and exits cleanly.
+
+Run /review-telemetry to consolidate results.
+
+## Self-Recovery
+
+The lightweight bash monitor survives Claude session restarts (it's a `nohup` process). On next invocation:
+
+1. **Monitor still running:** Step 1 detects the PID via `monitor.pid` -- user can keep it, restart, or start fresh
+2. **Monitor crashed** (PID dead, no `_stop` file): Offer to restart in the same TDIR -- appends to existing JSONL, no data loss
+3. **Monitor completed** (`_stop` file exists or MAX_CHECKS reached): Start a new TDIR
+
+For **agent team mode**: Sonnet agents die with the Claude session. On re-invocation, no PID is found -- offer to restart agents in the same TDIR (existing `.md` reports are preserved, new readings append below) or start fresh.

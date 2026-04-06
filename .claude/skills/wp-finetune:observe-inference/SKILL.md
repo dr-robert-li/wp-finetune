@@ -19,8 +19,38 @@ User says: "observe inference", "monitor serving", "monitor inference", "/observ
 
 ## Process
 
-### 1. Create Run Directory
+### 1. Create or Resume Run Directory
 
+**Self-recovery:** Check for an existing active monitor before creating a new directory.
+
+```bash
+# Check for running lightweight monitor from a previous session
+ACTIVE_PID=""
+ACTIVE_DIR=""
+for pidfile in telemetry/inference/*/monitor.pid; do
+    [ -f "$pidfile" ] || continue
+    pid=$(cat "$pidfile")
+    dir=$(dirname "$pidfile")
+    if kill -0 "$pid" 2>/dev/null && [ ! -f "$dir/_stop" ]; then
+        ACTIVE_PID="$pid"
+        ACTIVE_DIR="$dir"
+        break
+    fi
+done
+```
+
+**If active monitor found:** Use AskUserQuestion:
+- header: "Monitor found"
+- question: "Active monitor detected at ${ACTIVE_DIR} (PID ${ACTIVE_PID}). What do you want to do?"
+- options:
+  - "Keep it running" -- Monitor is healthy, just report its location
+  - "Restart in same directory" -- Kill and restart (appends to existing JSONL)
+  - "Start fresh" -- New timestamped directory
+
+**If no active monitor but an incomplete run exists** (TDIR with monitor.jsonl but no `_stop` and dead PID -- monitor crashed):
+- Offer to **restart** in the same directory (appends to existing JSONL, no data loss)
+
+**If no previous monitor:** Create fresh:
 ```bash
 TIMESTAMP=$(date +%Y-%m-%d_%H%M%S)
 TDIR="telemetry/inference/${TIMESTAMP}"
@@ -28,10 +58,79 @@ mkdir -p "${TDIR}"
 echo "Telemetry directory: ${TDIR}"
 ```
 
-### 2. Spawn Request Latency Observer
+Save TDIR for use in all steps below.
+
+### 2. Choose Monitoring Mode
+
+Use AskUserQuestion:
+- header: "Monitor mode"
+- question: "Which monitoring level for this inference run?"
+- options:
+  - "Lightweight (Recommended)" -- Single bash script, ~5MB, writes JSONL. Safe on DGX Spark with tight memory
+  - "Full agent team" -- 5 Sonnet agents writing detailed markdown reports. Adds ~2.0GB memory overhead. Use only with >25GB headroom
+
+### 3a. Lightweight Monitor (default)
+
+Generate and write the following script to `{TDIR}/monitor.sh`, then start it:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+TDIR="$1"
+JSONL="${TDIR}/monitor.jsonl"
+MAX_CHECKS=${2:-504}  # 504 * 30s = 4.2 hours
+
+for (( i=1; i<=MAX_CHECKS; i++ )); do
+    [[ -f "${TDIR}/_stop" ]] && echo "Stop signal. Exiting after $((i-1)) checks." && exit 0
+
+    gpu_raw=$(nvidia-smi --query-gpu=utilization.gpu,temperature.gpu,power.draw --format=csv,noheader,nounits 2>/dev/null || echo "0, 0, 0")
+    gpu_util=$(echo "$gpu_raw" | awk -F', ' '{print int($1)}')
+    temp=$(echo "$gpu_raw" | awk -F', ' '{print int($2)}')
+    watts=$(echo "$gpu_raw" | awk -F', ' '{printf "%.1f", $3}')
+    mem_line=$(free -m | grep Mem)
+    available=$(echo "$mem_line" | awk '{print $7}')
+    mem_available_gb=$(awk "BEGIN {printf \"%.1f\", $available / 1024}")
+
+    # Inference-specific: check vLLM health + latency probe
+    vllm_status=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8020/health 2>/dev/null || echo "000")
+    vllm_latency=$(curl -s -o /dev/null -w '%{time_total}' http://localhost:8020/health 2>/dev/null || echo "0")
+    # Dynamic model discovery for TTFT probe
+    model_name=$(curl -s http://localhost:8020/v1/models 2>/dev/null | python3 -c "import json,sys; print(json.load(sys.stdin)['data'][0]['id'])" 2>/dev/null || echo "")
+    if [ -n "$model_name" ]; then
+        ttft=$(curl -s -o /dev/null -w '%{time_total}' http://localhost:8020/v1/completions -H 'Content-Type: application/json' -d "{\"model\":\"$model_name\",\"prompt\":\"<wp_gen> \",\"max_tokens\":1}" 2>/dev/null || echo "0")
+    else
+        ttft="0"
+    fi
+    # Error count from docker logs
+    error_count=$(docker logs --tail 50 vllm 2>&1 | grep -ci 'error\|exception\|traceback' || echo "0")
+
+    ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    echo "{\"ts\": \"$ts\", \"watts\": $watts, \"temperature_c\": $temp, \"gpu_util_pct\": $gpu_util, \"mem_available_gb\": $mem_available_gb, \"vllm_status\": $vllm_status, \"vllm_latency_s\": $vllm_latency, \"ttft_s\": $ttft, \"model\": \"$model_name\", \"error_count\": $error_count, \"source\": \"monitor\"}" >> "$JSONL"
+    echo "$ts Check $i/$MAX_CHECKS | temp=${temp}C gpu=${gpu_util}% ram=${mem_available_gb}GB | vllm=$vllm_status latency=${vllm_latency}s ttft=${ttft}s errors=$error_count"
+
+    (( i < MAX_CHECKS )) && sleep 30
+done
+```
+
+Start the monitor:
+
+```bash
+chmod +x {TDIR}/monitor.sh
+nohup bash {TDIR}/monitor.sh "{TDIR}" > {TDIR}/monitor.log 2>&1 &
+echo $! > {TDIR}/monitor.pid
+```
+
+Report: "Inference lightweight monitor active. PID: {pid}. Output: {TDIR}/monitor.jsonl. Touch {TDIR}/_stop to end. Run /review-telemetry to consolidate results."
+
+### 3b. Full Agent Team (optional, sonnet only)
+
+Spawn agents with EXPLICIT `model="sonnet"` parameter. This is critical -- haiku agents do not persist loops.
+
+#### Request Latency Observer
 
 ```
 Agent(
+  model="sonnet",
   description="Telemetry: request latency",
   prompt="You are a request latency observer. Write observations to {TDIR}/request-latency.md.
 
@@ -62,10 +161,11 @@ Agent(
 )
 ```
 
-### 3. Spawn Throughput Observer
+#### Throughput Observer
 
 ```
 Agent(
+  model="sonnet",
   description="Telemetry: throughput",
   prompt="You are a throughput observer. Write observations to {TDIR}/throughput.md.
 
@@ -87,10 +187,11 @@ Agent(
 )
 ```
 
-### 4. Spawn GPU Utilization Observer
+#### GPU Utilization Observer
 
 ```
 Agent(
+  model="sonnet",
   description="Telemetry: GPU utilization (inference)",
   prompt="You are a GPU utilization observer during inference. Write observations to {TDIR}/gpu-utilization.md.
 
@@ -110,16 +211,17 @@ Agent(
 )
 ```
 
-### 5. Spawn Memory Observer
+#### Memory Observer
 
 ```
 Agent(
+  model="sonnet",
   description="Telemetry: memory (inference)",
   prompt="You are a memory observer during inference. Write observations to {TDIR}/memory.md.
 
   LOOP (every 30 seconds):
   1. Run: free -h
-  2. Run: docker stats --no-stream --format '{{.Name}}: MEM {{.MemUsage}} ({{.MemPerc}})' 2>/dev/null | grep -E 'vllm|ollama|litellm'  (ollama/litellm are optional — may not be running)
+  2. Run: docker stats --no-stream --format '{{.Name}}: MEM {{.MemUsage}} ({{.MemPerc}})' 2>/dev/null | grep -E 'vllm|ollama|litellm'  (ollama/litellm are optional -- may not be running)
   3. Run: nvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader,nounits
   4. Append to {TDIR}/memory.md:
      ### {HH:MM:SS}
@@ -138,17 +240,18 @@ Agent(
 )
 ```
 
-### 6. Spawn Error Rate Observer
+#### Error Rate Observer
 
 ```
 Agent(
+  model="sonnet",
   description="Telemetry: error rates",
   prompt="You are an error rate observer. Write observations to {TDIR}/error-rates.md.
 
   LOOP (every 60 seconds):
   1. Check vLLM metrics for errors: curl -s http://localhost:8020/metrics 2>/dev/null | grep -E 'http_requests.*5[0-9][0-9]\|error'
   2. Check vLLM logs for errors: docker logs --tail 20 vllm 2>&1 | grep -i 'error\|exception\|traceback\|OOM' | tail -5
-  3. Check LiteLLM logs (optional — only if litellm container is running): docker logs --tail 20 litellm 2>&1 | grep -i 'error\|exception\|429\|5[0-9][0-9]' | tail -5
+  3. Check LiteLLM logs (optional -- only if litellm container is running): docker logs --tail 20 litellm 2>&1 | grep -i 'error\|exception\|429\|5[0-9][0-9]' | tail -5
   4. Append to {TDIR}/error-rates.md:
      ### {HH:MM:SS}
      - HTTP 5xx count: {N}
@@ -165,12 +268,24 @@ Agent(
 )
 ```
 
-### 7. Report
-
-Tell the user: "Inference telemetry active with 5 observers. Output: {TDIR}/. Say 'stop observing' or touch {TDIR}/_stop to end."
+Report: "Inference telemetry active with 5 Sonnet observers. Output: {TDIR}/. Touch {TDIR}/_stop to end. Run /review-telemetry to consolidate results."
 
 ## Stopping Observers
 
+To stop all observers (both lightweight and agent team):
 ```bash
 touch {TDIR}/_stop
 ```
+Each agent checks for this file on every cycle and will write a Final Summary before exiting. The lightweight monitor also checks each cycle and exits cleanly.
+
+Run /review-telemetry to consolidate results.
+
+## Self-Recovery
+
+The lightweight bash monitor survives Claude session restarts (it's a `nohup` process). On next invocation:
+
+1. **Monitor still running:** Step 1 detects the PID via `monitor.pid` -- user can keep it, restart, or start fresh
+2. **Monitor crashed** (PID dead, no `_stop` file): Offer to restart in the same TDIR -- appends to existing JSONL, no data loss
+3. **Monitor completed** (`_stop` file exists or MAX_CHECKS reached): Start a new TDIR
+
+For **agent team mode**: Sonnet agents die with the Claude session. On re-invocation, no PID is found -- offer to restart agents in the same TDIR (existing `.md` reports are preserved, new readings append below) or start fresh.
