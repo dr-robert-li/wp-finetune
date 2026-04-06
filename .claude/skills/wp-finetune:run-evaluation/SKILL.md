@@ -208,19 +208,17 @@ The orchestrator (`run_eval_triage.py`) handles all of this automatically — in
 
 #### 2d. Run wp-bench (if available)
 
-```bash
-# Clone if needed
-if [ ! -d wp-bench ]; then
-  git clone https://github.com/WordPress/wp-bench.git
-  cd wp-bench && ./setup.sh && cd ..
-fi
+The orchestrator clones wp-bench if needed, then runs it via `config/wp-bench.yaml` with a temp config override per ratio:
 
-# Configure and run
-python3 wp-bench/run.py --model-url http://localhost:8020/v1 \
-  --output-dir output/eval_triage/ratio_{ratio}/wpbench/
+```python
+# Under the hood (orchestrator handles this automatically):
+# 1. Reads config/wp-bench.yaml, overrides output_path per ratio
+# 2. Writes temp config to output/eval_triage/ratio_{ratio}/wp_bench_config_tmp.yaml
+# 3. Runs: python -m wp_bench.run --config <tmp_config>  (cwd=wp-bench/)
+# 4. Output: output/eval_triage/ratio_{ratio}/wp_bench_results.json
 ```
 
-If wp-bench setup fails: set `wpbench_available=False`, continue without. wp-bench is for differentiation, not a hard gate.
+If wp-bench clone/setup fails or returns non-zero: continues without wp-bench and writes error detail to result JSON. wp-bench is for differentiation, not a hard gate.
 
 #### 2e. Stop vLLM, reclaim memory
 
