@@ -36,8 +36,9 @@ Agent(
 
   LOOP (every 2 minutes):
   1. Run: python scripts/pipeline_orchestrator.py status
+  1b. Check checkpoint state: ls data/checkpoints/*.json 2>/dev/null (shows resume markers for clone, extract, judge)
   2. Count files: ls data/phase1_extraction/output/passed/*.json 2>/dev/null | wc -l
-  3. Count files: ls data/phase2_synthetic/output/judged/passed_*.json 2>/dev/null | wc -l
+  3. Count passed+failed: ls data/phase2_synthetic/output/judged/passed_*.json 2>/dev/null | wc -l (passed); ls data/phase2_synthetic/output/judged/failed_*.json 2>/dev/null | wc -l (failed)
   4. Count files: ls data/phase2_synthetic/output/judge_training/*.json 2>/dev/null | wc -l
   5. Count files: ls data/phase3_cot/output/*.json 2>/dev/null | wc -l
   6. Check exports: ls data/final_dataset/*.jsonl 2>/dev/null | wc -l
@@ -45,7 +46,8 @@ Agent(
      ### {HH:MM:SS}
      - Phase: {current phase from status}
      - Passed repos: {N} (+{delta})
-     - Synthetic judged: {N} (+{delta})
+     - Checkpoint state: {clone/extract/judge resume markers present or absent}
+     - Synthetic judged: {passed}/{failed} (+{delta})
      - Judge training: {N} (+{delta})
      - CoT examples: {N} (+{delta})
      - Targets met: {yes/no}

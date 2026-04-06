@@ -115,7 +115,7 @@ Agent(
 
   LOOP (every 30 seconds):
   1. Run: free -h
-  2. Run: docker stats --no-stream --format '{{.Name}}: MEM {{.MemUsage}} ({{.MemPerc}})' 2>/dev/null | grep -E 'vllm|ollama|litellm'
+  2. Run: docker stats --no-stream --format '{{.Name}}: MEM {{.MemUsage}} ({{.MemPerc}})' 2>/dev/null | grep -E 'vllm|ollama|litellm'  (ollama/litellm are optional — may not be running)
   3. Run: nvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader,nounits
   4. Append to {TDIR}/memory.md:
      ### {HH:MM:SS}
@@ -144,7 +144,7 @@ Agent(
   LOOP (every 60 seconds):
   1. Check vLLM metrics for errors: curl -s http://localhost:8020/metrics 2>/dev/null | grep -E 'http_requests.*5[0-9][0-9]\|error'
   2. Check vLLM logs for errors: docker logs --tail 20 vllm 2>&1 | grep -i 'error\|exception\|traceback\|OOM' | tail -5
-  3. Check LiteLLM logs: docker logs --tail 20 litellm 2>&1 | grep -i 'error\|exception\|429\|5[0-9][0-9]' | tail -5
+  3. Check LiteLLM logs (optional — only if litellm container is running): docker logs --tail 20 litellm 2>&1 | grep -i 'error\|exception\|429\|5[0-9][0-9]' | tail -5
   4. Append to {TDIR}/error-rates.md:
      ### {HH:MM:SS}
      - HTTP 5xx count: {N}
