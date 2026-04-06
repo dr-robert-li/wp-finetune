@@ -22,7 +22,10 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 - **`wp-finetune:observe-packaging` skill** — Fixed `merged_model/` → `models/*-merged/`
 - **`wp-finetune:review-telemetry` skill** — Added monitor.log parsing support (lightweight monitor output), canonical thermal JSONL reading (`*_thermal.jsonl` with GPUSampler schema), and explicit "no telemetry found" message
 - **`wp-finetune:observe-data-pipeline` skill** — Added checkpoint resume state monitoring (`data/checkpoints/*.json`) and passed/failed count split for synthetic judged examples
-- **`wp-finetune:observe-inference` skill** — Clarified that ollama/litellm containers are optional (may not be running)
+- **`wp-finetune:observe-inference` skill** — Clarified that ollama/litellm containers are optional; model discovery fallback now skips TTFT probe instead of sending request with `"model":"unknown"`
+- **`wp-finetune:observe-packaging` skill** — Added note that `quantized/` paths are aspirational (v3.0 Phase 14 not yet implemented)
+- **`wp-finetune:review-telemetry` skill** — Replaced stale `classification precision` reference with actual eval metrics (Spearman, PHPCS, security)
+- **`wp-finetune:observe-training` skill** — Fixed duplicate step numbering (7,8,9,8,9 → 7,8,9,10,11) in container-monitor agent
 - **README** — Updated project status with v1.2 milestone, 60/40 training completion
 
 ### Fixed

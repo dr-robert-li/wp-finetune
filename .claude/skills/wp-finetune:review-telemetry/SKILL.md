@@ -95,7 +95,7 @@ Print the full summary to the conversation. Highlight any CRITICAL alerts promin
 
 **Evaluation:**
 - PHPCS pass rate, security pass rate
-- Spearman correlation, classification precision
+- Spearman correlation (overall + per-dimension), PHPCS pass rate, security pass rate
 - Quality gate result (PASS/FAIL)
 - GPU utilization during eval
 
