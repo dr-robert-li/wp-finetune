@@ -8,7 +8,7 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 - **Milestone v1.2: Judge Reasoning Fine-Tune** — 4 new phases (4.1-4.4) adding deep judge CoT reasoning and critique-then-fix capability to winning ratio adapter. 17 requirements defined across data generation, training, and evaluation
 - **Per-example logging** (EVAL-06) — `eval_gen.py` and `eval_judge.py` now persist input prompt, raw model response, and extracted code in per-example JSONL alongside scores. Enables human review, debugging, and future GRPO reward signals
 - **`--limit N` flag for `run_eval_triage.py`** — Passes through to `eval_gen.run_eval()` and `eval_judge.run_eval()`. Without it, eval runs all 10,166 test examples (~58h per ratio). Use `--limit 500` for triage (~4h per ratio). Does not affect wp-bench (always runs full canonical suite)
-- **Pre-merge step in `run_eval_triage.py`** — All adapters are merged on HOST (`device_map=auto`, GPU-accelerated) before the eval loop starts. Eliminates dependency on `unsloth-headless` container for adapter merging. Idempotent: skips already-merged models after verifying special tokens
+- **Pre-merge step in `run_eval_triage.py`** — All adapters are merged on HOST (`device_map=cpu`) before the eval loop starts. Eliminates dependency on `unsloth-headless` container for adapter merging. Idempotent: skips already-merged models after verifying special tokens
 
 ### Fixed
 - **`eval/eval_gate.py` per-dimension gates** (EVAL-07) — `run_gate()` was reading `dimension_pass_rates` and `dimension_correlations` from eval JSON but scripts write `per_dimension` with nested dicts (`{mean, pass_rate_8, na_count}` for gen, `{corr, p_value, n_pairs}` for judge). Per-dimension gates were silently passing on empty dicts. Now correctly extracts `pass_rate_8` and `corr` from nested structure
@@ -16,6 +16,8 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 - **`run_eval_triage.py` merge fallback blocked by missing container** — LoRA serving always fails for Qwen3-30B-A3B (modules_to_save), and merge fallback hardcoded `docker exec unsloth-headless` which fails if container isn't running. Pre-merge step eliminates this entirely; fallback now attempts HOST merge only
 - **`run_eval_triage.py` hardcoded container names** — Replaced hardcoded `"vllm"` and `"unsloth-headless"` strings with config lookups from `dgx_toolbox.yaml` via `_get_vllm_container_name()` and `_get_training_container_name()`
 - **`run_eval_triage.py` wp-bench error reporting** — Non-zero wp-bench exits now capture both stderr and stdout in error detail, and write failure reason to result JSON
+- **`merge_adapter.py` device_map=auto fails on MoE** — `device_map="auto"` triggers disk offload for Qwen3-30B-A3B MoE weights which fails without explicit `offload_folder`. Reverted to `device_map="cpu"` — 30B bf16 (~60GB) fits in DGX Spark 128GB unified RAM
+- **`merge_adapter.py` lora_dropout incompatibility** — peft 0.18+ rejects `lora_dropout != 0` on `ParamWrapper` (modules_to_save). Now zeros dropout before loading since it's training-only and irrelevant for merge
 - **`wp-finetune:run-evaluation` skill** — Fixed 9 critical inaccuracies: wrong CLI flags for eval_gen/eval_judge (`--model-url`→`--model`, `--test-file`→`--dataset`, `--output-dir`→`--output`), fabricated function signatures (`load_model_and_tokenizer`, `profile_ratio`, `RoutingCollector(model)`), wrong triage_ratios kwargs, nonexistent `dgx.stop()` method, nonexistent `--profiling-only` flag
 
 ### Changed
