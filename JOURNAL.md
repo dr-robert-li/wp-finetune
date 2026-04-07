@@ -4,6 +4,47 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-04-08 — Model council recommends reordering pipeline and GSPO over GRPO
+
+### What happened
+
+Passed the current post-triage plan (v1.2 reasoning SFT → v2.0 MoE-Sieve → v3.0 GRPO → prune → package) through a model council (GPT 5.4, Opus 4.6, Gemini 3.1 Pro). The synthesised result (see [Issue #1](https://github.com/dr-robert-li/wp-finetune/issues/1)) converges on two strategic changes.
+
+### Change 1: RL before MoE-Sieve, not after
+
+The current roadmap runs MoE-Sieve (Phases 7-8) before GRPO (Phase 11). The council unanimously recommends inverting this:
+
+**Current:** SFT → reasoning SFT → MoE-Sieve (profile + prune) → GRPO → AIMER → package
+**Recommended:** SFT → reasoning SFT → routing audit → GRPO/GSPO → MoE-Sieve (on RL-aligned policy) → AIMER → package
+
+The rationale is that MoE-Sieve profiles expert routing to decide which experts to keep. If you profile on SFT routing, you freeze a routing distribution that RL will then try to change — the sieve may have already removed experts that GRPO would have learned to use. Profiling after RL convergence means the sieve operates on the final policy's routing, not a stale snapshot.
+
+This also means the "protected expert set" concept becomes important: profile routing on both `<wp_gen>` and `<wp_judge>` distributions *before* RL to identify dual-purpose experts that must survive compression regardless.
+
+### Change 2: GSPO over GRPO for MoE stability
+
+The council flags MoE routing instability during token-level GRPO as a medium-likelihood, medium-impact risk. GSPO (sequence-level importance ratio, sequence-level clipping) is recommended as the primary RL optimizer because it avoids per-token routing perturbations that can cause expert activation drift.
+
+Fallback if GSPO is unavailable or too expensive: GRPO with larger group size G_max + Pro-GRPO expand-then-prune trajectory sampling + routing drift monitoring against the pre-RL audit baseline.
+
+### Convergence points (high confidence)
+
+- Compression must be structurally coupled to training — MoE-Sieve must profile on *both* gen and judge prompt distributions, not a single calibration set
+- AIMER is the preferred pruning method over REAP — calibration-free, competitive at 25-50% pruning, fast iteration loop
+- Rubric/judge rewards are exploitable — verifiable signals (PHPCS, security scanner, functional tests) must dominate over rubric-based rewards, with an anti-hack eval set that penalises verbosity exploitation, template critique collapse, and self-preference bias
+
+### Divergence points (decisions deferred)
+
+- **RL objective design:** Multi-objective reward vs dual-phase (gen then judge then joint) vs self-play (model critiques own outputs, train on deltas). No consensus — empirical.
+- **Pruning timing granularity:** RL before *any* pruning vs light sieve before RL vs sieve after some RL epochs. Council leans toward full RL first, but acknowledges cost.
+- **Judge reward mix:** Heavily verifiable vs rubric-heavy with bias calibration vs hybrid with reference-guided judging on a fraction.
+
+### Impact on roadmap
+
+The reordering affects v2.0 and v3.0 phase sequencing. The routing audit (currently implicit in Phase 7) needs to happen before RL, and MoE-Sieve moves to after RL convergence. Phase renumbering and requirement updates to follow once the v1.2 reasoning SFT phases are underway and there's a concrete decision on GSPO vs GRPO implementation.
+
+---
+
 ## 2026-04-08 — Judge GRPO promoted to hard requirement; project roadmap updated
 
 ### Triage results force a strategic shift
