@@ -281,6 +281,12 @@ Plans:
   4. Concentration report per ratio: per-layer CV, cumulative coverage curves, layer-depth skew, E_eff per layer with mean/max/variance — compared against Phase 4 base-model E_eff to quantify fine-tuning routing shift
   5. Decision matrix combining Phase 4 eval score and Phase 7 adapter E_eff selects the ratio with lowest E_eff at equivalent quality (within 2pp) — single ratio chosen for all subsequent work
   6. Protected expert set identified: experts with significant activation for BOTH gen and judge tasks are flagged as dual-purpose and must be retained through all subsequent phases (MoE-Sieve, pruning). Protected set exported as a per-layer mask for downstream consumption
+**Skill**: `wp-finetune:run-profiling` (NEW — create during phase planning)
+  - Extends `run-evaluation` pattern: `dgx.execute("eval_toolbox", ...)` for GPU-bound profiling
+  - Embeds `observe-evaluation` telemetry agents inline during profiling runs
+  - Idempotency: `idempotency_check="output/profiling/{ratio}/routing_report.json"`
+  - Execution test loop: after each ratio profile, validate Jaccard >=0.94 against full-set; if fail → re-profile with larger subsample and re-test
+  - Human review checkpoint: present E_eff comparison table + protected expert set before ratio selection
 **Plans**: TBD
 
 ### Phase 8: Reward Infrastructure
@@ -293,6 +299,10 @@ Plans:
   3. All reward signals pass through MO-GRPO normalization — each signal is normalized by within-group variance before combination, and a single dominant signal cannot inflate total reward
   4. WordPress standards checks use VeRPO partial credit — each check is weighted by difficulty estimated from pass rate across group samples, and rarely-passed checks contribute more signal than common ones
   5. Anti-hack eval set constructed and validated (D-11) — penalizes verbosity reward hacking, template critique collapse, and self-preference bias; eval set used as a regression check during RL training
+**Skill**: No new skill — reward pipeline is a Python module (`scripts/reward_pipeline.py`) with pytest test suite
+  - Fix-test-validate loop: each reward component (PHPCS, security, VeRPO, MO-GRPO norm) is built, unit-tested, and validated independently before integration
+  - Integration test: end-to-end reward computation on 50 held-out gen+judge examples with known-good and known-bad cases
+  - Anti-hack eval set validated: run reward pipeline on adversarial examples (verbose padding, template critiques, self-preferencing) — all must score below threshold
 **Plans**: TBD
 
 ### Phase 9: GSPO Training
@@ -304,6 +314,16 @@ Plans:
   2. RL gradients flow to all routed experts, attention layers, router gates, and shared experts — full-MoE RL, not hot-only (sieve comes after RL). Protected expert set from Phase 7 monitored via routing regularizer (KL divergence penalty if protected experts deactivate below baseline frequency)
   3. Router-shift ratio is computed between rollout and training phases, applied as stop-gradient floor multiplied into the clipped importance ratio before aggregation, and logged per step
   4. Training halts automatically if router-shift ratio exceeds the stability threshold — the halt is triggered by per-step monitoring, not a post-hoc check
+**Skill**: `wp-finetune:run-rl-training` (NEW — create during phase planning)
+  - Extends `run-training` pattern: per-epoch loop with `dgx.execute("unsloth_studio", ...)` for DGX Spark execution
+  - DGX validation: `dgx.validate(["toolbox", "config", "memory:70"])` pre-flight + `dgx.ensure_ready("unsloth_studio")` container check
+  - Embeds `observe-training` telemetry agents inline (6-agent team: gpu-metrics, thermal-throttling, training-metrics, disk-io, checkpoint-integrity, container-monitor)
+  - Calls `wp-finetune:adaptive-planner` between epochs (Step 8.5 pattern) for thermal/power-based config adjustment
+  - Router-shift monitoring loop: after each epoch, check shift ratio against threshold → if exceeded, halt and present to user; if stable, continue
+  - Protected expert retention check: after each epoch, compare current routing distribution against Phase 7 baseline → if protected experts deactivate below threshold, inject routing regularizer and re-run epoch
+  - Fix-test-validate loop: dry-run first (`--dry-run`), then real training; if training fails (OOM/HANG/THERMAL per failure classifier), `adaptive-planner` adjusts config and loop retries
+  - Anti-hack regression: run anti-hack eval set after training completes; if regression detected, flag for human review before proceeding
+  - Invokes `wp-finetune:review-telemetry` after training completes for consolidated summary
 **Plans**: TBD
 
 ### Phase 10: RL Comparative Evaluation
@@ -313,6 +333,12 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. **[wp-bench HARD GATE]** The RL model is evaluated against the v1.2 SFT baseline on wp-bench and all 9 eval dimensions — no dimension regression permitted; judge Spearman improvement expected (primary RL target). wp-bench is a hard gate — RL model must meet or exceed v1.2 SFT baseline wp-bench score before Phase 11 begins.
   2. RL evaluation report includes reward metric convergence curves, router-shift stability log (per-step shift ratios), protected expert retention rate vs Phase 7 baseline, gen/judge quality delta, and anti-hack eval results — sufficient to confirm RL added value before proceeding to MoE-Sieve
+**Skill**: Reuse `wp-finetune:run-evaluation` (extend with RL-specific metrics)
+  - Extends existing eval skill with: router-shift stability report, protected expert retention comparison, anti-hack eval pass rates
+  - DGX execution: `dgx.execute("eval_toolbox", ...)` for serving RL model + running eval suite
+  - Embeds `observe-evaluation` telemetry agents inline during eval runs
+  - Fix-test-validate loop: if any eval dimension regresses, present specific failure to user with suggested fix (re-train with adjusted regularizer, adjust reward weights) before declaring gate pass/fail
+  - Human review checkpoint: present full comparison table (v1.2 SFT vs RL) before gating v3.0
 **Plans**: TBD
 
 ---
@@ -335,6 +361,18 @@ Plans:
   3. The training uses the best gen/judge ratio identified by Phase 4 eval, not a hardcoded ratio
   4. Three k-sweep runs complete at budgets of approximately 13, 32, and 64 active experts per layer, each producing a separate adapter checkpoint
   5. The optimal k is declared as the smallest budget where wp-bench score falls within +/-1pp of full-LoRA, verified by TOST equivalence test (epsilon=2pp) across 3+ seeds; all protected experts from Phase 7 must be in the retained set at the optimal k
+**Skill**: `wp-finetune:run-sieve-training` (NEW — create during phase planning)
+  - Extends `run-training` pattern: per-k-budget loop with `dgx.execute("unsloth_studio", ...)` for DGX Spark execution
+  - Step 0: Re-profile routing using `wp-finetune:run-profiling` on the RL-trained model (RL-policy routing logs, not SFT)
+  - DGX validation: `dgx.validate(["toolbox", "config", "memory:70"])` + `dgx.ensure_ready("unsloth_studio")`
+  - Embeds `observe-training` telemetry agents inline per k-sweep run
+  - Calls `wp-finetune:adaptive-planner` between k-sweep runs for thermal/power config adjustment
+  - K-sweep loop: for each k in [13, 32, 64], train sieve adapter → run wp-bench inline → compare against full-LoRA baseline
+  - Fix-test-validate loop per k: if training OOMs → `adaptive-planner` adjusts batch → retry; if wp-bench regresses → log and continue to next k
+  - Protected expert retention check: after each k-sweep, verify all Phase 7 protected experts are in retained set → if not, adjust k threshold and re-run
+  - Idempotency: `idempotency_check="adapters/qwen3-30b-wp-sieve-k{k}/adapter_config.json"` per k-budget
+  - Invokes `wp-finetune:review-telemetry` after all k-sweeps complete
+  - Human review checkpoint: present k-sweep comparison table before declaring optimal k
 **Plans**: TBD
 
 ### Phase 12: MoE-Sieve Comparative Evaluation
@@ -344,6 +382,12 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. **[wp-bench HARD GATE]** An A/B eval runs each k-sweep MoE-Sieve adapter (all three k budgets) against v2.0 RL baseline on wp-bench and the static eval suite, with results recorded per adapter. wp-bench is a hard gate — each k-sweep adapter must be evaluated on wp-bench; any adapter that regresses below the v2.0 RL baseline wp-bench score is eliminated. Note: this phase requires a different eval harness than Phase 4 (adapters served as merged models; wp-bench config must target the merged checkpoint for each k-sweep variant).
   2. The report covers all 9 eval dimensions per adapter, overall scores, inference speed delta, and seed variance — sufficient to identify the optimal k and confirm MoE-Sieve quality before proceeding to pruning
+**Skill**: Reuse `wp-finetune:run-evaluation` (extend with sieve-specific A/B comparison)
+  - Per-k-adapter eval loop: for each k-sweep adapter, serve as merged model via `dgx.execute("vllm", ...)` → run full eval suite + wp-bench → record results
+  - Embeds `observe-evaluation` telemetry agents inline during eval
+  - Fix-test-validate loop: if eval harness fails (model serving error, wp-bench timeout) → fix serving config → re-run eval for that adapter
+  - TOST equivalence test automated: `eval_gate.py --tost --epsilon 2pp --seeds 3` across all k variants
+  - Human review checkpoint: present full A/B comparison table before gating pruning phase
 **Plans**: TBD
 
 ### Phase 13: LoRA Merge & Pruning (AIMER primary, REAP optional)
@@ -357,6 +401,16 @@ Plans:
   4. All variants evaluated via gating mask across all 9 dimensions before any weight removal — comparison table visible before committing
   5. Domain specificity analysis: expert overlap between AIMER and REAP retention sets quantified per layer — high overlap = WordPress isn't specialized enough for calibration advantage; low overlap = REAP captures domain routing AIMER misses
   6. Winning method + ratio selected by dimension-level retention (especially D2_security), preferring higher compression at equivalent quality; final model physically pruned with router re-normalization
+**Skill**: `wp-finetune:run-pruning` (NEW — create during phase planning)
+  - Step 1: Merge LoRA via `dgx.execute("unsloth_studio", "python", "-m", "scripts.merge_adapter", ...)` with idempotency check on merged checkpoint
+  - Step 2: Merge validation — load merged model, run 10 inference samples, compare outputs against adapter-on-base (exact match)
+  - Step 3: AIMER loop: for each ratio in [25%, 50%, 75%], run AIMER → eval via gating mask across all 9 dims → record results
+  - Step 4 (optional): REAP loop: same ratios with WordPress calibration data → eval → record
+  - Step 5: Domain specificity analysis: compute per-layer expert overlap between AIMER and REAP retention sets
+  - Fix-test-validate loop: if any pruning ratio causes >2pp regression on security dimension → try intermediate ratio → re-eval until clean
+  - Embeds `observe-packaging` telemetry agents inline during merge and pruning steps
+  - Human review checkpoint: present full comparison table (6 variants: 2 methods x 3 ratios) before committing to physical pruning
+  - Step 6: Physical pruning + router re-normalization → verify pruned model loads and generates coherent output
 **Plans**: TBD
 
 ### Phase 14: Final Comparative Evaluation
@@ -366,6 +420,14 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. **[wp-bench HARD GATE]** An A/B eval runs the pruned model against v2.0 RL baseline on wp-bench and the static eval suite, with all results recorded. wp-bench is a hard gate before packaging — the pruned model must meet or exceed the v2.0 RL baseline wp-bench score before Phase 15 begins. Note: this phase requires a different eval harness than Phase 4 (pruned model is a full merged model with no adapter; wp-bench config must target the pruned checkpoint directly).
   2. The report covers all 9 eval dimensions, inference speed delta (expected significant improvement from pruning), model size reduction, and seed variance — sufficient to confirm the full v3.0 pipeline adds value before packaging
+**Skill**: Reuse `wp-finetune:run-evaluation` (extend with pruned-model serving + speed benchmarks)
+  - Serve pruned model via `dgx.execute("vllm", ...)` — no LoRA adapter, direct model loading
+  - Embeds `observe-inference` telemetry agents inline for latency/throughput measurement during eval
+  - Speed benchmark: TTFT and tokens/sec measured across 100 prompts for both `<wp_gen>` and `<wp_judge>` task types
+  - A/B comparison automated: pruned model vs v2.0 RL baseline across all 9 dimensions + speed delta + model size
+  - Fix-test-validate loop: if pruned model fails to serve (missing weights, router mismatch) → diagnose → fix pruning step → re-serve → re-eval
+  - Invokes `wp-finetune:review-telemetry` for consolidated inference performance summary
+  - Human review checkpoint: present full comparison report before gating packaging
 **Plans**: TBD
 
 ### Phase 15: Packaging
@@ -378,6 +440,16 @@ Plans:
   3. If quantization is warranted, incremental testing at Q8->Q6->Q5->Q4 stops at the lowest level holding within +/-2pp of the Gate 1 baseline; quantization is the final step and is never applied before Gate 2 confirms it is needed
   4. The HuggingFace model card documents the full compression lineage (base -> RL -> MoE-Sieve -> merge -> AIMER/REAP winner -> quantization level) with eval scores at each gate, AIMER vs REAP comparison results, and usage examples for both task tokens
   5. E2E inference validation confirms both `<wp_gen>` and `<wp_judge>` prompts produce correct outputs via the final shipped format on the target serving stack (vLLM or Ollama)
+**Skill**: `wp-finetune:run-packaging` (NEW — create during phase planning)
+  - Extends `observe-packaging` telemetry pattern: file-integrity agents track quantization output sizes and special token presence
+  - Gate 1: `dgx.execute("eval_toolbox", ...)` for bf16 baseline measurement with idempotency check
+  - Gate 2: Human decision checkpoint — present Gate 1 results, recommend quantization decision
+  - Quantization loop (if warranted): for each level in [Q8, Q6, Q5, Q4] → quantize via `dgx.execute("vllm", ...)` → eval against Gate 1 baseline → if within ±2pp, record as candidate → if regression >2pp, stop and use previous level
+  - Fix-test-validate loop: if quantized model fails special token check (AWQ/GGUF token embedding) → fix quantization config → re-quantize → re-test
+  - E2E validation: serve final model on target stack → run 20 `<wp_gen>` + 20 `<wp_judge>` prompts → verify coherent output with correct task token routing
+  - Embeds `observe-inference` telemetry agents inline during E2E validation for production-representative latency numbers
+  - HuggingFace upload: model card generation with full lineage, eval scores at each gate, AIMER vs REAP results
+  - Human review checkpoint: final sign-off before `huggingface-cli upload`
 **Plans**: TBD
 
 ## Progress
