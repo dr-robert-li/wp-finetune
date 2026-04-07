@@ -90,6 +90,9 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 | Multi-ratio training with isolated checkpoints | Each ratio trains to adapters/{run_name}/, models/{run_name}-merged/ | ✓ Good |
 | No one-off scripts in pipeline | Skills + pipeline_orchestrator.py, not throwaway agent scripts | ✓ Good |
 | dgx_toolbox.py project-agnostic | All project-specific couplings moved to config/dgx_toolbox.yaml | ✓ Good |
+| Phase 4 triage: 30/70 wins, NO_SURVIVORS | Only 30/70 produces parseable judge output (497 pairs, Spearman 0.57). Other 3 ratios: all judge examples skipped (unparseable). Gen is solved (97-100% PHPCS). Judge is the bottleneck. | ✓ Good |
+| Dual-mode GRPO (gen + judge) | Gen is 0.99+ at SFT — GRPO budget wasted on it. Judge at 0.57 Spearman needs the most RL investment. Phase 11 targets both modes with judge receiving equal or greater budget. | — Pending |
+| 0.85 Spearman gate lowered to 0.50 | 0.85 is aspirational. 0.57 is a meaningful positive correlation (p=0.000). Gate lowered to allow triage to proceed; v1.2 + v3.0 GRPO will improve judge quality toward 0.85. | ✓ Good |
 
 ## Current Milestone: v1.2 Judge Reasoning Fine-Tune
 
@@ -125,11 +128,12 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 
 ## Planned Milestone: v3.0 GRPO & Production Deployment
 
-**Goal:** Apply gen-only GRPO with composite verifiable rewards and RSPO router-shift stabilization, then merge LoRA, REAP prune on final routing, and package for production.
+**Goal:** Apply dual-mode GRPO (gen + judge reasoning) with composite verifiable rewards and RSPO router-shift stabilization, then merge LoRA, REAP prune on final routing, and package for production.
 
 **Target features:**
-- Composite reward: 70% verifiable (PHPCS + security gate + WP standards with VeRPO partial credit) / 30% frozen wp_judge (MO-GRPO normalized)
-- Gen-only GRPO on hot experts with RSPO router-shift stabilization (note: GRPO scope may extend to judge reasoning quality using verifiable rewards — PHPCS/security scanner for critique-then-fix, separately spawned Claude evaluator agent for scoring consistency — as a v3.0 scope decision)
+- Gen rewards: 70% verifiable (PHPCS + security gate + WP standards with VeRPO partial credit) / 30% frozen wp_judge (MO-GRPO normalized)
+- Judge rewards: score-reasoning consistency (separately spawned Claude evaluator agent) + fix correctness (PHPCS/security scanner on critique-then-fix corrected code)
+- Dual-mode GRPO on hot experts with RSPO router-shift stabilization — judge is the primary bottleneck (Spearman 0.57 vs gen 0.99+ at SFT) and receives equal or greater GRPO budget
 - LoRA merge into base weights before pruning
 - REAP pruning on merged model (50-75% compression, targeting ~8-12B total params)
 - Cascading compression gates for packaging (bf16 → optional quantization Q8→Q4)

@@ -178,7 +178,7 @@ Requirements for GRPO reinforcement learning on the MoE-Sieve model, followed by
 
 ### GRPO Training
 
-- [ ] **GRPO-05**: Gen-only GRPO — `<wp_gen>` generation quality improved via RL; `<wp_judge>` capability completely frozen from SFT. **Note:** GRPO could also be extended to refine judge reasoning quality using verifiable rewards (PHPCS/security scanner for critique-then-fix corrections, separately spawned Claude evaluator agent for scoring consistency, PHPCS/security scanner for fix correctness verification). This is a scope consideration for v3.0, not currently planned.
+- [ ] **GRPO-05**: Dual-mode GRPO — both `<wp_gen>` generation quality and `<wp_judge>` reasoning quality improved via RL. Gen rewards: PHPCS + security + VeRPO. Judge rewards: score-reasoning consistency (via separately spawned Claude evaluator agent), fix correctness (PHPCS/security scanner on critique-then-fix corrected code). Judge is the primary bottleneck (Spearman 0.57 vs gen 0.99+ at SFT stage) and receives equal or greater GRPO budget.
 - [ ] **GRPO-06**: Hot experts only — GRPO gradients flow to hot routed experts + attention + router gates + shared experts; cold routed experts frozen (structural stability anchor)
 - [ ] **GRPO-07**: RSPO router-shift stabilization — compute router-shift ratio between rollout and training phases, apply stop-gradient and floor, multiply into clipped importance ratio before aggregation
 - [ ] **GRPO-08**: Router-shift ratio monitored throughout training — log per-step shift metrics; halt training if shift exceeds stability threshold (routing collapse early warning)
