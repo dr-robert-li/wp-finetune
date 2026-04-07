@@ -39,9 +39,52 @@ Fallback if GSPO is unavailable or too expensive: GRPO with larger group size G_
 - **Pruning timing granularity:** RL before *any* pruning vs light sieve before RL vs sieve after some RL epochs. Council leans toward full RL first, but acknowledges cost.
 - **Judge reward mix:** Heavily verifiable vs rubric-heavy with bias calibration vs hybrid with reference-guided judging on a fraction.
 
-### Impact on roadmap
+### Updated roadmap
 
-The reordering affects v2.0 and v3.0 phase sequencing. The routing audit (currently implicit in Phase 7) needs to happen before RL, and MoE-Sieve moves to after RL convergence. Phase renumbering and requirement updates to follow once the v1.2 reasoning SFT phases are underway and there's a concrete decision on GSPO vs GRPO implementation.
+Roadmap restructured. v2.0 is now "RL Alignment" (routing audit → rewards → GSPO/GRPO → RL eval). v3.0 is now "MoE-Sieve, Pruning & Packaging" (post-RL sieve → eval → merge + AIMER prune → final eval → package). 15 phases total, 101 active requirements.
+
+**v1.2 Judge Reasoning (Phases 4.1-4.4) — Next**
+
+| Phase | Name | Status | Depends On |
+|-------|------|--------|------------|
+| 4.1 | Reasoning Data Generation | Planned | Phase 4 triage |
+| 4.2 | Reasoning Dataset Assembly | Not started | Phase 4.1 |
+| 4.3 | Reasoning Fine-Tune | Not started | Phase 4.2 |
+| 4.4 | Reasoning Eval & Merge | Not started | Phase 4.3 |
+
+**v2.0 RL Alignment (Phases 7-10) — RL runs on full MoE, not sieve-constrained**
+
+| Phase | Name | Depends On |
+|-------|------|------------|
+| 7 | Router Profiling & Protected Expert Set | Phase 4.4 |
+| 8 | Reward Infrastructure | Phase 7 |
+| 9 | GSPO/GRPO Training | Phase 8 |
+| 10 | RL Comparative Evaluation | Phase 9 |
+
+GSPO preferred. Protected expert set from Phase 7 monitored via routing regulariser during RL. Anti-hack eval set built in Phase 8. Phase 10 gates v3.0.
+
+**v3.0 MoE-Sieve, Pruning & Packaging (Phases 11-15) — Sieve uses RL-policy routing logs**
+
+| Phase | Name | Depends On |
+|-------|------|------------|
+| 11 | Post-RL MoE-Sieve | Phase 10 |
+| 12 | MoE-Sieve Comparative Eval | Phase 11 |
+| 13 | LoRA Merge & Pruning (AIMER primary) | Phase 12 |
+| 14 | Final Comparative Eval | Phase 13 |
+| 15 | Packaging | Phase 14 |
+
+Execution order: `1→2→3→4→4.1→4.2→4.3→4.4→7→8→9→10→11→12→13→14→15`
+
+Phase 5 deferred (subsumed by Phase 15). Phase 6 complete (independent).
+
+| Milestone | Requirements | Complete |
+|-----------|-------------|----------|
+| v1.0 | 39 | 32 (7 eval pending) |
+| v1.1 | 13 | 13 |
+| v1.2 | 17 | 0 |
+| v2.0 | 16 | 0 |
+| v3.0 | 21 | 0 |
+| **Total** | **101 active + 7 deferred** | **45** |
 
 ---
 
@@ -65,22 +108,7 @@ The 0.85 Spearman gate was lowered to 0.50 to allow triage to proceed. 0.57 is a
 
 ### Pipeline status
 
-Completed: Phases 1-3 (v1.0), Phase 4 (v1.0 Eval Triage — 30/70 wins), Phase 6 (v1.1 Adaptive Training)
-
-| Milestone | Phase | Name | Status | Depends On |
-|-----------|-------|------|--------|------------|
-| v1.2 Judge Reasoning | 4.1 | Seed Curation + Data Gen (deep CoT + critique-then-fix) | **Next** | Phase 4 triage |
-| | 4.2 | Dataset Assembly (consistency validation + training mix) | Defined | Phase 4.1 |
-| | 4.3 | Reasoning Fine-Tune (≤2e-5 LR, 8192 seq, frozen router) | Defined | Phase 4.2 |
-| | 4.4 | Eval & Merge (Spearman + PHPCS + Claude evaluator + human) | Defined | Phase 4.3 |
-| v2.0 MoE-Sieve | 7 | Router Profiling + Ratio Selection (adapter E_eff) | Planned | Phase 4.4 |
-| | 8 | Selective Training (hot experts only, k-sweep) | Planned | Phase 7 |
-| | 9 | Comparative Eval (A/B vs full-LoRA) | Planned | Phase 8 |
-| v3.0 GRPO & Deploy | 10 | Reward Infrastructure (PHPCS + security + VeRPO + MO-GRPO) | Planned | Phase 9 |
-| | 11 | Dual-mode GRPO (gen + judge reasoning) | Planned | Phase 10 |
-| | 12 | LoRA Merge + Pruning (AIMER vs REAP) | Planned | Phase 11 |
-| | 13 | Comparative Eval (vs v2.0) | Planned | Phase 12 |
-| | 14 | Packaging (cascading compression gates + HuggingFace) | Planned | Phase 13 |
+*Superseded by the updated roadmap in the entry above (model council reordering).*
 
 ---
 
