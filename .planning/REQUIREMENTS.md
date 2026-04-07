@@ -66,15 +66,15 @@ Source data already exists at `/home/robert_li/Desktop/data/wp-finetune-data/`: 
 
 ### Deployment (deferred to v2.0 Packaging)
 
-DPLT requirements moved to v2.0 PKG-01 through PKG-05 — package after MoE-Sieve + REAP pruning, not the intermediate full-LoRA model. Serving requirements (vLLM, Ollama, Open-WebUI) covered by PKG-05 E2E validation.
+DPLT requirements moved to v3.0 PKG-01 through PKG-05 — package after RL + MoE-Sieve + pruning, not the intermediate full-LoRA model. Serving requirements (vLLM, Ollama, Open-WebUI) covered by PKG-05 E2E validation.
 
-- [ ] ~~**DPLT-01**: LoRA adapter merged into base model weights~~ → subsumed by v2.0 PRUNE-05
-- [ ] ~~**DPLT-02**: AWQ quantization produced for vLLM~~ → subsumed by v2.0 PKG-03 (if warranted by Gate 2)
-- [ ] ~~**DPLT-03**: GGUF quantization produced for Ollama~~ → subsumed by v2.0 PKG-03 (if warranted by Gate 2)
-- [ ] ~~**DPLT-04**: vLLM serving~~ → subsumed by v2.0 PKG-05
-- [ ] ~~**DPLT-05**: Ollama serving~~ → subsumed by v2.0 PKG-05
-- [ ] ~~**DPLT-06**: HuggingFace upload~~ → subsumed by v2.0 PKG-04
-- [ ] ~~**DPLT-07**: Open-WebUI demo~~ → subsumed by v2.0 PKG-05
+- [ ] ~~**DPLT-01**: LoRA adapter merged into base model weights~~ -> subsumed by v3.0 PRUNE-05
+- [ ] ~~**DPLT-02**: AWQ quantization produced for vLLM~~ -> subsumed by v3.0 PKG-03 (if warranted by Gate 2)
+- [ ] ~~**DPLT-03**: GGUF quantization produced for Ollama~~ -> subsumed by v3.0 PKG-03 (if warranted by Gate 2)
+- [ ] ~~**DPLT-04**: vLLM serving~~ -> subsumed by v3.0 PKG-05
+- [ ] ~~**DPLT-05**: Ollama serving~~ -> subsumed by v3.0 PKG-05
+- [ ] ~~**DPLT-06**: HuggingFace upload~~ -> subsumed by v3.0 PKG-04
+- [ ] ~~**DPLT-07**: Open-WebUI demo~~ -> subsumed by v3.0 PKG-05
 
 ## v1.1 Requirements — Adaptive Training Infrastructure
 
@@ -107,7 +107,7 @@ Requirements for power-primary adaptive planner. Depends on dgx-toolbox Phase 13
 
 ## v1.2 Requirements — Judge Reasoning Fine-Tune
 
-Requirements for deep reasoning fine-tuning of the winning ratio adapter. Depends on Phase 4 eval triage completing (need winning ratio). Must complete before v2.0 MoE-Sieve (routing profile must reflect reasoning capability).
+Requirements for deep reasoning fine-tuning of the winning ratio adapter. Depends on Phase 4 eval triage completing (need winning ratio). Must complete before v2.0 RL Alignment (routing profile must reflect reasoning capability).
 
 ### Data Generation
 
@@ -135,9 +135,9 @@ Requirements for deep reasoning fine-tuning of the winning ratio adapter. Depend
 - [ ] **REVL-07**: Classification accuracy — confusion matrix (TP/TN/FP/FN) computed at score thresholds from eval_judge.py per-example data, measuring whether the model correctly distinguishes good from bad code
 - [ ] **REVL-08**: Reasoning length distribution — reasoning chains are neither truncated nor exploding; median, p95, and max token counts recorded and reviewed against expected range
 
-## v2.0 Requirements — MoE-Sieve Selective Training
+## v2.0 Requirements — RL Alignment
 
-Requirements for selective expert training and evaluation. Depends on v1.2 completing (need reasoning-enhanced adapter). Pruning and packaging deferred to v3.0 (must happen after GRPO to prune on final routing distribution).
+Requirements for RL alignment before MoE-Sieve. Depends on v1.2 completing (need reasoning-enhanced adapter). Pipeline reordered per Issue #1 (D-07): RL runs before MoE-Sieve because routing statistics should reflect reward-aligned behavior, not SFT pre-training usage.
 
 ### Router Profiling
 
@@ -152,23 +152,6 @@ Requirements for selective expert training and evaluation. Depends on v1.2 compl
 - [ ] **GATE-01**: Decision matrix combining Phase 4 eval score (normalized 0-1) and Phase 7 routing concentration (mean E_eff, max E_eff, E_eff variance) per surviving ratio — select ratio with lowest E_eff at equivalent quality (within 2pp), preferring compressibility over marginal quality gains
 - [x] **GATE-02**: Phase 4 triage uses high bar for elimination (only cut ratios that fail hard gates or are >5pp behind) and low bar for continuation — 1-2pp differences may invert after pruning if routing concentration differs
 
-### Selective Training (MoE-Sieve)
-
-- [ ] **SIEVE-01**: LoRA r=32, α=64, dropout=0.05 applied to hot routed experts + all attention (Q/K/V/O) + router gates + 4 shared experts (always trained); cold routed experts frozen
-- [ ] **SIEVE-02**: Gen-hot experts trained on golden signal data only (passed examples, synthetic good); judge-hot experts trained on full spectrum (passed + failed + contrastive)
-- [ ] **SIEVE-03**: Retrain uses best gen/judge ratio determined by Phase 4 eval results
-- [ ] **SIEVE-04**: K-sweep at minimum 3 budgets (~13, 32, 64 experts per layer from 128 routed) to find accuracy plateau for Qwen3-30B-A3B on WordPress data
-- [ ] **SIEVE-05**: Optimal k is smallest budget matching full-LoRA within ±1pp on wp-bench (TOST equivalence test, ε=2pp, 3+ seeds)
-
-### Comparative Evaluation
-
-- [ ] **EVAL2-01**: A/B eval of each k-sweep MoE-Sieve adapter against v1.0 full-LoRA on wp-bench and static eval suite
-- [ ] **EVAL2-02**: Report includes per-dimension comparison (all 9 dimensions), overall scores, inference speed delta, and seed variance comparison
-
-## v3.0 Requirements — GRPO & Production Deployment
-
-Requirements for GRPO reinforcement learning on the MoE-Sieve model, followed by LoRA merge, REAP pruning on final routing distribution, and production packaging. GRPO must precede pruning because RL changes which experts matter.
-
 ### Reward Infrastructure
 
 - [ ] **GRPO-01**: Composite reward pipeline with 70% verifiable / 30% judge weighting — PHPCS pass rate (high-variance anchor), security scanner (hard gate: score=0 on failure), WordPress standards checks (VeRPO partial credit weighted by check difficulty), frozen wp_judge score (MO-GRPO normalized)
@@ -176,28 +159,52 @@ Requirements for GRPO reinforcement learning on the MoE-Sieve model, followed by
 - [ ] **GRPO-03**: MO-GRPO normalization on all reward signals — each signal normalized by within-group variance to prevent single-signal dominance
 - [ ] **GRPO-04**: VeRPO-style partial credit for WordPress standards checks — each check weighted by difficulty (estimated from pass rate across group samples; rarely-passed checks contribute more signal)
 
-### GRPO Training
+### GSPO/GRPO Training
 
-- [ ] **GRPO-05**: Dual-mode GRPO — both `<wp_gen>` generation quality and `<wp_judge>` reasoning quality improved via RL. Gen rewards: PHPCS + security + VeRPO. Judge rewards: score-reasoning consistency (via separately spawned Claude evaluator agent), fix correctness (PHPCS/security scanner on critique-then-fix corrected code). Judge is the primary bottleneck (Spearman 0.57 vs gen 0.99+ at SFT stage) and receives equal or greater GRPO budget.
-- [ ] **GRPO-06**: Hot experts only — GRPO gradients flow to hot routed experts + attention + router gates + shared experts; cold routed experts frozen (structural stability anchor)
+- [ ] **GRPO-05**: Dual-mode RL — both `<wp_gen>` generation quality and `<wp_judge>` reasoning quality improved via RL. Gen rewards: PHPCS + security + VeRPO. Judge rewards: score-reasoning consistency (via separately spawned Claude evaluator agent), fix correctness (PHPCS/security scanner on critique-then-fix corrected code). Judge is the primary bottleneck (Spearman 0.57 vs gen 0.99+ at SFT stage) and receives equal or greater RL budget.
+- [ ] **GRPO-06**: Full-MoE RL — GSPO/GRPO gradients flow to all routed experts + attention + router gates + shared experts. Protected expert set from Phase 7 monitored via routing regularizer (KL divergence penalty if protected experts deactivate below baseline frequency). GSPO (sequence-level) preferred per D-08; GRPO with larger group size + Pro-GRPO expand-then-prune as fallback.
 - [ ] **GRPO-07**: RSPO router-shift stabilization — compute router-shift ratio between rollout and training phases, apply stop-gradient and floor, multiply into clipped importance ratio before aggregation
 - [ ] **GRPO-08**: Router-shift ratio monitored throughout training — log per-step shift metrics; halt training if shift exceeds stability threshold (routing collapse early warning)
 
-### LoRA Merge & Expert Pruning (AIMER vs REAP)
+### RL Comparative Evaluation
 
-Sub-experiment: Does WordPress domain specialization create enough routing concentration for calibration-based pruning (REAP) to outperform weight-based pruning (AIMER)? Or is PHP/WordPress too close to general code for domain-aware pruning to differentiate?
+- [ ] **RLEV-01**: RL model (GSPO/GRPO output) evaluated against v1.2 SFT baseline on wp-bench and all 9 eval dimensions — no dimension regression permitted; judge Spearman improvement expected (primary RL target)
+- [ ] **RLEV-02**: RL evaluation report includes reward metric convergence curves, router-shift stability log (per-step shift ratios), protected expert retention rate vs Phase 7 baseline, gen/judge quality delta, and anti-hack eval results
 
-- [ ] **MERGE-01**: Merge MoE-Sieve + GRPO LoRA adapters into base model weights before pruning — REAP needs activation magnitudes from the unified model, AIMER needs final weight norms
-- [ ] **PRUNE-01**: Run AIMER pruning on merged model (weight-based, no calibration, ~1 second) at 25%, 50%, and 75% compression ratios — serves as task-agnostic baseline
-- [ ] **PRUNE-02**: Run REAP pruning on same merged model with WordPress calibration data (gen + judge examples), `reap` saliency scoring, at same 25%, 50%, 75% compression ratios — serves as domain-aware comparison
+## v3.0 Requirements — MoE-Sieve, Pruning & Packaging
+
+Requirements for MoE-Sieve on the RL-trained model, followed by LoRA merge, pruning, evaluation, and production packaging. MoE-Sieve operates post-RL using RL-policy routing logs (not SFT logs) per Issue #1 (D-07). AIMER is the primary pruning method (D-09); REAP is an optional comparison.
+
+**Note:** MoE-Sieve in v3.0 operates on the RL-trained model using RL-policy routing logs (not SFT logs). A fresh profiling pass is required before sieve selection.
+
+### Selective Training (MoE-Sieve) — Post-RL
+
+- [ ] **SIEVE-01**: Fresh routing profiling on RL-trained model; LoRA r=32, alpha=64, dropout=0.05 applied to hot routed experts (per RL-policy routing) + all attention (Q/K/V/O) + router gates + 4 shared experts (always trained); cold routed experts frozen. Protected experts from Phase 7 must be in the retained set.
+- [ ] **SIEVE-02**: Gen-hot experts (per RL-policy routing categories) trained on golden signal data only (passed examples, synthetic good); judge-hot experts trained on full spectrum (passed + failed + contrastive)
+- [ ] **SIEVE-03**: Retrain uses best gen/judge ratio determined by Phase 4 eval results
+- [ ] **SIEVE-04**: K-sweep at minimum 3 budgets (~13, 32, 64 experts per layer from 128 routed) to find accuracy plateau for Qwen3-30B-A3B on WordPress data
+- [ ] **SIEVE-05**: Optimal k is smallest budget matching full-LoRA within +/-1pp on wp-bench (TOST equivalence test, epsilon=2pp, 3+ seeds); all protected experts from Phase 7 must be retained at optimal k
+
+### MoE-Sieve Comparative Evaluation
+
+- [ ] **EVAL2-01**: A/B eval of each k-sweep MoE-Sieve adapter against v2.0 RL baseline on wp-bench and static eval suite
+- [ ] **EVAL2-02**: Report includes per-dimension comparison (all 9 dimensions), overall scores, inference speed delta, and seed variance comparison
+
+### LoRA Merge & Pruning (AIMER primary, REAP optional)
+
+Sub-experiment: Does WordPress domain specialization create enough routing concentration for calibration-based pruning (REAP) to outperform weight-based pruning (AIMER)? Or is PHP/WordPress too close to general code for domain-aware pruning to differentiate? AIMER is the primary pruning method (D-09) — calibration-free and fast iteration. REAP is an optional comparison.
+
+- [ ] **MERGE-01**: Merge MoE-Sieve + RL LoRA adapters into base model weights before pruning — REAP needs activation magnitudes from the unified model, AIMER needs final weight norms
+- [ ] **PRUNE-01**: Run AIMER pruning on merged model (weight-based, no calibration, ~1 second) at 25%, 50%, and 75% compression ratios — serves as primary pruning method (D-09)
+- [ ] **PRUNE-02**: Optionally run REAP pruning on same merged model with WordPress calibration data (gen + judge examples), `reap` saliency scoring, at same 25%, 50%, 75% compression ratios — serves as domain-aware comparison
 - [ ] **PRUNE-03**: Evaluate both methods via gating mask before weight removal — compare retention across all 9 eval dimensions at each compression ratio (6 variants total: 2 methods × 3 ratios)
 - [ ] **PRUNE-04**: Analyze domain specificity signal: compare which experts each method retains/prunes — high overlap suggests WordPress isn't specialized enough for calibration-based advantage; low overlap suggests REAP is capturing domain-specific routing patterns AIMER misses
 - [ ] **PRUNE-05**: Select winning method + compression ratio with best dimension-level retention (especially D2_security), prefer higher compression at equivalent quality; if regression on any dimension, reduce compression incrementally until clean
 - [ ] **PRUNE-06**: Final model has expert weights physically removed and router softmax re-normalized for removed expert slots; saved as HuggingFace-compatible checkpoint; pruning methodology documented in model card
 
-### Comparative Evaluation
+### Final Comparative Evaluation
 
-- [ ] **EVAL3-01**: A/B eval of GRPO+pruned model against v2.0 SFT-only (MoE-Sieve without GRPO) on wp-bench and static eval suite
+- [ ] **EVAL3-01**: A/B eval of pruned model against v2.0 RL baseline on wp-bench and static eval suite
 - [ ] **EVAL3-02**: Report includes per-dimension comparison, inference speed delta (expect significant from pruning), model size reduction, and seed variance
 
 ### Packaging (cascading compression gates)
@@ -205,7 +212,7 @@ Sub-experiment: Does WordPress domain specialization create enough routing conce
 - [ ] **PKG-01**: Gate 1 — Eval pruned bf16 model: record size, inference speed, all 9 dimensions as quality baseline for subsequent compression
 - [ ] **PKG-02**: Gate 2 — Assess whether quantization is needed based on pruned model size, deployment constraints, and Gate 1 performance margins
 - [ ] **PKG-03**: If quantization warranted, test incrementally Q8→Q6→Q5→Q4, eval at each level, stop at lowest quantization holding within ±2pp of Gate 1 baseline
-- [ ] **PKG-04**: Model card + adapter uploaded to HuggingFace with full compression lineage (base → MoE-Sieve → GRPO → merge → AIMER/REAP winner → quantization level, eval at each gate) including AIMER vs REAP comparison results
+- [ ] **PKG-04**: Model card + adapter uploaded to HuggingFace with full compression lineage (base -> RL -> MoE-Sieve -> merge -> AIMER/REAP winner -> quantization level, eval at each gate) including AIMER vs REAP comparison results
 - [ ] **PKG-05**: E2E inference validation on final shipped format (both `<wp_gen>` and `<wp_judge>` prompts via target serving stack)
 
 ## v4 Requirements (deferred)
@@ -274,13 +281,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EVAL-05 | Phase 3 | Complete (03-02) |
 | EVAL-06 | Phase 4 | Pending |
 | EVAL-07 | Phase 4 | Pending |
-| DPLT-01 | Phase 5 | Deferred → v2.0 PRUNE-05 |
-| DPLT-02 | Phase 5 | Deferred → v2.0 PKG-03 |
-| DPLT-03 | Phase 5 | Deferred → v2.0 PKG-03 |
-| DPLT-04 | Phase 5 | Deferred → v2.0 PKG-05 |
-| DPLT-05 | Phase 5 | Deferred → v2.0 PKG-05 |
-| DPLT-06 | Phase 5 | Deferred → v2.0 PKG-04 |
-| DPLT-07 | Phase 5 | Deferred → v2.0 PKG-05 |
+| DPLT-01 | Phase 5 | Deferred -> v3.0 PRUNE-05 |
+| DPLT-02 | Phase 5 | Deferred -> v3.0 PKG-03 |
+| DPLT-03 | Phase 5 | Deferred -> v3.0 PKG-03 |
+| DPLT-04 | Phase 5 | Deferred -> v3.0 PKG-05 |
+| DPLT-05 | Phase 5 | Deferred -> v3.0 PKG-05 |
+| DPLT-06 | Phase 5 | Deferred -> v3.0 PKG-04 |
+| DPLT-07 | Phase 5 | Deferred -> v3.0 PKG-05 |
 
 | ADPT-01 | Phase 6 | Complete |
 | ADPT-02 | Phase 6 | Complete |
@@ -321,45 +328,47 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PROF-05 | Phase 7 | Pending |
 | GATE-01 | Phase 7 | Pending |
 | GATE-02 | Phase 4 | Complete |
-| SIEVE-01 | Phase 8 | Pending |
-| SIEVE-02 | Phase 8 | Pending |
-| SIEVE-03 | Phase 8 | Pending |
-| SIEVE-04 | Phase 8 | Pending |
-| SIEVE-05 | Phase 8 | Pending |
-| EVAL2-01 | Phase 9 | Pending |
-| EVAL2-02 | Phase 9 | Pending |
-| GRPO-01 | Phase 10 | Pending |
-| GRPO-02 | Phase 10 | Pending |
-| GRPO-03 | Phase 10 | Pending |
-| GRPO-04 | Phase 10 | Pending |
-| GRPO-05 | Phase 11 | Pending |
-| GRPO-06 | Phase 11 | Pending |
-| GRPO-07 | Phase 11 | Pending |
-| GRPO-08 | Phase 11 | Pending |
-| MERGE-01 | Phase 12 | Pending |
-| PRUNE-01 | Phase 12 | Pending |
-| PRUNE-02 | Phase 12 | Pending |
-| PRUNE-03 | Phase 12 | Pending |
-| PRUNE-04 | Phase 12 | Pending |
-| PRUNE-05 | Phase 12 | Pending |
-| PRUNE-06 | Phase 12 | Pending |
-| EVAL3-01 | Phase 13 | Pending |
-| EVAL3-02 | Phase 13 | Pending |
-| PKG-01 | Phase 14 | Pending |
-| PKG-02 | Phase 14 | Pending |
-| PKG-03 | Phase 14 | Pending |
-| PKG-04 | Phase 14 | Pending |
-| PKG-05 | Phase 14 | Pending |
+| GRPO-01 | Phase 8 | Pending |
+| GRPO-02 | Phase 8 | Pending |
+| GRPO-03 | Phase 8 | Pending |
+| GRPO-04 | Phase 8 | Pending |
+| GRPO-05 | Phase 9 | Pending |
+| GRPO-06 | Phase 9 | Pending |
+| GRPO-07 | Phase 9 | Pending |
+| GRPO-08 | Phase 9 | Pending |
+| RLEV-01 | Phase 10 | Pending |
+| RLEV-02 | Phase 10 | Pending |
+| SIEVE-01 | Phase 11 | Pending |
+| SIEVE-02 | Phase 11 | Pending |
+| SIEVE-03 | Phase 11 | Pending |
+| SIEVE-04 | Phase 11 | Pending |
+| SIEVE-05 | Phase 11 | Pending |
+| EVAL2-01 | Phase 12 | Pending |
+| EVAL2-02 | Phase 12 | Pending |
+| MERGE-01 | Phase 13 | Pending |
+| PRUNE-01 | Phase 13 | Pending |
+| PRUNE-02 | Phase 13 | Pending |
+| PRUNE-03 | Phase 13 | Pending |
+| PRUNE-04 | Phase 13 | Pending |
+| PRUNE-05 | Phase 13 | Pending |
+| PRUNE-06 | Phase 13 | Pending |
+| EVAL3-01 | Phase 14 | Pending |
+| EVAL3-02 | Phase 14 | Pending |
+| PKG-01 | Phase 15 | Pending |
+| PKG-02 | Phase 15 | Pending |
+| PKG-03 | Phase 15 | Pending |
+| PKG-04 | Phase 15 | Pending |
+| PKG-05 | Phase 15 | Pending |
 
 **Coverage:**
 - v1 requirements: 39 total (32 complete, 7 eval pending)
 - v1.1 requirements: 13 total (13 complete)
-- v1.2 requirements: 17 total (0 complete) — DGEN-01/02/03 → Phase 4.1; DGEN-04/05 → Phase 4.2; RTRN-01/02/03/04 → Phase 4.3; REVL-01/02/03/04/05/06/07/08 → Phase 4.4
-- v2.0 requirements: 14 total (0 complete) — PROF(5) + GATE(2) + SIEVE(5) + EVAL2(2)
-- v3.0 requirements: 22 total (0 complete) — GRPO(8) + MERGE(1) + PRUNE(6) + EVAL3(2) + PKG(5)
-- DPLT requirements: 7 total (deferred → v3.0 PKG/PRUNE)
-- Total mapped to phases: 96 (all requirements mapped, 0 unmapped)
+- v1.2 requirements: 17 total (0 complete) — DGEN-01/02/03 -> Phase 4.1; DGEN-04/05 -> Phase 4.2; RTRN-01/02/03/04 -> Phase 4.3; REVL-01/02/03/04/05/06/07/08 -> Phase 4.4
+- v2.0 requirements: 17 total (0 complete) — PROF(5) + GATE(2) + GRPO(8) + RLEV(2) [Phases 7-10]
+- v3.0 requirements: 21 total (0 complete) — SIEVE(5) + EVAL2(2) + MERGE(1) + PRUNE(6) + EVAL3(2) + PKG(5) [Phases 11-15]
+- DPLT requirements: 7 total (deferred -> v3.0 PKG/PRUNE)
+- Total mapped to phases: 98 (all requirements mapped, 0 unmapped; +2 from RLEV-01/02)
 
 ---
 *Requirements defined: 2026-03-26*
-*Last updated: 2026-04-04 — EVAL-06/07 added to Phase 4; REVL-03 updated, REVL-06/07/08 added to Phase 4.4; GRPO-05 note updated (Claude evaluator replaces Nemotron)*
+*Last updated: 2026-04-08 — Pipeline reordered per Issue #1 (D-07): RL before MoE-Sieve; GRPO-01-04 moved to Phase 8, GRPO-05-08 to Phase 9, SIEVE to Phase 11, EVAL2 to Phase 12, MERGE/PRUNE to Phase 13, EVAL3 to Phase 14, PKG to Phase 15; GRPO-05/06 updated for full-MoE RL + GSPO primary (D-08); RLEV-01/02 added for Phase 10; SIEVE updated for post-RL context; AIMER primary (D-09), REAP optional*
