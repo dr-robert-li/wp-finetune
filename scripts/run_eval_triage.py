@@ -858,9 +858,12 @@ def run_wpbench_for_ratio(
         with open(tmp_config, "w") as f:
             _yaml.dump(config, f)
 
-        # Run wp-bench
+        # Run wp-bench via the installed CLI entry point.
+        # wp-bench is installed as `pip install -e wp-bench/python` so the
+        # `wp-bench` console script is on PATH.  The Python package has no
+        # `wp_bench.run` module — the entry point is `wp_bench.cli:app`.
         result = subprocess.run(
-            ["python", "-m", "wp_bench.run", "--config", str(tmp_config)],
+            ["wp-bench", "run", "--config", str(tmp_config)],
             capture_output=True,
             text=True,
             timeout=3600,  # 1 hour max
@@ -1037,12 +1040,15 @@ def run_eval_and_wpbench_for_ratio(
         else:
             eval_succeeded = True
             logger.info(f"Eval already done for ratio {ratio}, starting vLLM for wp-bench only ...")
-            # Still need vLLM for wp-bench
+            # Still need vLLM for wp-bench.
+            # Use the pre-merged model (not LoRA serving) so wp-bench runs
+            # against the same weights that will ship — LoRA serving requires
+            # --enable-lora which is unnecessary here and has caused instability.
             if not skip_wpbench and not wpbench_already_done:
                 try:
-                    vllm_proc = _start_vllm_with_lora(ratio)
-                    if not _wait_for_vllm(endpoint, timeout_s=health_timeout):
-                        logger.warning(f"vLLM failed to start for wp-bench on ratio {ratio}. Skipping wp-bench.")
+                    vllm_proc = _fallback_merge_and_serve(ratio)
+                    if vllm_proc is None or not _wait_for_vllm(endpoint, timeout_s=health_timeout):
+                        logger.warning(f"vLLM (merged) failed to start for wp-bench on ratio {ratio}. Skipping wp-bench.")
                         return eval_succeeded
                 except Exception as e:
                     logger.warning(f"Could not start vLLM for wp-bench: {e}")
