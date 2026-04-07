@@ -4,28 +4,41 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
-## 2026-04-07 — Human-annotated seed data folded into Phase 4.1
+## 2026-04-07 — Seed data collection: harder than expected, dimension gaps are real
+
+### Two-track work
+
+Running concurrent with Phase 4 eval triage (all 4 ratios now processing), seed data collection for v1.2 Phase 4.1 is underway. Two sources: internal (extracted from proprietary SE engagement archives) and external (UGC from public sites via agent-driven search).
+
+### Internal extraction: 27 seeds from testing archives
+
+Exhaustive survey of 5 tarballs of SE engagement data. The testing/ folder yielded 27 seeds with deep code-level annotations (actual PHP/SQL, dimensional reasoning, WP-function citations). The Scoping-Tool/ folder (716 reports) was higher-level hosting/sizing analysis — no code-depth annotations extractable. 27 seeds is the complete internal yield.
+
+### External UGC collection: 93 seeds, but dimension distribution is skewed
+
+Agents cast a wide net across Stack Overflow, WordPress.org forums, GitHub issues/PRs, WordPress Stack Exchange, security advisories. 93 seeds collected, bringing total to 120 (exceeding the 50-100 target). But the distribution reveals a structural problem:
+
+**Boundary cases are concentrated in dimensions that are already easy for LLMs.** Security has 22 boundary seeds (85%), wp_api_usage has 23 (79%). Meanwhile:
+
+- **Accessibility: 1 boundary case out of 11 total (9%).** The 10 clear-cut seeds are all trivial (missing alt text, missing labels). The subtle cases — semantically incorrect ARIA, tab order disruption from PHP-generated markup, live region misuse in AJAX updates, focus management in modal plugins — barely exist in UGC because developers rarely ask about them publicly.
+- **i18n: 4 boundary cases out of 13 total (31%).** Mostly plugin review handbook rules (missing `__()` wrappers). The hard cases — non-reorderable sprintf placeholders breaking translator workflows, plural form edge cases for Slavic languages, HTML inside translation strings — are almost absent from UGC.
+
+This isn't a collection failure — it reflects that these dimensions are genuinely underrepresented in public WordPress discourse. People post obvious security holes and performance problems. They don't post "my ARIA attributes are semantically incorrect" or "my `_n()` call hardcodes the singular form."
+
+### What this means for the seed strategy
+
+The UGC-sourceable boundary cases for accessibility and i18n may not exist in sufficient quantity. Options being explored:
+1. **Targeted boundary collection prompt** — narrower search with specific anti-pattern types defined (5 accessibility types: hidden interactive elements, tab order disruption, live region misuse, color-only state, focus management; 4 i18n types: non-reorderable sprintf, plural edge cases, HTML in strings, locale-dependent formatting). Exhaustive source list (36+ domains across WordPress ecosystem, accessibility communities, i18n communities, security research databases, conference talks).
+2. **Accept the gap and compensate during agent generation** — use the few boundary seeds that exist as exemplars and rely on Claude agents to extrapolate the patterns. Risk: agents may produce plausible-looking but technically incorrect boundary reasoning for dimensions they've seen few examples of.
 
 ### Decision: human seeds as Phase 4.1 blocking first task
 
 Rather than inserting a new Phase 4.0, human-annotated seed data curation becomes the first task of Phase 4.1 (Reasoning Data Generation). This blocks the rest of 4.1 — Claude agents can't generate reasoning at scale until the seeds exist as few-shot exemplars.
 
-### Why blocking is acceptable
-
 The seeds serve triple duty:
 1. **Few-shot exemplars** for Claude agents generating reasoning chains at scale (Phase 4.1)
 2. **Validated test set** for Phase 4.4 eval — Spearman calibration, TP/TN/FP/FN, reasoning quality scoring all need ground truth that doesn't come from the same synthetic pipeline
 3. **Threshold calibration anchor** — the "arbitrary thresholds, subject to human override" problem from Phase 4 triage can't be solved data-driven without a validated reference set
-
-### What gets annotated
-
-~50-100 examples, focused on:
-- **Reasoning quality over code pairs.** The synthetic mutation pipeline (phase2_mutate.py) already produces (good, bad) pairs. The gap is in *contrastive explanation quality* — human annotators write dimension-specific reasoning ("the mutation removes `wp_nonce_field()` from the form handler, creating a CSRF vector") rather than vague pattern-matching.
-- **Boundary cases over clear-cut ones.** Subtle defects (missing nonce in specific plugin context, performance issue only at scale) where LLM-generated reasoning is weakest and human signal is densest. Trivially bad mutations (delete all escaping) are handled fine by agents.
-
-### What this changes in 4.1
-
-Phase 4.1's existing "pilot-validate 20-50 examples" step becomes: curate human seeds first, then use them as few-shot for the pilot, then scale. The rest of 4.1 (generation at scale, parse validation, <2% failure rate) is unchanged.
 
 ---
 
