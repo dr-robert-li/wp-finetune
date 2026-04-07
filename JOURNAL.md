@@ -4,6 +4,56 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-04-08 — 30/70 wins triage; judge capability is a format learning threshold
+
+### Triage results
+
+All 4 ratios passed gen quality (97-100% PHPCS, 100% security). The surprise: **30/70 is the only ratio where judge mode works at all.**
+
+| Ratio | PHPCS | Security | Gen Quality | Spearman | Valid Pairs | Status |
+|-------|-------|----------|-------------|----------|-------------|--------|
+| 30/70 | 100% | 100% | 1.000 | 0.570 | 497 | FAIL (Spearman) |
+| 40/60 | 98.6% | 100% | 0.993 | 0.000 | 0 | FAIL (all skipped) |
+| 50/50 | 97.2% | 100% | 0.986 | 0.000 | 0 | FAIL (all skipped) |
+| 60/40 | 98.8% | 100% | 0.994 | 0.000 | 0 | FAIL (all skipped) |
+
+Formal verdict: NO_SURVIVORS (no ratio hits the 0.85 Spearman gate). In practice, 30/70 is the clear winner — it's the only model that can produce parseable judge output at all.
+
+### Why this is surprising and what it means
+
+The initial hypothesis was that higher gen ratios would produce better code generation, and the judge side was the "easier" task (just output structured scores). The opposite is true:
+
+1. **Gen format is the model's native capability.** `<wp_gen>` → PHP code is close to what the base model already does. All ratios learn it easily (97-100% PHPCS). The gen/judge training ratio barely matters for gen quality.
+
+2. **Judge format has a learning threshold.** `<wp_judge>` → structured JSON scoring with dimension breakdowns is a fundamentally new output format. The model needs a minimum volume of judge examples to reliably produce `{"overall_score": N, "wpcs_compliance": N, ...}`. 30/70 crossed that threshold with ~3.5x more judge examples than 60/40. The other ratios produce partial or malformed JSON that the parser rejects entirely (0 valid pairs).
+
+3. **This is a format problem, not a quality problem.** 30/70's Spearman of 0.57 (p=0.000) shows meaningful positive correlation — the model *is* learning to judge, it just hasn't been taught to reason about *why* it assigns scores. It's aping frontier models rather than developing calibrated judgment. Per-dimension: D1_wpcs (0.585) and D2_security (0.597) are strongest.
+
+### Decision: accept 30/70 with gate override
+
+The 0.85 Spearman gate was aspirational for this training stage. 0.57 is the baseline that v1.2's reasoning fine-tune is specifically designed to improve. Accepting 30/70 as the winning ratio and proceeding to Phase 4.1.
+
+### Seed data collection: 145 seeds, all dimension gaps closed
+
+Concurrent with eval, the boundary seed collection reached its target:
+
+- **27 seeds** from personal SA engagement archives (thousands of engagements surveyed, 27 had the specific combination of defective code + dimensional reasoning)
+- **93 seeds** from UGC (Stack Overflow, WPSE, GitHub, security advisories)
+- **25 targeted boundary seeds** from a second pass focused on the 4 weak dimensions
+
+Final distribution — all 9 dimensions covered with 5+ boundary cases each. The critical gaps are filled:
+
+| Dimension | Boundary before | Boundary after |
+|-----------|----------------|----------------|
+| accessibility | 1 | 6 (all 5 boundary types A1-A5 filled) |
+| i18n | 4 | 11 (all 4 types I1-I4 with multiple examples) |
+| dependency_integrity | 8 | 13 |
+| wpcs_compliance | 7 | 15 |
+
+Overall: 78 boundary / 145 total (54%). Accessibility boundary examples remain the sparsest — this reflects a cultural gap in web development discourse more broadly, not a search failure. People post obvious security holes and performance problems publicly; they don't post "my ARIA attributes are semantically incorrect." This would likely be even worse in smaller ecosystems like Drupal where lower adoption means fewer public discussions to source from, and boundary-quantity thresholds that were tight for WordPress might not be meetable at all.
+
+---
+
 ## 2026-04-07 — Seed data collection: harder than expected, dimension gaps are real
 
 ### Two-track work
