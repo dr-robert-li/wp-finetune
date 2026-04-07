@@ -170,7 +170,11 @@ Plans:
   3. Bulk deep judge CoT agent generates reasoning-enriched examples where each response contains dimension-by-dimension analysis with line references, issue identification, fix suggestions, and structured scores — sourced from `data/phase1_extraction/output/{passed,failed}/`
   4. Bulk critique-then-fix agent generates examples from the existing mutation pool (`data/phase2_synthetic/output/mutated/`) where each triple contains the defective code, a structured critique with severity per dimension (critical/high/medium/low), and the corrected version in a clearly delimited `<corrected_code>` block
   5. Both generation streams reach their target example counts without >2% parse failure rate (measured by multi-strategy JSON extraction with hard rejection)
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 04.1-01-PLAN.md — Seed import + deep judge CoT generation script (seed data import, few-shot agent generation with 9-dimension quality gate)
+- [ ] 04.1-02-PLAN.md — Critique-then-fix generation script + pilot execution of both streams with human review gate
 
 ### Phase 4.2: Reasoning Dataset Assembly — INSERTED
 **Goal**: Both generation streams are merged into a quality-validated training dataset with score consistency enforcement, canonical output template compliance, and the correct training mix (reasoning examples + 30% flat judge replay + 20% wp_gen replay) — ready for continued fine-tuning
