@@ -51,8 +51,18 @@ models/
 adapters/
 merged_model/
 
+# Eval output (generated results, large JSONLs)
+output/
+
 # Telemetry output (ephemeral run data)
 telemetry/
+
+# wp-bench (cloned repo, re-cloneable)
+wp-bench/
+
+# Claude Code local project config (user-specific)
+.claude/projects/
+.claude/worktrees/
 
 # MLflow artifacts
 mlruns/
@@ -61,3 +71,6 @@ mlruns.db
 # Parse failure logs
 *_parse_failures.jsonl
 unsloth_compiled_cache/
+
+# Nohup output
+nohup.out
