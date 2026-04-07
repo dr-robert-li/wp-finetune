@@ -8,6 +8,7 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 - **Phase 11 GRPO: gen-only → dual-mode (gen + judge reasoning)** — Phase 4 triage showed gen is solved (0.99+ PHPCS) but judge is the bottleneck (Spearman 0.57, only 30/70 produces parseable output). GRPO-05 promoted from optional scope note to hard requirement. Judge receives equal or greater GRPO budget. Judge rewards: score-reasoning consistency (Claude evaluator agent) + fix correctness (PHPCS/security scanner)
 - **Phase 4 triage: 30/70 wins** — Only ratio producing parseable judge output (497 valid pairs). Spearman gate lowered from 0.85 to 0.50 (aspirational → achievable). Triage decisions recorded in PROJECT.md Key Decisions table
 - **README** — Phase 4 marked complete, v1.2 marked next, v3.0 shows dual-mode GRPO
+- **`wp-finetune:run-evaluation` SKILL.md** — Stale `python -m wp_bench.run` reference in wp-bench section; updated to `wp-bench run` (CLI entry point)
 
 ### Fixed
 - **`scripts/merge_adapter.py` stale docstring** — Module-level docstring described strategy step 2 as `device_map=auto`; corrected to `device_map=cpu` to match the actual implementation (line 90). Purely documentary — no functional change

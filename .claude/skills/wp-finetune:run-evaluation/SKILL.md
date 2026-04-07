@@ -215,7 +215,7 @@ The orchestrator clones wp-bench if needed, then runs it via `config/wp-bench.ya
 # Under the hood (orchestrator handles this automatically):
 # 1. Reads config/wp-bench.yaml, overrides output_path per ratio
 # 2. Writes temp config to output/eval_triage/ratio_{ratio}/wp_bench_config_tmp.yaml
-# 3. Runs: python -m wp_bench.run --config <tmp_config>  (cwd=wp-bench/)
+# 3. Runs: wp-bench run --config <tmp_config>  (cwd=wp-bench/)
 # 4. Output: output/eval_triage/ratio_{ratio}/wp_bench_results.json
 ```
 
