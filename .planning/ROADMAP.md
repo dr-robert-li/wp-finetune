@@ -84,7 +84,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. A conversion script reads `wp_top1000_plugins_final.csv` and `wp_top100_themes_final.csv`, applies quality_tier automatically based on vulnerability data (plugins with unpatched critical CVEs get "assessed" tier with stricter path filters), and writes a valid repos.yaml containing WordPress Core, at least 10 plugins, and at least 5 themes, each with quality_tier, path_filters, and description fields
   4. A test run of phase2_mutate.py with PHPCS unavailable hard-exits instead of silently accepting mutations
   5. All Claude API calls in the pipeline use exponential backoff with jitter and route bulk judging through the Batch API
-**Plans**: 2 plans
+**Plans**: 3 plans
 
 Plans:
 - [x] 01-01-PLAN.md — Shared utilities and pre-flight (utils.py with extract_json, backoff, checkpoint, Batch API; preflight.py with tool validation)
@@ -170,11 +170,12 @@ Plans:
   3. Bulk deep judge CoT agent generates reasoning-enriched examples where each response contains dimension-by-dimension analysis with line references, issue identification, fix suggestions, and structured scores — sourced from `data/phase1_extraction/output/{passed,failed}/`
   4. Bulk critique-then-fix agent generates examples from the existing mutation pool (`data/phase2_synthetic/output/mutated/`) where each triple contains the defective code, a structured critique with severity per dimension (critical/high/medium/low), and the corrected version in a clearly delimited `<corrected_code>` block
   5. Both generation streams reach their target example counts without >2% parse failure rate (measured by multi-strategy JSON extraction with hard rejection)
-**Plans**: 2 plans
+**Plans**: 3 plans
 
 Plans:
 - [ ] 04.1-01-PLAN.md — Seed import + deep judge CoT generation script (seed data import, few-shot agent generation with 9-dimension quality gate)
 - [ ] 04.1-02-PLAN.md — Critique-then-fix generation script + pilot execution of both streams with human review gate
+- [ ] 04.1-03-PLAN.md — Bulk generation of both streams (deep judge CoT + critique-then-fix) after pilot approval
 
 ### Phase 4.2: Reasoning Dataset Assembly — INSERTED
 **Goal**: Both generation streams are merged into a quality-validated training dataset with score consistency enforcement, canonical output template compliance, and the correct training mix (reasoning examples + 30% flat judge replay + 20% wp_gen replay) — ready for continued fine-tuning
