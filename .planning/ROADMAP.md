@@ -62,7 +62,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 <summary>v3.0 GRPO & Production Deployment (Phases 10-14) — Planned</summary>
 
 - [ ] **Phase 10: Reward Infrastructure** - Build composite reward pipeline (70% verifiable / 30% judge) with security hard gate, MO-GRPO normalization, and VeRPO partial credit
-- [ ] **Phase 11: GRPO Training** - Gen-only GRPO on hot experts with RSPO router-shift stabilization and collapse monitoring
+- [ ] **Phase 11: GRPO Training** - Dual-mode GRPO (gen + judge reasoning) on hot experts with RSPO router-shift stabilization and collapse monitoring
 - [ ] **Phase 12: LoRA Merge & Expert Pruning (AIMER vs REAP)** - Merge adapters, run both AIMER (weight-based) and REAP (calibration-based) at 3 compression ratios, compare to determine if WordPress specialization benefits domain-aware pruning
 - [ ] **Phase 13: Comparative Evaluation** - A/B compare GRPO+pruned model against v2.0 SFT-only on wp-bench, all 9 dimensions, speed delta, and model size
 - [ ] **Phase 14: Packaging** - Cascading compression gates (bf16 baseline → quantization decision → HuggingFace upload → E2E inference validation)
@@ -202,7 +202,7 @@ Plans:
   1. `eval_judge.py` Spearman correlation on the reasoning adapter meets or exceeds the winning ratio baseline — absolute score distributions per dimension are compared and any dimension with mean shift >0.5 points vs baseline is flagged
   2. `eval_gen.py` PHPCS pass rate on the reasoning adapter is within 2pp of the winning ratio baseline — generation regression is not masked by improved judge metrics
   3. Reasoning quality evaluated by separately spawned Claude evaluator agent (independent context, opaque inputs only): dimension coverage rate, score-reasoning consistency rate, and coherence assessment on representative sample — recorded alongside Nemotron-free automated checks (regex dimension coverage, issue specificity)
-  4. wp-bench scores on the reasoning adapter meet or exceed the winning ratio baseline
+  4. **[wp-bench HARD GATE]** wp-bench score on the reasoning adapter meets or exceeds the 30_70 baseline — this gate was deferred from Phase 4 triage (wp-bench was skipped there) and MUST execute here before adapter merge. Requires a different eval harness than Phase 4: serve the reasoning adapter as a merged model (not LoRA-on-base) and point wp-bench config at the merged checkpoint. Adapter merge is blocked until this gate passes.
   5. Human reviews a sample of reasoning outputs (deep judge CoT and critique-then-fix) and explicitly approves quality before the adapter merge runs — `models/qwen3-30b-wp-{winning}-reasoning-merged/` is written only after human sign-off
   6. Fix correctness: critique-then-fix corrected code passes PHPCS + security scanner, confirming fixes actually resolve identified issues — pass rate recorded
   7. Classification accuracy: confusion matrix (TP/TN/FP/FN) at score thresholds derived from eval_judge.py per-example data — precision, recall, F1 recorded per dimension
@@ -293,7 +293,7 @@ Plans:
 **Depends on**: Phase 8
 **Requirements**: EVAL2-01, EVAL2-02
 **Success Criteria** (what must be TRUE):
-  1. An A/B eval runs each k-sweep MoE-Sieve adapter (all three k budgets) against v1.0 full-LoRA on wp-bench and the static eval suite, with results recorded per adapter
+  1. **[wp-bench HARD GATE]** An A/B eval runs each k-sweep MoE-Sieve adapter (all three k budgets) against v1.0 full-LoRA on wp-bench and the static eval suite, with results recorded per adapter. wp-bench is a hard gate here — each k-sweep adapter must be evaluated on wp-bench; any adapter that regresses below the v1.0 full-LoRA wp-bench score is eliminated. Note: this phase requires a different eval harness than Phase 4 (adapters served as merged models; wp-bench config must target the merged checkpoint for each k-sweep variant).
   2. The report covers all 9 eval dimensions per adapter, overall scores, inference speed delta, and seed variance — sufficient to identify the optimal k and confirm MoE-Sieve quality before proceeding to GRPO
 **Plans**: TBD
 
@@ -316,12 +316,12 @@ Plans:
   4. WordPress standards checks use VeRPO partial credit — each check is weighted by difficulty estimated from pass rate across group samples, and rarely-passed checks contribute more signal than common ones
 **Plans**: TBD
 
-### Phase 11: GRPO Training
-**Goal**: Gen-only GRPO refines the MoE-Sieve model's generation quality on hot experts, with RSPO router-shift stabilization ensuring experts do not drift from their established routing patterns. **Scope note:** GRPO could also refine judge reasoning quality using verifiable rewards (PHPCS/security scanner verify critique-then-fix corrections; separately spawned Claude evaluator agent for scoring consistency checks). This is a v3.0 scope decision — evaluate after gen-only GRPO results are available.
+### Phase 11: GRPO Training (Gen + Judge Reasoning)
+**Goal**: Dual-mode GRPO refines both generation quality and judge reasoning quality on hot experts, with RSPO router-shift stabilization. Judge is the primary bottleneck (Spearman 0.57 vs gen 0.99+ at SFT stage) and receives equal or greater GRPO budget. Gen rewards use PHPCS + security + VeRPO. Judge rewards use score-reasoning consistency (separately spawned Claude evaluator agent) and fix correctness (PHPCS/security scanner on critique-then-fix corrected code).
 **Depends on**: Phase 10
 **Requirements**: GRPO-05, GRPO-06, GRPO-07, GRPO-08
 **Success Criteria** (what must be TRUE):
-  1. GRPO training applies gradients only to `<wp_gen>` generation tasks — `<wp_judge>` capability is completely frozen from SFT and receives no gradient updates
+  1. GRPO training applies gradients to both `<wp_gen>` and `<wp_judge>` task pathways — gen uses verifiable code quality rewards, judge uses reasoning consistency + fix correctness rewards
   2. GRPO gradients flow only to hot routed experts, attention layers, router gates, and shared experts — cold routed experts receive no updates, preserving structural stability
   3. RSPO router-shift ratio is computed between rollout and training phases, applied as stop-gradient floor multiplied into the clipped importance ratio before aggregation, and logged per step
   4. Training halts automatically if router-shift ratio exceeds the stability threshold — the halt is triggered by per-step monitoring, not a post-hoc check
@@ -345,7 +345,7 @@ Plans:
 **Depends on**: Phase 12
 **Requirements**: EVAL3-01, EVAL3-02
 **Success Criteria** (what must be TRUE):
-  1. An A/B eval runs the GRPO+pruned model against v2.0 SFT-only (best k MoE-Sieve adapter) on wp-bench and the static eval suite, with all results recorded
+  1. **[wp-bench HARD GATE]** An A/B eval runs the GRPO+pruned model against v2.0 SFT-only (best k MoE-Sieve adapter) on wp-bench and the static eval suite, with all results recorded. wp-bench is a hard gate before packaging — the GRPO+pruned model must meet or exceed the v2.0 SFT-only wp-bench score before Phase 14 begins. Note: this phase requires a different eval harness than Phase 4 (pruned model is a full merged model with no adapter; wp-bench config must target the pruned checkpoint directly).
   2. The report covers all 9 eval dimensions, inference speed delta (expected significant improvement from pruning), model size reduction, and seed variance — sufficient to confirm the full v3.0 pipeline adds value before packaging
 **Plans**: TBD
 

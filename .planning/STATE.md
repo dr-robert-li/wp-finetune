@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Judge Reasoning Fine-Tune
 status: executing
-stopped_at: v1.2 roadmap created — Phases 4.1-4.4 defined; Phase 4 triage must complete before Phase 4.1 begins
-last_updated: "2026-04-05T00:00:00.000Z"
-last_activity: 2026-04-05 -- v1.2 roadmap phases inserted (4.1-4.4)
+stopped_at: Phase 4 triage complete — 30_70 accepted via human override (Spearman gate waived; PHPCS+security gates passed); Phase 4.1 may now begin
+last_updated: "2026-04-06T00:00:00.000Z"
+last_activity: 2026-04-06 -- Phase 4 triage human override recorded; 30_70 accepted as winner
 progress:
   total_phases: 18
   completed_phases: 6
@@ -88,6 +88,8 @@ Recent decisions affecting current work:
 - [v3.0 Sequencing]: Phase 9 gates Phase 10 — MoE-Sieve eval results must confirm readiness before GRPO begins
 - [v3.0 Pruning]: REAP tests 25%, 50%, 75% compression ratios; WordPress domain narrowness may support aggressive pruning to ~8-12B total params
 - [v3.0 Packaging]: Quantization is the final step in Phase 14, gated by cascading eval (Gate 1 bf16 baseline, Gate 2 quantization decision)
+- [Phase 4 Triage 2026-04-06]: Human override — 30_70 accepted as winning ratio despite Spearman gate failure (0.5698 < 0.85); only ratio with non-zero Spearman, perfect PHPCS+security; Spearman threshold waived for this triage run, remains a hard gate in Phase 4.4 with human-annotated test set
+- [Phase 4 Triage 2026-04-06]: wp-bench gate deferred to Phase 4.4 — was skipped in triage run; Phase 4.4 must run full wp-bench eval before adapter merge
 - [v2.0 Roadmap]: Phase 7 execution blocked on Phase 4.4 completing (need reasoning-enhanced adapter; fresh routing profile required)
 - [Phase 06-adaptive-training-planner]: Human review checkpoint approved 2026-04-01 — all Phase 6 scripts verified before DGX execution
 - [Phase 06-adaptive-training-planner]: Canonical JSONL schema updated to GPUSampler fields (watts, temperature_c, gpu_util_pct, mem_available_gb)
@@ -97,8 +99,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Complete Phase 4 plan 3 (human review checkpoint: inspect E_eff + eval results + wp-bench scores, approve triage survivors)
-- After Phase 4 triage completes: begin Phase 4.1 (pilot 20-50 examples per stream before bulk generation)
+- Phase 4 triage COMPLETE (human override accepted 2026-04-06) — begin Phase 4.1 (pilot 20-50 examples per stream before bulk generation) using 30_70 adapter
 - Verify mutation pool size at `data/phase2_synthetic/output/mutated/` before setting Phase 4.1 critique-then-fix targets
 - Resolve Unsloth PEFT stacking question before Phase 4.3: Option A (nested LoRA on adapter) vs Option B (LoRA on merged model) — blocking question for training setup
 
@@ -130,6 +131,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-04-05
-Stopped at: v1.2 roadmap created — Phases 4.1-4.4 inserted; waiting for Phase 4 triage to complete before Phase 4.1 begins
+Last session: 2026-04-06
+Stopped at: Phase 4 triage complete (human override — 30_70 accepted); Phase 4.1 unblocked
 Resume file: None
