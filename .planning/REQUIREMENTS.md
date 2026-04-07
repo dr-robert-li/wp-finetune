@@ -159,16 +159,16 @@ Requirements for RL alignment before MoE-Sieve. Depends on v1.2 completing (need
 - [ ] **GRPO-03**: MO-GRPO normalization on all reward signals — each signal normalized by within-group variance to prevent single-signal dominance
 - [ ] **GRPO-04**: VeRPO-style partial credit for WordPress standards checks — each check weighted by difficulty (estimated from pass rate across group samples; rarely-passed checks contribute more signal)
 
-### GSPO/GRPO Training
+### GSPO Training (GRPO optional — decide at phase planning time)
 
 - [ ] **GRPO-05**: Dual-mode RL — both `<wp_gen>` generation quality and `<wp_judge>` reasoning quality improved via RL. Gen rewards: PHPCS + security + VeRPO. Judge rewards: score-reasoning consistency (via separately spawned Claude evaluator agent), fix correctness (PHPCS/security scanner on critique-then-fix corrected code). Judge is the primary bottleneck (Spearman 0.57 vs gen 0.99+ at SFT stage) and receives equal or greater RL budget.
-- [ ] **GRPO-06**: Full-MoE RL — GSPO/GRPO gradients flow to all routed experts + attention + router gates + shared experts. Protected expert set from Phase 7 monitored via routing regularizer (KL divergence penalty if protected experts deactivate below baseline frequency). GSPO (sequence-level) preferred per D-08; GRPO with larger group size + Pro-GRPO expand-then-prune as fallback.
-- [ ] **GRPO-07**: RSPO router-shift stabilization — compute router-shift ratio between rollout and training phases, apply stop-gradient and floor, multiply into clipped importance ratio before aggregation
+- [ ] **GRPO-06**: Full-MoE RL — GSPO gradients flow to all routed experts + attention + router gates + shared experts. Protected expert set from Phase 7 monitored via routing regularizer (KL divergence penalty if protected experts deactivate below baseline frequency). GSPO (sequence-level) is the primary objective for MoE stability (D-08). If GSPO proves unavailable or too costly at Phase 9 planning time, GRPO with larger group size + Pro-GRPO expand-then-prune is the fallback — this is an implementation decision deferred to Phase 9.
+- [ ] **GRPO-07**: Router-shift stabilization (RSPO for GSPO, or equivalent for GRPO) — compute router-shift ratio between rollout and training phases, apply stop-gradient and floor, multiply into clipped importance ratio before aggregation
 - [ ] **GRPO-08**: Router-shift ratio monitored throughout training — log per-step shift metrics; halt training if shift exceeds stability threshold (routing collapse early warning)
 
 ### RL Comparative Evaluation
 
-- [ ] **RLEV-01**: RL model (GSPO/GRPO output) evaluated against v1.2 SFT baseline on wp-bench and all 9 eval dimensions — no dimension regression permitted; judge Spearman improvement expected (primary RL target)
+- [ ] **RLEV-01**: RL model (GSPO output, or GRPO if selected at Phase 9) evaluated against v1.2 SFT baseline on wp-bench and all 9 eval dimensions — no dimension regression permitted; judge Spearman improvement expected (primary RL target)
 - [ ] **RLEV-02**: RL evaluation report includes reward metric convergence curves, router-shift stability log (per-step shift ratios), protected expert retention rate vs Phase 7 baseline, gen/judge quality delta, and anti-hack eval results
 
 ## v3.0 Requirements — MoE-Sieve, Pruning & Packaging
