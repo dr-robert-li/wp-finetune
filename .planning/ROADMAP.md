@@ -14,7 +14,7 @@ Six phases take the project from fragile pipeline scripts to a trained dual-mode
 
 Phases 4.1-4.4 (v1.2) add deep judge reasoning capability to the winning ratio adapter — generating reasoning-enriched judge data and critique-then-fix pairs, continued fine-tuning at lower LR, and re-evaluating before proceeding. Phase 4 triage (identifying the winning adapter) is a hard prerequisite. The v1.2 reasoning adapter must be complete before Phase 7 because routing profiles must reflect the final reasoning capability.
 
-Phases 7-10 (v2.0) implement RL alignment per Issue #1's recommended order: first profile routing and identify the protected expert set (Phase 7), then build reward infrastructure with anti-hack eval (Phase 8), then run GSPO/GRPO on the FULL MoE (Phase 9), and finally evaluate RL output against the v1.2 SFT baseline (Phase 10). RL runs before MoE-Sieve because "routing statistics should reflect reward-aligned behavior, not SFT pre-training usage" (Issue #1). GSPO (sequence-level) is the primary RL objective for MoE stability (D-08); GRPO with larger group size + Pro-GRPO expand-then-prune as fallback. Phase 10 gates Phase 11.
+Phases 7-10 (v2.0) implement RL alignment per Issue #1's recommended order: first profile routing and identify the protected expert set (Phase 7), then build reward infrastructure with anti-hack eval (Phase 8), then run GSPO on the FULL MoE (Phase 9), and finally evaluate RL output against the v1.2 SFT baseline (Phase 10). RL runs before MoE-Sieve because "routing statistics should reflect reward-aligned behavior, not SFT pre-training usage" (Issue #1). GSPO (sequence-level) is the primary RL objective for MoE stability (D-08). Whether GRPO is also evaluated as a fallback is an optional decision deferred to Phase 9 planning time. Phase 10 gates Phase 11.
 
 Phases 11-15 (v3.0) apply MoE-Sieve on the RL-trained model using RL-policy routing logs (Phase 11), evaluate the sieved model (Phase 12), merge LoRA and prune with AIMER (primary, D-09) or REAP (optional comparison) on the final routing distribution (Phase 13), evaluate against v2.0 (Phase 14), and package for production (Phase 15). MoE-Sieve operates post-RL so that sieve selection reflects reward-aligned routing, not SFT routing. LoRA must be merged before pruning runs — activation magnitudes require the unified model.
 
@@ -54,8 +54,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 7: Router Profiling & Protected Expert Set** - Gradient-free profiling pass tagging expert routing counts by task token affinity, identify dual-purpose experts that must not be pruned (D-10), with stability verification and concentration report
 - [ ] **Phase 8: Reward Infrastructure** - Build composite reward pipeline (70% verifiable / 30% judge) with security hard gate, MO-GRPO normalization, VeRPO partial credit, and anti-hack eval set (D-11)
-- [ ] **Phase 9: GSPO/GRPO Training** - Dual-mode RL (gen + judge reasoning) on FULL MoE with RSPO router-shift stabilization and collapse monitoring; GSPO (sequence-level) primary per D-08, GRPO + Pro-GRPO as fallback; protected experts from Phase 7 monitored
-- [ ] **Phase 10: RL Comparative Evaluation** - Compare RL model (GSPO/GRPO output) against v1.2 SFT baseline on wp-bench and all 9 eval dimensions; gates v3.0
+- [ ] **Phase 9: GSPO Training** - Dual-mode RL (gen + judge reasoning) on FULL MoE with router-shift stabilization and collapse monitoring; GSPO (sequence-level) is the primary objective for MoE stability (D-08); GRPO is an optional fallback decided at Phase 9 planning time; protected experts from Phase 7 monitored
+- [ ] **Phase 10: RL Comparative Evaluation** - Compare RL model against v1.2 SFT baseline on wp-bench and all 9 eval dimensions; gates v3.0
 
 </details>
 
@@ -266,7 +266,7 @@ Plans:
 
 ### v2.0 RL Alignment
 
-**Milestone Goal:** Profile routing to identify the protected expert set, build reward infrastructure with anti-hack eval, run GSPO/GRPO on the FULL MoE (not sieve-constrained), and evaluate RL output against v1.2 SFT baseline. RL runs before MoE-Sieve per Issue #1: routing statistics should reflect reward-aligned behavior, not SFT pre-training usage. GSPO (sequence-level) is the primary RL objective for MoE stability (D-08).
+**Milestone Goal:** Profile routing to identify the protected expert set, build reward infrastructure with anti-hack eval, run GSPO on the FULL MoE (not sieve-constrained), and evaluate RL output against v1.2 SFT baseline. RL runs before MoE-Sieve per Issue #1: routing statistics should reflect reward-aligned behavior, not SFT pre-training usage. GSPO (sequence-level) is the primary RL objective for MoE stability (D-08). Whether to also evaluate GRPO as an alternative is an optional decision deferred to Phase 9 planning time.
 
 **Dependency:** Phase 4.4 (v1.2 complete — reasoning adapter merged) must complete before Phase 7. Phase 7 profiles the v1.2 reasoning adapter, not the v1.0 adapter. Phase 10 gates Phase 11 (MoE-Sieve).
 
@@ -295,19 +295,19 @@ Plans:
   5. Anti-hack eval set constructed and validated (D-11) — penalizes verbosity reward hacking, template critique collapse, and self-preference bias; eval set used as a regression check during RL training
 **Plans**: TBD
 
-### Phase 9: GSPO/GRPO Training
-**Goal**: Dual-mode RL refines both generation quality and judge reasoning quality on the FULL MoE (not sieve-constrained), with RSPO router-shift stabilization. GSPO (sequence-level) is the primary RL objective for MoE stability (D-08); GRPO with larger group size + Pro-GRPO expand-then-prune as fallback. Judge is the primary bottleneck (Spearman 0.57 vs gen 0.99+ at SFT stage) and receives equal or greater RL budget. Gen rewards use PHPCS + security + VeRPO. Judge rewards use score-reasoning consistency (separately spawned Claude evaluator agent) and fix correctness (PHPCS/security scanner on critique-then-fix corrected code). Protected experts from Phase 7 monitored via routing regularizer.
+### Phase 9: GSPO Training
+**Goal**: Dual-mode RL refines both generation quality and judge reasoning quality on the FULL MoE (not sieve-constrained), with router-shift stabilization. GSPO (sequence-level) is the primary RL objective for MoE stability (D-08). Whether to also evaluate GRPO (with larger group size + Pro-GRPO expand-then-prune) as a fallback is an implementation decision made at Phase 9 planning time based on GSPO availability and feasibility. Judge is the primary bottleneck (Spearman 0.57 vs gen 0.99+ at SFT stage) and receives equal or greater RL budget. Gen rewards use PHPCS + security + VeRPO. Judge rewards use score-reasoning consistency (separately spawned Claude evaluator agent) and fix correctness (PHPCS/security scanner on critique-then-fix corrected code). Protected experts from Phase 7 monitored via routing regularizer.
 **Depends on**: Phase 8
 **Requirements**: GRPO-05, GRPO-06, GRPO-07, GRPO-08
 **Success Criteria** (what must be TRUE):
   1. RL training applies gradients to both `<wp_gen>` and `<wp_judge>` task pathways — gen uses verifiable code quality rewards, judge uses reasoning consistency + fix correctness rewards
-  2. GSPO/GRPO gradients flow to all routed experts, attention layers, router gates, and shared experts — full-MoE RL, not hot-only (sieve comes after RL). Protected expert set from Phase 7 monitored via routing regularizer (KL divergence penalty if protected experts deactivate below baseline frequency)
-  3. RSPO router-shift ratio is computed between rollout and training phases, applied as stop-gradient floor multiplied into the clipped importance ratio before aggregation, and logged per step
+  2. RL gradients flow to all routed experts, attention layers, router gates, and shared experts — full-MoE RL, not hot-only (sieve comes after RL). Protected expert set from Phase 7 monitored via routing regularizer (KL divergence penalty if protected experts deactivate below baseline frequency)
+  3. Router-shift ratio is computed between rollout and training phases, applied as stop-gradient floor multiplied into the clipped importance ratio before aggregation, and logged per step
   4. Training halts automatically if router-shift ratio exceeds the stability threshold — the halt is triggered by per-step monitoring, not a post-hoc check
 **Plans**: TBD
 
 ### Phase 10: RL Comparative Evaluation
-**Goal**: The RL model (GSPO/GRPO output) is compared against the v1.2 SFT baseline on all quality dimensions, confirming RL improved judge reasoning (the primary target) without regressing generation quality — gates v3.0 MoE-Sieve
+**Goal**: The RL model is compared against the v1.2 SFT baseline on all quality dimensions, confirming RL improved judge reasoning (the primary target) without regressing generation quality — gates v3.0 MoE-Sieve
 **Depends on**: Phase 9
 **Requirements**: RLEV-01, RLEV-02
 **Success Criteria** (what must be TRUE):
@@ -405,7 +405,7 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 6. Adaptive Training Planner | v1.1 | 6/6 | Complete | 2026-04-01 |
 | 7. Router Profiling & Protected Expert Set | v2.0 | 0/? | Not started | - |
 | 8. Reward Infrastructure | v2.0 | 0/? | Not started | - |
-| 9. GSPO/GRPO Training | v2.0 | 0/? | Not started | - |
+| 9. GSPO Training | v2.0 | 0/? | Not started | - |
 | 10. RL Comparative Evaluation | v2.0 | 0/? | Not started | - |
 | 11. Post-RL MoE-Sieve | v3.0 | 0/? | Not started | - |
 | 12. MoE-Sieve Comparative Evaluation | v3.0 | 0/? | Not started | - |

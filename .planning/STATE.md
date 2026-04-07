@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
-status: Phase 4 triage is a hard prerequisite for all v1.2 phases
+status: executing
 stopped_at: "Phase 4.1 context gathered — seed expansion strategy, issue #1 pipeline reorder accepted"
-last_updated: "2026-04-07T21:52:46.705Z"
+last_updated: "2026-04-07T23:45:21.775Z"
 progress:
-  total_phases: 6
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_phases: 16
+  completed_phases: 2
+  total_plans: 12
+  completed_plans: 9
   percent: 33
 ---
 
@@ -20,13 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 04 — evaluation (triage must complete before v1.2 work begins)
+**Current focus:** Phase 04.1 — reasoning-data-generation-inserted
 
 ## Current Position
 
-Phase: 04 (evaluation) — EXECUTING (plan 3 of 3 pending)
+Phase: 04.1 (reasoning-data-generation-inserted) — EXECUTING
+Plan: 1 of 3
 Next phase: 4.1 (Reasoning Data Generation) — blocked on Phase 4 triage completing
-Status: Phase 4 triage is a hard prerequisite for all v1.2 phases
+Status: Executing Phase 04.1
 
 Progress: [██░░░░░░░░] 33% (phases 1, 2, 3, 4 partial, 6 complete vs 18 total)
 
