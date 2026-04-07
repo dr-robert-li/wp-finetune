@@ -1,16 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: Judge Reasoning Fine-Tune
-status: executing
-stopped_at: Phase 4 triage complete — 30_70 accepted via human override (Spearman gate waived; PHPCS+security gates passed); Phase 4.1 may now begin
-last_updated: "2026-04-06T00:00:00.000Z"
-last_activity: 2026-04-06 -- Phase 4 triage human override recorded; 30_70 accepted as winner
+milestone: v1.0
+milestone_name: MVP
+status: Phase 4 triage is a hard prerequisite for all v1.2 phases
+stopped_at: "Phase 4.1 context gathered — seed expansion strategy, issue #1 pipeline reorder accepted"
+last_updated: "2026-04-07T21:52:46.705Z"
 progress:
-  total_phases: 18
-  completed_phases: 6
-  total_plans: 9
-  completed_plans: 8
+  total_phases: 6
+  completed_phases: 1
+  total_plans: 3
+  completed_plans: 3
   percent: 33
 ---
 
@@ -131,6 +130,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-04-06
-Stopped at: Phase 4 triage complete (human override — 30_70 accepted); Phase 4.1 unblocked
-Resume file: None
+Last session: 2026-04-07T21:52:46.701Z
+Stopped at: Phase 4.1 context gathered — seed expansion strategy, issue #1 pipeline reorder accepted
+Resume file: .planning/phases/04.1-reasoning-data-generation-inserted/04.1-CONTEXT.md
