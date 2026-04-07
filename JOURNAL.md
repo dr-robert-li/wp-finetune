@@ -10,9 +10,9 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 Running concurrent with Phase 4 eval triage (all 4 ratios now processing), seed data collection for v1.2 Phase 4.1 is underway. Two sources: internal (extracted from proprietary SE engagement archives) and external (UGC from public sites via agent-driven search).
 
-### Internal extraction: 27 seeds from testing archives
+### Internal extraction: 27 seeds from thousands of Solutions Architecture engagements
 
-Exhaustive survey of 5 tarballs of SE engagement data. The testing/ folder yielded 27 seeds with deep code-level annotations (actual PHP/SQL, dimensional reasoning, WP-function citations). The Scoping-Tool/ folder (716 reports) was higher-level hosting/sizing analysis — no code-depth annotations extractable. 27 seeds is the complete internal yield.
+Exhaustive survey of 5 tarballs spanning thousands of personal Solutions Architecture engagement notes and recommendations accumulated over years of WordPress consulting. The testing/ folder yielded 27 seeds with deep code-level annotations (actual PHP/SQL, dimensional reasoning, WP-function citations). The Scoping-Tool/ folder (716 reports) was higher-level hosting/sizing analysis — no code-depth annotations extractable. Despite the volume of source material, only 27 engagements contained the specific combination needed: actual defective code + human-written dimensional reasoning explaining what's wrong. Most engagement notes are architectural recommendations or configuration guidance, not code-level critique.
 
 ### External UGC collection: 93 seeds, but dimension distribution is skewed
 
