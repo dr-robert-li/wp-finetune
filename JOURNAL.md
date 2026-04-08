@@ -4,6 +4,38 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-04-08 — Phase 4.1 bulk generation underway; plans hardened against council review
+
+### Bulk generation commenced
+
+Phase 4.1 (Reasoning Data Generation) is executing in parallel across 3 plans. The 145 curated seeds are now seeding agent-scale generation of the two training streams:
+
+- **Plan 04.1-01** — Deep judge CoT generation. Pilot complete; Task 3 retroactive citation audit running against pilot artifacts.
+- **Plan 04.1-02** — Critique-then-fix generation. Pilot complete; Task 4 retroactive CtF quality audit running against pilot artifacts.
+- **Plan 04.1-03** — Bulk generation + hardened merge + human checkpoint. All 6 tasks executing (bulk CoT, bulk CtF, hardened merge with manifests, audit samples, blocking human checkpoint).
+
+### Plans hardened from multi-AI review
+
+Before executing, the plans were revised (not replaced) against a consensus review. Eight concerns were translated into concrete tasks with hardcoded thresholds:
+
+| Concern | Severity | Threshold |
+|---------|----------|-----------|
+| Citation accuracy (not just presence) | HIGH | `citation_validity_rate >= 0.70` |
+| Critique-fix alignment + PHP lint | HIGH | `lint >= 0.80`, `alignment >= 0.50`, `differs >= 0.95` |
+| Quality-based bulk acceptance | HIGH | `parse_fail < 0.02`, `dup <= 0.05` |
+| Train/eval contamination | HIGH | SHA-256 manifests per input function ID |
+| N/A dimension policy | MED | max 2 N/A dims with ≥20-char justification |
+| Dedup (prompt + output side) | MED | normalised SHA-256, `duplicate_rate ≤ 0.05` |
+| Post-bulk human audit | MED | N=20/stream, blocking checkpoint ≥17/20 pass |
+
+The citation accuracy threshold is the one to watch — "dimension-specific reasoning that cites real WordPress functions" is the whole point of the seed strategy, and 0.70 is a floor, not a target.
+
+### Execution note
+
+The bulk CoT/CtF streams and the hardening audits are independent (audits run against pilot artifacts, bulk runs against fresh inputs) so they're running in parallel waves instead of sequentially. The human checkpoint at the end of Plan 03 is the blocking gate — no advance to Phase 4.2 until ≥17/20 samples per stream pass manual review.
+
+---
+
 ## 2026-04-08 — Model council recommends reordering pipeline and GSPO over GRPO
 
 ### What happened
