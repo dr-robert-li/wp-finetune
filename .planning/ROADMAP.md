@@ -18,6 +18,8 @@ Phases 7-10 (v2.0) implement RL alignment per Issue #1's recommended order: firs
 
 Phases 11-15 (v3.0) apply MoE-Sieve on the RL-trained model using RL-policy routing logs (Phase 11), evaluate the sieved model (Phase 12), merge LoRA and prune with AIMER (primary, D-09) or REAP (optional comparison) on the final routing distribution (Phase 13), evaluate against v2.0 (Phase 14), and package for production (Phase 15). MoE-Sieve operates post-RL so that sieve selection reflects reward-aligned routing, not SFT routing. LoRA must be merged before pruning runs — activation magnitudes require the unified model.
 
+**LLM Execution Pattern (MANDATORY across all phases):** ALL LLM-driven work — data generation, reasoning generation, judge evaluation, eval-by-LLM scoring — MUST use **Claude Code agents** (parallel `Agent(run_in_background=true)` spawning following the `wp-finetune:run-data-pipeline` SKILL.md pattern), NOT the Anthropic API directly. The direct API path (`call_with_backoff`, `anthropic.Anthropic()`) is acceptable only for small pilots (<50 examples). At scale (>100 examples), the direct API fails due to rate limits, timeout cascades, and error recovery brittleness; Claude Code agents use the subscription quota and parallelize reliably. This is a hard rule established from prior phase experience (Phase 1/2 generated 134K judged + 29K CoT examples successfully via agents).
+
 ## Phases
 
 **Phase Numbering:**
@@ -171,12 +173,18 @@ Plans:
   3. Bulk deep judge CoT agent generates reasoning-enriched examples where each response contains dimension-by-dimension analysis with line references, issue identification, fix suggestions, and structured scores — sourced from `data/phase1_extraction/output/{passed,failed}/`
   4. Bulk critique-then-fix agent generates examples from the existing mutation pool (`data/phase2_synthetic/output/mutated/`) where each triple contains the defective code, a structured critique with severity per dimension (critical/high/medium/low), and the corrected version in a clearly delimited `<corrected_code>` block
   5. Both generation streams reach their target example counts without >2% parse failure rate (measured by multi-strategy JSON extraction with hard rejection)
+**Skill**: `wp-finetune:run-reasoning-data-gen` (NEW — create at Phase 4.1-04 if needed; 4.1-01/02/03 plans serve as pattern reference)
+  - **LLM execution: Claude Code agents ONLY** — parallel `Agent(run_in_background=true)` per batch following `wp-finetune:run-data-pipeline` pattern. NO Anthropic API. Pilot scripts (4.1-01/02) used direct API which works for 40 examples; bulk (4.1-03) uses agent spawning per the global LLM rule
+  - DGX usage: NONE — pure CPU work, no GPU containers needed
+  - Pattern: spawn N parallel agents → each reads input batch JSON + seeds + rubric → generates output batch JSON via in-context reasoning → merge step applies quality gates
+  - Fix-test-validate loop: pilot → human review → bulk via agents → quality audit → if accepted count below target, spawn additional agent batches with incremented index
+  - Quality gates run as a deterministic merge step (not in agents): citation accuracy verification, PHP lint via `subprocess.run(["php", "-l", ...])`, critique-fix alignment check, all 9 dimensions present
 **Plans**: 3 plans
 
 Plans:
-- [ ] 04.1-01-PLAN.md — Seed import + deep judge CoT generation script (seed data import, few-shot agent generation with 9-dimension quality gate)
+- [x] 04.1-01-PLAN.md — Seed import + deep judge CoT generation script (seed data import, few-shot agent generation with 9-dimension quality gate)
 - [x] 04.1-02-PLAN.md — Critique-then-fix generation script + pilot execution of both streams with human review gate
-- [ ] 04.1-03-PLAN.md — Bulk generation of both streams (deep judge CoT + critique-then-fix) after pilot approval
+- [ ] 04.1-03-PLAN.md — Bulk generation of both streams via Claude Code agents (NOT API) after pilot approval
 
 ### Phase 4.2: Reasoning Dataset Assembly — INSERTED
 **Goal**: Both generation streams are merged into a quality-validated training dataset with score consistency enforcement, canonical output template compliance, and the correct training mix (reasoning examples + 30% flat judge replay + 20% wp_gen replay) — ready for continued fine-tuning
@@ -187,6 +195,12 @@ Plans:
   2. All retained reasoning examples conform to the canonical output template: dimension-by-dimension analysis prose followed by `[/REASONING]` separator followed by a JSON scores block inside `<judge_output>` tags — no example deviates from this structure
   3. The assembled training mix contains: reasoning examples (deep CoT + critique-then-fix) plus 30% flat judge replay examples from the original phase 1/2 judge training data plus 20% wp_gen replay examples from the phase 1 training set — actual counts and percentages recorded in metadata.json
   4. `data/reasoning_dataset/openai_train.jsonl` and `openai_val.jsonl` are exported with an 80/20 split (larger val slice than main dataset due to smaller total size)
+**Skill**: `wp-finetune:run-reasoning-assembly` (NEW — create during phase planning)
+  - **LLM execution**: Claude Code agents ONLY for any LLM-judged consistency checks. NO Anthropic API. Score consistency validation MAY be deterministic (regex/threshold rules: "if reasoning text contains 'critical' and security score >=7 → reject") OR may spawn Claude Code agents for nuanced cases (NOT API). Decision deferred to phase planning.
+  - DGX usage: NONE — pure Python (json manipulation, regex, file I/O)
+  - Pattern: read 4.1 batch outputs → run deterministic consistency rules → for ambiguous cases, spawn Claude Code agents to judge consistency → assemble training mix via Python → export multi-format
+  - Fix-test-validate loop: dry-run consistency rules on 10 known-good + 10 known-bad pilot examples → tune thresholds → run on full dataset → human review of rejected examples → adjust if false-positive rate >5% → re-run
+  - Quality audit: rejection rate per rule type, training mix percentage verification, output schema validation
 **Plans**: TBD
 
 ### Phase 4.3: Reasoning Fine-Tune — INSERTED
@@ -199,6 +213,7 @@ Plans:
   3. MoE router layer weights are confirmed frozen in the Unsloth PEFT config before training begins — training log shows router parameters excluded from the optimizer parameter count
   4. Training completes 1-2 epochs on the combined reasoning dataset without OOM or loss divergence, and parse failure rate on checkpoint eval outputs stays below 5% throughout (abort condition if exceeded)
 **Skill**: Reuse `wp-finetune:run-training` (reasoning-specific config)
+  - **LLM execution**: No LLM API used — pure DGX training execution. The model itself is being trained on the reasoning dataset from Phase 4.2; no external LLM calls during the training loop.
   - DGX pre-flight: `dgx.validate(["toolbox", "config", "memory:70"])` + `dgx.ensure_ready("unsloth_studio")` — same pattern as Phase 3 training
   - Config: `train_config_reasoning.yaml` with LR <=2e-5, `max_seq_length: 8192`, `base_adapter: adapters/qwen3-30b-wp-{winning}/`
   - Router freeze verification: before training starts, confirm router params excluded from optimizer via `--dry-run` output inspection
@@ -224,6 +239,7 @@ Plans:
   7. Classification accuracy: confusion matrix (TP/TN/FP/FN) at score thresholds derived from eval_judge.py per-example data — precision, recall, F1 recorded per dimension
   8. Reasoning length distribution: median, p95, max token counts recorded and reviewed against expected range (flag if p95 > 6000 tokens or median < 500)
 **Skill**: Reuse `wp-finetune:run-evaluation` (reasoning-specific eval + merge)
+  - **LLM execution**: Claude Code agents ONLY (`Agent(run_in_background=true)` per `wp-finetune:run-data-pipeline` SKILL.md pattern) — NO Anthropic API direct calls. REVL-03 reasoning quality scoring (dimension coverage, score-reasoning consistency, coherence) spawns independent Claude Code evaluator agents with opaque inputs. REVL-06 fix correctness uses deterministic PHPCS + security scanner (no LLM). REVL-05 human review is manual (no LLM).
   - DGX execution: serve reasoning adapter as merged model via `dgx.execute("vllm", ...)` — NOT LoRA-on-base (wp-bench requires merged checkpoint)
   - Embeds `observe-evaluation` telemetry agents inline during eval runs
   - Sequential eval loop: eval_gen.py → eval_judge.py → eval_gate.py → wp-bench — each gate checked before proceeding to next
@@ -304,6 +320,7 @@ Plans:
   5. Decision matrix combining Phase 4 eval score and Phase 7 adapter E_eff selects the ratio with lowest E_eff at equivalent quality (within 2pp) — single ratio chosen for all subsequent work
   6. Protected expert set identified: experts with significant activation for BOTH gen and judge tasks are flagged as dual-purpose and must be retained through all subsequent phases (MoE-Sieve, pruning). Protected set exported as a per-layer mask for downstream consumption
 **Skill**: `wp-finetune:run-profiling` (NEW — create during phase planning)
+  - **LLM execution**: No LLM API used — gradient-free profiling runs forward passes of the ratio adapters on DGX, hooking `Qwen3MoeSparseMoeBlock` gating outputs. No external LLM calls; the model under profiling is the only model invoked (and only for local forward-pass routing capture, not generation judging).
   - Extends `run-evaluation` pattern: `dgx.execute("eval_toolbox", ...)` for GPU-bound profiling
   - Embeds `observe-evaluation` telemetry agents inline during profiling runs
   - Idempotency: `idempotency_check="output/profiling/{ratio}/routing_report.json"`
@@ -322,6 +339,7 @@ Plans:
   4. WordPress standards checks use VeRPO partial credit — each check is weighted by difficulty estimated from pass rate across group samples, and rarely-passed checks contribute more signal than common ones
   5. Anti-hack eval set constructed and validated (D-11) — penalizes verbosity reward hacking, template critique collapse, and self-preference bias; eval set used as a regression check during RL training
 **Skill**: No new skill — reward pipeline is a Python module (`scripts/reward_pipeline.py`) with pytest test suite
+  - **LLM execution**: Claude Code agents ONLY (`Agent(run_in_background=true)` per `wp-finetune:run-data-pipeline` SKILL.md pattern) — NO Anthropic API direct calls. The reward pipeline itself uses deterministic signals (PHPCS, security scanner, VeRPO, MO-GRPO normalization) plus the frozen local `wp_judge` model for the 30% judge component — no external LLM during reward computation. Anti-hack eval set construction (D-11 adversarial examples: verbose padding, template critiques, self-preferencing) uses Claude Code agents to score candidate adversarial cases during set construction.
   - Fix-test-validate loop: each reward component (PHPCS, security, VeRPO, MO-GRPO norm) is built, unit-tested, and validated independently before integration
   - Integration test: end-to-end reward computation on 50 held-out gen+judge examples with known-good and known-bad cases
   - Anti-hack eval set validated: run reward pipeline on adversarial examples (verbose padding, template critiques, self-preferencing) — all must score below threshold
@@ -337,6 +355,7 @@ Plans:
   3. Router-shift ratio is computed between rollout and training phases, applied as stop-gradient floor multiplied into the clipped importance ratio before aggregation, and logged per step
   4. Training halts automatically if router-shift ratio exceeds the stability threshold — the halt is triggered by per-step monitoring, not a post-hoc check
 **Skill**: `wp-finetune:run-rl-training` (NEW — create during phase planning)
+  - **LLM execution**: Claude Code agents ONLY (`Agent(run_in_background=true)` per `wp-finetune:run-data-pipeline` SKILL.md pattern) — NO Anthropic API direct calls. GRPO-05 judge rewards use "score-reasoning consistency (separately spawned Claude evaluator agent)" during rollout scoring — these MUST be Claude Code agents. Gen rewards use deterministic PHPCS + security + VeRPO (no LLM). The training loop itself runs on DGX with the policy model; external judge-consistency scoring dispatches to Claude Code agents in parallel batches between rollout and gradient steps.
   - Extends `run-training` pattern: per-epoch loop with `dgx.execute("unsloth_studio", ...)` for DGX Spark execution
   - DGX validation: `dgx.validate(["toolbox", "config", "memory:70"])` pre-flight + `dgx.ensure_ready("unsloth_studio")` container check
   - Embeds `observe-training` telemetry agents inline (6-agent team: gpu-metrics, thermal-throttling, training-metrics, disk-io, checkpoint-integrity, container-monitor)
@@ -356,6 +375,7 @@ Plans:
   1. **[wp-bench HARD GATE]** The RL model is evaluated against the v1.2 SFT baseline on wp-bench and all 9 eval dimensions — no dimension regression permitted; judge Spearman improvement expected (primary RL target). wp-bench is a hard gate — RL model must meet or exceed v1.2 SFT baseline wp-bench score before Phase 11 begins.
   2. RL evaluation report includes reward metric convergence curves, router-shift stability log (per-step shift ratios), protected expert retention rate vs Phase 7 baseline, gen/judge quality delta, and anti-hack eval results — sufficient to confirm RL added value before proceeding to MoE-Sieve
 **Skill**: Reuse `wp-finetune:run-evaluation` (extend with RL-specific metrics)
+  - **LLM execution**: Claude Code agents ONLY (`Agent(run_in_background=true)` per `wp-finetune:run-data-pipeline` SKILL.md pattern) — NO Anthropic API direct calls. Any LLM-judged eval dimensions (reasoning quality, score-reasoning consistency, anti-hack adversarial scoring for RLEV-02 anti-hack eval results) spawn independent Claude Code evaluator agents. Deterministic evals (PHPCS, security, wp-bench) run on DGX without LLM calls.
   - Extends existing eval skill with: router-shift stability report, protected expert retention comparison, anti-hack eval pass rates
   - DGX execution: `dgx.execute("eval_toolbox", ...)` for serving RL model + running eval suite
   - Embeds `observe-evaluation` telemetry agents inline during eval runs
@@ -384,6 +404,7 @@ Plans:
   4. Three k-sweep runs complete at budgets of approximately 13, 32, and 64 active experts per layer, each producing a separate adapter checkpoint
   5. The optimal k is declared as the smallest budget where wp-bench score falls within +/-1pp of full-LoRA, verified by TOST equivalence test (epsilon=2pp) across 3+ seeds; all protected experts from Phase 7 must be in the retained set at the optimal k
 **Skill**: `wp-finetune:run-sieve-training` (NEW — create during phase planning)
+  - **LLM execution**: No LLM API used — MoE-Sieve selective training runs on DGX with the RL-trained model. Re-profiling uses gradient-free forward passes (no external LLM). Training applies LoRA adapters to hot routed experts with no external LLM calls. Any inline wp-bench scoring during k-sweeps is deterministic (no LLM judge).
   - Extends `run-training` pattern: per-k-budget loop with `dgx.execute("unsloth_studio", ...)` for DGX Spark execution
   - Step 0: Re-profile routing using `wp-finetune:run-profiling` on the RL-trained model (RL-policy routing logs, not SFT)
   - DGX validation: `dgx.validate(["toolbox", "config", "memory:70"])` + `dgx.ensure_ready("unsloth_studio")`
@@ -405,6 +426,7 @@ Plans:
   1. **[wp-bench HARD GATE]** An A/B eval runs each k-sweep MoE-Sieve adapter (all three k budgets) against v2.0 RL baseline on wp-bench and the static eval suite, with results recorded per adapter. wp-bench is a hard gate — each k-sweep adapter must be evaluated on wp-bench; any adapter that regresses below the v2.0 RL baseline wp-bench score is eliminated. Note: this phase requires a different eval harness than Phase 4 (adapters served as merged models; wp-bench config must target the merged checkpoint for each k-sweep variant).
   2. The report covers all 9 eval dimensions per adapter, overall scores, inference speed delta, and seed variance — sufficient to identify the optimal k and confirm MoE-Sieve quality before proceeding to pruning
 **Skill**: Reuse `wp-finetune:run-evaluation` (extend with sieve-specific A/B comparison)
+  - **LLM execution**: Claude Code agents ONLY (`Agent(run_in_background=true)` per `wp-finetune:run-data-pipeline` SKILL.md pattern) — NO Anthropic API direct calls. Any LLM-judged eval dimensions (reasoning quality, score-reasoning consistency) across the k-sweep adapters spawn independent Claude Code evaluator agents. Deterministic evals (wp-bench, PHPCS, security, TOST equivalence) run on DGX without LLM calls.
   - Per-k-adapter eval loop: for each k-sweep adapter, serve as merged model via `dgx.execute("vllm", ...)` → run full eval suite + wp-bench → record results
   - Embeds `observe-evaluation` telemetry agents inline during eval
   - Fix-test-validate loop: if eval harness fails (model serving error, wp-bench timeout) → fix serving config → re-run eval for that adapter
@@ -424,6 +446,7 @@ Plans:
   5. Domain specificity analysis: expert overlap between AIMER and REAP retention sets quantified per layer — high overlap = WordPress isn't specialized enough for calibration advantage; low overlap = REAP captures domain routing AIMER misses
   6. Winning method + ratio selected by dimension-level retention (especially D2_security), preferring higher compression at equivalent quality; final model physically pruned with router re-normalization
 **Skill**: `wp-finetune:run-pruning` (NEW — create during phase planning)
+  - **LLM execution**: No LLM API used — AIMER is weight-based (task-agnostic, no calibration) and REAP is calibration-based using WordPress calibration data (activation statistics, not LLM judging). Both methods run on the merged model via DGX forward passes; no external LLM calls. Eval across all 9 dimensions in this phase uses gating-mask evaluation (not LLM-judged scoring).
   - Step 1: Merge LoRA via `dgx.execute("unsloth_studio", "python", "-m", "scripts.merge_adapter", ...)` with idempotency check on merged checkpoint
   - Step 2: Merge validation — load merged model, run 10 inference samples, compare outputs against adapter-on-base (exact match)
   - Step 3: AIMER loop: for each ratio in [25%, 50%, 75%], run AIMER → eval via gating mask across all 9 dims → record results
@@ -443,6 +466,7 @@ Plans:
   1. **[wp-bench HARD GATE]** An A/B eval runs the pruned model against v2.0 RL baseline on wp-bench and the static eval suite, with all results recorded. wp-bench is a hard gate before packaging — the pruned model must meet or exceed the v2.0 RL baseline wp-bench score before Phase 15 begins. Note: this phase requires a different eval harness than Phase 4 (pruned model is a full merged model with no adapter; wp-bench config must target the pruned checkpoint directly).
   2. The report covers all 9 eval dimensions, inference speed delta (expected significant improvement from pruning), model size reduction, and seed variance — sufficient to confirm the full v3.0 pipeline adds value before packaging
 **Skill**: Reuse `wp-finetune:run-evaluation` (extend with pruned-model serving + speed benchmarks)
+  - **LLM execution**: Claude Code agents ONLY (`Agent(run_in_background=true)` per `wp-finetune:run-data-pipeline` SKILL.md pattern) — NO Anthropic API direct calls. Any LLM-judged eval dimensions (reasoning quality, score-reasoning consistency) for the pruned model comparison spawn independent Claude Code evaluator agents. Deterministic evals (wp-bench, PHPCS, security, latency/throughput benchmarks) run on DGX without LLM calls.
   - Serve pruned model via `dgx.execute("vllm", ...)` — no LoRA adapter, direct model loading
   - Embeds `observe-inference` telemetry agents inline for latency/throughput measurement during eval
   - Speed benchmark: TTFT and tokens/sec measured across 100 prompts for both `<wp_gen>` and `<wp_judge>` task types
@@ -463,6 +487,7 @@ Plans:
   4. The HuggingFace model card documents the full compression lineage (base -> RL -> MoE-Sieve -> merge -> AIMER/REAP winner -> quantization level) with eval scores at each gate, AIMER vs REAP comparison results, and usage examples for both task tokens
   5. E2E inference validation confirms both `<wp_gen>` and `<wp_judge>` prompts produce correct outputs via the final shipped format on the target serving stack (vLLM or Ollama)
 **Skill**: `wp-finetune:run-packaging` (NEW — create during phase planning)
+  - **LLM execution**: No LLM API used — quantization (Q8/Q6/Q5/Q4), model serving validation, and HuggingFace upload are deterministic operations. E2E inference validation runs `<wp_gen>` and `<wp_judge>` prompts directly against the final shipped model on the target serving stack (vLLM or Ollama) and checks for coherent output — no external LLM judge.
   - Extends `observe-packaging` telemetry pattern: file-integrity agents track quantization output sizes and special token presence
   - Gate 1: `dgx.execute("eval_toolbox", ...)` for bf16 baseline measurement with idempotency check
   - Gate 2: Human decision checkpoint — present Gate 1 results, recommend quantization decision
