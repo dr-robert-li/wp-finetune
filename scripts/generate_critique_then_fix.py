@@ -577,19 +577,21 @@ def main():
     print(f"Target: {target} examples")
     print(f"Output: {output_path}")
 
-    # Load checkpoint for resume
+    # Load checkpoint for resume (examples persisted across runs)
     checkpoint = load_checkpoint(checkpoint_key)
     completed_ids = set(checkpoint.get("completed", []))
+    examples = list(checkpoint.get("examples", []))
+    if examples:
+        print(f"Resuming from checkpoint: {len(examples)} examples already generated")
 
     # Shuffle deterministically
     random.seed(42)
     random.shuffle(failed_functions)
 
-    examples = []
-    parse_attempts = 0
-    parse_failures = 0
-    lint_failures = 0
-    alignment_failures = 0
+    parse_attempts = int(checkpoint.get("parse_attempts", 0))
+    parse_failures = int(checkpoint.get("parse_failures", 0))
+    lint_failures = int(checkpoint.get("lint_failures", 0))
+    alignment_failures = int(checkpoint.get("alignment_failures", 0))
 
     for i, func in enumerate(failed_functions):
         if len(examples) >= target:
@@ -633,19 +635,33 @@ def main():
         examples.append(example)
         checkpoint.setdefault("completed", []).append(func_id)
 
+        # Persist counters and examples in checkpoint for full resume
+        checkpoint["examples"] = examples
+        checkpoint["parse_attempts"] = parse_attempts
+        checkpoint["parse_failures"] = parse_failures
+        checkpoint["lint_failures"] = lint_failures
+        checkpoint["alignment_failures"] = alignment_failures
+
         if len(examples) % 5 == 0:
             print(f"  Generated {len(examples)}/{target} examples "
                   f"(parse_fail={parse_failures}, lint_fail={lint_failures}, "
                   f"align_fail={alignment_failures})")
-
-        # Save checkpoint every 20 examples
-        if len(examples) % 20 == 0:
+            # Checkpoint every 5 examples + write incremental output
             save_checkpoint(checkpoint_key, checkpoint)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(output_path, "w") as f:
+                json.dump(examples, f, indent=2)
 
     # Final checkpoint save
+    checkpoint["examples"] = examples
+    checkpoint["parse_attempts"] = parse_attempts
+    checkpoint["parse_failures"] = parse_failures
+    checkpoint["lint_failures"] = lint_failures
+    checkpoint["alignment_failures"] = alignment_failures
     save_checkpoint(checkpoint_key, checkpoint)
 
     # Save output
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w") as f:
         json.dump(examples, f, indent=2)
 
