@@ -25,6 +25,63 @@ WP_API_CITATIONS = [
 ]
 
 
+FAILED_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "failed"
+
+
+def load_failed_functions_filtered() -> list:
+    """Load Phase 1 failed functions with concrete defects only.
+
+    Source filter (Fix 2): Only include functions where the Phase 1 assessment
+    shows concrete defects — i.e., critical_failures is non-empty OR any dimension
+    score is <= 5. This prevents routing functions tagged 'low quality' by aggregate
+    score alone, which caused the model to fabricate cosmetic improvements.
+
+    Returns only functions with body length >= 50 chars.
+    """
+    functions = []
+    skipped_no_defect = 0
+
+    if not FAILED_DIR.exists():
+        return functions
+
+    for f in sorted(FAILED_DIR.glob("*.json")):
+        try:
+            with open(f) as fh:
+                entries = json.load(fh)
+            if not isinstance(entries, list):
+                continue
+            for entry in entries:
+                assessment = entry.get("assessment", {})
+                critical_failures = assessment.get("critical_failures", [])
+                scores = assessment.get("scores", {})
+                has_low_score = any(v <= 5 for v in scores.values() if isinstance(v, (int, float)))
+
+                # Source filter: concrete defect required
+                if not critical_failures and not has_low_score:
+                    skipped_no_defect += 1
+                    continue
+
+                body = entry.get("body", "")
+                docblock = entry.get("docblock", "")
+                code = f"{docblock}\n{body}".strip() if docblock else body
+                if len(code) < 50:
+                    continue
+
+                functions.append({
+                    "code": code,
+                    "source_file": f.name,
+                    "function_name": entry.get("function_name", "unknown"),
+                    "critical_failures": critical_failures,
+                    "low_score_dims": [k for k, v in scores.items() if isinstance(v, (int, float)) and v <= 5],
+                })
+        except (json.JSONDecodeError, KeyError):
+            continue
+
+    print(f"Source filter: {len(functions)} functions with concrete defects "
+          f"({skipped_no_defect} skipped — no critical_failures and all scores > 5)")
+    return functions
+
+
 def has_pattern(code, patterns):
     for p in patterns:
         if re.search(p, code, re.IGNORECASE):
@@ -301,10 +358,20 @@ def detect_issues(code, fn_name, source_file):
 def generate_corrected_code(code, fn_name, issues):
     """Generate corrected PHP code that fixes critical/high severity issues.
 
+    Rules:
+    - Fix ONLY the issues identified in detect_issues() — do not insert defensive
+      boilerplate (input sanitization, generic validation, defensive var checks) unless
+      the critique explicitly identifies that defect.
+    - Do NOT reference variables that don't exist in the function signature.
+      In particular, never insert code referencing $args unless $args appears in the
+      original function signature.
+    - The corrected code must be syntactically valid PHP.
+
     Always produces code different from the original by at minimum:
     - Adding/improving PHPDoc block
-    - Adding security guards where missing
-    - Wrapping output with escaping functions
+    - Adding security guards WHERE the critique identified them as missing
+    - Wrapping output with escaping functions WHERE XSS was identified
+    - Removing debug statements WHERE debug statements were identified
     """
     fn_base = fn_name.split("::")[-1] if "::" in fn_name else fn_name
     corrected = code
@@ -373,44 +440,46 @@ def generate_corrected_code(code, fn_name, issues):
                 count=1
             )
 
-    # ALWAYS add real code-level changes to ensure corrected_code differs after normalization.
-    # normalization strips PHP comments (/** */ and // ), so changes must be in executable code.
+    # Add real code-level fixes for critical/high issues only.
+    # IMPORTANT: Only insert code that references variables actually present in the
+    # function signature. Do NOT insert generic boilerplate that references $args or
+    # other undefined variables. Fix only the issues detected in detect_issues().
+    #
+    # Removed bogus fallback templates that previously inserted:
+    #   "// Defensive: Added input sanitization per WPCS review"
+    #   "$sanitized_input = array_map('sanitize_text_field', is_array($args ?? null) ..."
+    #   "// Input validation added per code quality review"
+    #   "if ( empty( $args ) && func_num_args() > 0 ) ..."
+    # Both referenced an undefined $args variable and were inserted regardless of context.
 
-    # Strategy: Insert defensive coding patterns into the function body based on issue types.
-    # Find the function body opening brace to insert after it.
     func_body_match = re.search(r'function\s+\S+\s*\([^)]*\)\s*\{', corrected)
     if func_body_match:
         insert_pos = func_body_match.end()
         additions = []
 
-        # Add type-hinting assertions or validation based on what's missing
         sec_issues = issues.get("security", {})
         sql_issues = issues.get("sql_safety", {})
-        i18n_issues = issues.get("i18n", {})
-        cq_issues = issues.get("code_quality", {})
 
-        # Ensure at least one substantive code addition
+        # Only insert guards for concrete issues that were explicitly detected.
+        # Each inserted snippet must use variables/APIs the function actually receives.
         if sec_issues.get("severity") in ("critical", "high") and "wp_verify_nonce" not in corrected:
+            # Nonce guard — $_REQUEST['_wpnonce'] is always available in WP request context
             additions.append(
                 f"\n    if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_key( $_REQUEST['_wpnonce'] ), '{fn_base}_nonce' ) ) {{\n        wp_send_json_error( array( 'message' => esc_html__( 'Invalid security token.', 'plugin-slug' ) ) );\n        return;\n    }}"
             )
         elif sec_issues.get("severity") in ("critical", "high") and "current_user_can" not in corrected:
+            # Capability check — no function arguments referenced
             additions.append(
                 f"\n    if ( ! current_user_can( 'manage_options' ) ) {{\n        wp_send_json_error( array( 'message' => esc_html__( 'Permission denied.', 'plugin-slug' ) ) );\n        return;\n    }}"
             )
         elif sql_issues.get("severity") == "critical" and "$wpdb->prepare" not in corrected:
+            # Add caching layer — uses func_get_args() which is always defined
             additions.append(
                 f"\n    global $wpdb;\n    $cache_key = 'wp_plugin_{fn_base}_' . md5( serialize( func_get_args() ) );\n    $cached = wp_cache_get( $cache_key, 'plugin-slug' );\n    if ( false !== $cached ) {{\n        return $cached;\n    }}"
             )
-        elif cq_issues.get("severity") in ("high", "medium"):
-            additions.append(
-                f"\n    // Input validation added per code quality review\n    if ( empty( $args ) && func_num_args() > 0 ) {{\n        return new WP_Error( 'invalid_args', esc_html__( 'Invalid arguments provided.', 'plugin-slug' ) );\n    }}"
-            )
-        else:
-            # Fallback: always add at minimum a type-checking guard
-            additions.append(
-                f"\n    // Defensive: Added input sanitization per WPCS review\n    $sanitized_input = array_map( 'sanitize_text_field', is_array( $args ?? null ) ? $args : array() );"
-            )
+        # No fallback template — if no critical/high security or SQL issue was detected,
+        # the fixes applied above (escaping, doc block, debug removal) are sufficient.
+        # Do NOT insert generic boilerplate referencing undefined variables.
 
         if additions:
             corrected = corrected[:insert_pos] + "".join(additions) + corrected[insert_pos:]
@@ -491,9 +560,52 @@ def process_ctf_batch(batch_num):
     return len(examples)
 
 
+def partition_input_batches(num_batches: int = 10, batch_size: int = 20,
+                             seed: int = 42) -> int:
+    """Partition filtered Phase 1 failed functions into input batch files.
+
+    Uses load_failed_functions_filtered() — only functions with concrete defects.
+    Writes _input_batch_{NN:02d}.json files to the batches directory.
+
+    Returns: number of functions written to input batches.
+    """
+    import random
+    fns = load_failed_functions_filtered()
+    if len(fns) < 200:
+        print(f"BLOCKED: Only {len(fns)} filtered functions found — need > 200. "
+              "Check source filter field names.")
+        return 0
+
+    batches_dir = PROJECT_ROOT / "data" / "phase4_reasoning" / "critique_then_fix" / "batches"
+    batches_dir.mkdir(parents=True, exist_ok=True)
+
+    random.seed(seed)
+    random.shuffle(fns)
+
+    total_written = 0
+    for i in range(num_batches):
+        batch = fns[i * batch_size:(i + 1) * batch_size]
+        if not batch:
+            break
+        out = batches_dir / f"_input_batch_{i:02d}.json"
+        out.write_text(json.dumps(batch, indent=2))
+        total_written += len(batch)
+        print(f"Wrote input batch {i:02d}: {len(batch)} functions -> {out}")
+
+    print(f"\nPartition complete: {num_batches} batches × {batch_size} = {total_written} functions")
+    return total_written
+
+
 if __name__ == "__main__":
-    total = 0
-    for i in range(5):
-        n = process_ctf_batch(i)
-        total += n
-    print(f"\nTotal CtF examples generated: {total}")
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == "partition":
+        num_batches = int(sys.argv[2]) if len(sys.argv) > 2 else 10
+        batch_size = int(sys.argv[3]) if len(sys.argv) > 3 else 20
+        partition_input_batches(num_batches=num_batches, batch_size=batch_size)
+    else:
+        # Process all existing input batches
+        total = 0
+        for i in range(10):
+            n = process_ctf_batch(i)
+            total += n
+        print(f"\nTotal CtF examples generated: {total}")
