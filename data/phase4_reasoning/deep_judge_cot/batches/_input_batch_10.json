@@ -1,0 +1,122 @@
+[
+  {
+    "code": "/**\n\t * Get the note.\n\t *\n\t * @return Note\n\t */\nfunction get_note() {\n\t\t$content_lines = array(\n\t\t\t__( 'The Pinterest For WooCommerce plugin has been updated to version 1.4.0, which now supports Pinterest\\'s new V5 API, replacing the outgoing V3 API.<br/>You need to re-authorize the plugin through your WooCommerce dashboard to maintain integration functionality and access new features.', 'pinterest-for-woocommerce' ),\n\t\t);\n\n\t\t$additional_data = array(\n\t\t\t'role' => 'administrator',\n\t\t);\n\n\t\t$note = new Note();\n\t\t$note->set_title( __( 'Pinterest For WooCommerce action required.', 'pinterest-for-woocommerce' ) );\n\t\t$note->set_content( implode( '', $content_lines ) );\n\t\t$note->set_content_data( (object) $additional_data );\n\t\t$note->set_type( Note::E_WC_ADMIN_NOTE_ERROR );\n\t\t$note->set_name( self::NOTE_NAME );\n\t\t$note->set_source( 'woocommerce-admin' );\n\t\t$note->add_action(\n\t\t\t'pinterest-for-woocommerce-v5-update-failure-go-to-settings',\n\t\t\t__( 'Authenticate with Pinterest', 'pinterest-for-woocommerce' ),\n\t\t\tadmin_url( 'admin.php?page=wc-admin&path=/pinterest/onboarding' ),\n\t\t\tNote::E_WC_ADMIN_NOTE_ACTIONED,\n\t\t\ttrue,\n\t\t\t'primary'\n\t\t);\n\t\treturn $note;\n\t}",
+    "source_file": "pinterest-for-woocommerce.json",
+    "source_dir": "passed",
+    "function_name": "TokenExchangeFailure::get_note"
+  },
+  {
+    "code": "/**\n\t * Outputs the content of the widget.\n\t *\n\t * @param array $args     Widget arguments.\n\t * @param array $instance Widget instance.\n\t *\n\t * @since 1.0.0\n\t *\n\t * @return void\n\t * @SuppressWarnings(PHPMD.UnusedFormalParameter)\n\t * @SuppressWarnings(PHPMD.ElseExpression)\n\t */\nfunction widget( $args, $instance ) {\n\t\t$defaults = [\n\t\t\t'title'              => '',\n\t\t\t'post_type'          => '',\n\t\t\t'query_type'         => '',\n\t\t\t'portfolio_hover'    => '',\n\t\t\t'post_date'          => '',\n\t\t\t'comments_count'     => '',\n\t\t\t'thumbnail'          => '',\n\t\t\t'posts_num'          => '',\n\t\t\t'order_by'           => '',\n\t\t\t'category'           => [],\n\t\t\t'portfolio_category' => [],\n\t\t];\n\n\t\t$instance            = wp_parse_args( $instance, $defaults );\n\t\t$title               = $instance['title'];\n\t\t$post_type           = $instance['post_type'];\n\t\t$query_type          = $instance['query_type'];\n\t\t$portfolio_hover     = $instance['portfolio_hover'];\n\t\t$show_date           = $instance['post_date'];\n\t\t$show_comments_count = $instance['comments_count'];\n\t\t$show_thumbnail      = $instance['thumbnail'];\n\t\t$post_num            = $instance['posts_num'];\n\t\t$orderby             = $instance['order_by'];\n\n\t\t$category_option = 'post' === $post_type ? 'category' : 'portfolio_category';\n\t\t$categories      = array_map( function( $category ) {\n\t\t\treturn intval( $category );\n\t\t}, $instance[ $category_option ] );\n\n\t\techo $args['before_widget']; // phpcs:ignore\n\n\t\tif ( ! empty( $title ) ) {\n\t\t\techo $args['before_title']; // phpcs:ignore\n\t\t\techo esc_html( $title );\n\t\t\techo $args['after_title']; // phpcs:ignore\n\t\t}\n\n\t\tjupiterx_open_markup_e( 'jupiterx_widget_posts_wrapper', 'div', 'class=jupiterx-widget-posts-wrapper' );\n\n\t\tif ( 'comments' === $query_type ) {\n\n\t\t\t$comments = get_comments( [\n\t\t\t\t'post_type' => $post_type,\n\t\t\t\t'number'    => $post_num,\n\t\t\t] );\n\n\t\t\t$this->comments( $comments, $show_date, $show_comments_count );\n\n\t\t} else {\n\n\t\t\t$query_args = [\n\t\t\t\t'post_type'        => $post_type,\n\t\t\t\t'posts_per_page'   => $post_num,\n\t\t\t\t'orderby'          => $orderby,\n\t\t\t\t'suppress_filters' => 0,\n\t\t\t];\n\n\t\t\tif ( ! in_array( 0, $categories, true ) ) {\n\n\t\t\t\t$query_args['tax_query'][] = [ // @codingStandardsIgnoreLine\n\t\t\t\t\t'taxonomy' => 'portfolio_category',\n\t\t\t\t\t'field'    => 'term_id',\n\t\t\t\t\t'terms'    => $categories,\n\t\t\t\t\t'operator' => 'IN',\n\t\t\t\t];\n\n\t\t\t\tif ( 'post' === $post_type ) {\n\t\t\t\t\t$query_args['cat'] = $categories;\n\t\t\t\t\tunset( $query_args['tax_query'] );\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tif ( 'popular' === $query_type ) {\n\t\t\t\t$query_args['orderby'] = 'comment_count';\n\t\t\t}\n\n\t\t\t$posts = get_posts( $query_args );\n\n\t\t\tif ( 'post' === $post_type ) {\n\t\t\t\t$this->posts( $posts, $show_thumbnail, $show_date, $show_comments_count );\n\t\t\t} else {\n\t\t\t\t$this->portfolios( $posts, $portfolio_hover );\n\t\t\t}\n\t\t}\n\n\t\tjupiterx_close_markup_e( 'jupiterx_widget_posts_wrapper', 'div' );\n\n\t\techo $args['after_widget']; // phpcs:ignore\n\t}",
+    "source_file": "jupiterx-core.json",
+    "source_dir": "passed",
+    "function_name": "JupiterX_Widget_Posts::widget"
+  },
+  {
+    "code": "function name($value)\n    {\n        if (!isset(self::$valueToName[$value])) {\n            throw new UnexpectedValueException(sprintf(\n                    'Enum %s has no name defined for value %s', __CLASS__, $value));\n        }\n        return self::$valueToName[$value];\n    }",
+    "source_file": "plugnmeet.json",
+    "source_dir": "failed",
+    "function_name": "IngressInput::name"
+  },
+  {
+    "code": "function __toString(): string\n    {\n        return '@for $' . $this->variable . ' from ' . $this->from . ($this->exclusive ? ' to ' : ' through ') . $this->to . '{' . implode(' ', $this->getChildren()) . '}';\n    }",
+    "source_file": "wp-scss.json",
+    "source_dir": "failed",
+    "function_name": "ForRule::__toString"
+  },
+  {
+    "code": "/**\n\t * Retrieve a registered customer row id by user_id.\n\t *\n\t * @param string|int $user_id User ID.\n\t * @return false|int Customer ID if found, boolean false if not.\n\t */\nfunction get_customer_id_by_user_id( $user_id ) {\n\t\tglobal $wpdb;\n\n\t\t$table_name  = self::get_db_table_name();\n\t\t$customer_id = $wpdb->get_var(\n\t\t\t$wpdb->prepare(\n\t\t\t\t// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared\n\t\t\t\t\"SELECT customer_id FROM {$table_name}",
+    "source_file": "woocommerce.json",
+    "source_dir": "passed",
+    "function_name": "get_customer_id_by_user_id"
+  },
+  {
+    "code": "/**\n\t * This filter allows other plugins to override which shortcodes Jetpack loads.\n\t *\n\t * Fires as part of the `after_setup_theme` WP hook, so modifying code needs to be in a plugin, not in a theme's functions.php.\n\t *\n\t * @module shortcodes\n\t *\n\t * @since 2.2.1\n\t * @since 4.2.0 Added filename without extension as array key.\n\t *\n\t * @param array $shortcode_includes An array of which shortcodes to include.\n\t */\nfunction jetpack_load_shortcodes() {\n\t// Prevent third-party shortcode plugins when loading shortcode files.\n\t// Format: shortcode => condition_when_to_skip\n\t$shortcode_skips = array(\n\t\t'shortcode-utils' => true, // Utils aren't shortcodes.\n\t\t'soundcloud'      => function_exists( 'soundcloud_shortcode' ), // SoundCloud Shortcodes plugin\n\t);\n\n\t$shortcode_includes = array();\n\n\tforeach ( Jetpack::glob_php( __DIR__ . '/shortcodes' ) as $file ) {\n\t\t$filename = substr( basename( $file ), 0, -4 );\n\n\t\tif ( empty( $shortcode_skips[ $filename ] ) ) {\n\t\t\t$shortcode_includes[ $filename ] = $file;\n\t\t}\n\t}\n\n\t\n\t$shortcode_includes = apply_filters( 'jetpack_shortcodes_to_include', $shortcode_includes );\n\n\tforeach ( $shortcode_includes as $include ) {\n\t\tinclude_once $include;\n\t}\n}",
+    "source_file": "jetpack.json",
+    "source_dir": "passed",
+    "function_name": "jetpack_load_shortcodes"
+  },
+  {
+    "code": "/**\n     * @param string $x\n     * @param string $y\n     * @param bool $dontFallback\n     * @return string\n     * @throws SodiumException\n     */\nfunction ristretto255_scalar_sub(\n        #[\\SensitiveParameter]\n        $x,\n        #[\\SensitiveParameter]\n        $y,\n        $dontFallback = false\n    ) {\n        if (self::useNewSodiumAPI() && !$dontFallback) {\n            return sodium_crypto_core_ristretto255_scalar_sub($x, $y);\n        }\n        return ParagonIE_Sodium_Core_Ristretto255::ristretto255_scalar_sub($x, $y);\n    }",
+    "source_file": "wordpress-develop.json",
+    "source_dir": "passed",
+    "function_name": "ParagonIE_Sodium_Compat::ristretto255_scalar_sub"
+  },
+  {
+    "code": "/**\n\t * Process an option deletion for specific keys.\n\t *\n\t * @param string $option_key The option key.\n\t *\n\t * @return void\n\t *\n\t * @internal For exclusive usage of WooCommerce core, backwards compatibility not guaranteed.\n\t */\nfunction process_deleted_option( $option_key ) {\n\t\tif ( self::BACKGROUND_SYNC_MODE_OPTION !== $option_key ) {\n\t\t\treturn;\n\t\t}\n\n\t\t$this->unschedule_background_sync();\n\t\t$this->batch_processing_controller->remove_processor( self::class );\n\t}",
+    "source_file": "woocommerce.json",
+    "source_dir": "passed",
+    "function_name": "get_background_sync_interval::process_deleted_option"
+  },
+  {
+    "code": "/**\n\t * Get the list of default params for a usual query.\n\t *\n\t * @since 3.0.0\n\t *\n\t * @return array\n\t */\nfunction get_default_params() {\n\n\t\treturn [\n\t\t\t'offset'   => 0,\n\t\t\t'per_page' => self::$per_page,\n\t\t\t'order'    => 'DESC',\n\t\t\t'orderby'  => 'id',\n\t\t\t'search'   => '',\n\t\t];\n\t}",
+    "source_file": "wp-mail-smtp.json",
+    "source_dir": "failed",
+    "function_name": "EventsCollection::get_default_params"
+  },
+  {
+    "code": "/**\n\t * Changes filesystem permissions.\n\t *\n\t * @since 2.5.0\n\t *\n\t * @param string    $file      Path to the file.\n\t * @param int|false $mode      Optional. The permissions as octal number, usually 0644 for files,\n\t *                             0755 for directories. Default false.\n\t * @param bool      $recursive Optional. If set to true, changes file permissions recursively.\n\t *                             Default false.\n\t * @return bool True on success, false on failure.\n\t */\nfunction chmod( $file, $mode = false, $recursive = false ) {\n\t\tif ( ! $mode ) {\n\t\t\tif ( $this->is_file( $file ) ) {\n\t\t\t\t$mode = FS_CHMOD_FILE;\n\t\t\t} elseif ( $this->is_dir( $file ) ) {\n\t\t\t\t$mode = FS_CHMOD_DIR;\n\t\t\t} else {\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\n\t\tif ( ! $recursive || ! $this->is_dir( $file ) ) {\n\t\t\t$current_mode = fileperms( $file ) & 0777 | 0644;\n\n\t\t\t/*\n\t\t\t * fileperms() populates the stat cache, so have to clear it\n\t\t\t * to maintain parity with the previous behavior.\n\t\t\t */\n\t\t\tclearstatcache( true, $file );\n\n\t\t\t/*\n\t\t\t * Avoid calling chmod() if the requested mode is already set,\n\t\t\t * to prevent throwing a warning when we aren't the owner.\n\t\t\t */\n\t\t\tif ( $current_mode === $mode ) {\n\t\t\t\treturn true;\n\t\t\t}\n\n\t\t\treturn chmod( $file, $mode );\n\t\t}\n\n\t\t// Is a directory, and we want recursive.\n\t\t$file     = trailingslashit( $file );\n\t\t$filelist = $this->dirlist( $file );\n\n\t\tforeach ( (array) $filelist as $filename => $filemeta ) {\n\t\t\t$this->chmod( $file . $filename, $mode, $recursive );\n\t\t}\n\n\t\treturn true;\n\t}",
+    "source_file": "wordpress-develop.json",
+    "source_dir": "passed",
+    "function_name": "WP_Filesystem_Direct::chmod"
+  },
+  {
+    "code": "function clearNtpReportDrift()\n    {\n        unset($this->ntp_report_drift);\n    }",
+    "source_file": "plugnmeet.json",
+    "source_dir": "failed",
+    "function_name": "packet_drift::clearNtpReportDrift"
+  },
+  {
+    "code": "/**\n     * @template T\n     *\n     * @param list<T> $list\n     *\n     * @return T\n     */\nfunction last(array $list)\n    {\n        $count = count($list);\n\n        if ($count === 0) {\n            throw new \\LogicException('The list may not be empty.');\n        }\n\n        return $list[$count - 1];\n    }",
+    "source_file": "wp-scss.json",
+    "source_dir": "failed",
+    "function_name": "ListUtil::last"
+  },
+  {
+    "code": "/**\n\t * Checks whether the gateway is enabled.\n\t *\n\t * @return bool The result.\n\t */\nfunction is_enabled() {\n\t\treturn 'yes' === $this->get_option( 'enabled' );\n\t}",
+    "source_file": "woocommerce-payments.json",
+    "source_dir": "passed",
+    "function_name": "is_enabled"
+  },
+  {
+    "code": "function clearRoom()\n    {\n        unset($this->room);\n    }",
+    "source_file": "plugnmeet.json",
+    "source_dir": "failed",
+    "function_name": "GetActiveRoomInfoRes::clearRoom"
+  },
+  {
+    "code": "/**\n\t * VaultPaymentTokenDeleted constructor.\n\t *\n\t * @param LoggerInterface $logger The logger.\n\t */\nfunction __construct( LoggerInterface $logger ) {\n\t\t$this->logger = $logger;\n\t}",
+    "source_file": "woocommerce-paypal-payments.json",
+    "source_dir": "passed",
+    "function_name": "VaultPaymentTokenDeleted::__construct"
+  },
+  {
+    "code": "/**\n\t * Options_Form_Generator constructor.\n\t *\n\t * @param Options_Inputs $inputs The Options_Inputs instance.\n\t */\nfunction __construct( Options_Inputs $inputs ) {\n\t\t$this->options_inputs = $inputs;\n\t}",
+    "source_file": "duplicate-post.json",
+    "source_dir": "passed",
+    "function_name": "Options_Form_Generator::__construct"
+  },
+  {
+    "code": "/**\n\t * @doesNotPerformAssertions\n\t */\nfunction test_get_items() {\n\t\t// Controller does not implement get_items().\n\t}",
+    "source_file": "gutenberg.json",
+    "source_dir": "failed",
+    "function_name": "WP_REST_Global_Styles_Controller_Gutenberg_Test::test_get_items"
+  },
+  {
+    "code": "/**\n\t * Get the additional info from wc action.\n\t *\n\t * @param $product\n\t *\n\t * @return false|string\n\t */\nfunction get_additional_info( $product ) {\n\t\tob_start(); // Start buffering\n\n\t\tdo_action( 'woocommerce_product_additional_information', $product );\n\n\t\treturn ob_get_clean();\n\t}",
+    "source_file": "jupiterx-core.json",
+    "source_dir": "passed",
+    "function_name": "Product_Additional_Info::get_additional_info"
+  },
+  {
+    "code": "/**\n\t * Return the recurring job's interval in seconds.\n\t *\n\t * @return int\n\t */\nfunction get_interval(): int {\n\t\treturn 12 * HOUR_IN_SECONDS; // 12 hours.\n\t}",
+    "source_file": "google-listings-and-ads.json",
+    "source_dir": "passed",
+    "function_name": "get_interval"
+  },
+  {
+    "code": "/**\n     * Prepare sources for save.\n     *\n     * @param array $data\n     *\n     * @return array\n     */\nfunction prepare_sources( $data = false ) {\n        $sources = array();\n\n        if ( ! $data ) {\n            $data = $_POST;\n        }\n\n        if ( isset( $data['source_names'], $data['source_embed_content'] ) ) {\n            $source_names         = $data['source_names'];\n            $source_choice        = isset( $data['source_choice'] ) ? $data['source_choice'] : array();\n            $source_embed_content = $data['source_embed_content'];\n            $source_link          = isset( $data['source_link'] ) ? $data['source_link'] : array();\n            $source_quality       = isset( $data['source_quality'] ) ? $data['source_quality'] : array();\n            $source_language      = isset( $data['source_language'] ) ? $data['source_language'] : array();\n            $source_player        = isset( $data['source_player'] ) ? $data['source_player'] : array();\n            $source_date_added    = isset( $data['source_date_added'] ) ? $data['source_date_added'] : array();\n            $source_position      = isset( $data['source_position'] ) ? $data['source_position'] : array();\n            $source_names_max_key = max( array_keys( $source_names ) );\n\n            for ( $i = 0; $i <= $source_names_max_key; $i++ ) {\n                if ( empty( $source_names[ $i ] ) ) {\n                    continue;\n                }\n\n                $source = array(\n                    'name'          => isset( $source_names[ $i ] ) ? masvideos_clean( $source_names[ $i ] ) : '',\n                    'choice'        => isset( $source_choice[ $i ] ) ? masvideos_clean( $source_choice[ $i ] ) : '',\n                    'embed_content' => isset( $source_embed_content[ $i ] ) ? masvideos_sanitize_textarea_iframe( stripslashes( $source_embed_content[ $i ] ) ) : '',\n                    'link'          => isset( $source_link[ $i ] ) ? masvideos_clean( $source_link[ $i ] ) : '',\n                    'quality'       => isset( $source_quality[ $i ] ) ? masvideos_clean( $source_quality[ $i ] ) : '',\n                    'language'      => isset( $source_language[ $i ] ) ? masvideos_clean( $source_language[ $i ] ) : '',\n                    'player'        => isset( $source_player[ $i ] ) ? masvideos_clean( $source_player[ $i ] ) : '',\n                    'date_added'    => isset( $source_date_added[ $i ] ) ? masvideos_clean( $source_date_added[ $i ] ) : '',\n                    'position'      => isset( $source_position[ $i ] ) ? absint( $source_position[ $i ] ) : 0\n                );\n                $sources[] = $source;\n            }\n        }\n        return $sources;\n    }",
+    "source_file": "masvideos.json",
+    "source_dir": "passed",
+    "function_name": "MasVideos_Meta_Box_Episode_Data::prepare_sources"
+  }
+]

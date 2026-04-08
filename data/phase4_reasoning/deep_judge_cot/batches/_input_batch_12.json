@@ -1,0 +1,122 @@
+[
+  {
+    "code": "/**\n\t * Build the root sitemap (example.com/sitemap_index.xml) which lists sub-sitemaps for other content types.\n\t */\nfunction build_root_map() {\n\t\t$links = [];\n\t\tforeach ( $this->providers as $provider ) {\n\t\t\t$links = array_merge( $links, $provider->get_index_links( $this->max_entries ) );\n\t\t}\n\n\t\tif ( empty( $links ) ) {\n\t\t\treturn '';\n\t\t}\n\n\t\treturn $this->get_index( $links );\n\t}",
+    "source_file": "seo-by-rank-math.json",
+    "source_dir": "failed",
+    "function_name": "build_root_map"
+  },
+  {
+    "code": "function addParam($param, $value) {\n    $extracted_value = $this->extractValue($value);\n    if (!ApiConfig::TYPE_CHECKER_STRICT_MODE\n      || !$this->param_checker->isValidParam($param)\n    ) {\n      if ($this->param_checker->isFileParam($param)) {\n          $this->file_params[$param] = $extracted_value;\n      } else {\n        $this->params[$param] = $extracted_value;\n      }\n    } else {\n      if ($this->param_checker->isValidParamPair($param, $value)) {\n        if ($this->param_checker->isFileParam($param)) {\n          $this->file_params[$param] = $extracted_value;\n        } else {\n          $this->params[$param] = $extracted_value;\n        }\n      } elseif ($this->param_checker->isPrimitiveType($param)) {\n        $param_type = $this->param_checker->getType($param);\n        $this->params[$param] = $this->param_checker->convertStringToPrimType(\n          $param_type, $value);\n      } else {\n        throw new \\LogicException('The value for '.$param.' is not compatible');\n      }\n    }\n    return $this;\n  }",
+    "source_file": "official-facebook-pixel.json",
+    "source_dir": "failed",
+    "function_name": "ApiRequest::addParam"
+  },
+  {
+    "code": "/**\n\t * Constructor.\n\t *\n\t * @param TodosModel $todos_model The TodosModel instance.\n\t */\nfunction __construct( TodosModel $todos_model ) {\n\t\t$this->todos_model = $todos_model;\n\t}",
+    "source_file": "woocommerce-paypal-payments.json",
+    "source_dir": "passed",
+    "function_name": "TodosSortingAndFilteringService::__construct"
+  },
+  {
+    "code": "function getReferencedEnums() {\n    $ref_enums = array();\n    return $ref_enums;\n  }",
+    "source_file": "official-facebook-pixel.json",
+    "source_dir": "failed",
+    "function_name": "PublisherWhiteList::getReferencedEnums"
+  },
+  {
+    "code": "/**\n\t * Filter email preview data used when previewing the email in new tab.\n\t *\n\t * @param string $data The preview HTML string.\n\t * @return string The updated preview HTML with placeholders replaced.\n\t */\nfunction update_preview_post_template_html_data( $data ) {\n\t\t// return early if the data does not contain the placeholder meaning it's already been processed.\n\t\tif ( ! str_contains( (string) $data, BlockEmailRenderer::WOO_EMAIL_CONTENT_PLACEHOLDER ) ) {\n\t\t\treturn $data;\n\t\t}\n\n\t\t// phpcs:disable WordPress.Security.NonceVerification.Recommended\n\t\t// Nonce verification is disabled here because the preview action doesn't modify data,\n\t\t// and the check caused issues with the 'Preview in new tab' feature due to context changes.\n\t\t$type_param = isset( $_GET['woo_email'] ) ? sanitize_text_field( wp_unslash( $_GET['woo_email'] ) ) : '';\n\n\t\t// check for post id (preview id) in the request.\n\t\t$post_id = isset( $_REQUEST['preview_id'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['preview_id'] ) ) : '';\n\n\t\t// phpcs:enable\n\t\treturn $this->update_email_preview_data( $data, $type_param, $post_id );\n\t}",
+    "source_file": "woocommerce.json",
+    "source_dir": "failed",
+    "function_name": "prepare_context_data::update_preview_post_template_html_data"
+  },
+  {
+    "code": "/**\n * Default custom background callback.\n *\n * @since 3.0.0\n */\nfunction _custom_background_cb() {\n\t// $background is the saved custom image, or the default image.\n\t$background = set_url_scheme( get_background_image() );\n\n\t/*\n\t * $color is the saved custom color.\n\t * A default has to be specified in style.css. It will not be printed here.\n\t */\n\t$color = get_background_color();\n\n\tif ( get_theme_support( 'custom-background', 'default-color' ) === $color ) {\n\t\t$color = false;\n\t}\n\n\tif ( ! $background && ! $color ) {\n\t\tif ( is_customize_preview() ) {\n\t\t\techo '<style id=\"custom-background-css\"></style>';\n\t\t}\n\t\treturn;\n\t}\n\n\t$style = $color ? 'background-color: ' . maybe_hash_hex_color( $color ) . ';' : '';\n\n\tif ( $background ) {\n\t\t$image = ' background-image: url(\"' . sanitize_url( $background ) . '\");';\n\n\t\t// Background Position.\n\t\t$position_x = get_theme_mod( 'background_position_x', get_theme_support( 'custom-background', 'default-position-x' ) );\n\t\t$position_y = get_theme_mod( 'background_position_y', get_theme_support( 'custom-background', 'default-position-y' ) );\n\n\t\tif ( ! in_array( $position_x, array( 'left', 'center', 'right' ), true ) ) {\n\t\t\t$position_x = 'left';\n\t\t}\n\n\t\tif ( ! in_array( $position_y, array( 'top', 'center', 'bottom' ), true ) ) {\n\t\t\t$position_y = 'top';\n\t\t}\n\n\t\t$position = \" background-position: $position_x $position_y;\";\n\n\t\t// Background Size.\n\t\t$size = get_theme_mod( 'background_size', get_theme_support( 'custom-background', 'default-size' ) );\n\n\t\tif ( ! in_array( $size, array( 'auto', 'contain', 'cover' ), true ) ) {\n\t\t\t$size = 'auto';\n\t\t}\n\n\t\t$size = \" background-size: $size;\";\n\n\t\t// Background Repeat.\n\t\t$repeat = get_theme_mod( 'background_repeat', get_theme_support( 'custom-background', 'default-repeat' ) );\n\n\t\tif ( ! in_array( $repeat, array( 'repeat-x', 'repeat-y', 'repeat', 'no-repeat' ), true ) ) {\n\t\t\t$repeat = 'repeat';\n\t\t}\n\n\t\t$repeat = \" background-repeat: $repeat;\";\n\n\t\t// Background Scroll.\n\t\t$attachment = get_theme_mod( 'background_attachment', get_theme_support( 'custom-background', 'default-attachment' ) );\n\n\t\tif ( 'fixed' !== $attachment ) {\n\t\t\t$attachment = 'scroll';\n\t\t}\n\n\t\t$attachment = \" background-attachment: $attachment;\";\n\n\t\t$style .= $image . $position . $size . $repeat . $attachment;\n\t}\n\n\t$processor = new WP_HTML_Tag_Processor( '<style id=\"custom-background-css\"></style>' );\n\t$processor->next_tag();\n\n\t$style_tag_content = 'body.custom-background { ' . trim( $style ) . ' }';\n\t$processor->set_modifiable_text( \"\\n{$style_tag_content}",
+    "source_file": "wordpress-develop.json",
+    "source_dir": "passed",
+    "function_name": "_custom_background_cb"
+  },
+  {
+    "code": "/**\n\t\t * Before frontend element render.\n\t\t *\n\t\t * Fires before Elementor element is rendered in the frontend.\n\t\t *\n\t\t * The dynamic portion of the hook name, `$element_type`, refers to the element type.\n\t\t *\n\t\t * @since 1.0.0\n\t\t *\n\t\t * @param Element_Base $this The element.\n\t\t */\nfunction print_element() {\n\t\t$element_type = $this->get_type();\n\n\t\tif ( $this->should_render_shortcode() ) {\n\t\t\t$unique_id = apply_filters( 'elementor/element_cache/unique_id', '' );\n\n\t\t\techo '[elementor-element k=\"' . esc_attr( $unique_id ) . '\" data=\"' . esc_attr( base64_encode( wp_json_encode( $this->get_raw_data() ) ) ) . '\"]';\n\t\t\treturn;\n\t\t}\n\n\t\t\n\t\tdo_action( 'elementor/frontend/before_render', $this );\n\n\t\t\n\t\tdo_action( \"elementor/frontend/{$element_type}",
+    "source_file": "elementor.json",
+    "source_dir": "passed",
+    "function_name": "Element_Base::print_element"
+  },
+  {
+    "code": "function get_pagination() {\n\n\t\t$pagination = '';\n\t\t$items      = $this->get_items();\n\n\t\tif ( $items && $this->_options['number'] > 0 ) {\n\n\t\t\t$number        = $this->_options['number'];\n\t\t\t$total         = $this->_query->get_total();\n\t\t\t$max_num_pages = intval( $total / $number );\n\n\t\t\tif ( $total % $number ) {\n\t\t\t\t$max_num_pages ++;\n\t\t\t}\n\n\t\t\tif ( $this->_options['paged'] && $max_num_pages > 1 ) {\n\t\t\t\t$pagenum_link = html_entity_decode( get_pagenum_link() );\n\n\t\t\t\t$query_args = array();\n\t\t\t\t$url_parts  = explode( '?', $pagenum_link );\n\n\t\t\t\tif ( isset( $url_parts[1] ) ) {\n\t\t\t\t\twp_parse_str( $url_parts[1], $query_args );\n\t\t\t\t}\n\n\t\t\t\t$pagenum_link = esc_url_raw( remove_query_arg( array_keys( $query_args ), $pagenum_link ) );\n\t\t\t\t$pagenum_link = trailingslashit( $pagenum_link ) . '%_%';\n\n\t\t\t\t$pagination = paginate_links(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'base'      => $pagenum_link,\n\t\t\t\t\t\t'total'     => $max_num_pages,\n\t\t\t\t\t\t'current'   => max( 1, $this->_options['paged'] ),\n\t\t\t\t\t\t'mid_size'  => 1,\n\t\t\t\t\t\t'add_args'  => array_map( 'urlencode', $query_args ),\n\t\t\t\t\t\t'prev_text' => __( '<', 'learnpress' ),\n\t\t\t\t\t\t'next_text' => __( '>', 'learnpress' ),\n\t\t\t\t\t\t'type'      => '',\n\t\t\t\t\t)\n\t\t\t\t);\n\t\t\t}\n\t\t}\n\n\t\treturn $pagination;\n\t}",
+    "source_file": "learnpress-course-review.json",
+    "source_dir": "failed",
+    "function_name": "LP_Modal_Search_Users::get_pagination"
+  },
+  {
+    "code": "/**\n     * Generated from protobuf field <code>string region = 12;</code>\n     * @return string\n     */\nfunction getRegion()\n    {\n        return $this->region;\n    }",
+    "source_file": "plugnmeet.json",
+    "source_dir": "passed",
+    "function_name": "permission::getRegion"
+  },
+  {
+    "code": "function init_form_fields() {\n\t\t$this->init_common_form_fields( 'PAYONE ' . __( 'Przelewy24', 'payone-woocommerce-3' ) );\n\t\t$this->form_fields['countries']['default'] = [ 'PL' ];\n\t}",
+    "source_file": "bs-payone-woocommerce.json",
+    "source_dir": "failed",
+    "function_name": "Przelewy24::init_form_fields"
+  },
+  {
+    "code": "function get_conditional_title() {\n    if($this->utils->lcp_not_empty('conditional_title') && $this->get_posts_count() > 0) {\n      return esc_html(trim($this->params['conditional_title']));\n    }\n  }",
+    "source_file": "list-category-posts.json",
+    "source_dir": "failed",
+    "function_name": "CatList::get_conditional_title"
+  },
+  {
+    "code": "function seek_outside_of_buffer( int $target_offset ): void {\n\t\tthrow new ByteStreamException( 'Cannot seek outside of the buffered range' );\n\t}",
+    "source_file": "wordpress-importer.json",
+    "source_dir": "failed",
+    "function_name": "BaseByteReadStream::seek_outside_of_buffer"
+  },
+  {
+    "code": "function getFieldTypes() {\n    return array(\n      'checkbox_key' => 'string',\n      'is_checked' => 'string',\n    );\n  }",
+    "source_file": "official-facebook-pixel.json",
+    "source_dir": "failed",
+    "function_name": "UserLeadGenDisclaimerResponseFields::getFieldTypes"
+  },
+  {
+    "code": "/**\n     * Generated from protobuf field <code>.plugnmeet.DataMsgBodyType type = 2;</code>\n     * @param int $var\n     * @return $this\n     */\nfunction setType($var)\n    {\n        GPBUtil::checkEnum($var, \\Mynaparrot\\PlugnmeetProto\\DataMsgBodyType::class);\n        $this->type = $var;\n\n        return $this;\n    }",
+    "source_file": "plugnmeet.json",
+    "source_dir": "passed",
+    "function_name": "type::setType"
+  },
+  {
+    "code": "function numberCallBack( $args ) {\n\t\t$options = get_option( 'plugnmeet_settings' );\n\n\t\t$id       = isset( $args['id'] ) ? esc_attr( $args['id'] ) : '';\n\t\t$required = isset( $args['required'] ) ? esc_attr( $args['required'] ) : '';\n\t\t$value    = isset( $options[ $id ] ) ? esc_attr( $options[ $id ] ) : $args['default'];\n\n\t\t$html = '<input id=\"' . $id . '\" required=\"' . $required . '\" name=\"plugnmeet_settings[' . $id . ']\" type=\"number\" size=\"10\" value=\"' . $value . '\">';\n\t\techo wp_kses( $html, $this->allowedHtml );\n\t}",
+    "source_file": "plugnmeet.json",
+    "source_dir": "failed",
+    "function_name": "Plugnmeet_SettingsPage::numberCallBack"
+  },
+  {
+    "code": "/**\n\t * Is this an AMP polling request.\n\t *\n\t * @return bool AMP polling request.\n\t */\nfunction is_amp_polling() {\n\t\t// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Public read-only check for AMP polling status.\n\t\treturn isset( $_GET[ self::AMP_UPDATE_QUERY_VAR ] );\n\t}",
+    "source_file": "liveblog.json",
+    "source_dir": "failed",
+    "function_name": "WPCOM_Liveblog_AMP::is_amp_polling"
+  },
+  {
+    "code": "/**\n\t * Initialize the API namespaces under WooCommerce Admin.\n\t *\n\t * @return void\n\t */\nfunction rest_api_init() {\n\t\tif ( wc_rest_should_load_namespace( 'wc-admin' ) ) {\n\t\t\t$this->rest_api_init_wc_admin();\n\t\t}\n\n\t\t$rest_api_util = wc_get_container()->get( RestApiUtil::class );\n\t\t$rest_api_util->lazy_load_namespace( 'wc-analytics', array( $this, 'rest_api_init_wc_analytics' ) );\n\n\t\tif ( Features::is_enabled( 'launch-your-store' ) ) {\n\t\t\t$controller        = 'Automattic\\WooCommerce\\Admin\\API\\LaunchYourStore';\n\t\t\t$this->$controller = new $controller();\n\t\t\t$this->$controller->register_routes();\n\t\t}\n\t}",
+    "source_file": "woocommerce.json",
+    "source_dir": "passed",
+    "function_name": "lazy_load_namespace::rest_api_init"
+  },
+  {
+    "code": "function smallParcelReference()\n    {\n        return self::parse(get_option('dpdconnect_company_info'), 'dpdconnect_spr');\n    }",
+    "source_file": "woocommerce-shipping.json",
+    "source_dir": "failed",
+    "function_name": "Option::smallParcelReference"
+  },
+  {
+    "code": "/**\n\t * Moves information around the database, supports back to 1.5\n\t * @since 1.2\n\t */\nfunction upgrade( $from, $to ) {\n\n\t\t//check to see if we have any sections, if not add the sections\n\t\tif ( sizeof( $this->get_sections( false ) ) == 0 ) {\n\t\t\twp_insert_term( 'Education', 'wp_resume_section');\n\t\t\twp_insert_term( 'Experience', 'wp_resume_section' );\n\t\t\twp_insert_term( 'Awards', 'wp_resume_section' );\n\t\t}\n\n\t\t//1.6 -- add multi-user support (v. 1.6)\n\t\tif ( $from && substr( $from, 0, 3 ) < '1.6' ) {\n\n\t\t\t$options = $this->options->get_options();\n\t\t\t$usermeta = array();\n\n\t\t\t//migrate $options[field] to (usermeta) [wp_resume][field] and kill original\n\t\t\tforeach ( $this->options->user_defaults as $field=>$value ) {\n\t\t\t\tif ( isset( $options[$field] ) ) {\n\t\t\t\t\t$usermeta[$field] = $options[$field];\n\t\t\t\t\tunset( $options[$field] );\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t//store usermeta to current user\n\t\t\t//(assumption: user upgrading is author of resume)\n\t\t\tupdate_user_meta( get_current_user_id(), 'wp_resume', $usermeta );\n\n\t\t\t//store updated options\n\t\t\t$this->options->set_options( $options );\n\n\t\t}\n\n\t\t// 2.2 -- move from user_meta to user_option\n\t\tif ( $from && $from < '2.2' ) {\n\n\t\t\t$users = get_users( array( 'blog_id' => $GLOBALS['blog_id'] , 'fields' => 'ID' ) );\n\t\t\tforeach ($users as $user) {\n\n\t\t\t\t$user_options = get_user_meta( $user, 'wp_resume', true );\n\t\t\t\tdelete_user_meta( $user, 'wp_resume' );\n\n\n\t\t\t\t$user_options = array();\n\n\t\t\t\t//loop default fields\n\t\t\t\tforeach ( $this->options->user_defaults as $key => $value )\n\t\t\t\t\t$user_options[ $key ] = $value;\n\n\t\t\t\t//update\n\t\t\t\t$this->options->set_user_options( $user_options, $user );\n\n\t\t\t}\n\n\t\t}\n\n\t\t//2.5 -- flip key and value in order array\n\t\tif ( $from < '2.5' ) {\n\n\t\t\t$users = get_users( array( 'blog_id' => $GLOBALS['blog_id'] , 'fields' => 'ID' ) );\n\n\t\t\tforeach ( $users as $user ) {\n\n\t\t\t\t$order = $this->options->get_user_option( 'order', $user );\n\n\t\t\t\t$new = array();\n\n\t\t\t\tforeach ( $order as $k => $v )\n\t\t\t\t\t$new[ $v ] = $k;\n\n\t\t\t\t$order = $this->options->set_user_option( 'order', $new, $user );\n\n\t\t\t}\n\n\t\t}\n\n\t\t//flush rewrite rules just in case\n\t\tflush_rewrite_rules();\n\n\t}",
+    "source_file": "wp-resume.json",
+    "source_dir": "passed",
+    "function_name": "WP_Resume::upgrade"
+  },
+  {
+    "code": "/**\n\t\t * Filters whether a given thrown error should be handled by the fatal error handler.\n\t\t *\n\t\t * This filter is only fired if the error is not already configured to be handled by WordPress core. As such,\n\t\t * it exclusively allows adding further rules for which errors should be handled, but not removing existing\n\t\t * ones.\n\t\t *\n\t\t * @since 5.2.0\n\t\t *\n\t\t * @param bool  $should_handle_error Whether the error should be handled by the fatal error handler.\n\t\t * @param array $error               Error information retrieved from `error_get_last()`.\n\t\t */\nfunction should_handle_error( $error ) {\n\t\t$error_types_to_handle = array(\n\t\t\tE_ERROR,\n\t\t\tE_PARSE,\n\t\t\tE_USER_ERROR,\n\t\t\tE_COMPILE_ERROR,\n\t\t\tE_RECOVERABLE_ERROR,\n\t\t);\n\n\t\tif ( isset( $error['type'] ) && in_array( $error['type'], $error_types_to_handle, true ) ) {\n\t\t\treturn true;\n\t\t}\n\n\t\t\n\t\treturn (bool) apply_filters( 'wp_should_handle_php_error', false, $error );\n\t}",
+    "source_file": "wordpress-develop.json",
+    "source_dir": "passed",
+    "function_name": "WP_Fatal_Error_Handler::should_handle_error"
+  }
+]
