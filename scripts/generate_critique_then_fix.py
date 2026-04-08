@@ -337,11 +337,15 @@ Defective PHP Code to critique and fix:
 
 IMPORTANT: corrected_code in your JSON must be the actual corrected PHP source, not wrapped in additional tags. The code must be syntactically valid PHP."""
 
+    # Scale max_tokens with code length: longer code needs more tokens for corrected version
+    code_len = len(code)
+    max_tokens = min(4096, max(3072, code_len // 2))
+
     try:
         resp = call_with_backoff(
             client,
-            model="claude-sonnet-4-6-20250514",
-            max_tokens=3072,
+            model="claude-sonnet-4-5",
+            max_tokens=max_tokens,
             messages=[{"role": "user", "content": prompt}],
         )
         raw_text = resp.content[0].text
@@ -562,7 +566,7 @@ def main():
 
     # Determine target and output path
     if args.pilot:
-        target = 40
+        target = int(os.environ.get("PILOT_TARGET", "40"))
         output_path = PILOT_DIR / "critique_then_fix_pilot.json"
         checkpoint_key = "generate_critique_then_fix_pilot"
     else:
