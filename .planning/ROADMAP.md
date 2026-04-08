@@ -174,8 +174,8 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [x] 04.1-01-PLAN.md — Seed import + deep judge CoT generation script (seed data import, few-shot agent generation with 9-dimension quality gate)
-- [ ] 04.1-02-PLAN.md — Critique-then-fix generation script + pilot execution of both streams with human review gate
+- [ ] 04.1-01-PLAN.md — Seed import + deep judge CoT generation script (seed data import, few-shot agent generation with 9-dimension quality gate)
+- [x] 04.1-02-PLAN.md — Critique-then-fix generation script + pilot execution of both streams with human review gate
 - [ ] 04.1-03-PLAN.md — Bulk generation of both streams (deep judge CoT + critique-then-fix) after pilot approval
 
 ### Phase 4.2: Reasoning Dataset Assembly — INSERTED
@@ -491,7 +491,7 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 2. Dataset Production | v1.0 | 6/7 | Complete | 2026-03-29 |
 | 3. Model Prep and Training | v1.0 | 3/3 | Complete | 2026-03-27 |
 | 4. Evaluation | v1.0 | 2/3 | In Progress|  |
-| 4.1. Reasoning Data Generation | v1.2 | 0/? | Not started | - |
+| 4.1. Reasoning Data Generation | v1.2 | 1/3 | In Progress|  |
 | 4.2. Reasoning Dataset Assembly | v1.2 | 0/? | Not started | - |
 | 4.3. Reasoning Fine-Tune | v1.2 | 0/? | Not started | - |
 | 4.4. Reasoning Eval & Merge | v1.2 | 0/? | Not started | - |
