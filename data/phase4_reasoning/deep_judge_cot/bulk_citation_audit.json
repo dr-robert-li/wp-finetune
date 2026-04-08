@@ -1,0 +1,2712 @@
+{
+  "input_file": "/home/robert_li/Desktop/projects/wp-finetune/data/phase4_reasoning/deep_judge_cot/deep_judge_cot_bulk.json",
+  "total_examples": 270,
+  "citation_validity_rate": 1.0,
+  "aggregate_hallucination_ratio": 0.0,
+  "total_citations": 101,
+  "total_hallucinated": 0,
+  "examples_with_zero_citations": 229,
+  "threshold": 0.5,
+  "per_example": [
+    {
+      "index": 0,
+      "function_name": "edition::setNodeId",
+      "source_file": "plugnmeet.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 1,
+      "function_name": "bulk_copy_templates",
+      "source_file": "elementor.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 2,
+      "function_name": "LP_REST_Courses_Controller::get_item",
+      "source_file": "learnpress-bbpress.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 3,
+      "function_name": "Jetpack_Copy_Post::update_content",
+      "source_file": "jetpack.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 4,
+      "function_name": "get_customer_currency_args_from_request",
+      "source_file": "woocommerce-payments.json",
+      "total_citations": 6,
+      "grounded_citations": 6,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 5,
+      "function_name": "is_post_indexable",
+      "source_file": "seo-by-rank-math.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 6,
+      "function_name": "CourseAuthorUrlElementor::__construct",
+      "source_file": "learnpress-buddypress.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 7,
+      "function_name": "VideoCopyrightGeoGate::getFieldsEnum",
+      "source_file": "official-facebook-pixel.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 8,
+      "function_name": "LP",
+      "source_file": "learnpress-wishlist.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 9,
+      "function_name": "get_question_object",
+      "source_file": "learnpress-bbpress.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 10,
+      "function_name": "has_element_dynamic_tag",
+      "source_file": "elementor.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 11,
+      "function_name": "get_base::get_image_url",
+      "source_file": "wordpress-develop.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 12,
+      "function_name": "DatabaseChanges::getCreateQueryFieldConfigDefaultsValues",
+      "source_file": "onoffice-for-wp-websites.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 13,
+      "function_name": "Image_Prioritizer_Video_Tag_Visitor::reduce_poster_image_size",
+      "source_file": "image-prioritizer.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 14,
+      "function_name": "sanitize::validate_fields",
+      "source_file": "woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 15,
+      "function_name": "lock_process",
+      "source_file": "learnpress-course-review.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 16,
+      "function_name": "Controller::get_item_permissions_check",
+      "source_file": "constant-contact-woocommerce.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 17,
+      "function_name": "get_name",
+      "source_file": "pinterest-for-woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 18,
+      "function_name": "supports_emogrifier::clear_alt_body_field",
+      "source_file": "woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 19,
+      "function_name": "LP_Email_Cancelled_Order_Admin::__construct",
+      "source_file": "learnpress-buddypress.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 20,
+      "function_name": "VindiWebhooks::query_order_by_metas",
+      "source_file": "vindi-payment-gateway.json",
+      "total_citations": 6,
+      "grounded_citations": 6,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 21,
+      "function_name": "Form_Emails_Storing::apply_hooks_on_draft_transition",
+      "source_file": "blocks-animation.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 22,
+      "function_name": "VindiPaymentProcessor::get_call_build_items_method",
+      "source_file": "vindi-payment-gateway.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 23,
+      "function_name": "EarlyOrderHandler::determine_wc_order_id",
+      "source_file": "woocommerce-paypal-payments.json",
+      "total_citations": 6,
+      "grounded_citations": 6,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 24,
+      "function_name": "CourseModel::get_external_link",
+      "source_file": "learnpress-bbpress.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 25,
+      "function_name": "LP_Course::delete_relate_data_when_delete_course",
+      "source_file": "learnpress-buddypress.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 26,
+      "function_name": "WC_REST_Payments_Onboarding_Controller::get_fields",
+      "source_file": "woocommerce-payments.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 27,
+      "function_name": "Tt4b_Pixel_Class::get_user",
+      "source_file": "tiktok-for-business.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 28,
+      "function_name": "WP_Style_Engine_Processor::add_store",
+      "source_file": "wordpress-develop.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 29,
+      "function_name": "Settings_Sanitize::sanitize_tax_slugs",
+      "source_file": "where-did-they-go-from-here.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 30,
+      "function_name": "has_finished",
+      "source_file": "learnpress-wishlist.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 31,
+      "function_name": "Transfer::create",
+      "source_file": "razorpay-payment-button-elementor.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 32,
+      "function_name": "Flip_Box::get_icon",
+      "source_file": "jupiterx-core.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 33,
+      "function_name": "ExampleServiceWithDependencies::is_in_test_mode",
+      "source_file": "woocommerce-payments.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 34,
+      "function_name": "WC_Email_Customer_Cancelled_Order::get_content_html",
+      "source_file": "woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 35,
+      "function_name": "LP_Course_Section::get_course_id",
+      "source_file": "learnpress-course-review.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 36,
+      "function_name": "AMP_Nav_Menu_Dropdown_Sanitizer::add_buffering_hooks",
+      "source_file": "amp-wp.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 37,
+      "function_name": "sip_outbound_trunk::setSipDispatchRuleId",
+      "source_file": "plugnmeet.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 38,
+      "function_name": "FieldLoaderSupervisorValues::getFullNameSupervisor",
+      "source_file": "onoffice-for-wp-websites.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 39,
+      "function_name": "tokenise_payment",
+      "source_file": "geidea-online-payments.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 40,
+      "function_name": "Mailer::get_debug_info",
+      "source_file": "wp-mail-smtp.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 41,
+      "function_name": "BusinessObjectTransferOwnershipAgreementFields::getFieldTypes",
+      "source_file": "official-facebook-pixel.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 42,
+      "function_name": "WP_Navigation_Block_Renderer_Test::test_gutenberg_get_markup_for_inner_block_site_title",
+      "source_file": "gutenberg.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 43,
+      "function_name": "Skin_Inner_Content::register_image_controls",
+      "source_file": "jupiterx-core.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 44,
+      "function_name": "Http::getReason",
+      "source_file": "woo-razorpay.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 45,
+      "function_name": "TranscriptionSegment::setId",
+      "source_file": "plugnmeet.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 46,
+      "function_name": "wpcf7_swv_create_rule",
+      "source_file": "contact-form-7.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 47,
+      "function_name": "WC_Payments_Fraud_Service::get_sift_user_id",
+      "source_file": "woocommerce-payments.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 48,
+      "function_name": "ValidatedUrlStylesheetDataGarbageCollection::process",
+      "source_file": "amp.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 49,
+      "function_name": "Block_Editor::enqueue_elementor_script",
+      "source_file": "duplicate-post.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 50,
+      "function_name": "QuestionPostMultipleChoiceModel::get_default_answers",
+      "source_file": "learnpress-wishlist.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 51,
+      "function_name": "APGSitemapVideo::consulta",
+      "source_file": "google-video-sitemap-feed-with-multisite-support.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 52,
+      "function_name": "rates::setRates",
+      "source_file": "plugnmeet.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 53,
+      "function_name": "LP_Array_Access::offsetExists",
+      "source_file": "learnpress-buddypress.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 54,
+      "function_name": "Review_Comparison_Block::get_review_block",
+      "source_file": "blocks-animation.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 55,
+      "function_name": "SingleCourseClassicTemplate::html_instructor_main",
+      "source_file": "learnpress-wishlist.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 56,
+      "function_name": "get_post_custom_keys",
+      "source_file": "wordpress-develop.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 57,
+      "function_name": "ProductCatalogDataSourceFields::getFieldTypes",
+      "source_file": "official-facebook-pixel.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 58,
+      "function_name": "dominant_color_metadata",
+      "source_file": "performance-lab.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 59,
+      "function_name": "WP_Theme_JSON_Gutenberg::get_metadata_boolean",
+      "source_file": "gutenberg.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 60,
+      "function_name": "api_get_meta_data",
+      "source_file": "woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 61,
+      "function_name": "WPCOM_Liveblog::admin_enqueue_scripts",
+      "source_file": "liveblog.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 62,
+      "function_name": "Entity::getEntityClass",
+      "source_file": "razorpay-payment-button-elementor.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 63,
+      "function_name": "_set_field_defaults",
+      "source_file": "cmb2.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 64,
+      "function_name": "Post_Comments::comment_form_fields",
+      "source_file": "jupiterx-core.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 65,
+      "function_name": "WC_Gateway_Geidea::add_card_tokens_menu",
+      "source_file": "geidea-online-payments.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 66,
+      "function_name": "prepare_links",
+      "source_file": "woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 67,
+      "function_name": "YIT_Licence::__construct",
+      "source_file": "yith-woocommerce-ajax-search.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 68,
+      "function_name": "Helpers::register_file_as_media_attachment",
+      "source_file": "theme-demo-import.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 69,
+      "function_name": "MarketingOverview::get_installed_plugins",
+      "source_file": "woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 70,
+      "function_name": "process_pending_batch",
+      "source_file": "woocommerce.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 71,
+      "function_name": "VarnishDebug::remote_get",
+      "source_file": "varnish-http-purge.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 72,
+      "function_name": "WP_AI_Client_HTTP_Client::__construct",
+      "source_file": "wordpress-develop.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 73,
+      "function_name": "transport::getHeaders",
+      "source_file": "plugnmeet.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 74,
+      "function_name": "OrderTransformer::isAgeCheckNeeded",
+      "source_file": "woocommerce-shipping.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 75,
+      "function_name": "OD_Element::get_url_metric_group",
+      "source_file": "optimization-detective.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 76,
+      "function_name": "ShippingProfilesFeedHandler::get_feed_data",
+      "source_file": "facebook-for-woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 77,
+      "function_name": "values::setValues",
+      "source_file": "plugnmeet.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 78,
+      "function_name": "get_post_stati",
+      "source_file": "wordpress-develop.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 79,
+      "function_name": "AHSC_set_parameters_to_check",
+      "source_file": "aruba-hispeed-cache.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 80,
+      "function_name": "Woo_Posti_Shipping::can_load",
+      "source_file": "posti-shipping.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 81,
+      "function_name": "Item_Info::get_shipping_product",
+      "source_file": "woo-postnl.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 82,
+      "function_name": "GeoSearchBuilderFromInputVars::setViewProperty",
+      "source_file": "onoffice-for-wp-websites.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 83,
+      "function_name": "AdAccountAdsRecommendedAudios::getReferencedEnums",
+      "source_file": "official-facebook-pixel.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 84,
+      "function_name": "REST_Site_Health_Controller::get_rest_routes",
+      "source_file": "google-site-kit.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 85,
+      "function_name": "get_xml",
+      "source_file": "polldaddy.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 86,
+      "function_name": "ProductValidator::passes_product_terms_check",
+      "source_file": "facebook-for-woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 87,
+      "function_name": "ProductQuery::get_valid_query_vars",
+      "source_file": "woocommerce.json",
+      "total_citations": 6,
+      "grounded_citations": 6,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 88,
+      "function_name": "display_rows",
+      "source_file": "wordpress-develop.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 89,
+      "function_name": "maybe_remove_assigned",
+      "source_file": "learnpress-wishlist.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 90,
+      "function_name": "WC_Widget_Recent_Reviews::__construct",
+      "source_file": "woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 91,
+      "function_name": "gutenberg_render_dimensions_support",
+      "source_file": "gutenberg.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 92,
+      "function_name": "PostNL::instance_form_fields",
+      "source_file": "woo-postnl.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 93,
+      "function_name": "Document::create",
+      "source_file": "woo-razorpay.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 94,
+      "function_name": "get_commentdata",
+      "source_file": "wordpress-develop.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 95,
+      "function_name": "LP_Request::register_ajax",
+      "source_file": "learnpress-wishlist.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 96,
+      "function_name": "ProductAverageRating::register_block_type_assets",
+      "source_file": "woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 97,
+      "function_name": "AddressChecks::field_maximum_cart_value",
+      "source_file": "bs-payone-woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 98,
+      "function_name": "OptionsMethodShippingService::getOptionsShipments",
+      "source_file": "melhor-envio-cotacao.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 99,
+      "function_name": "is_admin_bar_showing",
+      "source_file": "wordpress-develop.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 100,
+      "function_name": "ACF_Admin_Tool_Import::html",
+      "source_file": "advanced-custom-fields.json",
+      "total_citations": 2,
+      "grounded_citations": 2,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 101,
+      "function_name": "is_order_ready_for_capture",
+      "source_file": "woocommerce-square.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 102,
+      "function_name": "TFTabs_Widget_Free::get_style_depends",
+      "source_file": "themesflat-addons-for-elementor.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 103,
+      "function_name": "get_attribute_taxonomies::unset_regeneration_aborted_flag",
+      "source_file": "woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 104,
+      "function_name": "schedule_action::update_term_meta_fields",
+      "source_file": "woocommerce.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 105,
+      "function_name": "prepare_object_for_response",
+      "source_file": "learnpress-course-review.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 106,
+      "function_name": "Skin_Base::update_control",
+      "source_file": "elementor.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 107,
+      "function_name": "RewriteAPI::getResponseBody",
+      "source_file": "official-mailerlite-sign-up-forms.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 108,
+      "function_name": "get_filename",
+      "source_file": "amp.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 109,
+      "function_name": "Template_Widget_Caption::__construct",
+      "source_file": "a3-responsive-slider.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 110,
+      "function_name": "DataListView::setShowStatus",
+      "source_file": "onoffice-for-wp-websites.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 111,
+      "function_name": "JupiterX_Core_Control_Panel_Popup::get_instance",
+      "source_file": "jupiterx-core.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 112,
+      "function_name": "remove_attribute",
+      "source_file": "speculation-rules.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 113,
+      "function_name": "Notification::get_date_notified",
+      "source_file": "woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 114,
+      "function_name": "get_activate_error_message",
+      "source_file": "woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 115,
+      "function_name": "Campaign::getAdSets",
+      "source_file": "official-facebook-pixel.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 116,
+      "function_name": "Widget_CTA_Render::render_text_container",
+      "source_file": "hello-plus.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 117,
+      "function_name": "acf_loop::remove_loop",
+      "source_file": "advanced-custom-fields.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 118,
+      "function_name": "Cash_App_Pay_Gateway::add_admin_notices",
+      "source_file": "woocommerce-square.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 119,
+      "function_name": "ThirdPartyPartnerLiftRequest::getSelf",
+      "source_file": "official-facebook-pixel.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 120,
+      "function_name": "PLVT_View_Transition_Animation_Registry::use_animation_post_transition_names",
+      "source_file": "web-worker-offloading.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 121,
+      "function_name": "add_filter::add_admin_body_classes",
+      "source_file": "woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 122,
+      "function_name": "Emogrifier::getCssSelectorPrecedence",
+      "source_file": "learnpress-buddypress.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 123,
+      "function_name": "normalizeValue",
+      "source_file": "wp-scss.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 124,
+      "function_name": "RoomUploadedFileMetadata::getFilePath",
+      "source_file": "plugnmeet.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 125,
+      "function_name": "override_i18n",
+      "source_file": "woo-product-reviews-shortcode.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 126,
+      "function_name": "CatalogBasedTargetingFields::getFieldTypes",
+      "source_file": "official-facebook-pixel.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 127,
+      "function_name": "update_customer",
+      "source_file": "woocommerce-payments.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 128,
+      "function_name": "LP_Material_Files_DB::delete_local_file",
+      "source_file": "learnpress-wishlist.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 129,
+      "function_name": "WC_Stripe_Agentic_Commerce_Product_Mapper::get_tax_behavior",
+      "source_file": "woocommerce-gateway-stripe.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 130,
+      "function_name": "ActiveRoomInfo::setRoomTitle",
+      "source_file": "plugnmeet.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 131,
+      "function_name": "field_timezone",
+      "source_file": "cmb2.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 132,
+      "function_name": "set_type",
+      "source_file": "learnpress-buddypress.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 133,
+      "function_name": "Paths::getConfigDirAbs",
+      "source_file": "webp-express.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 134,
+      "function_name": "PlaceholderSelector::__construct",
+      "source_file": "wp-scss.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 135,
+      "function_name": "MasVideos_Emails::instance",
+      "source_file": "masvideos.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 136,
+      "function_name": "get_group::jsonSerialize",
+      "source_file": "performance-lab.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 137,
+      "function_name": "Auditor::test_internet",
+      "source_file": "platnosci-online-blue-media.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 138,
+      "function_name": "get_gateway",
+      "source_file": "woocommerce-square.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 139,
+      "function_name": "LP_Modal_Search_Users::instance",
+      "source_file": "learnpress-wishlist.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 140,
+      "function_name": "perflab_wrap_server_timing",
+      "source_file": "web-worker-offloading.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 141,
+      "function_name": "register_routes::woopay_tracker",
+      "source_file": "woocommerce-payments.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 142,
+      "function_name": "PLVT_View_Transition_Animation::get_aliases",
+      "source_file": "optimization-detective.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 143,
+      "function_name": "LP_Widget_Popular_Courses::lp_rest_api_content",
+      "source_file": "learnpress-wishlist.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 144,
+      "function_name": "amend_twentytwentyone_styles",
+      "source_file": "amp.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 145,
+      "function_name": "WooCommercePreOrders::init",
+      "source_file": "google-listings-and-ads.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 146,
+      "function_name": "render_additional_fields::render_content",
+      "source_file": "woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 147,
+      "function_name": "TypeChecker::convertStringToPrimType",
+      "source_file": "official-facebook-pixel.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 148,
+      "function_name": "add_action::manual_database_update",
+      "source_file": "woocommerce.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 149,
+      "function_name": "uninstall",
+      "source_file": "custom-post-type-permalinks.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 150,
+      "function_name": "masvideos_template_loop_person_poster_close",
+      "source_file": "masvideos.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 151,
+      "function_name": "perflab_maybe_remove_object_cache_dropin",
+      "source_file": "optimization-detective.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 152,
+      "function_name": "YITH_WCAS_Ajax_Search_Widget::form",
+      "source_file": "yith-woocommerce-ajax-search.json",
+      "total_citations": 6,
+      "grounded_citations": 6,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 153,
+      "function_name": "WC_REST_Stripe_Settings_Controller::update_is_sepa_tokens_for_ideal_enabled",
+      "source_file": "woocommerce-gateway-stripe.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 154,
+      "function_name": "SassScriptException::convertOrCoerceValue",
+      "source_file": "wp-scss.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 155,
+      "function_name": "WC_Gateway_PPEC_With_PayPal_Addons::update_failing_payment_method",
+      "source_file": "pp-express-wc4jp.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 156,
+      "function_name": "AbstractBlockType::render_content_block_template",
+      "source_file": "learnpress-wishlist.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 157,
+      "function_name": "Database::table",
+      "source_file": "seo-by-rank-math.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 158,
+      "function_name": "allowed_numbers::setName",
+      "source_file": "plugnmeet.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 159,
+      "function_name": "product_filter_context_data",
+      "source_file": "woocommerce-paypal-payments.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 160,
+      "function_name": "get_totalauthors",
+      "source_file": "wp-stats.json",
+      "total_citations": 7,
+      "grounded_citations": 7,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 161,
+      "function_name": "acf",
+      "source_file": "advanced-custom-fields.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 162,
+      "function_name": "WC_REST_Square_Settings_Controller::get_settings",
+      "source_file": "woocommerce-square.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 163,
+      "function_name": "WP_Translation_File::translate",
+      "source_file": "wordpress-develop.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 164,
+      "function_name": "initialize_available_currencies",
+      "source_file": "woocommerce-payments.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 165,
+      "function_name": "Request::request",
+      "source_file": "razorpay-quick-payments.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 166,
+      "function_name": "wp_ajax_edit_theme_plugin_file",
+      "source_file": "wordpress-develop.json",
+      "total_citations": 6,
+      "grounded_citations": 6,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 167,
+      "function_name": "GTag::get_amp_mode",
+      "source_file": "seo-by-rank-math.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 168,
+      "function_name": "LP_Admin_Ajax::duplicator",
+      "source_file": "learnpress-wishlist.json",
+      "total_citations": 4,
+      "grounded_citations": 4,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 169,
+      "function_name": "Epsilon_Control_Toggle::__construct",
+      "source_file": "shapely-companion.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 170,
+      "function_name": "Control_Color::get_default_settings",
+      "source_file": "elementor.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 171,
+      "function_name": "HTMLBuilder::escapeURL",
+      "source_file": "twitter.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 172,
+      "function_name": "get_item_schema",
+      "source_file": "woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 173,
+      "function_name": "Seller::getSiteId",
+      "source_file": "woocommerce-mercadopago.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 174,
+      "function_name": "MasVideos_Person::set_tag_ids",
+      "source_file": "masvideos.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 175,
+      "function_name": "sanitize_setting_value",
+      "source_file": "where-did-they-go-from-here.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 176,
+      "function_name": "set_cache",
+      "source_file": "woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 177,
+      "function_name": "WC_WCCOM_Site_Installation_Manager::__construct",
+      "source_file": "woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 178,
+      "function_name": "Image_CDN::init",
+      "source_file": "jetpack.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 179,
+      "function_name": "IntegrationRegistry::get_all_registered_editor_script_handles",
+      "source_file": "woocommerce-paypal-payments.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 180,
+      "function_name": "Jetpack_Subscribe_Overlay::init",
+      "source_file": "jetpack.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 181,
+      "function_name": "agent_dispatches::getReplayEnabled",
+      "source_file": "plugnmeet.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 182,
+      "function_name": "Util::__construct",
+      "source_file": "jupiterx-core.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 183,
+      "function_name": "Image_Helper::get_caption",
+      "source_file": "wordpress-seo.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 184,
+      "function_name": "WC_Square_Gift_Card_Sent::__construct",
+      "source_file": "woocommerce-square.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 185,
+      "function_name": "AdAccount::getAdSetsByLabels",
+      "source_file": "official-facebook-pixel.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 186,
+      "function_name": "OrdersVersionStringInvalidator::handle_before_order_save",
+      "source_file": "woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 187,
+      "function_name": "SettingsProvider::gateway_enabled",
+      "source_file": "woocommerce-paypal-payments.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 188,
+      "function_name": "QuizQuestionsDB::getInstance",
+      "source_file": "learnpress-bbpress.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 189,
+      "function_name": "Module::save_variation_gallery_data",
+      "source_file": "jupiterx-core.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 190,
+      "function_name": "Plugnmeet_Admin::sanitize_array_fields",
+      "source_file": "plugnmeet.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 191,
+      "function_name": "acf_get_textarea_input",
+      "source_file": "advanced-custom-fields.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 192,
+      "function_name": "WC_Admin::init_page_controller",
+      "source_file": "woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 193,
+      "function_name": "EventSourceGroup::getEndpoint",
+      "source_file": "official-facebook-pixel.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 194,
+      "function_name": "TokenExchangeFailure::get_note",
+      "source_file": "pinterest-for-woocommerce.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 195,
+      "function_name": "JupiterX_Widget_Posts::widget",
+      "source_file": "jupiterx-core.json",
+      "total_citations": 6,
+      "grounded_citations": 6,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 196,
+      "function_name": "IngressInput::name",
+      "source_file": "plugnmeet.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 197,
+      "function_name": "ForRule::__toString",
+      "source_file": "wp-scss.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 198,
+      "function_name": "get_customer_id_by_user_id",
+      "source_file": "woocommerce.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 199,
+      "function_name": "jetpack_load_shortcodes",
+      "source_file": "jetpack.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 200,
+      "function_name": "ParagonIE_Sodium_Compat::ristretto255_scalar_sub",
+      "source_file": "wordpress-develop.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 201,
+      "function_name": "get_background_sync_interval::process_deleted_option",
+      "source_file": "woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 202,
+      "function_name": "EventsCollection::get_default_params",
+      "source_file": "wp-mail-smtp.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 203,
+      "function_name": "WP_Filesystem_Direct::chmod",
+      "source_file": "wordpress-develop.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 204,
+      "function_name": "packet_drift::clearNtpReportDrift",
+      "source_file": "plugnmeet.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 205,
+      "function_name": "ListUtil::last",
+      "source_file": "wp-scss.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 206,
+      "function_name": "is_enabled",
+      "source_file": "woocommerce-payments.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 207,
+      "function_name": "GetActiveRoomInfoRes::clearRoom",
+      "source_file": "plugnmeet.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 208,
+      "function_name": "VaultPaymentTokenDeleted::__construct",
+      "source_file": "woocommerce-paypal-payments.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 209,
+      "function_name": "Options_Form_Generator::__construct",
+      "source_file": "duplicate-post.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 210,
+      "function_name": "WP_REST_Global_Styles_Controller_Gutenberg_Test::test_get_items",
+      "source_file": "gutenberg.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 211,
+      "function_name": "Product_Additional_Info::get_additional_info",
+      "source_file": "jupiterx-core.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 212,
+      "function_name": "get_interval",
+      "source_file": "google-listings-and-ads.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 213,
+      "function_name": "MasVideos_Meta_Box_Episode_Data::prepare_sources",
+      "source_file": "masvideos.json",
+      "total_citations": 6,
+      "grounded_citations": 6,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 214,
+      "function_name": "Email_Report_Data_Section_Part::set_dimensions",
+      "source_file": "google-site-kit.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 215,
+      "function_name": "method_exists::get_wp_mail_initiator",
+      "source_file": "wp-mail-smtp.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 216,
+      "function_name": "MasVideos_TMDB_Configuration::setAPIKey",
+      "source_file": "masvideos.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 217,
+      "function_name": "Has_Connected_Admins::query_connected_admins",
+      "source_file": "google-site-kit.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 218,
+      "function_name": "prependSelectors",
+      "source_file": "wp-scss.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 219,
+      "function_name": "renderDropdown",
+      "source_file": "woocommerce.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 220,
+      "function_name": "WC_Customer::set_billing_first_name",
+      "source_file": "woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 221,
+      "function_name": "PairedBrowsing::init_app",
+      "source_file": "amp-wp.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 222,
+      "function_name": "end",
+      "source_file": "woo-widget-product-slideshow.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 223,
+      "function_name": "File_Upload_Upgrader::cleanup",
+      "source_file": "wordpress-develop.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 224,
+      "function_name": "Gateway::getStateDate",
+      "source_file": "platnosci-online-blue-media.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 225,
+      "function_name": "AdminTemplate::html_popup_items_to_select_clone",
+      "source_file": "learnpress-wishlist.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 226,
+      "function_name": "Control_Gallery::get_default_settings",
+      "source_file": "elementor.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 227,
+      "function_name": "VaultPaymentTokenDeleted::responsible_for_request",
+      "source_file": "woocommerce-paypal-payments.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 228,
+      "function_name": "Jetpack_Sitemap_State::initial",
+      "source_file": "jetpack.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 229,
+      "function_name": "LP_Meta_Box_WP_Editor_Field::output",
+      "source_file": "learnpress-wishlist.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 230,
+      "function_name": "InsightsTranscriptionConfigReq::getAllowedSpokenLangs",
+      "source_file": "plugnmeet.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 231,
+      "function_name": "Ehp_Footer::get_type",
+      "source_file": "hello-plus.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 232,
+      "function_name": "get_nonce_action",
+      "source_file": "learnpress-wishlist.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 233,
+      "function_name": "Module::handle_editor",
+      "source_file": "jupiterx-core.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 234,
+      "function_name": "build_root_map",
+      "source_file": "seo-by-rank-math.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 235,
+      "function_name": "ApiRequest::addParam",
+      "source_file": "official-facebook-pixel.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 236,
+      "function_name": "prepare_context_data::update_preview_post_template_html_data",
+      "source_file": "woocommerce.json",
+      "total_citations": 6,
+      "grounded_citations": 6,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 237,
+      "function_name": "_custom_background_cb",
+      "source_file": "wordpress-develop.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 238,
+      "function_name": "Element_Base::print_element",
+      "source_file": "elementor.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 239,
+      "function_name": "LP_Modal_Search_Users::get_pagination",
+      "source_file": "learnpress-course-review.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 240,
+      "function_name": "permission::getRegion",
+      "source_file": "plugnmeet.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 241,
+      "function_name": "Przelewy24::init_form_fields",
+      "source_file": "bs-payone-woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 242,
+      "function_name": "CatList::get_conditional_title",
+      "source_file": "list-category-posts.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 243,
+      "function_name": "BaseByteReadStream::seek_outside_of_buffer",
+      "source_file": "wordpress-importer.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 244,
+      "function_name": "UserLeadGenDisclaimerResponseFields::getFieldTypes",
+      "source_file": "official-facebook-pixel.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 245,
+      "function_name": "type::setType",
+      "source_file": "plugnmeet.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 246,
+      "function_name": "Plugnmeet_SettingsPage::numberCallBack",
+      "source_file": "plugnmeet.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 247,
+      "function_name": "WPCOM_Liveblog_AMP::is_amp_polling",
+      "source_file": "liveblog.json",
+      "total_citations": 6,
+      "grounded_citations": 6,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 248,
+      "function_name": "lazy_load_namespace::rest_api_init",
+      "source_file": "woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 249,
+      "function_name": "Option::smallParcelReference",
+      "source_file": "woocommerce-shipping.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 250,
+      "function_name": "WP_Resume::upgrade",
+      "source_file": "wp-resume.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 251,
+      "function_name": "WP_Fatal_Error_Handler::should_handle_error",
+      "source_file": "wordpress-develop.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 252,
+      "function_name": "LockSettings::getLockMicrophone",
+      "source_file": "plugnmeet.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 253,
+      "function_name": "masvideos_reset_episodes_loop",
+      "source_file": "masvideos.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 254,
+      "function_name": "WC_Payments_Express_Checkout_Ajax_Handler::get_payment_method_title_from_definition",
+      "source_file": "woocommerce-payments.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 255,
+      "function_name": "custom_orders_table_usage_is_enabled::custom_orders_table_usage_is_enabled",
+      "source_file": "woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 256,
+      "function_name": "Media_Carousel::add_repeater_controls",
+      "source_file": "jupiterx-core.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 257,
+      "function_name": "LP_Abstract_Course::get_permalink",
+      "source_file": "learnpress-buddypress.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 258,
+      "function_name": "SelfTestRedirectAbstract::startupTests",
+      "source_file": "webp-express.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 259,
+      "function_name": "Jetpack_Google_Translate_Widget::update",
+      "source_file": "jetpack.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 260,
+      "function_name": "LP_REST_Instructor_Controller::__construct",
+      "source_file": "learnpress-bbpress.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 261,
+      "function_name": "DataFormConfiguration::setActionType",
+      "source_file": "onoffice-for-wp-websites.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 262,
+      "function_name": "wc_doing_it_wrong",
+      "source_file": "woocommerce.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 263,
+      "function_name": "Mod_Performance_Monitor::normalize_type_rows",
+      "source_file": "wp-optimizer.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 264,
+      "function_name": "IntakeDeleteAction::__construct",
+      "source_file": "cdekdelivery.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 265,
+      "function_name": "Controls_Stack::add_control",
+      "source_file": "jet-style-manager.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 266,
+      "function_name": "ScriptLoaderRegistrator::enqueue",
+      "source_file": "onoffice-for-wp-websites.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 267,
+      "function_name": "Front::get_featured_image_id_args",
+      "source_file": "seo-by-rank-math.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 268,
+      "function_name": "Frontend::__construct",
+      "source_file": "jupiterx-core.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 269,
+      "function_name": "WP_Customize_Selective_Refresh::enqueue_preview_scripts",
+      "source_file": "wordpress-develop.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    }
+  ]
+}
