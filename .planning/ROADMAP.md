@@ -239,9 +239,9 @@ Plans:
 
 ---
 
-### Phase 5: Packaging and Deployment
+### Phase 5: Packaging and Deployment (DEFERRED → v3.0 Phase 15)
 **Goal**: Model is quantized, served on all DGX Toolbox endpoints, and published to HuggingFace Hub
-**Depends on**: Phase 4 (human-approved eval results)
+**Depends on**: Deferred — all DPLT requirements subsumed by v3.0 PKG/PRUNE phases (Phase 13-15)
 **Requirements**: DPLT-01, DPLT-02, DPLT-03, DPLT-04, DPLT-05, DPLT-06, DPLT-07
 **Success Criteria** (what must be TRUE):
   1. LoRA adapter merged into base model (or served via --lora-modules)

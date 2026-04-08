@@ -6,7 +6,7 @@ status: executing
 stopped_at: "Phase 4.1 context gathered — seed expansion strategy, issue #1 pipeline reorder accepted"
 last_updated: "2026-04-07T23:45:21.775Z"
 progress:
-  total_phases: 16
+  total_phases: 19
   completed_phases: 2
   total_plans: 12
   completed_plans: 9
@@ -29,7 +29,7 @@ Plan: 1 of 3
 Next phase: 4.1 (Reasoning Data Generation) — blocked on Phase 4 triage completing
 Status: Executing Phase 04.1
 
-Progress: [██░░░░░░░░] 33% (phases 1, 2, 3, 4 partial, 6 complete vs 18 total)
+Progress: [██░░░░░░░░] 26% (phases 1, 2, 3, 4 partial, 6 complete — 5 of 19 total)
 
 ## Performance Metrics
 
@@ -82,7 +82,7 @@ Recent decisions affecting current work:
 - [v1.2 Roadmap 2026-04-05]: Phase 4.4 human sign-off required before adapter merge — adapter written to models/ only after human approval
 - [v1.2 Roadmap 2026-04-05]: Phase 7 dependency updated to Phase 4.4 (v1.2 reasoning adapter) — v1.2 must complete before MoE-Sieve profiling; fresh routing profile required even though router was frozen during v1.2
 - [v2.0 Reorder 2026-04-08]: Pipeline reordered per Issue #1 (D-07): RL (Phases 8-9) runs BEFORE MoE-Sieve (Phase 11) — routing statistics should reflect reward-aligned behavior
-- [v2.0 Reorder 2026-04-08]: v2.0 now Phases 7-10 (Router Profiling, Reward Infra, GSPO/GRPO Training, RL Eval); GSPO primary per D-08
+- [v2.0 Reorder 2026-04-08]: v2.0 now Phases 7-10 (Router Profiling, Reward Infra, GSPO Training, RL Eval); GSPO primary per D-08
 - [v2.0 Reorder 2026-04-08]: Phase 10 (RL Eval) gates Phase 11 (Post-RL MoE-Sieve) — RL eval results must confirm readiness
 - [v3.0 Reorder 2026-04-08]: v3.0 now Phases 11-15 (Post-RL MoE-Sieve, Sieve Eval, Merge+Pruning, Final Eval, Packaging)
 - [v3.0 Reorder 2026-04-08]: Phase 13 MERGE-01 (LoRA merge) must precede pruning — activation magnitudes require unified model
@@ -111,7 +111,7 @@ Recent decisions affecting current work:
 - [Phase 7]: Phase 4.4 (v1.2 complete — adapter merged) must complete before Phase 7 can execute
 - [Phase 6]: dgx-toolbox Phase 13 (telemetry/ package) must be complete before Phase 6 can execute
 - [Phase 8]: Phase 7 (router profiling + protected expert set) must complete before Phase 8 (reward infrastructure) begins
-- [Phase 10]: Phase 9 (GSPO/GRPO training) must complete before Phase 10 (RL eval) — RL eval gates v3.0 MoE-Sieve
+- [Phase 10]: Phase 9 (GSPO training) must complete before Phase 10 (RL eval) — RL eval gates v3.0 MoE-Sieve
 - [Phase 11]: Phase 10 (RL eval) must confirm readiness before Phase 11 (post-RL MoE-Sieve) begins — fresh RL-policy routing profiling required
 - [Phase 13]: LoRA merge (MERGE-01) must complete before pruning — strictly sequential within the phase; AIMER primary (D-09)
 - [Phase 15]: Quantization (PKG-03) is gated by Gate 2 decision — verify AWQ support for Qwen3-30B-A3B in vLLM (likely native)
