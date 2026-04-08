@@ -1,0 +1,614 @@
+[
+  {
+    "seed_id": "ugc_boundary_001",
+    "seed_type": "deep_judge_cot",
+    "source_url": "https://github.com/WordPress/gutenberg/issues/67078",
+    "source_platform": "github",
+    "source_file": "packages/components/src/dropdown-menu-v2/index.tsx (Ariakit Menu wrapper)",
+    "code": "<Ariakit.Menu modal>\n  {/* When modal=true, Ariakit adds inert to sibling elements:\n      <div id=\"wpwrap\" inert>\n      The trigger button lives inside #wpwrap.\n      The menu's aria-labelledby points to the trigger button ID.\n      Chrome treats elements inside an inert subtree as invalid\n      sources for aria-labelledby, so the accessible name becomes\n      an empty string with an 'invalid source' warning. */}\n  <div role=\"menu\" aria-labelledby=\"trigger-button-id\">\n    {/* menu items */}\n  </div>\n</Ariakit.Menu>",
+    "human_reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "accessibility": {
+          "score": 2,
+          "analysis": "The menu is labelled by means of an aria-labelledby attribute that points to the trigger button. When the menu opens, the trigger button is inside a wrapper that gets an inert attribute. At this point, Chrome ignores the trigger button to compute the label of the menu. Usually referenced elements that are visually hidden with CSS or the HTML hidden attribute do work for aria-labelledby. However, inert is different — at least in Chrome — the accessible name becomes an empty string and the DevTools accessibility panel reports 'invalid source'. Firefox does compute the menu labeling correctly, which shows this is a gray area in the specs and a browser inconsistency. The real problem is that inert is being used without thorough accessibility testing, and the Gutenberg Modal component uses aria-hidden instead of inert specifically to avoid this class of issue."
+        }
+      },
+      "overall_score": 0,
+      "key_observation": "This is a boundary case because the aria-labelledby reference IS syntactically valid and the referenced element IS in the DOM — the failure only manifests due to the inert attribute semantics in Chrome, an interaction few developers test for. The defect is in shipped Gutenberg code (introduced in the Ariakit-based DropdownMenu v2), affects the Site Editor Preview button menu, and was filed by a recognised Gutenberg a11y contributor (afercia). It illustrates that technically correct ARIA labeling can break under inert, making it a subtle and high-signal semantic ARIA failure."
+    },
+    "dimensions_addressed": [
+      "accessibility"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  },
+  {
+    "seed_id": "ugc_boundary_002",
+    "seed_type": "critique_then_fix",
+    "source_url": "https://bbpress.org/forums/topic/tabindex-attributes-cause-accessibility-problems/",
+    "source_platform": "wp_org",
+    "source_file": "src/includes/forums/template.php (lines ~2393 and ~2479)",
+    "defective_code": "/* bbPress forum template.php — the bbp_tab_index_attribute() helper\n   emits a positive tabindex attribute on native form controls,\n   overriding the document's natural tab order. */\n\n/* Defective (current): */\n<select\n  name=\"<?php echo esc_attr( $r['select_id'] ) ?>\"\n  id=\"<?php echo esc_attr( $r['select_id'] ) ?>_select\"\n  class=\"<?php echo esc_attr( $r['select_class'] ); ?>\"\n  <?php bbp_tab_index_attribute( $r['tab'] ); ?>\n>\n\n/* The bbp_tab_index_attribute() function outputs:\n   tabindex=\"{positive integer}\" on every form control\n   across forum, topic, and reply templates, imposing\n   a custom sequential focus order that conflicts with\n   the surrounding WordPress page's tab sequence. */",
+    "human_critique": {
+      "summary": "The tabindex attributes all over the place in the bbPress plugin are causing accessibility problems for users who are blind or who navigate using the Tab key. Disrupting the tab sequence of a page is almost never an OK solution on a site — it creates a confusing and unpredictable navigation. A patch was committed to bbPress 2.6 five years ago but never released, so the defect ships in the current distributed plugin. The issue is that positive tabindex values impose an ordering that often bears no resemblance to the visual or DOM order, so keyboard users jump around unpredictably among the form controls within forum, topic, and reply forms.",
+      "dimensions": {
+        "accessibility": {
+          "severity": "high",
+          "score": 2,
+          "reasoning": "The tabindex attributes all over the place in the bbPress plugin are causing accessibility problems for users who are blind or who navigate using the Tab key. Disrupting the tab sequence of a page is almost never an OK solution on a site — it creates a confusing and unpredictable navigation. A patch was committed to bbPress 2.6 five years ago but never released, so the defect ships in the current distributed plugin. The issue is that positive tabindex values impose an ordering that often bears no resemblance to the visual or DOM order, so keyboard users jump around unpredictably among the form controls within forum, topic, and reply forms."
+        }
+      },
+      "key_observation": "The boundary subtlety is that the problem is not an absent tabindex but an unnecessary positive tabindex on already-natively-focusable controls. Many developers think tabindex is required for keyboard accessibility; the failure here is the opposite: adding it causes the disruption. The pattern spans an entire plugin's template system via a helper function, making it systemic rather than a one-off oversight. The unreleased patch and the forum thread document real user impact, and a core WordPress a11y team member (joedolson) confirmed the fix exists but remains unshipped."
+    },
+    "corrected_code": "/* Corrected: remove the bbp_tab_index_attribute() call.\n   Native form controls (select, input, button, textarea)\n   are already in the tab sequence by default;\n   no explicit tabindex is needed. */\n<select\n  name=\"<?php echo esc_attr( $r['select_id'] ) ?>\"\n  id=\"<?php echo esc_attr( $r['select_id'] ) ?>_select\"\n  class=\"<?php echo esc_attr( $r['select_class'] ); ?>\"\n>\n/* A patch to bbPress 2.6 (never released) committed\n   this fix: https://bbpress.trac.wordpress.org/ticket/2714 */",
+    "dimensions_addressed": [
+      "accessibility"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  },
+  {
+    "seed_id": "ugc_boundary_003",
+    "seed_type": "deep_judge_cot",
+    "source_url": "https://github.com/WordPress/gutenberg/issues/15292",
+    "source_platform": "github",
+    "source_file": "packages/a11y/src/index.js (wp-a11y-speak-assertive region); Gutenberg block editor action handlers",
+    "code": "<!-- The wp-a11y-speak-assertive live region is used for\n     non-urgent editorial feedback such as 'Block duplicated'.\n     assertive interrupts the screen reader immediately,\n     appropriate only for critical/time-sensitive alerts. -->\n<div\n  id=\"wp-a11y-speak-assertive\"\n  aria-live=\"assertive\"\n  aria-relevant=\"additions text\"\n  aria-atomic=\"true\"\n  class=\"screen-reader-text wp-a11y-speak-region\"\n>\n  Block duplicated.\n</div>\n\n<!-- Many other block actions (hide/show Block panel,\n     delete block, undo, redo) emit NO announcement at all,\n     while some that do (block creation on Enter key press)\n     use assertive — causing either silence or interruption\n     with no middle ground of polite status messages. -->",
+    "human_reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "accessibility": {
+          "score": 2,
+          "analysis": "Many block functions are not announced to assistive technologies. Although some functions are announced (such as creating a new block), many others are not — hiding/showing the Block panel, removing blocks, duplicating blocks, undo, and redo. Some actions are easy to trigger by mistake — pressing Enter at the end of block text creates a new block, which is announced, but undoing it is not. Users who are blind must determine what has changed by navigating around all the blocks, relying on short-term memory more than sighted users. Additionally, for the actions that are announced, using assertive for routine status feedback like 'Block duplicated' is an overuse: assertive should be reserved for critical, time-sensitive interruptions."
+        }
+      },
+      "overall_score": 0,
+      "key_observation": "The boundary condition is two-layered: (1) silence where announcements should exist (missing live region updates), and (2) incorrect politeness level where announcements do exist (assertive for non-urgent feedback). Both issues coexist in the same codebase. The silence problem is a classic live region gap — not wrong markup but absent markup. The assertive overuse is a semantic misuse that degrades the experience for screen reader users who rely on the polite queue not being constantly preempted. This is from the WPCampus/Tenon audit of Gutenberg (GUT-series issues), a peer-reviewed accessibility assessment."
+    },
+    "dimensions_addressed": [
+      "accessibility"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  },
+  {
+    "seed_id": "ugc_boundary_004",
+    "seed_type": "critique_then_fix",
+    "source_url": "https://core.trac.wordpress.org/ticket/47682",
+    "source_platform": "wp_org",
+    "source_file": "wp-admin/css/common.scss (and derived wp-admin/css/common.min.css)",
+    "defective_code": "/* WordPress admin — link hover state is communicated\n   solely by a color change from #0073aa (rest) to #00a0d2 (hover).\n   The hover color has insufficient contrast against the\n   most common admin backgrounds, and no non-color cue\n   (underline, border, icon) is added on hover. */\n\na {\n  color: #0073aa;\n}\na:hover,\na:active {\n  color: #00a0d2; /* contrast ratios:\n    3.02:1 on white #ffffff   (WCAG AA requires 4.5:1)\n    2.67:1 on grey  #f1f1f1   (admin default bg)\n    2.87:1 on grey  #f9f9f9   (table zebra stripe)\n    — all below WCAG 1.4.3 minimum AND\n    no text-decoration or other non-color cue is added */\n  color: #00a0d2;\n}",
+    "human_critique": {
+      "summary": "The hover/active state of links in the WordPress admin is communicated only by a lighter blue (#00a0d2 vs. #0073aa at rest), which has a contrast ratio of 3.02:1 on white and as low as 2.67:1 on the standard admin grey background — both below the WCAG 1.4.3 minimum of 4.5:1 for normal text. The hover color is also lighter than the rest color, meaning contrast is reduced at exactly the moment users are interacting. No non-color cue (underline, border, shape change) is added on hover to compensate. The ticket notes that using color-only hover states is also a WCAG 1.4.1 concern when the hover color contrast with the rest state is below 3:1, since color-blind or low-vision users may not perceive the state change at all.",
+      "dimensions": {
+        "accessibility": {
+          "severity": "high",
+          "score": 2,
+          "reasoning": "The hover/active state of links in the WordPress admin is communicated only by a lighter blue (#00a0d2 vs. #0073aa at rest), which has a contrast ratio of 3.02:1 on white and as low as 2.67:1 on the standard admin grey background — both below the WCAG 1.4.3 minimum of 4.5:1 for normal text. The hover color is also lighter than the rest color, meaning contrast is reduced at exactly the moment users are interacting. No non-color cue (underline, border, shape change) is added on hover to compensate. The ticket notes that using color-only hover states is also a WCAG 1.4.1 concern when the hover color contrast with the rest state is below 3:1, since color-blind or low-vision users may not perceive the state change at all."
+        }
+      },
+      "key_observation": "This is a boundary case because the rest-state link color (#0073aa) IS compliant, and the bug only manifests in the hover/active transient state — a state that automated scanners rarely check since it requires simulated interaction. Furthermore, the failure combines two overlapping WCAG violations: 1.4.3 (contrast minimum) and 1.4.1 (color as the sole state indicator), which is more nuanced than a simple missing-color-contrast defect. The issue was filed by the WordPress accessibility lead (afercia), confirmed, patched, and shipped in 5.3.1, providing full UGC lifecycle evidence."
+    },
+    "corrected_code": "/* Fix committed in WordPress 5.3.1:\n   hover color changed to #006799, which achieves\n   ≥4.5:1 contrast on all admin backgrounds. */\na:hover,\na:active {\n  color: #006799;\n}\n\n/* The ticket also proposed non-color alternatives\n   that were not committed but remain best practice: */\na:hover {\n  color: #006799;\n  text-decoration: underline; /* adds non-color hover cue */\n}",
+    "dimensions_addressed": [
+      "accessibility"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  },
+  {
+    "seed_id": "ugc_boundary_005",
+    "seed_type": "deep_judge_cot",
+    "source_url": "https://github.com/WordPress/gutenberg/issues/55414",
+    "source_platform": "github",
+    "source_file": "packages/block-library/src/image/view.js (Lightbox modal focus handling, introduced in #55212)",
+    "code": "/* The Lightbox implementation branches focus behavior\n   based on event.pointerType, which is unreliable across browsers: */\n\nfunction openLightbox( event ) {\n  // Intended: skip focus transfer for pointer/touch interactions,\n  // apply only for keyboard. But:\n  // Chrome/Opera: event.pointerType === '' on keyboard (expected)\n  // Firefox/Safari: event.pointerType === undefined on keyboard\n  // This condition therefore evaluates differently per browser.\n  if ( event.pointerType !== '' ) {\n    // Pointer/touch path: focus is NOT moved to the dialog.\n    // Focus stays on the page behind the dialog:\n    //   - tabbing navigates page content behind the modal\n    //   - dialog is not announced by screen readers\n    //   - Escape key does not close the dialog\n    return;\n  }\n  // Keyboard path (only reached in Chrome, not Firefox/Safari):\n  dialog.querySelector( '.close-button' ).focus();\n}\n\nfunction closeLightbox() {\n  // Focus is not returned to the trigger button.\n  // Result: complete focus loss — next Tab press\n  // restarts from the document root.\n  dialog.close();\n}",
+    "human_reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "accessibility": {
+          "score": 2,
+          "analysis": "The implementation based on event.pointerType is buggy — Chrome and Opera return an empty string when using the keyboard (as expected), while Firefox and Safari return undefined. Regardless, differentiating behavior depending on pointing device vs. 'other' is not OK for accessibility. Modal dialog focus management should always have the same behavior regardless of mouse, touch, keyboard, or other input. The assumption that users are always either using a pointing device or other is incorrect — for example, a user may open the modal dialog with a click and then close it by pressing the Escape key. When opening the dialog, focus is not transferred to the dialog in Firefox: focus stays on the page behind the dialog, the dialog is not announced by screen readers, and the dialog does not close on Escape. When closing, focus should always return to the trigger button, but instead there is a full focus loss: tabbing restarts from the document root."
+        }
+      },
+      "overall_score": 0,
+      "key_observation": "This is a high-signal boundary case because the defect is not a missing focus management implementation but a flawed conditional that makes focus handling browser-dependent, producing correct behavior in one browser (Chrome keyboard) and broken behavior in another (Firefox keyboard). The failure also conflates input modality detection with accessibility behaviour — a subtle architectural error. The issue was filed by afercia (a WordPress core accessibility contributor) as a follow-up review on a PR, demonstrating that the defect survived code review. All failure modes — focus not transferred on open, no screen reader announcement, Escape key inoperative, full focus loss on close — are documented with browser-specific reproduction steps."
+    },
+    "dimensions_addressed": [
+      "accessibility"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  },
+  {
+    "seed_id": "ugc_boundary_006",
+    "seed_type": "critique_then_fix",
+    "source_url": "https://core.trac.wordpress.org/ticket/49250",
+    "source_platform": "wp_org",
+    "source_file": "wp-admin/includes/ms.php",
+    "defective_code": "sprintf( __( 'Are you sure you want to delete the site %1$s? This can not be undone. If %1$s is giving you problems, you can block it instead.', 'default' ), $blog_name )",
+    "human_critique": {
+      "summary": "The string deliberately reuses %1$s twice so that $blog_name is only passed to sprintf() once. The patch proposed replacing both occurrences with %s and passing $blog_name twice. The ticket was closed as 'wontfix' with the explanation: '%1$s is used here so that we don't have to pass $blog_name to sprintf() twice to avoid a Too few arguments PHP warning. With the patch, %s is used twice, so we'll also have to pass $blog_name twice. There are at least two other places in core with the same approach. I don't see a significant benefit in breaking existing translations here.' The boundary case is the semantic collision between PHP's sprintf argument-reuse mechanism (%1$s appearing twice for a single argument) and the gettext convention that numbered placeholders exist to allow translators to reorder them — reuse and reorder are mutually exclusive intents expressed through identical syntax.",
+      "dimensions": {
+        "i18n": {
+          "severity": "high",
+          "score": 2,
+          "reasoning": "The string deliberately reuses %1$s twice so that $blog_name is only passed to sprintf() once. The patch proposed replacing both occurrences with %s and passing $blog_name twice. The ticket was closed as 'wontfix' with the explanation: '%1$s is used here so that we don't have to pass $blog_name to sprintf() twice to avoid a Too few arguments PHP warning. With the patch, %s is used twice, so we'll also have to pass $blog_name twice. There are at least two other places in core with the same approach. I don't see a significant benefit in breaking existing translations here.' The boundary case is the semantic collision between PHP's sprintf argument-reuse mechanism (%1$s appearing twice for a single argument) and the gettext convention that numbered placeholders exist to allow translators to reorder them — reuse and reorder are mutually exclusive intents expressed through identical syntax."
+        }
+      },
+      "key_observation": "This is a WordPress core ticket in the I18N component showing how argument-index reuse (%1$s twice for one argument) is an anti-pattern: translators seeing %1$s twice in GlotPress expect they can swap it with a second positional argument, but no such second argument exists. The wontfix rationale documents the real engineering trade-off — avoiding PHP warnings vs. honest positional semantics — giving explicit reasoning about the interaction between sprintf mechanics and i18n conventions."
+    },
+    "corrected_code": "sprintf( __( 'Are you sure you want to delete the site %s? This can not be undone. If %s is giving you problems, you can block it instead.', 'default' ), $blog_name, $blog_name )",
+    "dimensions_addressed": [
+      "i18n"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  },
+  {
+    "seed_id": "ugc_boundary_007",
+    "seed_type": "deep_judge_cot",
+    "source_url": "https://github.com/WordPress/WordPress-Coding-Standards/issues/698",
+    "source_platform": "github",
+    "source_file": "WordPress/Sniffs/WP/I18nSniff.php (WPCS autofix path); example code is generic plugin PHP",
+    "code": "__( '%s for %s item', 'my-slug' );",
+    "human_reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "i18n": {
+          "score": 2,
+          "analysis": "PHPCS reports 'Multiple placeholders should be ordered. Expected \\'%1$s, %2$s\\', but got %s,%s.' Running phpcbf to auto-fix produces the wrong result: both %s are collapsed to %1$s because str_replace() replaces all occurrences before processing the second element: str_replace(array('%s', '%s'), array('%1$s', '%2$s'), \"'%s for %s item'\") → __( '%1$s for %1$d item', 'my-slug' ). The two distinct arguments now share the same positional index, making it impossible for a translator to reorder them; furthermore the type specifier of the second placeholder is silently corrupted from %s to %d."
+        }
+      },
+      "overall_score": 0,
+      "key_observation": "The defect is a concrete autofix regression in WordPress-Coding-Standards itself (the tool developers are told to use to enforce i18n correctness). The non-reorderable pattern is the root cause: un-numbered %s placeholders cannot be swapped by a translator because sprintf does not support reordering without $n notation. The bug was confirmed, labelled 'Type: Bug / Focus: I18n', and fixed in PR #710. The original string, the broken autofix output, the expected correct output, and the str_replace root cause are all present in the issue thread."
+    },
+    "dimensions_addressed": [
+      "i18n"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  },
+  {
+    "seed_id": "ugc_boundary_008",
+    "seed_type": "critique_then_fix",
+    "source_url": "https://core.trac.wordpress.org/ticket/13651",
+    "source_platform": "wp_org",
+    "source_file": "wp-includes/comment-template.php (comments_number / comments_popup_link); wp-content/themes/twentyten/loop.php",
+    "defective_code": "comments_popup_link(\n    __( 'Leave a comment', 'twentyten' ),\n    __( '1 Comment', 'twentyten' ),\n    __( '% Comments', 'twentyten' )\n);",
+    "human_critique": {
+      "summary": "From the ticket: 'There is possibility to use 0, 1 or more comments. But for Czech there are also two plural forms: 0 (žádný komentář), 1 (1 komentář), 2-4 (komentáře) and 5 and more (komentářů). Function comments_number does not support it.' And: 'The problem is not that plural forms are not supported, it's that comments_popup_link() and comments_number() didn't use them correctly.' And: 'The problem is actually way wider and potentially applicable to any noun (i.e. days, users, articles, categories etc.) not just comments.' Czech plural rule: nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2. Polish is similar but extends the rule to all numbers >20 ending in 2, 3, or 4. The three-argument pseudo-plural API (zero/one/more) cannot represent languages with 3–6 plural forms and so the wrong string is always shown.",
+      "dimensions": {
+        "i18n": {
+          "severity": "high",
+          "score": 2,
+          "reasoning": "From the ticket: 'There is possibility to use 0, 1 or more comments. But for Czech there are also two plural forms: 0 (žádný komentář), 1 (1 komentář), 2-4 (komentáře) and 5 and more (komentářů). Function comments_number does not support it.' And: 'The problem is not that plural forms are not supported, it's that comments_popup_link() and comments_number() didn't use them correctly.' And: 'The problem is actually way wider and potentially applicable to any noun (i.e. days, users, articles, categories etc.) not just comments.' Czech plural rule: nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2. Polish is similar but extends the rule to all numbers >20 ending in 2, 3, or 4. The three-argument pseudo-plural API (zero/one/more) cannot represent languages with 3–6 plural forms and so the wrong string is always shown."
+        }
+      },
+      "key_observation": "This is a high-priority (Priority: highest omg bbq), major-severity WordPress core bug in the I18N component that shipped in default themes for years, required third-party plugins (Multilingual Comments Number, Russify Comments Number) to work around, and took six years of discussion across 80+ trac comments before a definitive fix landed. The ticket directly names the broken languages (Czech, Polish, Russian, Ukrainian), provides exact Plural-Forms strings, quotes the engineering reasoning for the failure, and shows that the API design (three fixed English slots) is structurally incapable of expressing non-English plural morphology."
+    },
+    "corrected_code": "/* Correct approach using _n() so plural forms are honoured */\ncomments_popup_link(\n    __( 'Leave a comment', 'twentyten' ),\n    _n( '%s Comment', '%s Comments', $number, 'twentyten' ),\n    _n( '%s Comment', '%s Comments', $number, 'twentyten' )\n);\n/* Or the core-approved fix using noop + translate_nooped_plural */",
+    "dimensions_addressed": [
+      "i18n"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  },
+  {
+    "seed_id": "ugc_boundary_009",
+    "seed_type": "deep_judge_cot",
+    "source_url": "https://core.trac.wordpress.org/ticket/33073",
+    "source_platform": "wp_org",
+    "source_file": "wp-includes/pluggable.php; wp-includes/feed-atom-comments.php; wp-includes/feed-rss2-comments.php",
+    "code": "/* pluggable.php — email notification; no translator guard */\n$notify_message .= sprintf( __('Trash it: %s'), admin_url(\"comment.php?action=trash&c=$comment_id\") ) . \"\\r\\n\";\n$notify_message .= sprintf( __('Delete it: %s'), admin_url(\"comment.php?action=delete&c=$comment_id\") ) . \"\\r\\n\";",
+    "human_reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "i18n": {
+          "score": 2,
+          "analysis": "From the ticket: 'Several strings need to have an indication warning translators against the inclusion of HTML entities within their translation, because of where the strings are used (RSS feeds, e-mails, JavaScript). Case in point: in French, there should be a non-breaking space (&nbsp;) before any double sign (; : ! ?). So translators would turn \"URL: %s\" into \"Adresse web&nbsp;: %s\". And for strings that are used in feeds, it breaks them.' And: 'When translations are being worked on, translators may use HTML entities in their translations. In scenarios where translation doesn't happen in a browser, these can show as the raw set of characters for the entity, for instance &bnsp;.' The HTML entity injected by the French translator is typographically correct in HTML context but appears as literal text in email body and RSS feed payloads."
+        }
+      },
+      "overall_score": 0,
+      "key_observation": "The defect is subtle: the translation string itself contains no HTML, yet a locale-correct translation (French non-breaking space before punctuation) introduces an HTML entity (&nbsp;) that is valid in browser output but destructive in email/RSS contexts. This is an I3 boundary case because the problem arises from the interaction between translatable-string context (email/feed vs. HTML) and legitimate locale typographic conventions — not from developer-inserted markup. Confirmed open core trac ticket; French and German communities both affected."
+    },
+    "dimensions_addressed": [
+      "i18n"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  },
+  {
+    "seed_id": "ugc_boundary_010",
+    "seed_type": "critique_then_fix",
+    "source_url": "https://core.trac.wordpress.org/ticket/35751",
+    "source_platform": "wp_org",
+    "source_file": "wp-admin/includes/meta-boxes.php",
+    "defective_code": "/* Multiple instances; representative examples: */\n_e( 'Excerpts are optional hand-crafted summaries of your content that can be used in your theme. <a href=\"https://codex.wordpress.org/Excerpt\" target=\"_blank\">Learn more about manual excerpts.</a>' );\n\n_e( 'Custom fields can be used to add extra metadata to a post that you can <a href=\"https://codex.wordpress.org/Using_Custom_Fields\" target=\"_blank\">use in your theme</a>.' );\n\nprintf( __( 'Allow <a href=\"%s\" target=\"_blank\">trackbacks and pingbacks</a> on this page.' ), esc_url( $url ) );",
+    "human_critique": {
+      "summary": "From ticket #31858 (sibling in the same series): 'It is very hard to translate strings with HTML code because the string is in Hebrew and the code is in English. With RTL it is even harder — when the code is in RTL it is very confusing.' Ticket #35751 is one of eighteen parallel tickets (31840, 31852–31864, 31867–31871) opened specifically to purge HTML from translatable strings across wp-admin. The anchor text inside <a> tags requires a separate translation from the surrounding prose, but because they are concatenated in a single msgid the translator must manipulate raw HTML without knowing the RTL/LTR rendering environment, the target_blank policy, or whether the href must remain untranslated.",
+      "dimensions": {
+        "i18n": {
+          "severity": "high",
+          "score": 2,
+          "reasoning": "From ticket #31858 (sibling in the same series): 'It is very hard to translate strings with HTML code because the string is in Hebrew and the code is in English. With RTL it is even harder — when the code is in RTL it is very confusing.' Ticket #35751 is one of eighteen parallel tickets (31840, 31852–31864, 31867–31871) opened specifically to purge HTML from translatable strings across wp-admin. The anchor text inside <a> tags requires a separate translation from the surrounding prose, but because they are concatenated in a single msgid the translator must manipulate raw HTML without knowing the RTL/LTR rendering environment, the target_blank policy, or whether the href must remain untranslated."
+        }
+      },
+      "key_observation": "This is a confirmed WordPress core defect (closed fixed), representative of a mass-remediation effort spanning 18 related tickets. The HTML-inside-string pattern locks translators into manually editing markup they cannot preview, silently breaks XSS escaping (esc_html on a string containing <a> strips the tag), and prevents translators from changing word order around anchor text — a real need in RTL languages like Hebrew and Arabic. The series explicitly documents the RTL confusion and the engineering fix (separate the URL, keep only the link label translatable)."
+    },
+    "corrected_code": "/* Sentence text and URL separated; link label kept translatable */\n_e( 'Excerpts are optional hand-crafted summaries of your content that can be used in your theme.' );\n$url = 'https://codex.wordpress.org/Excerpt';\n$link_text = __( 'Learn more about manual excerpts.' );\nprintf( '<a href=\"%s\" target=\"_blank\">%s</a>', esc_url( $url ), $link_text );\n\n/* For the URL-only case, move URL out of translatable string: */\nprintf(\n    /* translators: %s: URL to Using Custom Fields */\n    __( 'Custom fields can be used to add extra metadata to a post that you can <a href=\"%s\" target=\"_blank\">use in your theme</a>.' ),\n    esc_url( 'https://codex.wordpress.org/Using_Custom_Fields' )\n);",
+    "dimensions_addressed": [
+      "i18n"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  },
+  {
+    "seed_id": "ugc_boundary_011",
+    "seed_type": "deep_judge_cot",
+    "source_url": "https://core.trac.wordpress.org/ticket/10373",
+    "source_platform": "wp_org",
+    "source_file": "wp-includes/functions.php (number_format_i18n); wp-includes/locale.php",
+    "code": "/* number_format_i18n() before fix — delegates directly to PHP number_format() */\nfunction number_format_i18n( $number, $decimals = 0 ) {\n    global $wp_locale;\n    if ( isset( $wp_locale ) ) {\n        $formatted = number_format(\n            $number,\n            absint( $decimals ),\n            $wp_locale->number_format['decimal_point'],\n            $wp_locale->number_format['thousands_sep']\n        );\n    } else {\n        $formatted = number_format( $number, absint( $decimals ) );\n    }\n    return $formatted;\n}\n/* Concrete failure: Czech/Russian locale sets thousands_sep = '\\xA0' (non-breaking space, Windows-1252).\n   number_format( 1000, 0, ',', \"\\xA0\" ) returns '1?000' — corrupted output. */\necho number_format( 1000, 0, ',', \"\\xA0\" ); // => '1�000' on PHP <= 5.3",
+    "human_reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "i18n": {
+          "score": 2,
+          "analysis": "From the ticket: 'Although this is not a native bug to WordPress, the problem source is in PHP; the impact is caused also in WordPress. This situation is problematic for users in Eastern Europe (Czech Republic, Russia, etc.) where the standard thousands separator is a non-breakable space. The users in these countries usually don't want to use real space (ASCII 32) as thousands separator, as it could be word-wrapped and the number would be separated into two lines. Unfortunately supplying both variants of non-breakable space (i.e. &nbsp; or ASCII 160) fails.' Comment #25 shows the actual corruption: echo number_format(1000, 0, \\',\\', \"\\\\xA0\") returns 1�000 on PHP 5.6 because \\xA0 is Windows-1252 and PHP expects \\xC2\\xA0 for UTF-8."
+        }
+      },
+      "overall_score": 0,
+      "key_observation": "This is a confirmed core bug (closed fixed in WP 4.5) where number_format_i18n() silently produces corrupted, non-renderable output for Czech (cs_CZ), Russian (ru_RU), and other Eastern European locales that legitimately use a non-breaking space as their thousands separator. The locale-dependent assumption is that PHP's number_format() can accept any separator string from the locale definition — it cannot when the separator is a multi-byte UTF-8 character or an HTML entity. The ticket documents the exact encoding mismatch, names the affected countries, and shows multiple failed attempts before the final fix."
+    },
+    "dimensions_addressed": [
+      "i18n"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  },
+  {
+    "seed_id": "ugc_boundary_012",
+    "seed_type": "critique_then_fix",
+    "source_url": "https://developer.wordpress.org/reference/functions/date_i18n/",
+    "source_platform": "wp_org",
+    "source_file": "wp-includes/functions.php (date_i18n); pattern demonstrated in wp-admin/includes/class-wp-posts-list-table.php",
+    "defective_code": "/* Common plugin/theme anti-pattern: hardcoded English date format string, bypassing locale */\necho date_i18n( 'F j, Y', get_the_date( 'U' ) );\n// Produces 'April 7, 2026' in every locale;\n// German translator expects '7. April 2026', Japanese expects '2026年4月7日'.\n\n/* Even with date_i18n, passing a hardcoded format ignores the translator-adjustable format:\n   'Note that the format, however, is not converted to a local one if you manually specify it.' */",
+    "human_critique": {
+      "summary": "From the WordPress developer reference for date_i18n(): 'Note that the format, however, is not converted to a local one if you manually specify it. If you need a localized format, then you should use get_option(\\'date_format\\') if you need the format set by the user in Settings > General. Alternatively, you can wrap your predefined format in __() in order to allow translators to adjust the date to the proper local format. If you do so, then you should also include a translator comment, to let the translators know what the date format is referring to and where it is used, so they can convert it accurately.' The core class-wp-posts-list-table.php source demonstrates the correct pattern. Locales produce demonstrably different output: en_US → '2023/03/08 at 4:00 pm', de_CH → '08.03.2023 um 16:00 Uhr', fr_FR → '08/03/2023 à 16h00', ja → '2023年3月8日 午後4:00'.",
+      "dimensions": {
+        "i18n": {
+          "severity": "high",
+          "score": 2,
+          "reasoning": "From the WordPress developer reference for date_i18n(): 'Note that the format, however, is not converted to a local one if you manually specify it. If you need a localized format, then you should use get_option(\\'date_format\\') if you need the format set by the user in Settings > General. Alternatively, you can wrap your predefined format in __() in order to allow translators to adjust the date to the proper local format. If you do so, then you should also include a translator comment, to let the translators know what the date format is referring to and where it is used, so they can convert it accurately.' The core class-wp-posts-list-table.php source demonstrates the correct pattern. Locales produce demonstrably different output: en_US → '2023/03/08 at 4:00 pm', de_CH → '08.03.2023 um 16:00 Uhr', fr_FR → '08/03/2023 à 16h00', ja → '2023年3月8日 午後4:00'."
+        }
+      },
+      "key_observation": "The defect type — assuming a hardcoded PHP date format string like 'F j, Y' is locale-neutral — is pervasive in WordPress themes and plugins (Stack Overflow answer for this pattern has hundreds of upvotes). The authoritative developer.wordpress.org reference explicitly documents the assumption as incorrect and prescribes wrapping the format string in __() with a PHP date format translator comment. The real-world divergence across locales (day-before-month, kanji numerals, preposition placement) makes this a high-signal I4 boundary case backed by core documentation and core source code."
+    },
+    "corrected_code": "/* WordPress core approach (class-wp-posts-list-table.php): wrap format string in __() */\n$t_time = sprintf(\n    /* translators: 1: Post date, 2: Post time. */\n    __( '%1$s at %2$s' ),\n    /* translators: Post date format. See https://www.php.net/manual/datetime.format.php */\n    get_the_time( __( 'Y/m/d' ), $post ),\n    /* translators: Post time format. See https://www.php.net/manual/datetime.format.php */\n    get_the_time( __( 'g:i a' ), $post )\n);\n/* This allows locale teams to translate 'Y/m/d' → 'd.m.Y' (German) or 'Y年m月d日' (Japanese). */",
+    "dimensions_addressed": [
+      "i18n"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  },
+  {
+    "seed_id": "ugc_boundary_013",
+    "seed_type": "deep_judge_cot",
+    "source_url": "https://core.trac.wordpress.org/ticket/64229",
+    "source_platform": "wp_org",
+    "source_file": "wp-includes/class-wp-scripts.php, wp-includes/class-wp-script-modules.php",
+    "code": "// Plugin enqueues a script or script module with an unregistered dependency handle.\n// Before WP 6.9.1 there was NO notice — WordPress silently skipped printing the asset.\nadd_action(\n    'wp_enqueue_scripts',\n    static function () {\n        // Classic script: silently not printed if 'classic-dependency' handle is absent\n        wp_enqueue_script(\n            'classic-script-with-missing-dependency',\n            'https://example.com/classic-script.js',\n            array( 'classic-dependency' )  // handle not registered\n        );\n        // Script module (WP 6.8): was PRINTED despite missing dependency — changed in 6.9\n        wp_enqueue_script_module(\n            'script-module-with-missing-dependency',\n            'https://example.com/script-module.js',\n            array( 'module-dependency' )  // handle not registered\n        );\n    }\n);\n// Version matrix:\n//   WP 6.8 classic scripts: NOT printed, no notice\n//   WP 6.8 script modules:  PRINTED (missing dep ignored), no notice\n//   WP 6.9 script modules:  NOT printed (r60999 fix for #63486), no notice\n//   WP 6.9.1+: _doing_it_wrong() notice added for both",
+    "human_reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "dependency_integrity": {
+          "score": 2,
+          "analysis": "The ticket description states: 'Currently, WordPress silently skips printing such assets, which makes dependency issues difficult to diagnose.' A core contributor noted: 'Given the change in behavior in 6.9 where script modules with missing dependencies are no longer printed, it may be that sites will start breaking where previously they worked in 6.8. This was reported as a bug in #64342.' The version-specific nature is explicit: classic scripts were silently dropped for all versions, while script modules switched from silently-printed (6.8) to silently-dropped (6.9), only becoming diagnosable in 6.9.1 when _doing_it_wrong() notices were added."
+        }
+      },
+      "overall_score": 0,
+      "key_observation": "This is a multi-version D1 case with three distinct boundary behaviours for the same defect class across consecutive releases (6.8, 6.9, 6.9.1). The defect — enqueuing a script with an unregistered dependency handle — is completely silent in all versions before 6.9.1: no PHP error, no admin notice, no log entry. The script simply does not load, making the failure appear as a JavaScript runtime error or missing feature rather than a dependency problem. The Trac ticket and PR #10545 include concrete test code, version-specific regression data, and authoritative core contributor discussion about why the silence makes this hard to diagnose."
+    },
+    "dimensions_addressed": [
+      "dependency_integrity"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  },
+  {
+    "seed_id": "ugc_boundary_014",
+    "seed_type": "critique_then_fix",
+    "source_url": "https://make.wordpress.org/core/2023/07/14/registering-scripts-with-async-and-defer-attributes-in-wordpress-6-3/",
+    "source_platform": "wp_org",
+    "source_file": "wp-includes/script-loader.php (wp_register_script / wp_enqueue_script)",
+    "defective_code": "// Plugin registers a script intending it to load in the <head> (in_footer=false),\n// but uses the new WP 6.3 array syntax for $args without a version guard:\nwp_register_script(\n    'foo',\n    '/path/to/foo.js',\n    array(),\n    '1.0.0',\n    array(\n        'strategy' => 'defer',\n        'in_footer' => false,  // intends: print in <head>\n    )\n);\n// On WP < 6.3: the array() passed as $in_footer evaluates to boolean true.\n// Result: script silently loads in the footer — no error, no warning.\n// wp_register_script signature before 6.3: ..., $in_footer = false\n// array() cast to bool = true => loads in footer, opposite of intent.",
+    "human_critique": {
+      "summary": "Official dev note states: 'In WordPress versions <6.3, however, the presence of the above array assigned to the $in_footer parameter would itself evaluate to a boolean value of true, the opposite of what may be intended by the developer.' And: 'The simplest way to prevent this interoperability problem is to pass the strategy via a different means than the $args param.' The incompatibility is entirely silent — WordPress on < 6.3 will accept and run the code without any error or notice, but will load the script in the footer instead of the head, inverting the developer's intent. No deprecation, no log entry, no admin notice.",
+      "dimensions": {
+        "dependency_integrity": {
+          "severity": "high",
+          "score": 2,
+          "reasoning": "Official dev note states: 'In WordPress versions <6.3, however, the presence of the above array assigned to the $in_footer parameter would itself evaluate to a boolean value of true, the opposite of what may be intended by the developer.' And: 'The simplest way to prevent this interoperability problem is to pass the strategy via a different means than the $args param.' The incompatibility is entirely silent — WordPress on < 6.3 will accept and run the code without any error or notice, but will load the script in the footer instead of the head, inverting the developer's intent. No deprecation, no log entry, no admin notice."
+        }
+      },
+      "key_observation": "This is a canonical D1 boundary case: a WordPress core API signature change (WP 6.3) that produces silent behavioural incompatibility on earlier versions. The defect manifests only when: (a) the plugin uses the new array $args syntax, AND (b) the site runs WP < 6.3. The failure is silent — PHP treats the non-empty array as boolean true with no warning. The official dev note explicitly documents the boundary and provides a version-guarded corrected pattern. This is a first-party Make WordPress source with precise code examples and version-specific reasoning."
+    },
+    "corrected_code": "// Option 1: version-guarded wrapper\nfunction myplugin_register_script( $handle, $src, $deps, $ver, $args ) {\n    global $wp_version;\n    if ( version_compare( $wp_version, '6.3', '>=' ) ) {\n        wp_register_script( $handle, $src, $deps, $ver, $args );\n    } else {\n        $in_footer = isset( $args['in_footer'] ) ? $args['in_footer'] : false;\n        wp_register_script( $handle, $src, $deps, $ver, $in_footer );\n    }\n}\n\n// Option 2: use wp_script_add_data() for strategy only (backward-safe)\nwp_register_script( 'foo', '/path/to/foo.js', array(), '1.0.0', false );\nwp_script_add_data( 'foo', 'strategy', 'defer' );\n// wp_script_add_data is understood by WP 6.3+ and silently ignored on older versions.",
+    "dimensions_addressed": [
+      "dependency_integrity"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  },
+  {
+    "seed_id": "ugc_boundary_015",
+    "seed_type": "deep_judge_cot",
+    "source_url": "https://core.trac.wordpress.org/ticket/54221",
+    "source_platform": "wp_org",
+    "source_file": "wp-includes/functions.php (recurse_dirsize, get_dirsizes, set_transient)",
+    "code": "// Before WP 6.4 fix (r56522):\n// set_transient() called without an expiration argument.\n// WordPress rule: transients WITHOUT expiration are stored in wp_options with autoload=yes.\n// This caused dirsize_cache to be autoloaded on EVERY page request.\n\n// In wp-includes/functions.php, recurse_dirsize():\nset_transient( 'dirsize_cache', $dirsize_cache ); // No $expiration argument\n// ^ Result: wp_options row: option_name='_transient_dirsize_cache', autoload='yes'\n// This transient grows proportionally to the number of subdirectories under wp-content/uploads.\n// On a site with 207,221 upload subfolders: 20 MB loaded on every page via:\n//   SELECT option_name, option_value FROM wp_options WHERE autoload = 'yes'\n// Query takes 1s+ on 32 GB RAM / 8 CPU database servers.\n// Usage context: only needed on Dashboard, Site Health, and multisite quota pages.\n// 99% of requests load 20MB they never use.",
+    "human_reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "dependency_integrity": {
+          "score": 2,
+          "analysis": "Reporter archon810: 'After months of perf issues on a fairly large site (10s of millions of monthly PVs), I finally dug in properly and discovered an absolutely massive _transient_dirsize_cache option which was set to autoload=yes... currently sitting at 207,221 entries worth 20MB of data. That's 20MB every SELECT option_name, option_value FROM wp_options WHERE autoload = \"yes\" loads each time. The query takes 1s+ on 32GB RAM 8-CPU db servers.' Core contributor flixos90: 'The even larger issue is that it is being autoloaded, thus affecting every basically every request.' Core contributor spacedmonkey (commit message): 'For sites without a persistent object cache, transients without an expiration are stored in autoloaded options. This means this option would load on every page request. Loading this option on every page request when it is not used is wasteful.'"
+        }
+      },
+      "overall_score": 0,
+      "key_observation": "This is a canonical D2 boundary case from WordPress core itself. The defect is structural: set_transient() without expiration silently opts into autoload=yes in wp_options, a documented but non-obvious behaviour. The boundary condition is upload directory scale — the bug is invisible on small sites (< ~5,000 folders, < 100 KB) but catastrophic on large sites (207k folders = 20 MB autoloaded). The fix is a single-line expiration addition. The Trac ticket has 68 comments, reporter identity, benchmark data, and the final committed changeset (r56522). This is the prototypical autoload pollution defect: a plugin/core call that accidentally opts large data into the all-options query without considering per-request cost."
+    },
+    "dimensions_addressed": [
+      "dependency_integrity"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  },
+  {
+    "seed_id": "ugc_boundary_016",
+    "seed_type": "critique_then_fix",
+    "source_url": "https://core.trac.wordpress.org/ticket/58853",
+    "source_platform": "wp_org",
+    "source_file": "wp-includes/media.php (wp_filter_content_tags hook registration), wp-includes/shortcodes.php (do_shortcode hook registration)",
+    "defective_code": "// In wp-includes/media.php (since WP 5.5, the bug):\n// wp_filter_content_tags() hooked to the_content at priority 10 (default).\nadd_filter( 'the_content', 'wp_filter_content_tags', 10 );\n\n// In wp-includes/shortcodes.php:\n// do_shortcode() hooked to the_content at priority 11.\nadd_filter( 'the_content', 'do_shortcode', 11 );\n\n// Execution order: wp_filter_content_tags() runs FIRST (priority 10),\n// then do_shortcode() expands shortcodes (priority 11).\n//\n// Defect: wp_filter_content_tags() processes HTML content for image optimizations\n// (loading=lazy, fetchpriority=high) BEFORE shortcodes are expanded.\n// Images inside shortcodes are invisible to wp_filter_content_tags() at priority 10.\n// After shortcode expansion at priority 11, those images are never re-processed.\n//\n// Boundary case — the wrong image gets fetchpriority=high:\n// If the post contains:\n//   [shortcode]  <- generates a large above-the-fold image\n//   <img>        <- a regular block image below the fold\n//\n// wp_filter_content_tags (priority 10) sees only the <img> tag (shortcode not yet expanded).\n// It assigns fetchpriority=\"high\" to the <img> (first image it sees).\n// do_shortcode (priority 11) then expands the shortcode, generating the large image.\n// The shortcode image gets loading=\"lazy\" from the separate do_shortcode context,\n// even though it is above the fold and should have fetchpriority=\"high\".\n// The wrong image is prioritized for LCP; the LCP image is lazily loaded.",
+    "human_critique": {
+      "summary": "Core contributor flixos90 (ticket description): 'This has been due to an unfortunate oversight from when the function was initially introduced in WordPress 5.5, as it used the default hook priority of 10 on the the_content filter, while do_shortcode uses hook priority 11.' And: 'It's actually the reverse example I think which would be broken right now: A large shortcode generated image followed by a large image block would currently result in the 2nd image receiving fetchpriority=\"high\" because only that image would be handled as part of wp_filter_content_tags(). That's because the shortcode is parsed later than that, i.e. too late.' And: 'even that workaround does not work reliably since images using it are parsed separately from the rest of the content, which can lead to LCP problems, e.g. when a shortcode is on top of the page, as it would still receive loading=\"lazy\" when it shouldn't.'",
+      "dimensions": {
+        "dependency_integrity": {
+          "severity": "high",
+          "score": 2,
+          "reasoning": "Core contributor flixos90 (ticket description): 'This has been due to an unfortunate oversight from when the function was initially introduced in WordPress 5.5, as it used the default hook priority of 10 on the the_content filter, while do_shortcode uses hook priority 11.' And: 'It's actually the reverse example I think which would be broken right now: A large shortcode generated image followed by a large image block would currently result in the 2nd image receiving fetchpriority=\"high\" because only that image would be handled as part of wp_filter_content_tags(). That's because the shortcode is parsed later than that, i.e. too late.' And: 'even that workaround does not work reliably since images using it are parsed separately from the rest of the content, which can lead to LCP problems, e.g. when a shortcode is on top of the page, as it would still receive loading=\"lazy\" when it shouldn't.'"
+        }
+      },
+      "key_observation": "This is a textbook D3 case from WordPress core: two core functions hooked to the same filter (the_content) at adjacent priorities (10 and 11), where the ordering was an oversight since WP 5.5. The defect only manifests when: (a) a post contains a shortcode that generates an image AND a regular block/HTML image, AND (b) the shortcode image is above the fold while the block image is below. In all other layouts, the priority conflict has no observable effect. The fix required a 1-priority-level change (10 → 12) to correct the execution order. The Trac ticket includes ecosystem impact analysis (28 plugins using wp_filter_content_tags, zero calling remove_filter on it), confirming the boundary is version-structural rather than environment-specific."
+    },
+    "corrected_code": "// Fix committed in r56693 (WP 6.3), authored by flixos90:\n// Change wp_filter_content_tags() priority to 12 (after do_shortcode at 11).\nremove_filter( 'the_content', 'wp_filter_content_tags', 10 );\nadd_filter( 'the_content', 'wp_filter_content_tags', 12 );\n// Same change applied to widget_text_content and widget_block_content filters.\n\n// Also: add do_shortcode context to early-return guard in\n// wp_get_loading_optimization_attributes() so shortcode-generated images\n// are processed within their parent content blob rather than in isolation:\n// (prevent double-counting images seen during nested shortcode processing)",
+    "dimensions_addressed": [
+      "dependency_integrity"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  },
+  {
+    "seed_id": "ugc_boundary_017",
+    "seed_type": "deep_judge_cot",
+    "source_url": "https://github.com/wp-media/wp-rocket/issues/6384",
+    "source_platform": "github",
+    "source_file": "wp-rocket/inc/ThirdParty/Plugins/ContactForm7.php, cf7-conditional-fields/cf7cf.php (line 510, 524)",
+    "code": "// WP Rocket compatibility file (correct for pages WITHOUT CF7 forms):\nadd_filter( 'wpcf7_load_js', '__return_false' );   // Prevents CF7 JS loading\nadd_filter( 'wpcf7_load_css', '__return_false' );  // Prevents CF7 CSS loading\n\n// CF7 (v5.8.6) script registration pattern:\n// controller.php#L49-L58: registers 'contact-form-7' handle WITHOUT enqueuing it\n// controller.php#L110:    enqueues it only when wpcf7_load_js filter returns true\n// controller.php#L68-L70: applies wpcf7_load_js filter to decide whether to enqueue\n\n// Conditional Fields for CF7 (v2.4.6) — the third-party trigger:\n// cf7cf.php#L510: enqueues its own scripts\n// cf7cf.php#L524: enqueues with 'contact-form-7' as a hard dependency:\nwp_enqueue_script(\n    'cf7cf-script',\n    plugin_dir_url( __FILE__ ) . 'js/cf7cf.js',\n    array( 'contact-form-7', 'jquery' ),  // Forces CF7 script enqueue via WP dependency system\n    CF7CF_VERSION,\n    true\n);\n// OR a custom theme:\nadd_action( 'wp_enqueue_scripts', 'theme_scripts', 100 );\nfunction theme_scripts() {\n    wp_enqueue_script(\n        'theme-contact-form-7-ext',\n        get_stylesheet_directory_uri() . '/assets/js/contact-form-7.js',\n        array( 'contact-form-7', 'jquery' ),  // Hard dependency on CF7 handle\n        THEME_VERSION,\n        array( 'in_footer' => true )\n    );\n}\n\n// Result on pages WITHOUT CF7 forms, when WP Rocket is active:\n// 1. WP Rocket sets wpcf7_load_js -> false (correct intent: don't load CF7)\n// 2. CF7 script is REGISTERED (as a handle) but not enqueued by CF7 itself\n// 3. Third-party's wp_enqueue_script with 'contact-form-7' in $deps forces\n//    WP dependency resolver to enqueue the 'contact-form-7' handle\n// 4. CF7 script loads, but WITHOUT the wp_localize_script('wpcf7') call\n//    (that call only happens inside CF7's own enqueue function, gated by wpcf7_load_js)\n// 5. CF7's JavaScript references window.wpcf7 which does not exist -> console errors\n//    Datepicker, conditional logic, form validation all break silently",
+    "human_reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "dependency_integrity": {
+          "score": 2,
+          "analysis": "WP Rocket engineer (issue #6384): 'by default the filters wpcf7_load_js and wpcf7_load_css return true so the script will always be enqueued along with the localized script. But our compatibility file is changing their return based on if the current page contain a contact form or not, and in case of Not the localized script won’t be added even if a third party enqueued CF7 script which causes console errors and corrupted functionality.' Root cause summary: 'WP Rocket intelligently prevents unnecessary CF7 loading, but third-parties enqueue unconditionally via dependencies, creating a race condition where script loads without required localization.' This is a hook contract violation: CF7's wpcf7_load_js filter is an internal API signal that controls both enqueuing AND localization together, but WordPress's script dependency system can bypass the enqueue gate while the localization gate remains closed."
+        }
+      },
+      "overall_score": 0,
+      "key_observation": "This is a D3 boundary case where a filter contract is violated through the script dependency resolution mechanism. The defect only manifests when all three conditions are simultaneously true: (1) WP Rocket is active and its CF7 compatibility file is loaded, (2) the current page does NOT contain a CF7 form (so wpcf7_load_js returns false), AND (3) a third-party plugin or theme has registered a script with 'contact-form-7' in its $deps array. Under any subset of these conditions, the site works correctly. The Github issue was classified as 'type: bug', 'severity: major', '3rd party compatibility', 'priority: high', and the mechanism is explained with exact line-number references to CF7 source code, making this high-signal for dependency_integrity analysis."
+    },
+    "dimensions_addressed": [
+      "dependency_integrity"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  },
+  {
+    "seed_id": "ugc_boundary_018",
+    "seed_type": "critique_then_fix",
+    "source_url": "https://patchstack.com/articles/common-plugin-vulnerabilities-how-to-fix-them/",
+    "source_platform": "security_advisory",
+    "source_file": "Most Common WordPress Vulnerabilities & How to Fix Them",
+    "defective_code": "add_action('wp_ajax_update_settings', function() {\n    if (!current_user_can('manage_options')) { exit; }\n\n    // Non-Yoda: condition reads 'if action is set AND nonce fails'\n    if (isset($_POST['action']) && !wp_verify_nonce('action', 'action')) {\n        exit;\n    }\n\n    update_option('my_settings', ['setting1' => esc_html($_POST['setting1'])]);\n});",
+    "human_critique": {
+      "summary": "Patchstack explains: 'This is still vulnerable to CSRF because if we simply don't pass the action POST parameter in the CSRF payload, the nonce token is not validated either.' The defective non-Yoda guard checks 'if action is present AND nonce is wrong' — but a CSRF payload that omits the action field altogether causes isset to return false, short-circuiting the && so wp_verify_nonce is never called. The nonce check only fires when action IS sent, making it trivially bypassable by omitting that field. Yoda-style conditions with || (or the equivalent affirmative check) avoid this trap by expressing the guard as 'exit unless both conditions are satisfied.'",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "high",
+          "score": 2,
+          "reasoning": "Patchstack explains: 'This is still vulnerable to CSRF because if we simply don't pass the action POST parameter in the CSRF payload, the nonce token is not validated either.' The defective non-Yoda guard checks 'if action is present AND nonce is wrong' — but a CSRF payload that omits the action field altogether causes isset to return false, short-circuiting the && so wp_verify_nonce is never called. The nonce check only fires when action IS sent, making it trivially bypassable by omitting that field. Yoda-style conditions with || (or the equivalent affirmative check) avoid this trap by expressing the guard as 'exit unless both conditions are satisfied.'"
+        }
+      },
+      "key_observation": "This is a publicly documented, real bypass pattern seen in multiple plugins. The code contains a nonce check that looks complete (both isset and wp_verify_nonce present) but the condition style — non-Yoda with && — creates a CSRF bypass. This is exactly the W1 boundary case: a non-Yoda condition in a security-sensitive context where the style choice has an exploitable consequence, not merely a style preference."
+    },
+    "corrected_code": "add_action('wp_ajax_update_settings', function() {\n    if (!current_user_can('manage_options')) { exit; }\n\n    if (!isset($_POST['action']) || !wp_verify_nonce('action', 'action')) {\n        exit;\n    }\n\n    update_option('my_settings', ['setting1' => sanitize_text_field(wp_unslash($_POST['setting1']))]);\n});",
+    "dimensions_addressed": [
+      "wpcs_compliance"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  },
+  {
+    "seed_id": "ugc_boundary_019",
+    "seed_type": "deep_judge_cot",
+    "source_url": "https://www.pluginvulnerabilities.com/2024/01/24/wordpress-plugin-developers-need-to-make-sure-there-nonce-checks-both-work-if-a-nonce-isnt-sent-or-if-the-nonce-is-wrong/",
+    "source_platform": "security_advisory",
+    "source_file": "plugin security review article (2024-01-24)",
+    "code": "if ( ! isset( $_POST['activate_nonce'] ) && ! wp_verify_nonce( $_POST['activate_nonce'], 'activate_plugin_nonce' ) ) { return; }",
+    "human_reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 2,
+          "analysis": "The defective code uses && (AND) instead of || (OR) to combine the isset check with wp_verify_nonce. When a nonce IS sent but is invalid, isset returns true (negated to false), so the left operand of && is false. With &&, the entire condition is short-circuit false — no bailout occurs, and the CSRF-protected action proceeds despite the invalid nonce. The author explains: 'If a nonce is sent, but it isn't valid, it won't stop the code running, as it should.' Developers writing non-Yoda conditions with && in this security gate pattern produce a subtly wrong guard that appears to check both conditions but actually guards only against the case where no nonce is sent at all."
+        }
+      },
+      "overall_score": 0,
+      "key_observation": "This is a documented real-world CSRF bypass found in a plugin security review. The code LOOKS like a correct nonce guard — it has both isset and wp_verify_nonce — but the Boolean operator choice makes the verification effectively optional when a nonce is present. It is a non-Yoda-style condition (variable on the left of the comparison) used in a security-critical context, and the error is invisible to casual review. The WPCS YodaConditions sniff flags non-Yoda comparisons exactly because these subtle logic errors are harder to spot in complex Boolean expressions around security checks."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  },
+  {
+    "seed_id": "ugc_boundary_020",
+    "seed_type": "critique_then_fix",
+    "source_url": "https://developer.wordpress.org/plugins/wordpress-org/common-issues/",
+    "source_platform": "wp_org",
+    "source_file": "Common issues – Plugin Handbook",
+    "defective_code": "// Defective: esc_url_raw used for output — it is a sanitization function, not an escaping function\necho '<a href=\"' . esc_url_raw($url) . '\">Click</a>';\n\n// Also defective: using a sanitize function (sanitize_text_field) in place of esc_html at echo point\necho sanitize_text_field($_POST['example']);\n\n// Defective: using filter_input without a sanitizing filter\n$post_id = filter_input(INPUT_GET, 'post_id'); // applies FILTER_DEFAULT — not sanitizing",
+    "human_critique": {
+      "summary": "The WordPress Plugin Review Team Handbook states: 'We know this is confusing, the esc_url_raw function is not an escaping function, but a sanitizing function similar to sanitize_url. Specifically it is used to sanitize a URL for use in a database or a redirection. The appropriate function to escape a URL is esc_url.' On sanitize/escape confusion: 'Sanitize functions cannot be used to escape. They serve different purposes. Even if they seem to be perfect for this purpose, most of the functions are filterable and people expect to use them to sanitize. Therefore, another plugin may change what they do and make yours at risk and exploitable.' The filter_input issue: 'Leaving the filter parameter empty, PHP by default will apply the filter FILTER_DEFAULT which is not sanitizing at all.'",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "high",
+          "score": 2,
+          "reasoning": "The WordPress Plugin Review Team Handbook states: 'We know this is confusing, the esc_url_raw function is not an escaping function, but a sanitizing function similar to sanitize_url. Specifically it is used to sanitize a URL for use in a database or a redirection. The appropriate function to escape a URL is esc_url.' On sanitize/escape confusion: 'Sanitize functions cannot be used to escape. They serve different purposes. Even if they seem to be perfect for this purpose, most of the functions are filterable and people expect to use them to sanitize. Therefore, another plugin may change what they do and make yours at risk and exploitable.' The filter_input issue: 'Leaving the filter parameter empty, PHP by default will apply the filter FILTER_DEFAULT which is not sanitizing at all.'"
+        }
+      },
+      "key_observation": "This comes directly from the WordPress Plugin Review Team's documented list of most common review failures — meaning reviewers actively encounter and reject plugins for these exact mistakes. esc_url_raw is a high-signal W2 example because its name contains 'esc' and 'url', strongly implying it is an escaping function for URLs, but the '_raw' suffix signals its actual purpose (for storage/redirects). Developers who use it for HTML output have chosen the function with the correct semantic family but wrong variant. The filterable nature of sanitize functions adds a second dimension: even if sanitize_text_field currently produces safe output, a filter hook from another plugin could change its behavior."
+    },
+    "corrected_code": "// Correct: esc_url for output\necho '<a href=\"' . esc_url($url) . '\">Click</a>';\n\n// Correct: sanitize on input, escape on output\necho esc_html(sanitize_text_field($_POST['example']));\n\n// Correct: provide a sanitizing filter constant\n$post_id = filter_input(INPUT_GET, 'post_id', FILTER_SANITIZE_NUMBER_INT);",
+    "dimensions_addressed": [
+      "wpcs_compliance"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  },
+  {
+    "seed_id": "ugc_boundary_021",
+    "seed_type": "deep_judge_cot",
+    "source_url": "https://patchstack.com/articles/common-plugin-vulnerabilities-how-to-fix-them/",
+    "source_platform": "security_advisory",
+    "source_file": "Most Common WordPress Vulnerabilities & How to Fix Them",
+    "code": "$variable = $_REQUEST['id'];\n\n// Wrong: sanitize_text_field does not remove quotes or escape values for SQL\n$wpdb->get_var(\"SELECT * FROM wp_users WHERE id = \" . sanitize_text_field($variable));\n\n// Also wrong: esc_sql escapes but the value must be in quotes in the query\n$wpdb->get_var(\"SELECT * FROM wp_users WHERE id = \" . esc_sql($variable));",
+    "human_reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 2,
+          "analysis": "Patchstack annotates the defective code explicitly: 'Vulnerable, sanitize_text_field does not remove quotes or escape values' and 'Vulnerable, esc_sql variables must be enclosed within quotes.' sanitize_text_field() is a general-purpose text sanitizer designed for display contexts — it strips tags and normalizes whitespace but preserves characters like ' and \" that enable SQL injection. esc_sql() correctly escapes SQL special characters but the value must be wrapped in quotes in the query string — omitting the quotes leaves esc_sql() ineffective. Both choices reflect selecting plausible-sounding functions that do not match the specific security context (SQL query construction)."
+        }
+      },
+      "overall_score": 0,
+      "key_observation": "This example, published by Patchstack as an authoritative reference for plugin developers, shows two distinct wrong function choices for SQL context — not zero escaping, but wrong escaping that looks intentional. It is a W2 boundary case because both sanitize_text_field and esc_sql are real WordPress security functions; the error is their misapplication to a SQL context without prepared statements. The article teachable moment is that function naming alone (sanitize_, esc_) does not guarantee context-appropriate security."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  },
+  {
+    "seed_id": "ugc_boundary_022",
+    "seed_type": "critique_then_fix",
+    "source_url": "https://www.pluginvulnerabilities.com/2023/10/05/the-wordpress-function-sanitize_text_field-isnt-always-enough-security-to-protect-against-xss/",
+    "source_platform": "security_advisory",
+    "source_file": "Plugin: table-of-contents (af2_post_table_content output, 2023 partial fix)",
+    "defective_code": "// Incomplete fix: sanitize_text_field applied on input, but _e() used for HTML-attribute output\n// $cltranslate was sanitized upstream with sanitize_text_field(), creating false safety\n<div class=\"af2_post_table_content\"\n     data-searchvalue=\"<?php _e($cltranslate); ?>\">",
+    "human_critique": {
+      "summary": "Plugin Vulnerabilities explains: 'The update to the plugin attempting to fix the vulnerability involved passing user input submitted through the plugin to sanitize_text_field(). That works if that input is going to be output as text on a page, but doesn't work if the input is output as an HTML attribute.' sanitize_text_field() converts single < characters to entities and strips tags, but does NOT escape quotes. When the sanitized value is placed inside an HTML attribute (data-searchvalue=\"...\"), an attacker can inject \" onmouseover=alert(0)// to break out of the attribute. The fix requires esc_attr() or esc_attr_e() at the output point, not just sanitize_text_field() on the input. WPScan, Patchstack, and Wordfence all marked the issue as fixed after the sanitize_text_field() addition, demonstrating widespread misunderstanding of this function's purpose.",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "high",
+          "score": 2,
+          "reasoning": "Plugin Vulnerabilities explains: 'The update to the plugin attempting to fix the vulnerability involved passing user input submitted through the plugin to sanitize_text_field(). That works if that input is going to be output as text on a page, but doesn't work if the input is output as an HTML attribute.' sanitize_text_field() converts single < characters to entities and strips tags, but does NOT escape quotes. When the sanitized value is placed inside an HTML attribute (data-searchvalue=\"...\"), an attacker can inject \" onmouseover=alert(0)// to break out of the attribute. The fix requires esc_attr() or esc_attr_e() at the output point, not just sanitize_text_field() on the input. WPScan, Patchstack, and Wordfence all marked the issue as fixed after the sanitize_text_field() addition, demonstrating widespread misunderstanding of this function's purpose."
+        }
+      },
+      "key_observation": "This is a real CVE (reported 2023) where a professional fix using sanitize_text_field() was itself incomplete and still exploitable via the HTML attribute context. Three major security vendors (WPScan, Patchstack, Wordfence) incorrectly marked it as resolved. This exemplifies the W2 boundary case: a wrong sanitization function chosen that appears correct (it IS a sanitization function, and it DID remove the original PoC vector) but fails in a different output context. The human reasoning is deeply educational — sanitize is not context-free."
+    },
+    "corrected_code": "<div class=\"af2_post_table_content\"\n     data-searchvalue=\"<?php esc_attr_e($cltranslate); ?>\">",
+    "dimensions_addressed": [
+      "wpcs_compliance"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  },
+  {
+    "seed_id": "ugc_boundary_023",
+    "seed_type": "deep_judge_cot",
+    "source_url": "https://docs.wpvip.com/security/validating-sanitizing-and-escaping/",
+    "source_platform": "wp_vip",
+    "source_file": "Validating, sanitizing, and escaping – WordPress VIP Documentation",
+    "code": "// Early escaping creates false safety: $url and $text appear \"safe\" but\n// something could inadvertently change the variable before it is output\n$url  = esc_url( $url );\n$text = esc_html( $text );\n\n// ... potentially many lines of code ...\n// Another developer may later add: $url .= $_GET['extra']; // re-taints the escaped variable\n\necho '<a href=\"' . $url . '\">' . $text . '</a>';",
+    "human_reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 2,
+          "analysis": "WordPress VIP Documentation explains the false safety of early escaping: 'Something could inadvertently change the variable between when it was firstly cast and when it is outputted, introducing a potential vulnerability.' The document lists four reasons late escaping is better: code reviews can confirm safety at a glance without tracing variable history; automatic scanning is more accurate; the code is more robust to future modifications; and early-escaped variable names like $url give no indication to maintainers whether re-assigning them (e.g., $url .= add_query_arg('x', $val)) will re-taint them before output. WP VIP also notes that if early escaping is unavoidable, variables must be postfixed with _escaped, _safe, or _clean (e.g., $url_escaped) to signal their state — but this convention is rarely followed in the wild."
+        }
+      },
+      "overall_score": 0,
+      "key_observation": "This is the canonical W3 pattern documented by WordPress VIP (the highest-tier managed WordPress hosting), meaning this is an observed recurring failure in production plugin and theme code. The false safety arises because early-escaped variables look handled — code reviewers trust the esc_url() call they can see — but the variable is a mutable binding that can be re-tainted by subsequent assignments. WPCS's WordPress.Security.EscapeOutput sniff specifically flags this by requiring late escaping; the VIP documentation explains exactly why the sniff exists."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  },
+  {
+    "seed_id": "ugc_boundary_024",
+    "seed_type": "critique_then_fix",
+    "source_url": "https://github.com/WordPress/WordPress-Coding-Standards/issues/869",
+    "source_platform": "github",
+    "source_file": "Issue #869: Don't require sanitization with wp_verify_nonce()",
+    "defective_code": "// Escaping applied at point of passing to wp_verify_nonce — creates false safety:\n// esc_html alters the nonce token, causing legitimate nonces to FAIL verification\nwp_verify_nonce( esc_html( get_request_nonce() ), 'my-action' );\n\n// Demonstrated by sybrew with a nonce containing '<':\n// get_request_nonce() returns 'some<-hash'\n// esc_html converts it to 'some&lt;-hash'\n// wp_verify_nonce('some&lt;-hash') returns 0 (false negative) instead of 1",
+    "human_critique": {
+      "summary": "sybrew demonstrated on GitHub: 'wp_verify_nonce( esc_html( get_request_nonce() ) ) // Output: 0 — false negative!' The issue is that esc_html() is an output escaping function — it converts < to &lt; and similar. If a nonce contains such characters (possible with pluggable implementations), applying esc_html() before passing to wp_verify_nonce() transforms the token and it will never match the expected hash, silently degrading security by always failing verification. The thread reveals a deeper W3 pattern: the developer chose esc_html to 'make it safe' before passing to wp_verify_nonce, believing early escaping adds safety. In reality it introduces a false-safety violation — the code looks hardened, but the escape function wrong-context application means the security check itself becomes unreliable (always returns false = silently bypassed if wrapped in if(!wp_verify_nonce(...)) { return; }).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "high",
+          "score": 2,
+          "reasoning": "sybrew demonstrated on GitHub: 'wp_verify_nonce( esc_html( get_request_nonce() ) ) // Output: 0 — false negative!' The issue is that esc_html() is an output escaping function — it converts < to &lt; and similar. If a nonce contains such characters (possible with pluggable implementations), applying esc_html() before passing to wp_verify_nonce() transforms the token and it will never match the expected hash, silently degrading security by always failing verification. The thread reveals a deeper W3 pattern: the developer chose esc_html to 'make it safe' before passing to wp_verify_nonce, believing early escaping adds safety. In reality it introduces a false-safety violation — the code looks hardened, but the escape function wrong-context application means the security check itself becomes unreliable (always returns false = silently bypassed if wrapped in if(!wp_verify_nonce(...)) { return; })."
+        }
+      },
+      "key_observation": "This is a multi-year WPCS GitHub discussion (2017–2023) with contributions from core WPCS maintainers. The false safety pattern is doubly deceptive: the developer applies a security function (esc_html) to harden input, but the wrong context of application (escaping rather than sanitizing a hash token) means the security verification itself fails. If the outer condition is if(!wp_verify_nonce(...)) { return; } a permanently-false nonce always triggers early return — effectively disabling the action, not enabling unauthorized access, but still a security logic failure caused by wrong function choice at output-escaping time."
+    },
+    "corrected_code": "// For distributed plugins: sanitize_text_field + wp_unslash\nwp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['my-nonce'] ) ), 'my-action' );\n\n// For non-distributed code where nonce format is known:\nwp_verify_nonce( sanitize_key( $_POST['my-nonce'] ), 'my-action' );\n\n// Most correct per WPCS sniff suppression (raw, no sanitization needed):\nif ( ! isset( $_POST['my-nonce'] ) || ! wp_verify_nonce( wp_unslash( $_POST['my-nonce'] ), 'my-action' ) ) {\n    wp_die();\n}",
+    "dimensions_addressed": [
+      "wpcs_compliance"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  },
+  {
+    "seed_id": "ugc_boundary_025",
+    "seed_type": "deep_judge_cot",
+    "source_url": "https://wptavern.com/xss-vulnerability-affects-more-than-a-dozen-popular-wordpress-plugins",
+    "source_platform": "security_advisory",
+    "source_file": "XSS Vulnerability Affects More Than a Dozen Popular WordPress Plugins (2015-04-21)",
+    "code": "// add_query_arg() with no arguments uses the current URL — output looks safe because\n// add_query_arg appears to be a URL manipulation function, not a raw string\necho add_query_arg( $key, $value );\n\n// Or using remove_query_arg, same pattern:\necho remove_query_arg( 'action' );",
+    "human_reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 2,
+          "analysis": "WP Tavern reported that inaccurate WordPress Codex documentation (present for over 5 years since 2009) led developers to assume add_query_arg() and remove_query_arg() properly escape user input. Mike Jolley (WooThemes) wrote in 2013: 'WordPress doesn't automatically sanitize the current URL if you don't pass in your own. You need to use esc_url during output: echo esc_url( add_query_arg( $key, $value ) ); If you forget to do this, a malicious URL, for example one containing some JavaScript, could potentially be output and executed on your page.' Samuel 'Otto' Wood only updated the Codex in early 2015. The false safety pattern: add_query_arg returns a string that looks like a well-formed URL — developers assumed the URL-shaped output was inherently safe for HTML output without further escaping."
+        }
+      },
+      "overall_score": 0,
+      "key_observation": "This vulnerability affected more than a dozen popular WordPress plugins simultaneously, demonstrating that the false-safety pattern was pervasive and non-obvious even to experienced developers. The W3 boundary case is clear: the return value of add_query_arg looks like a safe URL (it is a URL manipulation function), so developers echoed it directly, but its output includes unescaped user input from the current request URL. Late escaping — wrapping the echo with esc_url() — is the corrective WPCS pattern. The multi-year documentation gap that caused this makes it a high-signal example of how false safety compounds with trusted tooling."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance"
+    ],
+    "defect_subtlety": "boundary",
+    "annotation_type": "ugc_expert"
+  }
+]
