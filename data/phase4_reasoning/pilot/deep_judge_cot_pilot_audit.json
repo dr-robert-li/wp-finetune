@@ -1,0 +1,228 @@
+{
+  "input_file": "data/phase4_reasoning/pilot/deep_judge_cot_pilot.json",
+  "total_examples": 20,
+  "citation_validity_rate": 0.85,
+  "aggregate_hallucination_ratio": 0.1267605633802817,
+  "total_citations": 71,
+  "total_hallucinated": 9,
+  "examples_with_zero_citations": 1,
+  "threshold": 0.5,
+  "per_example": [
+    {
+      "index": 0,
+      "function_name": "edition::setNodeId",
+      "source_file": "plugnmeet.json",
+      "total_citations": 2,
+      "grounded_citations": 1,
+      "hallucinated_citations": [
+        "esc_html"
+      ],
+      "hallucination_ratio": 0.5,
+      "passes_threshold": false
+    },
+    {
+      "index": 1,
+      "function_name": "bulk_copy_templates",
+      "source_file": "elementor.json",
+      "total_citations": 8,
+      "grounded_citations": 8,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 2,
+      "function_name": "LP_REST_Courses_Controller::get_item",
+      "source_file": "learnpress-bbpress.json",
+      "total_citations": 5,
+      "grounded_citations": 4,
+      "hallucinated_citations": [
+        "$wpdb->prepare"
+      ],
+      "hallucination_ratio": 0.2,
+      "passes_threshold": true
+    },
+    {
+      "index": 3,
+      "function_name": "Jetpack_Copy_Post::update_content",
+      "source_file": "jetpack.json",
+      "total_citations": 4,
+      "grounded_citations": 4,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 4,
+      "function_name": "get_customer_currency_args_from_request",
+      "source_file": "woocommerce-payments.json",
+      "total_citations": 9,
+      "grounded_citations": 9,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 5,
+      "function_name": "CourseAuthorUrlElementor::__construct",
+      "source_file": "learnpress-buddypress.json",
+      "total_citations": 4,
+      "grounded_citations": 4,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 6,
+      "function_name": "VideoCopyrightGeoGate::getFieldsEnum",
+      "source_file": "official-facebook-pixel.json",
+      "total_citations": 3,
+      "grounded_citations": 3,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 7,
+      "function_name": "LP",
+      "source_file": "learnpress-wishlist.json",
+      "total_citations": 2,
+      "grounded_citations": 2,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 8,
+      "function_name": "get_question_object",
+      "source_file": "learnpress-bbpress.json",
+      "total_citations": 2,
+      "grounded_citations": 2,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 9,
+      "function_name": "has_element_dynamic_tag",
+      "source_file": "elementor.json",
+      "total_citations": 4,
+      "grounded_citations": 2,
+      "hallucinated_citations": [
+        "$wpdb->prepare",
+        "wp_unslash"
+      ],
+      "hallucination_ratio": 0.5,
+      "passes_threshold": false
+    },
+    {
+      "index": 10,
+      "function_name": "DatabaseChanges::getCreateQueryFieldConfigDefaultsValues",
+      "source_file": "onoffice-for-wp-websites.json",
+      "total_citations": 5,
+      "grounded_citations": 4,
+      "hallucinated_citations": [
+        "esc_html"
+      ],
+      "hallucination_ratio": 0.2,
+      "passes_threshold": true
+    },
+    {
+      "index": 11,
+      "function_name": "Image_Prioritizer_Video_Tag_Visitor::reduce_poster_image_size",
+      "source_file": "image-prioritizer.json",
+      "total_citations": 2,
+      "grounded_citations": 2,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 12,
+      "function_name": "sanitize::validate_fields",
+      "source_file": "woocommerce.json",
+      "total_citations": 4,
+      "grounded_citations": 2,
+      "hallucinated_citations": [
+        "esc_html",
+        "sanitize_text_field"
+      ],
+      "hallucination_ratio": 0.5,
+      "passes_threshold": false
+    },
+    {
+      "index": 13,
+      "function_name": "lock_process",
+      "source_file": "learnpress-course-review.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 14,
+      "function_name": "Controller::get_item_permissions_check",
+      "source_file": "constant-contact-woocommerce.json",
+      "total_citations": 2,
+      "grounded_citations": 2,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 15,
+      "function_name": "get_name",
+      "source_file": "pinterest-for-woocommerce.json",
+      "total_citations": 4,
+      "grounded_citations": 3,
+      "hallucinated_citations": [
+        "esc_html"
+      ],
+      "hallucination_ratio": 0.25,
+      "passes_threshold": true
+    },
+    {
+      "index": 16,
+      "function_name": "supports_emogrifier::clear_alt_body_field",
+      "source_file": "woocommerce.json",
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 17,
+      "function_name": "LP_Email_Cancelled_Order_Admin::__construct",
+      "source_file": "learnpress-buddypress.json",
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    },
+    {
+      "index": 18,
+      "function_name": "VindiWebhooks::query_order_by_metas",
+      "source_file": "vindi-payment-gateway.json",
+      "total_citations": 5,
+      "grounded_citations": 4,
+      "hallucinated_citations": [
+        "$wpdb->prepare"
+      ],
+      "hallucination_ratio": 0.2,
+      "passes_threshold": true
+    },
+    {
+      "index": 19,
+      "function_name": "Form_Emails_Storing::apply_hooks_on_draft_transition",
+      "source_file": "blocks-animation.json",
+      "total_citations": 4,
+      "grounded_citations": 4,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0,
+      "passes_threshold": true
+    }
+  ]
+}
