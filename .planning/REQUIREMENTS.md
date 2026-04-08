@@ -112,7 +112,7 @@ Requirements for deep reasoning fine-tuning of the winning ratio adapter. Depend
 ### Data Generation
 
 - [ ] **DGEN-01**: Pilot validation generates 20-50 deep judge CoT examples and 20-50 critique-then-fix examples, reviewed for quality before bulk generation
-- [ ] **DGEN-02**: Deep judge CoT agent generates reasoning-enriched judge examples with dimension-by-dimension analysis, issue identification with line references, fix suggestions, and structured scores
+- [x] **DGEN-02**: Deep judge CoT agent generates reasoning-enriched judge examples with dimension-by-dimension analysis, issue identification with line references, fix suggestions, and structured scores
 - [ ] **DGEN-03**: Critique-then-fix agent generates examples where defective code (from mutation pool) receives structured critique with severity per dimension, followed by the corrected version
 - [ ] **DGEN-04**: Score consistency validation rejects examples where reasoning text contradicts numeric scores before export
 - [ ] **DGEN-05**: Reasoning dataset is assembled with training mix: reasoning examples + 30% flat judge replay + 20% wp_gen replay examples
@@ -304,7 +304,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PROB-03 | Phase 6 | Complete |
 
 | DGEN-01 | Phase 4.1 | Pending |
-| DGEN-02 | Phase 4.1 | Pending |
+| DGEN-02 | Phase 4.1 | Complete |
 | DGEN-03 | Phase 4.1 | Pending |
 | DGEN-04 | Phase 4.2 | Pending |
 | DGEN-05 | Phase 4.2 | Pending |
