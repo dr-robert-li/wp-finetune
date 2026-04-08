@@ -12,6 +12,7 @@ Usage:
 """
 
 import json
+import os
 import random
 import sys
 import argparse
@@ -296,7 +297,7 @@ Return valid JSON only."""
     try:
         resp = call_with_backoff(
             client,
-            model="claude-sonnet-4-6-20250514",
+            model="claude-sonnet-4-5",
             max_tokens=2048,
             messages=[{"role": "user", "content": prompt}],
         )
@@ -413,7 +414,7 @@ def main():
 
     # Determine target and output path
     if args.pilot:
-        target = 40
+        target = int(os.environ.get("PILOT_TARGET", "40"))
         output_path = PILOT_DIR / "deep_judge_cot_pilot.json"
         checkpoint_key = "generate_deep_judge_cot_pilot"
     else:
