@@ -1,0 +1,1382 @@
+[
+  {
+    "source_file": "wordpress-seo.json",
+    "function_name": "__construct::embed_rss",
+    "defective_code": "/**\n\t * Adds the RSS footer and/or header to an RSS feed item.\n\t *\n\t * @param string $content Feed item content.\n\t *\n\t * @return string The content to add.\n\t */\nfunction embed_rss( $content ) {\n\t\t$before  = $this->rss_replace_vars( $this->options->get( 'rssbefore', '' ) );\n\t\t$after   = $this->rss_replace_vars( $this->options->get( 'rssafter', '' ) );\n\t\t$content = $before . $content . $after;\n\n\t\treturn $content;\n\t}",
+    "critique": {
+      "summary": "Function 'embed_rss' has code quality and standards issues that should be addressed for production readiness (source: wordpress-seo.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'embed_rss' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'embed_rss' (source: wordpress-seo.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'embed_rss' has no obvious security vulnerabilities but lacks defensive coding patterns (source: wordpress-seo.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'embed_rss' has no obvious performance issues for its current scope (source: wordpress-seo.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'embed_rss' uses WordPress APIs appropriately for its scope (source: wordpress-seo.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'embed_rss' code quality is acceptable but could improve single responsibility adherence (source: wordpress-seo.json, 7 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'embed_rss' has no problematic dependency patterns detected (source: wordpress-seo.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'embed_rss' i18n handling is acceptable (source: wordpress-seo.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'embed_rss' does not produce HTML output \u2014 accessibility dimension not applicable (source: wordpress-seo.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'embed_rss' has no obvious security vulnerabilities but lacks defensive coding patterns (source: wordpress-seo.json)"
+    },
+    "corrected_code": "/**\n\t * Adds the RSS footer and/or header to an RSS feed item.\n\t *\n\t * @param string $content Feed item content.\n\t *\n\t * @return string The content to add.\n\t */\nfunction embed_rss( $content ) {\n\t\t$before  = $this->rss_replace_vars( $this->options->get( 'rssbefore', '' ) );\n\t\t$after   = $this->rss_replace_vars( $this->options->get( 'rssafter', '' ) );\n\t\t$content = $before . $content . $after;\n\n\t\treturn $content;\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "facebook-for-woocommerce.json",
+    "function_name": "OrderUtil::add_product_settings_tab_content",
+    "defective_code": "/**\n\t * Adds content to the new Facebook tab on the Product edit page.\n\t *\n\t * @internal\n\t *\n\t * @since 1.10.0\n\t */\nfunction add_product_settings_tab_content() {\n\t\tglobal $post;\n\n\t\t// all products have sync enabled unless explicitly disabled\n\t\t$sync_enabled = 'no' !== get_post_meta( $post->ID, Products::get_product_sync_meta_key(), true );\n\t\t$visibility   = get_post_meta( $post->ID, Products::VISIBILITY_META_KEY, true );\n\t\t$is_visible   = $visibility ? wc_string_to_bool( $visibility ) : true;\n\t\t$product      = wc_get_product( $post );\n\n\t\t$rich_text_description = get_post_meta( $post->ID, \\WC_Facebookcommerce_Integration::FB_RICH_TEXT_DESCRIPTION, true );\n\t\t$price                 = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_PRODUCT_PRICE, true );\n\t\t$image_source          = get_post_meta( $post->ID, Products::PRODUCT_IMAGE_SOURCE_META_KEY, true );\n\t\t$image                 = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_PRODUCT_IMAGE, true );\n\t\t$video_source          = get_post_meta( $post->ID, Products::PRODUCT_VIDEO_SOURCE_META_KEY, true );\n\t\t$video_urls            = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_PRODUCT_VIDEO, true );\n\t\t$custom_video_url      = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_PRODUCT_VIDEO . '_custom_url', true );\n\t\t$fb_brand              = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_BRAND, true ) ? get_post_meta( $post->ID, \\WC_Facebook_Product::FB_BRAND, true ) : get_post_meta( $post->ID, '_wc_facebook_enhanced_catalog_attributes_brand', true );\n\t\t$fb_mpn                = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_MPN, true );\n\t\t$fb_condition          = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_PRODUCT_CONDITION, true );\n\t\t$fb_age_group          = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_AGE_GROUP, true ) ? get_post_meta( $post->ID, \\WC_Facebook_Product::FB_AGE_GROUP, true ) : get_post_meta( $post->ID, '_wc_facebook_enhanced_catalog_attributes_age_group', true );\n\t\t$fb_gender             = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_GENDER, true ) ? get_post_meta( $post->ID, \\WC_Facebook_Product::FB_GENDER, true ) : get_post_meta( $post->ID, '_wc_facebook_enhanced_catalog_attributes_gender', true );\n\t\t$fb_size               = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_SIZE, true ) ? get_post_meta( $post->ID, \\WC_Facebook_Product::FB_SIZE, true ) : get_post_meta( $post->ID, '_wc_facebook_enhanced_catalog_attributes_size', true );\n\t\t$fb_color              = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_COLOR, true ) ? get_post_meta( $post->ID, \\WC_Facebook_Product::FB_COLOR, true ) : get_post_meta( $post->ID, '_wc_facebook_enhanced_catalog_attributes_color', true );\n\t\t$fb_material           = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_MATERIAL, true ) ? get_post_meta( $post->ID, \\WC_Facebook_Product::FB_MATERIAL, true ) : get_post_meta( $post->ID, '_wc_facebook_enhanced_catalog_attributes_material', true );\n\t\t$fb_pattern            = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_PATTERN, true ) ? get_post_meta( $post->ID, \\WC_Facebook_Product::FB_PATTERN, true ) : get_post_meta( $post->ID, '_wc_facebook_enhanced_catalog_attributes_pattern', true );\n\n\t\tif ( $sync_enabled ) {\n\t\t\t$sync_mode = $is_visible ? self::SYNC_MODE_SYNC_AND_SHOW : self::SYNC_MODE_SYNC_AND_HIDE;\n\t\t} else {\n\t\t\t$sync_mode = self::SYNC_MODE_SYNC_DISABLED;\n\t\t}\n\n\t\t// 'id' attribute needs to match the 'target' parameter set above\n\t\t?>\n\t\t<div id='facebook_options' class='panel woocommerce_options_panel'>\n\t\t\t<div>\n\t\t\t\t<?php\n\n\t\t\t\twoocommerce_wp_select(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'          => 'wc_facebook_sync_mode',\n\t\t\t\t\t\t'label'       => __( 'Facebook Sync', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'options'     => array(\n\t\t\t\t\t\t\tself::SYNC_MODE_SYNC_AND_SHOW => __( 'Sync and show in catalog', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\tself::SYNC_MODE_SYNC_AND_HIDE => __( 'Sync and hide in catalog', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\tself::SYNC_MODE_SYNC_DISABLED => __( 'Do not sync', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t),\n\t\t\t\t\t\t'value'       => $sync_mode,\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t\t'description' => __( 'Choose whether to sync this product to Facebook and, if synced, whether it should be visible in the catalog.', 'facebook-for-woocommerce' ),\n\t\t\t\t\t)\n\t\t\t\t);\n\t\t\t\t?>\n\t\t\t</div>\n\n\t\t<?php\n\t\t// Video fields are now rendered in the options_group section with radio buttons\n\t\t?>\n\n\n\t\t\t<div class='options_group hide_if_variable'>\n\t\t\t\t<?php\n\t\t\t\techo '<div class=\"wp-editor-wrap\">';\n\t\t\t\techo '<label for=\"' . esc_attr( \\WC_Facebookcommerce_Integration::FB_PRODUCT_DESCRIPTION ) . '\">' .\n\t\t\t\t\tesc_html__( 'Facebook Description', 'facebook-for-woocommerce' ) .\n\t\t\t\t\t'</label>';\n\t\t\t\twp_editor(\n\t\t\t\t\t$rich_text_description,\n\t\t\t\t\t\\WC_Facebookcommerce_Integration::FB_PRODUCT_DESCRIPTION,\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'            => \\WC_Facebook_Product::FB_PRODUCT_DESCRIPTION,\n\t\t\t\t\t\t'textarea_name' => \\WC_Facebookcommerce_Integration::FB_PRODUCT_DESCRIPTION,\n\t\t\t\t\t\t'textarea_rows' => 10,\n\t\t\t\t\t\t'media_buttons' => true,\n\t\t\t\t\t\t'teeny'         => true,\n\t\t\t\t\t\t'quicktags'     => false,\n\t\t\t\t\t\t'tinymce'       => array(\n\t\t\t\t\t\t\t'toolbar1' => 'bold,italic,bullist,spellchecker,fullscreen',\n\t\t\t\t\t\t),\n\t\t\t\t\t)\n\t\t\t\t);\n\t\t\t\techo '</div>';\n\n\t\t\t\twoocommerce_wp_radio(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'            => 'fb_product_image_source',\n\t\t\t\t\t\t'label'         => __( 'Facebook Product Image', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'desc_tip'      => true,\n\t\t\t\t\t\t'description'   => __( 'Choose the product image that should be synced to the Facebook catalog and displayed for this product.', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'options'       => array(\n\t\t\t\t\t\t\tProducts::PRODUCT_IMAGE_SOURCE_PRODUCT => __( 'Use WooCommerce image', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\tProducts::PRODUCT_IMAGE_SOURCE_CUSTOM  => __( 'Use custom image', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t),\n\t\t\t\t\t\t'value'         => $image_source ? $image_source : Products::PRODUCT_IMAGE_SOURCE_PRODUCT,\n\t\t\t\t\t\t'class'         => 'short enable-if-sync-enabled js-fb-product-image-source',\n\t\t\t\t\t\t'wrapper_class' => 'fb-product-image-source-field',\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t\twoocommerce_wp_text_input(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'          => \\WC_Facebook_Product::FB_PRODUCT_IMAGE,\n\t\t\t\t\t\t'label'       => __( 'Custom Image URL', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'value'       => $image,\n\t\t\t\t\t\t'class'       => sprintf( 'enable-if-sync-enabled product-image-source-field show-if-product-image-source-%s', Products::PRODUCT_IMAGE_SOURCE_CUSTOM ),\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t\t'description' => __( 'Please enter an absolute URL (e.g. https://domain.com/image.jpg).', 'facebook-for-woocommerce' ),\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t\t// Render the Facebook Product Video field with radio buttons\n\t\t\t\t$this->render_facebook_product_video_field( $video_urls );\n\n\t\t\t\twoocommerce_wp_text_input(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'          => \\WC_Facebook_Product::FB_PRODUCT_PRICE,\n\t\t\t\t\t\t'label'       => sprintf(\n\t\t\t\t\t\t/* translators: Placeholders %1$s - WC currency symbol */\n\t\t\t\t\t\t\t__( 'Facebook Price (%1$s)', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\tget_woocommerce_currency_symbol()\n\t\t\t\t\t\t),\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t\t'description' => __( 'Custom price for product on Facebook. Please enter in monetary decimal (.) format without thousand separators and currency symbols. If blank, product price will be used.', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'cols'        => 40,\n\t\t\t\t\t\t'rows'        => 60,\n\t\t\t\t\t\t'value'       => $price,\n\t\t\t\t\t\t'class'       => 'enable-if-sync-enabled',\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t\twoocommerce_wp_hidden_input(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'    => \\WC_Facebook_Product::FB_REMOVE_FROM_SYNC,\n\t\t\t\t\t\t'value' => '',\n\t\t\t\t\t)\n\t\t\t\t);\n\t\t\t\t?>\n\t\t\t</div>\n\n\t\t\t<div class='wc_facebook_commerce_fields'>\n\t\t\t\t<p class=\"text-heading\">\n\t\t\t\t\t<span><?php echo esc_html( \\WooCommerce\\Facebook\\Admin\\Product_Categories::get_catalog_explanation_text() ); ?></span>\n\t\t\t\t\t<a href=\"#\" class=\"go-to-attributes-link\" style=\"text-decoration: underline; cursor: pointer;\">\n\t\t\t\t\t\t<?php echo esc_html__( 'Go to attributes', 'facebook-for-woocommerce' ); ?>\n\t\t\t\t\t</a>\n\t\t\t\t</p>\n\t\t\t</div>\n\n\t\t\t<script type=\"text/javascript\">\n\t\t\tjQuery(document).ready(function($) {\n\t\t\t\t$('.go-to-attributes-link').click(function(e) {\n\t\t\t\t\te.preventDefault();\n\t\t\t\t\t$('li.attribute_options.attribute_tab a[href=\"#product_attributes\"]').trigger('click');\n\t\t\t\t\t$('html, body').animate({\n\t\t\t\t\t\tscrollTop: $('#product_attributes').offset().top - 50\n\t\t\t\t\t}, 500);\n\t\t\t\t});\n\t\t\t});\n\t\t\t</script>\n\n\t\t\t<?php\n\t\t\t\twoocommerce_wp_text_input(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'          => \\WC_Facebook_Product::FB_MPN,\n\t\t\t\t\t\t'name'        => \\WC_Facebook_Product::FB_MPN,\n\t\t\t\t\t\t'label'       => __( 'Manufacturer Part Number (MPN)', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'value'       => $fb_mpn,\n\t\t\t\t\t\t'class'       => 'enable-if-sync-enabled',\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t\t'description' => __( 'Manufacturer Part Number (MPN) of the item', 'facebook-for-woocommerce' ),\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t\twoocommerce_wp_text_input(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'          => \\WC_Facebook_Product::FB_BRAND,\n\t\t\t\t\t\t'name'        => \\WC_Facebook_Product::FB_BRAND,\n\t\t\t\t\t\t'label'       => __( 'Brand', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'value'       => $fb_brand,\n\t\t\t\t\t\t'class'       => 'enable-if-sync-enabled',\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t\t'description' => __( 'Brand name of the item', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'placeholder' => \\WC_Facebookcommerce_Utils::get_default_fb_brand(),\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t\twoocommerce_wp_select(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'          => \\WC_Facebook_Product::FB_PRODUCT_CONDITION,\n\t\t\t\t\t\t'name'        => \\WC_Facebook_Product::FB_PRODUCT_CONDITION,\n\t\t\t\t\t\t'label'       => __( 'Condition', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'options'     => array(\n\t\t\t\t\t\t\t'' => __( 'Select', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::CONDITION_NEW => __( 'New', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::CONDITION_REFURBISHED => __( 'Refurbished', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::CONDITION_USED => __( 'Used', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t),\n\t\t\t\t\t\t'value'       => $fb_condition,\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t\t'description' => __( 'This refers to the condition of your product. Supported values are new, refurbished and used.', 'facebook-for-woocommerce' ),\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t\twoocommerce_wp_text_input(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'          => \\WC_Facebook_Product::FB_SIZE,\n\t\t\t\t\t\t'label'       => __( 'Size', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t\t'description' => __( 'Size of the product item', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'name'        => \\WC_Facebook_Product::FB_SIZE,\n\t\t\t\t\t\t'cols'        => 40,\n\t\t\t\t\t\t'rows'        => 60,\n\t\t\t\t\t\t'value'       => $fb_size,\n\t\t\t\t\t\t'class'       => 'enable-if-sync-enabled',\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t\twoocommerce_wp_text_input(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'          => \\WC_Facebook_Product::FB_COLOR,\n\t\t\t\t\t\t'name'        => \\WC_Facebook_Product::FB_COLOR,\n\t\t\t\t\t\t'label'       => __( 'Color', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t\t'description' => __( 'Color of the product item', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'cols'        => 40,\n\t\t\t\t\t\t'rows'        => 60,\n\t\t\t\t\t\t'value'       => $fb_color,\n\t\t\t\t\t\t'class'       => 'enable-if-sync-enabled',\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t\twoocommerce_wp_select(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'          => \\WC_Facebook_Product::FB_AGE_GROUP,\n\t\t\t\t\t\t'name'        => \\WC_Facebook_Product::FB_AGE_GROUP,\n\t\t\t\t\t\t'label'       => __( 'Age Group', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'options'     => array(\n\t\t\t\t\t\t\t'' => __( 'Select', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::AGE_GROUP_ADULT => __( 'Adult', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::AGE_GROUP_ALL_AGES => __( 'All Ages', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::AGE_GROUP_TEEN => __( 'Teen', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::AGE_GROUP_KIDS => __( 'Kids', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::AGE_GROUP_TODDLER => __( 'Toddler', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::AGE_GROUP_INFANT => __( 'Infant', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::AGE_GROUP_NEWBORN => __( 'Newborn', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t),\n\t\t\t\t\t\t'value'       => $fb_age_group,\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t\t'description' => __( 'Select the age group for this product.', 'facebook-for-woocommerce' ),\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t\twoocommerce_wp_select(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'          => \\WC_Facebook_Product::FB_GENDER,\n\t\t\t\t\t\t'name'        => \\WC_Facebook_Product::FB_GENDER,\n\t\t\t\t\t\t'label'       => __( 'Gender', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'options'     => array(\n\t\t\t\t\t\t\t'' => __( 'Select', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::GENDER_FEMALE => __( 'Female', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::GENDER_MALE => __( 'Male', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::GENDER_UNISEX => __( 'Unisex', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t),\n\t\t\t\t\t\t'value'       => $fb_gender,\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t\t'description' => __( 'Select the gender for this product.', 'facebook-for-woocommerce' ),\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t\twoocommerce_wp_text_input(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'          => \\WC_Facebook_Product::FB_MATERIAL,\n\t\t\t\t\t\t'label'       => __( 'Material', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t\t'description' => __( 'Material of the product item', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'name'        => \\WC_Facebook_Product::FB_MATERIAL,\n\t\t\t\t\t\t'cols'        => 40,\n\t\t\t\t\t\t'rows'        => 60,\n\t\t\t\t\t\t'value'       => $fb_material,\n\t\t\t\t\t\t'class'       => 'enable-if-sync-enabled',\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t\twoocommerce_wp_text_input(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'          => \\WC_Facebook_Product::FB_PATTERN,\n\t\t\t\t\t\t'label'       => __( 'Pattern', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t\t'description' => __( 'Pattern of the product item', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'name'        => \\WC_Facebook_Product::FB_PATTERN,\n\t\t\t\t\t\t'cols'        => 40,\n\t\t\t\t\t\t'rows'        => 60,\n\t\t\t\t\t\t'value'       => $fb_pattern,\n\t\t\t\t\t\t'class'       => 'enable-if-sync-enabled',\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t?>\n\n\t\t\t<div class='wc-facebook-commerce-options-group options_group google_product_catgory'>\n\t\t\t\t<?php \\WooCommerce\\Facebook\\Admin\\Products::render_google_product_category_fields_and_enhanced_attributes( $product ); ?>\n\t\t\t</div>\n\t\t</div>\n\t\t<?php\n\t}",
+    "critique": {
+      "summary": "Function 'add_product_settings_tab_content' has code quality and standards issues that should be addressed for production readiness (source: facebook-for-woocommerce.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'add_product_settings_tab_content' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'add_product_settings_tab_content' (source: facebook-for-woocommerce.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'add_product_settings_tab_content' has no obvious security vulnerabilities but lacks defensive coding patterns (source: facebook-for-woocommerce.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'add_product_settings_tab_content' has no obvious performance issues for its current scope (source: facebook-for-woocommerce.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'add_product_settings_tab_content' uses WordPress APIs appropriately for its scope (source: facebook-for-woocommerce.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'add_product_settings_tab_content' (280 lines, source: facebook-for-woocommerce.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'add_product_settings_tab_content' has no problematic dependency patterns detected (source: facebook-for-woocommerce.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'add_product_settings_tab_content' i18n handling is acceptable (source: facebook-for-woocommerce.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'add_product_settings_tab_content' renders HTML (source: facebook-for-woocommerce.json) \u2014 verify semantic structure uses appropriate HTML5 elements",
+          "fix": "Use semantic HTML: <nav>, <main>, <article>, <section> where appropriate; avoid div-soup for content that has semantic meaning"
+        }
+      },
+      "key_observation": "'add_product_settings_tab_content' has no obvious security vulnerabilities but lacks defensive coding patterns (source: facebook-for-woocommerce.json)"
+    },
+    "corrected_code": "/**\n\t * Adds content to the new Facebook tab on the Product edit page.\n\t *\n\t * @internal\n\t *\n\t * @since 1.10.0\n\t */\nfunction add_product_settings_tab_content() {\n\t\tglobal $post;\n\n\t\t// all products have sync enabled unless explicitly disabled\n\t\t$sync_enabled = 'no' !== get_post_meta( $post->ID, Products::get_product_sync_meta_key(), true );\n\t\t$visibility   = get_post_meta( $post->ID, Products::VISIBILITY_META_KEY, true );\n\t\t$is_visible   = $visibility ? wc_string_to_bool( $visibility ) : true;\n\t\t$product      = wc_get_product( $post );\n\n\t\t$rich_text_description = get_post_meta( $post->ID, \\WC_Facebookcommerce_Integration::FB_RICH_TEXT_DESCRIPTION, true );\n\t\t$price                 = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_PRODUCT_PRICE, true );\n\t\t$image_source          = get_post_meta( $post->ID, Products::PRODUCT_IMAGE_SOURCE_META_KEY, true );\n\t\t$image                 = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_PRODUCT_IMAGE, true );\n\t\t$video_source          = get_post_meta( $post->ID, Products::PRODUCT_VIDEO_SOURCE_META_KEY, true );\n\t\t$video_urls            = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_PRODUCT_VIDEO, true );\n\t\t$custom_video_url      = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_PRODUCT_VIDEO . '_custom_url', true );\n\t\t$fb_brand              = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_BRAND, true ) ? get_post_meta( $post->ID, \\WC_Facebook_Product::FB_BRAND, true ) : get_post_meta( $post->ID, '_wc_facebook_enhanced_catalog_attributes_brand', true );\n\t\t$fb_mpn                = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_MPN, true );\n\t\t$fb_condition          = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_PRODUCT_CONDITION, true );\n\t\t$fb_age_group          = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_AGE_GROUP, true ) ? get_post_meta( $post->ID, \\WC_Facebook_Product::FB_AGE_GROUP, true ) : get_post_meta( $post->ID, '_wc_facebook_enhanced_catalog_attributes_age_group', true );\n\t\t$fb_gender             = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_GENDER, true ) ? get_post_meta( $post->ID, \\WC_Facebook_Product::FB_GENDER, true ) : get_post_meta( $post->ID, '_wc_facebook_enhanced_catalog_attributes_gender', true );\n\t\t$fb_size               = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_SIZE, true ) ? get_post_meta( $post->ID, \\WC_Facebook_Product::FB_SIZE, true ) : get_post_meta( $post->ID, '_wc_facebook_enhanced_catalog_attributes_size', true );\n\t\t$fb_color              = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_COLOR, true ) ? get_post_meta( $post->ID, \\WC_Facebook_Product::FB_COLOR, true ) : get_post_meta( $post->ID, '_wc_facebook_enhanced_catalog_attributes_color', true );\n\t\t$fb_material           = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_MATERIAL, true ) ? get_post_meta( $post->ID, \\WC_Facebook_Product::FB_MATERIAL, true ) : get_post_meta( $post->ID, '_wc_facebook_enhanced_catalog_attributes_material', true );\n\t\t$fb_pattern            = get_post_meta( $post->ID, \\WC_Facebook_Product::FB_PATTERN, true ) ? get_post_meta( $post->ID, \\WC_Facebook_Product::FB_PATTERN, true ) : get_post_meta( $post->ID, '_wc_facebook_enhanced_catalog_attributes_pattern', true );\n\n\t\tif ( $sync_enabled ) {\n\t\t\t$sync_mode = $is_visible ? self::SYNC_MODE_SYNC_AND_SHOW : self::SYNC_MODE_SYNC_AND_HIDE;\n\t\t} else {\n\t\t\t$sync_mode = self::SYNC_MODE_SYNC_DISABLED;\n\t\t}\n\n\t\t// 'id' attribute needs to match the 'target' parameter set above\n\t\t?>\n\t\t<div id='facebook_options' class='panel woocommerce_options_panel'>\n\t\t\t<div>\n\t\t\t\t<?php\n\n\t\t\t\twoocommerce_wp_select(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'          => 'wc_facebook_sync_mode',\n\t\t\t\t\t\t'label'       => __( 'Facebook Sync', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'options'     => array(\n\t\t\t\t\t\t\tself::SYNC_MODE_SYNC_AND_SHOW => __( 'Sync and show in catalog', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\tself::SYNC_MODE_SYNC_AND_HIDE => __( 'Sync and hide in catalog', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\tself::SYNC_MODE_SYNC_DISABLED => __( 'Do not sync', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t),\n\t\t\t\t\t\t'value'       => $sync_mode,\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t\t'description' => __( 'Choose whether to sync this product to Facebook and, if synced, whether it should be visible in the catalog.', 'facebook-for-woocommerce' ),\n\t\t\t\t\t)\n\t\t\t\t);\n\t\t\t\t?>\n\t\t\t</div>\n\n\t\t<?php\n\t\t// Video fields are now rendered in the options_group section with radio buttons\n\t\t?>\n\n\n\t\t\t<div class='options_group hide_if_variable'>\n\t\t\t\t<?php\n\t\t\t\techo '<div class=\"wp-editor-wrap\">';\n\t\t\t\techo '<label for=\"' . esc_attr( \\WC_Facebookcommerce_Integration::FB_PRODUCT_DESCRIPTION ) . '\">' .\n\t\t\t\t\tesc_html__( 'Facebook Description', 'facebook-for-woocommerce' ) .\n\t\t\t\t\t'</label>';\n\t\t\t\twp_editor(\n\t\t\t\t\t$rich_text_description,\n\t\t\t\t\t\\WC_Facebookcommerce_Integration::FB_PRODUCT_DESCRIPTION,\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'            => \\WC_Facebook_Product::FB_PRODUCT_DESCRIPTION,\n\t\t\t\t\t\t'textarea_name' => \\WC_Facebookcommerce_Integration::FB_PRODUCT_DESCRIPTION,\n\t\t\t\t\t\t'textarea_rows' => 10,\n\t\t\t\t\t\t'media_buttons' => true,\n\t\t\t\t\t\t'teeny'         => true,\n\t\t\t\t\t\t'quicktags'     => false,\n\t\t\t\t\t\t'tinymce'       => array(\n\t\t\t\t\t\t\t'toolbar1' => 'bold,italic,bullist,spellchecker,fullscreen',\n\t\t\t\t\t\t),\n\t\t\t\t\t)\n\t\t\t\t);\n\t\t\t\techo '</div>';\n\n\t\t\t\twoocommerce_wp_radio(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'            => 'fb_product_image_source',\n\t\t\t\t\t\t'label'         => __( 'Facebook Product Image', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'desc_tip'      => true,\n\t\t\t\t\t\t'description'   => __( 'Choose the product image that should be synced to the Facebook catalog and displayed for this product.', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'options'       => array(\n\t\t\t\t\t\t\tProducts::PRODUCT_IMAGE_SOURCE_PRODUCT => __( 'Use WooCommerce image', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\tProducts::PRODUCT_IMAGE_SOURCE_CUSTOM  => __( 'Use custom image', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t),\n\t\t\t\t\t\t'value'         => $image_source ? $image_source : Products::PRODUCT_IMAGE_SOURCE_PRODUCT,\n\t\t\t\t\t\t'class'         => 'short enable-if-sync-enabled js-fb-product-image-source',\n\t\t\t\t\t\t'wrapper_class' => 'fb-product-image-source-field',\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t\twoocommerce_wp_text_input(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'          => \\WC_Facebook_Product::FB_PRODUCT_IMAGE,\n\t\t\t\t\t\t'label'       => __( 'Custom Image URL', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'value'       => $image,\n\t\t\t\t\t\t'class'       => sprintf( 'enable-if-sync-enabled product-image-source-field show-if-product-image-source-%s', Products::PRODUCT_IMAGE_SOURCE_CUSTOM ),\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t\t'description' => __( 'Please enter an absolute URL (e.g. https://domain.com/image.jpg).', 'facebook-for-woocommerce' ),\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t\t// Render the Facebook Product Video field with radio buttons\n\t\t\t\t$this->render_facebook_product_video_field( $video_urls );\n\n\t\t\t\twoocommerce_wp_text_input(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'          => \\WC_Facebook_Product::FB_PRODUCT_PRICE,\n\t\t\t\t\t\t'label'       => sprintf(\n\t\t\t\t\t\t/* translators: Placeholders %1$s - WC currency symbol */\n\t\t\t\t\t\t\t__( 'Facebook Price (%1$s)', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\tget_woocommerce_currency_symbol()\n\t\t\t\t\t\t),\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t\t'description' => __( 'Custom price for product on Facebook. Please enter in monetary decimal (.) format without thousand separators and currency symbols. If blank, product price will be used.', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'cols'        => 40,\n\t\t\t\t\t\t'rows'        => 60,\n\t\t\t\t\t\t'value'       => $price,\n\t\t\t\t\t\t'class'       => 'enable-if-sync-enabled',\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t\twoocommerce_wp_hidden_input(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'    => \\WC_Facebook_Product::FB_REMOVE_FROM_SYNC,\n\t\t\t\t\t\t'value' => '',\n\t\t\t\t\t)\n\t\t\t\t);\n\t\t\t\t?>\n\t\t\t</div>\n\n\t\t\t<div class='wc_facebook_commerce_fields'>\n\t\t\t\t<p class=\"text-heading\">\n\t\t\t\t\t<span><?php echo esc_html( \\WooCommerce\\Facebook\\Admin\\Product_Categories::get_catalog_explanation_text() ); ?></span>\n\t\t\t\t\t<a href=\"#\" class=\"go-to-attributes-link\" style=\"text-decoration: underline; cursor: pointer;\">\n\t\t\t\t\t\t<?php echo esc_html__( 'Go to attributes', 'facebook-for-woocommerce' ); ?>\n\t\t\t\t\t</a>\n\t\t\t\t</p>\n\t\t\t</div>\n\n\t\t\t<script type=\"text/javascript\">\n\t\t\tjQuery(document).ready(function($) {\n\t\t\t\t$('.go-to-attributes-link').click(function(e) {\n\t\t\t\t\te.preventDefault();\n\t\t\t\t\t$('li.attribute_options.attribute_tab a[href=\"#product_attributes\"]').trigger('click');\n\t\t\t\t\t$('html, body').animate({\n\t\t\t\t\t\tscrollTop: $('#product_attributes').offset().top - 50\n\t\t\t\t\t}, 500);\n\t\t\t\t});\n\t\t\t});\n\t\t\t</script>\n\n\t\t\t<?php\n\t\t\t\twoocommerce_wp_text_input(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'          => \\WC_Facebook_Product::FB_MPN,\n\t\t\t\t\t\t'name'        => \\WC_Facebook_Product::FB_MPN,\n\t\t\t\t\t\t'label'       => __( 'Manufacturer Part Number (MPN)', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'value'       => $fb_mpn,\n\t\t\t\t\t\t'class'       => 'enable-if-sync-enabled',\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t\t'description' => __( 'Manufacturer Part Number (MPN) of the item', 'facebook-for-woocommerce' ),\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t\twoocommerce_wp_text_input(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'          => \\WC_Facebook_Product::FB_BRAND,\n\t\t\t\t\t\t'name'        => \\WC_Facebook_Product::FB_BRAND,\n\t\t\t\t\t\t'label'       => __( 'Brand', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'value'       => $fb_brand,\n\t\t\t\t\t\t'class'       => 'enable-if-sync-enabled',\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t\t'description' => __( 'Brand name of the item', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'placeholder' => \\WC_Facebookcommerce_Utils::get_default_fb_brand(),\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t\twoocommerce_wp_select(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'          => \\WC_Facebook_Product::FB_PRODUCT_CONDITION,\n\t\t\t\t\t\t'name'        => \\WC_Facebook_Product::FB_PRODUCT_CONDITION,\n\t\t\t\t\t\t'label'       => __( 'Condition', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'options'     => array(\n\t\t\t\t\t\t\t'' => __( 'Select', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::CONDITION_NEW => __( 'New', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::CONDITION_REFURBISHED => __( 'Refurbished', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::CONDITION_USED => __( 'Used', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t),\n\t\t\t\t\t\t'value'       => $fb_condition,\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t\t'description' => __( 'This refers to the condition of your product. Supported values are new, refurbished and used.', 'facebook-for-woocommerce' ),\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t\twoocommerce_wp_text_input(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'          => \\WC_Facebook_Product::FB_SIZE,\n\t\t\t\t\t\t'label'       => __( 'Size', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t\t'description' => __( 'Size of the product item', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'name'        => \\WC_Facebook_Product::FB_SIZE,\n\t\t\t\t\t\t'cols'        => 40,\n\t\t\t\t\t\t'rows'        => 60,\n\t\t\t\t\t\t'value'       => $fb_size,\n\t\t\t\t\t\t'class'       => 'enable-if-sync-enabled',\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t\twoocommerce_wp_text_input(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'          => \\WC_Facebook_Product::FB_COLOR,\n\t\t\t\t\t\t'name'        => \\WC_Facebook_Product::FB_COLOR,\n\t\t\t\t\t\t'label'       => __( 'Color', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t\t'description' => __( 'Color of the product item', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'cols'        => 40,\n\t\t\t\t\t\t'rows'        => 60,\n\t\t\t\t\t\t'value'       => $fb_color,\n\t\t\t\t\t\t'class'       => 'enable-if-sync-enabled',\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t\twoocommerce_wp_select(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'          => \\WC_Facebook_Product::FB_AGE_GROUP,\n\t\t\t\t\t\t'name'        => \\WC_Facebook_Product::FB_AGE_GROUP,\n\t\t\t\t\t\t'label'       => __( 'Age Group', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'options'     => array(\n\t\t\t\t\t\t\t'' => __( 'Select', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::AGE_GROUP_ADULT => __( 'Adult', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::AGE_GROUP_ALL_AGES => __( 'All Ages', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::AGE_GROUP_TEEN => __( 'Teen', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::AGE_GROUP_KIDS => __( 'Kids', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::AGE_GROUP_TODDLER => __( 'Toddler', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::AGE_GROUP_INFANT => __( 'Infant', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::AGE_GROUP_NEWBORN => __( 'Newborn', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t),\n\t\t\t\t\t\t'value'       => $fb_age_group,\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t\t'description' => __( 'Select the age group for this product.', 'facebook-for-woocommerce' ),\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t\twoocommerce_wp_select(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'          => \\WC_Facebook_Product::FB_GENDER,\n\t\t\t\t\t\t'name'        => \\WC_Facebook_Product::FB_GENDER,\n\t\t\t\t\t\t'label'       => __( 'Gender', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'options'     => array(\n\t\t\t\t\t\t\t'' => __( 'Select', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::GENDER_FEMALE => __( 'Female', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::GENDER_MALE => __( 'Male', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t\t\\WC_Facebook_Product::GENDER_UNISEX => __( 'Unisex', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t),\n\t\t\t\t\t\t'value'       => $fb_gender,\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t\t'description' => __( 'Select the gender for this product.', 'facebook-for-woocommerce' ),\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t\twoocommerce_wp_text_input(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'          => \\WC_Facebook_Product::FB_MATERIAL,\n\t\t\t\t\t\t'label'       => __( 'Material', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t\t'description' => __( 'Material of the product item', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'name'        => \\WC_Facebook_Product::FB_MATERIAL,\n\t\t\t\t\t\t'cols'        => 40,\n\t\t\t\t\t\t'rows'        => 60,\n\t\t\t\t\t\t'value'       => $fb_material,\n\t\t\t\t\t\t'class'       => 'enable-if-sync-enabled',\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t\twoocommerce_wp_text_input(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'          => \\WC_Facebook_Product::FB_PATTERN,\n\t\t\t\t\t\t'label'       => __( 'Pattern', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t\t'description' => __( 'Pattern of the product item', 'facebook-for-woocommerce' ),\n\t\t\t\t\t\t'name'        => \\WC_Facebook_Product::FB_PATTERN,\n\t\t\t\t\t\t'cols'        => 40,\n\t\t\t\t\t\t'rows'        => 60,\n\t\t\t\t\t\t'value'       => $fb_pattern,\n\t\t\t\t\t\t'class'       => 'enable-if-sync-enabled',\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t?>\n\n\t\t\t<div class='wc-facebook-commerce-options-group options_group google_product_catgory'>\n\t\t\t\t<?php \\WooCommerce\\Facebook\\Admin\\Products::render_google_product_category_fields_and_enhanced_attributes( $product ); ?>\n\t\t\t</div>\n\t\t</div>\n\t\t<?php\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "wordpress-importer.json",
+    "function_name": "wp_scrub_utf8",
+    "defective_code": "/**\n\t * Fallback function for scrubbing UTF-8.\n\t *\n\t * @ignore\n\t * @private\n\t *\n\t * @since 6.9.0\n\t */\nfunction wp_scrub_utf8( $text ) {\n\t\treturn _wp_scrub_utf8_fallback( $text );\n\t}",
+    "critique": {
+      "summary": "Function 'wp_scrub_utf8' has code quality and standards issues that should be addressed for production readiness (source: wordpress-importer.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'wp_scrub_utf8' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'wp_scrub_utf8' (source: wordpress-importer.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'wp_scrub_utf8' has no obvious security vulnerabilities but lacks defensive coding patterns (source: wordpress-importer.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'wp_scrub_utf8' has no obvious performance issues for its current scope (source: wordpress-importer.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'wp_scrub_utf8' uses WordPress APIs appropriately for its scope (source: wordpress-importer.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'wp_scrub_utf8' code quality is acceptable but could improve single responsibility adherence (source: wordpress-importer.json, 4 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'wp_scrub_utf8' has no problematic dependency patterns detected (source: wordpress-importer.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'wp_scrub_utf8' i18n handling is acceptable (source: wordpress-importer.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'wp_scrub_utf8' does not produce HTML output \u2014 accessibility dimension not applicable (source: wordpress-importer.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'wp_scrub_utf8' has no obvious security vulnerabilities but lacks defensive coding patterns (source: wordpress-importer.json)"
+    },
+    "corrected_code": "/**\n\t * Fallback function for scrubbing UTF-8.\n\t *\n\t * @ignore\n\t * @private\n\t *\n\t * @since 6.9.0\n\t */\nfunction wp_scrub_utf8( $text ) {\n\t\treturn _wp_scrub_utf8_fallback( $text );\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "woocommerce-mercadopago.json",
+    "function_name": "CreditsGateway::isAvailable",
+    "defective_code": "/**\n     * Verify if the gateway is available\n     *\n     * @return bool\n     */\nfunction isAvailable(): bool\n    {\n        global $mercadopago;\n\n        $paymentMethodsBySite = $mercadopago->sellerConfig->getSiteIdPaymentMethods();\n\n        foreach ($paymentMethodsBySite as $paymentMethod) {\n            if ('consumer_credits' === $paymentMethod['id']) {\n                return true;\n            }\n        }\n\n        return false;\n    }",
+    "critique": {
+      "summary": "Function 'isAvailable' has code quality and standards issues that should be addressed for production readiness (source: woocommerce-mercadopago.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Function 'isAvailable' uses camelCase \u2014 WPCS requires snake_case (e.g., 'is_available')",
+          "fix": "Rename to snake_case convention"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'isAvailable' (source: woocommerce-mercadopago.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'isAvailable' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce-mercadopago.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'isAvailable' performs potentially expensive operations in a loop without caching (source: woocommerce-mercadopago.json)",
+          "fix": "Cache expensive computed values using wp_cache_set()/wp_cache_get() with appropriate cache group and expiry"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'isAvailable' uses WordPress APIs appropriately for its scope (source: woocommerce-mercadopago.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'isAvailable' code quality is acceptable but could improve single responsibility adherence (source: woocommerce-mercadopago.json, 12 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'isAvailable' has no problematic dependency patterns detected (source: woocommerce-mercadopago.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'isAvailable' i18n handling is acceptable (source: woocommerce-mercadopago.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'isAvailable' does not produce HTML output \u2014 accessibility dimension not applicable (source: woocommerce-mercadopago.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'isAvailable' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce-mercadopago.json)"
+    },
+    "corrected_code": "/**\n     * Verify if the gateway is available\n     *\n     * @return bool\n     */\nfunction isAvailable(): bool\n    {\n        global $mercadopago;\n\n        $paymentMethodsBySite = $mercadopago->sellerConfig->getSiteIdPaymentMethods();\n\n        foreach ($paymentMethodsBySite as $paymentMethod) {\n            if ('consumer_credits' === $paymentMethod['id']) {\n                return true;\n            }\n        }\n\n        return false;\n    }",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "woocommerce.json",
+    "function_name": "WC_Settings_Emails::get_settings_for_default_section",
+    "defective_code": "/**\n\t\t * Filters the email settings array.\n\t\t *\n\t\t * @since 2.1.0\n\t\t *\n\t\t * @param array $settings Array of email settings.\n\t\t */\nfunction get_settings_for_default_section() {\n\t\t$desc_help_text = sprintf(\n\t\t/* translators: %1$s: Link to WP Mail Logging plugin, %2$s: Link to Email FAQ support page. */\n\t\t\t__( 'To ensure your store&rsquo;s notifications arrive in your and your customers&rsquo; inboxes, we recommend connecting your email address to your domain and setting up a dedicated SMTP server. If something doesn&rsquo;t seem to be sending correctly, install the <a href=\"%1$s\">WP Mail Logging Plugin</a> or check the <a href=\"%2$s\">Email FAQ page</a>.', 'woocommerce' ),\n\t\t\t'https://wordpress.org/plugins/wp-mail-logging/',\n\t\t\t'https://woocommerce.com/document/email-faq'\n\t\t);\n\n\t\t$block_email_editor_enabled = FeaturesUtil::feature_is_enabled( 'block_email_editor' );\n\t\t$email_improvements_enabled = $this->get_email_improvements_enabled();\n\n\t\t// These defaults should be chosen by the same logic as the other color option properties.\n\t\t$default_colors = EmailColors::get_default_colors( $email_improvements_enabled );\n\n\t\tif ( $block_email_editor_enabled ) {\n\t\t\t$email_notifications_field = 'email_notification_block_emails';\n\t\t\t$email_notifications_desc  = null;\n\t\t} else {\n\t\t\t$email_notifications_field = 'email_notification';\n\t\t\t/* translators: %s: help description with link to WP Mail logging and support page. */\n\t\t\t$email_notifications_desc = sprintf( __( 'Email notifications sent from WooCommerce are listed below. Click on an email to configure it.<br>%s', 'woocommerce' ), $desc_help_text );\n\t\t}\n\n\t\t$settings =\n\t\t\tarray(\n\t\t\t\tarray(\n\t\t\t\t\t'title' => __( 'Email notifications', 'woocommerce' ),\n\t\t\t\t\t'desc'  => $email_notifications_desc,\n\t\t\t\t\t'type'  => 'title',\n\t\t\t\t\t'id'    => 'email_notification_settings',\n\t\t\t\t),\n\n\t\t\t\tarray( 'type' => $email_notifications_field ),\n\n\t\t\t\tarray(\n\t\t\t\t\t'type' => 'sectionend',\n\t\t\t\t\t'id'   => 'email_notification_settings',\n\t\t\t\t),\n\n\t\t\t\tarray(\n\t\t\t\t\t'type' => 'sectionend',\n\t\t\t\t\t'id'   => 'email_recipient_options',\n\t\t\t\t),\n\t\t\t\tarray(\n\t\t\t\t\t'title' => __( 'Email sender options', 'woocommerce' ),\n\t\t\t\t\t'type'  => 'title',\n\t\t\t\t\t'desc'  => __( \"Set the name and email address you'd like your outgoing emails to use.\", 'woocommerce' ),\n\t\t\t\t\t'id'    => 'email_options',\n\t\t\t\t),\n\n\t\t\t\tarray(\n\t\t\t\t\t'title'             => __( '\"From\" name', 'woocommerce' ),\n\t\t\t\t\t'desc'              => '',\n\t\t\t\t\t'id'                => 'woocommerce_email_from_name',\n\t\t\t\t\t'type'              => 'text',\n\t\t\t\t\t'css'               => 'min-width:400px;',\n\t\t\t\t\t'default'           => esc_attr( get_bloginfo( 'name', 'display' ) ),\n\t\t\t\t\t'autoload'          => false,\n\t\t\t\t\t'desc_tip'          => true,\n\t\t\t\t\t'skip_initial_save' => true,\n\t\t\t\t),\n\n\t\t\t\tarray(\n\t\t\t\t\t'title'             => __( '\"From\" address', 'woocommerce' ),\n\t\t\t\t\t'desc'              => '',\n\t\t\t\t\t'id'                => 'woocommerce_email_from_address',\n\t\t\t\t\t'type'              => 'email',\n\t\t\t\t\t'custom_attributes' => array(\n\t\t\t\t\t\t'multiple' => 'multiple',\n\t\t\t\t\t),\n\t\t\t\t\t'css'               => 'min-width:400px;',\n\t\t\t\t\t'default'           => get_option( 'admin_email' ),\n\t\t\t\t\t'autoload'          => false,\n\t\t\t\t\t'desc_tip'          => true,\n\t\t\t\t),\n\t\t\t);\n\n\t\t// Add reply-to fields when block email editor is enabled.\n\t\tif ( $block_email_editor_enabled ) {\n\t\t\t$settings = array_merge(\n\t\t\t\t$settings,\n\t\t\t\tarray(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'    => __( 'Add \"Reply-to\" email', 'woocommerce' ),\n\t\t\t\t\t\t'desc'     => __( 'Add a different email address to receive replies.', 'woocommerce' ),\n\t\t\t\t\t\t'id'       => 'woocommerce_email_reply_to_enabled',\n\t\t\t\t\t\t'type'     => 'checkbox',\n\t\t\t\t\t\t'default'  => 'no',\n\t\t\t\t\t\t'autoload' => false,\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'    => __( '\"Reply-to\" name', 'woocommerce' ),\n\t\t\t\t\t\t'desc'     => '',\n\t\t\t\t\t\t'id'       => 'woocommerce_email_reply_to_name',\n\t\t\t\t\t\t'type'     => 'text',\n\t\t\t\t\t\t'css'      => 'min-width:400px;',\n\t\t\t\t\t\t'default'  => '',\n\t\t\t\t\t\t'autoload' => false,\n\t\t\t\t\t\t'desc_tip' => true,\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'    => __( '\"Reply-to\" address', 'woocommerce' ),\n\t\t\t\t\t\t'desc'     => '',\n\t\t\t\t\t\t'id'       => 'woocommerce_email_reply_to_address',\n\t\t\t\t\t\t'type'     => 'email',\n\t\t\t\t\t\t'css'      => 'min-width:400px;',\n\t\t\t\t\t\t'default'  => '',\n\t\t\t\t\t\t'autoload' => false,\n\t\t\t\t\t\t'desc_tip' => true,\n\t\t\t\t\t),\n\t\t\t\t)\n\t\t\t);\n\t\t}\n\n\t\t$settings = array_merge(\n\t\t\t$settings,\n\t\t\tarray(\n\t\t\t\tarray(\n\t\t\t\t\t'type' => 'sectionend',\n\t\t\t\t\t'id'   => 'email_options',\n\t\t\t\t),\n\t\t\t)\n\t\t);\n\n\t\t// If the email editor is enabled the design is handled by the email editor.\n\t\tif ( ! $block_email_editor_enabled ) {\n\t\t\t$settings = array_merge(\n\t\t\t\t$settings,\n\t\t\t\tarray(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title' => __( 'Email template', 'woocommerce' ),\n\t\t\t\t\t\t'type'  => 'title',\n\t\t\t\t\t\t'desc'  => __( 'Customize your WooCommerce email template and preview it below.', 'woocommerce' ),\n\t\t\t\t\t\t'id'    => 'email_template_options',\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title' => __( 'Try new templates', 'woocommerce' ),\n\t\t\t\t\t\t'type'  => 'previewing_new_templates',\n\t\t\t\t\t\t'id'    => 'previewing_new_templates',\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'       => __( 'Logo', 'woocommerce' ),\n\t\t\t\t\t\t'desc'        => __( 'Add your logo to each of your WooCommerce emails. If no logo is uploaded, your site title will be used instead.', 'woocommerce' ),\n\t\t\t\t\t\t'id'          => 'woocommerce_email_header_image',\n\t\t\t\t\t\t'type'        => 'email_image_url',\n\t\t\t\t\t\t'css'         => 'min-width:400px;',\n\t\t\t\t\t\t'placeholder' => __( 'N/A', 'woocommerce' ),\n\t\t\t\t\t\t'default'     => '',\n\t\t\t\t\t\t'autoload'    => false,\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'     => __( 'Logo width (px)', 'woocommerce' ),\n\t\t\t\t\t\t'id'        => 'woocommerce_email_header_image_width',\n\t\t\t\t\t\t'desc_tip'  => '',\n\t\t\t\t\t\t'default'   => '120',\n\t\t\t\t\t\t'type'      => 'number',\n\t\t\t\t\t\t'row_class' => $email_improvements_enabled ? '' : 'disabled',\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'     => __( 'Header alignment', 'woocommerce' ),\n\t\t\t\t\t\t'id'        => 'woocommerce_email_header_alignment',\n\t\t\t\t\t\t'desc_tip'  => '',\n\t\t\t\t\t\t'default'   => 'left',\n\t\t\t\t\t\t'type'      => 'select',\n\t\t\t\t\t\t'class'     => 'wc-enhanced-select',\n\t\t\t\t\t\t'options'   => array(\n\t\t\t\t\t\t\t'left'   => __( 'Left', 'woocommerce' ),\n\t\t\t\t\t\t\t'center' => __( 'Center', 'woocommerce' ),\n\t\t\t\t\t\t\t'right'  => __( 'Right', 'woocommerce' ),\n\t\t\t\t\t\t),\n\t\t\t\t\t\t'row_class' => $email_improvements_enabled ? '' : 'disabled',\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'     => __( 'Font family', 'woocommerce' ),\n\t\t\t\t\t\t'id'        => 'woocommerce_email_font_family',\n\t\t\t\t\t\t'default'   => 'Helvetica',\n\t\t\t\t\t\t'type'      => 'email_font_family',\n\t\t\t\t\t\t'row_class' => $email_improvements_enabled ? '' : 'disabled',\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'       => __( 'Footer text', 'woocommerce' ),\n\t\t\t\t\t\t/* translators: %s: Available placeholders for use */\n\t\t\t\t\t\t'desc'        => __( 'This text will appear in the footer of all of your WooCommerce emails.', 'woocommerce' ) . ' ' . sprintf( __( 'Available placeholders: %s', 'woocommerce' ), '{site_title} {site_url} {store_address} {store_email}' ),\n\t\t\t\t\t\t'id'          => 'woocommerce_email_footer_text',\n\t\t\t\t\t\t'css'         => 'width:400px; height: 75px;',\n\t\t\t\t\t\t'placeholder' => __( 'N/A', 'woocommerce' ),\n\t\t\t\t\t\t'type'        => 'textarea',\n\t\t\t\t\t\t'default'     => '{site_title}<br />{store_address}',\n\t\t\t\t\t\t'autoload'    => false,\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'type' => 'sectionend',\n\t\t\t\t\t\t'id'   => 'email_template_options',\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title' => __( 'Color palette', 'woocommerce' ),\n\t\t\t\t\t\t'type'  => 'email_color_palette',\n\t\t\t\t\t\t'id'    => 'email_color_palette',\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'    => __( 'Accent', 'woocommerce' ),\n\t\t\t\t\t\t/* translators: %s: default color */\n\t\t\t\t\t\t'desc'     => sprintf( __( 'Customize the color of your buttons and links. Default %s.', 'woocommerce' ), '<code>' . $default_colors['base'] . '</code>' ),\n\t\t\t\t\t\t'id'       => 'woocommerce_email_base_color',\n\t\t\t\t\t\t'type'     => 'color',\n\t\t\t\t\t\t'css'      => 'width:6em;',\n\t\t\t\t\t\t'default'  => $default_colors['base'],\n\t\t\t\t\t\t'autoload' => false,\n\t\t\t\t\t\t'desc_tip' => true,\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'    => __( 'Email background', 'woocommerce' ),\n\t\t\t\t\t\t/* translators: %s: default color */\n\t\t\t\t\t\t'desc'     => sprintf( __( 'Select a color for the background of your emails. Default %s.', 'woocommerce' ), '<code>' . $default_colors['bg'] . '</code>' ),\n\t\t\t\t\t\t'id'       => 'woocommerce_email_background_color',\n\t\t\t\t\t\t'type'     => 'color',\n\t\t\t\t\t\t'css'      => 'width:6em;',\n\t\t\t\t\t\t'default'  => $default_colors['bg'],\n\t\t\t\t\t\t'autoload' => false,\n\t\t\t\t\t\t'desc_tip' => true,\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'    => __( 'Content background', 'woocommerce' ),\n\t\t\t\t\t\t/* translators: %s: default color */\n\t\t\t\t\t\t'desc'     => sprintf( __( 'Choose a background color for the content area of your emails. Default %s.', 'woocommerce' ), '<code>' . $default_colors['body_bg'] . '</code>' ),\n\t\t\t\t\t\t'id'       => 'woocommerce_email_body_background_color',\n\t\t\t\t\t\t'type'     => 'color',\n\t\t\t\t\t\t'css'      => 'width:6em;',\n\t\t\t\t\t\t'default'  => $default_colors['body_bg'],\n\t\t\t\t\t\t'autoload' => false,\n\t\t\t\t\t\t'desc_tip' => true,\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'    => __( 'Heading & text', 'woocommerce' ),\n\t\t\t\t\t\t/* translators: %s: default color */\n\t\t\t\t\t\t'desc'     => sprintf( __( 'Set the color of your headings and text. Default %s.', 'woocommerce' ), '<code>' . $default_colors['body_text'] . '</code>' ),\n\t\t\t\t\t\t'id'       => 'woocommerce_email_text_color',\n\t\t\t\t\t\t'type'     => 'color',\n\t\t\t\t\t\t'css'      => 'width:6em;',\n\t\t\t\t\t\t'default'  => $default_colors['body_text'],\n\t\t\t\t\t\t'autoload' => false,\n\t\t\t\t\t\t'desc_tip' => true,\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'    => __( 'Secondary text', 'woocommerce' ),\n\t\t\t\t\t\t/* translators: %s: footer default color */\n\t\t\t\t\t\t'desc'     => sprintf( __( 'Choose a color for your secondary text, such as your footer content. Default %s.', 'woocommerce' ), '<code>' . $default_colors['footer_text'] . '</code>' ),\n\t\t\t\t\t\t'id'       => 'woocommerce_email_footer_text_color',\n\t\t\t\t\t\t'type'     => 'color',\n\t\t\t\t\t\t'css'      => 'width:6em;',\n\t\t\t\t\t\t'default'  => $default_colors['footer_text'],\n\t\t\t\t\t\t'autoload' => false,\n\t\t\t\t\t\t'desc_tip' => true,\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'    => __( 'Auto-sync with theme', 'woocommerce' ),\n\t\t\t\t\t\t'desc'     => __( 'Automatically update email styles when theme styles change', 'woocommerce' ),\n\t\t\t\t\t\t'id'       => 'woocommerce_email_auto_sync_with_theme',\n\t\t\t\t\t\t'type'     => 'hidden',\n\t\t\t\t\t\t'default'  => 'no',\n\t\t\t\t\t\t'autoload' => false,\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'type' => 'sectionend',\n\t\t\t\t\t\t'id'   => 'email_color_palette',\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title' => __( 'Email improvements button', 'woocommerce' ),\n\t\t\t\t\t\t'type'  => 'email_improvements_button',\n\t\t\t\t\t\t'id'    => 'email_improvements_button',\n\t\t\t\t\t),\n\n\t\t\t\t\tarray( 'type' => 'email_preview' ),\n\t\t\t\t)\n\t\t\t);\n\t\t}\n\n\t\t// Remove empty elements that depend on the email_improvements feature flag.\n\t\t$settings = array_filter( $settings );\n\n\t\t\n\t\treturn apply_filters( 'woocommerce_email_settings', $settings );\n\t}",
+    "critique": {
+      "summary": "Function 'get_settings_for_default_section' has code quality and standards issues that should be addressed for production readiness (source: woocommerce.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'get_settings_for_default_section' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'get_settings_for_default_section' (source: woocommerce.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'get_settings_for_default_section' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'get_settings_for_default_section' has no obvious performance issues for its current scope (source: woocommerce.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'get_settings_for_default_section' uses WordPress APIs appropriately for its scope (source: woocommerce.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'get_settings_for_default_section' (270 lines, source: woocommerce.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'get_settings_for_default_section' has no problematic dependency patterns detected (source: woocommerce.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'get_settings_for_default_section' i18n handling is acceptable (source: woocommerce.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'get_settings_for_default_section' renders HTML (source: woocommerce.json) \u2014 verify semantic structure uses appropriate HTML5 elements",
+          "fix": "Use semantic HTML: <nav>, <main>, <article>, <section> where appropriate; avoid div-soup for content that has semantic meaning"
+        }
+      },
+      "key_observation": "'get_settings_for_default_section' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce.json)"
+    },
+    "corrected_code": "/**\n\t\t * Filters the email settings array.\n\t\t *\n\t\t * @since 2.1.0\n\t\t *\n\t\t * @param array $settings Array of email settings.\n\t\t */\nfunction get_settings_for_default_section() {\n\t\t$desc_help_text = sprintf(\n\t\t/* translators: %1$s: Link to WP Mail Logging plugin, %2$s: Link to Email FAQ support page. */\n\t\t\t__( 'To ensure your store&rsquo;s notifications arrive in your and your customers&rsquo; inboxes, we recommend connecting your email address to your domain and setting up a dedicated SMTP server. If something doesn&rsquo;t seem to be sending correctly, install the <a href=\"%1$s\">WP Mail Logging Plugin</a> or check the <a href=\"%2$s\">Email FAQ page</a>.', 'woocommerce' ),\n\t\t\t'https://wordpress.org/plugins/wp-mail-logging/',\n\t\t\t'https://woocommerce.com/document/email-faq'\n\t\t);\n\n\t\t$block_email_editor_enabled = FeaturesUtil::feature_is_enabled( 'block_email_editor' );\n\t\t$email_improvements_enabled = $this->get_email_improvements_enabled();\n\n\t\t// These defaults should be chosen by the same logic as the other color option properties.\n\t\t$default_colors = EmailColors::get_default_colors( $email_improvements_enabled );\n\n\t\tif ( $block_email_editor_enabled ) {\n\t\t\t$email_notifications_field = 'email_notification_block_emails';\n\t\t\t$email_notifications_desc  = null;\n\t\t} else {\n\t\t\t$email_notifications_field = 'email_notification';\n\t\t\t/* translators: %s: help description with link to WP Mail logging and support page. */\n\t\t\t$email_notifications_desc = sprintf( __( 'Email notifications sent from WooCommerce are listed below. Click on an email to configure it.<br>%s', 'woocommerce' ), $desc_help_text );\n\t\t}\n\n\t\t$settings =\n\t\t\tarray(\n\t\t\t\tarray(\n\t\t\t\t\t'title' => __( 'Email notifications', 'woocommerce' ),\n\t\t\t\t\t'desc'  => $email_notifications_desc,\n\t\t\t\t\t'type'  => 'title',\n\t\t\t\t\t'id'    => 'email_notification_settings',\n\t\t\t\t),\n\n\t\t\t\tarray( 'type' => $email_notifications_field ),\n\n\t\t\t\tarray(\n\t\t\t\t\t'type' => 'sectionend',\n\t\t\t\t\t'id'   => 'email_notification_settings',\n\t\t\t\t),\n\n\t\t\t\tarray(\n\t\t\t\t\t'type' => 'sectionend',\n\t\t\t\t\t'id'   => 'email_recipient_options',\n\t\t\t\t),\n\t\t\t\tarray(\n\t\t\t\t\t'title' => __( 'Email sender options', 'woocommerce' ),\n\t\t\t\t\t'type'  => 'title',\n\t\t\t\t\t'desc'  => __( \"Set the name and email address you'd like your outgoing emails to use.\", 'woocommerce' ),\n\t\t\t\t\t'id'    => 'email_options',\n\t\t\t\t),\n\n\t\t\t\tarray(\n\t\t\t\t\t'title'             => __( '\"From\" name', 'woocommerce' ),\n\t\t\t\t\t'desc'              => '',\n\t\t\t\t\t'id'                => 'woocommerce_email_from_name',\n\t\t\t\t\t'type'              => 'text',\n\t\t\t\t\t'css'               => 'min-width:400px;',\n\t\t\t\t\t'default'           => esc_attr( get_bloginfo( 'name', 'display' ) ),\n\t\t\t\t\t'autoload'          => false,\n\t\t\t\t\t'desc_tip'          => true,\n\t\t\t\t\t'skip_initial_save' => true,\n\t\t\t\t),\n\n\t\t\t\tarray(\n\t\t\t\t\t'title'             => __( '\"From\" address', 'woocommerce' ),\n\t\t\t\t\t'desc'              => '',\n\t\t\t\t\t'id'                => 'woocommerce_email_from_address',\n\t\t\t\t\t'type'              => 'email',\n\t\t\t\t\t'custom_attributes' => array(\n\t\t\t\t\t\t'multiple' => 'multiple',\n\t\t\t\t\t),\n\t\t\t\t\t'css'               => 'min-width:400px;',\n\t\t\t\t\t'default'           => get_option( 'admin_email' ),\n\t\t\t\t\t'autoload'          => false,\n\t\t\t\t\t'desc_tip'          => true,\n\t\t\t\t),\n\t\t\t);\n\n\t\t// Add reply-to fields when block email editor is enabled.\n\t\tif ( $block_email_editor_enabled ) {\n\t\t\t$settings = array_merge(\n\t\t\t\t$settings,\n\t\t\t\tarray(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'    => __( 'Add \"Reply-to\" email', 'woocommerce' ),\n\t\t\t\t\t\t'desc'     => __( 'Add a different email address to receive replies.', 'woocommerce' ),\n\t\t\t\t\t\t'id'       => 'woocommerce_email_reply_to_enabled',\n\t\t\t\t\t\t'type'     => 'checkbox',\n\t\t\t\t\t\t'default'  => 'no',\n\t\t\t\t\t\t'autoload' => false,\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'    => __( '\"Reply-to\" name', 'woocommerce' ),\n\t\t\t\t\t\t'desc'     => '',\n\t\t\t\t\t\t'id'       => 'woocommerce_email_reply_to_name',\n\t\t\t\t\t\t'type'     => 'text',\n\t\t\t\t\t\t'css'      => 'min-width:400px;',\n\t\t\t\t\t\t'default'  => '',\n\t\t\t\t\t\t'autoload' => false,\n\t\t\t\t\t\t'desc_tip' => true,\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'    => __( '\"Reply-to\" address', 'woocommerce' ),\n\t\t\t\t\t\t'desc'     => '',\n\t\t\t\t\t\t'id'       => 'woocommerce_email_reply_to_address',\n\t\t\t\t\t\t'type'     => 'email',\n\t\t\t\t\t\t'css'      => 'min-width:400px;',\n\t\t\t\t\t\t'default'  => '',\n\t\t\t\t\t\t'autoload' => false,\n\t\t\t\t\t\t'desc_tip' => true,\n\t\t\t\t\t),\n\t\t\t\t)\n\t\t\t);\n\t\t}\n\n\t\t$settings = array_merge(\n\t\t\t$settings,\n\t\t\tarray(\n\t\t\t\tarray(\n\t\t\t\t\t'type' => 'sectionend',\n\t\t\t\t\t'id'   => 'email_options',\n\t\t\t\t),\n\t\t\t)\n\t\t);\n\n\t\t// If the email editor is enabled the design is handled by the email editor.\n\t\tif ( ! $block_email_editor_enabled ) {\n\t\t\t$settings = array_merge(\n\t\t\t\t$settings,\n\t\t\t\tarray(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title' => __( 'Email template', 'woocommerce' ),\n\t\t\t\t\t\t'type'  => 'title',\n\t\t\t\t\t\t'desc'  => __( 'Customize your WooCommerce email template and preview it below.', 'woocommerce' ),\n\t\t\t\t\t\t'id'    => 'email_template_options',\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title' => __( 'Try new templates', 'woocommerce' ),\n\t\t\t\t\t\t'type'  => 'previewing_new_templates',\n\t\t\t\t\t\t'id'    => 'previewing_new_templates',\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'       => __( 'Logo', 'woocommerce' ),\n\t\t\t\t\t\t'desc'        => __( 'Add your logo to each of your WooCommerce emails. If no logo is uploaded, your site title will be used instead.', 'woocommerce' ),\n\t\t\t\t\t\t'id'          => 'woocommerce_email_header_image',\n\t\t\t\t\t\t'type'        => 'email_image_url',\n\t\t\t\t\t\t'css'         => 'min-width:400px;',\n\t\t\t\t\t\t'placeholder' => __( 'N/A', 'woocommerce' ),\n\t\t\t\t\t\t'default'     => '',\n\t\t\t\t\t\t'autoload'    => false,\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'     => __( 'Logo width (px)', 'woocommerce' ),\n\t\t\t\t\t\t'id'        => 'woocommerce_email_header_image_width',\n\t\t\t\t\t\t'desc_tip'  => '',\n\t\t\t\t\t\t'default'   => '120',\n\t\t\t\t\t\t'type'      => 'number',\n\t\t\t\t\t\t'row_class' => $email_improvements_enabled ? '' : 'disabled',\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'     => __( 'Header alignment', 'woocommerce' ),\n\t\t\t\t\t\t'id'        => 'woocommerce_email_header_alignment',\n\t\t\t\t\t\t'desc_tip'  => '',\n\t\t\t\t\t\t'default'   => 'left',\n\t\t\t\t\t\t'type'      => 'select',\n\t\t\t\t\t\t'class'     => 'wc-enhanced-select',\n\t\t\t\t\t\t'options'   => array(\n\t\t\t\t\t\t\t'left'   => __( 'Left', 'woocommerce' ),\n\t\t\t\t\t\t\t'center' => __( 'Center', 'woocommerce' ),\n\t\t\t\t\t\t\t'right'  => __( 'Right', 'woocommerce' ),\n\t\t\t\t\t\t),\n\t\t\t\t\t\t'row_class' => $email_improvements_enabled ? '' : 'disabled',\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'     => __( 'Font family', 'woocommerce' ),\n\t\t\t\t\t\t'id'        => 'woocommerce_email_font_family',\n\t\t\t\t\t\t'default'   => 'Helvetica',\n\t\t\t\t\t\t'type'      => 'email_font_family',\n\t\t\t\t\t\t'row_class' => $email_improvements_enabled ? '' : 'disabled',\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'       => __( 'Footer text', 'woocommerce' ),\n\t\t\t\t\t\t/* translators: %s: Available placeholders for use */\n\t\t\t\t\t\t'desc'        => __( 'This text will appear in the footer of all of your WooCommerce emails.', 'woocommerce' ) . ' ' . sprintf( __( 'Available placeholders: %s', 'woocommerce' ), '{site_title} {site_url} {store_address} {store_email}' ),\n\t\t\t\t\t\t'id'          => 'woocommerce_email_footer_text',\n\t\t\t\t\t\t'css'         => 'width:400px; height: 75px;',\n\t\t\t\t\t\t'placeholder' => __( 'N/A', 'woocommerce' ),\n\t\t\t\t\t\t'type'        => 'textarea',\n\t\t\t\t\t\t'default'     => '{site_title}<br />{store_address}',\n\t\t\t\t\t\t'autoload'    => false,\n\t\t\t\t\t\t'desc_tip'    => true,\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'type' => 'sectionend',\n\t\t\t\t\t\t'id'   => 'email_template_options',\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title' => __( 'Color palette', 'woocommerce' ),\n\t\t\t\t\t\t'type'  => 'email_color_palette',\n\t\t\t\t\t\t'id'    => 'email_color_palette',\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'    => __( 'Accent', 'woocommerce' ),\n\t\t\t\t\t\t/* translators: %s: default color */\n\t\t\t\t\t\t'desc'     => sprintf( __( 'Customize the color of your buttons and links. Default %s.', 'woocommerce' ), '<code>' . $default_colors['base'] . '</code>' ),\n\t\t\t\t\t\t'id'       => 'woocommerce_email_base_color',\n\t\t\t\t\t\t'type'     => 'color',\n\t\t\t\t\t\t'css'      => 'width:6em;',\n\t\t\t\t\t\t'default'  => $default_colors['base'],\n\t\t\t\t\t\t'autoload' => false,\n\t\t\t\t\t\t'desc_tip' => true,\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'    => __( 'Email background', 'woocommerce' ),\n\t\t\t\t\t\t/* translators: %s: default color */\n\t\t\t\t\t\t'desc'     => sprintf( __( 'Select a color for the background of your emails. Default %s.', 'woocommerce' ), '<code>' . $default_colors['bg'] . '</code>' ),\n\t\t\t\t\t\t'id'       => 'woocommerce_email_background_color',\n\t\t\t\t\t\t'type'     => 'color',\n\t\t\t\t\t\t'css'      => 'width:6em;',\n\t\t\t\t\t\t'default'  => $default_colors['bg'],\n\t\t\t\t\t\t'autoload' => false,\n\t\t\t\t\t\t'desc_tip' => true,\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'    => __( 'Content background', 'woocommerce' ),\n\t\t\t\t\t\t/* translators: %s: default color */\n\t\t\t\t\t\t'desc'     => sprintf( __( 'Choose a background color for the content area of your emails. Default %s.', 'woocommerce' ), '<code>' . $default_colors['body_bg'] . '</code>' ),\n\t\t\t\t\t\t'id'       => 'woocommerce_email_body_background_color',\n\t\t\t\t\t\t'type'     => 'color',\n\t\t\t\t\t\t'css'      => 'width:6em;',\n\t\t\t\t\t\t'default'  => $default_colors['body_bg'],\n\t\t\t\t\t\t'autoload' => false,\n\t\t\t\t\t\t'desc_tip' => true,\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'    => __( 'Heading & text', 'woocommerce' ),\n\t\t\t\t\t\t/* translators: %s: default color */\n\t\t\t\t\t\t'desc'     => sprintf( __( 'Set the color of your headings and text. Default %s.', 'woocommerce' ), '<code>' . $default_colors['body_text'] . '</code>' ),\n\t\t\t\t\t\t'id'       => 'woocommerce_email_text_color',\n\t\t\t\t\t\t'type'     => 'color',\n\t\t\t\t\t\t'css'      => 'width:6em;',\n\t\t\t\t\t\t'default'  => $default_colors['body_text'],\n\t\t\t\t\t\t'autoload' => false,\n\t\t\t\t\t\t'desc_tip' => true,\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'    => __( 'Secondary text', 'woocommerce' ),\n\t\t\t\t\t\t/* translators: %s: footer default color */\n\t\t\t\t\t\t'desc'     => sprintf( __( 'Choose a color for your secondary text, such as your footer content. Default %s.', 'woocommerce' ), '<code>' . $default_colors['footer_text'] . '</code>' ),\n\t\t\t\t\t\t'id'       => 'woocommerce_email_footer_text_color',\n\t\t\t\t\t\t'type'     => 'color',\n\t\t\t\t\t\t'css'      => 'width:6em;',\n\t\t\t\t\t\t'default'  => $default_colors['footer_text'],\n\t\t\t\t\t\t'autoload' => false,\n\t\t\t\t\t\t'desc_tip' => true,\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title'    => __( 'Auto-sync with theme', 'woocommerce' ),\n\t\t\t\t\t\t'desc'     => __( 'Automatically update email styles when theme styles change', 'woocommerce' ),\n\t\t\t\t\t\t'id'       => 'woocommerce_email_auto_sync_with_theme',\n\t\t\t\t\t\t'type'     => 'hidden',\n\t\t\t\t\t\t'default'  => 'no',\n\t\t\t\t\t\t'autoload' => false,\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'type' => 'sectionend',\n\t\t\t\t\t\t'id'   => 'email_color_palette',\n\t\t\t\t\t),\n\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'title' => __( 'Email improvements button', 'woocommerce' ),\n\t\t\t\t\t\t'type'  => 'email_improvements_button',\n\t\t\t\t\t\t'id'    => 'email_improvements_button',\n\t\t\t\t\t),\n\n\t\t\t\t\tarray( 'type' => 'email_preview' ),\n\t\t\t\t)\n\t\t\t);\n\t\t}\n\n\t\t// Remove empty elements that depend on the email_improvements feature flag.\n\t\t$settings = array_filter( $settings );\n\n\t\t\n\t\treturn apply_filters( 'woocommerce_email_settings', $settings );\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "woocommerce-paypal-payments.json",
+    "function_name": "AxoModule::services",
+    "defective_code": "/**\n\t * {@inheritDoc}\n\t */\nfunction services(): array {\n\t\treturn require __DIR__ . '/../services.php';\n\t}",
+    "critique": {
+      "summary": "Function 'services' has code quality and standards issues that should be addressed for production readiness (source: woocommerce-paypal-payments.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Function 'services' uses camelCase \u2014 WPCS requires snake_case (e.g., 'services')",
+          "fix": "Rename to snake_case convention"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'services' (source: woocommerce-paypal-payments.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'services' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce-paypal-payments.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'services' has no obvious performance issues for its current scope (source: woocommerce-paypal-payments.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'services' uses WordPress APIs appropriately for its scope (source: woocommerce-paypal-payments.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'services' code quality is acceptable but could improve single responsibility adherence (source: woocommerce-paypal-payments.json, 4 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'services' has no problematic dependency patterns detected (source: woocommerce-paypal-payments.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "medium",
+          "issue": "'services' may produce user-visible output without translation wrappers (source: woocommerce-paypal-payments.json)",
+          "fix": "Audit for hardcoded strings and wrap in __() or esc_html__() with the plugin text domain"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'services' does not produce HTML output \u2014 accessibility dimension not applicable (source: woocommerce-paypal-payments.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'services' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce-paypal-payments.json)"
+    },
+    "corrected_code": "/**\n\t * {@inheritDoc}\n\t */\nfunction services(): array {\n\t\treturn require __DIR__ . '/../services.php';\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "posti-shipping.json",
+    "function_name": "Check_Tool::admin_page",
+    "defective_code": "function admin_page() {\n            add_submenu_page('tools.php', $this->page_title, $this->page_title, 'manage_woocommerce', $this->core->prefix . '_check', array( $this, 'render_check_tool' ), 10);\n        }",
+    "critique": {
+      "summary": "Function 'admin_page' has code quality and standards issues that should be addressed for production readiness (source: posti-shipping.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'admin_page' \u2014 required by WPCS for all public functions",
+          "fix": "Add /** @param, @return, @since tags above function 'admin_page'"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'admin_page' (source: posti-shipping.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'admin_page' has no obvious security vulnerabilities but lacks defensive coding patterns (source: posti-shipping.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'admin_page' has no obvious performance issues for its current scope (source: posti-shipping.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'admin_page' uses WordPress APIs appropriately for its scope (source: posti-shipping.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'admin_page' code quality is acceptable but could improve single responsibility adherence (source: posti-shipping.json, 3 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'admin_page' has no problematic dependency patterns detected (source: posti-shipping.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'admin_page' i18n handling is acceptable (source: posti-shipping.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'admin_page' does not produce HTML output \u2014 accessibility dimension not applicable (source: posti-shipping.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'admin_page' has no obvious security vulnerabilities but lacks defensive coding patterns (source: posti-shipping.json)"
+    },
+    "corrected_code": "/**\n * Admin Page \u2014 fixed version.\n *\n * @return mixed\n * @since 1.0.0\n */\nfunction admin_page() {\n            add_submenu_page('tools.php', $this->page_title, $this->page_title, 'manage_woocommerce', $this->core->prefix . '_check', array( $this, 'render_check_tool' ), 10);\n        }",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "wp-super-cache.json",
+    "function_name": "do_scossdl_off_ob_start",
+    "defective_code": "/**\n * Registers scossdl_off_filter as output buffer, if needed.\n */\nfunction do_scossdl_off_ob_start() {\n\tglobal $ossdl_off_blog_url, $ossdl_off_cdn_url;\n\n\tif ( class_exists( 'Jetpack' ) && Jetpack::is_module_active( 'photon' ) ) {\n\t\treturn;\n\t}\n\n\tscossdl_off_get_options();\n\n\tif ( ! empty( $ossdl_off_cdn_url ) &&\n\t\t$ossdl_off_blog_url !== $ossdl_off_cdn_url\n\t) {\n\t\tadd_filter( 'wp_cache_ob_callback_filter', 'scossdl_off_filter' );\n\t}\n}",
+    "critique": {
+      "summary": "Function 'do_scossdl_off_ob_start' has code quality and standards issues that should be addressed for production readiness (source: wp-super-cache.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'do_scossdl_off_ob_start' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'do_scossdl_off_ob_start' (source: wp-super-cache.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'do_scossdl_off_ob_start' has no obvious security vulnerabilities but lacks defensive coding patterns (source: wp-super-cache.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'do_scossdl_off_ob_start' has no obvious performance issues for its current scope (source: wp-super-cache.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'do_scossdl_off_ob_start' uses WordPress APIs appropriately for its scope (source: wp-super-cache.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'do_scossdl_off_ob_start' (13 lines, source: wp-super-cache.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'do_scossdl_off_ob_start' has no problematic dependency patterns detected (source: wp-super-cache.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'do_scossdl_off_ob_start' i18n handling is acceptable (source: wp-super-cache.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'do_scossdl_off_ob_start' does not produce HTML output \u2014 accessibility dimension not applicable (source: wp-super-cache.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'do_scossdl_off_ob_start' has no obvious security vulnerabilities but lacks defensive coding patterns (source: wp-super-cache.json)"
+    },
+    "corrected_code": "/**\n * Registers scossdl_off_filter as output buffer, if needed.\n */\nfunction do_scossdl_off_ob_start() {\n\tglobal $ossdl_off_blog_url, $ossdl_off_cdn_url;\n\n\tif ( class_exists( 'Jetpack' ) && Jetpack::is_module_active( 'photon' ) ) {\n\t\treturn;\n\t}\n\n\tscossdl_off_get_options();\n\n\tif ( ! empty( $ossdl_off_cdn_url ) &&\n\t\t$ossdl_off_blog_url !== $ossdl_off_cdn_url\n\t) {\n\t\tadd_filter( 'wp_cache_ob_callback_filter', 'scossdl_off_filter' );\n\t}\n}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "wp-scss.json",
+    "function_name": "IfExpression::__construct",
+    "defective_code": "function __construct(ArgumentInvocation $arguments, FileSpan $span)\n    {\n        $this->span = $span;\n        $this->arguments = $arguments;\n    }",
+    "critique": {
+      "summary": "Function '__construct' has code quality and standards issues that should be addressed for production readiness (source: wp-scss.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for '__construct' \u2014 required by WPCS for all public functions",
+          "fix": "Add /** @param, @return, @since tags above function '__construct'"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in '__construct' (source: wp-scss.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'__construct' has no obvious security vulnerabilities but lacks defensive coding patterns (source: wp-scss.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'__construct' has no obvious performance issues for its current scope (source: wp-scss.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'__construct' uses WordPress APIs appropriately for its scope (source: wp-scss.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'__construct' code quality is acceptable but could improve single responsibility adherence (source: wp-scss.json, 5 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'__construct' has no problematic dependency patterns detected (source: wp-scss.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'__construct' i18n handling is acceptable (source: wp-scss.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'__construct' does not produce HTML output \u2014 accessibility dimension not applicable (source: wp-scss.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'__construct' has no obvious security vulnerabilities but lacks defensive coding patterns (source: wp-scss.json)"
+    },
+    "corrected_code": "/**\n *   Construct \u2014 fixed version.\n *\n  * @param mixed $arguments Arguments value.\n * @param mixed $span Span value.\n* @return mixed\n * @since 1.0.0\n */\nfunction __construct(ArgumentInvocation $arguments, FileSpan $span)\n    {\n        $this->span = $span;\n        $this->arguments = $arguments;\n    }",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "woocommerce-services.json",
+    "function_name": "WC_REST_Connect_Shipping_Carrier_Controller::post",
+    "defective_code": "function post( $request ) {\n\t\t$settings = $request->get_json_params();\n\n\t\t$response = $this->api_client->create_shipping_carrier_account( $settings );\n\t\tif ( is_wp_error( $response ) ) {\n\t\t\t$error = new WP_Error(\n\t\t\t\t$response->get_error_code(),\n\t\t\t\t$response->get_error_message(),\n\t\t\t\tarray( 'message' => $response->get_error_message() )\n\t\t\t);\n\t\t\t$this->logger->log( $error, __CLASS__ );\n\n\t\t\treturn $error;\n\t\t}\n\n\t\tdo_action( 'wc_connect_fetch_service_schemas' );\n\t\treturn $response;\n\t}",
+    "critique": {
+      "summary": "Function 'post' has code quality and standards issues that should be addressed for production readiness (source: woocommerce-services.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'post' \u2014 required by WPCS for all public functions; Function 'post' uses camelCase \u2014 WPCS requires snake_case (e.g., 'post')",
+          "fix": "Add /** @param, @return, @since tags above function 'post'; Rename to snake_case convention"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'post' (source: woocommerce-services.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'post' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce-services.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'post' has no obvious performance issues for its current scope (source: woocommerce-services.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'post' uses WordPress APIs appropriately for its scope (source: woocommerce-services.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'post' code quality is acceptable but could improve single responsibility adherence (source: woocommerce-services.json, 15 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'post' instantiates WP_Error \u2014 ensure these dependencies are available in all execution contexts (source: woocommerce-services.json)",
+          "fix": "Inject dependencies via constructor or factory pattern rather than instantiating inside the function; improves testability"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'post' i18n handling is acceptable (source: woocommerce-services.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'post' does not produce HTML output \u2014 accessibility dimension not applicable (source: woocommerce-services.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'post' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce-services.json)"
+    },
+    "corrected_code": "/**\n * Post \u2014 fixed version.\n *\n  * @param mixed $request Request value.\n* @return mixed\n * @since 1.0.0\n */\nfunction post( $request ) {\n\t\t$settings = $request->get_json_params();\n\n\t\t$response = $this->api_client->create_shipping_carrier_account( $settings );\n\t\tif ( is_wp_error( $response ) ) {\n\t\t\t$error = new WP_Error(\n\t\t\t\t$response->get_error_code(),\n\t\t\t\t$response->get_error_message(),\n\t\t\t\tarray( 'message' => $response->get_error_message() )\n\t\t\t);\n\t\t\t$this->logger->log( $error, __CLASS__ );\n\n\t\t\treturn $error;\n\t\t}\n\n\t\tdo_action( 'wc_connect_fetch_service_schemas' );\n\t\treturn $response;\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "lmsace-connect.json",
+    "function_name": "local_lmsace_connect_external::get_courses",
+    "defective_code": "/**\n     * Get courses matching a specific field (id/s, shortname, idnumber, category)\n     *\n     * @param int $from field name to search, or empty for all courses\n     * @param int $limit value to search\n     * @return array list of courses and warnings\n     * @throws  invalid_parameter_exception\n     * @since Moodle 3.2\n     */\nfunction get_courses($from = 0, $limit = 0) {\n        global $DB, $CFG;\n        require_once($CFG->dirroot . '/course/lib.php');\n        require_once($CFG->libdir . '/filterlib.php');\n\n        $params = self::validate_parameters(self::get_courses_parameters(),\n            array(\n                'from'  => $from,\n                'limit'  => $limit,\n            )\n        );\n        $warnings = array();\n\n        $courses = $DB->get_records('course', [], 'id ASC', '*', $from, $limit);\n        if (empty($courses)) {\n            return [];\n        }\n\n        $coursesdata = array();\n        foreach ($courses as $course) {\n            $context = context_course::instance($course->id);\n            $canupdatecourse = has_capability('moodle/course:update', $context);\n            $canviewhiddencourses = has_capability('moodle/course:viewhiddencourses', $context);\n\n            // Check if the course is visible in the site for the user.\n            if (!$course->visible and !$canviewhiddencourses and !$canupdatecourse) {\n                continue;\n            }\n            // Get the public course information, even if we are not enrolled.\n            $courseinlist = new core_course_list_element($course);\n\n            // Now, check if we have access to the course, unless it was already checked.\n            try {\n                if (empty($course->contextvalidated)) {\n                    core_course_external::validate_context($context);\n                }\n            } catch (Exception $e) {\n                // User can not access the course, check if they can see the public information about the course and return it.\n                if (core_course_category::can_view_course_info($course)) {\n                    $coursesdata[$course->id] = self::get_course_public_information($courseinlist, $context);\n                }\n                continue;\n            }\n            $coursesdata[$course->id] = self::get_course_public_information($courseinlist, $context);\n            // Return information for any user that can access the course.\n            $coursefields = array('format', 'showgrades', 'newsitems', 'startdate', 'enddate', 'maxbytes', 'showreports', 'visible',\n                'groupmode', 'groupmodeforce', 'defaultgroupingid', 'enablecompletion', 'completionnotify', 'lang', 'theme',\n                'marker');\n\n            // Course filters.\n            $coursesdata[$course->id]['filters'] = filter_get_available_in_context($context);\n\n            // Information for managers only.\n            if ($canupdatecourse) {\n                $managerfields = array('idnumber', 'legacyfiles', 'calendartype', 'timecreated', 'timemodified', 'requested',\n                    'cacherev');\n                $coursefields = array_merge($coursefields, $managerfields);\n            }\n\n            // Populate fields.\n            foreach ($coursefields as $field) {\n                $coursesdata[$course->id][$field] = $course->{$field};\n            }\n\n            // Clean lang and auth fields for external functions (it may content uninstalled themes or language packs).\n            if (isset($coursesdata[$course->id]['theme'])) {\n                $coursesdata[$course->id]['theme'] = clean_param($coursesdata[$course->id]['theme'], PARAM_THEME);\n            }\n            if (isset($coursesdata[$course->id]['lang'])) {\n                $coursesdata[$course->id]['lang'] = clean_param($coursesdata[$course->id]['lang'], PARAM_LANG);\n            }\n\n            $courseformatoptions = course_get_format($course)->get_config_for_external();\n            foreach ($courseformatoptions as $key => $value) {\n                $coursesdata[$course->id]['courseformatoptions'][] = array(\n                    'name' => $key,\n                    'value' => $value\n                );\n            }\n        }\n\n        return array(\n            'courses' => $coursesdata,\n            'warnings' => $warnings\n        );\n    }",
+    "critique": {
+      "summary": "Function 'get_courses' has 1 high-severity issue(s) (dependency_integrity) that compromise security or correctness.",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'get_courses' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'get_courses' (source: lmsace-connect.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'get_courses' has no obvious security vulnerabilities but lacks defensive coding patterns (source: lmsace-connect.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'get_courses' performs potentially expensive operations in a loop without caching (source: lmsace-connect.json)",
+          "fix": "Cache expensive computed values using wp_cache_set()/wp_cache_get() with appropriate cache group and expiry"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'get_courses' uses WordPress APIs appropriately for its scope (source: lmsace-connect.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'get_courses' (76 lines, source: lmsace-connect.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "high",
+          "issue": "'get_courses' uses direct require/require_once for file inclusion \u2014 bypasses WordPress autoloading and creates fragile file path dependencies",
+          "fix": "Use WordPress plugin architecture: register classes in plugin.php with spl_autoload_register() or Composer autoloading instead of direct require"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'get_courses' i18n handling is acceptable (source: lmsace-connect.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'get_courses' does not produce HTML output \u2014 accessibility dimension not applicable (source: lmsace-connect.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'get_courses' has no obvious security vulnerabilities but lacks defensive coding patterns (source: lmsace-connect.json)"
+    },
+    "corrected_code": "/**\n     * Get courses matching a specific field (id/s, shortname, idnumber, category)\n     *\n     * @param int $from field name to search, or empty for all courses\n     * @param int $limit value to search\n     * @return array list of courses and warnings\n     * @throws  invalid_parameter_exception\n     * @since Moodle 3.2\n     */\nfunction get_courses($from = 0, $limit = 0) {\n        global $DB, $CFG;\n        require_once($CFG->dirroot . '/course/lib.php');\n        require_once($CFG->libdir . '/filterlib.php');\n\n        $params = self::validate_parameters(self::get_courses_parameters(),\n            array(\n                'from'  => $from,\n                'limit'  => $limit,\n            )\n        );\n        $warnings = array();\n\n        $courses = $DB->get_records('course', [], 'id ASC', '*', $from, $limit);\n        if (empty($courses)) {\n            return [];\n        }\n\n        $coursesdata = array();\n        foreach ($courses as $course) {\n            $context = context_course::instance($course->id);\n            $canupdatecourse = has_capability('moodle/course:update', $context);\n            $canviewhiddencourses = has_capability('moodle/course:viewhiddencourses', $context);\n\n            // Check if the course is visible in the site for the user.\n            if (!$course->visible and !$canviewhiddencourses and !$canupdatecourse) {\n                continue;\n            }\n            // Get the public course information, even if we are not enrolled.\n            $courseinlist = new core_course_list_element($course);\n\n            // Now, check if we have access to the course, unless it was already checked.\n            try {\n                if (empty($course->contextvalidated)) {\n                    core_course_external::validate_context($context);\n                }\n            } catch (Exception $e) {\n                // User can not access the course, check if they can see the public information about the course and return it.\n                if (core_course_category::can_view_course_info($course)) {\n                    $coursesdata[$course->id] = self::get_course_public_information($courseinlist, $context);\n                }\n                continue;\n            }\n            $coursesdata[$course->id] = self::get_course_public_information($courseinlist, $context);\n            // Return information for any user that can access the course.\n            $coursefields = array('format', 'showgrades', 'newsitems', 'startdate', 'enddate', 'maxbytes', 'showreports', 'visible',\n                'groupmode', 'groupmodeforce', 'defaultgroupingid', 'enablecompletion', 'completionnotify', 'lang', 'theme',\n                'marker');\n\n            // Course filters.\n            $coursesdata[$course->id]['filters'] = filter_get_available_in_context($context);\n\n            // Information for managers only.\n            if ($canupdatecourse) {\n                $managerfields = array('idnumber', 'legacyfiles', 'calendartype', 'timecreated', 'timemodified', 'requested',\n                    'cacherev');\n                $coursefields = array_merge($coursefields, $managerfields);\n            }\n\n            // Populate fields.\n            foreach ($coursefields as $field) {\n                $coursesdata[$course->id][$field] = $course->{$field};\n            }\n\n            // Clean lang and auth fields for external functions (it may content uninstalled themes or language packs).\n            if (isset($coursesdata[$course->id]['theme'])) {\n                $coursesdata[$course->id]['theme'] = clean_param($coursesdata[$course->id]['theme'], PARAM_THEME);\n            }\n            if (isset($coursesdata[$course->id]['lang'])) {\n                $coursesdata[$course->id]['lang'] = clean_param($coursesdata[$course->id]['lang'], PARAM_LANG);\n            }\n\n            $courseformatoptions = course_get_format($course)->get_config_for_external();\n            foreach ($courseformatoptions as $key => $value) {\n                $coursesdata[$course->id]['courseformatoptions'][] = array(\n                    'name' => $key,\n                    'value' => $value\n                );\n            }\n        }\n\n        return array(\n            'courses' => $coursesdata,\n            'warnings' => $warnings\n        );\n    }",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "customize_preview_init",
+    "defective_code": "/**\n\t\t * This function is called when customizer preview is initialized\n\t\t *\n\t\t * @type    function\n\t\t * @date    22/03/2016\n\t\t * @since   5.3.2\n\t\t *\n\t\t * @param   $customizer (object)\n\t\t * @return  n/a\n\t\t */\nfunction customize_preview_init( $customizer ) {\n\n\t\t\t// get customizer settings (widgets)\n\t\t\t$settings = $this->settings( $customizer );\n\n\t\t\t// bail early if no settings\n\t\t\tif ( empty( $settings ) ) {\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\t// append values\n\t\t\tforeach ( $settings as $setting ) {\n\n\t\t\t\t// get acf data\n\t\t\t\t$data = $setting->acf;\n\n\t\t\t\t// append acf_value to preview_values\n\t\t\t\t$this->preview_values[ $data['post_id'] ] = $data['values'];\n\t\t\t\t$this->preview_fields[ $data['post_id'] ] = $data['fields'];\n\t\t\t}\n\n\t\t\t// bail early if no preview_values\n\t\t\tif ( empty( $this->preview_values ) ) {\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\t// add filters\n\t\t\tadd_filter( 'acf/pre_load_value', array( $this, 'pre_load_value' ), 10, 3 );\n\t\t\tadd_filter( 'acf/pre_load_reference', array( $this, 'pre_load_reference' ), 10, 3 );\n\t\t}",
+    "critique": {
+      "summary": "Function 'customize_preview_init' has code quality and standards issues that should be addressed for production readiness (source: advanced-custom-fields.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'customize_preview_init' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'customize_preview_init' (source: advanced-custom-fields.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'customize_preview_init' has no obvious security vulnerabilities but lacks defensive coding patterns (source: advanced-custom-fields.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'customize_preview_init' performs potentially expensive operations in a loop without caching (source: advanced-custom-fields.json)",
+          "fix": "Cache expensive computed values using wp_cache_set()/wp_cache_get() with appropriate cache group and expiry"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'customize_preview_init' uses WordPress APIs appropriately for its scope (source: advanced-custom-fields.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'customize_preview_init' (24 lines, source: advanced-custom-fields.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'customize_preview_init' has no problematic dependency patterns detected (source: advanced-custom-fields.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'customize_preview_init' i18n handling is acceptable (source: advanced-custom-fields.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'customize_preview_init' does not produce HTML output \u2014 accessibility dimension not applicable (source: advanced-custom-fields.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'customize_preview_init' has no obvious security vulnerabilities but lacks defensive coding patterns (source: advanced-custom-fields.json)"
+    },
+    "corrected_code": "/**\n\t\t * This function is called when customizer preview is initialized\n\t\t *\n\t\t * @type    function\n\t\t * @date    22/03/2016\n\t\t * @since   5.3.2\n\t\t *\n\t\t * @param   $customizer (object)\n\t\t * @return  n/a\n\t\t */\nfunction customize_preview_init( $customizer ) {\n\n\t\t\t// get customizer settings (widgets)\n\t\t\t$settings = $this->settings( $customizer );\n\n\t\t\t// bail early if no settings\n\t\t\tif ( empty( $settings ) ) {\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\t// append values\n\t\t\tforeach ( $settings as $setting ) {\n\n\t\t\t\t// get acf data\n\t\t\t\t$data = $setting->acf;\n\n\t\t\t\t// append acf_value to preview_values\n\t\t\t\t$this->preview_values[ $data['post_id'] ] = $data['values'];\n\t\t\t\t$this->preview_fields[ $data['post_id'] ] = $data['fields'];\n\t\t\t}\n\n\t\t\t// bail early if no preview_values\n\t\t\tif ( empty( $this->preview_values ) ) {\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\t// add filters\n\t\t\tadd_filter( 'acf/pre_load_value', array( $this, 'pre_load_value' ), 10, 3 );\n\t\t\tadd_filter( 'acf/pre_load_reference', array( $this, 'pre_load_reference' ), 10, 3 );\n\t\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "polldaddy.json",
+    "function_name": "plugin_options",
+    "defective_code": "function plugin_options() {\n\t\tif ( isset( $_POST['polldaddy_email'] ) ) {\n\t\t\t$account_email = false;\n\t\t} else {\n\t\t\t$connected     = false;\n\t\t\t$account_email = '';\n\t\t\t$polldaddy     = $this->get_client( WP_POLLDADDY__PARTNERGUID, $this->user_code );\n\t\t\t$account       = $polldaddy->get_account();\n\n\t\t\tif ( ! empty( $account ) ) {\n\t\t\t\t$connected     = true;\n\t\t\t\t$account_email = $account->email;\n\t\t\t}\n\n\t\t\t$polldaddy->reset();\n\t\t\t$poll = $polldaddy->get_poll( 1 );\n\n\t\t\t$options = array(\n\t\t\t\t101 => __( 'Aluminum Narrow', 'polldaddy' ),\n\t\t\t\t102 => __( 'Aluminum Medium', 'polldaddy' ),\n\t\t\t\t103 => __( 'Aluminum Wide', 'polldaddy' ),\n\t\t\t\t104 => __( 'Plain White Narrow', 'polldaddy' ),\n\t\t\t\t105 => __( 'Plain White Medium', 'polldaddy' ),\n\t\t\t\t106 => __( 'Plain White Wide', 'polldaddy' ),\n\t\t\t\t107 => __( 'Plain Black Narrow', 'polldaddy' ),\n\t\t\t\t108 => __( 'Plain Black Medium', 'polldaddy' ),\n\t\t\t\t109 => __( 'Plain Black Wide', 'polldaddy' ),\n\t\t\t\t110 => __( 'Paper Narrow', 'polldaddy' ),\n\t\t\t\t111 => __( 'Paper Medium', 'polldaddy' ),\n\t\t\t\t112 => __( 'Paper Wide', 'polldaddy' ),\n\t\t\t\t113 => __( 'Skull Dark Narrow', 'polldaddy' ),\n\t\t\t\t114 => __( 'Skull Dark Medium', 'polldaddy' ),\n\t\t\t\t115 => __( 'Skull Dark Wide', 'polldaddy' ),\n\t\t\t\t116 => __( 'Skull Light Narrow', 'polldaddy' ),\n\t\t\t\t117 => __( 'Skull Light Medium', 'polldaddy' ),\n\t\t\t\t118 => __( 'Skull Light Wide', 'polldaddy' ),\n\t\t\t\t157 => __( 'Micro', 'polldaddy' ),\n\t\t\t\t119 => __( 'Plastic White Narrow', 'polldaddy' ),\n\t\t\t\t120 => __( 'Plastic White Medium', 'polldaddy' ),\n\t\t\t\t121 => __( 'Plastic White Wide', 'polldaddy' ),\n\t\t\t\t122 => __( 'Plastic Grey Narrow', 'polldaddy' ),\n\t\t\t\t123 => __( 'Plastic Grey Medium', 'polldaddy' ),\n\t\t\t\t124 => __( 'Plastic Grey Wide', 'polldaddy' ),\n\t\t\t\t125 => __( 'Plastic Black Narrow', 'polldaddy' ),\n\t\t\t\t126 => __( 'Plastic Black Medium', 'polldaddy' ),\n\t\t\t\t127 => __( 'Plastic Black Wide', 'polldaddy' ),\n\t\t\t\t128 => __( 'Manga Narrow', 'polldaddy' ),\n\t\t\t\t129 => __( 'Manga Medium', 'polldaddy' ),\n\t\t\t\t130 => __( 'Manga Wide', 'polldaddy' ),\n\t\t\t\t131 => __( 'Tech Dark Narrow', 'polldaddy' ),\n\t\t\t\t132 => __( 'Tech Dark Medium', 'polldaddy' ),\n\t\t\t\t133 => __( 'Tech Dark Wide', 'polldaddy' ),\n\t\t\t\t134 => __( 'Tech Grey Narrow', 'polldaddy' ),\n\t\t\t\t135 => __( 'Tech Grey Medium', 'polldaddy' ),\n\t\t\t\t136 => __( 'Tech Grey Wide', 'polldaddy' ),\n\t\t\t\t137 => __( 'Tech Light Narrow', 'polldaddy' ),\n\t\t\t\t138 => __( 'Tech Light Medium', 'polldaddy' ),\n\t\t\t\t139 => __( 'Tech Light Wide', 'polldaddy' ),\n\t\t\t\t140 => __( 'Working Male Narrow', 'polldaddy' ),\n\t\t\t\t141 => __( 'Working Male Medium', 'polldaddy' ),\n\t\t\t\t142 => __( 'Working Male Wide', 'polldaddy' ),\n\t\t\t\t143 => __( 'Working Female Narrow', 'polldaddy' ),\n\t\t\t\t144 => __( 'Working Female Medium', 'polldaddy' ),\n\t\t\t\t145 => __( 'Working Female Wide', 'polldaddy' ),\n\t\t\t\t146 => __( 'Thinking Male Narrow', 'polldaddy' ),\n\t\t\t\t147 => __( 'Thinking Male Medium', 'polldaddy' ),\n\t\t\t\t148 => __( 'Thinking Male Wide', 'polldaddy' ),\n\t\t\t\t149 => __( 'Thinking Female Narrow', 'polldaddy' ),\n\t\t\t\t150 => __( 'Thinking Female Medium', 'polldaddy' ),\n\t\t\t\t151 => __( 'Thinking Female Wide', 'polldaddy' ),\n\t\t\t\t152 => __( 'Sunset Narrow', 'polldaddy' ),\n\t\t\t\t153 => __( 'Sunset Medium', 'polldaddy' ),\n\t\t\t\t154 => __( 'Sunset Wide', 'polldaddy' ),\n\t\t\t\t155 => __( 'Music Medium', 'polldaddy' ),\n\t\t\t\t156 => __( 'Music Wide', 'polldaddy' ),\n\t\t\t);\n\n\t\t\t$polldaddy->reset();\n\t\t\t$styles = $polldaddy->get_styles();\n\n\t\t\tif ( ! empty( $styles ) && ! empty( $styles->style ) && count( $styles->style ) > 0 ) {\n\t\t\t\tforeach ( (array) $styles->style as $style ) {\n\t\t\t\t\t$options[ (int) $style->_id ] = $style->title;\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\t$this->print_errors();\n\n\t\t$this->render_partial( 'html-admin-setup-header' );\n\t\tif ( ! $connected ) {\n\t\t\tupdate_option( 'crowdsignal_api_key_secret', md5( time() . wp_rand() ) );\n\t\t\t$this->render_partial( 'html-admin-setup-step-1' );\n\t\t} else {\n\t\t\t$this->render_partial(\n\t\t\t\t'settings',\n\t\t\t\tarray(\n\t\t\t\t\t'is_connected'  => $connected,\n\t\t\t\t\t'api_key'       => get_option( 'polldaddy_api_key' ),\n\t\t\t\t)\n\t\t\t);\n\n\t\t\tif ( ! is_plugin_active( 'crowdsignal-forms/crowdsignal-forms.php' ) ) {\n\t\t\t\t$this->render_partial( 'html-admin-teaser' );\n\t\t\t} else {\n\t\t\t\t$this->render_partial( 'html-admin-setup-step-3' );\n\t\t\t}\n\n\t\t\t$this->render_partial(\n\t\t\t\t'settings-2',\n\t\t\t\tarray(\n\t\t\t\t\t'is_connected'  => $connected,\n\t\t\t\t\t'api_key'       => get_option( 'polldaddy_api_key' ),\n\t\t\t\t\t'poll'          => $poll,\n\t\t\t\t\t'options'       => $options,\n\t\t\t\t\t'controller'    => $this,\n\t\t\t\t\t'account_email' => $account_email,\n\t\t\t\t)\n\t\t\t);\n\t\t}\n\t\t$this->render_partial( 'html-admin-setup-footer' );\n\t}",
+    "critique": {
+      "summary": "Function 'plugin_options' has 1 critical issue(s) (security) requiring immediate remediation before deployment.",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'plugin_options' \u2014 required by WPCS for all public functions",
+          "fix": "Add /** @param, @return, @since tags above function 'plugin_options'"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'plugin_options' (source: polldaddy.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "critical",
+          "issue": "'plugin_options' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests",
+          "fix": "Add wp_verify_nonce($_POST['_wpnonce'], 'action_name') before processing any user input; use wp_nonce_field() in forms"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'plugin_options' performs potentially expensive operations in a loop without caching (source: polldaddy.json)",
+          "fix": "Cache expensive computed values using wp_cache_set()/wp_cache_get() with appropriate cache group and expiry"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'plugin_options' uses WordPress APIs appropriately for its scope (source: polldaddy.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'plugin_options' (113 lines, source: polldaddy.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'plugin_options' has no problematic dependency patterns detected (source: polldaddy.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'plugin_options' i18n handling is acceptable (source: polldaddy.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'plugin_options' does not produce HTML output \u2014 accessibility dimension not applicable (source: polldaddy.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'plugin_options' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests"
+    },
+    "corrected_code": "/**\n * Plugin Options \u2014 fixed version.\n *\n * @return mixed\n * @since 1.0.0\n */\nfunction plugin_options() {\n    if ( ! current_user_can( 'manage_options' ) ) {\n        wp_send_json_error( array( 'message' => esc_html__( 'Permission denied.', 'plugin-slug' ) ) );\n        return;\n    }\n    // Security: Verify nonce before processing user input\n    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) ), 'plugin_options_action' ) ) {\n        wp_die( esc_html__( 'Security check failed.', 'plugin-slug' ) );\n    }\n\n\t\tif ( isset( $_POST['polldaddy_email'] ) ) {\n\t\t\t$account_email = false;\n\t\t} else {\n\t\t\t$connected     = false;\n\t\t\t$account_email = '';\n\t\t\t$polldaddy     = $this->get_client( WP_POLLDADDY__PARTNERGUID, $this->user_code );\n\t\t\t$account       = $polldaddy->get_account();\n\n\t\t\tif ( ! empty( $account ) ) {\n\t\t\t\t$connected     = true;\n\t\t\t\t$account_email = $account->email;\n\t\t\t}\n\n\t\t\t$polldaddy->reset();\n\t\t\t$poll = $polldaddy->get_poll( 1 );\n\n\t\t\t$options = array(\n\t\t\t\t101 => __( 'Aluminum Narrow', 'polldaddy' ),\n\t\t\t\t102 => __( 'Aluminum Medium', 'polldaddy' ),\n\t\t\t\t103 => __( 'Aluminum Wide', 'polldaddy' ),\n\t\t\t\t104 => __( 'Plain White Narrow', 'polldaddy' ),\n\t\t\t\t105 => __( 'Plain White Medium', 'polldaddy' ),\n\t\t\t\t106 => __( 'Plain White Wide', 'polldaddy' ),\n\t\t\t\t107 => __( 'Plain Black Narrow', 'polldaddy' ),\n\t\t\t\t108 => __( 'Plain Black Medium', 'polldaddy' ),\n\t\t\t\t109 => __( 'Plain Black Wide', 'polldaddy' ),\n\t\t\t\t110 => __( 'Paper Narrow', 'polldaddy' ),\n\t\t\t\t111 => __( 'Paper Medium', 'polldaddy' ),\n\t\t\t\t112 => __( 'Paper Wide', 'polldaddy' ),\n\t\t\t\t113 => __( 'Skull Dark Narrow', 'polldaddy' ),\n\t\t\t\t114 => __( 'Skull Dark Medium', 'polldaddy' ),\n\t\t\t\t115 => __( 'Skull Dark Wide', 'polldaddy' ),\n\t\t\t\t116 => __( 'Skull Light Narrow', 'polldaddy' ),\n\t\t\t\t117 => __( 'Skull Light Medium', 'polldaddy' ),\n\t\t\t\t118 => __( 'Skull Light Wide', 'polldaddy' ),\n\t\t\t\t157 => __( 'Micro', 'polldaddy' ),\n\t\t\t\t119 => __( 'Plastic White Narrow', 'polldaddy' ),\n\t\t\t\t120 => __( 'Plastic White Medium', 'polldaddy' ),\n\t\t\t\t121 => __( 'Plastic White Wide', 'polldaddy' ),\n\t\t\t\t122 => __( 'Plastic Grey Narrow', 'polldaddy' ),\n\t\t\t\t123 => __( 'Plastic Grey Medium', 'polldaddy' ),\n\t\t\t\t124 => __( 'Plastic Grey Wide', 'polldaddy' ),\n\t\t\t\t125 => __( 'Plastic Black Narrow', 'polldaddy' ),\n\t\t\t\t126 => __( 'Plastic Black Medium', 'polldaddy' ),\n\t\t\t\t127 => __( 'Plastic Black Wide', 'polldaddy' ),\n\t\t\t\t128 => __( 'Manga Narrow', 'polldaddy' ),\n\t\t\t\t129 => __( 'Manga Medium', 'polldaddy' ),\n\t\t\t\t130 => __( 'Manga Wide', 'polldaddy' ),\n\t\t\t\t131 => __( 'Tech Dark Narrow', 'polldaddy' ),\n\t\t\t\t132 => __( 'Tech Dark Medium', 'polldaddy' ),\n\t\t\t\t133 => __( 'Tech Dark Wide', 'polldaddy' ),\n\t\t\t\t134 => __( 'Tech Grey Narrow', 'polldaddy' ),\n\t\t\t\t135 => __( 'Tech Grey Medium', 'polldaddy' ),\n\t\t\t\t136 => __( 'Tech Grey Wide', 'polldaddy' ),\n\t\t\t\t137 => __( 'Tech Light Narrow', 'polldaddy' ),\n\t\t\t\t138 => __( 'Tech Light Medium', 'polldaddy' ),\n\t\t\t\t139 => __( 'Tech Light Wide', 'polldaddy' ),\n\t\t\t\t140 => __( 'Working Male Narrow', 'polldaddy' ),\n\t\t\t\t141 => __( 'Working Male Medium', 'polldaddy' ),\n\t\t\t\t142 => __( 'Working Male Wide', 'polldaddy' ),\n\t\t\t\t143 => __( 'Working Female Narrow', 'polldaddy' ),\n\t\t\t\t144 => __( 'Working Female Medium', 'polldaddy' ),\n\t\t\t\t145 => __( 'Working Female Wide', 'polldaddy' ),\n\t\t\t\t146 => __( 'Thinking Male Narrow', 'polldaddy' ),\n\t\t\t\t147 => __( 'Thinking Male Medium', 'polldaddy' ),\n\t\t\t\t148 => __( 'Thinking Male Wide', 'polldaddy' ),\n\t\t\t\t149 => __( 'Thinking Female Narrow', 'polldaddy' ),\n\t\t\t\t150 => __( 'Thinking Female Medium', 'polldaddy' ),\n\t\t\t\t151 => __( 'Thinking Female Wide', 'polldaddy' ),\n\t\t\t\t152 => __( 'Sunset Narrow', 'polldaddy' ),\n\t\t\t\t153 => __( 'Sunset Medium', 'polldaddy' ),\n\t\t\t\t154 => __( 'Sunset Wide', 'polldaddy' ),\n\t\t\t\t155 => __( 'Music Medium', 'polldaddy' ),\n\t\t\t\t156 => __( 'Music Wide', 'polldaddy' ),\n\t\t\t);\n\n\t\t\t$polldaddy->reset();\n\t\t\t$styles = $polldaddy->get_styles();\n\n\t\t\tif ( ! empty( $styles ) && ! empty( $styles->style ) && count( $styles->style ) > 0 ) {\n\t\t\t\tforeach ( (array) $styles->style as $style ) {\n\t\t\t\t\t$options[ (int) $style->_id ] = $style->title;\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\t$this->print_errors();\n\n\t\t$this->render_partial( 'html-admin-setup-header' );\n\t\tif ( ! $connected ) {\n\t\t\tupdate_option( 'crowdsignal_api_key_secret', md5( time() . wp_rand() ) );\n\t\t\t$this->render_partial( 'html-admin-setup-step-1' );\n\t\t} else {\n\t\t\t$this->render_partial(\n\t\t\t\t'settings',\n\t\t\t\tarray(\n\t\t\t\t\t'is_connected'  => $connected,\n\t\t\t\t\t'api_key'       => get_option( 'polldaddy_api_key' ),\n\t\t\t\t)\n\t\t\t);\n\n\t\t\tif ( ! is_plugin_active( 'crowdsignal-forms/crowdsignal-forms.php' ) ) {\n\t\t\t\t$this->render_partial( 'html-admin-teaser' );\n\t\t\t} else {\n\t\t\t\t$this->render_partial( 'html-admin-setup-step-3' );\n\t\t\t}\n\n\t\t\t$this->render_partial(\n\t\t\t\t'settings-2',\n\t\t\t\tarray(\n\t\t\t\t\t'is_connected'  => $connected,\n\t\t\t\t\t'api_key'       => get_option( 'polldaddy_api_key' ),\n\t\t\t\t\t'poll'          => $poll,\n\t\t\t\t\t'options'       => $options,\n\t\t\t\t\t'controller'    => $this,\n\t\t\t\t\t'account_email' => $account_email,\n\t\t\t\t)\n\t\t\t);\n\t\t}\n\t\t$this->render_partial( 'html-admin-setup-footer' );\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "woocommerce-services.json",
+    "function_name": "WC_REST_Connect_Packages_Controller::__construct",
+    "defective_code": "function __construct( WC_Connect_API_Client $api_client, WC_Connect_Service_Settings_Store $settings_store, WC_Connect_Logger $logger, WC_Connect_Service_Schemas_Store $service_schemas_store ) {\n\t\tparent::__construct( $api_client, $settings_store, $logger );\n\t\t$this->package_settings = new WC_Connect_Package_Settings(\n\t\t\t$settings_store,\n\t\t\t$service_schemas_store\n\t\t);\n\t}",
+    "critique": {
+      "summary": "Function '__construct' has code quality and standards issues that should be addressed for production readiness (source: woocommerce-services.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for '__construct' \u2014 required by WPCS for all public functions",
+          "fix": "Add /** @param, @return, @since tags above function '__construct'"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in '__construct' (source: woocommerce-services.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'__construct' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce-services.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'__construct' has no obvious performance issues for its current scope (source: woocommerce-services.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'__construct' uses WordPress APIs appropriately for its scope (source: woocommerce-services.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'__construct' code quality is acceptable but could improve single responsibility adherence (source: woocommerce-services.json, 7 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'__construct' instantiates WC_Connect_Package_Settings \u2014 ensure these dependencies are available in all execution contexts (source: woocommerce-services.json)",
+          "fix": "Inject dependencies via constructor or factory pattern rather than instantiating inside the function; improves testability"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'__construct' i18n handling is acceptable (source: woocommerce-services.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'__construct' does not produce HTML output \u2014 accessibility dimension not applicable (source: woocommerce-services.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'__construct' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce-services.json)"
+    },
+    "corrected_code": "/**\n *   Construct \u2014 fixed version.\n *\n  * @param mixed $api_client Api Client value.\n * @param mixed $settings_store Settings Store value.\n * @param mixed $logger Logger value.\n * @param mixed $service_schemas_store Service Schemas Store value.\n* @return mixed\n * @since 1.0.0\n */\nfunction __construct( WC_Connect_API_Client $api_client, WC_Connect_Service_Settings_Store $settings_store, WC_Connect_Logger $logger, WC_Connect_Service_Schemas_Store $service_schemas_store ) {\n\t\tparent::__construct( $api_client, $settings_store, $logger );\n\t\t$this->package_settings = new WC_Connect_Package_Settings(\n\t\t\t$settings_store,\n\t\t\t$service_schemas_store\n\t\t);\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_get_taxonomy_labels",
+    "defective_code": "/**\n * Returns an array of taxonomies in the format \"name => label\" for use in a select field.\n *\n * @date    3/8/18\n * @since   5.7.2\n *\n * @param   array $taxonomies Optional. An array of specific taxonomies to return.\n * @return  array\n */\nfunction acf_get_taxonomy_labels( $taxonomies = array() ) {\n\n\t// default\n\tif ( empty( $taxonomies ) ) {\n\t\t$taxonomies = acf_get_taxonomies();\n\t}\n\n\t// vars\n\t$ref  = array();\n\t$data = array();\n\n\t// loop\n\tforeach ( $taxonomies as $taxonomy ) {\n\n\t\t// vars\n\t\t$object = get_taxonomy( $taxonomy );\n\t\t$label  = $object->labels->singular_name;\n\n\t\t// append\n\t\t$data[ $taxonomy ] = $label;\n\n\t\t// increase counter\n\t\tif ( ! isset( $ref[ $label ] ) ) {\n\t\t\t$ref[ $label ] = 0;\n\t\t}\n\t\t++$ref[ $label ];\n\t}\n\n\t// show taxonomy name next to label for shared labels\n\tforeach ( $data as $taxonomy => $label ) {\n\t\tif ( $ref[ $label ] > 1 ) {\n\t\t\t$data[ $taxonomy ] .= ' (' . $taxonomy . ')';\n\t\t}\n\t}\n\n\t// return\n\treturn $data;\n}",
+    "critique": {
+      "summary": "Function 'acf_get_taxonomy_labels' has code quality and standards issues that should be addressed for production readiness (source: advanced-custom-fields.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'acf_get_taxonomy_labels' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'acf_get_taxonomy_labels' (source: advanced-custom-fields.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'acf_get_taxonomy_labels' has no obvious security vulnerabilities but lacks defensive coding patterns (source: advanced-custom-fields.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'acf_get_taxonomy_labels' performs potentially expensive operations in a loop without caching (source: advanced-custom-fields.json)",
+          "fix": "Cache expensive computed values using wp_cache_set()/wp_cache_get() with appropriate cache group and expiry"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'acf_get_taxonomy_labels' uses WordPress APIs appropriately for its scope (source: advanced-custom-fields.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'acf_get_taxonomy_labels' (31 lines, source: advanced-custom-fields.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'acf_get_taxonomy_labels' has no problematic dependency patterns detected (source: advanced-custom-fields.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'acf_get_taxonomy_labels' i18n handling is acceptable (source: advanced-custom-fields.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'acf_get_taxonomy_labels' does not produce HTML output \u2014 accessibility dimension not applicable (source: advanced-custom-fields.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'acf_get_taxonomy_labels' has no obvious security vulnerabilities but lacks defensive coding patterns (source: advanced-custom-fields.json)"
+    },
+    "corrected_code": "/**\n * Returns an array of taxonomies in the format \"name => label\" for use in a select field.\n *\n * @date    3/8/18\n * @since   5.7.2\n *\n * @param   array $taxonomies Optional. An array of specific taxonomies to return.\n * @return  array\n */\nfunction acf_get_taxonomy_labels( $taxonomies = array() ) {\n\n\t// default\n\tif ( empty( $taxonomies ) ) {\n\t\t$taxonomies = acf_get_taxonomies();\n\t}\n\n\t// vars\n\t$ref  = array();\n\t$data = array();\n\n\t// loop\n\tforeach ( $taxonomies as $taxonomy ) {\n\n\t\t// vars\n\t\t$object = get_taxonomy( $taxonomy );\n\t\t$label  = $object->labels->singular_name;\n\n\t\t// append\n\t\t$data[ $taxonomy ] = $label;\n\n\t\t// increase counter\n\t\tif ( ! isset( $ref[ $label ] ) ) {\n\t\t\t$ref[ $label ] = 0;\n\t\t}\n\t\t++$ref[ $label ];\n\t}\n\n\t// show taxonomy name next to label for shared labels\n\tforeach ( $data as $taxonomy => $label ) {\n\t\tif ( $ref[ $label ] > 1 ) {\n\t\t\t$data[ $taxonomy ] .= ' (' . $taxonomy . ')';\n\t\t}\n\t}\n\n\t// return\n\treturn $data;\n}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "smart-custom-fields.json",
+    "function_name": "Smart_Custom_Fields_Field_Related_Posts::display_field_options",
+    "defective_code": "/**\n\t * Displaying the option fields in custom field settings page.\n\t *\n\t * @param int $group_key Group key.\n\t * @param int $field_key Field key.\n\t */\nfunction display_field_options( $group_key, $field_key ) {\n\t\t$this->display_label_option( $group_key, $field_key );\n\t\t$this->display_name_option( $group_key, $field_key );\n\t\t?>\n\t\t<tr>\n\t\t\t<th><?php esc_html_e( 'Post Types', 'smart-custom-fields' ); ?></th>\n\t\t\t<td>\n\t\t\t\t<?php\n\t\t\t\t$post_types = get_post_types(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'show_ui' => true,\n\t\t\t\t\t),\n\t\t\t\t\t'objects'\n\t\t\t\t);\n\t\t\t\tunset( $post_types['attachment'] );\n\t\t\t\tunset( $post_types['wp_block'] );\n\t\t\t\tunset( $post_types[ SCF_Config::NAME ] );\n\t\t\t\t?>\n\t\t\t\t<?php foreach ( $post_types as $post_type => $post_type_object ) : ?>\n\t\t\t\t\t<?php\n\t\t\t\t\t$save_post_types = $this->get( 'post-type' );\n\t\t\t\t\t?>\n\t\t\t\t<input type=\"checkbox\"\n\t\t\t\t\tname=\"<?php echo esc_attr( $this->get_field_name_in_setting( $group_key, $field_key, 'post-type' ) ); ?>[]\"\n\t\t\t\t\tvalue=\"<?php echo esc_attr( $post_type ); ?>\"\n\t\t\t\t\t<?php if ( is_array( $save_post_types ) && in_array( $post_type, $save_post_types, true ) ) : ?>\n\t\t\t\t\t\tchecked=\"checked\"\n\t\t\t\t\t<?php endif; ?>\n\t\t\t\t/><?php echo esc_html( $post_type_object->labels->singular_name ); ?>\n\t\t\t\t<?php endforeach; ?>\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th><?php esc_html_e( 'Selectable number', 'smart-custom-fields' ); ?></th>\n\t\t\t<td>\n\t\t\t\t<input type=\"number\"\n\t\t\t\t\tname=\"<?php echo esc_attr( $this->get_field_name_in_setting( $group_key, $field_key, 'limit' ) ); ?>\"\n\t\t\t\t\tvalue=\"<?php echo esc_attr( $this->get( 'limit' ) ); ?>\" min=\"1\" step=\"1\" />\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th><?php esc_html_e( 'Instruction', 'smart-custom-fields' ); ?></th>\n\t\t\t<td>\n\t\t\t\t<textarea name=\"<?php echo esc_attr( $this->get_field_name_in_setting( $group_key, $field_key, 'instruction' ) ); ?>\"\n\t\t\t\t\tclass=\"widefat\" rows=\"5\"><?php echo esc_attr( $this->get( 'instruction' ) ); ?></textarea>\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th><?php esc_html_e( 'Notes', 'smart-custom-fields' ); ?></th>\n\t\t\t<td>\n\t\t\t\t<input type=\"text\"\n\t\t\t\t\tname=\"<?php echo esc_attr( $this->get_field_name_in_setting( $group_key, $field_key, 'notes' ) ); ?>\"\n\t\t\t\t\tclass=\"widefat\"\n\t\t\t\t\tvalue=\"<?php echo esc_attr( $this->get( 'notes' ) ); ?>\"\n\t\t\t\t/>\n\t\t\t</td>\n\t\t</tr>\n\t\t<?php\n\t}",
+    "critique": {
+      "summary": "Function 'display_field_options' has 1 high-severity issue(s) (accessibility) that compromise security or correctness.",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'display_field_options' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'display_field_options' (source: smart-custom-fields.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'display_field_options' has no obvious security vulnerabilities but lacks defensive coding patterns (source: smart-custom-fields.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'display_field_options' performs potentially expensive operations in a loop without caching (source: smart-custom-fields.json)",
+          "fix": "Cache expensive computed values using wp_cache_set()/wp_cache_get() with appropriate cache group and expiry"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'display_field_options' uses WordPress APIs appropriately for its scope (source: smart-custom-fields.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'display_field_options' (60 lines, source: smart-custom-fields.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'display_field_options' has no problematic dependency patterns detected (source: smart-custom-fields.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'display_field_options' i18n handling is acceptable (source: smart-custom-fields.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "high",
+          "issue": "'display_field_options' renders form inputs without associated <label> elements \u2014 screen readers cannot identify form fields, failing WCAG 2.1 success criterion 1.3.1",
+          "fix": "Add <label for='field_id'>Field Name</label> before each <input id='field_id'>, or use aria-label attribute: <input aria-label='Field Name'>"
+        }
+      },
+      "key_observation": "'display_field_options' has no obvious security vulnerabilities but lacks defensive coding patterns (source: smart-custom-fields.json)"
+    },
+    "corrected_code": "/**\n\t * Displaying the option fields in custom field settings page.\n\t *\n\t * @param int $group_key Group key.\n\t * @param int $field_key Field key.\n\t */\nfunction display_field_options( $group_key, $field_key ) {\n\t\t$this->display_label_option( $group_key, $field_key );\n\t\t$this->display_name_option( $group_key, $field_key );\n\t\t?>\n\t\t<tr>\n\t\t\t<th><?php esc_html_e( 'Post Types', 'smart-custom-fields' ); ?></th>\n\t\t\t<td>\n\t\t\t\t<?php\n\t\t\t\t$post_types = get_post_types(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'show_ui' => true,\n\t\t\t\t\t),\n\t\t\t\t\t'objects'\n\t\t\t\t);\n\t\t\t\tunset( $post_types['attachment'] );\n\t\t\t\tunset( $post_types['wp_block'] );\n\t\t\t\tunset( $post_types[ SCF_Config::NAME ] );\n\t\t\t\t?>\n\t\t\t\t<?php foreach ( $post_types as $post_type => $post_type_object ) : ?>\n\t\t\t\t\t<?php\n\t\t\t\t\t$save_post_types = $this->get( 'post-type' );\n\t\t\t\t\t?>\n\t\t\t\t<input type=\"checkbox\"\n\t\t\t\t\tname=\"<?php echo esc_attr( $this->get_field_name_in_setting( $group_key, $field_key, 'post-type' ) ); ?>[]\"\n\t\t\t\t\tvalue=\"<?php echo esc_attr( $post_type ); ?>\"\n\t\t\t\t\t<?php if ( is_array( $save_post_types ) && in_array( $post_type, $save_post_types, true ) ) : ?>\n\t\t\t\t\t\tchecked=\"checked\"\n\t\t\t\t\t<?php endif; ?>\n\t\t\t\t/><?php echo esc_html( $post_type_object->labels->singular_name ); ?>\n\t\t\t\t<?php endforeach; ?>\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th><?php esc_html_e( 'Selectable number', 'smart-custom-fields' ); ?></th>\n\t\t\t<td>\n\t\t\t\t<input type=\"number\"\n\t\t\t\t\tname=\"<?php echo esc_attr( $this->get_field_name_in_setting( $group_key, $field_key, 'limit' ) ); ?>\"\n\t\t\t\t\tvalue=\"<?php echo esc_attr( $this->get( 'limit' ) ); ?>\" min=\"1\" step=\"1\" />\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th><?php esc_html_e( 'Instruction', 'smart-custom-fields' ); ?></th>\n\t\t\t<td>\n\t\t\t\t<textarea name=\"<?php echo esc_attr( $this->get_field_name_in_setting( $group_key, $field_key, 'instruction' ) ); ?>\"\n\t\t\t\t\tclass=\"widefat\" rows=\"5\"><?php echo esc_attr( $this->get( 'instruction' ) ); ?></textarea>\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th><?php esc_html_e( 'Notes', 'smart-custom-fields' ); ?></th>\n\t\t\t<td>\n\t\t\t\t<input type=\"text\"\n\t\t\t\t\tname=\"<?php echo esc_attr( $this->get_field_name_in_setting( $group_key, $field_key, 'notes' ) ); ?>\"\n\t\t\t\t\tclass=\"widefat\"\n\t\t\t\t\tvalue=\"<?php echo esc_attr( $this->get( 'notes' ) ); ?>\"\n\t\t\t\t/>\n\t\t\t</td>\n\t\t</tr>\n\t\t<?php\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "posti-shipping.json",
+    "function_name": "Text::custom_pickup_point_title",
+    "defective_code": "function custom_pickup_point_title() {\r\n      return __('Custom pickup address', 'woo-pakettikauppa');\r\n    }",
+    "critique": {
+      "summary": "Function 'custom_pickup_point_title' has code quality and standards issues that should be addressed for production readiness (source: posti-shipping.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'custom_pickup_point_title' \u2014 required by WPCS for all public functions",
+          "fix": "Add /** @param, @return, @since tags above function 'custom_pickup_point_title'"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'custom_pickup_point_title' (source: posti-shipping.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'custom_pickup_point_title' has no obvious security vulnerabilities but lacks defensive coding patterns (source: posti-shipping.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'custom_pickup_point_title' has no obvious performance issues for its current scope (source: posti-shipping.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'custom_pickup_point_title' uses WordPress APIs appropriately for its scope (source: posti-shipping.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'custom_pickup_point_title' code quality is acceptable but could improve single responsibility adherence (source: posti-shipping.json, 3 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'custom_pickup_point_title' has no problematic dependency patterns detected (source: posti-shipping.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'custom_pickup_point_title' i18n handling is acceptable (source: posti-shipping.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'custom_pickup_point_title' does not produce HTML output \u2014 accessibility dimension not applicable (source: posti-shipping.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'custom_pickup_point_title' has no obvious security vulnerabilities but lacks defensive coding patterns (source: posti-shipping.json)"
+    },
+    "corrected_code": "/**\n * Custom Pickup Point Title \u2014 fixed version.\n *\n * @return mixed\n * @since 1.0.0\n */\nfunction custom_pickup_point_title() {\r\n      return __('Custom pickup address', 'woo-pakettikauppa');\r\n    }",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "bs-payone-woocommerce.json",
+    "function_name": "ApiLog::get_entries",
+    "defective_code": "/**\n\t * @param int $page\n\t * @param int $per_page\n\t *\n\t * @return array\n\t */\nfunction get_entries( $page = 1, $per_page = 10 ) {\n\t\tglobal $wpdb;\n\n\t\t$query = 'SELECT id, request, response, created_at\n                  FROM ' . $wpdb->prefix . \\Payone\\Payone\\Api\\Log::TABLE_NAME . ' \n                  ORDER BY created_at DESC\n                  LIMIT ' . ( $page - 1 ) * $per_page . ', ' . $per_page;\n\t\t$rows  = $wpdb->get_results( $query, ARRAY_A );\n\n\t\t$entries = [];\n\t\tforeach ( $rows as $row ) {\n\t\t\t$entries[] = \\Payone\\Payone\\Api\\Log::constructFromDatabase( $row );\n\t\t}\n\n\t\treturn $entries;\n\t}",
+    "critique": {
+      "summary": "Function 'get_entries' has 1 critical issue(s) (sql_safety) requiring immediate remediation before deployment.",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'get_entries' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "critical",
+          "issue": "$wpdb database queries in 'get_entries' execute without $wpdb->prepare() \u2014 SQL injection vulnerability allows attackers to manipulate database queries via unsanitized input",
+          "fix": "Wrap all dynamic values in $wpdb->prepare() with typed placeholders: $wpdb->prepare('SELECT * FROM %s WHERE id = %d', $table, absint($id))"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'get_entries' has no obvious security vulnerabilities but lacks defensive coding patterns (source: bs-payone-woocommerce.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'get_entries' performs potentially expensive operations in a loop without caching (source: bs-payone-woocommerce.json)",
+          "fix": "Cache expensive computed values using wp_cache_set()/wp_cache_get() with appropriate cache group and expiry"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'get_entries' uses WordPress APIs appropriately for its scope (source: bs-payone-woocommerce.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'get_entries' (14 lines, source: bs-payone-woocommerce.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'get_entries' has no problematic dependency patterns detected (source: bs-payone-woocommerce.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'get_entries' i18n handling is acceptable (source: bs-payone-woocommerce.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'get_entries' does not produce HTML output \u2014 accessibility dimension not applicable (source: bs-payone-woocommerce.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'get_entries' has no obvious security vulnerabilities but lacks defensive coding patterns (source: bs-payone-woocommerce.json)"
+    },
+    "corrected_code": "/**\n\t * @param int $page\n\t * @param int $per_page\n\t *\n\t * @return array\n\t */\nfunction get_entries( $page = 1, $per_page = 10 ) {\n    global $wpdb;\n    $cache_key = 'wp_plugin_get_entries_' . md5( serialize( func_get_args() ) );\n    $cached = wp_cache_get( $cache_key, 'plugin-slug' );\n    if ( false !== $cached ) {\n        return $cached;\n    }\n\t\tglobal $wpdb;\n\n\t\t$query = 'SELECT id, request, response, created_at\n                  FROM ' . $wpdb->prefix . \\Payone\\Payone\\Api\\Log::TABLE_NAME . ' \n                  ORDER BY created_at DESC\n                  LIMIT ' . ( $page - 1 ) * $per_page . ', ' . $per_page;\n\t\t$rows  = $wpdb->get_results( $query, ARRAY_A );\n\n\t\t$entries = [];\n\t\tforeach ( $rows as $row ) {\n\t\t\t$entries[] = \\Payone\\Payone\\Api\\Log::constructFromDatabase( $row );\n\t\t}\n\n\t\treturn $entries;\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "gutenberg.json",
+    "function_name": "WP_Test_REST_Icons_Controller::wpSetUpBeforeClass",
+    "defective_code": "function wpSetUpBeforeClass( WP_UnitTest_Factory $factory ) {\n\t\tself::$admin_id       = $factory->user->create( array( 'role' => 'administrator' ) );\n\t\tself::$editor_id      = $factory->user->create( array( 'role' => 'editor' ) );\n\t\tself::$contributor_id = $factory->user->create( array( 'role' => 'contributor' ) );\n\t\tself::$subscriber_id  = $factory->user->create( array( 'role' => 'subscriber' ) );\n\t}",
+    "critique": {
+      "summary": "Function 'wpSetUpBeforeClass' has code quality and standards issues that should be addressed for production readiness (source: gutenberg.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'wpSetUpBeforeClass' \u2014 required by WPCS for all public functions; Function 'wpSetUpBeforeClass' uses camelCase \u2014 WPCS requires snake_case (e.g., 'wp_set_up_before_class')",
+          "fix": "Add /** @param, @return, @since tags above function 'wpSetUpBeforeClass'; Rename to snake_case convention"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'wpSetUpBeforeClass' (source: gutenberg.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'wpSetUpBeforeClass' has no obvious security vulnerabilities but lacks defensive coding patterns (source: gutenberg.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'wpSetUpBeforeClass' has no obvious performance issues for its current scope (source: gutenberg.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'wpSetUpBeforeClass' uses WordPress APIs appropriately for its scope (source: gutenberg.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'wpSetUpBeforeClass' code quality is acceptable but could improve single responsibility adherence (source: gutenberg.json, 6 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'wpSetUpBeforeClass' has no problematic dependency patterns detected (source: gutenberg.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'wpSetUpBeforeClass' i18n handling is acceptable (source: gutenberg.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'wpSetUpBeforeClass' does not produce HTML output \u2014 accessibility dimension not applicable (source: gutenberg.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'wpSetUpBeforeClass' has no obvious security vulnerabilities but lacks defensive coding patterns (source: gutenberg.json)"
+    },
+    "corrected_code": "/**\n * Wpsetupbeforeclass \u2014 fixed version.\n *\n  * @param mixed $factory Factory value.\n* @return mixed\n * @since 1.0.0\n */\nfunction wpSetUpBeforeClass( WP_UnitTest_Factory $factory ) {\n\t\tself::$admin_id       = $factory->user->create( array( 'role' => 'administrator' ) );\n\t\tself::$editor_id      = $factory->user->create( array( 'role' => 'editor' ) );\n\t\tself::$contributor_id = $factory->user->create( array( 'role' => 'contributor' ) );\n\t\tself::$subscriber_id  = $factory->user->create( array( 'role' => 'subscriber' ) );\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "polldaddy.json",
+    "function_name": "polldaddy_poll",
+    "defective_code": "function &polldaddy_poll( $args = null, $id = null, $_require_data = true ) {\n\t$false = false;\n\tif ( is_a( $args, 'Polldaddy_Poll' ) ) {\n\t\tif ( is_null( $id ) )\n\t\t\treturn $args;\n\t\tif ( !$id = (int) $id )\n\t\t\treturn $false;\n\t\t$args->_id = $id;\n\t\treturn $args;\n\t}\n\n\t$defaults = _polldaddy_poll_defaults();\n\n\tif ( !is_null( $args ) ) {\n\t\t$args = wp_parse_args( $args, $defaults );\n\t\t$args['parentID'] = (int) $args['parentID'];\n\n\t\tif ( $_require_data ) {\n\t\t\tif ( !is_string( $args['question'] ) || !$args['question'] )\n\t\t\t\treturn $false;\n\n\t\t\tif ( !is_array($args['answers']) || !$args['answers'] )\n\t\t\t\treturn $false;\n\t\t}\n\n\t\tforeach ( array( 'multipleChoice', 'randomiseAnswers', 'makePublic', 'otherAnswer', 'closePoll', 'closePollNow', 'sharing' ) as $bool ) {\n\t\t\tif ( 'no' !== $args[$bool] && 'yes' !== $args[$bool] )\n\t\t\t\t$args[$bool] = $defaults[$bool];\n\t\t}\n\n\t\tif ( '0' == get_option( 'blog_public' ) )\n\t\t\t$args['makePublic'] = 'no';\n\n\t\tforeach ( array( 'styleID', 'packID', 'folderID', 'languageID', 'choices', 'blockExpiration' ) as $int )\n\t\t\tif ( !is_numeric( $args[$int] ) )\n\t\t\t\t$args[$int] = $defaults[$int];\n\n\t\tif ( !in_array( $args['resultsType'], array( 'show', 'percent', 'hide' ) ) )\n\t\t\t$args['resultsType'] = $defaults['resultsType'];\n\n\t\tif ( !in_array( $args['blockRepeatVotersType'], array( 'off', 'cookie', 'cookieip' ) ) )\n\t\t\t$args['blockRepeatVotersType'] = $defaults['blockRepeatVotersType'];\n\n\t\tif ( !in_array( $args['comments'], array( 'off', 'allow', 'moderate' ) ) )\n\t\t\t$args['comments'] = $defaults['comments'];\n\n\t\tif ( is_numeric( $args['closeDate'] ) )\n\t\t\t$args['closeDate'] = gmdate( 'Y-m-d H:i:s', $args['closeDate'] );\n\t\tif ( !$args['closeDate'] )\n\t\t\t$args['closeDate'] = gmdate( 'Y-m-d H:i:s' );\n\n\t\t$args['answers'] = new Polldaddy_Poll_Answers( array( 'answer' => $args['answers'] ) );\n\n\t\tif ( is_null( $id ) )\n\t\t\t$id = $args['id'];\n\t\tunset( $args['id'] );\n\t}\n\n\t$obj = new Polldaddy_Poll( $args, compact( 'id' ) );\n\n\treturn $obj;\n}",
+    "critique": {
+      "summary": "Function 'polldaddy_poll' has code quality and standards issues that should be addressed for production readiness (source: polldaddy.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'polldaddy_poll' \u2014 required by WPCS for all public functions",
+          "fix": "Add /** @param, @return, @since tags above function 'polldaddy_poll'"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'polldaddy_poll' (source: polldaddy.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'polldaddy_poll' has no obvious security vulnerabilities but lacks defensive coding patterns (source: polldaddy.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'polldaddy_poll' performs potentially expensive operations in a loop without caching (source: polldaddy.json)",
+          "fix": "Cache expensive computed values using wp_cache_set()/wp_cache_get() with appropriate cache group and expiry"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'polldaddy_poll' uses WordPress APIs appropriately for its scope (source: polldaddy.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'polldaddy_poll' (47 lines, source: polldaddy.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'polldaddy_poll' instantiates Polldaddy_Poll_Answers, Polldaddy_Poll \u2014 ensure these dependencies are available in all execution contexts (source: polldaddy.json)",
+          "fix": "Inject dependencies via constructor or factory pattern rather than instantiating inside the function; improves testability"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'polldaddy_poll' i18n handling is acceptable (source: polldaddy.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'polldaddy_poll' does not produce HTML output \u2014 accessibility dimension not applicable (source: polldaddy.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'polldaddy_poll' has no obvious security vulnerabilities but lacks defensive coding patterns (source: polldaddy.json)"
+    },
+    "corrected_code": "function &polldaddy_poll( $args = null, $id = null, $_require_data = true ) {\n\t$false = false;\n\tif ( is_a( $args, 'Polldaddy_Poll' ) ) {\n\t\tif ( is_null( $id ) )\n\t\t\treturn $args;\n\t\tif ( !$id = (int) $id )\n\t\t\treturn $false;\n\t\t$args->_id = $id;\n\t\treturn $args;\n\t}\n\n\t$defaults = _polldaddy_poll_defaults();\n\n\tif ( !is_null( $args ) ) {\n\t\t$args = wp_parse_args( $args, $defaults );\n\t\t$args['parentID'] = (int) $args['parentID'];\n\n\t\tif ( $_require_data ) {\n\t\t\tif ( !is_string( $args['question'] ) || !$args['question'] )\n\t\t\t\treturn $false;\n\n\t\t\tif ( !is_array($args['answers']) || !$args['answers'] )\n\t\t\t\treturn $false;\n\t\t}\n\n\t\tforeach ( array( 'multipleChoice', 'randomiseAnswers', 'makePublic', 'otherAnswer', 'closePoll', 'closePollNow', 'sharing' ) as $bool ) {\n\t\t\tif ( 'no' !== $args[$bool] && 'yes' !== $args[$bool] )\n\t\t\t\t$args[$bool] = $defaults[$bool];\n\t\t}\n\n\t\tif ( '0' == get_option( 'blog_public' ) )\n\t\t\t$args['makePublic'] = 'no';\n\n\t\tforeach ( array( 'styleID', 'packID', 'folderID', 'languageID', 'choices', 'blockExpiration' ) as $int )\n\t\t\tif ( !is_numeric( $args[$int] ) )\n\t\t\t\t$args[$int] = $defaults[$int];\n\n\t\tif ( !in_array( $args['resultsType'], array( 'show', 'percent', 'hide' ) ) )\n\t\t\t$args['resultsType'] = $defaults['resultsType'];\n\n\t\tif ( !in_array( $args['blockRepeatVotersType'], array( 'off', 'cookie', 'cookieip' ) ) )\n\t\t\t$args['blockRepeatVotersType'] = $defaults['blockRepeatVotersType'];\n\n\t\tif ( !in_array( $args['comments'], array( 'off', 'allow', 'moderate' ) ) )\n\t\t\t$args['comments'] = $defaults['comments'];\n\n\t\tif ( is_numeric( $args['closeDate'] ) )\n\t\t\t$args['closeDate'] = gmdate( 'Y-m-d H:i:s', $args['closeDate'] );\n\t\tif ( !$args['closeDate'] )\n\t\t\t$args['closeDate'] = gmdate( 'Y-m-d H:i:s' );\n\n\t\t$args['answers'] = new Polldaddy_Poll_Answers( array( 'answer' => $args['answers'] ) );\n\n\t\tif ( is_null( $id ) )\n\t\t\t$id = $args['id'];\n\t\tunset( $args['id'] );\n\t}\n\n\t$obj = new Polldaddy_Poll( $args, compact( 'id' ) );\n\n\treturn $obj;\n}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  }
+]

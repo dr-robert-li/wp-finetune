@@ -1,0 +1,227 @@
+[
+  {
+    "code": "/**\n\t * Fires on Edit Author Slug activation.\n\t *\n\t * @since 0.7.0\n\t */\nfunction ba_eas_activation() {\n\n\t\n\tdo_action( 'ba_eas_activation' );\n}",
+    "source_file": "edit-author-slug.json",
+    "function_name": "ba_eas_activation",
+    "critical_failures": [
+      "Function is essentially a no-op stub \u2014 it does nothing except fire a hook named identically to itself, providing no actual activation logic and no meaningful implementation.",
+      "PHPDoc block is minimal and missing @param/@return tags; while this function has no parameters and no return, the docblock should at minimum clarify intended usage and context.",
+      "Excessive blank line inside function body violates WordPress Coding Standards formatting.",
+      "Recursive/circular self-referential naming: firing 'ba_eas_activation' inside ba_eas_activation() is confusing and suggests incomplete or skeleton code not ready for production training data."
+    ],
+    "low_score_dims": [
+      "code_quality",
+      "dependency_integrity"
+    ]
+  },
+  {
+    "code": "function init(): void {\n\t\ttry {\n\t\t\t$this->secret = bin2hex( random_bytes( 16 ) );\n\t\t} catch ( Throwable $e ) {\n\t\t\t$this->secret = wp_generate_password( 16 );\n\t\t}\n\n\t\t$this->time = time();\n\t\t$this->url  = null;\n\t}",
+    "source_file": "woocommerce-paypal-payments.json",
+    "function_name": "OnboardingUrl::init",
+    "critical_failures": [
+      "Below threshold on: wpcs_compliance"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "/**\n\t\t * Filter: 'wpseo_should_save_indexable' - Allow developers to enable / disable\n\t\t * saving the indexable when the indexable is updated. Warning: overriding\n\t\t * the intended action may cause problems when moving from a staging to a\n\t\t * production environment because indexable permalinks may get set incorrectly.\n\t\t *\n\t\t * @param bool      $intend_to_save True if YoastSEO intends to save the indexable.\n\t\t * @param Indexable $indexable      The indexable to be saved.\n\t\t */\nfunction should_index_indexable( $indexable ) {\n\t\t$intend_to_save = $this->should_index_indexables();\n\n\t\t\n\t\treturn \\apply_filters( 'wpseo_should_save_indexable', $intend_to_save, $indexable );\n\t}",
+    "source_file": "wordpress-seo.json",
+    "function_name": "Indexable_Helper::should_index_indexable",
+    "critical_failures": [
+      "PHPDoc block is misplaced \u2014 it documents the filter hook, not the method itself. The method is missing its own @param, @return, and @since tags directly above the function signature.",
+      "Indentation is inconsistent \u2014 the function body uses 2-tab indentation while the opening `function` keyword appears at 0 indentation, indicating malformed extraction or WPCS indentation violations.",
+      "There is a blank line between `$intend_to_save` assignment and the `return` statement that serves no purpose and violates WPCS single-responsibility formatting expectations."
+    ],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "code_quality"
+    ]
+  },
+  {
+    "code": "/**\n\t * Data provider for test_wp_get_typography_font_size_value_should_use_fluid_typography_deprecated.\n\t *\n\t * @return array\n\t */\nfunction data_generate_font_size_preset_should_use_fluid_typography_deprecated_fixtures() {\n\t\treturn array(\n\t\t\t'returns value when fluid typography is deactivated' => array(\n\t\t\t\t'font_size'                   => array(\n\t\t\t\t\t'size' => '28px',\n\t\t\t\t),\n\t\t\t\t'should_use_fluid_typography' => false,\n\t\t\t\t'expected_output'             => '28px',\n\t\t\t),\n\t\t\t'returns clamp value when fluid typography is activated' => array(\n\t\t\t\t'font_size'                   => array(\n\t\t\t\t\t'size' => '28px',\n\t\t\t\t),\n\t\t\t\t'should_use_fluid_typography' => true,\n\t\t\t\t'expected_output'             => 'clamp(17.905px, 1.119rem + ((1vw - 3.2px) * 0.789), 28px)',\n\t\t\t),\n\t\t);\n\t}",
+    "source_file": "gutenberg.json",
+    "function_name": "WP_Block_Supports_Typography_Test::data_generate_font_size_preset_should_use_fluid_typography_deprecated_fixtures",
+    "critical_failures": [
+      "test code, excluded from training data"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ]
+  },
+  {
+    "code": "function setCountry( $country ) {\n\t\t$this->_country = $country;\n\t}",
+    "source_file": "pp-express-wc4jp.json",
+    "function_name": "PayPal_Address::setCountry",
+    "critical_failures": [
+      "Missing PHPDoc block"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "function transfers($options = array())\n    {\n        $relativeUrl = $this->getEntityUrl().$this->id;\n\n        return $this->request('GET', $relativeUrl, $options);\n    }",
+    "source_file": "woo-razorpay.json",
+    "function_name": "Order::transfers",
+    "critical_failures": [
+      "Missing PHPDoc block"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance"
+    ]
+  },
+  {
+    "code": "/**\n\t * Show value of variable\n\t *\n\t * @param mixed $variable\n\t * @param string $file_path\n\t * @param string $line\n\t */\nfunction var_dump( $variable, string $file_path = '', string $line = '' ) {\n\t\techo wp_kses( '<pre>' . print_r( $variable, true ) . '</pre>', true );\n\t\techo 'FILE:' . esc_html( $file_path ) . '<br> LINE:' . esc_html( $line );\n\t}",
+    "source_file": "learnpress-buddypress.json",
+    "function_name": "LP_Debug::var_dump",
+    "critical_failures": [
+      "Debug statements in production code",
+      "Hardcoded English strings in output without translation wrappers"
+    ],
+    "low_score_dims": [
+      "code_quality",
+      "i18n"
+    ]
+  },
+  {
+    "code": "function get_style_value( $css_property, $control_value, array $control_data ) {\n\t\tif ( 'URL' !== $css_property || empty( $control_value['id'] ) ) {\n\t\t\treturn parent::get_style_value( $css_property, $control_value, $control_data );\n\t\t}\n\n\t\tif ( empty( $control_value['size'] ) ) {\n\t\t\t$control_value['size'] = 'full';\n\t\t}\n\n\t\treturn wp_get_attachment_image_url( $control_value['id'], $control_value['size'] );\n\t}",
+    "source_file": "elementor.json",
+    "function_name": "Control_Media::get_style_value",
+    "critical_failures": [
+      "Missing PHPDoc block"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "/**\n\t * Format the error message.\n\t *\n\t * @param \\WP_Error $error The error.\n\t * @return string\n\t */\nfunction format_error( $error ) {\n\t\treturn defined( 'WP_DEBUG' ) && WP_DEBUG ? (\n\t\t\t'<span><strong>' . __( 'Error message: ', 'otter-blocks' ) . '</strong> ' . $error->get_error_message() . '</span>'\n\t\t) : '';\n\t}",
+    "source_file": "blocks-animation.json",
+    "function_name": "Stripe_Checkout_Block::format_error",
+    "critical_failures": [
+      "Unescaped output of potentially user-controlled or external data: `$error->get_error_message()` is echoed directly into HTML without escaping via `esc_html()` or similar, creating an XSS vector if the error message contains HTML/script content.",
+      "The translated string 'Error message: ' is output without escaping; should use `esc_html__()` instead of `__()` when inserting into HTML context.",
+      "security_auto_fail"
+    ],
+    "low_score_dims": [
+      "security"
+    ]
+  },
+  {
+    "code": "function set_properties() {\n\t\tparent::set_properties();\n\n\t\tif ( empty( $this->args->wp_dropdown_pages_args ) ) {\n\t\t\t$this->args->wp_dropdown_pages_args = array();\n\t\t}\n\n\t\t// Apply defeaults\n\t\t$this->args->wp_dropdown_pages_args = wp_parse_args(\n\t\t\t$this->args->wp_dropdown_pages_args,\n\t\t\t$this->wp_dropdown_pages_args\n\t\t);\n\n\t\t// Force some args\n\t\t$this->args->wp_dropdown_pages_args = array_merge(\n\t\t\t$this->args->wp_dropdown_pages_args,\n\t\t\tarray(\n\t\t\t\t'echo'     => true,\n\t\t\t\t'name'     => $this->attributes['name'],\n\t\t\t\t'id'       => $this->attributes['id'],\n\t\t\t\t'selected' => $this->field['value'],\n\t\t\t)\n\t\t);\n\t}",
+    "source_file": "menu-icons.json",
+    "function_name": "Kucrut_Form_Field_Select_Pages::set_properties",
+    "critical_failures": [
+      "missing_phpdoc"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "function wp_super_cache_jetpack_cookie_check( $cache_key ) {\n\tif ( isset ( $_COOKIE['akm_mobile'] ) ) {\n\t\tif ( $_COOKIE['akm_mobile'] == 'true' ) {\n\t\t\treturn 'mobile';\n\t\t} elseif ( $_COOKIE['akm_mobile'] == 'false' ) {\n\t\t\treturn 'normal';\n\t\t}\n\t}\n\n\tif ( ! class_exists( 'Automattic\\WPSC\\Device_Detection' ) ) {\n\t\treturn 'normal';\n\t}\n\n\tif ( \\Automattic\\WPSC\\Device_Detection::is_phone() ) {\n\t\treturn 'mobile';\n\t} else {\n\t\treturn 'normal';\n\t}\n}",
+    "source_file": "wp-super-cache.json",
+    "function_name": "wp_super_cache_jetpack_cookie_check",
+    "critical_failures": [
+      "Unescaped/unsanitized direct access to $_COOKIE['akm_mobile'] without sanitization before use in logic \u2014 cookie data is untrusted user-controlled input and should be sanitized with sanitize_text_field() or similar before comparison",
+      "Loose comparison operators (==) used instead of strict comparison (===) for cookie value checks, violating WPCS and potentially introducing type juggling issues",
+      "Missing PHPDoc block \u2014 no @param, @return, or @since tags documented",
+      "Space inside isset() parenthesis violates WordPress Coding Standards: isset ( $_COOKIE ) should be isset( $_COOKIE )"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "/**\n\t\t * Register Post Type\n\t\t *\n\t\t * @deprecated 13.9 Moved to Classic Theme Helper package.\n\t\t */\nfunction register_post_types() {\n\t\t\t_deprecated_function( __FUNCTION__, 'jetpack-13.9' );\n\t\t\t$this->new_instance->register_post_types();\n\t\t}",
+    "source_file": "jetpack.json",
+    "function_name": "Exception::register_post_types",
+    "critical_failures": [
+      "Deprecated function"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "/**\n     * @return mixed|null\n     * @throws \\Exception\n     */\nfunction getPaymentMethod()\n    {\n        if ($this->paymentMethod) {\n            return $this->paymentMethod;\n        }\n        if (!$this->paymentMethod) {\n            if (array_key_exists('payment_method', $_POST)) {\n                $this->paymentMethod = str_replace('woo-pagarme-payments-', '', sanitize_text_field($_POST['payment_method']));\n                return $this->paymentMethod ;\n            }\n        }\n        throw new \\Exception(__('Empty payment method', 'woo-pagarme-payments'));\n    }",
+    "source_file": "pagarme-payments-for-woocommerce.json",
+    "function_name": "PostFormatter::getPaymentMethod",
+    "critical_failures": [
+      "Form input without nonce verification"
+    ],
+    "low_score_dims": [
+      "security"
+    ]
+  },
+  {
+    "code": "/**\r\n\t * Save the order of posts from sortable feature\r\n\t *\r\n\t * @return void\r\n\t * @since 1.0\r\n\t * @author Antonino Scarfi' <antonino.scarfi@yithemes.com>\r\n\t */\nfunction sort_posts() {\r\n\t\tglobal $wpdb;\r\n\r\n\t\tparse_str( $_REQUEST['order'], $data );\r\n\r\n\t\tif ( is_array( $data ) ) {\r\n\t\t\t//$this->init_menu_order( $_REQUEST['post_type'] );\r\n\r\n\t\t\t$id_arr = array( );\r\n\t\t\tforeach ( $data as $key => $values ) {\r\n\t\t\t\tforeach ( $values as $position => $id ) {\r\n\t\t\t\t\t$id_arr[] = $id;\r\n\t\t\t\t}\r\n\t\t\t}\r\n\r\n\r\n\t\t\t$menu_order_arr = array( );\r\n\t\t\tforeach ( $id_arr as $key => $id ) {\r\n\t\t\t\t$results = $wpdb->get_results( \"SELECT menu_order FROM $wpdb->posts WHERE ID = \" . $id );\r\n\t\t\t\tforeach ( $results as $result ) {\r\n\t\t\t\t\t$menu_order_arr[] = $result->menu_order;\r\n\t\t\t\t}\r\n\t\t\t}\r\n\r\n\t\t\tsort( $menu_order_arr );\r\n\r\n\t\t\tforeach ( $data as $key => $values ) {\r\n\t\t\t\tforeach ( $values as $position => $id ) {\r\n\t\t\t\t\t$wpdb->update( $wpdb->posts, array( 'menu_order' => $menu_order_arr[$position] ), array( 'ID' => $id ) );\r\n\t\t\t\t}\r\n\t\t\t}\r\n\t\t}\r\n\r\n\t\tdie();\r\n\t}",
+    "source_file": "yith-woocommerce-ajax-search.json",
+    "function_name": "sort_posts",
+    "critical_failures": [
+      "Processes user input without nonce or sanitization",
+      "Raw SQL for post queries instead of WP_Query"
+    ],
+    "low_score_dims": [
+      "security",
+      "wp_api_usage"
+    ]
+  },
+  {
+    "code": "function getSdk(): Sdk\n    {\n        return $this->sdk ??= new Sdk(\n            $this->mercadopago->sellerConfig->getCredentialsAccessToken(),\n            MP_PLATFORM_ID,\n            Device::getDeviceProductId(),\n            $this->mercadopago->storeConfig->getIntegratorId()\n        );\n    }",
+    "source_file": "woocommerce-mercadopago.json",
+    "function_name": "AbstractTransaction::getSdk",
+    "critical_failures": [
+      "camelCase method naming violates WPCS (WordPress requires snake_case)",
+      "Missing PHPDoc block"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance"
+    ]
+  },
+  {
+    "code": "/**\n\t * {@inheritDoc}\n\t */\nfunction initialize() {  }",
+    "source_file": "woocommerce-paypal-payments.json",
+    "function_name": "BlocksPaymentMethod::initialize",
+    "critical_failures": [
+      "Below threshold on: wpcs_compliance"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "/**\n\t * Post Select option type.\n\t *\n\t * See @ot_display_by_type to see the full list of available arguments.\n\t *\n\t * @param array $args An array of arguments.\n\t *\n\t * @access public\n\t * @since  2.0\n\t */\nfunction ot_type_post_select( $args = array() ) {\n\n\t\t// Turns arguments array into variables.\n\t\textract( $args ); // phpcs:ignore\n\n\t\t// Verify a description.\n\t\t$has_desc = ! empty( $field_desc ) ? true : false;\n\n\t\t// Format setting outer wrapper.\n\t\techo '<div class=\"format-setting type-post-select ' . ( $has_desc ? 'has-desc' : 'no-desc' ) . '\">';\n\n\t\t/* description */\n\t\techo $has_desc ? '<div class=\"description\">' . wp_kses_post( htmlspecialchars_decode( $field_desc ) ) . '</div>' : '';\n\n\t\t// Format setting inner wrapper.\n\t\techo '<div class=\"format-setting-inner\">';\n\n\t\t// Build page select.\n\t\techo '<select name=\"' . esc_attr( $field_name ) . '\" id=\"' . esc_attr( $field_id ) . '\" class=\"option-tree-ui-select ' . esc_attr( $field_class ) . '\">';\n\n\t\t// Query posts array.\n\t\t$my_posts = get_posts(\n\t\t\tapply_filters(\n\t\t\t\t'ot_type_post_select_query',\n\t\t\t\tarray(\n\t\t\t\t\t'post_type'      => array( 'post' ),\n\t\t\t\t\t'posts_per_page' => -1,\n\t\t\t\t\t'orderby'        => 'title',\n\t\t\t\t\t'order'          => 'ASC',\n\t\t\t\t\t'post_status'    => 'any',\n\t\t\t\t),\n\t\t\t\t$field_id\n\t\t\t)\n\t\t);\n\n\t\t// Has posts.\n\t\tif ( is_array( $my_posts ) && ! empty( $my_posts ) ) {\n\t\t\techo '<option value=\"\">-- ' . esc_html__( 'Choose One', 'option-tree' ) . ' --</option>';\n\t\t\tforeach ( $my_posts as $my_post ) {\n\t\t\t\t$post_title = ! empty( $my_post->post_title ) ? $my_post->post_title : 'Untitled';\n\t\t\t\techo '<option value=\"' . esc_attr( $my_post->ID ) . '\" ' . selected( $field_value, $my_post->ID, false ) . '>' . esc_html( $post_title ) . '</option>';\n\t\t\t}\n\t\t} else {\n\t\t\techo '<option value=\"\">' . esc_html__( 'No Posts Found', 'option-tree' ) . '</option>';\n\t\t}\n\n\t\techo '</select>';\n\n\t\techo '</div>';\n\n\t\techo '</div>';\n\t}",
+    "source_file": "option-tree.json",
+    "function_name": "ot_type_post_select",
+    "critical_failures": [
+      "52-line function; phpcs:ignore; select without label; no @return"
+    ],
+    "low_score_dims": [
+      "accessibility"
+    ]
+  },
+  {
+    "code": "function get_keywords()\n    {\n        return ['social', 'rtm', 'share', 'social share'];\n    }",
+    "source_file": "rometheme-for-elementor.json",
+    "function_name": "Rkit_SocialShare::get_keywords",
+    "critical_failures": [
+      "Missing PHPDoc block"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "function set_fb_condition( $fb_condition ) {\n\t\t$this->set_fb_attribute( self::FB_PRODUCT_CONDITION, $fb_condition );\n\t}",
+    "source_file": "facebook-for-woocommerce.json",
+    "function_name": "ProductAttributeMapper::set_fb_condition",
+    "critical_failures": [
+      "Missing PHPDoc block"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "/**\n\t * Registers the filter to handle a public preview.\n\t *\n\t * Filter will be set if it's the main query, a preview, a singular page\n\t * and the query var `_ppp` exists.\n\t *\n\t * @since 2.0.0\n\t *\n\t * @param object $query The WP_Query object.\n\t */\nfunction show_public_preview( $query ) {\n\t\tif (\n\t\t\t$query->is_main_query() &&\n\t\t\t$query->is_preview() &&\n\t\t\t$query->is_singular() &&\n\t\t\t$query->get( '_ppp' )\n\t\t) {\n\t\t\tif ( ! headers_sent() ) {\n\t\t\t\tnocache_headers();\n\t\t\t\theader( 'X-Robots-Tag: noindex' );\n\t\t\t}\n\t\t\tadd_filter( 'wp_robots', 'wp_robots_no_robots' );\n\t\t\tadd_filter( 'posts_results', array( __CLASS__, 'set_post_to_publish' ), 10, 2 );\n\t\t}\n\t}",
+    "source_file": "public-post-preview.json",
+    "function_name": "DS_Public_Post_Preview::show_public_preview",
+    "critical_failures": [
+      "judge_error"
+    ],
+    "low_score_dims": []
+  }
+]

@@ -1,0 +1,1382 @@
+[
+  {
+    "source_file": "webp-express.json",
+    "function_name": "WCFMApi::doProcessRequest",
+    "defective_code": "function doProcessRequest() {\n      if (!check_ajax_referer('webpexpress-wcfm-nonce', 'nonce', false)) {\n          throw new \\Exception('The security nonce has expired. You need to reload (press F5) and try again)');\n      }\n      Validate::postHasKey('command');\n      $command = sanitize_text_field(stripslashes($_POST['command']));\n\n      switch ($command) {\n        /*\n        case 'get-tree':\n          $result = self::processGetTree();\n          break;*/\n        case 'get-folder':\n          $result = self::processGetFolder();\n          break;\n        case 'conversion-settings':\n          $result = self::processConversionSettings();\n          break;\n        case 'info':\n          $result = self::processInfo();\n          break;\n        case 'convert':\n          $result = self::processConvert();\n          break;\n        case 'delete-converted':\n          $result = self::processDeleteConverted();\n          break;\n        default:\n          throw new \\Exception('Unknown command');\n      }\n      if (!isset($result)) {\n          throw new \\Exception('Command: ' . $command . ' gave no result');\n      }\n\n      $json = wp_json_encode($result, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);\n      if ($json === false) {\n          // TODO: We can do better error handling than this!\n          throw new \\Exception('Failed encoding result to JSON');\n      } else {\n          echo $json;\n      }\n      wp_die();\n    }",
+    "critique": {
+      "summary": "Function 'doProcessRequest' has 1 high-severity issue(s) (security) that compromise security or correctness.",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'doProcessRequest' \u2014 required by WPCS for all public functions; Function 'doProcessRequest' uses camelCase \u2014 WPCS requires snake_case (e.g., 'do_process_request')",
+          "fix": "Add /** @param, @return, @since tags above function 'doProcessRequest'; Rename to snake_case convention"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'doProcessRequest' (source: webp-express.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "high",
+          "issue": "'doProcessRequest' outputs user-controlled data without escaping \u2014 XSS vulnerability allows injection of malicious scripts",
+          "fix": "Apply context-appropriate escaping: esc_html() for HTML text, esc_attr() for attributes, esc_url() for URLs before any echo/print"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'doProcessRequest' has no obvious performance issues for its current scope (source: webp-express.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'doProcessRequest' uses WordPress APIs appropriately for its scope (source: webp-express.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'doProcessRequest' code quality is acceptable but could improve single responsibility adherence (source: webp-express.json, 41 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'doProcessRequest' has no problematic dependency patterns detected (source: webp-express.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "medium",
+          "issue": "'doProcessRequest' may produce user-visible output without translation wrappers (source: webp-express.json)",
+          "fix": "Audit for hardcoded strings and wrap in __() or esc_html__() with the plugin text domain"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'doProcessRequest' does not produce HTML output \u2014 accessibility dimension not applicable (source: webp-express.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'doProcessRequest' outputs user-controlled data without escaping \u2014 XSS vulnerability allows injection of malicious scripts"
+    },
+    "corrected_code": "/**\n * Doprocessrequest \u2014 fixed version.\n *\n * @return mixed\n * @since 1.0.0\n */\nfunction doProcessRequest() {\n    if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_key( $_REQUEST['_wpnonce'] ), 'doProcessRequest_nonce' ) ) {\n        wp_send_json_error( array( 'message' => esc_html__( 'Invalid security token.', 'plugin-slug' ) ) );\n        return;\n    }\n      if (!check_ajax_referer('webpexpress-wcfm-nonce', 'nonce', false)) {\n          throw new \\Exception('The security nonce has expired. You need to reload (press F5) and try again)');\n      }\n      Validate::postHasKey('command');\n      $command = sanitize_text_field(stripslashes($_POST['command']));\n\n      switch ($command) {\n        /*\n        case 'get-tree':\n          $result = self::processGetTree();\n          break;*/\n        case 'get-folder':\n          $result = self::processGetFolder();\n          break;\n        case 'conversion-settings':\n          $result = self::processConversionSettings();\n          break;\n        case 'info':\n          $result = self::processInfo();\n          break;\n        case 'convert':\n          $result = self::processConvert();\n          break;\n        case 'delete-converted':\n          $result = self::processDeleteConverted();\n          break;\n        default:\n          throw new \\Exception('Unknown command');\n      }\n      if (!isset($result)) {\n          throw new \\Exception('Command: ' . $command . ' gave no result');\n      }\n\n      $json = wp_json_encode($result, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);\n      if ($json === false) {\n          // TODO: We can do better error handling than this!\n          throw new \\Exception('Failed encoding result to JSON');\n      } else {\n          echo esc_html( $json );\n      }\n      wp_die();\n    }",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "google-site-kit.json",
+    "function_name": "Notices::render_notices",
+    "defective_code": "/**\n\t\t * Notice object.\n\t\t *\n\t\t * @var Notice $notice Notice object.\n\t\t */\nfunction render_notices( $hook_suffix ) {\n\t\t$notices = $this->get_notices();\n\t\tif ( empty( $notices ) ) {\n\t\t\treturn;\n\t\t}\n\n\t\t\n\t\tforeach ( $notices as $notice ) {\n\t\t\tif ( ! $notice->is_active( $hook_suffix ) ) {\n\t\t\t\tcontinue;\n\t\t\t}\n\n\t\t\t$notice->render();\n\t\t}\n\t}",
+    "critique": {
+      "summary": "Function 'render_notices' has code quality and standards issues that should be addressed for production readiness (source: google-site-kit.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'render_notices' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'render_notices' (source: google-site-kit.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'render_notices' has no obvious security vulnerabilities but lacks defensive coding patterns (source: google-site-kit.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'render_notices' performs potentially expensive operations in a loop without caching (source: google-site-kit.json)",
+          "fix": "Cache expensive computed values using wp_cache_set()/wp_cache_get() with appropriate cache group and expiry"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'render_notices' uses WordPress APIs appropriately for its scope (source: google-site-kit.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'render_notices' (13 lines, source: google-site-kit.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'render_notices' has no problematic dependency patterns detected (source: google-site-kit.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'render_notices' i18n handling is acceptable (source: google-site-kit.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'render_notices' does not produce HTML output \u2014 accessibility dimension not applicable (source: google-site-kit.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'render_notices' has no obvious security vulnerabilities but lacks defensive coding patterns (source: google-site-kit.json)"
+    },
+    "corrected_code": "/**\n\t\t * Notice object.\n\t\t *\n\t\t * @var Notice $notice Notice object.\n\t\t */\nfunction render_notices( $hook_suffix ) {\n\t\t$notices = $this->get_notices();\n\t\tif ( empty( $notices ) ) {\n\t\t\treturn;\n\t\t}\n\n\t\t\n\t\tforeach ( $notices as $notice ) {\n\t\t\tif ( ! $notice->is_active( $hook_suffix ) ) {\n\t\t\t\tcontinue;\n\t\t\t}\n\n\t\t\t$notice->render();\n\t\t}\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "gutenberg.json",
+    "function_name": "WP_Style_Engine_CSS_Declarations_Test::test_should_compile_css_declarations_to_css_declarations_string",
+    "defective_code": "/**\n\t * Tests that CSS declarations are compiled into a CSS declarations block string.\n\t *\n\t * @covers ::get_declarations_string\n\t *\n\t * @dataProvider data_should_compile_css_declarations_to_css_declarations_string\n\t *\n\t * @param string $expected        The expected declarations block string.\n\t * @param bool   $should_prettify Optional. Whether to pretty the string. Default false.\n\t * @param int    $indent_count    Optional. The number of tab indents. Default false.\n\t */\nfunction test_should_compile_css_declarations_to_css_declarations_string( $expected, $should_prettify = false, $indent_count = 0 ) {\n\t\t$input_declarations = array(\n\t\t\t'color'                  => 'red',\n\t\t\t'border-top-left-radius' => '99px',\n\t\t\t'text-decoration'        => 'underline',\n\t\t);\n\t\t$css_declarations   = new WP_Style_Engine_CSS_Declarations_Gutenberg( $input_declarations );\n\n\t\t$this->assertSame(\n\t\t\t$expected,\n\t\t\t$css_declarations->get_declarations_string( $should_prettify, $indent_count )\n\t\t);\n\t}",
+    "critique": {
+      "summary": "Function 'test_should_compile_css_declarations_to_css_declarations_string' has code quality and standards issues that should be addressed for production readiness (source: gutenberg.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'test_should_compile_css_declarations_to_css_declarations_string' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'test_should_compile_css_declarations_to_css_declarations_string' (source: gutenberg.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'test_should_compile_css_declarations_to_css_declarations_string' has no obvious security vulnerabilities but lacks defensive coding patterns (source: gutenberg.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'test_should_compile_css_declarations_to_css_declarations_string' has no obvious performance issues for its current scope (source: gutenberg.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'test_should_compile_css_declarations_to_css_declarations_string' uses WordPress APIs appropriately for its scope (source: gutenberg.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'test_should_compile_css_declarations_to_css_declarations_string' (13 lines, source: gutenberg.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'test_should_compile_css_declarations_to_css_declarations_string' instantiates WP_Style_Engine_CSS_Declarations_Gutenberg \u2014 ensure these dependencies are available in all execution contexts (source: gutenberg.json)",
+          "fix": "Inject dependencies via constructor or factory pattern rather than instantiating inside the function; improves testability"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'test_should_compile_css_declarations_to_css_declarations_string' i18n handling is acceptable (source: gutenberg.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'test_should_compile_css_declarations_to_css_declarations_string' does not produce HTML output \u2014 accessibility dimension not applicable (source: gutenberg.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'test_should_compile_css_declarations_to_css_declarations_string' has no obvious security vulnerabilities but lacks defensive coding patterns (source: gutenberg.json)"
+    },
+    "corrected_code": "/**\n\t * Tests that CSS declarations are compiled into a CSS declarations block string.\n\t *\n\t * @covers ::get_declarations_string\n\t *\n\t * @dataProvider data_should_compile_css_declarations_to_css_declarations_string\n\t *\n\t * @param string $expected        The expected declarations block string.\n\t * @param bool   $should_prettify Optional. Whether to pretty the string. Default false.\n\t * @param int    $indent_count    Optional. The number of tab indents. Default false.\n\t */\nfunction test_should_compile_css_declarations_to_css_declarations_string( $expected, $should_prettify = false, $indent_count = 0 ) {\n\t\t$input_declarations = array(\n\t\t\t'color'                  => 'red',\n\t\t\t'border-top-left-radius' => '99px',\n\t\t\t'text-decoration'        => 'underline',\n\t\t);\n\t\t$css_declarations   = new WP_Style_Engine_CSS_Declarations_Gutenberg( $input_declarations );\n\n\t\t$this->assertSame(\n\t\t\t$expected,\n\t\t\t$css_declarations->get_declarations_string( $should_prettify, $indent_count )\n\t\t);\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "simple-image-sizes.json",
+    "function_name": "Post::a_featured_rebuild",
+    "defective_code": "/**\n\t * Rebuild the image size of a content featured image\n\t */\nfunction a_featured_rebuild() {\n\t\t// Get the nonce.\n\t\t$nonce = isset( $_POST['nonce'] ) ? $_POST['nonce'] : '';\n\n\t\t// Get the thumbnails.\n\t\t$id = isset( $_POST['id'] ) ? (int) $_POST['id'] : null;\n\n\t\t// Check the nonce.\n\t\tif ( ! wp_verify_nonce( $nonce, 'sis-regenerate-featured-' . $id ) || ! \\current_user_can( 'manage_options' ) ) {\n\t\t\twp_send_json( [ 'error' => __( 'Trying to cheat ?', 'simple-image-sizes' ) ] );\n\t\t}\n\n\t\t$attachment_id = get_post_thumbnail_id( $id );\n\n\t\tif ( ! has_post_thumbnail( $id ) || is_null( $attachment_id ) ) {\n\t\t\twp_send_json( [ 'error' => __( 'There is no media attached to this content.', 'simple-image-sizes' ) ] );\n\t\t}\n\n\t\t// Get the id.\n\t\twp_send_json( Main::thumbnail_rebuild( $attachment_id ) );\n\t}",
+    "critique": {
+      "summary": "Function 'a_featured_rebuild' has 1 high-severity issue(s) (security) that compromise security or correctness.",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'a_featured_rebuild' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'a_featured_rebuild' (source: simple-image-sizes.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "high",
+          "issue": "'a_featured_rebuild' outputs user-controlled data without escaping \u2014 XSS vulnerability allows injection of malicious scripts",
+          "fix": "Apply context-appropriate escaping: esc_html() for HTML text, esc_attr() for attributes, esc_url() for URLs before any echo/print"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'a_featured_rebuild' has no obvious performance issues for its current scope (source: simple-image-sizes.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'a_featured_rebuild' uses WordPress APIs appropriately for its scope (source: simple-image-sizes.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'a_featured_rebuild' (17 lines, source: simple-image-sizes.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'a_featured_rebuild' has no problematic dependency patterns detected (source: simple-image-sizes.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'a_featured_rebuild' i18n handling is acceptable (source: simple-image-sizes.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'a_featured_rebuild' does not produce HTML output \u2014 accessibility dimension not applicable (source: simple-image-sizes.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'a_featured_rebuild' outputs user-controlled data without escaping \u2014 XSS vulnerability allows injection of malicious scripts"
+    },
+    "corrected_code": "/**\n\t * Rebuild the image size of a content featured image\n\t */\nfunction a_featured_rebuild() {\n\t\t// Get the nonce.\n\t\t$nonce = isset( $_POST['nonce'] ) ? $_POST['nonce'] : '';\n\n\t\t// Get the thumbnails.\n\t\t$id = isset( $_POST['id'] ) ? (int) $_POST['id'] : null;\n\n\t\t// Check the nonce.\n\t\tif ( ! wp_verify_nonce( $nonce, 'sis-regenerate-featured-' . $id ) || ! \\current_user_can( 'manage_options' ) ) {\n\t\t\twp_send_json( [ 'error' => __( 'Trying to cheat ?', 'simple-image-sizes' ) ] );\n\t\t}\n\n\t\t$attachment_id = get_post_thumbnail_id( $id );\n\n\t\tif ( ! has_post_thumbnail( $id ) || is_null( $attachment_id ) ) {\n\t\t\twp_send_json( [ 'error' => __( 'There is no media attached to this content.', 'simple-image-sizes' ) ] );\n\t\t}\n\n\t\t// Get the id.\n\t\twp_send_json( Main::thumbnail_rebuild( $attachment_id ) );\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "gutenberg.json",
+    "function_name": "assertSame::test_merges_child_theme_json_into_parent_theme_json",
+    "defective_code": "function test_merges_child_theme_json_into_parent_theme_json() {\n\t\tswitch_theme( 'block-theme-child' );\n\n\t\t$actual_settings   = WP_Theme_JSON_Resolver_Gutenberg::get_theme_data()->get_settings();\n\t\t$expected_settings = array(\n\t\t\t'color'      => array(\n\t\t\t\t'custom'         => false,\n\t\t\t\t'customGradient' => false,\n\t\t\t\t'duotone'        => array(\n\t\t\t\t\t'theme' => array(\n\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t'colors' => array( '#333333', '#aaaaaa' ),\n\t\t\t\t\t\t\t'name'   => 'Custom Duotone',\n\t\t\t\t\t\t\t'slug'   => 'custom-duotone',\n\t\t\t\t\t\t),\n\t\t\t\t\t),\n\t\t\t\t),\n\t\t\t\t'gradients'      => array(\n\t\t\t\t\t'theme' => array(\n\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t'name'     => 'Custom gradient',\n\t\t\t\t\t\t\t'gradient' => 'linear-gradient(135deg,rgba(0,0,0) 0%,rgb(0,0,0) 100%)',\n\t\t\t\t\t\t\t'slug'     => 'custom-gradient',\n\t\t\t\t\t\t),\n\t\t\t\t\t),\n\t\t\t\t),\n\t\t\t\t'palette'        => array(\n\t\t\t\t\t'theme' => array(\n\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t'slug'  => 'light',\n\t\t\t\t\t\t\t'name'  => 'Light',\n\t\t\t\t\t\t\t'color' => '#f3f4f6',\n\t\t\t\t\t\t),\n\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t'slug'  => 'primary',\n\t\t\t\t\t\t\t'name'  => 'Primary',\n\t\t\t\t\t\t\t'color' => '#3858e9',\n\t\t\t\t\t\t),\n\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t'slug'  => 'dark',\n\t\t\t\t\t\t\t'name'  => 'Dark',\n\t\t\t\t\t\t\t'color' => '#111827',\n\t\t\t\t\t\t),\n\t\t\t\t\t),\n\t\t\t\t),\n\t\t\t\t'link'           => true,\n\t\t\t),\n\t\t\t'typography' => array(\n\t\t\t\t'customFontSize' => false,\n\t\t\t\t'lineHeight'     => true,\n\t\t\t\t'fontSizes'      => array(\n\t\t\t\t\t'theme' => array(\n\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t'name' => 'Custom',\n\t\t\t\t\t\t\t'slug' => 'custom',\n\t\t\t\t\t\t\t'size' => '100px',\n\t\t\t\t\t\t),\n\t\t\t\t\t),\n\t\t\t\t),\n\t\t\t),\n\t\t\t'shadow'     => array(\n\t\t\t\t'presets' => array(\n\t\t\t\t\t'theme' => array(\n\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t'name'   => 'Natural',\n\t\t\t\t\t\t\t'slug'   => 'natural',\n\t\t\t\t\t\t\t'shadow' => '2px 2px 3px #000',\n\t\t\t\t\t\t),\n\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t'name'   => 'Test',\n\t\t\t\t\t\t\t'slug'   => 'test',\n\t\t\t\t\t\t\t'shadow' => '2px 2px 3px #000',\n\t\t\t\t\t\t),\n\t\t\t\t\t),\n\t\t\t\t),\n\t\t\t),\n\t\t\t'spacing'    => array(\n\t\t\t\t'blockGap' => true,\n\t\t\t\t'units'    => array( 'rem' ),\n\t\t\t\t'padding'  => true,\n\t\t\t),\n\t\t\t'blocks'     => array(\n\t\t\t\t'core/paragraph'  => array(\n\t\t\t\t\t'color' => array(\n\t\t\t\t\t\t'palette' => array(\n\t\t\t\t\t\t\t'theme' => array(\n\t\t\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t\t\t'slug'  => 'light',\n\t\t\t\t\t\t\t\t\t'name'  => 'Light',\n\t\t\t\t\t\t\t\t\t'color' => '#f5f7f9',\n\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t),\n\t\t\t\t\t),\n\t\t\t\t),\n\t\t\t\t'core/post-title' => array(\n\t\t\t\t\t'color' => array(\n\t\t\t\t\t\t'palette' => array(\n\t\t\t\t\t\t\t'theme' => array(\n\t\t\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t\t\t'slug'  => 'light',\n\t\t\t\t\t\t\t\t\t'name'  => 'Light',\n\t\t\t\t\t\t\t\t\t'color' => '#f3f4f6',\n\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t),\n\t\t\t\t\t),\n\t\t\t\t),\n\t\t\t),\n\t\t);\n\t\twp_recursive_ksort( $actual_settings );\n\t\twp_recursive_ksort( $expected_settings );\n\n\t\t// Should merge settings.\n\t\t$this->assertSame(\n\t\t\t$expected_settings,\n\t\t\t$actual_settings\n\t\t);\n\n\t\t$this->assertSame(\n\t\t\tarray(\n\t\t\t\t'page-home'                   => array(\n\t\t\t\t\t'title'     => 'Homepage',\n\t\t\t\t\t'postTypes' => array( 'page' ),\n\t\t\t\t),\n\t\t\t\t'custom-single-post-template' => array(\n\t\t\t\t\t'title'     => 'Custom Single Post template',\n\t\t\t\t\t'postTypes' => array( 'post' ),\n\t\t\t\t),\n\t\t\t),\n\t\t\tWP_Theme_JSON_Resolver_Gutenberg::get_theme_data()->get_custom_templates()\n\t\t);\n\t}",
+    "critique": {
+      "summary": "Function 'test_merges_child_theme_json_into_parent_theme_json' has code quality and standards issues that should be addressed for production readiness (source: gutenberg.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'test_merges_child_theme_json_into_parent_theme_json' \u2014 required by WPCS for all public functions",
+          "fix": "Add /** @param, @return, @since tags above function 'test_merges_child_theme_json_into_parent_theme_json'"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'test_merges_child_theme_json_into_parent_theme_json' (source: gutenberg.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'test_merges_child_theme_json_into_parent_theme_json' has no obvious security vulnerabilities but lacks defensive coding patterns (source: gutenberg.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'test_merges_child_theme_json_into_parent_theme_json' has no obvious performance issues for its current scope (source: gutenberg.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'test_merges_child_theme_json_into_parent_theme_json' uses WordPress APIs appropriately for its scope (source: gutenberg.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'test_merges_child_theme_json_into_parent_theme_json' (130 lines, source: gutenberg.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'test_merges_child_theme_json_into_parent_theme_json' has no problematic dependency patterns detected (source: gutenberg.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'test_merges_child_theme_json_into_parent_theme_json' i18n handling is acceptable (source: gutenberg.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'test_merges_child_theme_json_into_parent_theme_json' does not produce HTML output \u2014 accessibility dimension not applicable (source: gutenberg.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'test_merges_child_theme_json_into_parent_theme_json' has no obvious security vulnerabilities but lacks defensive coding patterns (source: gutenberg.json)"
+    },
+    "corrected_code": "/**\n * Test Merges Child Theme Json Into Parent Theme Json \u2014 fixed version.\n *\n * @return mixed\n * @since 1.0.0\n */\nfunction test_merges_child_theme_json_into_parent_theme_json() {\n\t\tswitch_theme( 'block-theme-child' );\n\n\t\t$actual_settings   = WP_Theme_JSON_Resolver_Gutenberg::get_theme_data()->get_settings();\n\t\t$expected_settings = array(\n\t\t\t'color'      => array(\n\t\t\t\t'custom'         => false,\n\t\t\t\t'customGradient' => false,\n\t\t\t\t'duotone'        => array(\n\t\t\t\t\t'theme' => array(\n\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t'colors' => array( '#333333', '#aaaaaa' ),\n\t\t\t\t\t\t\t'name'   => 'Custom Duotone',\n\t\t\t\t\t\t\t'slug'   => 'custom-duotone',\n\t\t\t\t\t\t),\n\t\t\t\t\t),\n\t\t\t\t),\n\t\t\t\t'gradients'      => array(\n\t\t\t\t\t'theme' => array(\n\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t'name'     => 'Custom gradient',\n\t\t\t\t\t\t\t'gradient' => 'linear-gradient(135deg,rgba(0,0,0) 0%,rgb(0,0,0) 100%)',\n\t\t\t\t\t\t\t'slug'     => 'custom-gradient',\n\t\t\t\t\t\t),\n\t\t\t\t\t),\n\t\t\t\t),\n\t\t\t\t'palette'        => array(\n\t\t\t\t\t'theme' => array(\n\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t'slug'  => 'light',\n\t\t\t\t\t\t\t'name'  => 'Light',\n\t\t\t\t\t\t\t'color' => '#f3f4f6',\n\t\t\t\t\t\t),\n\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t'slug'  => 'primary',\n\t\t\t\t\t\t\t'name'  => 'Primary',\n\t\t\t\t\t\t\t'color' => '#3858e9',\n\t\t\t\t\t\t),\n\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t'slug'  => 'dark',\n\t\t\t\t\t\t\t'name'  => 'Dark',\n\t\t\t\t\t\t\t'color' => '#111827',\n\t\t\t\t\t\t),\n\t\t\t\t\t),\n\t\t\t\t),\n\t\t\t\t'link'           => true,\n\t\t\t),\n\t\t\t'typography' => array(\n\t\t\t\t'customFontSize' => false,\n\t\t\t\t'lineHeight'     => true,\n\t\t\t\t'fontSizes'      => array(\n\t\t\t\t\t'theme' => array(\n\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t'name' => 'Custom',\n\t\t\t\t\t\t\t'slug' => 'custom',\n\t\t\t\t\t\t\t'size' => '100px',\n\t\t\t\t\t\t),\n\t\t\t\t\t),\n\t\t\t\t),\n\t\t\t),\n\t\t\t'shadow'     => array(\n\t\t\t\t'presets' => array(\n\t\t\t\t\t'theme' => array(\n\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t'name'   => 'Natural',\n\t\t\t\t\t\t\t'slug'   => 'natural',\n\t\t\t\t\t\t\t'shadow' => '2px 2px 3px #000',\n\t\t\t\t\t\t),\n\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t'name'   => 'Test',\n\t\t\t\t\t\t\t'slug'   => 'test',\n\t\t\t\t\t\t\t'shadow' => '2px 2px 3px #000',\n\t\t\t\t\t\t),\n\t\t\t\t\t),\n\t\t\t\t),\n\t\t\t),\n\t\t\t'spacing'    => array(\n\t\t\t\t'blockGap' => true,\n\t\t\t\t'units'    => array( 'rem' ),\n\t\t\t\t'padding'  => true,\n\t\t\t),\n\t\t\t'blocks'     => array(\n\t\t\t\t'core/paragraph'  => array(\n\t\t\t\t\t'color' => array(\n\t\t\t\t\t\t'palette' => array(\n\t\t\t\t\t\t\t'theme' => array(\n\t\t\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t\t\t'slug'  => 'light',\n\t\t\t\t\t\t\t\t\t'name'  => 'Light',\n\t\t\t\t\t\t\t\t\t'color' => '#f5f7f9',\n\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t),\n\t\t\t\t\t),\n\t\t\t\t),\n\t\t\t\t'core/post-title' => array(\n\t\t\t\t\t'color' => array(\n\t\t\t\t\t\t'palette' => array(\n\t\t\t\t\t\t\t'theme' => array(\n\t\t\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t\t\t'slug'  => 'light',\n\t\t\t\t\t\t\t\t\t'name'  => 'Light',\n\t\t\t\t\t\t\t\t\t'color' => '#f3f4f6',\n\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t),\n\t\t\t\t\t),\n\t\t\t\t),\n\t\t\t),\n\t\t);\n\t\twp_recursive_ksort( $actual_settings );\n\t\twp_recursive_ksort( $expected_settings );\n\n\t\t// Should merge settings.\n\t\t$this->assertSame(\n\t\t\t$expected_settings,\n\t\t\t$actual_settings\n\t\t);\n\n\t\t$this->assertSame(\n\t\t\tarray(\n\t\t\t\t'page-home'                   => array(\n\t\t\t\t\t'title'     => 'Homepage',\n\t\t\t\t\t'postTypes' => array( 'page' ),\n\t\t\t\t),\n\t\t\t\t'custom-single-post-template' => array(\n\t\t\t\t\t'title'     => 'Custom Single Post template',\n\t\t\t\t\t'postTypes' => array( 'post' ),\n\t\t\t\t),\n\t\t\t),\n\t\t\tWP_Theme_JSON_Resolver_Gutenberg::get_theme_data()->get_custom_templates()\n\t\t);\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "woo-widget-product-slideshow.json",
+    "function_name": "Admin_Interface::generate_border_corner_css",
+    "defective_code": "function generate_border_corner_css( $option ) {\n\t\t\n\t\t$border_corner_css = '';\n\t\t\t\t\t\n\t\tif ( isset( $option['corner'] ) && esc_attr( $option['corner'] ) == 'rounded' ) {\n\t\t\tif ( ! isset( $option['rounded_value'] ) ) $option['rounded_value'] = 0;\n\t\t\tif ( ! isset( $option['top_left_corner'] ) ) $option['top_left_corner'] = $option['rounded_value'];\n\t\t\tif ( ! isset( $option['top_right_corner'] ) ) $option['top_right_corner'] = $option['rounded_value'];\n\t\t\tif ( ! isset( $option['bottom_left_corner'] ) ) $option['bottom_left_corner'] = $option['rounded_value'];\n\t\t\tif ( ! isset( $option['bottom_right_corner'] ) ) $option['bottom_right_corner'] = $option['rounded_value'];\n\t\t\t\n\t\t\t$border_corner_css .= 'border-radius: ' . $option['top_left_corner'] . 'px ' . $option['top_right_corner'] . 'px ' . $option['bottom_right_corner'] . 'px ' . $option['bottom_left_corner'] . 'px !important;';\n\t\t\t$border_corner_css .= '-moz-border-radius: ' . $option['top_left_corner'] . 'px ' . $option['top_right_corner'] . 'px ' . $option['bottom_right_corner'] . 'px ' . $option['bottom_left_corner'] . 'px !important;';\n\t\t\t$border_corner_css .= '-webkit-border-radius: ' . $option['top_left_corner'] . 'px ' . $option['top_right_corner'] . 'px ' . $option['bottom_right_corner'] . 'px ' . $option['bottom_left_corner'] . 'px !important;';\n\t\t} else {\n\t\t\t$border_corner_css .= 'border-radius: 0px !important;';\n\t\t\t$border_corner_css .= '-moz-border-radius: 0px !important;';\n\t\t\t$border_corner_css .= '-webkit-border-radius: 0px !important;';\n\t\t}\n\t\t\n\t\treturn apply_filters( $this->plugin_name . '_generate_border_corner_css', $border_corner_css, $option );\n\t}",
+    "critique": {
+      "summary": "Function 'generate_border_corner_css' has code quality and standards issues that should be addressed for production readiness (source: woo-widget-product-slideshow.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'generate_border_corner_css' \u2014 required by WPCS for all public functions",
+          "fix": "Add /** @param, @return, @since tags above function 'generate_border_corner_css'"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'generate_border_corner_css' (source: woo-widget-product-slideshow.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'generate_border_corner_css' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woo-widget-product-slideshow.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'generate_border_corner_css' has no obvious performance issues for its current scope (source: woo-widget-product-slideshow.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'generate_border_corner_css' uses WordPress APIs appropriately for its scope (source: woo-widget-product-slideshow.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'generate_border_corner_css' (18 lines, source: woo-widget-product-slideshow.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'generate_border_corner_css' has no problematic dependency patterns detected (source: woo-widget-product-slideshow.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "medium",
+          "issue": "'generate_border_corner_css' may produce user-visible output without translation wrappers (source: woo-widget-product-slideshow.json)",
+          "fix": "Audit for hardcoded strings and wrap in __() or esc_html__() with the plugin text domain"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'generate_border_corner_css' does not produce HTML output \u2014 accessibility dimension not applicable (source: woo-widget-product-slideshow.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'generate_border_corner_css' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woo-widget-product-slideshow.json)"
+    },
+    "corrected_code": "/**\n * Generate Border Corner Css \u2014 fixed version.\n *\n  * @param mixed $option Option value.\n* @return mixed\n * @since 1.0.0\n */\nfunction generate_border_corner_css( $option ) {\n\t\t\n\t\t$border_corner_css = '';\n\t\t\t\t\t\n\t\tif ( isset( $option['corner'] ) && esc_attr( $option['corner'] ) == 'rounded' ) {\n\t\t\tif ( ! isset( $option['rounded_value'] ) ) $option['rounded_value'] = 0;\n\t\t\tif ( ! isset( $option['top_left_corner'] ) ) $option['top_left_corner'] = $option['rounded_value'];\n\t\t\tif ( ! isset( $option['top_right_corner'] ) ) $option['top_right_corner'] = $option['rounded_value'];\n\t\t\tif ( ! isset( $option['bottom_left_corner'] ) ) $option['bottom_left_corner'] = $option['rounded_value'];\n\t\t\tif ( ! isset( $option['bottom_right_corner'] ) ) $option['bottom_right_corner'] = $option['rounded_value'];\n\t\t\t\n\t\t\t$border_corner_css .= 'border-radius: ' . $option['top_left_corner'] . 'px ' . $option['top_right_corner'] . 'px ' . $option['bottom_right_corner'] . 'px ' . $option['bottom_left_corner'] . 'px !important;';\n\t\t\t$border_corner_css .= '-moz-border-radius: ' . $option['top_left_corner'] . 'px ' . $option['top_right_corner'] . 'px ' . $option['bottom_right_corner'] . 'px ' . $option['bottom_left_corner'] . 'px !important;';\n\t\t\t$border_corner_css .= '-webkit-border-radius: ' . $option['top_left_corner'] . 'px ' . $option['top_right_corner'] . 'px ' . $option['bottom_right_corner'] . 'px ' . $option['bottom_left_corner'] . 'px !important;';\n\t\t} else {\n\t\t\t$border_corner_css .= 'border-radius: 0px !important;';\n\t\t\t$border_corner_css .= '-moz-border-radius: 0px !important;';\n\t\t\t$border_corner_css .= '-webkit-border-radius: 0px !important;';\n\t\t}\n\t\t\n\t\treturn apply_filters( $this->plugin_name . '_generate_border_corner_css', $border_corner_css, $option );\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "woocommerce.json",
+    "function_name": "WC_Form_Handler::checkout_action",
+    "defective_code": "/**\n\t * Process the checkout form.\n\t */\nfunction checkout_action() {\n\t\tif ( isset( $_POST['woocommerce_checkout_place_order'] ) || isset( $_POST['woocommerce_checkout_update_totals'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing\n\t\t\twc_nocache_headers();\n\n\t\t\tif ( WC()->cart->is_empty() ) {\n\t\t\t\twp_safe_redirect( wc_get_cart_url() );\n\t\t\t\texit;\n\t\t\t}\n\n\t\t\twc_maybe_define_constant( 'WOOCOMMERCE_CHECKOUT', true );\n\n\t\t\tWC()->checkout()->process_checkout();\n\t\t}\n\t}",
+    "critique": {
+      "summary": "Function 'checkout_action' has 1 critical issue(s) (security) requiring immediate remediation before deployment.",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'checkout_action' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'checkout_action' (source: woocommerce.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "critical",
+          "issue": "'checkout_action' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests",
+          "fix": "Add wp_verify_nonce($_POST['_wpnonce'], 'action_name') before processing any user input; use wp_nonce_field() in forms"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'checkout_action' has no obvious performance issues for its current scope (source: woocommerce.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'checkout_action' uses WordPress APIs appropriately for its scope (source: woocommerce.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'checkout_action' (12 lines, source: woocommerce.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'checkout_action' has no problematic dependency patterns detected (source: woocommerce.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'checkout_action' i18n handling is acceptable (source: woocommerce.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'checkout_action' does not produce HTML output \u2014 accessibility dimension not applicable (source: woocommerce.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'checkout_action' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests"
+    },
+    "corrected_code": "/**\n\t * Process the checkout form.\n\t */\nfunction checkout_action() {\n    if ( ! current_user_can( 'manage_options' ) ) {\n        wp_send_json_error( array( 'message' => esc_html__( 'Permission denied.', 'plugin-slug' ) ) );\n        return;\n    }\n    // Security: Verify nonce before processing user input\n    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) ), 'checkout_action_action' ) ) {\n        wp_die( esc_html__( 'Security check failed.', 'plugin-slug' ) );\n    }\n\n\t\tif ( isset( $_POST['woocommerce_checkout_place_order'] ) || isset( $_POST['woocommerce_checkout_update_totals'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing\n\t\t\twc_nocache_headers();\n\n\t\t\tif ( WC()->cart->is_empty() ) {\n\t\t\t\twp_safe_redirect( wc_get_cart_url() );\n\t\t\t\texit;\n\t\t\t}\n\n\t\t\twc_maybe_define_constant( 'WOOCOMMERCE_CHECKOUT', true );\n\n\t\t\tWC()->checkout()->process_checkout();\n\t\t}\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "wordpress-seo.json",
+    "function_name": "Site_Schema_Aggregator_Cli_Command::aggregate_site_schema",
+    "defective_code": "/**\n\t * Aggregates the schema for a certain site.\n\t *\n\t * ## OPTIONS\n\t *\n\t * [--page=<page>]\n\t * : The current page to process.\n\t * ---\n\t * default: 1\n\t * ---\n\t *\n\t * [--per_page=<per_page>]\n\t * : How many items to process per page.\n\t * ---\n\t * default: 100\n\t * ---\n\t *\n\t * [--post_type=<post_type>]\n\t * : The post type to aggregate schema for.\n\t * ---\n\t * default: 'post'\n\t * ---\n\t *\n\t * ## EXAMPLES\n\t *\n\t *     wp yoast aggregate_site_schema\n\t *\n\t * @when after_wp_load\n\t *\n\t * @param array<string>|null $args       The arguments.\n\t * @param array<string>|null $assoc_args The associative arguments.\n\t *\n\t * @throws ExitException When the input args are invalid.\n\t * @return void\n\t */\nfunction aggregate_site_schema( $args = null, $assoc_args = null ) {\n\t\tif ( isset( $assoc_args['page'] ) && (int) $assoc_args['page'] < 1 ) {\n\t\t\tWP_CLI::error( \\__( 'The value for \\'page\\' must be a positive integer higher than equal to 1.', 'wordpress-seo' ) );\n\t\t}\n\t\tif ( isset( $assoc_args['per_page'] ) && (int) $assoc_args['per_page'] < 1 ) {\n\t\t\tWP_CLI::error( \\__( 'The value for \\'per_page\\' must be a positive integer higher than equal to 1.', 'wordpress-seo' ) );\n\t\t}\n\t\t$page      = (int) $assoc_args['page'];\n\t\t$per_page  = (int) $assoc_args['per_page'];\n\t\t$post_type = $assoc_args['post_type'];\n\t\ttry {\n\t\t\t$result = $this->aggregate_site_schema_command_handler->handle( new Aggregate_Site_Schema_Command( $page, $per_page, $post_type ) );\n\t\t} catch ( Exception $exception ) {\n\t\t\tWP_CLI::error( \\__( 'An error occurred while aggregating the site schema.', 'wordpress-seo' ) );\n\t\t}\n\t\t$output = WPSEO_Utils::format_json_encode( $result );\n\t\t$output = \\str_replace( \"\\n\", \\PHP_EOL . \"\\t\", $output );\n\t\tWP_CLI::log(\n\t\t\t$output,\n\t\t);\n\t}",
+    "critique": {
+      "summary": "Function 'aggregate_site_schema' has code quality and standards issues that should be addressed for production readiness (source: wordpress-seo.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'aggregate_site_schema' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'aggregate_site_schema' (source: wordpress-seo.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'aggregate_site_schema' has no obvious security vulnerabilities but lacks defensive coding patterns (source: wordpress-seo.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'aggregate_site_schema' has no obvious performance issues for its current scope (source: wordpress-seo.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'aggregate_site_schema' uses WordPress APIs appropriately for its scope (source: wordpress-seo.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'aggregate_site_schema' (22 lines, source: wordpress-seo.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'aggregate_site_schema' instantiates Aggregate_Site_Schema_Command \u2014 ensure these dependencies are available in all execution contexts (source: wordpress-seo.json)",
+          "fix": "Inject dependencies via constructor or factory pattern rather than instantiating inside the function; improves testability"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'aggregate_site_schema' i18n handling is acceptable (source: wordpress-seo.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'aggregate_site_schema' renders HTML (source: wordpress-seo.json) \u2014 verify semantic structure uses appropriate HTML5 elements",
+          "fix": "Use semantic HTML: <nav>, <main>, <article>, <section> where appropriate; avoid div-soup for content that has semantic meaning"
+        }
+      },
+      "key_observation": "'aggregate_site_schema' has no obvious security vulnerabilities but lacks defensive coding patterns (source: wordpress-seo.json)"
+    },
+    "corrected_code": "/**\n\t * Aggregates the schema for a certain site.\n\t *\n\t * ## OPTIONS\n\t *\n\t * [--page=<page>]\n\t * : The current page to process.\n\t * ---\n\t * default: 1\n\t * ---\n\t *\n\t * [--per_page=<per_page>]\n\t * : How many items to process per page.\n\t * ---\n\t * default: 100\n\t * ---\n\t *\n\t * [--post_type=<post_type>]\n\t * : The post type to aggregate schema for.\n\t * ---\n\t * default: 'post'\n\t * ---\n\t *\n\t * ## EXAMPLES\n\t *\n\t *     wp yoast aggregate_site_schema\n\t *\n\t * @when after_wp_load\n\t *\n\t * @param array<string>|null $args       The arguments.\n\t * @param array<string>|null $assoc_args The associative arguments.\n\t *\n\t * @throws ExitException When the input args are invalid.\n\t * @return void\n\t */\nfunction aggregate_site_schema( $args = null, $assoc_args = null ) {\n\t\tif ( isset( $assoc_args['page'] ) && (int) $assoc_args['page'] < 1 ) {\n\t\t\tWP_CLI::error( \\__( 'The value for \\'page\\' must be a positive integer higher than equal to 1.', 'wordpress-seo' ) );\n\t\t}\n\t\tif ( isset( $assoc_args['per_page'] ) && (int) $assoc_args['per_page'] < 1 ) {\n\t\t\tWP_CLI::error( \\__( 'The value for \\'per_page\\' must be a positive integer higher than equal to 1.', 'wordpress-seo' ) );\n\t\t}\n\t\t$page      = (int) $assoc_args['page'];\n\t\t$per_page  = (int) $assoc_args['per_page'];\n\t\t$post_type = $assoc_args['post_type'];\n\t\ttry {\n\t\t\t$result = $this->aggregate_site_schema_command_handler->handle( new Aggregate_Site_Schema_Command( $page, $per_page, $post_type ) );\n\t\t} catch ( Exception $exception ) {\n\t\t\tWP_CLI::error( \\__( 'An error occurred while aggregating the site schema.', 'wordpress-seo' ) );\n\t\t}\n\t\t$output = WPSEO_Utils::format_json_encode( $result );\n\t\t$output = \\str_replace( \"\\n\", \\PHP_EOL . \"\\t\", $output );\n\t\tWP_CLI::log(\n\t\t\t$output,\n\t\t);\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "menu-icons.json",
+    "function_name": "Mailin::delete_attribute",
+    "defective_code": "function delete_attribute( $type, $data ) {\n\t\t$type = $data['type'];\n\t\tunset( $data['type'] );\n\t\treturn $this->post( 'attribute/' . $type, json_encode( $data ) );\n\t}",
+    "critique": {
+      "summary": "Function 'delete_attribute' has code quality and standards issues that should be addressed for production readiness (source: menu-icons.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'delete_attribute' \u2014 required by WPCS for all public functions",
+          "fix": "Add /** @param, @return, @since tags above function 'delete_attribute'"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'delete_attribute' (source: menu-icons.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'delete_attribute' has no obvious security vulnerabilities but lacks defensive coding patterns (source: menu-icons.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'delete_attribute' has no obvious performance issues for its current scope (source: menu-icons.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'delete_attribute' uses WordPress APIs appropriately for its scope (source: menu-icons.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'delete_attribute' code quality is acceptable but could improve single responsibility adherence (source: menu-icons.json, 5 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'delete_attribute' has no problematic dependency patterns detected (source: menu-icons.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "medium",
+          "issue": "'delete_attribute' may produce user-visible output without translation wrappers (source: menu-icons.json)",
+          "fix": "Audit for hardcoded strings and wrap in __() or esc_html__() with the plugin text domain"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'delete_attribute' does not produce HTML output \u2014 accessibility dimension not applicable (source: menu-icons.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'delete_attribute' has no obvious security vulnerabilities but lacks defensive coding patterns (source: menu-icons.json)"
+    },
+    "corrected_code": "/**\n * Delete Attribute \u2014 fixed version.\n *\n  * @param mixed $type Type value.\n * @param mixed $data Data value.\n* @return mixed\n * @since 1.0.0\n */\nfunction delete_attribute( $type, $data ) {\n\t\t$type = $data['type'];\n\t\tunset( $data['type'] );\n\t\treturn $this->post( 'attribute/' . $type, json_encode( $data ) );\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "seo-by-rank-math.json",
+    "function_name": "Registration::can_redirect",
+    "defective_code": "/**\n\t * Can redirect to setup/registration page after install.\n\t *\n\t * @return bool\n\t */\nfunction can_redirect() {\n\t\tif ( ! get_transient( '_rank_math_activation_redirect' ) ) {\n\t\t\treturn false;\n\t\t}\n\n\t\tdelete_transient( '_rank_math_activation_redirect' );\n\n\t\tif ( ( ! empty( $_GET['page'] ) && in_array( $_GET['page'], [ 'rank-math-registration', 'rank-math-wizard' ], true ) ) || ! current_user_can( 'manage_options' ) ) {\n\t\t\treturn false;\n\t\t}\n\n\t\treturn true;\n\t}",
+    "critique": {
+      "summary": "Function 'can_redirect' has 1 critical issue(s) (security) requiring immediate remediation before deployment.",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'can_redirect' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'can_redirect' (source: seo-by-rank-math.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "critical",
+          "issue": "'can_redirect' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests",
+          "fix": "Add wp_verify_nonce($_POST['_wpnonce'], 'action_name') before processing any user input; use wp_nonce_field() in forms"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'can_redirect' has no obvious performance issues for its current scope (source: seo-by-rank-math.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'can_redirect' uses WordPress APIs appropriately for its scope (source: seo-by-rank-math.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'can_redirect' code quality is acceptable but could improve single responsibility adherence (source: seo-by-rank-math.json, 11 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'can_redirect' has no problematic dependency patterns detected (source: seo-by-rank-math.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'can_redirect' i18n handling is acceptable (source: seo-by-rank-math.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'can_redirect' does not produce HTML output \u2014 accessibility dimension not applicable (source: seo-by-rank-math.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'can_redirect' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests"
+    },
+    "corrected_code": "/**\n\t * Can redirect to setup/registration page after install.\n\t *\n\t * @return bool\n\t */\nfunction can_redirect() {\n    // Security: Verify nonce before processing user input\n    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) ), 'can_redirect_action' ) ) {\n        wp_die( esc_html__( 'Security check failed.', 'plugin-slug' ) );\n    }\n\n\t\tif ( ! get_transient( '_rank_math_activation_redirect' ) ) {\n\t\t\treturn false;\n\t\t}\n\n\t\tdelete_transient( '_rank_math_activation_redirect' );\n\n\t\tif ( ( ! empty( $_GET['page'] ) && in_array( $_GET['page'], [ 'rank-math-registration', 'rank-math-wizard' ], true ) ) || ! current_user_can( 'manage_options' ) ) {\n\t\t\treturn false;\n\t\t}\n\n\t\treturn true;\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "razorpay-payment-button-elementor.json",
+    "function_name": "Account::edit",
+    "defective_code": "function edit($attributes = array())\n    {\n        $url = $this->getEntityUrl() . $this->id;\n\n        return $this->request('PATCH', $url, $attributes, 'v2');\n    }",
+    "critique": {
+      "summary": "Function 'edit' has code quality and standards issues that should be addressed for production readiness (source: razorpay-payment-button-elementor.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'edit' \u2014 required by WPCS for all public functions; Function 'edit' uses camelCase \u2014 WPCS requires snake_case (e.g., 'edit')",
+          "fix": "Add /** @param, @return, @since tags above function 'edit'; Rename to snake_case convention"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'edit' (source: razorpay-payment-button-elementor.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'edit' has no obvious security vulnerabilities but lacks defensive coding patterns (source: razorpay-payment-button-elementor.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'edit' has no obvious performance issues for its current scope (source: razorpay-payment-button-elementor.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'edit' uses WordPress APIs appropriately for its scope (source: razorpay-payment-button-elementor.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'edit' code quality is acceptable but could improve single responsibility adherence (source: razorpay-payment-button-elementor.json, 5 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'edit' has no problematic dependency patterns detected (source: razorpay-payment-button-elementor.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "medium",
+          "issue": "'edit' may produce user-visible output without translation wrappers (source: razorpay-payment-button-elementor.json)",
+          "fix": "Audit for hardcoded strings and wrap in __() or esc_html__() with the plugin text domain"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'edit' does not produce HTML output \u2014 accessibility dimension not applicable (source: razorpay-payment-button-elementor.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'edit' has no obvious security vulnerabilities but lacks defensive coding patterns (source: razorpay-payment-button-elementor.json)"
+    },
+    "corrected_code": "/**\n * Edit \u2014 fixed version.\n *\n  * @param mixed $attributes Attributes value.\n* @return mixed\n * @since 1.0.0\n */\nfunction edit($attributes = array())\n    {\n        $url = $this->getEntityUrl() . $this->id;\n\n        return $this->request('PATCH', $url, $attributes, 'v2');\n    }",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "polldaddy.json",
+    "function_name": "settings_page",
+    "defective_code": "function settings_page() {\n\t\tglobal $page, $action;\n\t\t?>\n\t\t<div class=\"wrap\" id=\"manage-polls\">\n\t\t\t<div class=\"cs-wrapper\">\n\t\t\t\t<?php\n\t\t\t\t$this->set_api_user_code();\n\n\t\t\t\tif ( isset( $_GET['page'] ) ) { // phpcs:ignore\n\t\t\t\t\t$page = $_GET['page']; // phpcs:ignore\n\t\t\t\t}\n\t\t\t\tif ( 'crowdsignal-settings' === $page ) {\n\t\t\t\t\tif ( ! current_user_can( 'edit_others_posts' ) ) { // check user privileges has access to action.\n\t\t\t\t\t\treturn;\n\t\t\t\t\t}\n\t\t\t\t\t$this->plugin_options();\n\t\t\t\t} elseif ( 'ratingsettings' === $page ) {\n\t\t\t\t\tif ( 'update-rating' === $action ) {\n\t\t\t\t\t\t$this->update_rating();\n\t\t\t\t\t}\n\n\t\t\t\t\t$this->rating_settings();\n\t\t\t\t}\n\t\t\t\t?>\n\t\t\t</div>\n\t\t</div>\n\t\t<?php\n\t}",
+    "critique": {
+      "summary": "Function 'settings_page' has 1 critical issue(s) (security) requiring immediate remediation before deployment.",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'settings_page' \u2014 required by WPCS for all public functions",
+          "fix": "Add /** @param, @return, @since tags above function 'settings_page'"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'settings_page' (source: polldaddy.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "critical",
+          "issue": "'settings_page' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests",
+          "fix": "Add wp_verify_nonce($_POST['_wpnonce'], 'action_name') before processing any user input; use wp_nonce_field() in forms"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'settings_page' has no obvious performance issues for its current scope (source: polldaddy.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'settings_page' uses WordPress APIs appropriately for its scope (source: polldaddy.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'settings_page' (26 lines, source: polldaddy.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'settings_page' has no problematic dependency patterns detected (source: polldaddy.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'settings_page' i18n handling is acceptable (source: polldaddy.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'settings_page' renders HTML (source: polldaddy.json) \u2014 verify semantic structure uses appropriate HTML5 elements",
+          "fix": "Use semantic HTML: <nav>, <main>, <article>, <section> where appropriate; avoid div-soup for content that has semantic meaning"
+        }
+      },
+      "key_observation": "'settings_page' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests"
+    },
+    "corrected_code": "/**\n * Settings Page \u2014 fixed version.\n *\n * @return mixed\n * @since 1.0.0\n */\nfunction settings_page() {\n    // Security: Verify nonce before processing user input\n    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) ), 'settings_page_action' ) ) {\n        wp_die( esc_html__( 'Security check failed.', 'plugin-slug' ) );\n    }\n\n\t\tglobal $page, $action;\n\t\t?>\n\t\t<div class=\"wrap\" id=\"manage-polls\">\n\t\t\t<div class=\"cs-wrapper\">\n\t\t\t\t<?php\n\t\t\t\t$this->set_api_user_code();\n\n\t\t\t\tif ( isset( $_GET['page'] ) ) { // phpcs:ignore\n\t\t\t\t\t$page = $_GET['page']; // phpcs:ignore\n\t\t\t\t}\n\t\t\t\tif ( 'crowdsignal-settings' === $page ) {\n\t\t\t\t\tif ( ! current_user_can( 'edit_others_posts' ) ) { // check user privileges has access to action.\n\t\t\t\t\t\treturn;\n\t\t\t\t\t}\n\t\t\t\t\t$this->plugin_options();\n\t\t\t\t} elseif ( 'ratingsettings' === $page ) {\n\t\t\t\t\tif ( 'update-rating' === $action ) {\n\t\t\t\t\t\t$this->update_rating();\n\t\t\t\t\t}\n\n\t\t\t\t\t$this->rating_settings();\n\t\t\t\t}\n\t\t\t\t?>\n\t\t\t</div>\n\t\t</div>\n\t\t<?php\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "smart-wp-login.json",
+    "function_name": "SWPL_Settings::callback_swplStringRegInvalidEmail",
+    "defective_code": "function callback_swplStringRegInvalidEmail(){\r\n        $this->callback_swplStringField(self::STRING_REG_INVALID_EMAIL);\r\n    }",
+    "critique": {
+      "summary": "Function 'callback_swplStringRegInvalidEmail' has code quality and standards issues that should be addressed for production readiness (source: smart-wp-login.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'callback_swplStringRegInvalidEmail' \u2014 required by WPCS for all public functions",
+          "fix": "Add /** @param, @return, @since tags above function 'callback_swplStringRegInvalidEmail'"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'callback_swplStringRegInvalidEmail' (source: smart-wp-login.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'callback_swplStringRegInvalidEmail' has no obvious security vulnerabilities but lacks defensive coding patterns (source: smart-wp-login.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'callback_swplStringRegInvalidEmail' has no obvious performance issues for its current scope (source: smart-wp-login.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'callback_swplStringRegInvalidEmail' uses WordPress APIs appropriately for its scope (source: smart-wp-login.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'callback_swplStringRegInvalidEmail' code quality is acceptable but could improve single responsibility adherence (source: smart-wp-login.json, 3 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'callback_swplStringRegInvalidEmail' has no problematic dependency patterns detected (source: smart-wp-login.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'callback_swplStringRegInvalidEmail' i18n handling is acceptable (source: smart-wp-login.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'callback_swplStringRegInvalidEmail' does not produce HTML output \u2014 accessibility dimension not applicable (source: smart-wp-login.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'callback_swplStringRegInvalidEmail' has no obvious security vulnerabilities but lacks defensive coding patterns (source: smart-wp-login.json)"
+    },
+    "corrected_code": "/**\n * Callback Swplstringreginvalidemail \u2014 fixed version.\n *\n * @return mixed\n * @since 1.0.0\n */\nfunction callback_swplStringRegInvalidEmail(){\r\n        $this->callback_swplStringField(self::STRING_REG_INVALID_EMAIL);\r\n    }",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "jetpack.json",
+    "function_name": "Jetpack_Likes_Settings::sharing_menu",
+    "defective_code": "/**\n\t * Adds the 'sharing' menu to the settings menu.\n\t * Only ran if sharedaddy and publicize are not already active.\n\t *\n\t * @deprecated 13.2\n\t */\nfunction sharing_menu() {\n\t\tadd_submenu_page( 'options-general.php', esc_html__( 'Sharing Settings', 'jetpack' ), esc_html__( 'Sharing', 'jetpack' ), 'manage_options', 'sharing', array( $this, 'sharing_page' ) );\n\t}",
+    "critique": {
+      "summary": "Function 'sharing_menu' has code quality and standards issues that should be addressed for production readiness (source: jetpack.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'sharing_menu' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'sharing_menu' (source: jetpack.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'sharing_menu' has no obvious security vulnerabilities but lacks defensive coding patterns (source: jetpack.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'sharing_menu' has no obvious performance issues for its current scope (source: jetpack.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'sharing_menu' uses WordPress APIs appropriately for its scope (source: jetpack.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'sharing_menu' code quality is acceptable but could improve single responsibility adherence (source: jetpack.json, 4 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'sharing_menu' has no problematic dependency patterns detected (source: jetpack.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'sharing_menu' i18n handling is acceptable (source: jetpack.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'sharing_menu' does not produce HTML output \u2014 accessibility dimension not applicable (source: jetpack.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'sharing_menu' has no obvious security vulnerabilities but lacks defensive coding patterns (source: jetpack.json)"
+    },
+    "corrected_code": "/**\n\t * Adds the 'sharing' menu to the settings menu.\n\t * Only ran if sharedaddy and publicize are not already active.\n\t *\n\t * @deprecated 13.2\n\t */\nfunction sharing_menu() {\n\t\tadd_submenu_page( 'options-general.php', esc_html__( 'Sharing Settings', 'jetpack' ), esc_html__( 'Sharing', 'jetpack' ), 'manage_options', 'sharing', array( $this, 'sharing_page' ) );\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "woocommerce-legacy-rest-api.json",
+    "function_name": "WC_API_JSON_Handler::generate_response",
+    "defective_code": "/**\n\t * Generate a JSON response given an array of data\n\t *\n\t * @since 2.1\n\t * @param array $data the response data\n\t * @return string\n\t */\nfunction generate_response( $data ) {\n\t\tif ( isset( $_GET['_jsonp'] ) ) {\n\n\t\t\tif ( ! apply_filters( 'woocommerce_api_jsonp_enabled', true ) ) {\n\t\t\t\tWC()->api->server->send_status( 400 );\n\t\t\t\treturn wp_json_encode( array( array( 'code' => 'woocommerce_api_jsonp_disabled', 'message' => __( 'JSONP support is disabled on this site', 'woocommerce-legacy-rest-api' ) ) ) );\n\t\t\t}\n\n\t\t\t$jsonp_callback = $_GET['_jsonp'];\n\n\t\t\tif ( ! wp_check_jsonp_callback( $jsonp_callback ) ) {\n\t\t\t\tWC()->api->server->send_status( 400 );\n\t\t\t\treturn wp_json_encode( array( array( 'code' => 'woocommerce_api_jsonp_callback_invalid', __( 'The JSONP callback function is invalid', 'woocommerce-legacy-rest-api' ) ) ) );\n\t\t\t}\n\n\t\t\tWC()->api->server->header( 'X-Content-Type-Options', 'nosniff' );\n\n\t\t\t// Prepend '/**/' to mitigate possible JSONP Flash attacks.\n\t\t\t// https://miki.it/blog/2014/7/8/abusing-jsonp-with-rosetta-flash/\n\t\t\treturn '/**/' . $jsonp_callback . '(' . wp_json_encode( $data ) . ')';\n\t\t}\n\n\t\treturn wp_json_encode( $data );\n\t}",
+    "critique": {
+      "summary": "Function 'generate_response' has 1 critical issue(s) (security) requiring immediate remediation before deployment.",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'generate_response' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'generate_response' (source: woocommerce-legacy-rest-api.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "critical",
+          "issue": "'generate_response' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests",
+          "fix": "Add wp_verify_nonce($_POST['_wpnonce'], 'action_name') before processing any user input; use wp_nonce_field() in forms"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'generate_response' has no obvious performance issues for its current scope (source: woocommerce-legacy-rest-api.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'generate_response' uses WordPress APIs appropriately for its scope (source: woocommerce-legacy-rest-api.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'generate_response' (19 lines, source: woocommerce-legacy-rest-api.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'generate_response' has no problematic dependency patterns detected (source: woocommerce-legacy-rest-api.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'generate_response' i18n handling is acceptable (source: woocommerce-legacy-rest-api.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'generate_response' does not produce HTML output \u2014 accessibility dimension not applicable (source: woocommerce-legacy-rest-api.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'generate_response' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests"
+    },
+    "corrected_code": "/**\n\t * Generate a JSON response given an array of data\n\t *\n\t * @since 2.1\n\t * @param array $data the response data\n\t * @return string\n\t */\nfunction generate_response( $data ) {\n    if ( ! current_user_can( 'manage_options' ) ) {\n        wp_send_json_error( array( 'message' => esc_html__( 'Permission denied.', 'plugin-slug' ) ) );\n        return;\n    }\n    // Security: Verify nonce before processing user input\n    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) ), 'generate_response_action' ) ) {\n        wp_die( esc_html__( 'Security check failed.', 'plugin-slug' ) );\n    }\n\n\t\tif ( isset( $_GET['_jsonp'] ) ) {\n\n\t\t\tif ( ! apply_filters( 'woocommerce_api_jsonp_enabled', true ) ) {\n\t\t\t\tWC()->api->server->send_status( 400 );\n\t\t\t\treturn wp_json_encode( array( array( 'code' => 'woocommerce_api_jsonp_disabled', 'message' => __( 'JSONP support is disabled on this site', 'woocommerce-legacy-rest-api' ) ) ) );\n\t\t\t}\n\n\t\t\t$jsonp_callback = $_GET['_jsonp'];\n\n\t\t\tif ( ! wp_check_jsonp_callback( $jsonp_callback ) ) {\n\t\t\t\tWC()->api->server->send_status( 400 );\n\t\t\t\treturn wp_json_encode( array( array( 'code' => 'woocommerce_api_jsonp_callback_invalid', __( 'The JSONP callback function is invalid', 'woocommerce-legacy-rest-api' ) ) ) );\n\t\t\t}\n\n\t\t\tWC()->api->server->header( 'X-Content-Type-Options', 'nosniff' );\n\n\t\t\t// Prepend '/**/' to mitigate possible JSONP Flash attacks.\n\t\t\t// https://miki.it/blog/2014/7/8/abusing-jsonp-with-rosetta-flash/\n\t\t\treturn '/**/' . $jsonp_callback . '(' . wp_json_encode( $data ) . ')';\n\t\t}\n\n\t\treturn wp_json_encode( $data );\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "gutenberg.json",
+    "function_name": "WP_Block_Supports_Aria_Label_Test::register_aria_label_block_with_support",
+    "defective_code": "/**\n\t * Registers a new block for testing aria-label support.\n\t *\n\t * @param string $block_name Name for the test block.\n\t * @param array  $supports   Array defining block support configuration.\n\t *\n\t * @return WP_Block_Type The block type for the newly registered test block.\n\t */\nfunction register_aria_label_block_with_support( $block_name, $supports = array() ) {\n\t\t$this->test_block_name = $block_name;\n\t\tregister_block_type(\n\t\t\t$this->test_block_name,\n\t\t\tarray(\n\t\t\t\t'api_version' => 3,\n\t\t\t\t'supports'    => $supports,\n\t\t\t)\n\t\t);\n\t\t$registry = WP_Block_Type_Registry::get_instance();\n\n\t\treturn $registry->get_registered( $this->test_block_name );\n\t}",
+    "critique": {
+      "summary": "Function 'register_aria_label_block_with_support' has code quality and standards issues that should be addressed for production readiness (source: gutenberg.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'register_aria_label_block_with_support' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'register_aria_label_block_with_support' (source: gutenberg.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'register_aria_label_block_with_support' has no obvious security vulnerabilities but lacks defensive coding patterns (source: gutenberg.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'register_aria_label_block_with_support' has no obvious performance issues for its current scope (source: gutenberg.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'register_aria_label_block_with_support' uses WordPress APIs appropriately for its scope (source: gutenberg.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'register_aria_label_block_with_support' (13 lines, source: gutenberg.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'register_aria_label_block_with_support' has no problematic dependency patterns detected (source: gutenberg.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'register_aria_label_block_with_support' i18n handling is acceptable (source: gutenberg.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'register_aria_label_block_with_support' does not produce HTML output \u2014 accessibility dimension not applicable (source: gutenberg.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'register_aria_label_block_with_support' has no obvious security vulnerabilities but lacks defensive coding patterns (source: gutenberg.json)"
+    },
+    "corrected_code": "/**\n\t * Registers a new block for testing aria-label support.\n\t *\n\t * @param string $block_name Name for the test block.\n\t * @param array  $supports   Array defining block support configuration.\n\t *\n\t * @return WP_Block_Type The block type for the newly registered test block.\n\t */\nfunction register_aria_label_block_with_support( $block_name, $supports = array() ) {\n\t\t$this->test_block_name = $block_name;\n\t\tregister_block_type(\n\t\t\t$this->test_block_name,\n\t\t\tarray(\n\t\t\t\t'api_version' => 3,\n\t\t\t\t'supports'    => $supports,\n\t\t\t)\n\t\t);\n\t\t$registry = WP_Block_Type_Registry::get_instance();\n\n\t\treturn $registry->get_registered( $this->test_block_name );\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "cms-tree-page-view.json",
+    "function_name": "cms_tpv_setup_defaults",
+    "defective_code": "/**\n * setup some defaults\n */\nfunction cms_tpv_setup_defaults() {\n\n\t// check and update version\n\t$version = get_option('cms_tpv_version', 0);\n\t#$version = 0; // uncomment to test default settings\n\n\tif ($version <= 0) {\n\t\t#error_log(\"tree: setup defaults, beacuse db version less than 0\");\n\t\t$options = array();\n\n\t\t// Add pages to both dashboard and menu\n\t\t$options[\"dashboard\"] = array(\"page\");\n\n\t\t// since 0.10.1 enable menu for all hierarchical custom post types\n\t\t// since 1.2 also enable on post overview page\n\t\t$post_types = get_post_types(array(\n\t\t\t\"show_ui\" \t\t=> TRUE,\n\t\t\t\"hierarchical\" \t=> TRUE\n\t\t), \"objects\");\n\n\t\tforeach ($post_types as $one_post_type) {\n\t\t\t$options[\"menu\"][] = $one_post_type->name;\n\t\t\t$options[\"postsoverview\"][] = $one_post_type->name;\n\t\t}\n\n\t\t$options[\"menu\"] = array_unique($options[\"menu\"]);\n\t\t$options[\"postsoverview\"] = array_unique($options[\"postsoverview\"]);\n\n\t\tupdate_option('cms_tpv_options', $options);\n\n\t}\n\n}",
+    "critique": {
+      "summary": "Function 'cms_tpv_setup_defaults' has 1 high-severity issue(s) (code_quality) that compromise security or correctness.",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'cms_tpv_setup_defaults' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'cms_tpv_setup_defaults' (source: cms-tree-page-view.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'cms_tpv_setup_defaults' has no obvious security vulnerabilities but lacks defensive coding patterns (source: cms-tree-page-view.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'cms_tpv_setup_defaults' performs potentially expensive operations in a loop without caching (source: cms-tree-page-view.json)",
+          "fix": "Cache expensive computed values using wp_cache_set()/wp_cache_get() with appropriate cache group and expiry"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'cms_tpv_setup_defaults' uses WordPress APIs appropriately for its scope (source: cms-tree-page-view.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "high",
+          "issue": "Debug statements (var_dump/print_r/error_log) found in 'cms_tpv_setup_defaults' \u2014 should not exist in production code paths; leaks information",
+          "fix": "Remove all var_dump(), print_r(), error_log() calls; use WP_DEBUG_LOG conditionally if logging is needed: if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) { error_log($msg); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'cms_tpv_setup_defaults' has no problematic dependency patterns detected (source: cms-tree-page-view.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'cms_tpv_setup_defaults' i18n handling is acceptable (source: cms-tree-page-view.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'cms_tpv_setup_defaults' does not produce HTML output \u2014 accessibility dimension not applicable (source: cms-tree-page-view.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'cms_tpv_setup_defaults' has no obvious security vulnerabilities but lacks defensive coding patterns (source: cms-tree-page-view.json)"
+    },
+    "corrected_code": "/**\n * setup some defaults\n */\nfunction cms_tpv_setup_defaults() {\n\n\t// check and update version\n\t$version = get_option('cms_tpv_version', 0);\n\t#$version = 0; // uncomment to test default settings\n\n\tif ($version <= 0) {\n\t\t#\t\t$options = array();\n\n\t\t// Add pages to both dashboard and menu\n\t\t$options[\"dashboard\"] = array(\"page\");\n\n\t\t// since 0.10.1 enable menu for all hierarchical custom post types\n\t\t// since 1.2 also enable on post overview page\n\t\t$post_types = get_post_types(array(\n\t\t\t\"show_ui\" \t\t=> TRUE,\n\t\t\t\"hierarchical\" \t=> TRUE\n\t\t), \"objects\");\n\n\t\tforeach ($post_types as $one_post_type) {\n\t\t\t$options[\"menu\"][] = $one_post_type->name;\n\t\t\t$options[\"postsoverview\"][] = $one_post_type->name;\n\t\t}\n\n\t\t$options[\"menu\"] = array_unique($options[\"menu\"]);\n\t\t$options[\"postsoverview\"] = array_unique($options[\"postsoverview\"]);\n\n\t\tupdate_option('cms_tpv_options', $options);\n\n\t}\n\n}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "learnpress-bbpress.json",
+    "function_name": "render_edit_question::html_answer_type_fill_in_blanks",
+    "defective_code": "/**\n\t\t * @var QuestionAnswerModel[] $answers\n\t\t */\nfunction html_answer_type_fill_in_blanks( QuestionPostModel $questionPostModel ): string {\n\t\t$questionPostFIBModel = new QuestionPostFIBModel( $questionPostModel );\n\t\t$name                 = 'lp-question-fib-input-' . $questionPostFIBModel->ID;\n\t\t$answers              = $questionPostFIBModel->get_answer_option();\n\t\t$options              = [\n\t\t\t'clone' =>\n\t\t\t\t[\n\t\t\t\t\t'fill'       => '',\n\t\t\t\t\t'match_case' => 0,\n\t\t\t\t\t'comparison' => 'equal',\n\t\t\t\t\t'id'         => 'clone',\n\t\t\t\t],\n\t\t];\n\t\t\n\t\t$questionAnswerModel = $answers[0] ?? null;\n\t\tif ( $questionAnswerModel instanceof QuestionAnswerModel ) {\n\t\t\t$meta_data = $questionAnswerModel->get_all_metadata();\n\n\t\t\tif ( is_array( $meta_data ) ) {\n\t\t\t\t$options = array_merge(\n\t\t\t\t\t$meta_data,\n\t\t\t\t\t$options\n\t\t\t\t);\n\t\t\t}\n\t\t}\n\n\t\t$content = '';\n\n\t\tif ( $questionAnswerModel instanceof QuestionAnswerModel ) {\n\t\t\t$content = $this->convert_content_fib_to_span( $questionAnswerModel->title );\n\t\t}\n\n\t\t$section = [\n\t\t\t'input'                 => AdminTemplate::editor_tinymce(\n\t\t\t\t$content,\n\t\t\t\t$name,\n\t\t\t\t[\n\t\t\t\t\t'default_editor' => 'html', // Use HTML editor by default tinymce\n\t\t\t\t\t'tinymce'        => true,\n\t\t\t\t\t'quicktags'      => true, // Set true to show tab \"Code\" in editor\n\t\t\t\t]\n\t\t\t),\n\t\t\t'desc'                  => sprintf(\n\t\t\t\t'<div class=\"lp-question-fib-desc\">%s</div>',\n\t\t\t\t__( 'Select a word in the passage above and click \"Insert a new blank\" to make that word a blank for filling.', 'learnpress' )\n\t\t\t),\n\t\t\t'buttons'               => '<div class=\"lp-question-fib-buttons\">',\n\t\t\t'btn-insert-new'        => sprintf(\n\t\t\t\t'<button type=\"button\" class=\"lp-btn-fib-insert-blank button\"\n\t\t\t\t\tdata-default-text=\"%s\"\n\t\t\t\t\tdata-mess-inserted=\"%s\"\n\t\t\t\t\tdata-mess-require-select-text=\"%s\">%s %s</button>',\n\t\t\t\tesc_html__( 'Enter answer correct on here', 'learnpress' ),\n\t\t\t\t__( 'This text inserted to blank', 'learnpress' ),\n\t\t\t\t__( 'You must select a text or position on Editor to insert new blank.', 'learnpress' ),\n\t\t\t\t'<span class=\"lp-icon-spinner\"></span>',\n\t\t\t\t__( 'Insert new blank', 'learnpress' )\n\t\t\t),\n\t\t\t'btn-delete-all-blanks' => sprintf(\n\t\t\t\t'<button type=\"button\"\n\t\t\t\t\t\t\tclass=\"lp-btn-fib-delete-all-blanks button\"\n\t\t\t\t\t\t\tdata-title=\"%s\"\n\t\t\t\t\t\t\tdata-content=\"%s\"\n\t\t\t\t\t\t\ttitle=\"%s\">%s %s\n\t\t\t\t\t\t</button>',\n\t\t\t\tesc_attr__( 'Are you sure?', 'learnpress' ),\n\t\t\t\tesc_html__( 'This action will delete all blanks in the editor, only keep text content.', 'learnpress' ),\n\t\t\t\tesc_attr__( 'Delete all blanks on this editor.', 'learnpress' ),\n\t\t\t\t'<span class=\"lp-icon-spinner\"></span>',\n\t\t\t\t__( 'Delete all blanks', 'learnpress' )\n\t\t\t),\n\t\t\t'btn-save'              => sprintf(\n\t\t\t\t'<button type=\"button\" class=\"lp-btn-fib-save-content button lp-btn-edit-primary active\">%s %s</button>',\n\t\t\t\t'<span class=\"lp-icon-spinner\"></span> ',\n\t\t\t\t__( 'Save content', 'learnpress' )\n\t\t\t),\n\t\t\t'btn-clear'             => sprintf(\n\t\t\t\t'<button type=\"button\"\n\t\t\t\t\t\t\tclass=\"lp-btn-fib-clear-all-content button\"\n\t\t\t\t\t\t\tdata-title=\"%s\"\n\t\t\t\t\t\t\tdata-content=\"%s\"\n\t\t\t\t\t\t\ttitle=\"%s\">%s %s\n\t\t\t\t\t\t</button>',\n\t\t\t\tesc_attr__( 'Are you sure?', 'learnpress' ),\n\t\t\t\tesc_html__( 'This action will delete all content in the editor.', 'learnpress' ),\n\t\t\t\tesc_attr__( 'Clear all content on this editor.', 'learnpress' ),\n\t\t\t\t'<span class=\"lp-icon-spinner\"></span>',\n\t\t\t\t__( 'Clear content', 'learnpress' )\n\t\t\t),\n\t\t\t'buttons_end'           => '</div>',\n\t\t\t'options'               => $this->html_fib_options( $options ),\n\t\t];\n\n\t\treturn Template::combine_components( $section );\n\t}",
+    "critique": {
+      "summary": "Function 'html_answer_type_fill_in_blanks' has code quality and standards issues that should be addressed for production readiness (source: learnpress-bbpress.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'html_answer_type_fill_in_blanks' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'html_answer_type_fill_in_blanks' (source: learnpress-bbpress.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'html_answer_type_fill_in_blanks' has no obvious security vulnerabilities but lacks defensive coding patterns (source: learnpress-bbpress.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'html_answer_type_fill_in_blanks' has no obvious performance issues for its current scope (source: learnpress-bbpress.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'html_answer_type_fill_in_blanks' uses WordPress APIs appropriately for its scope (source: learnpress-bbpress.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'html_answer_type_fill_in_blanks' (90 lines, source: learnpress-bbpress.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'html_answer_type_fill_in_blanks' instantiates QuestionPostFIBModel \u2014 ensure these dependencies are available in all execution contexts (source: learnpress-bbpress.json)",
+          "fix": "Inject dependencies via constructor or factory pattern rather than instantiating inside the function; improves testability"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'html_answer_type_fill_in_blanks' i18n handling is acceptable (source: learnpress-bbpress.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'html_answer_type_fill_in_blanks' renders HTML (source: learnpress-bbpress.json) \u2014 verify semantic structure uses appropriate HTML5 elements",
+          "fix": "Use semantic HTML: <nav>, <main>, <article>, <section> where appropriate; avoid div-soup for content that has semantic meaning"
+        }
+      },
+      "key_observation": "'html_answer_type_fill_in_blanks' has no obvious security vulnerabilities but lacks defensive coding patterns (source: learnpress-bbpress.json)"
+    },
+    "corrected_code": "/**\n\t\t * @var QuestionAnswerModel[] $answers\n\t\t */\nfunction html_answer_type_fill_in_blanks( QuestionPostModel $questionPostModel ): string {\n\t\t$questionPostFIBModel = new QuestionPostFIBModel( $questionPostModel );\n\t\t$name                 = 'lp-question-fib-input-' . $questionPostFIBModel->ID;\n\t\t$answers              = $questionPostFIBModel->get_answer_option();\n\t\t$options              = [\n\t\t\t'clone' =>\n\t\t\t\t[\n\t\t\t\t\t'fill'       => '',\n\t\t\t\t\t'match_case' => 0,\n\t\t\t\t\t'comparison' => 'equal',\n\t\t\t\t\t'id'         => 'clone',\n\t\t\t\t],\n\t\t];\n\t\t\n\t\t$questionAnswerModel = $answers[0] ?? null;\n\t\tif ( $questionAnswerModel instanceof QuestionAnswerModel ) {\n\t\t\t$meta_data = $questionAnswerModel->get_all_metadata();\n\n\t\t\tif ( is_array( $meta_data ) ) {\n\t\t\t\t$options = array_merge(\n\t\t\t\t\t$meta_data,\n\t\t\t\t\t$options\n\t\t\t\t);\n\t\t\t}\n\t\t}\n\n\t\t$content = '';\n\n\t\tif ( $questionAnswerModel instanceof QuestionAnswerModel ) {\n\t\t\t$content = $this->convert_content_fib_to_span( $questionAnswerModel->title );\n\t\t}\n\n\t\t$section = [\n\t\t\t'input'                 => AdminTemplate::editor_tinymce(\n\t\t\t\t$content,\n\t\t\t\t$name,\n\t\t\t\t[\n\t\t\t\t\t'default_editor' => 'html', // Use HTML editor by default tinymce\n\t\t\t\t\t'tinymce'        => true,\n\t\t\t\t\t'quicktags'      => true, // Set true to show tab \"Code\" in editor\n\t\t\t\t]\n\t\t\t),\n\t\t\t'desc'                  => sprintf(\n\t\t\t\t'<div class=\"lp-question-fib-desc\">%s</div>',\n\t\t\t\t__( 'Select a word in the passage above and click \"Insert a new blank\" to make that word a blank for filling.', 'learnpress' )\n\t\t\t),\n\t\t\t'buttons'               => '<div class=\"lp-question-fib-buttons\">',\n\t\t\t'btn-insert-new'        => sprintf(\n\t\t\t\t'<button type=\"button\" class=\"lp-btn-fib-insert-blank button\"\n\t\t\t\t\tdata-default-text=\"%s\"\n\t\t\t\t\tdata-mess-inserted=\"%s\"\n\t\t\t\t\tdata-mess-require-select-text=\"%s\">%s %s</button>',\n\t\t\t\tesc_html__( 'Enter answer correct on here', 'learnpress' ),\n\t\t\t\t__( 'This text inserted to blank', 'learnpress' ),\n\t\t\t\t__( 'You must select a text or position on Editor to insert new blank.', 'learnpress' ),\n\t\t\t\t'<span class=\"lp-icon-spinner\"></span>',\n\t\t\t\t__( 'Insert new blank', 'learnpress' )\n\t\t\t),\n\t\t\t'btn-delete-all-blanks' => sprintf(\n\t\t\t\t'<button type=\"button\"\n\t\t\t\t\t\t\tclass=\"lp-btn-fib-delete-all-blanks button\"\n\t\t\t\t\t\t\tdata-title=\"%s\"\n\t\t\t\t\t\t\tdata-content=\"%s\"\n\t\t\t\t\t\t\ttitle=\"%s\">%s %s\n\t\t\t\t\t\t</button>',\n\t\t\t\tesc_attr__( 'Are you sure?', 'learnpress' ),\n\t\t\t\tesc_html__( 'This action will delete all blanks in the editor, only keep text content.', 'learnpress' ),\n\t\t\t\tesc_attr__( 'Delete all blanks on this editor.', 'learnpress' ),\n\t\t\t\t'<span class=\"lp-icon-spinner\"></span>',\n\t\t\t\t__( 'Delete all blanks', 'learnpress' )\n\t\t\t),\n\t\t\t'btn-save'              => sprintf(\n\t\t\t\t'<button type=\"button\" class=\"lp-btn-fib-save-content button lp-btn-edit-primary active\">%s %s</button>',\n\t\t\t\t'<span class=\"lp-icon-spinner\"></span> ',\n\t\t\t\t__( 'Save content', 'learnpress' )\n\t\t\t),\n\t\t\t'btn-clear'             => sprintf(\n\t\t\t\t'<button type=\"button\"\n\t\t\t\t\t\t\tclass=\"lp-btn-fib-clear-all-content button\"\n\t\t\t\t\t\t\tdata-title=\"%s\"\n\t\t\t\t\t\t\tdata-content=\"%s\"\n\t\t\t\t\t\t\ttitle=\"%s\">%s %s\n\t\t\t\t\t\t</button>',\n\t\t\t\tesc_attr__( 'Are you sure?', 'learnpress' ),\n\t\t\t\tesc_html__( 'This action will delete all content in the editor.', 'learnpress' ),\n\t\t\t\tesc_attr__( 'Clear all content on this editor.', 'learnpress' ),\n\t\t\t\t'<span class=\"lp-icon-spinner\"></span>',\n\t\t\t\t__( 'Clear content', 'learnpress' )\n\t\t\t),\n\t\t\t'buttons_end'           => '</div>',\n\t\t\t'options'               => $this->html_fib_options( $options ),\n\t\t];\n\n\t\treturn Template::combine_components( $section );\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "woocommerce-payments.json",
+    "function_name": "Definition::addMethodCalls",
+    "defective_code": "function addMethodCalls(array $methods = []): DefinitionInterface\n    {\n        foreach ($methods as $method => $args) {\n            $this->addMethodCall($method, $args);\n        }\n\n        return $this;\n    }",
+    "critique": {
+      "summary": "Function 'addMethodCalls' has code quality and standards issues that should be addressed for production readiness (source: woocommerce-payments.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'addMethodCalls' \u2014 required by WPCS for all public functions; Function 'addMethodCalls' uses camelCase \u2014 WPCS requires snake_case (e.g., 'add_method_calls')",
+          "fix": "Add /** @param, @return, @since tags above function 'addMethodCalls'; Rename to snake_case convention"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'addMethodCalls' (source: woocommerce-payments.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'addMethodCalls' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce-payments.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'addMethodCalls' performs potentially expensive operations in a loop without caching (source: woocommerce-payments.json)",
+          "fix": "Cache expensive computed values using wp_cache_set()/wp_cache_get() with appropriate cache group and expiry"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'addMethodCalls' uses WordPress APIs appropriately for its scope (source: woocommerce-payments.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'addMethodCalls' code quality is acceptable but could improve single responsibility adherence (source: woocommerce-payments.json, 7 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'addMethodCalls' has no problematic dependency patterns detected (source: woocommerce-payments.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'addMethodCalls' i18n handling is acceptable (source: woocommerce-payments.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'addMethodCalls' does not produce HTML output \u2014 accessibility dimension not applicable (source: woocommerce-payments.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'addMethodCalls' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce-payments.json)"
+    },
+    "corrected_code": "/**\n * Addmethodcalls \u2014 fixed version.\n *\n  * @param mixed $methods Methods value.\n* @return mixed\n * @since 1.0.0\n */\nfunction addMethodCalls(array $methods = []): DefinitionInterface\n    {\n        foreach ($methods as $method => $args) {\n            $this->addMethodCall($method, $args);\n        }\n\n        return $this;\n    }",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "rometheme-for-elementor.json",
+    "function_name": "add_action::change_admin_footer",
+    "defective_code": "function change_admin_footer($footer_text)\n\t{\n\t\t$screen = get_current_screen();\n\t\tif ($screen->id == 'toplevel_page_romethemekit') {\n\t\t\t$footer_text = 'Thank you for creating with <a href=\"https://wordpress.org\">Wordpress</a>. | Love Using RomethemeKit For Elementor? <a href=\"https://wordpress.org/plugins/rometheme-for-elementor/#reviews\">Rate Us</a> ';\n\t\t\treturn $footer_text;\n\t\t}\n\t}",
+    "critique": {
+      "summary": "Function 'change_admin_footer' has code quality and standards issues that should be addressed for production readiness (source: rometheme-for-elementor.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'change_admin_footer' \u2014 required by WPCS for all public functions",
+          "fix": "Add /** @param, @return, @since tags above function 'change_admin_footer'"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'change_admin_footer' (source: rometheme-for-elementor.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'change_admin_footer' has no obvious security vulnerabilities but lacks defensive coding patterns (source: rometheme-for-elementor.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'change_admin_footer' has no obvious performance issues for its current scope (source: rometheme-for-elementor.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'change_admin_footer' uses WordPress APIs appropriately for its scope (source: rometheme-for-elementor.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'change_admin_footer' code quality is acceptable but could improve single responsibility adherence (source: rometheme-for-elementor.json, 8 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'change_admin_footer' has no problematic dependency patterns detected (source: rometheme-for-elementor.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'change_admin_footer' i18n handling is acceptable (source: rometheme-for-elementor.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'change_admin_footer' renders HTML (source: rometheme-for-elementor.json) \u2014 verify semantic structure uses appropriate HTML5 elements",
+          "fix": "Use semantic HTML: <nav>, <main>, <article>, <section> where appropriate; avoid div-soup for content that has semantic meaning"
+        }
+      },
+      "key_observation": "'change_admin_footer' has no obvious security vulnerabilities but lacks defensive coding patterns (source: rometheme-for-elementor.json)"
+    },
+    "corrected_code": "/**\n * Change Admin Footer \u2014 fixed version.\n *\n  * @param mixed $footer_text Footer Text value.\n* @return mixed\n * @since 1.0.0\n */\nfunction change_admin_footer($footer_text)\n\t{\n\t\t$screen = get_current_screen();\n\t\tif ($screen->id == 'toplevel_page_romethemekit') {\n\t\t\t$footer_text = 'Thank you for creating with <a href=\"https://wordpress.org\">Wordpress</a>. | Love Using RomethemeKit For Elementor? <a href=\"https://wordpress.org/plugins/rometheme-for-elementor/#reviews\">Rate Us</a> ';\n\t\t\treturn $footer_text;\n\t\t}\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  }
+]

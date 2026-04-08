@@ -1,0 +1,230 @@
+[
+  {
+    "code": "/**\n\t * Adds post columns to the /wp-admin/post.php page for amp_validated_url.\n\t *\n\t * @return array The filtered post columns.\n\t */\nfunction add_single_post_columns() {\n\t\treturn [\n\t\t\t'cb'                          => '<input type=\"checkbox\" />',\n\t\t\t'error_code'                  => __( 'Error', 'amp' ),\n\t\t\t'error_type'                  => __( 'Type', 'amp' ),\n\t\t\t'details'                     => sprintf(\n\t\t\t\t'%s<span class=\"dashicons dashicons-editor-help tooltip-button\" tabindex=\"0\"></span><div class=\"tooltip\" hidden data-content=\"%s\"></div>',\n\t\t\t\tesc_html__( 'Context', 'amp' ),\n\t\t\t\tesc_attr(\n\t\t\t\t\tsprintf(\n\t\t\t\t\t\t'<h3>%s</h3><p>%s</p>',\n\t\t\t\t\t\tesc_html__( 'Context', 'amp' ),\n\t\t\t\t\t\tesc_html__( 'The parent element of where the error occurred.', 'amp' )\n\t\t\t\t\t)\n\t\t\t\t)\n\t\t\t),\n\t\t\t'sources_with_invalid_output' => __( 'Sources', 'amp' ),\n\t\t\t'status'                      => sprintf(\n\t\t\t\t'%s<span class=\"dashicons dashicons-editor-help tooltip-button\" tabindex=\"0\"></span><div class=\"tooltip\" hidden data-content=\"%s\"></div>',\n\t\t\t\tesc_html__( 'Markup Status', 'amp' ),\n\t\t\t\tesc_attr(\n\t\t\t\t\tsprintf(\n\t\t\t\t\t\t'<h3>%s</h3><p>%s</p>',\n\t\t\t\t\t\tesc_html__( 'Markup Status', 'amp' ),\n\t\t\t\t\t\tesc_html__( 'When invalid markup is removed it will not block a URL from being served as AMP; the validation error will be sanitized, where the offending markup is stripped from the response to ensure AMP validity. If invalid AMP markup is kept, then URLs is occurs on will not be served as AMP pages.', 'amp' )\n\t\t\t\t\t)\n\t\t\t\t)\n\t\t\t),\n\t\t\t'reviewed'                    => sprintf(\n\t\t\t\t'%s<span class=\"dashicons dashicons-editor-help tooltip-button\" tabindex=\"0\"></span><div class=\"tooltip\" hidden data-content=\"%s\"></div>',\n\t\t\t\tesc_html__( 'Reviewed', 'amp' ),\n\t\t\t\tesc_attr(\n\t\t\t\t\tsprintf(\n\t\t\t\t\t\t'<h3>%s</h3><p>%s</p>',\n\t\t\t\t\t\tesc_html__( 'Reviewed', 'amp' ),\n\t\t\t\t\t\tesc_html__( 'Confirm that the action being taken on the invalid markup (causing a validation error) has been seen and approved.', 'amp' )\n\t\t\t\t\t)\n\t\t\t\t)\n\t\t\t),\n\t\t];\n\t}",
+    "source_file": "amp.json",
+    "function_name": "has_filter::add_single_post_columns",
+    "critical_failures": [
+      "Form inputs without labels or ARIA"
+    ],
+    "low_score_dims": [
+      "accessibility"
+    ]
+  },
+  {
+    "code": "function restore_default_settings( $parameters ) {\n\t\tglobal $wp_cache_config_file, $wp_cache_config_file_sample;\n\n\t\tif ( file_exists( $wp_cache_config_file_sample ) ) {\n\t\t\tcopy( $wp_cache_config_file_sample, $wp_cache_config_file );\n\t\t\t$cache_page_secret = md5( gmdate( 'H:i:s' ) . wp_rand() );\n\t\t\twp_cache_setting( 'cache_page_secret', $cache_page_secret );\n\n\t\t\tif ( function_exists( \"opcache_invalidate\" ) ) {\n\t\t\t\t@opcache_invalidate( $wp_cache_config_file );\n\t\t\t}\n\t\t}\n\t\twpsc_set_default_gc( true );\n\t}",
+    "source_file": "wp-super-cache.json",
+    "function_name": "WP_Super_Cache_Rest_Update_Settings::restore_default_settings",
+    "critical_failures": [
+      "Missing nonce verification / permission check: This is a REST API method that restores plugin defaults (a destructive state-changing operation) but contains no capability check (e.g., current_user_can()) or nonce/REST permission enforcement visible within the function itself. The function signature accepts $parameters but never validates authorization.",
+      "Suppressed error with @ operator on opcache_invalidate() \u2014 silencing errors is an anti-pattern and hides file-system failures.",
+      "Uses direct PHP file functions (copy()) instead of WP_Filesystem API for file operations.",
+      "md5(gmdate('H:i:s') . wp_rand()) is a weak secret generation pattern \u2014 gmdate is low-entropy; should use wp_generate_password() or random_bytes() for security tokens.",
+      "The $parameters argument is accepted but never used or validated, suggesting incomplete implementation.",
+      "security_auto_fail"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "security",
+      "wp_api_usage",
+      "code_quality"
+    ]
+  },
+  {
+    "code": "function setup_shipping() {\r\n      return __('Shipping', 'woo-pakettikauppa');\r\n    }",
+    "source_file": "posti-shipping.json",
+    "function_name": "Text::setup_shipping",
+    "critical_failures": [
+      "Missing PHPDoc block"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "function enqueue() {\n\t\t$asset_path = HELLO_THEME_SCRIPTS_PATH . $this->handle . '.asset.php';\n\t\t$asset_url = HELLO_THEME_SCRIPTS_URL;\n\n\t\tif ( ! file_exists( $asset_path ) ) {\n\t\t\tthrow new \\Exception( $asset_path . ' - You need to run `npm run build` for the \"hello-elementor\" first.' );\n\t\t}\n\n\t\t$script_asset = require $asset_path;\n\n\t\tforeach ( $this->dependencies as $dependency ) {\n\t\t\t$script_asset['dependencies'][] = $dependency;\n\t\t}\n\n\t\twp_enqueue_script(\n\t\t\t$this->handle,\n\t\t\t$asset_url . \"$this->handle.js\",\n\t\t\t$script_asset['dependencies'],\n\t\t\t$script_asset['version'],\n\t\t\ttrue\n\t\t);\n\n\t\t\\wp_set_script_translations( $this->handle, 'hello-elementor' );\n\t}",
+    "source_file": "hello-elementor.json",
+    "function_name": "Script::enqueue",
+    "critical_failures": [
+      "missing_phpdoc"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "/**\n     * Register to credits activate event\n     * @param mixed $callback\n     *\n     * @return void\n     */\nfunction registerEnableCreditsAction($callback)\n    {\n        add_action(self::ENABLE_CREDITS_ACTION, $callback);\n    }",
+    "source_file": "woocommerce-mercadopago.json",
+    "function_name": "Plugin::registerEnableCreditsAction",
+    "critical_failures": [
+      "camelCase method naming violates WPCS (WordPress requires snake_case)"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance"
+    ]
+  },
+  {
+    "code": "function libRed($args)\n    {\n        $color = $this->coerceColor($args[0]);\n\n        if (\\is_null($color)) {\n            throw $this->error('Error: argument `$color` of `red($color)` must be a color');\n        }\n\n        return new Number((int) $color[1], '');\n    }",
+    "source_file": "wp-scss.json",
+    "function_name": "libRed",
+    "critical_failures": [
+      "missing_phpdoc"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "/**\n\t * @return int\n\t */\nfunction get_minimum_preload_interval() {\n\t\tglobal $wpdb;\n\t\t$count = $this->get_post_count();\n\t\tif ( $count > 1000 ) {\n\t\t\t$min_refresh_interval = 720;\n\t\t} else {\n\t\t\t$min_refresh_interval = 30;\n\t\t}\n\n\t\treturn $min_refresh_interval;\n\t}",
+    "source_file": "wp-super-cache.json",
+    "function_name": "get_minimum_preload_interval",
+    "critical_failures": [],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "code_quality"
+    ]
+  },
+  {
+    "code": "/**\n\t * Check whether the current element of the iterator is acceptable.\n\t *\n\t * @link https://php.net/manual/en/filteriterator.accept.php\n\t * @return bool true if the current element is acceptable, otherwise false.\n\t */\nfunction accept() {\n\t\t$directory = $this->getInnerIterator()->current();\n\n\t\tif ( ! $directory->isDir() ) {\n\t\t\treturn true;\n\t\t}\n\n\t\tforeach ( $this->included_dirs as $included_dir ) {\n\t\t\tif ( ! preg_match( $included_dir, $directory->getPathname() ) ) {\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\n\t\treturn true;\n\t}",
+    "source_file": "amp-wp.json",
+    "function_name": "DirectoryFilter::accept",
+    "critical_failures": [
+      "test/bin/docs code, excluded from training data"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "code_quality"
+    ]
+  },
+  {
+    "code": "/**\n\t\t * Print out the settings fields for a particular settings section\n\t\t *\n\t\t * @global $wp_settings_fields Storage array of settings fields and their pages/sections\n\t\t *\n\t\t * @param  string $page    Slug title of the admin page who's settings fields you want to show.\n\t\t * @param  string $section Slug title of the settings section who's fields you want to show.\n\t\t * @return string\n\t\t *\n\t\t * @access public\n\t\t * @since  2.0\n\t\t */\nfunction do_settings_fields( $page, $section ) {\n\t\t\tglobal $wp_settings_fields;\n\n\t\t\tif ( ! isset( $wp_settings_fields ) || ! isset( $wp_settings_fields[ $page ] ) || ! isset( $wp_settings_fields[ $page ][ $section ] ) ) {\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\tforeach ( (array) $wp_settings_fields[ $page ][ $section ] as $field ) {\n\n\t\t\t\t$conditions = '';\n\n\t\t\t\tif ( isset( $field['args']['condition'] ) && ! empty( $field['args']['condition'] ) ) {\n\n\t\t\t\t\t$conditions  = ' data-condition=\"' . esc_attr( $field['args']['condition'] ) . '\"';\n\t\t\t\t\t$conditions .= isset( $field['args']['operator'] ) && in_array( $field['args']['operator'], array( 'and', 'AND', 'or', 'OR' ), true ) ? ' data-operator=\"' . esc_attr( $field['args']['operator'] ) . '\"' : '';\n\t\t\t\t}\n\n\t\t\t\t// Build the setting CSS class.\n\t\t\t\tif ( isset( $field['args']['class'] ) && ! empty( $field['args']['class'] ) ) {\n\n\t\t\t\t\t$classes = explode( ' ', $field['args']['class'] );\n\n\t\t\t\t\tforeach ( $classes as $key => $value ) {\n\t\t\t\t\t\t$classes[ $key ] = $value . '-wrap';\n\t\t\t\t\t}\n\n\t\t\t\t\t$class = 'format-settings ' . implode( ' ', $classes );\n\t\t\t\t} else {\n\n\t\t\t\t\t$class = 'format-settings';\n\t\t\t\t}\n\n\t\t\t\techo '<div id=\"setting_' . esc_attr( $field['id'] ) . '\" class=\"' . esc_attr( $class ) . '\"' . $conditions . '>'; // phpcs:ignore\n\n\t\t\t\techo '<div class=\"format-setting-wrap\">';\n\n\t\t\t\tif ( 'textblock' !== $field['args']['type'] && ! empty( $field['title'] ) ) {\n\n\t\t\t\t\techo '<div class=\"format-setting-label\">';\n\n\t\t\t\t\techo '<h3 class=\"label\">' . wp_kses_post( $field['title'] ) . '</h3>';\n\n\t\t\t\t\techo '</div>';\n\t\t\t\t}\n\n\t\t\t\tcall_user_func( $field['callback'], $field['args'] );\n\n\t\t\t\techo '</div>';\n\n\t\t\t\techo '</div>';\n\t\t\t}\n\t\t}",
+    "source_file": "option-tree.json",
+    "function_name": "OT_Settings::do_settings_fields",
+    "critical_failures": [
+      "Reimplements do_settings_fields() from WP core; missing @param/@return; mixes output and logic"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "function preventDirectAccess($filename)\n    {\n        // Protect against directly accessing webp-on-demand.php\n        // Only protect on Apache. We know for sure that the method is not reliable on nginx.\n        // We have not tested on litespeed yet, so we dare not.\n        if (self::isApache() && (!self::isNginxHandlingImages())) {\n            if (strpos($_SERVER['REQUEST_URI'], $filename) !== false) {\n                self::exitWithError(\n                    'It seems you are visiting this file (plugins/webp-express/wod/' . $filename . ') directly. We do not allow this.'\n                );\n                exit;\n            }\n        }\n    }",
+    "source_file": "webp-express.json",
+    "function_name": "WodConfigLoader::preventDirectAccess",
+    "critical_failures": [
+      "Missing PHPDoc block",
+      "Missing input sanitization"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "function gutenberg_get_migrated_active_templates() {\n\t// Query all templates in the database. See `get_block_templates`.\n\t$wp_query_args = array(\n\t\t'post_status'         => 'publish',\n\t\t'post_type'           => 'wp_template',\n\t\t'posts_per_page'      => -1,\n\t\t'no_found_rows'       => true,\n\t\t'lazy_load_term_meta' => false,\n\t\t'tax_query'           => array(\n\t\t\tarray(\n\t\t\t\t'taxonomy' => 'wp_theme',\n\t\t\t\t'field'    => 'name',\n\t\t\t\t'terms'    => get_stylesheet(),\n\t\t\t),\n\t\t),\n\t\t// Only get templates that are not inactive by default.\n\t\t'meta_query'          => array(\n\t\t\t'relation' => 'OR',\n\t\t\tarray(\n\t\t\t\t'key'     => 'is_inactive_by_default',\n\t\t\t\t'compare' => 'NOT EXISTS',\n\t\t\t),\n\t\t\tarray(\n\t\t\t\t'key'     => 'is_inactive_by_default',\n\t\t\t\t'value'   => false,\n\t\t\t\t'compare' => '=',\n\t\t\t),\n\t\t),\n\t);\n\n\t$template_query   = new WP_Query( $wp_query_args );\n\t$active_templates = array();\n\n\tforeach ( $template_query->posts as $post ) {\n\t\t$active_templates[ $post->post_name ] = $post->ID;\n\t}\n\n\treturn $active_templates;\n}",
+    "source_file": "gutenberg.json",
+    "function_name": "gutenberg_get_migrated_active_templates",
+    "critical_failures": [
+      "Missing PHPDoc block"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "/**\n\t * If the inclusive language analysis should be loaded in Free.\n\t *\n\t * It should always be loaded when Premium is not active. If Premium is active, it depends on the version. Some\n\t * Premium versions also have inclusive language code (when it was still a Premium only feature) which would result\n\t * in rendering the analysis twice. In those cases, the analysis should be only loaded from the Premium side.\n\t *\n\t * @return bool If the inclusive language analysis should be loaded.\n\t */\nfunction is_current_version_supported(): bool {\n\t\t$is_premium      = $this->product_helper->is_premium();\n\t\t$premium_version = $this->product_helper->get_premium_version();\n\n\t\treturn ! $is_premium\n\t\t\t\t|| \\version_compare( $premium_version, '19.6-RC0', '>=' )\n\t\t\t\t|| \\version_compare( $premium_version, '19.2', '==' );\n\t}",
+    "source_file": "wordpress-seo.json",
+    "function_name": "Inclusive_Language_Analysis::is_current_version_supported",
+    "critical_failures": [
+      "Missing @since tag in PHPDoc block \u2014 required by WordPress coding standards for all public/protected methods",
+      "PHPDoc @return description is incomplete/informal ('If the inclusive language analysis should be loaded' should be 'Whether the inclusive language analysis should be loaded')"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "/**\n     * Save meta box data.\n     *\n     * @param int     $post_id\n     * @param WP_Post $post\n     */\nfunction save( $post_id, $post ) {\n        $classname = MasVideos_Video_Factory::get_video_classname( $post_id );\n        $video = new $classname( $post_id );\n        $attachment_ids = isset( $_POST['video_image_gallery'] ) ? array_filter( explode( ',', masvideos_clean( $_POST['video_image_gallery'] ) ) ) : array();\n\n        $video->set_gallery_image_ids( $attachment_ids );\n        $video->save();\n    }",
+    "source_file": "masvideos.json",
+    "function_name": "MasVideos_Meta_Box_Video_Images::save",
+    "critical_failures": [
+      "Unsanitized user input from superglobals"
+    ],
+    "low_score_dims": [
+      "security"
+    ]
+  },
+  {
+    "code": "/**\n\t\t\t * Filter: 'wpseo_prev_rel_link' - Allow changing link rel output by Yoast SEO.\n\t\t\t *\n\t\t\t * @param string $unsigned The full `<link` element.\n\t\t\t */\nfunction present( $output_tag = true ) {\n\t\t$output = parent::present();\n\n\t\tif ( ! empty( $output ) ) {\n\t\t\t\n\t\t\treturn \\apply_filters( 'wpseo_prev_rel_link', $output );\n\t\t}\n\n\t\treturn '';\n\t}",
+    "source_file": "wordpress-seo.json",
+    "function_name": "Rel_Prev_Presenter::present",
+    "critical_failures": [
+      "Function signature declares parameter `$output_tag = true` but the parameter is never used anywhere in the function body \u2014 dead/misleading parameter",
+      "PHPDoc block is misplaced and describes the filter's parameter, not the function itself \u2014 missing proper @param, @return, @since tags for the method",
+      "Unused parameter `$output_tag` indicates the method signature does not match the parent class interface correctly, or is vestigial dead code"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "code_quality"
+    ]
+  },
+  {
+    "code": "function wpsupercache_uninstall() {\n\tglobal $wp_cache_config_file, $cache_path;\n\n\twpsc_remove_advanced_cache();\n\n\tif ( file_exists( $wp_cache_config_file ) ) {\n\t\tunlink( $wp_cache_config_file );\n\t}\n\n\twp_cache_remove_index();\n\n\tif ( ! empty( $cache_path ) ) {\n\t\t@unlink( $cache_path . '.htaccess' );\n\t\t@unlink( $cache_path . 'meta' );\n\t\t@unlink( $cache_path . 'supercache' );\n\t}\n\n\twp_clear_scheduled_hook( 'wp_cache_check_site_hook' );\n\twp_clear_scheduled_hook( 'wp_cache_gc' );\n\twp_clear_scheduled_hook( 'wp_cache_gc_watcher' );\n\twp_cache_disable_plugin();\n\tdelete_site_option( 'wp_super_cache_index_detected' );\n}",
+    "source_file": "wp-super-cache.json",
+    "function_name": "wpsupercache_uninstall",
+    "critical_failures": [
+      "Uses error-suppressing @ operator on unlink() calls, which hides filesystem errors instead of handling them properly",
+      "Direct use of unlink() instead of WP_Filesystem API for file operations",
+      "No capability check (current_user_can()) before performing destructive uninstall operations",
+      "No nonce verification present \u2014 though this may be an uninstall hook callback, the lack of any authorization check is a security concern",
+      "Missing PHPDoc block entirely \u2014 no @since, @return, @global annotations"
+    ],
+    "low_score_dims": [
+      "security",
+      "code_quality"
+    ]
+  },
+  {
+    "code": "/**\n\t * @doesNotPerformAssertions\n\t */\nfunction test_update_item() {\n\t\t// We are testing filters, not controller update_item().\n\t}",
+    "source_file": "gutenberg.json",
+    "function_name": "Tests_Resolve_Patterns_In_Template_Parts::test_update_item",
+    "critical_failures": [
+      "test code, excluded from training data"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ]
+  },
+  {
+    "code": "function response_part( $pos ) {\n\t\tif ( !isset( $this->response->demands->demand ) )\n\t\t\treturn false;\n\n\t\tif ( is_array( $this->response->demands->demand ) ) {\n\t\t\tif ( isset( $this->response->demands->demand[$pos] ) )\n\t\t\t\treturn $this->response->demands->demand[$pos];\n\t\t\treturn false;\n\t\t}\n\n\t\tif ( 0 === $pos )\n\t\t\treturn $this->response->demands->demand;\n\n\t\treturn false;\n\t}",
+    "source_file": "polldaddy.json",
+    "function_name": "response_part",
+    "critical_failures": [
+      "Missing PHPDoc block"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "/**\n\t * Transform the API request/response data into a string suitable for logging\n\t *\n\t * @since 3.0.0\n\t * @param array $data\n\t * @return string\n\t */\nfunction get_api_log_message( $data ) {\n\n\t\t$messages = array();\n\n\t\t$messages[] = isset( $data['uri'] ) && $data['uri'] ? 'Request' : 'Response';\n\n\t\tforeach ( (array) $data as $key => $value ) {\n\t\t\t// print_r here is necessary to dump request / response data for logging purposes.\n\t\t\t// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r\n\t\t\t$messages[] = trim( sprintf( '%s: %s', $key, is_array( $value ) || ( is_object( $value ) && 'stdClass' === get_class( $value ) ) ? print_r( (array) $value, true ) : $value ) );\n\t\t}\n\n\t\treturn implode( \"\\n\", $messages ) . \"\\n\";\n\t}",
+    "source_file": "woocommerce-square.json",
+    "function_name": "Plugin::get_api_log_message",
+    "critical_failures": [
+      "Contains debug statements"
+    ],
+    "low_score_dims": [
+      "code_quality"
+    ]
+  },
+  {
+    "code": "/**\n\t * Get html edit question type multiple choice.\n\t *\n\t * @param QuestionPostModel $questionPostModel\n\t *\n\t * @return string\n\t */\nfunction html_answer_type_sorting_choice_old( QuestionPostModel $questionPostModel ): string {\n\t\t$answers   = $questionPostModel->get_answer_option();\n\t\t$answers[] = null;\n\n\t\t$html_answers = '';\n\t\tforeach ( $answers as $answer ) {\n\t\t\t$is_clone           = true;\n\t\t\t$title              = '';\n\t\t\t$question_answer_id = 0;\n\n\t\t\tif ( ! is_null( $answer ) ) {\n\t\t\t\t$is_clone            = false;\n\t\t\t\t$questionAnswerModel = new QuestionAnswerModel( $answer );\n\t\t\t\t$title               = $questionAnswerModel->title;\n\t\t\t\t$question_answer_id  = $questionAnswerModel->question_answer_id;\n\t\t\t}\n\n\t\t\t$html_answers .= sprintf(\n\t\t\t\t'<div class=\"lp-question-answer-item %s\" data-answer-id=\"%d\">\n\t\t\t\t\t<span class=\"drag lp-icon-drag\" title=\"Drag to reorder section\"></span>\n\t\t\t\t\t<span class=\"lp-icon-spinner\"></span>\n\t\t\t\t\t<input type=\"text\" class=\"%s\" name=\"%s\" value=\"%s\" />\n\t\t\t\t\t<span class=\"lp-icon-trash-o lp-btn-delete-question-answer\"></span>\n\t\t\t\t</div>',\n\t\t\t\t$is_clone ? 'clone lp-hidden' : '',\n\t\t\t\tesc_attr( $question_answer_id ),\n\t\t\t\t'lp-question-answer-title-input lp-auto-save-question-answer',\n\t\t\t\t'lp-question-answer-title-input',\n\t\t\t\tesc_attr( $title )\n\t\t\t);\n\t\t}\n\n\t\t$html_answers .= sprintf(\n\t\t\t'<div class=\"lp-question-answer-item-add-new\">\n\t\t\t\t<span class=\"lp-icon-plus\" title=\"Add answer option\"></span>\n\t\t\t\t<input type=\"text\" class=\"%1$s\" name=\"%1$s\" value=\"\" data-mess-empty-title=\"%2$s\" />\n\t\t\t\t<button type=\"button\" class=\"button lp-btn-add-question-answer lp-btn-edit-primary\">%3$s</button>\n\t\t\t</div>',\n\t\t\t'lp-question-answer-title-new-input',\n\t\t\tesc_attr__( 'Answer title is required', 'learnpress' ),\n\t\t\t__( 'Add Option', 'learnpress' )\n\t\t);\n\n\t\t$section = [\n\t\t\t'header'  => sprintf(\n\t\t\t\t'<div class=\"lp-question-choice-header\">\n\t\t\t\t<span>%s</span><span>%s</span>\n\t\t\t</div>',\n\t\t\t\t__( 'Answers', 'learnpress' ),\n\t\t\t\t__( 'Corrects', 'learnpress' )\n\t\t\t),\n\t\t\t'answers' => $html_answers,\n\t\t];\n\n\t\treturn Template::combine_components( $section );\n\t}",
+    "source_file": "learnpress-wishlist.json",
+    "function_name": "render_edit_question::html_answer_type_sorting_choice_old",
+    "critical_failures": [
+      "Form inputs without associated labels"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "/**\n     * Get plugin file url\n     *\n     * @param string $path\n     * @param string $extension\n     * @param bool $ignoreSuffix\n     *\n     * @return string\n     */\nfunction getPluginFileUrl(string $path): string\n    {\n        return plugins_url($path, MP_PLUGIN_FILE);\n    }",
+    "source_file": "woocommerce-mercadopago.json",
+    "function_name": "Url::getPluginFileUrl",
+    "critical_failures": [
+      "camelCase method naming violates WPCS (WordPress requires snake_case)"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance"
+    ]
+  }
+]
