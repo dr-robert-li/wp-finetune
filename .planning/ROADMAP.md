@@ -198,6 +198,16 @@ Plans:
   2. `max_seq_length` is set to 8192 in the training config, and the training run processes examples longer than 4096 tokens without truncation errors or OOM
   3. MoE router layer weights are confirmed frozen in the Unsloth PEFT config before training begins — training log shows router parameters excluded from the optimizer parameter count
   4. Training completes 1-2 epochs on the combined reasoning dataset without OOM or loss divergence, and parse failure rate on checkpoint eval outputs stays below 5% throughout (abort condition if exceeded)
+**Skill**: Reuse `wp-finetune:run-training` (reasoning-specific config)
+  - DGX pre-flight: `dgx.validate(["toolbox", "config", "memory:70"])` + `dgx.ensure_ready("unsloth_studio")` — same pattern as Phase 3 training
+  - Config: `train_config_reasoning.yaml` with LR <=2e-5, `max_seq_length: 8192`, `base_adapter: adapters/qwen3-30b-wp-{winning}/`
+  - Router freeze verification: before training starts, confirm router params excluded from optimizer via `--dry-run` output inspection
+  - Embeds `observe-training` telemetry agents inline (6-agent team) for gradient norm, loss, and router_aux_loss monitoring
+  - Calls `wp-finetune:adaptive-planner` at Step 8.5 for thermal/power-based batch adjustment (8192-token sequences need careful memory management)
+  - Fix-test-validate loop: dry-run first → if OOM on 8192 sequences, `adaptive-planner` reduces batch → re-dry-run → proceed when clean; if loss divergence during training, halt and present gradient norm history to user
+  - Checkpoint eval loop: at each checkpoint, run `eval_judge.py` on 50 samples → if parse failure rate >5%, abort training early (RTRN-04 abort condition)
+  - Idempotency: `idempotency_check="adapters/qwen3-30b-wp-{winning}-reasoning/adapter_config.json"`
+  - Invokes `wp-finetune:review-telemetry` after training completes
 **Plans**: TBD
 
 ### Phase 4.4: Reasoning Eval & Adapter Merge — INSERTED
@@ -208,11 +218,23 @@ Plans:
   1. `eval_judge.py` Spearman correlation on the reasoning adapter meets or exceeds the winning ratio baseline — absolute score distributions per dimension are compared and any dimension with mean shift >0.5 points vs baseline is flagged
   2. `eval_gen.py` PHPCS pass rate on the reasoning adapter is within 2pp of the winning ratio baseline — generation regression is not masked by improved judge metrics
   3. Reasoning quality evaluated by separately spawned Claude evaluator agent (independent context, opaque inputs only): dimension coverage rate, score-reasoning consistency rate, and coherence assessment on representative sample — recorded alongside Nemotron-free automated checks (regex dimension coverage, issue specificity)
-  4. **[wp-bench HARD GATE]** wp-bench score on the reasoning adapter meets or exceeds the 30_70 baseline — this gate was deferred from Phase 4 triage (wp-bench was skipped there) and MUST execute here before adapter merge. Requires a different eval harness than Phase 4: serve the reasoning adapter as a merged model (not LoRA-on-base) and point wp-bench config at the merged checkpoint. Adapter merge is blocked until this gate passes.
+  4. **[wp-bench HARD GATE]** wp-bench score on the reasoning adapter meets or exceeds the winning ratio baseline — this gate was deferred from Phase 4 triage (wp-bench was skipped there) and MUST execute here before adapter merge. Requires a different eval harness than Phase 4: serve the reasoning adapter as a merged model (not LoRA-on-base) and point wp-bench config at the merged checkpoint. Adapter merge is blocked until this gate passes.
   5. Human reviews a sample of reasoning outputs (deep judge CoT and critique-then-fix) and explicitly approves quality before the adapter merge runs — `models/qwen3-30b-wp-{winning}-reasoning-merged/` is written only after human sign-off
   6. Fix correctness: critique-then-fix corrected code passes PHPCS + security scanner, confirming fixes actually resolve identified issues — pass rate recorded
   7. Classification accuracy: confusion matrix (TP/TN/FP/FN) at score thresholds derived from eval_judge.py per-example data — precision, recall, F1 recorded per dimension
   8. Reasoning length distribution: median, p95, max token counts recorded and reviewed against expected range (flag if p95 > 6000 tokens or median < 500)
+**Skill**: Reuse `wp-finetune:run-evaluation` (reasoning-specific eval + merge)
+  - DGX execution: serve reasoning adapter as merged model via `dgx.execute("vllm", ...)` — NOT LoRA-on-base (wp-bench requires merged checkpoint)
+  - Embeds `observe-evaluation` telemetry agents inline during eval runs
+  - Sequential eval loop: eval_gen.py → eval_judge.py → eval_gate.py → wp-bench — each gate checked before proceeding to next
+  - Fix-test-validate loop: if eval_gen PHPCS regresses >2pp → flag generation regression, present per-example failures for diagnosis; if Spearman drops → present dimension-level comparison for targeted investigation; if wp-bench fails → serve model differently (check tokenizer, check merge correctness) → re-eval
+  - Claude evaluator agent: spawned independently (separate context, opaque inputs) for REVL-03 reasoning quality — dimension coverage + score-reasoning consistency measured
+  - Fix correctness loop: run PHPCS + security scanner on critique-then-fix corrected code from eval samples → if pass rate below threshold, flag specific failure patterns
+  - Reasoning length check: compute median/p95/max token counts → flag if outside expected range (p95 >6000 or median <500)
+  - Human review checkpoint: present full eval comparison table (reasoning adapter vs winning ratio baseline) + reasoning output samples before gating merge
+  - Adapter merge: after human approval, `dgx.execute("unsloth_studio", "python", "-m", "scripts.merge_adapter", ...)` with idempotency check on `models/qwen3-30b-wp-{winning}-reasoning-merged/`
+  - Post-merge validation: load merged model, run 10 inference samples for both `<wp_gen>` and `<wp_judge>`, verify coherent output and correct task token routing
+  - Invokes `wp-finetune:review-telemetry` for consolidated eval summary
 **Plans**: TBD
 
 ---
