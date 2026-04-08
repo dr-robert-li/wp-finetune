@@ -2,7 +2,7 @@
 
 ## Milestones
 
-- 🚧 **v1.0 MVP** - Phases 1-5 (3 of 5 complete, eval + deployment remaining)
+- 🚧 **v1.0 MVP** - Phases 1-5 (3 of 4 active complete; Phase 4 in progress; Phase 5 deferred to v3.0 Phase 15)
 - ✅ **v1.1 Adaptive Training Infrastructure** - Phase 6 (complete 2026-04-01)
 - 🚧 **v1.2 Judge Reasoning Fine-Tune** - Phases 4.1-4.4 (inserted after Phase 4, before Phase 7)
 - 📋 **v2.0 RL Alignment** - Phases 7-10 (planned)
@@ -173,7 +173,7 @@ Plans:
   3. Bulk deep judge CoT agent generates reasoning-enriched examples where each response contains dimension-by-dimension analysis with line references, issue identification, fix suggestions, and structured scores — sourced from `data/phase1_extraction/output/{passed,failed}/`
   4. Bulk critique-then-fix agent generates examples from the existing mutation pool (`data/phase2_synthetic/output/mutated/`) where each triple contains the defective code, a structured critique with severity per dimension (critical/high/medium/low), and the corrected version in a clearly delimited `<corrected_code>` block
   5. Both generation streams reach their target example counts without >2% parse failure rate (measured by multi-strategy JSON extraction with hard rejection)
-**Skill**: `wp-finetune:run-reasoning-data-gen` (NEW — create at Phase 4.1-04 if needed; 4.1-01/02/03 plans serve as pattern reference)
+**Skill**: `wp-finetune:run-reasoning-data-gen` (NEW — optional, may be created if Phase 4.2 needs to re-run generation; 4.1-01/02/03 plans serve as pattern reference and define the agent spawning pattern)
   - **LLM execution: Claude Code agents ONLY** — parallel `Agent(run_in_background=true)` per batch following `wp-finetune:run-data-pipeline` pattern. NO Anthropic API. Pilot scripts (4.1-01/02) used direct API which works for 40 examples; bulk (4.1-03) uses agent spawning per the global LLM rule
   - DGX usage: NONE — pure CPU work, no GPU containers needed
   - Pattern: spawn N parallel agents → each reads input batch JSON + seeds + rubric → generates output batch JSON via in-context reasoning → merge step applies quality gates
@@ -282,7 +282,7 @@ Plans:
 
 ### Phase 6: Adaptive Training Planner
 **Goal**: Training runs automatically adapt batch size, prefetch, workers, and save/eval intervals based on real-time GPU power telemetry, with correct batch/grad_accum coupling and Unsloth override detection
-**Depends on**: Phase 5 (v1.0 complete); dgx-toolbox Phase 13 (telemetry/ package)
+**Depends on**: Phase 3 (training script exists); dgx-toolbox Phase 13 (telemetry/ package). Phase 5 was the original dependency but is now deferred to v3.0 — Phase 6 is independent of Phase 5.
 **Requirements**: ADPT-01, ADPT-02, ADPT-03, BTCH-01, BTCH-02, BTCH-03, TELE-01, TELE-02, TELE-03, TELE-04, PROB-01, PROB-02, PROB-03
 **Success Criteria** (what must be TRUE):
   1. Running the adaptive-planner skill with GPU at 50W (UNDERUTILIZED zone) recommends batch increase as Rung 1 action, and at 95W+ (THROTTLED zone) recommends batch decrease to 1 -- with temperature only overriding at >=82C regardless of power zone
@@ -502,9 +502,10 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.1 -> 4.2 -> 4.3 -> 4.4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13 -> 14 -> 15
-Note: Phase 4.1-4.4 (v1.2) insert between Phase 4 and Phase 5 — Phase 4 triage is a hard prerequisite for Phase 4.1.
-Note: Phase 5 (Packaging/Deployment v1.0) is deferred — v3.0 Phase 15 replaces it as the production packaging step.
+Phases execute in numeric order, SKIPPING Phase 5 (deferred): 1 -> 2 -> 3 -> 4 -> 4.1 -> 4.2 -> 4.3 -> 4.4 -> [5 SKIPPED] -> 6 (already complete) -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13 -> 14 -> 15
+Note: Phase 4.1-4.4 (v1.2) insert between Phase 4 and Phase 6 — Phase 4 triage is a hard prerequisite for Phase 4.1. Phase 5 is deferred and skipped.
+Note: Phase 5 (Packaging/Deployment v1.0) is deferred — v3.0 Phase 15 replaces it as the production packaging step. Phase 5 is never executed standalone.
+Note: Phase 6 was completed independently of Phase 5 (depends on Phase 3 + dgx-toolbox).
 Note: Phase 7 profiles the v1.2 reasoning adapter (from Phase 4.4), not the v1.0 adapter — v1.2 must complete before Phase 7 begins.
 Note: RL (Phases 8-9) runs BEFORE MoE-Sieve (Phase 11) per Issue #1 — routing statistics should reflect reward-aligned behavior.
 Note: Phase 10 gates Phase 11 — RL eval results must confirm readiness before MoE-Sieve begins.
