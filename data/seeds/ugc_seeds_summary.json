@@ -1,0 +1,42 @@
+{
+  "total_seeds": 93,
+  "by_type": {
+    "deep_judge_cot": 46,
+    "critique_then_fix": 47
+  },
+  "by_subtlety": {
+    "boundary": 33,
+    "clear-cut": 60
+  },
+  "by_platform": {
+    "wordpress_stackexchange": 0,
+    "stackoverflow": 7,
+    "github": 8,
+    "reddit": 2,
+    "wp_org": 48,
+    "wp_vip": 1,
+    "security_advisory": 27
+  },
+  "dimensions_covered": [
+    "accessibility",
+    "code_quality",
+    "dependency_integrity",
+    "i18n",
+    "performance",
+    "security",
+    "sql_safety",
+    "wp_api_usage",
+    "wpcs_compliance"
+  ],
+  "dimension_counts": {
+    "performance": 10,
+    "security": 20,
+    "sql_safety": 12,
+    "wp_api_usage": 16,
+    "code_quality": 14,
+    "dependency_integrity": 12,
+    "i18n": 13,
+    "accessibility": 10,
+    "wpcs_compliance": 11
+  }
+}
