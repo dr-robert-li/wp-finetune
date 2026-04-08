@@ -1,0 +1,1382 @@
+[
+  {
+    "source_file": "webp-express.json",
+    "function_name": "Paths::getWod2FolderUrlPath",
+    "defective_code": "function getWod2FolderUrlPath()\n    {\n        return\n            self::getWebPExpressPluginUrlPath() .\n            '/wod2';\n    }",
+    "critique": {
+      "summary": "Function 'getWod2FolderUrlPath' has code quality and standards issues that should be addressed for production readiness (source: webp-express.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'getWod2FolderUrlPath' \u2014 required by WPCS for all public functions; Function 'getWod2FolderUrlPath' uses camelCase \u2014 WPCS requires snake_case (e.g., 'get_wod2_folder_url_path')",
+          "fix": "Add /** @param, @return, @since tags above function 'getWod2FolderUrlPath'; Rename to snake_case convention"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'getWod2FolderUrlPath' (source: webp-express.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'getWod2FolderUrlPath' has no obvious security vulnerabilities but lacks defensive coding patterns (source: webp-express.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'getWod2FolderUrlPath' has no obvious performance issues for its current scope (source: webp-express.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'getWod2FolderUrlPath' uses WordPress APIs appropriately for its scope (source: webp-express.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'getWod2FolderUrlPath' code quality is acceptable but could improve single responsibility adherence (source: webp-express.json, 6 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'getWod2FolderUrlPath' has no problematic dependency patterns detected (source: webp-express.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'getWod2FolderUrlPath' i18n handling is acceptable (source: webp-express.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'getWod2FolderUrlPath' does not produce HTML output \u2014 accessibility dimension not applicable (source: webp-express.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'getWod2FolderUrlPath' has no obvious security vulnerabilities but lacks defensive coding patterns (source: webp-express.json)"
+    },
+    "corrected_code": "/**\n * Getwod2Folderurlpath \u2014 fixed version.\n *\n * @return mixed\n * @since 1.0.0\n */\nfunction getWod2FolderUrlPath()\n    {\n        return\n            self::getWebPExpressPluginUrlPath() .\n            '/wod2';\n    }",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "hello-plus.json",
+    "function_name": "Ajax_Handler::ajax_send_form",
+    "defective_code": "function ajax_send_form() {\n\t\tcheck_ajax_referer( self::NONCE_ACTION, 'nonce' );\n\n\t\t// $post_id that holds the form settings.\n\t\t$post_id = filter_input( INPUT_POST, 'post_id', FILTER_SANITIZE_NUMBER_INT );\n\t\t$queried_id = filter_input( INPUT_POST, 'queried_id', FILTER_SANITIZE_NUMBER_INT );\n\n\t\t// $queried_id the post for dynamic values data.\n\t\tif ( ! $queried_id ) {\n\t\t\t$queried_id = $post_id;\n\t\t}\n\n\t\t// Make the post as global post for dynamic values.\n\t\tUtils::elementor()->db->switch_to_post( $queried_id );\n\n\t\t$form_id = filter_input( INPUT_POST, 'form_id', FILTER_SANITIZE_FULL_SPECIAL_CHARS );\n\n\t\t$elementor = Utils::elementor();\n\t\t$document = $elementor->documents->get( $post_id );\n\t\t$form = null;\n\t\t$template_id = null;\n\n\t\tif ( $document ) {\n\t\t\t$form = Module::find_element_recursive( $document->get_elements_data(), (string) $form_id );\n\t\t}\n\n\t\tif ( ! empty( $form['templateID'] ) ) {\n\t\t\t$template = Utils::elementor()->documents->get( $form['templateID'] );\n\n\t\t\tif ( ! $template ) {\n\t\t\t\treturn false;\n\t\t\t}\n\n\t\t\t$template_id = $template->get_id();\n\t\t\t$form = $template->get_elements_data()[0];\n\t\t}\n\n\t\tif ( empty( $form ) ) {\n\t\t\t$this\n\t\t\t\t->add_error_message( self::get_default_message( self::INVALID_FORM, [] ) )\n\t\t\t\t->send();\n\t\t}\n\n\t\t// restore default values\n\t\t$widget = $elementor->elements_manager->create_element_instance( $form );\n\t\t$form['settings'] = $widget->get_settings_for_display();\n\t\t$form['settings']['id'] = $form_id;\n\t\t$form['settings']['form_post_id'] = $template_id ? $template_id : $post_id;\n\n\t\t// TODO: Should be removed if there is an ability to edit \"global widgets\"\n\t\t$form['settings']['edit_post_id'] = $post_id;\n\n\t\t$this->current_form = $form;\n\n\t\tif ( empty( $form['settings']['form_fields'] ) ) {\n\t\t\t$this\n\t\t\t\t->add_error_message( self::get_default_message( self::INVALID_FORM, $form['settings'] ) )\n\t\t\t\t->send();\n\t\t}\n\n\t\t// the fields are not fixed so they will be validated afterwards\n\t\t$form_fields = filter_input(\n\t\t\tINPUT_POST,\n\t\t\t'form_fields',\n\t\t\tFILTER_SANITIZE_FULL_SPECIAL_CHARS,\n\t\t\tFILTER_REQUIRE_ARRAY\n\t\t);\n\n\t\t$record = new Form_Record( $form_fields, $form );\n\n\t\tif ( ! $record->validate( $this ) ) {\n\t\t\t$this\n\t\t\t\t->add_error( $record->get( 'errors' ) )\n\t\t\t\t->add_error_message( self::get_default_message( self::ERROR, $form['settings'] ) )\n\t\t\t\t->send();\n\t\t}\n\n\t\t$record->process_fields( $this );\n\t\t//check for process errors\n\t\tif ( ! empty( $this->errors ) ) {\n\t\t\t$this->send();\n\t\t}\n\n\t\t$module = Module::instance();\n\n\t\t$actions = $module->actions_registrar->get();\n\t\t$errors = array_merge( $this->messages['error'], $this->messages['admin_error'] );\n\n\t\tforeach ( $actions as $action ) {\n\n\t\t\t$exception = null;\n\n\t\t\ttry {\n\t\t\t\t$action->run( $record, $this );\n\n\t\t\t\t$this->handle_bc_errors( $errors );\n\t\t\t} catch ( \\Exception $e ) {\n\t\t\t\t$exception = $e;\n\n\t\t\t\t// Add an admin error.\n\t\t\t\tif ( ! in_array( $exception->getMessage(), $this->messages['admin_error'], true ) ) {\n\t\t\t\t\t$this->add_admin_error_message( \"{$action->get_label()} {$exception->getMessage()}\" );\n\t\t\t\t}\n\n\t\t\t\t// Add a user error.\n\t\t\t\t$this->add_error_message( $this->get_default_message( self::ERROR, $this->current_form['settings'] ) );\n\t\t\t}",
+    "critique": {
+      "summary": "Function 'ajax_send_form' has code quality and standards issues that should be addressed for production readiness (source: hello-plus.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'ajax_send_form' \u2014 required by WPCS for all public functions",
+          "fix": "Add /** @param, @return, @since tags above function 'ajax_send_form'"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'ajax_send_form' (source: hello-plus.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'ajax_send_form' has no obvious security vulnerabilities but lacks defensive coding patterns (source: hello-plus.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'ajax_send_form' performs potentially expensive operations in a loop without caching (source: hello-plus.json)",
+          "fix": "Cache expensive computed values using wp_cache_set()/wp_cache_get() with appropriate cache group and expiry"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'ajax_send_form' uses WordPress APIs appropriately for its scope (source: hello-plus.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'ajax_send_form' code quality is acceptable but could improve single responsibility adherence (source: hello-plus.json, 81 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'ajax_send_form' instantiates Form_Record \u2014 ensure these dependencies are available in all execution contexts (source: hello-plus.json)",
+          "fix": "Inject dependencies via constructor or factory pattern rather than instantiating inside the function; improves testability"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'ajax_send_form' i18n handling is acceptable (source: hello-plus.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'ajax_send_form' does not produce HTML output \u2014 accessibility dimension not applicable (source: hello-plus.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'ajax_send_form' has no obvious security vulnerabilities but lacks defensive coding patterns (source: hello-plus.json)"
+    },
+    "corrected_code": "/**\n * Ajax Send Form \u2014 fixed version.\n *\n * @return mixed\n * @since 1.0.0\n */\nfunction ajax_send_form() {\n\t\tcheck_ajax_referer( self::NONCE_ACTION, 'nonce' );\n\n\t\t// $post_id that holds the form settings.\n\t\t$post_id = filter_input( INPUT_POST, 'post_id', FILTER_SANITIZE_NUMBER_INT );\n\t\t$queried_id = filter_input( INPUT_POST, 'queried_id', FILTER_SANITIZE_NUMBER_INT );\n\n\t\t// $queried_id the post for dynamic values data.\n\t\tif ( ! $queried_id ) {\n\t\t\t$queried_id = $post_id;\n\t\t}\n\n\t\t// Make the post as global post for dynamic values.\n\t\tUtils::elementor()->db->switch_to_post( $queried_id );\n\n\t\t$form_id = filter_input( INPUT_POST, 'form_id', FILTER_SANITIZE_FULL_SPECIAL_CHARS );\n\n\t\t$elementor = Utils::elementor();\n\t\t$document = $elementor->documents->get( $post_id );\n\t\t$form = null;\n\t\t$template_id = null;\n\n\t\tif ( $document ) {\n\t\t\t$form = Module::find_element_recursive( $document->get_elements_data(), (string) $form_id );\n\t\t}\n\n\t\tif ( ! empty( $form['templateID'] ) ) {\n\t\t\t$template = Utils::elementor()->documents->get( $form['templateID'] );\n\n\t\t\tif ( ! $template ) {\n\t\t\t\treturn false;\n\t\t\t}\n\n\t\t\t$template_id = $template->get_id();\n\t\t\t$form = $template->get_elements_data()[0];\n\t\t}\n\n\t\tif ( empty( $form ) ) {\n\t\t\t$this\n\t\t\t\t->add_error_message( self::get_default_message( self::INVALID_FORM, [] ) )\n\t\t\t\t->send();\n\t\t}\n\n\t\t// restore default values\n\t\t$widget = $elementor->elements_manager->create_element_instance( $form );\n\t\t$form['settings'] = $widget->get_settings_for_display();\n\t\t$form['settings']['id'] = $form_id;\n\t\t$form['settings']['form_post_id'] = $template_id ? $template_id : $post_id;\n\n\t\t// TODO: Should be removed if there is an ability to edit \"global widgets\"\n\t\t$form['settings']['edit_post_id'] = $post_id;\n\n\t\t$this->current_form = $form;\n\n\t\tif ( empty( $form['settings']['form_fields'] ) ) {\n\t\t\t$this\n\t\t\t\t->add_error_message( self::get_default_message( self::INVALID_FORM, $form['settings'] ) )\n\t\t\t\t->send();\n\t\t}\n\n\t\t// the fields are not fixed so they will be validated afterwards\n\t\t$form_fields = filter_input(\n\t\t\tINPUT_POST,\n\t\t\t'form_fields',\n\t\t\tFILTER_SANITIZE_FULL_SPECIAL_CHARS,\n\t\t\tFILTER_REQUIRE_ARRAY\n\t\t);\n\n\t\t$record = new Form_Record( $form_fields, $form );\n\n\t\tif ( ! $record->validate( $this ) ) {\n\t\t\t$this\n\t\t\t\t->add_error( $record->get( 'errors' ) )\n\t\t\t\t->add_error_message( self::get_default_message( self::ERROR, $form['settings'] ) )\n\t\t\t\t->send();\n\t\t}\n\n\t\t$record->process_fields( $this );\n\t\t//check for process errors\n\t\tif ( ! empty( $this->errors ) ) {\n\t\t\t$this->send();\n\t\t}\n\n\t\t$module = Module::instance();\n\n\t\t$actions = $module->actions_registrar->get();\n\t\t$errors = array_merge( $this->messages['error'], $this->messages['admin_error'] );\n\n\t\tforeach ( $actions as $action ) {\n\n\t\t\t$exception = null;\n\n\t\t\ttry {\n\t\t\t\t$action->run( $record, $this );\n\n\t\t\t\t$this->handle_bc_errors( $errors );\n\t\t\t} catch ( \\Exception $e ) {\n\t\t\t\t$exception = $e;\n\n\t\t\t\t// Add an admin error.\n\t\t\t\tif ( ! in_array( $exception->getMessage(), $this->messages['admin_error'], true ) ) {\n\t\t\t\t\t$this->add_admin_error_message( \"{$action->get_label()} {$exception->getMessage()}\" );\n\t\t\t\t}\n\n\t\t\t\t// Add a user error.\n\t\t\t\t$this->add_error_message( $this->get_default_message( self::ERROR, $this->current_form['settings'] ) );\n\t\t\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "woocommerce-paypal-payments.json",
+    "function_name": "CartProductsHelper::add_products",
+    "defective_code": "/**\n\t * Adds products to cart.\n\t *\n\t * @param array $products Array of products to be added to cart.\n\t * @return bool\n\t * @throws Exception Add to cart methods throw an exception on fail.\n\t */\nfunction add_products( array $products ): bool {\n\t\t$success = true;\n\t\tforeach ( $products as $product ) {\n\n\t\t\t// Add extras to POST, they are usually added by custom plugins.\n\t\t\tif ( $product['extra'] && is_array( $product['extra'] ) ) {\n\t\t\t\t// Handle cases like field[].\n\t\t\t\t$query = http_build_query( $product['extra'] );\n\t\t\t\tparse_str( $query, $extra );\n\n\t\t\t\tforeach ( $extra as $key => $value ) {\n\t\t\t\t\t$_POST[ $key ] = $value;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tif ( $product['product']->is_type( 'booking' ) ) {\n\t\t\t\t$success = $success && $this->add_booking_product(\n\t\t\t\t\t$product['product'],\n\t\t\t\t\t$product['booking']\n\t\t\t\t);\n\t\t\t} elseif ( $product['product']->is_type( 'variable' ) ) {\n\t\t\t\tif ( empty( $product['variations'] ) || ! is_array( $product['variations'] ) ) {\n\t\t\t\t\t$product['variations'] = array();\n\t\t\t\t}\n\t\t\t\t$success = $success && $this->add_variable_product(\n\t\t\t\t\t$product['product'],\n\t\t\t\t\t$product['quantity'],\n\t\t\t\t\t$product['variations']\n\t\t\t\t);\n\t\t\t} else {\n\t\t\t\t$success = $success && $this->add_product(\n\t\t\t\t\t$product['product'],\n\t\t\t\t\t$product['quantity']\n\t\t\t\t);\n\t\t\t}\n\t\t}\n\n\t\tif ( ! $success ) {\n\t\t\tthrow new Exception( 'Error adding products to cart.' );\n\t\t}\n\n\t\treturn true;\n\t}",
+    "critique": {
+      "summary": "Function 'add_products' has 1 critical issue(s) (security) requiring immediate remediation before deployment.",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'add_products' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'add_products' (source: woocommerce-paypal-payments.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "critical",
+          "issue": "'add_products' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests",
+          "fix": "Add wp_verify_nonce($_POST['_wpnonce'], 'action_name') before processing any user input; use wp_nonce_field() in forms"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'add_products' performs potentially expensive operations in a loop without caching (source: woocommerce-paypal-payments.json)",
+          "fix": "Cache expensive computed values using wp_cache_set()/wp_cache_get() with appropriate cache group and expiry"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'add_products' uses WordPress APIs appropriately for its scope (source: woocommerce-paypal-payments.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'add_products' (39 lines, source: woocommerce-paypal-payments.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'add_products' instantiates Exception \u2014 ensure these dependencies are available in all execution contexts (source: woocommerce-paypal-payments.json)",
+          "fix": "Inject dependencies via constructor or factory pattern rather than instantiating inside the function; improves testability"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'add_products' i18n handling is acceptable (source: woocommerce-paypal-payments.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'add_products' does not produce HTML output \u2014 accessibility dimension not applicable (source: woocommerce-paypal-payments.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'add_products' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests"
+    },
+    "corrected_code": "/**\n\t * Adds products to cart.\n\t *\n\t * @param array $products Array of products to be added to cart.\n\t * @return bool\n\t * @throws Exception Add to cart methods throw an exception on fail.\n\t */\nfunction add_products( array $products ): bool {\n    // Security: Verify nonce before processing user input\n    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) ), 'add_products_action' ) ) {\n        wp_die( esc_html__( 'Security check failed.', 'plugin-slug' ) );\n    }\n\n\t\t$success = true;\n\t\tforeach ( $products as $product ) {\n\n\t\t\t// Add extras to POST, they are usually added by custom plugins.\n\t\t\tif ( $product['extra'] && is_array( $product['extra'] ) ) {\n\t\t\t\t// Handle cases like field[].\n\t\t\t\t$query = http_build_query( $product['extra'] );\n\t\t\t\tparse_str( $query, $extra );\n\n\t\t\t\tforeach ( $extra as $key => $value ) {\n\t\t\t\t\t$_POST[ $key ] = $value;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tif ( $product['product']->is_type( 'booking' ) ) {\n\t\t\t\t$success = $success && $this->add_booking_product(\n\t\t\t\t\t$product['product'],\n\t\t\t\t\t$product['booking']\n\t\t\t\t);\n\t\t\t} elseif ( $product['product']->is_type( 'variable' ) ) {\n\t\t\t\tif ( empty( $product['variations'] ) || ! is_array( $product['variations'] ) ) {\n\t\t\t\t\t$product['variations'] = array();\n\t\t\t\t}\n\t\t\t\t$success = $success && $this->add_variable_product(\n\t\t\t\t\t$product['product'],\n\t\t\t\t\t$product['quantity'],\n\t\t\t\t\t$product['variations']\n\t\t\t\t);\n\t\t\t} else {\n\t\t\t\t$success = $success && $this->add_product(\n\t\t\t\t\t$product['product'],\n\t\t\t\t\t$product['quantity']\n\t\t\t\t);\n\t\t\t}\n\t\t}\n\n\t\tif ( ! $success ) {\n\t\t\tthrow new Exception( 'Error adding products to cart.' );\n\t\t}\n\n\t\treturn true;\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "woo-product-reviews-shortcode.json",
+    "function_name": "FS_Admin_Menu_Manager::get_option",
+    "defective_code": "function get_option( &$options, $key, $default = false ) {\n\t\t\treturn ! empty( $options[ $key ] ) ? $options[ $key ] : $default;\n\t\t}",
+    "critique": {
+      "summary": "Function 'get_option' has code quality and standards issues that should be addressed for production readiness (source: woo-product-reviews-shortcode.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'get_option' \u2014 required by WPCS for all public functions",
+          "fix": "Add /** @param, @return, @since tags above function 'get_option'"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'get_option' (source: woo-product-reviews-shortcode.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'get_option' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woo-product-reviews-shortcode.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'get_option' has no obvious performance issues for its current scope (source: woo-product-reviews-shortcode.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'get_option' uses WordPress APIs appropriately for its scope (source: woo-product-reviews-shortcode.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'get_option' code quality is acceptable but could improve single responsibility adherence (source: woo-product-reviews-shortcode.json, 3 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'get_option' has no problematic dependency patterns detected (source: woo-product-reviews-shortcode.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'get_option' i18n handling is acceptable (source: woo-product-reviews-shortcode.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'get_option' does not produce HTML output \u2014 accessibility dimension not applicable (source: woo-product-reviews-shortcode.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'get_option' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woo-product-reviews-shortcode.json)"
+    },
+    "corrected_code": "/**\n * Get Option \u2014 fixed version.\n *\n  * @param mixed $options Options value.\n * @param mixed $key Key value.\n * @param mixed $default Default value.\n* @return mixed\n * @since 1.0.0\n */\nfunction get_option( &$options, $key, $default = false ) {\n\t\t\treturn ! empty( $options[ $key ] ) ? $options[ $key ] : $default;\n\t\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_field_date_picker::format_value",
+    "defective_code": "/**\n\t\t * This filter is appied to the $value after it is loaded from the db and before it is returned to the template\n\t\t *\n\t\t * @type    filter\n\t\t * @since   3.6\n\t\t * @date    23/01/13\n\t\t *\n\t\t * @param   $value (mixed) the value which was loaded from the database\n\t\t * @param   $post_id (mixed) the post_id from which the value was loaded\n\t\t * @param   $field (array) the field array holding all the field options\n\t\t *\n\t\t * @return  $value (mixed) the modified value\n\t\t */\nfunction format_value( $value, $post_id, $field ) {\n\n\t\t\t// save_format - compatibility with ACF < 5.0.0\n\t\t\tif ( ! empty( $field['save_format'] ) ) {\n\t\t\t\treturn $value;\n\t\t\t}\n\n\t\t\t// return\n\t\t\treturn acf_format_date( $value, $field['return_format'] );\n\t\t}",
+    "critique": {
+      "summary": "Function 'format_value' has code quality and standards issues that should be addressed for production readiness (source: advanced-custom-fields.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'format_value' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'format_value' (source: advanced-custom-fields.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'format_value' has no obvious security vulnerabilities but lacks defensive coding patterns (source: advanced-custom-fields.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'format_value' has no obvious performance issues for its current scope (source: advanced-custom-fields.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'format_value' uses WordPress APIs appropriately for its scope (source: advanced-custom-fields.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'format_value' code quality is acceptable but could improve single responsibility adherence (source: advanced-custom-fields.json, 9 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'format_value' has no problematic dependency patterns detected (source: advanced-custom-fields.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "medium",
+          "issue": "'format_value' may produce user-visible output without translation wrappers (source: advanced-custom-fields.json)",
+          "fix": "Audit for hardcoded strings and wrap in __() or esc_html__() with the plugin text domain"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'format_value' does not produce HTML output \u2014 accessibility dimension not applicable (source: advanced-custom-fields.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'format_value' has no obvious security vulnerabilities but lacks defensive coding patterns (source: advanced-custom-fields.json)"
+    },
+    "corrected_code": "/**\n\t\t * This filter is appied to the $value after it is loaded from the db and before it is returned to the template\n\t\t *\n\t\t * @type    filter\n\t\t * @since   3.6\n\t\t * @date    23/01/13\n\t\t *\n\t\t * @param   $value (mixed) the value which was loaded from the database\n\t\t * @param   $post_id (mixed) the post_id from which the value was loaded\n\t\t * @param   $field (array) the field array holding all the field options\n\t\t *\n\t\t * @return  $value (mixed) the modified value\n\t\t */\nfunction format_value( $value, $post_id, $field ) {\n\n\t\t\t// save_format - compatibility with ACF < 5.0.0\n\t\t\tif ( ! empty( $field['save_format'] ) ) {\n\t\t\t\treturn $value;\n\t\t\t}\n\n\t\t\t// return\n\t\t\treturn acf_format_date( $value, $field['return_format'] );\n\t\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "woocommerce-paypal-payments.json",
+    "function_name": "PayLaterMessagingSettings::set_shop",
+    "defective_code": "function set_shop( $styles ): void {\n\t\t$this->data['shop'] = $this->sanitize_paylater_messaging( $styles, 'shop' );\n\t}",
+    "critique": {
+      "summary": "Function 'set_shop' has code quality and standards issues that should be addressed for production readiness (source: woocommerce-paypal-payments.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'set_shop' \u2014 required by WPCS for all public functions",
+          "fix": "Add /** @param, @return, @since tags above function 'set_shop'"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'set_shop' (source: woocommerce-paypal-payments.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'set_shop' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce-paypal-payments.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'set_shop' has no obvious performance issues for its current scope (source: woocommerce-paypal-payments.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'set_shop' uses WordPress APIs appropriately for its scope (source: woocommerce-paypal-payments.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'set_shop' code quality is acceptable but could improve single responsibility adherence (source: woocommerce-paypal-payments.json, 3 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'set_shop' has no problematic dependency patterns detected (source: woocommerce-paypal-payments.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'set_shop' i18n handling is acceptable (source: woocommerce-paypal-payments.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'set_shop' does not produce HTML output \u2014 accessibility dimension not applicable (source: woocommerce-paypal-payments.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'set_shop' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce-paypal-payments.json)"
+    },
+    "corrected_code": "/**\n * Set Shop \u2014 fixed version.\n *\n  * @param mixed $styles Styles value.\n* @return mixed\n * @since 1.0.0\n */\nfunction set_shop( $styles ): void {\n\t\t$this->data['shop'] = $this->sanitize_paylater_messaging( $styles, 'shop' );\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "twentytwenty.json",
+    "function_name": "TwentyTwenty_Walker_Comment::html5_comment",
+    "defective_code": "/**\n\t\t * Outputs a comment in the HTML5 format.\n\t\t *\n\t\t * @see wp_list_comments()\n\t\t * @see https://developer.wordpress.org/reference/functions/get_comment_author_url/\n\t\t * @see https://developer.wordpress.org/reference/functions/get_comment_author/\n\t\t * @see https://developer.wordpress.org/reference/functions/get_avatar/\n\t\t * @see https://developer.wordpress.org/reference/functions/get_comment_reply_link/\n\t\t * @see https://developer.wordpress.org/reference/functions/get_edit_comment_link/\n\t\t *\n\t\t * @param WP_Comment $comment Comment to display.\n\t\t * @param int        $depth   Depth of the current comment.\n\t\t * @param array      $args    An array of arguments.\n\t\t */\nfunction html5_comment( $comment, $depth, $args ) {\n\n\t\t\t$tag = ( 'div' === $args['style'] ) ? 'div' : 'li';\n\n\t\t\t?>\n\t\t\t<<?php echo $tag; //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static output ?> id=\"comment-<?php comment_ID(); ?>\" <?php comment_class( $this->has_children ? 'parent' : '', $comment ); ?>>\n\t\t\t\t<article id=\"div-comment-<?php comment_ID(); ?>\" class=\"comment-body\">\n\t\t\t\t\t<footer class=\"comment-meta\">\n\t\t\t\t\t\t<div class=\"comment-author vcard\">\n\t\t\t\t\t\t\t<?php\n\t\t\t\t\t\t\t$comment_author_url = get_comment_author_url( $comment );\n\t\t\t\t\t\t\t$comment_author     = get_comment_author( $comment );\n\t\t\t\t\t\t\t$avatar             = get_avatar( $comment, $args['avatar_size'] );\n\t\t\t\t\t\t\tif ( 0 !== $args['avatar_size'] ) {\n\t\t\t\t\t\t\t\tif ( empty( $comment_author_url ) ) {\n\t\t\t\t\t\t\t\t\techo wp_kses_post( $avatar );\n\t\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\t\tprintf( '<a href=\"%s\" rel=\"external nofollow\" class=\"url\">', $comment_author_url ); //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped --Escaped in https://developer.wordpress.org/reference/functions/get_comment_author_url/\n\t\t\t\t\t\t\t\t\techo wp_kses_post( $avatar );\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\tprintf(\n\t\t\t\t\t\t\t\t'<span class=\"fn\">%1$s</span><span class=\"screen-reader-text says\">%2$s</span>',\n\t\t\t\t\t\t\t\tesc_html( $comment_author ),\n\t\t\t\t\t\t\t\t__( 'says:', 'twentytwenty' )\n\t\t\t\t\t\t\t);\n\n\t\t\t\t\t\t\tif ( ! empty( $comment_author_url ) ) {\n\t\t\t\t\t\t\t\techo '</a>';\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t?>\n\t\t\t\t\t\t</div><!-- .comment-author -->\n\n\t\t\t\t\t\t<div class=\"comment-metadata\">\n\t\t\t\t\t\t\t<a href=\"<?php echo esc_url( get_comment_link( $comment, $args ) ); ?>\">\n\t\t\t\t\t\t\t\t<?php\n\t\t\t\t\t\t\t\t/* Translators: 1 = comment date, 2 = comment time */\n\t\t\t\t\t\t\t\t$comment_timestamp = sprintf( __( '%1$s at %2$s', 'twentytwenty' ), get_comment_date( '', $comment ), get_comment_time() );\n\t\t\t\t\t\t\t\t?>\n\t\t\t\t\t\t\t\t<time datetime=\"<?php comment_time( 'c' ); ?>\" title=\"<?php echo esc_attr( $comment_timestamp ); ?>\">\n\t\t\t\t\t\t\t\t\t<?php echo esc_html( $comment_timestamp ); ?>\n\t\t\t\t\t\t\t\t</time>\n\t\t\t\t\t\t\t</a>\n\t\t\t\t\t\t\t<?php\n\t\t\t\t\t\t\tif ( get_edit_comment_link() ) {\n\t\t\t\t\t\t\t\techo ' <span aria-hidden=\"true\">&bull;</span> <a class=\"comment-edit-link\" href=\"' . esc_url( get_edit_comment_link() ) . '\">' . __( 'Edit', 'twentytwenty' ) . '</a>';\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t?>\n\t\t\t\t\t\t</div><!-- .comment-metadata -->\n\n\t\t\t\t\t</footer><!-- .comment-meta -->\n\n\t\t\t\t\t<div class=\"comment-content entry-content\">\n\n\t\t\t\t\t\t<?php\n\n\t\t\t\t\t\tcomment_text();\n\n\t\t\t\t\t\tif ( '0' === $comment->comment_approved ) {\n\t\t\t\t\t\t\t?>\n\t\t\t\t\t\t\t<p class=\"comment-awaiting-moderation\"><?php _e( 'Your comment is awaiting moderation.', 'twentytwenty' ); ?></p>\n\t\t\t\t\t\t\t<?php\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\t?>\n\n\t\t\t\t\t</div><!-- .comment-content -->\n\n\t\t\t\t\t<?php\n\n\t\t\t\t\t$comment_reply_link = get_comment_reply_link(\n\t\t\t\t\t\tarray_merge(\n\t\t\t\t\t\t\t$args,\n\t\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t\t'add_below' => 'div-comment',\n\t\t\t\t\t\t\t\t'depth'     => $depth,\n\t\t\t\t\t\t\t\t'max_depth' => $args['max_depth'],\n\t\t\t\t\t\t\t\t'before'    => '<span class=\"comment-reply\">',\n\t\t\t\t\t\t\t\t'after'     => '</span>',\n\t\t\t\t\t\t\t)\n\t\t\t\t\t\t)\n\t\t\t\t\t);\n\n\t\t\t\t\t$by_post_author = twentytwenty_is_comment_by_post_author( $comment );\n\n\t\t\t\t\tif ( $comment_reply_link || $by_post_author ) {\n\t\t\t\t\t\t?>\n\n\t\t\t\t\t\t<footer class=\"comment-footer-meta\">\n\n\t\t\t\t\t\t\t<?php\n\t\t\t\t\t\t\tif ( $comment_reply_link ) {\n\t\t\t\t\t\t\t\techo $comment_reply_link; //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped --Link is escaped in https://developer.wordpress.org/reference/functions/get_comment_reply_link/\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\tif ( $by_post_author ) {\n\t\t\t\t\t\t\t\techo '<span class=\"by-post-author\">' . __( 'By Post Author', 'twentytwenty' ) . '</span>';\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t?>\n\n\t\t\t\t\t\t</footer>\n\n\t\t\t\t\t\t<?php\n\t\t\t\t\t}\n\t\t\t\t\t?>\n\n\t\t\t\t</article><!-- .comment-body -->\n\n\t\t\t<?php\n\t\t}",
+    "critique": {
+      "summary": "Function 'html5_comment' has code quality and standards issues that should be addressed for production readiness (source: twentytwenty.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'html5_comment' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'html5_comment' (source: twentytwenty.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'html5_comment' has no obvious security vulnerabilities but lacks defensive coding patterns (source: twentytwenty.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'html5_comment' has no obvious performance issues for its current scope (source: twentytwenty.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'html5_comment' uses WordPress APIs appropriately for its scope (source: twentytwenty.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'html5_comment' (89 lines, source: twentytwenty.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'html5_comment' has no problematic dependency patterns detected (source: twentytwenty.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'html5_comment' i18n handling is acceptable (source: twentytwenty.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'html5_comment' renders HTML (source: twentytwenty.json) \u2014 verify semantic structure uses appropriate HTML5 elements",
+          "fix": "Use semantic HTML: <nav>, <main>, <article>, <section> where appropriate; avoid div-soup for content that has semantic meaning"
+        }
+      },
+      "key_observation": "'html5_comment' has no obvious security vulnerabilities but lacks defensive coding patterns (source: twentytwenty.json)"
+    },
+    "corrected_code": "/**\n\t\t * Outputs a comment in the HTML5 format.\n\t\t *\n\t\t * @see wp_list_comments()\n\t\t * @see https://developer.wordpress.org/reference/functions/get_comment_author_url/\n\t\t * @see https://developer.wordpress.org/reference/functions/get_comment_author/\n\t\t * @see https://developer.wordpress.org/reference/functions/get_avatar/\n\t\t * @see https://developer.wordpress.org/reference/functions/get_comment_reply_link/\n\t\t * @see https://developer.wordpress.org/reference/functions/get_edit_comment_link/\n\t\t *\n\t\t * @param WP_Comment $comment Comment to display.\n\t\t * @param int        $depth   Depth of the current comment.\n\t\t * @param array      $args    An array of arguments.\n\t\t */\nfunction html5_comment( $comment, $depth, $args ) {\n\n\t\t\t$tag = ( 'div' === $args['style'] ) ? 'div' : 'li';\n\n\t\t\t?>\n\t\t\t<<?php echo $tag; //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static output ?> id=\"comment-<?php comment_ID(); ?>\" <?php comment_class( $this->has_children ? 'parent' : '', $comment ); ?>>\n\t\t\t\t<article id=\"div-comment-<?php comment_ID(); ?>\" class=\"comment-body\">\n\t\t\t\t\t<footer class=\"comment-meta\">\n\t\t\t\t\t\t<div class=\"comment-author vcard\">\n\t\t\t\t\t\t\t<?php\n\t\t\t\t\t\t\t$comment_author_url = get_comment_author_url( $comment );\n\t\t\t\t\t\t\t$comment_author     = get_comment_author( $comment );\n\t\t\t\t\t\t\t$avatar             = get_avatar( $comment, $args['avatar_size'] );\n\t\t\t\t\t\t\tif ( 0 !== $args['avatar_size'] ) {\n\t\t\t\t\t\t\t\tif ( empty( $comment_author_url ) ) {\n\t\t\t\t\t\t\t\t\techo wp_kses_post( $avatar );\n\t\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\t\tprintf( '<a href=\"%s\" rel=\"external nofollow\" class=\"url\">', $comment_author_url ); //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped --Escaped in https://developer.wordpress.org/reference/functions/get_comment_author_url/\n\t\t\t\t\t\t\t\t\techo wp_kses_post( $avatar );\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\tprintf(\n\t\t\t\t\t\t\t\t'<span class=\"fn\">%1$s</span><span class=\"screen-reader-text says\">%2$s</span>',\n\t\t\t\t\t\t\t\tesc_html( $comment_author ),\n\t\t\t\t\t\t\t\t__( 'says:', 'twentytwenty' )\n\t\t\t\t\t\t\t);\n\n\t\t\t\t\t\t\tif ( ! empty( $comment_author_url ) ) {\n\t\t\t\t\t\t\t\techo '</a>';\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t?>\n\t\t\t\t\t\t</div><!-- .comment-author -->\n\n\t\t\t\t\t\t<div class=\"comment-metadata\">\n\t\t\t\t\t\t\t<a href=\"<?php echo esc_url( get_comment_link( $comment, $args ) ); ?>\">\n\t\t\t\t\t\t\t\t<?php\n\t\t\t\t\t\t\t\t/* Translators: 1 = comment date, 2 = comment time */\n\t\t\t\t\t\t\t\t$comment_timestamp = sprintf( __( '%1$s at %2$s', 'twentytwenty' ), get_comment_date( '', $comment ), get_comment_time() );\n\t\t\t\t\t\t\t\t?>\n\t\t\t\t\t\t\t\t<time datetime=\"<?php comment_time( 'c' ); ?>\" title=\"<?php echo esc_attr( $comment_timestamp ); ?>\">\n\t\t\t\t\t\t\t\t\t<?php echo esc_html( $comment_timestamp ); ?>\n\t\t\t\t\t\t\t\t</time>\n\t\t\t\t\t\t\t</a>\n\t\t\t\t\t\t\t<?php\n\t\t\t\t\t\t\tif ( get_edit_comment_link() ) {\n\t\t\t\t\t\t\t\techo ' <span aria-hidden=\"true\">&bull;</span> <a class=\"comment-edit-link\" href=\"' . esc_url( get_edit_comment_link() ) . '\">' . __( 'Edit', 'twentytwenty' ) . '</a>';\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t?>\n\t\t\t\t\t\t</div><!-- .comment-metadata -->\n\n\t\t\t\t\t</footer><!-- .comment-meta -->\n\n\t\t\t\t\t<div class=\"comment-content entry-content\">\n\n\t\t\t\t\t\t<?php\n\n\t\t\t\t\t\tcomment_text();\n\n\t\t\t\t\t\tif ( '0' === $comment->comment_approved ) {\n\t\t\t\t\t\t\t?>\n\t\t\t\t\t\t\t<p class=\"comment-awaiting-moderation\"><?php _e( 'Your comment is awaiting moderation.', 'twentytwenty' ); ?></p>\n\t\t\t\t\t\t\t<?php\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\t?>\n\n\t\t\t\t\t</div><!-- .comment-content -->\n\n\t\t\t\t\t<?php\n\n\t\t\t\t\t$comment_reply_link = get_comment_reply_link(\n\t\t\t\t\t\tarray_merge(\n\t\t\t\t\t\t\t$args,\n\t\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t\t'add_below' => 'div-comment',\n\t\t\t\t\t\t\t\t'depth'     => $depth,\n\t\t\t\t\t\t\t\t'max_depth' => $args['max_depth'],\n\t\t\t\t\t\t\t\t'before'    => '<span class=\"comment-reply\">',\n\t\t\t\t\t\t\t\t'after'     => '</span>',\n\t\t\t\t\t\t\t)\n\t\t\t\t\t\t)\n\t\t\t\t\t);\n\n\t\t\t\t\t$by_post_author = twentytwenty_is_comment_by_post_author( $comment );\n\n\t\t\t\t\tif ( $comment_reply_link || $by_post_author ) {\n\t\t\t\t\t\t?>\n\n\t\t\t\t\t\t<footer class=\"comment-footer-meta\">\n\n\t\t\t\t\t\t\t<?php\n\t\t\t\t\t\t\tif ( $comment_reply_link ) {\n\t\t\t\t\t\t\t\techo $comment_reply_link; //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped --Link is escaped in https://developer.wordpress.org/reference/functions/get_comment_reply_link/\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\tif ( $by_post_author ) {\n\t\t\t\t\t\t\t\techo '<span class=\"by-post-author\">' . __( 'By Post Author', 'twentytwenty' ) . '</span>';\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t?>\n\n\t\t\t\t\t\t</footer>\n\n\t\t\t\t\t\t<?php\n\t\t\t\t\t}\n\t\t\t\t\t?>\n\n\t\t\t\t</article><!-- .comment-body -->\n\n\t\t\t<?php\n\t\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "seo-by-rank-math.json",
+    "function_name": "get_columns",
+    "defective_code": "/**\n\t\t * Filters the columns displayed in the Redirections table.\n\t\t *\n\t\t * @param array $columns Array of columns.\n\t\t */\nfunction get_columns() {\n\t\t\n\t\treturn apply_filters(\n\t\t\t'rank_math/redirection/admin_columns',\n\t\t\t[\n\t\t\t\t'cb'            => '<input type=\"checkbox\" />',\n\t\t\t\t'sources'       => esc_html__( 'From', 'rank-math' ),\n\t\t\t\t'url_to'        => esc_html__( 'To', 'rank-math' ),\n\t\t\t\t'header_code'   => esc_html__( 'Type', 'rank-math' ),\n\t\t\t\t'hits'          => esc_html__( 'Hits', 'rank-math' ),\n\t\t\t\t'created'       => esc_html__( 'Created', 'rank-math' ),\n\t\t\t\t'last_accessed' => esc_html__( 'Last Accessed', 'rank-math' ),\n\t\t\t]\n\t\t);\n\t}",
+    "critique": {
+      "summary": "Function 'get_columns' has 1 high-severity issue(s) (accessibility) that compromise security or correctness.",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'get_columns' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'get_columns' (source: seo-by-rank-math.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'get_columns' has no obvious security vulnerabilities but lacks defensive coding patterns (source: seo-by-rank-math.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'get_columns' has no obvious performance issues for its current scope (source: seo-by-rank-math.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'get_columns' uses WordPress APIs appropriately for its scope (source: seo-by-rank-math.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'get_columns' (15 lines, source: seo-by-rank-math.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'get_columns' has no problematic dependency patterns detected (source: seo-by-rank-math.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'get_columns' i18n handling is acceptable (source: seo-by-rank-math.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "high",
+          "issue": "'get_columns' renders form inputs without associated <label> elements \u2014 screen readers cannot identify form fields, failing WCAG 2.1 success criterion 1.3.1",
+          "fix": "Add <label for='field_id'>Field Name</label> before each <input id='field_id'>, or use aria-label attribute: <input aria-label='Field Name'>"
+        }
+      },
+      "key_observation": "'get_columns' has no obvious security vulnerabilities but lacks defensive coding patterns (source: seo-by-rank-math.json)"
+    },
+    "corrected_code": "/**\n\t\t * Filters the columns displayed in the Redirections table.\n\t\t *\n\t\t * @param array $columns Array of columns.\n\t\t */\nfunction get_columns() {\n\t\t\n\t\treturn apply_filters(\n\t\t\t'rank_math/redirection/admin_columns',\n\t\t\t[\n\t\t\t\t'cb'            => '<input type=\"checkbox\" />',\n\t\t\t\t'sources'       => esc_html__( 'From', 'rank-math' ),\n\t\t\t\t'url_to'        => esc_html__( 'To', 'rank-math' ),\n\t\t\t\t'header_code'   => esc_html__( 'Type', 'rank-math' ),\n\t\t\t\t'hits'          => esc_html__( 'Hits', 'rank-math' ),\n\t\t\t\t'created'       => esc_html__( 'Created', 'rank-math' ),\n\t\t\t\t'last_accessed' => esc_html__( 'Last Accessed', 'rank-math' ),\n\t\t\t]\n\t\t);\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "woocommerce.json",
+    "function_name": "wc_no_js",
+    "defective_code": "/**\n * NO JS handling.\n *\n * @since 3.4.0\n * @return void\n */\nfunction wc_no_js() {\n\t$type_attr = current_theme_supports( 'html5', 'script' ) ? '' : \" type='text/javascript'\";\n\t?>\n\t<script<?php echo $type_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>\n\t\t(function () {\n\t\t\tvar c = document.body.className;\n\t\t\tc = c.replace(/woocommerce-no-js/, 'woocommerce-js');\n\t\t\tdocument.body.className = c;\n\t\t})();\n\t</script>\n\t<?php\n}",
+    "critique": {
+      "summary": "Function 'wc_no_js' has code quality and standards issues that should be addressed for production readiness (source: woocommerce.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'wc_no_js' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'wc_no_js' (source: woocommerce.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'wc_no_js' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'wc_no_js' has no obvious performance issues for its current scope (source: woocommerce.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'wc_no_js' uses WordPress APIs appropriately for its scope (source: woocommerce.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'wc_no_js' (13 lines, source: woocommerce.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'wc_no_js' has no problematic dependency patterns detected (source: woocommerce.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "medium",
+          "issue": "'wc_no_js' may produce user-visible output without translation wrappers (source: woocommerce.json)",
+          "fix": "Audit for hardcoded strings and wrap in __() or esc_html__() with the plugin text domain"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'wc_no_js' renders HTML (source: woocommerce.json) \u2014 verify semantic structure uses appropriate HTML5 elements",
+          "fix": "Use semantic HTML: <nav>, <main>, <article>, <section> where appropriate; avoid div-soup for content that has semantic meaning"
+        }
+      },
+      "key_observation": "'wc_no_js' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce.json)"
+    },
+    "corrected_code": "/**\n * NO JS handling.\n *\n * @since 3.4.0\n * @return void\n */\nfunction wc_no_js() {\n\t$type_attr = current_theme_supports( 'html5', 'script' ) ? '' : \" type='text/javascript'\";\n\t?>\n\t<script<?php echo $type_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>\n\t\t(function () {\n\t\t\tvar c = document.body.className;\n\t\t\tc = c.replace(/woocommerce-no-js/, 'woocommerce-js');\n\t\t\tdocument.body.className = c;\n\t\t})();\n\t</script>\n\t<?php\n}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "woo-widget-product-slideshow.json",
+    "function_name": "lib_round",
+    "defective_code": "function lib_round($arg) {\n\t\t$value = $this->assertNumber($arg);\n\t\treturn array(\"number\", round($value), $arg[2]);\n\t}",
+    "critique": {
+      "summary": "Function 'lib_round' has code quality and standards issues that should be addressed for production readiness (source: woo-widget-product-slideshow.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'lib_round' \u2014 required by WPCS for all public functions",
+          "fix": "Add /** @param, @return, @since tags above function 'lib_round'"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'lib_round' (source: woo-widget-product-slideshow.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'lib_round' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woo-widget-product-slideshow.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'lib_round' has no obvious performance issues for its current scope (source: woo-widget-product-slideshow.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'lib_round' uses WordPress APIs appropriately for its scope (source: woo-widget-product-slideshow.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'lib_round' code quality is acceptable but could improve single responsibility adherence (source: woo-widget-product-slideshow.json, 4 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'lib_round' has no problematic dependency patterns detected (source: woo-widget-product-slideshow.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "medium",
+          "issue": "'lib_round' may produce user-visible output without translation wrappers (source: woo-widget-product-slideshow.json)",
+          "fix": "Audit for hardcoded strings and wrap in __() or esc_html__() with the plugin text domain"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'lib_round' does not produce HTML output \u2014 accessibility dimension not applicable (source: woo-widget-product-slideshow.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'lib_round' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woo-widget-product-slideshow.json)"
+    },
+    "corrected_code": "/**\n * Lib Round \u2014 fixed version.\n *\n  * @param mixed $arg Arg value.\n* @return mixed\n * @since 1.0.0\n */\nfunction lib_round($arg) {\n\t\t$value = $this->assertNumber($arg);\n\t\treturn array(\"number\", round($value), $arg[2]);\n\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "woo-product-reviews-shortcode.json",
+    "function_name": "FS_Checkout_Manager::get_checkout_redirect_nonce_action",
+    "defective_code": "function get_checkout_redirect_nonce_action( Freemius $fs ) {\n\t\t\treturn $fs->get_unique_affix() . '_checkout_redirect';\n\t\t}",
+    "critique": {
+      "summary": "Function 'get_checkout_redirect_nonce_action' has code quality and standards issues that should be addressed for production readiness (source: woo-product-reviews-shortcode.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'get_checkout_redirect_nonce_action' \u2014 required by WPCS for all public functions",
+          "fix": "Add /** @param, @return, @since tags above function 'get_checkout_redirect_nonce_action'"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'get_checkout_redirect_nonce_action' (source: woo-product-reviews-shortcode.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'get_checkout_redirect_nonce_action' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woo-product-reviews-shortcode.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'get_checkout_redirect_nonce_action' has no obvious performance issues for its current scope (source: woo-product-reviews-shortcode.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'get_checkout_redirect_nonce_action' uses WordPress APIs appropriately for its scope (source: woo-product-reviews-shortcode.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'get_checkout_redirect_nonce_action' code quality is acceptable but could improve single responsibility adherence (source: woo-product-reviews-shortcode.json, 3 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'get_checkout_redirect_nonce_action' has no problematic dependency patterns detected (source: woo-product-reviews-shortcode.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "medium",
+          "issue": "'get_checkout_redirect_nonce_action' may produce user-visible output without translation wrappers (source: woo-product-reviews-shortcode.json)",
+          "fix": "Audit for hardcoded strings and wrap in __() or esc_html__() with the plugin text domain"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'get_checkout_redirect_nonce_action' does not produce HTML output \u2014 accessibility dimension not applicable (source: woo-product-reviews-shortcode.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'get_checkout_redirect_nonce_action' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woo-product-reviews-shortcode.json)"
+    },
+    "corrected_code": "/**\n * Get Checkout Redirect Nonce Action \u2014 fixed version.\n *\n  * @param mixed $fs Fs value.\n* @return mixed\n * @since 1.0.0\n */\nfunction get_checkout_redirect_nonce_action( Freemius $fs ) {\n\t\t\treturn $fs->get_unique_affix() . '_checkout_redirect';\n\t\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "razorpay-quick-payments.json",
+    "function_name": "Utility::verifyWebhookSignature",
+    "defective_code": "function verifyWebhookSignature($payload, $actualSignature, $secret)\n    {\n        self::verifySignature($payload, $actualSignature, $secret);\n    }",
+    "critique": {
+      "summary": "Function 'verifyWebhookSignature' has code quality and standards issues that should be addressed for production readiness (source: razorpay-quick-payments.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'verifyWebhookSignature' \u2014 required by WPCS for all public functions; Function 'verifyWebhookSignature' uses camelCase \u2014 WPCS requires snake_case (e.g., 'verify_webhook_signature')",
+          "fix": "Add /** @param, @return, @since tags above function 'verifyWebhookSignature'; Rename to snake_case convention"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'verifyWebhookSignature' (source: razorpay-quick-payments.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'verifyWebhookSignature' has no obvious security vulnerabilities but lacks defensive coding patterns (source: razorpay-quick-payments.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'verifyWebhookSignature' has no obvious performance issues for its current scope (source: razorpay-quick-payments.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'verifyWebhookSignature' uses WordPress APIs appropriately for its scope (source: razorpay-quick-payments.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'verifyWebhookSignature' code quality is acceptable but could improve single responsibility adherence (source: razorpay-quick-payments.json, 4 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'verifyWebhookSignature' has no problematic dependency patterns detected (source: razorpay-quick-payments.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'verifyWebhookSignature' i18n handling is acceptable (source: razorpay-quick-payments.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'verifyWebhookSignature' does not produce HTML output \u2014 accessibility dimension not applicable (source: razorpay-quick-payments.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'verifyWebhookSignature' has no obvious security vulnerabilities but lacks defensive coding patterns (source: razorpay-quick-payments.json)"
+    },
+    "corrected_code": "/**\n * Verifywebhooksignature \u2014 fixed version.\n *\n  * @param mixed $payload Payload value.\n * @param mixed $actual Actual value.\n * @param mixed $secret Secret value.\n* @return mixed\n * @since 1.0.0\n */\nfunction verifyWebhookSignature($payload, $actualSignature, $secret)\n    {\n        self::verifySignature($payload, $actualSignature, $secret);\n    }",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "woocommerce-mercadopago.json",
+    "function_name": "Funnel::updateStepCredentials",
+    "defective_code": "function updateStepCredentials(?\\Closure $after = null): void\n    {\n        $this->update([\n            'is_added_production_credential' => !empty($this->seller->getCredentialsAccessTokenProd()),\n            'is_added_test_credential'       => !empty($this->seller->getCredentialsAccessTokenTest()),\n            'plugin_mode'                    => $this->getPluginMode(),\n            'cust_id'                        => $this->seller->getCustIdFromAT(),\n            'site_id'                        => $this->country::countryToSiteId($this->country->getPluginDefaultCountry()),\n        ], $after);\n    }",
+    "critique": {
+      "summary": "Function 'updateStepCredentials' has code quality and standards issues that should be addressed for production readiness (source: woocommerce-mercadopago.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'updateStepCredentials' \u2014 required by WPCS for all public functions; Function 'updateStepCredentials' uses camelCase \u2014 WPCS requires snake_case (e.g., 'update_step_credentials')",
+          "fix": "Add /** @param, @return, @since tags above function 'updateStepCredentials'; Rename to snake_case convention"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'updateStepCredentials' (source: woocommerce-mercadopago.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'updateStepCredentials' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce-mercadopago.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'updateStepCredentials' has no obvious performance issues for its current scope (source: woocommerce-mercadopago.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'updateStepCredentials' uses WordPress APIs appropriately for its scope (source: woocommerce-mercadopago.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'updateStepCredentials' code quality is acceptable but could improve single responsibility adherence (source: woocommerce-mercadopago.json, 10 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'updateStepCredentials' has no problematic dependency patterns detected (source: woocommerce-mercadopago.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'updateStepCredentials' i18n handling is acceptable (source: woocommerce-mercadopago.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'updateStepCredentials' does not produce HTML output \u2014 accessibility dimension not applicable (source: woocommerce-mercadopago.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'updateStepCredentials' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce-mercadopago.json)"
+    },
+    "corrected_code": "/**\n * Updatestepcredentials \u2014 fixed version.\n *\n  * @param mixed $after After value.\n* @return mixed\n * @since 1.0.0\n */\nfunction updateStepCredentials(?\\Closure $after = null): void\n    {\n        $this->update([\n            'is_added_production_credential' => !empty($this->seller->getCredentialsAccessTokenProd()),\n            'is_added_test_credential'       => !empty($this->seller->getCredentialsAccessTokenTest()),\n            'plugin_mode'                    => $this->getPluginMode(),\n            'cust_id'                        => $this->seller->getCustIdFromAT(),\n            'site_id'                        => $this->country::countryToSiteId($this->country->getPluginDefaultCountry()),\n        ], $after);\n    }",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "seo-by-rank-math.json",
+    "function_name": "get_last_modified_gmt",
+    "defective_code": "/**\n\t * Get the GMT modification date for the last modified post in the post type.\n\t *\n\t * @param  string|array $post_types Post type or array of types.\n\t * @param  boolean      $return_all Flag to return array of values.\n\t * @return string|array|false\n\t *\n\t * @copyright Copyright (C) 2008-2019, Yoast BV\n\t * The following code is a derivative work of the code from the Yoast(https://github.com/Yoast/wordpress-seo/), which is licensed under GPL v3.\n\t */\nfunction get_last_modified_gmt( $post_types, $return_all = false ) {\n\t\tglobal $wpdb;\n\n\t\tif ( empty( $post_types ) ) {\n\t\t\treturn false;\n\t\t}\n\n\t\tstatic $post_type_dates = null;\n\t\tif ( ! is_array( $post_types ) ) {\n\t\t\t$post_types = [ $post_types ];\n\t\t}\n\n\t\tforeach ( $post_types as $post_type ) {\n\t\t\tif ( ! isset( $post_type_dates[ $post_type ] ) ) { // If we hadn't seen post type before. R.\n\t\t\t\t$post_type_dates = null;\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\n\t\tif ( is_null( $post_type_dates ) ) {\n\t\t\t$post_type_dates = [];\n\t\t\t$post_type_names = get_post_types( [ 'public' => true ] );\n\n\t\t\tif ( ! empty( $post_type_names ) ) {\n\t\t\t\t$sql = \"\n\t\t\t\tSELECT post_type, MAX( GREATEST( p.post_modified_gmt, p.post_date_gmt ) ) AS date\n\t\t\t\tFROM $wpdb->posts as p\n\t\t\t\tLEFT JOIN {$wpdb->postmeta} AS pm ON ( p.ID = pm.post_id AND pm.meta_key = 'rank_math_robots')\n\t\t\t\tWHERE (\n\t\t\t\t\t( pm.meta_key = 'rank_math_robots' AND pm.meta_value NOT LIKE '%noindex%' ) OR\n\t\t\t\t    pm.post_id IS NULL\n\t\t\t\t)\n\t\t\t\tAND p.post_status IN ( 'publish','inherit' )\n\t\t\t\t\tAND p.post_type IN ('\" . implode( \"','\", $post_type_names ) . \"')\n\t\t\t\tGROUP BY p.post_type\n\t\t\t\tORDER BY p.post_modified_gmt DESC\";\n\n\t\t\t\tforeach ( DB_Helper::get_results( $sql ) as $obj ) {\n\t\t\t\t\t$post_type_dates[ $obj->post_type ] = $obj->date;\n\t\t\t\t}\n\t\t\t}\n\t\t}",
+    "critique": {
+      "summary": "Function 'get_last_modified_gmt' has 1 critical issue(s) (sql_safety) requiring immediate remediation before deployment.",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'get_last_modified_gmt' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "critical",
+          "issue": "$wpdb database queries in 'get_last_modified_gmt' execute without $wpdb->prepare() \u2014 SQL injection vulnerability allows attackers to manipulate database queries via unsanitized input",
+          "fix": "Wrap all dynamic values in $wpdb->prepare() with typed placeholders: $wpdb->prepare('SELECT * FROM %s WHERE id = %d', $table, absint($id))"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'get_last_modified_gmt' has no obvious security vulnerabilities but lacks defensive coding patterns (source: seo-by-rank-math.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'get_last_modified_gmt' performs potentially expensive operations in a loop without caching (source: seo-by-rank-math.json)",
+          "fix": "Cache expensive computed values using wp_cache_set()/wp_cache_get() with appropriate cache group and expiry"
+        },
+        "wp_api_usage": {
+          "severity": "high",
+          "issue": "'get_last_modified_gmt' uses raw $wpdb queries for post data instead of WP_Query \u2014 bypasses WordPress caching, filters, and multisite table prefix support",
+          "fix": "Replace raw SQL with WP_Query: $query = new WP_Query(['post_type' => 'post', 'posts_per_page' => -1]); $posts = $query->posts;"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'get_last_modified_gmt' code quality is acceptable but could improve single responsibility adherence (source: seo-by-rank-math.json, 37 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'get_last_modified_gmt' has no problematic dependency patterns detected (source: seo-by-rank-math.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'get_last_modified_gmt' i18n handling is acceptable (source: seo-by-rank-math.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'get_last_modified_gmt' does not produce HTML output \u2014 accessibility dimension not applicable (source: seo-by-rank-math.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'get_last_modified_gmt' has no obvious security vulnerabilities but lacks defensive coding patterns (source: seo-by-rank-math.json)"
+    },
+    "corrected_code": "/**\n\t * Get the GMT modification date for the last modified post in the post type.\n\t *\n\t * @param  string|array $post_types Post type or array of types.\n\t * @param  boolean      $return_all Flag to return array of values.\n\t * @return string|array|false\n\t *\n\t * @copyright Copyright (C) 2008-2019, Yoast BV\n\t * The following code is a derivative work of the code from the Yoast(https://github.com/Yoast/wordpress-seo/), which is licensed under GPL v3.\n\t */\nfunction get_last_modified_gmt( $post_types, $return_all = false ) {\n    global $wpdb;\n    $cache_key = 'wp_plugin_get_last_modified_gmt_' . md5( serialize( func_get_args() ) );\n    $cached = wp_cache_get( $cache_key, 'plugin-slug' );\n    if ( false !== $cached ) {\n        return $cached;\n    }\n\t\tglobal $wpdb;\n\n\t\tif ( empty( $post_types ) ) {\n\t\t\treturn false;\n\t\t}\n\n\t\tstatic $post_type_dates = null;\n\t\tif ( ! is_array( $post_types ) ) {\n\t\t\t$post_types = [ $post_types ];\n\t\t}\n\n\t\tforeach ( $post_types as $post_type ) {\n\t\t\tif ( ! isset( $post_type_dates[ $post_type ] ) ) { // If we hadn't seen post type before. R.\n\t\t\t\t$post_type_dates = null;\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\n\t\tif ( is_null( $post_type_dates ) ) {\n\t\t\t$post_type_dates = [];\n\t\t\t$post_type_names = get_post_types( [ 'public' => true ] );\n\n\t\t\tif ( ! empty( $post_type_names ) ) {\n\t\t\t\t$sql = \"\n\t\t\t\tSELECT post_type, MAX( GREATEST( p.post_modified_gmt, p.post_date_gmt ) ) AS date\n\t\t\t\tFROM $wpdb->posts as p\n\t\t\t\tLEFT JOIN {$wpdb->postmeta} AS pm ON ( p.ID = pm.post_id AND pm.meta_key = 'rank_math_robots')\n\t\t\t\tWHERE (\n\t\t\t\t\t( pm.meta_key = 'rank_math_robots' AND pm.meta_value NOT LIKE '%noindex%' ) OR\n\t\t\t\t    pm.post_id IS NULL\n\t\t\t\t)\n\t\t\t\tAND p.post_status IN ( 'publish','inherit' )\n\t\t\t\t\tAND p.post_type IN ('\" . implode( \"','\", $post_type_names ) . \"')\n\t\t\t\tGROUP BY p.post_type\n\t\t\t\tORDER BY p.post_modified_gmt DESC\";\n\n\t\t\t\tforeach ( DB_Helper::get_results( $sql ) as $obj ) {\n\t\t\t\t\t$post_type_dates[ $obj->post_type ] = $obj->date;\n\t\t\t\t}\n\t\t\t}\n\t\t}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "wp-super-cache.json",
+    "function_name": "wpsc_update_check",
+    "defective_code": "function wpsc_update_check() {\n\tglobal $wpsc_version;\n\n\tif (\n\t\t! isset( $wpsc_version ) ||\n\t\t$wpsc_version != 169\n\t) {\n\t\twp_cache_setting( 'wpsc_version', 169 );\n\t\tglobal $wp_cache_debug_log, $cache_path;\n\t\t$log_file = $cache_path . str_replace('/', '', str_replace('..', '', $wp_cache_debug_log));\n\t\tif ( ! file_exists( $log_file ) ) {\n\t\t\treturn false;\n\t\t}\n\t\t@unlink( $log_file );\n\t\twp_cache_debug( 'wpsc_update_check: Deleted old log file on plugin update.' );\n\t}\n}",
+    "critique": {
+      "summary": "Function 'wpsc_update_check' has code quality and standards issues that should be addressed for production readiness (source: wp-super-cache.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'wpsc_update_check' \u2014 required by WPCS for all public functions",
+          "fix": "Add /** @param, @return, @since tags above function 'wpsc_update_check'"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'wpsc_update_check' (source: wp-super-cache.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'wpsc_update_check' has no obvious security vulnerabilities but lacks defensive coding patterns (source: wp-super-cache.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'wpsc_update_check' has no obvious performance issues for its current scope (source: wp-super-cache.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'wpsc_update_check' uses WordPress APIs appropriately for its scope (source: wp-super-cache.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'wpsc_update_check' code quality is acceptable but could improve single responsibility adherence (source: wp-super-cache.json, 16 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'wpsc_update_check' has no problematic dependency patterns detected (source: wp-super-cache.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'wpsc_update_check' i18n handling is acceptable (source: wp-super-cache.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'wpsc_update_check' does not produce HTML output \u2014 accessibility dimension not applicable (source: wp-super-cache.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'wpsc_update_check' has no obvious security vulnerabilities but lacks defensive coding patterns (source: wp-super-cache.json)"
+    },
+    "corrected_code": "/**\n * Wpsc Update Check \u2014 fixed version.\n *\n * @return mixed\n * @since 1.0.0\n */\nfunction wpsc_update_check() {\n\tglobal $wpsc_version;\n\n\tif (\n\t\t! isset( $wpsc_version ) ||\n\t\t$wpsc_version != 169\n\t) {\n\t\twp_cache_setting( 'wpsc_version', 169 );\n\t\tglobal $wp_cache_debug_log, $cache_path;\n\t\t$log_file = $cache_path . str_replace('/', '', str_replace('..', '', $wp_cache_debug_log));\n\t\tif ( ! file_exists( $log_file ) ) {\n\t\t\treturn false;\n\t\t}\n\t\t@unlink( $log_file );\n\t\twp_cache_debug( 'wpsc_update_check: Deleted old log file on plugin update.' );\n\t}\n}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "cmb2.json",
+    "function_name": "CMB2_Type_Counter_Base::char_counter_markup",
+    "defective_code": "/**\n\t * Return character counter markup for this field.\n\t *\n\t * @since  2.7.0\n\t *\n\t * @param  string $val The actual value of this field.\n\t *\n\t * @return string\n\t */\nfunction char_counter_markup( $val ) {\n\t\t$markup = '';\n\n\t\tif ( ! $this->field->args( 'char_counter' ) ) {\n\t\t\treturn $markup;\n\t\t}\n\n\t\t$type     = (string) $this->field->args( 'char_counter' );\n\t\t$field_id = $this->_id( '', false );\n\t\t$char_max = (int) $this->field->prop( 'char_max' );\n\t\tif ( $char_max ) {\n\t\t\t$char_max = 'data-max=\"' . $char_max . '\"';\n\t\t}\n\n\t\tswitch ( $type ) {\n\t\t\tcase 'words':\n\t\t\t\t$label = $char_max\n\t\t\t\t\t? $this->_text( 'words_left_text', esc_html__( 'Words left', 'cmb2' ) )\n\t\t\t\t\t: $this->_text( 'words_text', esc_html__( 'Words', 'cmb2' ) );\n\t\t\t\tbreak;\n\t\t\tdefault:\n\t\t\t\t$type  = 'characters';\n\t\t\t\t$label = $char_max\n\t\t\t\t\t? $this->_text( 'characters_left_text', esc_html__( 'Characters left', 'cmb2' ) )\n\t\t\t\t\t: $this->_text( 'characters_text', esc_html__( 'Characters', 'cmb2' ) );\n\t\t\t\tbreak;\n\t\t}\n\n\t\t$msg = $char_max\n\t\t\t? sprintf( '<span class=\"cmb2-char-max-msg\">%s</span>', $this->_text( 'characters_truncated_text', esc_html__( 'Your text may be truncated.', 'cmb2' ) ) )\n\t\t\t: '';\n\n\t\t$length = strlen( $val );\n\t\t$width  = $length > 1 ? ( 8 * strlen( (string) $length ) ) + 15 : false;\n\n\t\t$markup .= '<p class=\"cmb2-char-counter-wrap\">';\n\t\t$markup .= sprintf(\n\t\t\t'<label><span class=\"cmb2-char-counter-label\">%2$s:</span> <input id=\"%1$s\" data-field-id=\"%3$s\" data-counter-type=\"%4$s\" %5$s class=\"cmb2-char-counter\" type=\"text\" value=\"%6$s\" readonly=\"readonly\" style=\"%7$s\"></label>%8$s',\n\t\t\tesc_attr( 'char-counter-' . $field_id ),\n\t\t\t$label,\n\t\t\tesc_attr( $field_id ),\n\t\t\t$type,\n\t\t\t$char_max,\n\t\t\t$length,\n\t\t\t$width ? \"width: {$width}",
+    "critique": {
+      "summary": "Function 'char_counter_markup' has code quality and standards issues that should be addressed for production readiness (source: cmb2.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'char_counter_markup' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'char_counter_markup' (source: cmb2.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'char_counter_markup' has no obvious security vulnerabilities but lacks defensive coding patterns (source: cmb2.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'char_counter_markup' has no obvious performance issues for its current scope (source: cmb2.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'char_counter_markup' uses WordPress APIs appropriately for its scope (source: cmb2.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'char_counter_markup' (40 lines, source: cmb2.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'char_counter_markup' has no problematic dependency patterns detected (source: cmb2.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'char_counter_markup' i18n handling is acceptable (source: cmb2.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "medium",
+          "issue": "'char_counter_markup' renders HTML without ARIA attributes \u2014 complex interactive elements lack screen reader annotations",
+          "fix": "Add aria-required='true' for required fields, aria-describedby='help_text_id' for fields with descriptions, role='alert' for error messages"
+        }
+      },
+      "key_observation": "'char_counter_markup' has no obvious security vulnerabilities but lacks defensive coding patterns (source: cmb2.json)"
+    },
+    "corrected_code": "/**\n\t * Return character counter markup for this field.\n\t *\n\t * @since  2.7.0\n\t *\n\t * @param  string $val The actual value of this field.\n\t *\n\t * @return string\n\t */\nfunction char_counter_markup( $val ) {\n\t\t$markup = '';\n\n\t\tif ( ! $this->field->args( 'char_counter' ) ) {\n\t\t\treturn $markup;\n\t\t}\n\n\t\t$type     = (string) $this->field->args( 'char_counter' );\n\t\t$field_id = $this->_id( '', false );\n\t\t$char_max = (int) $this->field->prop( 'char_max' );\n\t\tif ( $char_max ) {\n\t\t\t$char_max = 'data-max=\"' . $char_max . '\"';\n\t\t}\n\n\t\tswitch ( $type ) {\n\t\t\tcase 'words':\n\t\t\t\t$label = $char_max\n\t\t\t\t\t? $this->_text( 'words_left_text', esc_html__( 'Words left', 'cmb2' ) )\n\t\t\t\t\t: $this->_text( 'words_text', esc_html__( 'Words', 'cmb2' ) );\n\t\t\t\tbreak;\n\t\t\tdefault:\n\t\t\t\t$type  = 'characters';\n\t\t\t\t$label = $char_max\n\t\t\t\t\t? $this->_text( 'characters_left_text', esc_html__( 'Characters left', 'cmb2' ) )\n\t\t\t\t\t: $this->_text( 'characters_text', esc_html__( 'Characters', 'cmb2' ) );\n\t\t\t\tbreak;\n\t\t}\n\n\t\t$msg = $char_max\n\t\t\t? sprintf( '<span class=\"cmb2-char-max-msg\">%s</span>', $this->_text( 'characters_truncated_text', esc_html__( 'Your text may be truncated.', 'cmb2' ) ) )\n\t\t\t: '';\n\n\t\t$length = strlen( $val );\n\t\t$width  = $length > 1 ? ( 8 * strlen( (string) $length ) ) + 15 : false;\n\n\t\t$markup .= '<p class=\"cmb2-char-counter-wrap\">';\n\t\t$markup .= sprintf(\n\t\t\t'<label><span class=\"cmb2-char-counter-label\">%2$s:</span> <input id=\"%1$s\" data-field-id=\"%3$s\" data-counter-type=\"%4$s\" %5$s class=\"cmb2-char-counter\" type=\"text\" value=\"%6$s\" readonly=\"readonly\" style=\"%7$s\"></label>%8$s',\n\t\t\tesc_attr( 'char-counter-' . $field_id ),\n\t\t\t$label,\n\t\t\tesc_attr( $field_id ),\n\t\t\t$type,\n\t\t\t$char_max,\n\t\t\t$length,\n\t\t\t$width ? \"width: {$width}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "learnpress-course-review.json",
+    "function_name": "remove_item",
+    "defective_code": "/**\n\t\t\t * @since 3.0.0\n\t\t\t */\nfunction remove_item( $order_item_id ): bool {\n\t\t\tglobal $wpdb;\n\n\t\t\t$item_id       = absint( $order_item_id );\n\t\t\t$order_item_id = absint( $order_item_id );\n\n\t\t\tif ( ! $item_id ) {\n\t\t\t\treturn false;\n\t\t\t}\n\n\t\t\tdo_action( 'learn_press_before_delete_order_item', $item_id );\n\n\t\t\t\n\t\t\tdo_action( 'learn-press/before-delete-order-item', $item_id, $this->get_id() );\n\n\t\t\t$filter                      = new OrderItemsFilter();\n\t\t\t$filter->order_item_id       = $order_item_id;\n\t\t\t$filter->return_string_query = true;\n\t\t\t$filter->run_query_count     = false;\n\t\t\t$order_items_db              = LPOrderItemsDB::getInstance();\n\t\t\t$order_items_db->get_query_single_row( $filter );\n\t\t\t$query_single_row = $order_items_db->get_items( $filter );\n\t\t\t$itemObj          = $order_items_db->wpdb->get_row( $query_single_row );\n\n\t\t\tif ( $itemObj && $itemObj->item_type === LP_COURSE_CPT ) {\n\t\t\t\t$course_id = $itemObj->item_id;\n\t\t\t\t$user_ids  = $this->get_user_id();\n\t\t\t\tif ( is_array( $user_ids ) ) {\n\t\t\t\t\tforeach ( $user_ids as $user_id ) {\n\t\t\t\t\t\t// Delete course item on learnpress_user_items if exists\n\t\t\t\t\t\t$userCourseItem = UserItemModel::find_user_item(\n\t\t\t\t\t\t\t$user_id,\n\t\t\t\t\t\t\t$course_id,\n\t\t\t\t\t\t\tLP_COURSE_CPT,\n\t\t\t\t\t\t\t$this->get_id(),\n\t\t\t\t\t\t\tLP_ORDER_CPT,\n\t\t\t\t\t\t\ttrue\n\t\t\t\t\t\t);\n\t\t\t\t\t\tif ( $userCourseItem instanceof UserItemModel ) {\n\t\t\t\t\t\t\t$userCourseModel = new UserCourseModel( $userCourseItem );\n\t\t\t\t\t\t\t$userCourseModel->delete();\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t} else {\n\t\t\t\t\t// Delete course item on learnpress_user_items if exists\n\t\t\t\t\t$userCourseItem = UserItemModel::find_user_item(\n\t\t\t\t\t\t$user_ids,\n\t\t\t\t\t\t$course_id,\n\t\t\t\t\t\tLP_COURSE_CPT,\n\t\t\t\t\t\t$this->get_id(),\n\t\t\t\t\t\tLP_ORDER_CPT,\n\t\t\t\t\t\ttrue\n\t\t\t\t\t);\n\t\t\t\t\tif ( $userCourseItem instanceof UserItemModel ) {\n\t\t\t\t\t\t$userCourseModel = new UserCourseModel( $userCourseItem );\n\t\t\t\t\t\t$userCourseModel->delete();\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t$wpdb->query( $wpdb->prepare( \"DELETE FROM {$wpdb->prefix}",
+    "critique": {
+      "summary": "Function 'remove_item' has code quality and standards issues that should be addressed for production readiness (source: learnpress-course-review.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'remove_item' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "$wpdb->prepare() is used in 'remove_item' \u2014 SQL injection risk mitigated, but verify placeholder types (%s vs %d) match actual data types",
+          "fix": "Audit placeholder types: use %d for integers (absint()), %s for strings, %f for floats \u2014 never mix types"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'remove_item' has no obvious security vulnerabilities but lacks defensive coding patterns (source: learnpress-course-review.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'remove_item' performs potentially expensive operations in a loop without caching (source: learnpress-course-review.json)",
+          "fix": "Cache expensive computed values using wp_cache_set()/wp_cache_get() with appropriate cache group and expiry"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'remove_item' uses WordPress APIs appropriately for its scope (source: learnpress-course-review.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'remove_item' code quality is acceptable but could improve single responsibility adherence (source: learnpress-course-review.json, 54 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'remove_item' instantiates UserCourseModel, OrderItemsFilter \u2014 ensure these dependencies are available in all execution contexts (source: learnpress-course-review.json)",
+          "fix": "Inject dependencies via constructor or factory pattern rather than instantiating inside the function; improves testability"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'remove_item' i18n handling is acceptable (source: learnpress-course-review.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'remove_item' does not produce HTML output \u2014 accessibility dimension not applicable (source: learnpress-course-review.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'remove_item' has no obvious security vulnerabilities but lacks defensive coding patterns (source: learnpress-course-review.json)"
+    },
+    "corrected_code": "/**\n\t\t\t * @since 3.0.0\n\t\t\t */\nfunction remove_item( $order_item_id ): bool {\n\t\t\tglobal $wpdb;\n\n\t\t\t$item_id       = absint( $order_item_id );\n\t\t\t$order_item_id = absint( $order_item_id );\n\n\t\t\tif ( ! $item_id ) {\n\t\t\t\treturn false;\n\t\t\t}\n\n\t\t\tdo_action( 'learn_press_before_delete_order_item', $item_id );\n\n\t\t\t\n\t\t\tdo_action( 'learn-press/before-delete-order-item', $item_id, $this->get_id() );\n\n\t\t\t$filter                      = new OrderItemsFilter();\n\t\t\t$filter->order_item_id       = $order_item_id;\n\t\t\t$filter->return_string_query = true;\n\t\t\t$filter->run_query_count     = false;\n\t\t\t$order_items_db              = LPOrderItemsDB::getInstance();\n\t\t\t$order_items_db->get_query_single_row( $filter );\n\t\t\t$query_single_row = $order_items_db->get_items( $filter );\n\t\t\t$itemObj          = $order_items_db->wpdb->get_row( $query_single_row );\n\n\t\t\tif ( $itemObj && $itemObj->item_type === LP_COURSE_CPT ) {\n\t\t\t\t$course_id = $itemObj->item_id;\n\t\t\t\t$user_ids  = $this->get_user_id();\n\t\t\t\tif ( is_array( $user_ids ) ) {\n\t\t\t\t\tforeach ( $user_ids as $user_id ) {\n\t\t\t\t\t\t// Delete course item on learnpress_user_items if exists\n\t\t\t\t\t\t$userCourseItem = UserItemModel::find_user_item(\n\t\t\t\t\t\t\t$user_id,\n\t\t\t\t\t\t\t$course_id,\n\t\t\t\t\t\t\tLP_COURSE_CPT,\n\t\t\t\t\t\t\t$this->get_id(),\n\t\t\t\t\t\t\tLP_ORDER_CPT,\n\t\t\t\t\t\t\ttrue\n\t\t\t\t\t\t);\n\t\t\t\t\t\tif ( $userCourseItem instanceof UserItemModel ) {\n\t\t\t\t\t\t\t$userCourseModel = new UserCourseModel( $userCourseItem );\n\t\t\t\t\t\t\t$userCourseModel->delete();\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t} else {\n\t\t\t\t\t// Delete course item on learnpress_user_items if exists\n\t\t\t\t\t$userCourseItem = UserItemModel::find_user_item(\n\t\t\t\t\t\t$user_ids,\n\t\t\t\t\t\t$course_id,\n\t\t\t\t\t\tLP_COURSE_CPT,\n\t\t\t\t\t\t$this->get_id(),\n\t\t\t\t\t\tLP_ORDER_CPT,\n\t\t\t\t\t\ttrue\n\t\t\t\t\t);\n\t\t\t\t\tif ( $userCourseItem instanceof UserItemModel ) {\n\t\t\t\t\t\t$userCourseModel = new UserCourseModel( $userCourseItem );\n\t\t\t\t\t\t$userCourseModel->delete();\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t$wpdb->query( $wpdb->prepare( \"DELETE FROM {$wpdb->prefix}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "query-monitor.json",
+    "function_name": "get_dependency_data",
+    "defective_code": "/** This filter is documented in wp-includes/class.wp-scripts.php */\nfunction get_dependency_data( _WP_Dependency $dependency ) {\n\t\t$loader = rtrim( $this->get_dependency_type(), 's' );\n\t\t$src = $dependency->src;\n\t\t$url = new QM_Data_URL();\n\n\t\tif ( null === $dependency->ver ) {\n\t\t\t$ver = '';\n\t\t} else {\n\t\t\t$ver = $dependency->ver ?: $this->data->default_version;\n\t\t}\n\n\t\tif ( ! empty( $src ) && ! empty( $ver ) ) {\n\t\t\t$src = add_query_arg( 'ver', $ver, $src );\n\t\t}\n\n\t\t\n\t\t$source = apply_filters( \"{$loader}",
+    "critique": {
+      "summary": "Function 'get_dependency_data' has code quality and standards issues that should be addressed for production readiness (source: query-monitor.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'get_dependency_data' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'get_dependency_data' (source: query-monitor.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'get_dependency_data' has no obvious security vulnerabilities but lacks defensive coding patterns (source: query-monitor.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'get_dependency_data' has no obvious performance issues for its current scope (source: query-monitor.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'get_dependency_data' uses WordPress APIs appropriately for its scope (source: query-monitor.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'get_dependency_data' (14 lines, source: query-monitor.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'get_dependency_data' instantiates QM_Data_URL \u2014 ensure these dependencies are available in all execution contexts (source: query-monitor.json)",
+          "fix": "Inject dependencies via constructor or factory pattern rather than instantiating inside the function; improves testability"
+        },
+        "i18n": {
+          "severity": "low",
+          "issue": "'get_dependency_data' i18n handling is acceptable (source: query-monitor.json) \u2014 verify text domain consistency across the plugin",
+          "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'get_dependency_data' does not produce HTML output \u2014 accessibility dimension not applicable (source: query-monitor.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'get_dependency_data' has no obvious security vulnerabilities but lacks defensive coding patterns (source: query-monitor.json)"
+    },
+    "corrected_code": "/** This filter is documented in wp-includes/class.wp-scripts.php */\nfunction get_dependency_data( _WP_Dependency $dependency ) {\n\t\t$loader = rtrim( $this->get_dependency_type(), 's' );\n\t\t$src = $dependency->src;\n\t\t$url = new QM_Data_URL();\n\n\t\tif ( null === $dependency->ver ) {\n\t\t\t$ver = '';\n\t\t} else {\n\t\t\t$ver = $dependency->ver ?: $this->data->default_version;\n\t\t}\n\n\t\tif ( ! empty( $src ) && ! empty( $ver ) ) {\n\t\t\t$src = add_query_arg( 'ver', $ver, $src );\n\t\t}\n\n\t\t\n\t\t$source = apply_filters( \"{$loader}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "woocommerce-mercadopago.json",
+    "function_name": "getEnabled",
+    "defective_code": "function getEnabled(): bool\n    {\n        return $this->get_option(static::ENABLED_OPTION, static::ENABLED_DEFAULT) === \"yes\";\n    }",
+    "critique": {
+      "summary": "Function 'getEnabled' has code quality and standards issues that should be addressed for production readiness (source: woocommerce-mercadopago.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "medium",
+          "issue": "Missing PHPDoc block for 'getEnabled' \u2014 required by WPCS for all public functions; Function 'getEnabled' uses camelCase \u2014 WPCS requires snake_case (e.g., 'get_enabled')",
+          "fix": "Add /** @param, @return, @since tags above function 'getEnabled'; Rename to snake_case convention"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'getEnabled' (source: woocommerce-mercadopago.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'getEnabled' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce-mercadopago.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'getEnabled' has no obvious performance issues for its current scope (source: woocommerce-mercadopago.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'getEnabled' uses WordPress APIs appropriately for its scope (source: woocommerce-mercadopago.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "low",
+          "issue": "'getEnabled' code quality is acceptable but could improve single responsibility adherence (source: woocommerce-mercadopago.json, 4 lines)",
+          "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'getEnabled' has no problematic dependency patterns detected (source: woocommerce-mercadopago.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "medium",
+          "issue": "'getEnabled' may produce user-visible output without translation wrappers (source: woocommerce-mercadopago.json)",
+          "fix": "Audit for hardcoded strings and wrap in __() or esc_html__() with the plugin text domain"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'getEnabled' does not produce HTML output \u2014 accessibility dimension not applicable (source: woocommerce-mercadopago.json)",
+          "fix": "No changes needed for accessibility in this non-rendering function"
+        }
+      },
+      "key_observation": "'getEnabled' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce-mercadopago.json)"
+    },
+    "corrected_code": "/**\n * Getenabled \u2014 fixed version.\n *\n * @return mixed\n * @since 1.0.0\n */\nfunction getEnabled(): bool\n    {\n        return $this->get_option(static::ENABLED_OPTION, static::ENABLED_DEFAULT) === \"yes\";\n    }",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "source_file": "optimization-detective.json",
+    "function_name": "plwwo_register_default_scripts",
+    "defective_code": "/**\n * Registers defaults scripts for Web Worker Offloading.\n *\n * @since 0.1.0\n * @access private\n *\n * @param WP_Scripts $scripts WP_Scripts instance.\n */\nfunction plwwo_register_default_scripts( WP_Scripts $scripts ): void {\n\t// The source code for partytown.js is built from <https://github.com/BuilderIO/partytown/blob/b292a14047a0c12ca05ba97df1833935d42fdb66/src/lib/main/snippet.ts>.\n\t// See webpack config in the WordPress/performance repo: <https://github.com/WordPress/performance/blob/282a068f3eb2575d37aeb9034e894e7140fcddca/webpack.config.js#L84-L130>.\n\tif ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) {\n\t\t$partytown_js_path = '/build/debug/partytown.js';// @codeCoverageIgnore\n\t} else {\n\t\t$partytown_js_path = '/build/partytown.js';\n\t}\n\n\t$partytown_js = file_get_contents( __DIR__ . $partytown_js_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- It's a local filesystem path not a remote request.\n\tif ( false === $partytown_js ) {\n\t\treturn;// @codeCoverageIgnore\n\t}\n\n\t$scripts->add(\n\t\t'web-worker-offloading',\n\t\t'',\n\t\tarray(),\n\t\tWEB_WORKER_OFFLOADING_VERSION,\n\t\tarray( 'in_footer' => false )\n\t);\n\n\t$scripts->add_inline_script(\n\t\t'web-worker-offloading',\n\t\tsprintf(\n\t\t\t'window.partytown = {...(window.partytown || {}), ...%s};',\n\t\t\twp_json_encode( plwwo_get_configuration(), JSON_HEX_TAG | JSON_UNESCAPED_SLASHES )\n\t\t),\n\t\t'before'\n\t);\n\n\t$scripts->add_inline_script( 'web-worker-offloading', $partytown_js );\n}",
+    "critique": {
+      "summary": "Function 'plwwo_register_default_scripts' has code quality and standards issues that should be addressed for production readiness (source: optimization-detective.json).",
+      "dimensions": {
+        "wpcs_compliance": {
+          "severity": "low",
+          "issue": "WPCS coding style is acceptable in 'plwwo_register_default_scripts' but lacks PHPDoc completeness",
+          "fix": "Ensure @param types and @return type are documented"
+        },
+        "sql_safety": {
+          "severity": "low",
+          "issue": "No direct database queries in 'plwwo_register_default_scripts' (source: optimization-detective.json) \u2014 SQL safety dimension acceptable",
+          "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+        },
+        "security": {
+          "severity": "medium",
+          "issue": "'plwwo_register_default_scripts' has no obvious security vulnerabilities but lacks defensive coding patterns (source: optimization-detective.json)",
+          "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+        },
+        "performance": {
+          "severity": "low",
+          "issue": "'plwwo_register_default_scripts' has no obvious performance issues for its current scope (source: optimization-detective.json)",
+          "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+        },
+        "wp_api_usage": {
+          "severity": "low",
+          "issue": "'plwwo_register_default_scripts' uses WordPress APIs appropriately for its scope (source: optimization-detective.json), but hooks and filters could be more explicit",
+          "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+        },
+        "code_quality": {
+          "severity": "medium",
+          "issue": "'plwwo_register_default_scripts' (30 lines, source: optimization-detective.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+          "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+        },
+        "dependency_integrity": {
+          "severity": "low",
+          "issue": "'plwwo_register_default_scripts' has no problematic dependency patterns detected (source: optimization-detective.json)",
+          "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+        },
+        "i18n": {
+          "severity": "medium",
+          "issue": "'plwwo_register_default_scripts' may produce user-visible output without translation wrappers (source: optimization-detective.json)",
+          "fix": "Audit for hardcoded strings and wrap in __() or esc_html__() with the plugin text domain"
+        },
+        "accessibility": {
+          "severity": "low",
+          "issue": "'plwwo_register_default_scripts' renders HTML (source: optimization-detective.json) \u2014 verify semantic structure uses appropriate HTML5 elements",
+          "fix": "Use semantic HTML: <nav>, <main>, <article>, <section> where appropriate; avoid div-soup for content that has semantic meaning"
+        }
+      },
+      "key_observation": "'plwwo_register_default_scripts' has no obvious security vulnerabilities but lacks defensive coding patterns (source: optimization-detective.json)"
+    },
+    "corrected_code": "/**\n * Registers defaults scripts for Web Worker Offloading.\n *\n * @since 0.1.0\n * @access private\n *\n * @param WP_Scripts $scripts WP_Scripts instance.\n */\nfunction plwwo_register_default_scripts( WP_Scripts $scripts ): void {\n\t// The source code for partytown.js is built from <https://github.com/BuilderIO/partytown/blob/b292a14047a0c12ca05ba97df1833935d42fdb66/src/lib/main/snippet.ts>.\n\t// See webpack config in the WordPress/performance repo: <https://github.com/WordPress/performance/blob/282a068f3eb2575d37aeb9034e894e7140fcddca/webpack.config.js#L84-L130>.\n\tif ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) {\n\t\t$partytown_js_path = '/build/debug/partytown.js';// @codeCoverageIgnore\n\t} else {\n\t\t$partytown_js_path = '/build/partytown.js';\n\t}\n\n\t$partytown_js = file_get_contents( __DIR__ . $partytown_js_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- It's a local filesystem path not a remote request.\n\tif ( false === $partytown_js ) {\n\t\treturn;// @codeCoverageIgnore\n\t}\n\n\t$scripts->add(\n\t\t'web-worker-offloading',\n\t\t'',\n\t\tarray(),\n\t\tWEB_WORKER_OFFLOADING_VERSION,\n\t\tarray( 'in_footer' => false )\n\t);\n\n\t$scripts->add_inline_script(\n\t\t'web-worker-offloading',\n\t\tsprintf(\n\t\t\t'window.partytown = {...(window.partytown || {}), ...%s};',\n\t\t\twp_json_encode( plwwo_get_configuration(), JSON_HEX_TAG | JSON_UNESCAPED_SLASHES )\n\t\t),\n\t\t'before'\n\t);\n\n\t$scripts->add_inline_script( 'web-worker-offloading', $partytown_js );\n}",
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  }
+]

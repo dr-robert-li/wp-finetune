@@ -1,0 +1,248 @@
+[
+  {
+    "code": "function instance() {\n        if ( is_null( self::$_instance ) ) {\n            self::$_instance = new self();\n        }\n\n        return self::$_instance;\n    }",
+    "source_file": "printful-shipping-for-woocommerce.json",
+    "function_name": "Printful_Token_Migration::instance",
+    "critical_failures": [
+      "Missing PHPDoc block"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "/**\n\t * Generate Slider CSS\n\t *\n\t * @param mixed $block Block data.\n\t * @return string\n\t * @since   1.3.0\n\t * @access  public\n\t */\nfunction render_css( $block ) {\n\t\t$css = new CSS_Utility( $block );\n\n\t\t$css->add_item(\n\t\t\tarray(\n\t\t\t\t'properties' => array(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'property' => '--height',\n\t\t\t\t\t\t'value'    => 'height',\n\t\t\t\t\t\t'format'   => function ( $value, $attrs ) {\n\t\t\t\t\t\t\treturn is_numeric( $value ) ? $value . 'px' : $value;\n\t\t\t\t\t\t},\n\t\t\t\t\t),\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'property' => '--height-tablet',\n\t\t\t\t\t\t'value'    => 'heightTablet',\n\t\t\t\t\t),\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'property' => '--height-mobile',\n\t\t\t\t\t\t'value'    => 'heightMobile',\n\t\t\t\t\t),\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'property' => '--width',\n\t\t\t\t\t\t'value'    => 'width',\n\t\t\t\t\t),\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'property' => '--arrows-color',\n\t\t\t\t\t\t'value'    => 'arrowsColor',\n\t\t\t\t\t),\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'property' => '--arrows-background-color',\n\t\t\t\t\t\t'value'    => 'arrowsBackgroundColor',\n\t\t\t\t\t),\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'property' => '--pagination-color',\n\t\t\t\t\t\t'value'    => 'paginationColor',\n\t\t\t\t\t),\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'property' => '--pagination-active-color',\n\t\t\t\t\t\t'value'    => 'paginationActiveColor',\n\t\t\t\t\t),\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'property' => '--border-color',\n\t\t\t\t\t\t'value'    => 'borderColor',\n\t\t\t\t\t),\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'property' => '--border-width',\n\t\t\t\t\t\t'value'    => 'borderWidth',\n\t\t\t\t\t),\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'property' => '--border-radius',\n\t\t\t\t\t\t'value'    => 'borderRadius',\n\t\t\t\t\t),\n\t\t\t\t),\n\t\t\t)\n\t\t);\n\n\t\t$style = $css->generate();\n\n\t\treturn $style;\n\t}",
+    "source_file": "blocks-animation.json",
+    "function_name": "Slider_CSS::render_css",
+    "critical_failures": [
+      "Function is declared as a standalone function rather than a class method (missing 'public' visibility keyword and class context in the extracted code, despite PHPDoc claiming @access public)",
+      "Indentation is inconsistent \u2014 the function body uses different indentation than the opening function signature, violating WPCS",
+      "CSS property values passed from block attributes (e.g., color values, dimensions) are not sanitized before being used in CSS output; unescaped user-controlled data could result in CSS injection if output is not handled by CSS_Utility safely \u2014 and that safety cannot be verified from this code unit alone",
+      "The @param type hint uses 'mixed' which is insufficiently specific for documentation quality; no validation or type-checking of $block is performed before passing to CSS_Utility"
+    ],
+    "low_score_dims": [
+      "dependency_integrity"
+    ]
+  },
+  {
+    "code": "function data_get_slug_from_attribute() {\n\t\treturn array(\n\t\t\t'pipe-slug'                       => array( 'var:preset|duotone|blue-orange', 'blue-orange' ),\n\t\t\t'css-var'                         => array( 'var(--wp--preset--duotone--blue-orange)', 'blue-orange' ),\n\t\t\t'css-var-invalid-slug-chars'      => array( 'var(--wp--preset--duotone--.)', '.' ),\n\t\t\t'css-var-missing-end-parenthesis' => array( 'var(--wp--preset--duotone--blue-orange', '' ),\n\t\t\t'invalid'                         => array( 'not a valid attribute', '' ),\n\t\t\t'css-var-no-value'                => array( 'var(--wp--preset--duotone--)', '' ),\n\t\t\t'pipe-slug-no-value'              => array( 'var:preset|duotone|', '' ),\n\t\t\t'css-var-spaces'                  => array( 'var(--wp--preset--duotone--    ', '' ),\n\t\t\t'pipe-slug-spaces'                => array( 'var:preset|duotone|  ', '' ),\n\t\t\t'array-of-colors'                 => array( array( '#000000', '#ffffff' ), '' ),\n\t\t\t'empty-array'                     => array( array(), '' ),\n\t\t);\n\t}",
+    "source_file": "gutenberg.json",
+    "function_name": "WP_Duotone_Gutenberg_Test::data_get_slug_from_attribute",
+    "critical_failures": [
+      "test code, excluded from training data"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ]
+  },
+  {
+    "code": "/**\n * Add an index to the downloadable product permissions table to improve performance of update_user_by_order_id.\n *\n * @return void\n */\nfunction wc_update_310_downloadable_products() {\n\tglobal $wpdb;\n\n\t$index_exists = $wpdb->get_row( \"SHOW INDEX FROM {$wpdb->prefix}",
+    "source_file": "woocommerce.json",
+    "function_name": "wc_update_310_downloadable_products",
+    "critical_failures": [
+      "SQL query with dynamic values without $wpdb->prepare()"
+    ],
+    "low_score_dims": [
+      "sql_safety"
+    ]
+  },
+  {
+    "code": "/**\n\t * @return int\n\t */\nfunction check_WC_API_access() {\n\n\t\tglobal $wpdb;\n\n\t\t//if any keys are set\n\t\t$count    = $wpdb->get_var(\n\t\t    \"SELECT COUNT(*) as key_count FROM {$wpdb->prefix}",
+    "source_file": "printful-shipping-for-woocommerce.json",
+    "function_name": "check_WC_API_access",
+    "critical_failures": [
+      "Unprepared SQL with dynamic values"
+    ],
+    "low_score_dims": [
+      "sql_safety"
+    ]
+  },
+  {
+    "code": "/**\n\t * @return void\n\t */\nfunction before_output() {\n\t\tforeach ( (array) glob( $this->qm->plugin_path( 'output/headers/*.php' ) ) as $file ) {\n\t\t\trequire_once $file;\n\t\t}\n\t}",
+    "source_file": "query-monitor.json",
+    "function_name": "QM_Dispatcher_AJAX::before_output",
+    "critical_failures": [
+      "PHPDoc block is incomplete \u2014 missing @since tag and no class-level context established in the snippet; method lacks sufficient documentation for a public API",
+      "File inclusion via glob() on a path derived from a plugin method is not validated or sanitized before require_once; while plugin_path() likely returns a fixed path, there is no visible validation that the resolved path is within expected boundaries",
+      "glob() can return false on failure; (array) cast handles this but the failure is silently swallowed with no error handling or logging",
+      "No use of WP_Filesystem for file operations; direct file inclusion without verifying file existence or checking against a whitelist of expected files"
+    ],
+    "low_score_dims": [
+      "security",
+      "dependency_integrity"
+    ]
+  },
+  {
+    "code": "/**\n * Outputs the JavaScript to handle the form shaking on the login page.\n *\n * @since 3.0.0\n */\nfunction wp_shake_js() {\n\t?>\n\t<script type=\"text/javascript\">\n\tdocument.querySelector('form').classList.add('shake');\n\t</script>\n\t<?php\n}",
+    "source_file": "two-factor.json",
+    "function_name": "wp_shake_js",
+    "critical_failures": [
+      "judge_error"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "function test_get_item_schema() {\n\t\t$this->markTestSkipped( 'No need to implement' );\n\t}",
+    "source_file": "gutenberg.json",
+    "function_name": "Gutenberg_REST_Attachments_Controller_Test::test_get_item_schema",
+    "critical_failures": [
+      "test code, excluded from training data"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ]
+  },
+  {
+    "code": "/**\n\t * Build the body for the test email.\n\t *\n\t * @param Form_Data_Request $form_data The form request data.\n\t * @return string\n\t * @since 2.0.3\n\t */\nfunction build_test_email( $form_data ) {\n\t\treturn sprintf(\n\t\t\t'\n\t\t<!doctype html>\n\t\t<html xmlns=\"http://www.w3.org/1999/xhtml\">\n\t\t<head>\n\t\t\t<meta http-equiv=\"Content-Type\" content=\"text/html;\" charset=\"utf-8\"/>\n\t\t\t<!-- view port meta tag -->\n\t\t\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n\t\t\t<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"/>\n\t\t\t<title>%s</title>\n\t\t</head>\n\t\t<body>\n\t\t%s\n\t\t<br><br>\n\t\t%s\n\t\t</body>\n\t\t</html>\n\t\t',\n\t\t\tsprintf(\n\t\t\t\t// translators: %s is the admin email address.\n\t\t\t\t__( 'Mail From: %s', 'otter-blocks' ), \n\t\t\t\tsanitize_email( get_site_option( 'admin_email' ) ) \n\t\t\t),\n\t\t\tesc_html__( 'This a test email. If you receive this email, your SMTP set-up is working for sending emails via Form Block.', 'otter-blocks' ),\n\t\t\tsprintf( \n\t\t\t\t// translators: %s is the URL of the site from which the email was sent.\n\t\t\t\t__( 'Location: %s', 'otter-blocks' ),\n\t\t\t\t'<a href=\"' . $form_data->get_data_from_payload( 'site' ) . '\">' . esc_html__( 'link', 'otter-blocks' ) . '</a>'\n\t\t\t)\n\t\t);\n\t}",
+    "source_file": "blocks-animation.json",
+    "function_name": "Form_Email::build_test_email",
+    "critical_failures": [
+      "Unescaped output of potentially user-controlled data: `$form_data->get_data_from_payload('site')` is used directly inside an href attribute without `esc_url()`, creating an XSS vector.",
+      "The `__()` function is used for strings containing HTML placeholders (e.g., 'Mail From: %s', 'Location: %s') where the substituted values include raw HTML; `wp_kses()` or proper escaping of the final composed string is missing.",
+      "The translated string 'Location: %s' is passed to sprintf with a raw `<a>` tag, meaning translator notes do not adequately protect against unsafe markup injection and the href is unescaped.",
+      "security_auto_fail"
+    ],
+    "low_score_dims": [
+      "security"
+    ]
+  },
+  {
+    "code": "/**\n\t * Meta Boxes option type.\n\t *\n\t * @access public\n\t * @since  2.0\n\t */\nfunction ot_type_meta_boxes() {\n\n\t\t// Format setting outer wrapper.\n\t\techo '<div class=\"format-setting type-textblock wide-desc\">';\n\n\t\t// Description.\n\t\techo '<div class=\"description\">';\n\n\t\techo '<h4>' . esc_html__( 'How-to-guide', 'option-tree' ) . '</h4>';\n\n\t\t/* translators: %1$s: directory name, %2$s: directory name, %3$s: file type */\n\t\t$string = esc_html__( 'There are a few simple steps you need to take in order to use OptionTree\\'s built in Meta Box API. In the code below I\\'ll show you a basic demo of how to create your very own custom meta box using any number of the option types you have at your disposal. If you would like to see some demo code, there is a directory named %1$s inside the %2$s directory that contains a file named %3$s you can reference.', 'option-tree' );\n\t\techo '<p>' . sprintf( $string, '<code>theme-mode</code>', '<code>assets</code>', '<code>demo-meta-boxes.php</code>' ) . '</p>'; // phpcs:ignore\n\n\t\techo '<p>' . esc_html__( 'It\\'s important to note that Meta Boxes do not support WYSIWYG editors at this time and if you set one of your options to Textarea it will automatically revert to a Textarea Simple until a valid solution is found. WordPress released this statement regarding the wp_editor() function:', 'option-tree' ) . '</p>';\n\n\t\techo '<blockquote>' . esc_html__( 'Once instantiated, the WYSIWYG editor cannot be moved around in the DOM. What this means in practical terms, is that you cannot put it in meta-boxes that can be dragged and placed elsewhere on the page.', 'option-tree' ) . '</blockquote>';\n\n\t\techo '<h5>' . esc_html__( 'Create and include your custom meta boxes file.', 'option-tree' ) . '</h5>';\n\n\t\techo '<ul class=\"docs-ul\">';\n\n\t\t/* translators: %s: file name */\n\t\t$string = esc_html__( 'Create a file and name it anything you want, maybe %s.', 'option-tree' );\n\t\techo '<li>' . sprintf( $string, '<code>meta-boxes.php</code>' ) . '</li>'; // phpcs:ignore\n\n\t\t/* translators: %1$s: directory name, %2$s: file name */\n\t\t$string = esc_html__( 'As well, you\\'ll probably want to create a directory named %1$s to put your %2$s into which will help keep you file structure nice and tidy.', 'option-tree' );\n\t\techo '<li>' . sprintf( $string, '<code>includes</code>', '<code>meta-boxes.php</code>' ) . '</li>'; // phpcs:ignore\n\n\t\t/* translators: %s: file name */\n\t\t$string = esc_html__( 'Add the following code to your %s.', 'option-tree' );\n\t\techo '<li>' . sprintf( $string, '<code>functions.php</code>' ) . '</li>'; // phpcs:ignore\n\n\t\techo '</ul>';\n\n\t\techo '<pre><code>/**\n * Meta Boxes\n */\nrequire( trailingslashit( get_template_directory() ) . \\'includes/meta-boxes.php\\' );\n</code></pre>';\n\n\t\techo '<ul class=\"docs-ul\">';\n\n\t\t/* translators: %1$s: file name, %2$s: hook type, %3$s: function name */\n\t\t$string = esc_html__( 'Add a variation of the following code to your %1$s. You\\'ll obviously need to fill it in with all your custom array values. It\\'s important to note here that we use the %2$s filter because if you were to call the %3$s function before OptionTree was loaded the sky would fall on your head.', 'option-tree' );\n\t\techo '<li>' . sprintf( $string, '<code>meta-boxes.php</code>', '<code>admin_init</code>', '<code>ot_register_meta_box</code>' ) . '</li>'; // phpcs:ignore\n\n\t\techo '</ul>';\n\n\t\techo \"<pre><code>/**\n * Initialize the meta boxes. \n */\nadd_action( 'admin_init', 'custom_meta_boxes' );\n\nfunction custom_meta_boxes() {\n\n  &#36;my_meta_box = array(\n    'id'        => 'my_meta_box',\n    'title'     => 'My Meta Box',\n    'desc'      => '',\n    'pages'     => array( 'post' ),\n    'context'   => 'normal',\n    'priority'  => 'high',\n    'fields'    => array(\n      array(\n        'id'          => 'background',\n        'label'       => 'Background',\n        'desc'        => '',\n        'std'         => '',\n        'type'        => 'background',\n        'class'       => '',\n        'choices'     => array()\n      )\n    )\n  );\n  \n  ot_register_meta_box( &#36;my_meta_box );\n\n}</code></pre>\";\n\n\t\techo '</div>';\n\n\t\techo '</div>';\n\t}",
+    "source_file": "option-tree.json",
+    "function_name": "ot_type_meta_boxes",
+    "critical_failures": [
+      "85-line docs function; phpcs:ignore; unescaped echo; no @param/@return"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "wp_api_usage",
+      "code_quality",
+      "accessibility"
+    ]
+  },
+  {
+    "code": "/**\n\t * \u30d6\u30ed\u30c3\u30af\u306e\u30ed\u30fc\u30c9\n\t *\n\t * @param string $block_name \u8aad\u307f\u8fbc\u3080\u30d6\u30ed\u30c3\u30af\u540d.\n\t * @return void\n\t */\nfunction load_block( $block_name ) {\n\t\t$block_info = $this->get_block_info( $block_name );\n\n\t\t$require_file_path = VK_BLOCKS_DIR_PATH . 'inc/vk-blocks/build/blocks/' . $block_name . '/index.php';\n\t\tif ( $block_info['is_pro'] ) {\n\t\t\t$require_file_path = VK_BLOCKS_DIR_PATH . 'inc/vk-blocks/build/blocks/_pro/' . $block_name . '/index.php';\n\t\t}\n\n\t\tif ( file_exists( $require_file_path ) ) {\n\t\t\trequire_once $require_file_path;\n\t\t}\n\t}",
+    "source_file": "vk-blocks.json",
+    "function_name": "VK_Blocks_Block_Loader::load_block",
+    "critical_failures": [
+      "Path traversal vulnerability: $block_name is used directly in file path construction without any sanitization or validation. An attacker-controlled value could traverse directories (e.g., '../../sensitive-file') to load arbitrary PHP files.",
+      "Missing @since tag in PHPDoc block, which is required by WordPress Coding Standards for documented methods.",
+      "PHPDoc comment uses Japanese (\u975e-English) inline comments without English equivalents, which is inconsistent with WordPress Coding Standards for distributed plugins.",
+      "security_auto_fail"
+    ],
+    "low_score_dims": [
+      "security"
+    ]
+  },
+  {
+    "code": "/**\n\t * Get the display name of the method.\n\t *\n\t * @return string Display name of the method.\n\t */\nfunction get_display_name() {\n\t\treturn \"{$this->parent->name}",
+    "source_file": "amp-wp.json",
+    "function_name": "Method::get_display_name",
+    "critical_failures": [
+      "test/bin/docs code, excluded from training data"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "code_quality"
+    ]
+  },
+  {
+    "code": "/**\n\t * If Google Analytics is connected.\n\t *\n\t * @return bool If Google Analytics is connected.\n\t */\nfunction is_ga_connected(): bool {\n\t\tif ( $this->ga_module['connected'] !== null ) {\n\t\t\treturn $this->ga_module['connected'];\n\t\t}\n\n\t\treturn $this->site_kit_is_connected_call->is_ga_connected();\n\t}",
+    "source_file": "wordpress-seo.json",
+    "function_name": "Site_Kit::is_ga_connected",
+    "critical_failures": [
+      "Missing @since tag in PHPDoc block \u2014 required by WordPress coding standards for public/protected API methods",
+      "Function definition lacks proper method visibility keyword context (likely a method but shown without 'public'/'protected'/'private' \u2014 cannot confirm this is correctly declared)",
+      "Non-strict null comparison: `!== null` check on array key `$this->ga_module['connected']` will not correctly guard against falsy non-null values; semantically fragile pattern",
+      "PHPDoc @return description is redundant/non-informative (repeats the tag type and name only)"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance"
+    ]
+  },
+  {
+    "code": "/**\n\t\t * Filter 'wpseo_aioseo_cleanup_limit' - Allow filtering the number of validations during each action pass.\n\t\t *\n\t\t * @param int $limit The maximum number of validations.\n\t\t */\nfunction get_limit() {\n\t\t\n\t\t$limit = \\apply_filters( 'wpseo_aioseo_validation_limit', 25 );\n\n\t\tif ( ! \\is_int( $limit ) || $limit < 1 ) {\n\t\t\t$limit = 25;\n\t\t}\n\n\t\treturn $limit;\n\t}",
+    "source_file": "wordpress-seo.json",
+    "function_name": "get_limit",
+    "critical_failures": [],
+    "low_score_dims": [
+      "wpcs_compliance"
+    ]
+  },
+  {
+    "code": "function unregisterFunction($name) {\n\t\tunset($this->libFunctions[$name]);\n\t}",
+    "source_file": "jupiterx-core.json",
+    "function_name": "unregisterFunction",
+    "critical_failures": [],
+    "low_score_dims": [
+      "wpcs_compliance"
+    ]
+  },
+  {
+    "code": "/**\n\t * Delete all the data from the lookup table.\n\t */\nfunction truncate_lookup_table() {\n\t\tglobal $wpdb;\n\n\t\t$wpdb->query( \"TRUNCATE TABLE {$this->lookup_table_name}",
+    "source_file": "woocommerce.json",
+    "function_name": "DataRegenerator::truncate_lookup_table",
+    "critical_failures": [
+      "SQL query with dynamic values without $wpdb->prepare()"
+    ],
+    "low_score_dims": [
+      "sql_safety"
+    ]
+  },
+  {
+    "code": "function isParcelshop($dpdProduct)\n    {\n        return (strpos(strtolower($dpdProduct['type'] ?? ''), 'parcelshop') !== false);\n    }",
+    "source_file": "woocommerce-shipping.json",
+    "function_name": "TypeHelper::isParcelshop",
+    "critical_failures": [
+      "Missing PHPDoc block"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance"
+    ]
+  },
+  {
+    "code": "/**\n     * Retrieves or display nonce hidden field for forms\n     *\n     * @param string $id\n     * @param string $fieldName\n     *\n     * @return string\n     */\nfunction generateNonceField(string $id, string $fieldName): string\n    {\n        return wp_nonce_field($id, $fieldName);\n    }",
+    "source_file": "woocommerce-mercadopago.json",
+    "function_name": "Nonce::generateNonceField",
+    "critical_failures": [
+      "camelCase method naming violates WPCS (WordPress requires snake_case)"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance"
+    ]
+  },
+  {
+    "code": "/**\n\t\t * Payment Gateway Payment Form New Payment Method Input HTML.\n\t\t *\n\t\t * Filters the HTML rendered for the \"Use a new card\" radio button.\n\t\t *\n\t\t * @since 3.0.0\n\t\t * @param string $html\n\t\t * @param Payment_Gateway_Payment_Form $this payment form instance\n\t\t */\nfunction get_use_new_payment_method_input_html() {\n\n\t\t// input\n\t\t$html = sprintf(\n\t\t\t'<input type=\"radio\" id=\"wc-%1$s-use-new-payment-method\" name=\"wc-%1$s-payment-token\" class=\"js-sv-wc-payment-token js-wc-%1$s-payment-token\" style=\"width:auto; margin-right: .5em;\" value=\"\" %2$s />',\n\t\t\tesc_attr( $this->get_gateway()->get_id_dasherized() ),\n\t\t\tchecked( $this->default_new_payment_method(), true, false )\n\t\t);\n\n\t\t// label\n\t\t$html .= sprintf(\n\t\t\t'<label style=\"display:inline;\" for=\"wc-%s-use-new-payment-method\">%s</label>',\n\t\t\tesc_attr( $this->get_gateway()->get_id_dasherized() ),\n\t\t\t$this->get_gateway()->is_credit_card_gateway() ? esc_html__( 'Use a new card', 'woocommerce-square' ) : esc_html__( 'Use a new bank account', 'woocommerce-square' )\n\t\t);\n\n\t\t\n\t\treturn apply_filters( 'wc_' . $this->get_gateway()->get_id() . '_payment_form_new_payment_method_input_html', $html, $this );\n\t}",
+    "source_file": "woocommerce-square.json",
+    "function_name": "get_use_new_payment_method_input_html",
+    "critical_failures": [
+      "Below threshold on: accessibility"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "function razorpayPluginActivated()\n    {\n        $activateProperties = [\n            'page_url'            => isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : 'unknown',\n            'redirect_to_page'    => $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']\n        ];\n\n        $response = $this->rzpTrackSegment('plugin activate', $activateProperties);\n\n        $this->rzpTrackDataLake('plugin activate', $activateProperties);\n\n        $this->hposInstrumentation();\n\n        $this->initRzpCronJobs();\n\n        return 'success';\n    }",
+    "source_file": "woo-razorpay.json",
+    "function_name": "TrackPluginInstrumentation::razorpayPluginActivated",
+    "critical_failures": [
+      "Missing PHPDoc block"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance"
+    ]
+  }
+]

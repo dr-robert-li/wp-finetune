@@ -1,0 +1,227 @@
+[
+  {
+    "code": "/**\n\t * Constructor\n\t */\nfunction __construct() {\n\t\t$this->headers = new Headers();\n\t\t$this->cookies = new Jar();\n\t}",
+    "source_file": "woo-razorpay.json",
+    "function_name": "Response::__construct",
+    "critical_failures": [
+      "Below threshold on: wpcs_compliance"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "/**\n\t * Filters the author role.\n\t *\n\t * @since 1.1.0\n\t *\n\t * @param string $role    The first listed user role.\n\t * @param int    $user_id The user id.\n\t */\nfunction ba_eas_get_user_role( $roles = array(), $user_id = 0 ) {\n\n\t// Set the default role to empty.\n\t$role = '';\n\n\t// Attempt to get the user role. Grab the first role in the array.\n\tif ( ! empty( $roles ) && is_array( $roles ) ) {\n\t\t$role = array_shift( $roles );\n\t} elseif ( ! empty( $user_id ) ) {\n\n\t\t// Get the WP_User object.\n\t\t$user = get_userdata( $user_id );\n\n\t\t// If the roles aren't empty, grab the first listed role.\n\t\tif ( ! empty( $user->roles ) ) {\n\t\t\t$role = array_shift( $user->roles );\n\t\t}\n\t}\n\n\t\n\treturn apply_filters( 'ba_eas_get_user_role', $role, $user_id );\n}",
+    "source_file": "edit-author-slug.json",
+    "function_name": "ba_eas_get_user_role",
+    "critical_failures": [
+      "PHPDoc block is misplaced \u2014 it documents the filter hook (ba_eas_get_user_role) rather than the function itself; the function is missing its own @param and @return tags, and @since is absent from the function docblock",
+      "Function signature accepts $roles parameter but the filter and docblock only pass/document $user_id, making the $roles argument invisible to filter callbacks and creating a misleading API surface"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "/**\n\t * Return an ordered list of notes.\n\t *\n\t * @param array  $args Query arguments.\n\t * @param string $context Optional argument that the woocommerce_note_where_clauses filter can use to determine whether to apply extra conditions. Extensions should define their own contexts and use them to avoid adding to notes where clauses when not needed.\n\t * @return array An array of objects containing a note id.\n\t */\nfunction get_notes( $args = array(), $context = self::WC_ADMIN_NOTE_OPER_GLOBAL ) {\n\t\tglobal $wpdb;\n\n\t\t$defaults = array(\n\t\t\t'per_page' => get_option( 'posts_per_page' ),\n\t\t\t'page'     => 1,\n\t\t\t'order'    => 'DESC',\n\t\t\t'orderby'  => 'date_created',\n\t\t);\n\t\t$args     = wp_parse_args( $args, $defaults );\n\n\t\t$offset        = $args['per_page'] * ( $args['page'] - 1 );\n\t\t$where_clauses = $this->get_notes_where_clauses( $args, $context );\n\n\t\t// sanitize order and orderby.\n\t\t$order_by  = '`' . str_replace( '`', '', $args['orderby'] ) . '`';\n\t\t$order_dir = 'asc' === strtolower( $args['order'] ) ? 'ASC' : 'DESC';\n\n\t\t$query = $wpdb->prepare(\n\t\t\t// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared\n\t\t\t\"SELECT * FROM {$wpdb->prefix}",
+    "source_file": "woocommerce.json",
+    "function_name": "get_notes",
+    "critical_failures": [
+      "SELECT * without LIMIT"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "function html_edit_image_via_ai(): string {\n\t\t$components = [\n\t\t\t'wrap-script-template'     => '<script type=\"text/template\" id=\"lp-tmpl-edit-image-ai\">',\n\t\t\t'wrap'                     => '<div class=\"lp-generate-data-ai-wrap\">',\n\t\t\t'btn-close'                =>\n\t\t\t\t'<button type=\"button\" class=\"lp-btn-close-ai-popup\">\n\t\t\t\t\t<i class=\"lp-icon-remove\"></i>\n\t\t\t\t</button>',\n\t\t\t'h2'                       => sprintf(\n\t\t\t\t'<div class=\"content-title\">%s</div>',\n\t\t\t\tesc_html__( 'Generate Course Image', 'learnpress' )\n\t\t\t),\n\t\t\t'header'                   => $this->html_image_step_header(), // You can add header if needed.\n\t\t\t'form'                     => '<form class=\"lp-form-generate-data-ai\">',\n\t\t\t'wrap-fields'              => '<div class=\"lp-form-fields\">',\n\t\t\t'step-1'                   => $this->html_image_step_1(),\n\t\t\t'step-2'                   => $this->html_image_step_2(),\n\t\t\t'step-3'                   => $this->html_image_step_3(),\n\t\t\t'wrap-fields-end'          => '</div>',\n\t\t\t'buttons'                  => sprintf(\n\t\t\t\t'<div class=\"button-actions\" data-step=\"1\" data-step-max=\"3\">\n\t\t\t\t\t<button class=\"btn btn-secondary lp-btn-step lp-hidden\"\n\t\t\t\t\t\tdata-step-show=\"2,3\"\n\t\t\t\t\t\tdata-action=\"prev\" type=\"button\">&larr; %s\n\t\t\t\t\t</button>\n\t\t\t\t\t<button class=\"btn btn-primary lp-btn-step lp-hidden\"\n\t\t\t\t\t\tdata-step-show=\"0\"\n\t\t\t\t\t\tdata-action=\"next\" type=\"button\">%s &rarr;\n\t\t\t\t\t</button>\n\t\t\t\t\t<button class=\"lp-button btn-primary lp-btn-generate-prompt\"\n\t\t\t\t\t\tdata-step-show=\"1\"\n\t\t\t\t\t\tdata-send=\"%s\" type=\"button\">%s\n\t\t\t\t\t</button>\n\t\t\t\t\t<button class=\"lp-button btn-primary lp-btn-call-open-ai lp-hidden\"\n\t\t\t\t\t\tdata-step-show=\"2\"\n\t\t\t\t\t\tdata-send=\"%s\" type=\"button\">%s\n\t\t\t\t\t</button>\n\t\t\t\t</div>',\n\t\t\t\tesc_html__( 'Previous', 'learnpress' ),\n\t\t\t\tesc_html__( 'Next', 'learnpress' ),\n\t\t\t\tTemplate::convert_data_to_json(\n\t\t\t\t\t[\n\t\t\t\t\t\t'action'         => 'openai_generate_prompt',\n\t\t\t\t\t\t'lp-prompt-type' => 'course-image',\n\t\t\t\t\t\t'id_url'         => 'generate_prompt_openai',\n\t\t\t\t\t]\n\t\t\t\t),\n\t\t\t\tesc_html__( 'Generate Prompt', 'learnpress' ),\n\t\t\t\tTemplate::convert_data_to_json(\n\t\t\t\t\t[\n\t\t\t\t\t\t'action'         => 'openai_generate_image',\n\t\t\t\t\t\t'lp-prompt-type' => 'course-image',\n\t\t\t\t\t\t'target-apply'   => 'set-wp-editor-content', // Click apply to apply title to this field.\n\t\t\t\t\t\t'id_url'         => 'submit_to_openai',\n\t\t\t\t\t]\n\t\t\t\t),\n\t\t\t\tesc_html__( 'Generate Image Course', 'learnpress' ),\n\t\t\t),\n\t\t\t'post-id'                  => sprintf(\n\t\t\t\t'<input type=\"hidden\" name=\"post-id\" value=\"%d\" />',\n\t\t\t\tget_the_ID()\n\t\t\t),\n\t\t\t'form-end'                 => '</form>',\n\t\t\t'wrap-end'                 => '</div>',\n\t\t\t'wrap-script-template-end' => '</script>',\n\t\t];\n\n\t\treturn Template::combine_components( $components );\n\t}",
+    "source_file": "learnpress-wishlist.json",
+    "function_name": "AdminEditWithAITemplate::html_edit_image_via_ai",
+    "critical_failures": [
+      "Form inputs without associated labels"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "function lib_e($arg) {\n\t\tswitch ($arg[0]) {\n\t\t\tcase \"list\":\n\t\t\t\t$items = $arg[2];\n\t\t\t\tif (isset($items[0])) {\n\t\t\t\t\treturn $this->lib_e($items[0]);\n\t\t\t\t}\n\t\t\t\treturn self::$defaultValue;\n\t\t\tcase \"string\":\n\t\t\t\t$arg[1] = \"\";\n\t\t\t\treturn $arg;\n\t\t\tcase \"keyword\":\n\t\t\t\treturn $arg;\n\t\t\tdefault:\n\t\t\t\treturn array(\"keyword\", $this->compileValue($arg));\n\t\t}\n\t}",
+    "source_file": "woo-widget-product-slideshow.json",
+    "function_name": "lib_e",
+    "critical_failures": [
+      "Missing PHPDoc block"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance"
+    ]
+  },
+  {
+    "code": "function isAllowed(): bool\n\t{\n\t\t$currentUser = wp_get_current_user();\n\t\t$roles = $currentUser->roles ?? [];\n\n\t\t$userRolePermissions = self::USER_ROLE_PERMISSIONS;\n\n\t\tforeach ($userRolePermissions as $role) {\n\t\t\tif (in_array($role, $roles, true)) {\n\t\t\t\treturn true;\n\t\t\t}\n\t\t}\n\n\t\treturn false;\n\t}",
+    "source_file": "samedaycourier-shipping.json",
+    "function_name": "isAllowed",
+    "critical_failures": [
+      "Missing PHPDoc block"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "/**\n\t * Checks whether we have a specific researcher for the current locale and returns that language.\n\t * If there is no researcher for the current locale, returns default as the researcher.\n\t *\n\t * @return string The language to use to select a researcher.\n\t */\nfunction get_researcher_language() {\n\t\t$researcher_language = WPSEO_Language_Utils::get_language( \\get_locale() );\n\t\t$supported_languages = Researcher_Languages::SUPPORTED_LANGUAGES;\n\n\t\tif ( ! \\in_array( $researcher_language, $supported_languages, true ) ) {\n\t\t\t$researcher_language = 'default';\n\t\t}\n\t\treturn $researcher_language;\n\t}",
+    "source_file": "wordpress-seo.json",
+    "function_name": "Language_Helper::get_researcher_language",
+    "critical_failures": [
+      "Missing @since tag in PHPDoc block \u2014 required by WordPress Coding Standards for public API methods",
+      "Function is defined as a standalone function but appears to be a class method (indentation and context suggest it belongs to Language_Helper class but lacks proper class method declaration structure in the snippet \u2014 likely an extraction artifact, but PHPDoc is incomplete regardless)",
+      "Missing @since tag is a WPCS violation for any public API surface"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance"
+    ]
+  },
+  {
+    "code": "function isSpecialNumber(): bool\n    {\n        if ($this->quotes) {\n            return false;\n        }\n\n        if (\\strlen($this->text) < \\strlen('min(_)')) {\n            return false;\n        }\n\n        $first = $this->text[0];\n\n        if ($first === 'c' || $first === 'C') {\n            $second = $this->text[1];\n\n            if ($second === 'l' || $second === 'L') {\n                return ($this->text[2] === 'a' || $this->text[2] === 'A')\n                    && ($this->text[3] === 'm' || $this->text[3] === 'M')\n                    && ($this->text[4] === 'p' || $this->text[4] === 'P')\n                    && $this->text[5] === '(';\n            }\n\n            if ($second === 'a' || $second === 'A') {\n                return ($this->text[2] === 'l' || $this->text[2] === 'L')\n                    && ($this->text[3] === 'c' || $this->text[3] === 'C')\n                    && $this->text[4] === '(';\n            }\n\n            return false;\n        }\n\n        if ($first === 'v' || $first === 'V') {\n            return ($this->text[1] === 'a' || $this->text[1] === 'A')\n                && ($this->text[2] === 'r' || $this->text[2] === 'R')\n                && $this->text[3] === '(';\n        }\n\n        if ($first === 'e' || $first === 'E') {\n            return ($this->text[1] === 'n' || $this->text[1] === 'N')\n                && ($this->text[2] === 'v' || $this->text[2] === 'V')\n                && $this->text[3] === '(';\n        }\n\n        if ($first === 'm' || $first === 'M') {\n            $second = $this->text[1];\n\n            if ($second === 'a' || $second === 'A') {\n                return ($this->text[2] === 'x' || $this->text[2] === 'X')\n                    && $this->text[3] === '(';\n            }\n\n            if ($second === 'i' || $second === 'I') {\n                return ($this->text[2] === 'n' || $this->text[2] === 'N')\n                    && $this->text[3] === '(';\n            }\n\n            return false;\n        }\n\n        return false;\n    }",
+    "source_file": "wp-scss.json",
+    "function_name": "SassString::isSpecialNumber",
+    "critical_failures": [
+      "missing_phpdoc"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "/**\n\t * Converts an attachment src to an attachment ID.\n\t *\n\t * @param string $src The attachment src.\n\t *\n\t * @return int The attachment ID. 0 if none was found.\n\t */\nfunction attachment_src_to_id( $src ) {\n\t\tglobal $post;\n\n\t\tif ( isset( $this->used_caches[ $post->ID ][ $src ] ) ) {\n\t\t\treturn $this->used_caches[ $post->ID ][ $src ];\n\t\t}\n\n\t\t$cache = $this->get_cache_for_post( $post->ID );\n\t\tif ( isset( $cache[ $src ] ) ) {\n\t\t\t$this->used_caches[ $post->ID ][ $src ] = $cache[ $src ];\n\t\t\treturn $cache[ $src ];\n\t\t}\n\n\t\t$this->used_caches[ $post->ID ][ $src ] = $this->image_helper->get_attachment_by_url( $src );\n\t\treturn $this->used_caches[ $post->ID ][ $src ];\n\t}",
+    "source_file": "wordpress-seo.json",
+    "function_name": "Structured_Data_Blocks::attachment_src_to_id",
+    "critical_failures": [
+      "Unsafe access to global $post without null/validity check \u2014 accessing $post->ID when $post may be null or not a WP_Post object will cause a fatal error, making this unreliable in admin, REST, or CLI contexts.",
+      "Missing @since tag in PHPDoc block, which is required by WPCS for public/protected methods."
+    ],
+    "low_score_dims": [
+      "code_quality"
+    ]
+  },
+  {
+    "code": "/**\n\t\t * Filter: 'wpseo_schema_person_social_profiles' - Allows filtering of social profiles per user.\n\t\t *\n\t\t * @param string[] $social_profiles The array of social profiles to retrieve. Each should be a user meta field\n\t\t *                                  key. As they are retrieved using the WordPress function `get_the_author_meta`.\n\t\t * @param int      $user_id         The current user we're grabbing social profiles for.\n\t\t */\nfunction get_social_profiles( $same_as_urls, $user_id ) {\n\t\t\n\t\t$social_profiles = \\apply_filters( 'wpseo_schema_person_social_profiles', $this->social_profiles, $user_id );\n\n\t\t// We can only handle an array.\n\t\tif ( ! \\is_array( $social_profiles ) ) {\n\t\t\treturn $same_as_urls;\n\t\t}\n\n\t\tforeach ( $social_profiles as $profile ) {\n\t\t\t// Skip non-string values.\n\t\t\tif ( ! \\is_string( $profile ) ) {\n\t\t\t\tcontinue;\n\t\t\t}\n\n\t\t\t$social_url = $this->url_social_site( $profile, $user_id );\n\t\t\tif ( $social_url ) {\n\t\t\t\t$same_as_urls[] = $social_url;\n\t\t\t}\n\t\t}\n\n\t\treturn $same_as_urls;\n\t}",
+    "source_file": "wordpress-seo.json",
+    "function_name": "Person::get_social_profiles",
+    "critical_failures": [
+      "PHPDoc block is misplaced \u2014 it documents the filter (wpseo_schema_person_social_profiles) rather than the function itself. The function lacks its own @param, @return, and @since tags, violating WPCS for public/protected API methods.",
+      "Indentation is inconsistent \u2014 the function body uses extra leading tabs suggesting a copy/paste or formatting error, which violates WordPress Coding Standards.",
+      "The PHPDoc block documents filter parameters but is positioned as if it documents the function, which is misleading and incorrect formatting per WPCS."
+    ],
+    "low_score_dims": [
+      "wpcs_compliance"
+    ]
+  },
+  {
+    "code": "function getCheckoutEmailIfAvailable()\n    {\n        $order_key = isset($_GET['key']) ? sanitize_text_field(wp_unslash($_GET['key'])) : '';\n        if ($order_key) {\n            $order_id = wc_get_order_id_by_order_key($order_key);\n            if ($order_id) {\n                $order = wc_get_order($order_id);\n                if ($order) {\n                    return $order->get_billing_email();\n                }\n            }\n        }\n\n        $current_user = wp_get_current_user();\n        if ($current_user->ID && $current_user->user_email) {\n            return $current_user->user_email;\n        }\n\n        if (WC()->customer) {\n            $email = WC()->customer->get_billing_email();\n            if ($email) {\n                return $email;\n            }\n        }\n\n        return '';\n    }",
+    "source_file": "woocommerce-mercadopago.json",
+    "function_name": "CustomGateway::getCheckoutEmailIfAvailable",
+    "critical_failures": [
+      "camelCase method naming violates WPCS (WordPress requires snake_case)",
+      "Missing PHPDoc block",
+      "Direct $_GET access without sanitization wrapper"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance"
+    ]
+  },
+  {
+    "code": "/**\n * Skips the spam check if it is not necessary.\n *\n * @return bool True if the spam check is not necessary.\n */\nfunction wpcf7_stripe_skip_spam_check( $skip_spam_check, $submission ) {\n\t$service = WPCF7_Stripe::get_instance();\n\n\tif ( ! $service->is_active() ) {\n\t\treturn $skip_spam_check;\n\t}\n\n\tif ( ! empty( $_POST['_wpcf7_stripe_payment_intent'] ) ) {\n\t\t$pi_id = trim( $_POST['_wpcf7_stripe_payment_intent'] );\n\t\t$payment_intent = $service->api()->retrieve_payment_intent( $pi_id );\n\n\t\tif ( isset( $payment_intent['status'] )\n\t\tand ( 'succeeded' === $payment_intent['status'] ) ) {\n\t\t\t$submission->push( 'payment_intent', $pi_id );\n\t\t}\n\t}\n\n\tif ( ! empty( $submission->pull( 'payment_intent' ) )\n\tand $submission->verify_posted_data_hash() ) {\n\t\t$skip_spam_check = true;\n\t}\n\n\treturn $skip_spam_check;\n}",
+    "source_file": "contact-form-7.json",
+    "function_name": "wpcf7_stripe_skip_spam_check",
+    "critical_failures": [
+      "missing_nonce_on_state_change"
+    ],
+    "low_score_dims": [
+      "security"
+    ]
+  },
+  {
+    "code": "/**\n\t\t * description\n\t\t *\n\t\t * @type    function\n\t\t * @date    7/09/2016\n\t\t * @since   5.4.0\n\t\t *\n\t\t * @param   $post_id (int)\n\t\t * @return  $post_id (int)\n\t\t */\nfunction render_form( $args = array() ) {\n\n\t\t\t// Vars.\n\t\t\t$is_registered = false;\n\t\t\t$field_groups  = array();\n\t\t\t$fields        = array();\n\n\t\t\t// Allow form settings to be directly provided.\n\t\t\tif ( is_array( $args ) ) {\n\t\t\t\t$args = $this->validate_form( $args );\n\n\t\t\t\t// Otherwise, lookup registered form.\n\t\t\t} else {\n\t\t\t\t$is_registered = true;\n\t\t\t\t$args          = $this->get_form( $args );\n\t\t\t\tif ( ! $args ) {\n\t\t\t\t\treturn false;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// Extract vars.\n\t\t\t$post_id = $args['post_id'];\n\n\t\t\t// Prevent ACF from loading values for \"new_post\".\n\t\t\tif ( $post_id === 'new_post' ) {\n\t\t\t\t$post_id = false;\n\t\t\t}\n\n\t\t\t// Set uploader type.\n\t\t\tacf_update_setting( 'uploader', $args['uploader'] );\n\n\t\t\t// Register local fields.\n\t\t\tforeach ( $this->get_default_fields() as $k => $field ) {\n\t\t\t\tacf_add_local_field( $field );\n\t\t\t}\n\n\t\t\t// Append post_title field.\n\t\t\tif ( $args['post_title'] ) {\n\t\t\t\t$_post_title          = acf_get_field( '_post_title' );\n\t\t\t\t$_post_title['value'] = $post_id ? get_post_field( 'post_title', $post_id ) : '';\n\t\t\t\t$fields[]             = $_post_title;\n\t\t\t}\n\n\t\t\t// Append post_content field.\n\t\t\tif ( $args['post_content'] ) {\n\t\t\t\t$_post_content          = acf_get_field( '_post_content' );\n\t\t\t\t$_post_content['value'] = $post_id ? get_post_field( 'post_content', $post_id ) : '';\n\t\t\t\t$fields[]               = $_post_content;\n\t\t\t}\n\n\t\t\t// Load specific fields.\n\t\t\tif ( $args['fields'] ) {\n\n\t\t\t\t// Lookup fields using $strict = false for better compatibility with field names.\n\t\t\t\tforeach ( $args['fields'] as $selector ) {\n\t\t\t\t\t$fields[] = acf_maybe_get_field( $selector, $post_id, false );\n\t\t\t\t}\n\n\t\t\t\t// Load specific field groups.\n\t\t\t} elseif ( $args['field_groups'] ) {\n\t\t\t\tforeach ( $args['field_groups'] as $selector ) {\n\t\t\t\t\t$field_groups[] = acf_get_field_group( $selector );\n\t\t\t\t}\n\n\t\t\t\t// Load fields for the given \"new_post\" args.\n\t\t\t} elseif ( $args['post_id'] == 'new_post' ) {\n\t\t\t\t$field_groups = acf_get_field_groups( $args['new_post'] );\n\n\t\t\t\t// Load fields for the given \"post_id\" arg.\n\t\t\t} else {\n\t\t\t\t$field_groups = acf_get_field_groups(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'post_id' => $args['post_id'],\n\t\t\t\t\t)\n\t\t\t\t);\n\t\t\t}\n\n\t\t\t// load fields from the found field groups.\n\t\t\tif ( $field_groups ) {\n\t\t\t\tforeach ( $field_groups as $field_group ) {\n\t\t\t\t\t$_fields = acf_get_fields( $field_group );\n\t\t\t\t\tif ( $_fields ) {\n\t\t\t\t\t\tforeach ( $_fields as $_field ) {\n\t\t\t\t\t\t\t$fields[] = $_field;\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// Add honeypot field.\n\t\t\tif ( $args['honeypot'] ) {\n\t\t\t\t$fields[] = acf_get_field( '_validate_email' );\n\t\t\t}\n\n\t\t\t// Display updated_message\n\t\t\tif ( ! empty( $_GET['updated'] ) && $args['updated_message'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Used as a flag; data not used.\n\t\t\t\tprintf( $args['html_updated_message'], $args['updated_message'] ); //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- designed to contain potentially unsafe HTML, set by developers.\n\t\t\t}\n\n\t\t\t// display form\n\t\t\tif ( $args['form'] ) : ?>\n\t\t\t\t<form <?php echo acf_esc_attrs( $args['form_attributes'] ); ?>>\n\t\t\t\t<?php\n\t\t\tendif;\n\n\t\t\t// Render hidde form data.\n\t\t\tacf_form_data(\n\t\t\t\tarray(\n\t\t\t\t\t'screen'  => 'acf_form',\n\t\t\t\t\t'post_id' => $args['post_id'],\n\t\t\t\t\t'form'    => $is_registered ? $args['id'] : acf_encrypt( json_encode( $args ) ),\n\t\t\t\t)\n\t\t\t);\n\n\t\t\t?>\n\t\t\t<div class=\"acf-fields acf-form-fields -<?php echo esc_attr( $args['label_placement'] ); ?>\">\n\t\t\t\t<?php echo $args['html_before_fields']; ?><?php //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- designed to contain potentially unsafe HTML, set by developers. ?>\n\t\t\t\t<?php acf_render_fields( $fields, $post_id, $args['field_el'], $args['instruction_placement'] ); ?>\n\t\t\t\t<?php echo $args['html_after_fields']; ?><?php //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- designed to contain potentially unsafe HTML, set by developers. ?>\n\t\t\t</div>\n\t\t\t<?php if ( $args['form'] ) : ?>\n\t\t\t\t<div class=\"acf-form-submit\">\n\t\t\t\t\t<?php printf( $args['html_submit_button'], $args['submit_value'] ); ?><?php //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- designed to contain potentially unsafe HTML, set by developers. ?>\n\t\t\t\t\t<?php echo $args['html_submit_spinner']; ?><?php //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- designed to contain potentially unsafe HTML, set by developers. ?>\n\t\t\t\t</div>\n\t\t\t\t</form>\n\t\t\t<?php endif;\n\t\t}",
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_form_front::render_form",
+    "critical_failures": [
+      "PHPDoc block describes wrong function signature \u2014 '@param $post_id (int)' and '@return $post_id (int)' are completely wrong for this method; this is a misleading public API docblock.",
+      "Unescaped output of developer-supplied HTML via printf() with $args['html_updated_message'] and $args['updated_message'] \u2014 even with phpcs:ignore, this pattern teaches unsafe output practices; the format string itself is unescaped and user/developer-controlled, creating XSS risk if args are not fully trusted.",
+      "Use of $_GET['updated'] without any sanitization or casting before use as a flag \u2014 even as a boolean check, this is a bad pattern to teach.",
+      "Missing form nonce output \u2014 while ACF may handle nonces inside acf_form_data(), this function as presented outputs a <form> element with no visible nonce field and no comment indicating where nonce is emitted, making it appear to teach nonce-less form rendering.",
+      "Use of json_encode() directly instead of wp_json_encode() which handles character encoding edge cases correctly per WordPress standards.",
+      "Loose comparison ($args['post_id'] == 'new_post') mixed with strict comparison ($post_id === 'new_post') for the same logical check \u2014 inconsistent and potentially buggy.",
+      "security_auto_fail"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "security",
+      "accessibility"
+    ]
+  },
+  {
+    "code": "function getRootAndRelPathForDestination($destinationPath, $imageRoots) {\n        foreach ($imageRoots->getArray() as $i => $imageRoot) {\n            $rootPath = $imageRoot->getAbsPath();\n            if (strpos($destinationPath, realpath($rootPath)) !== false) {\n                $relPath = substr($destinationPath, strlen(realpath($rootPath)) + 1);\n                return [$imageRoot->id, $relPath];\n            }\n        }\n        return ['', ''];\n    }",
+    "source_file": "webp-express.json",
+    "function_name": "Paths::getRootAndRelPathForDestination",
+    "critical_failures": [
+      "Missing PHPDoc block"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "/**\n\t * Save meta box data.\n\t *\n\t * @param int     $post_id\n\t * @param WP_Post $post\n\t */\nfunction save( $post_id, $post ) {\n\t\t$product_type   = empty( $_POST['product-type'] ) ? WC_Product_Factory::get_product_type( $post_id ) : sanitize_title( stripslashes( $_POST['product-type'] ) );\n\t\t$classname      = WC_Product_Factory::get_product_classname( $post_id, $product_type ? $product_type : ProductType::SIMPLE );\n\t\t$product        = new $classname( $post_id );\n\t\t$attachment_ids = isset( $_POST['product_image_gallery'] ) ? array_filter( explode( ',', wc_clean( $_POST['product_image_gallery'] ) ) ) : array();\n\n\t\t$product->set_gallery_image_ids( $attachment_ids );\n\t\t$product->save();\n\t}",
+    "source_file": "woocommerce.json",
+    "function_name": "WC_Meta_Box_Product_Images::save",
+    "critical_failures": [
+      "Handles POST/REQUEST data without nonce verification"
+    ],
+    "low_score_dims": [
+      "security"
+    ]
+  },
+  {
+    "code": "function register_endpoints(): void {\n\t\tCreateOffersEndpoint::register_endpoint();\n\t\tGetOffersEndpoint::register_endpoint();\n\t\tDeleteOffersEndpoint::register_endpoint();\n\t}",
+    "source_file": "facebook-for-woocommerce.json",
+    "function_name": "OfferManagementEndpointBase::register_endpoints",
+    "critical_failures": [
+      "Missing PHPDoc block"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "/**\n\t * {@inheritDoc}\n\t */\nfunction run( ContainerInterface $c ): bool {\n\t\tadd_action( 'after_setup_theme', fn() => $this->run_with_translations( $c ) );\n\n\t\treturn true;\n\t}",
+    "source_file": "woocommerce-paypal-payments.json",
+    "function_name": "LocalAlternativePaymentMethodsModule::run",
+    "critical_failures": [
+      "Below threshold on: wpcs_compliance"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "/**\n\t\t * The migration to run.\n\t\t *\n\t\t * @var Migration $migration\n\t\t */\nfunction run_migration( $version, $migration_class ) {\n\t\t\n\t\t$migration = new $migration_class( $this->adapter );\n\t\ttry {\n\t\t\t$this->adapter->start_transaction();\n\t\t\t$migration->up();\n\t\t\t$this->adapter->add_version( $version );\n\t\t\t$this->adapter->commit_transaction();\n\t\t} catch ( Exception $e ) {\n\t\t\t$this->adapter->rollback_transaction();\n\t\t\tthrow new Exception( \\sprintf( '%s - %s', $migration_class, $e->getMessage() ), 0, $e );\n\t\t}\n\t}",
+    "source_file": "wordpress-seo.json",
+    "function_name": "Migration_Runner::run_migration",
+    "critical_failures": [
+      "Missing PHPDoc @param and @return tags on the function itself (the docblock present is for a variable, not the function signature)",
+      "Function is declared without visibility modifier (public/protected/private) \u2014 appears to be a method but declared as a bare function in the snippet",
+      "Missing @since tag in PHPDoc",
+      "Uses \\sprintf() instead of WordPress-idiomatic sprintf() \u2014 minor but reflects standards inconsistency",
+      "Catches base Exception instead of a more specific exception type; re-throws generic Exception rather than a domain-specific or WordPress exception class, which can mask errors and is a code quality concern",
+      "No capability or permission check before running a migration, though context-dependent this is a concern for a method that mutates database state"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance"
+    ]
+  },
+  {
+    "code": "/**\n\t * Fix domain for Elementor edit links in Theme Builder\n\t *\n\t * @param  string                       $url\n\t * @param  Elementor\\Core\\Base\\Document $document\n\t * @return string\n\t */\nfunction fix_elementor_edit_link( $url, $document ) {\n\n\t\treturn $this->fix_url_domain( $url, $document->get_main_id() );\n\n\t}",
+    "source_file": "connect-polylang-elementor.json",
+    "function_name": "fix_elementor_edit_link",
+    "critical_failures": [
+      "PHPDoc block is missing @since tag, which is required for WordPress coding standards on public API methods",
+      "Indentation is inconsistent \u2014 function body is indented with extra tabs suggesting copy-paste formatting issues, violating WPCS formatting rules",
+      "Function appears to use $this context but is not declared as a method within a visible class definition \u2014 dependency on 'fix_elementor_edit_link' listed as a self-reference suggesting a circular or structural issue",
+      "No type validation or null check on $document before calling ->get_main_id(), risking fatal errors if $document is not a valid Elementor Document object"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "dependency_integrity"
+    ]
+  },
+  {
+    "code": "function is_dynamic_content(): bool {\n\t\treturn false;\n\t}",
+    "source_file": "elementor.json",
+    "function_name": "Widget_Image_Carousel::is_dynamic_content",
+    "critical_failures": [
+      "Missing PHPDoc block"
+    ],
+    "low_score_dims": []
+  }
+]
