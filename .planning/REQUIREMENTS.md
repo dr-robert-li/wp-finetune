@@ -363,7 +363,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 **Coverage:**
 - v1 requirements: 39 total (32 complete, 7 eval pending)
 - v1.1 requirements: 13 total (13 complete)
-- v1.2 requirements: 17 total (0 complete) — DGEN-01/02/03 -> Phase 4.1; DGEN-04/05 -> Phase 4.2; RTRN-01/02/03/04 -> Phase 4.3; REVL-01/02/03/04/05/06/07/08 -> Phase 4.4
+- v1.2 requirements: 17 total (1 complete: DGEN-02) — DGEN-01/02/03 -> Phase 4.1; DGEN-04/05 -> Phase 4.2; RTRN-01/02/03/04 -> Phase 4.3; REVL-01/02/03/04/05/06/07/08 -> Phase 4.4
 - v2.0 requirements: 16 total (0 complete) — PROF(5) + GATE-01(1) + GRPO(8) + RLEV(2) [Phases 7-10]
 - v3.0 requirements: 21 total (0 complete) — SIEVE(5) + EVAL2(2) + MERGE(1) + PRUNE(6) + EVAL3(2) + PKG(5) [Phases 11-15]
 - DPLT requirements: 7 total (deferred -> v3.0 PKG/PRUNE)
