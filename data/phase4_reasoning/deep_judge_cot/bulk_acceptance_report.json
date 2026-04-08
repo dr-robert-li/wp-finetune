@@ -1,0 +1,28 @@
+{
+  "stream": "cot",
+  "generated_at": "2026-04-08T12:27:10.310237Z",
+  "accepted_count": 270,
+  "total_attempted": 280,
+  "parse_failures": 0,
+  "parse_failure_rate": 0.0,
+  "duplicate_rate": 0.017857142857142856,
+  "dup_prompt": 3,
+  "dup_output": 2,
+  "rejection_reasons": {
+    "dup_output": 2,
+    "dup_prompt": 3,
+    "citation_hallucination:0.50": 3,
+    "citation_hallucination:1.00": 2
+  },
+  "citation_validity_rate": 1.0,
+  "aggregate_hallucination_ratio": 0.0,
+  "thresholds": {
+    "parse_failure_rate_max": 0.02,
+    "citation_validity_rate_min": 0.7,
+    "duplicate_rate_max": 0.05,
+    "accepted_count_min": 100,
+    "max_na_dimensions": 2,
+    "na_justification_min_chars": 20
+  },
+  "passed_acceptance_gate": true
+}
