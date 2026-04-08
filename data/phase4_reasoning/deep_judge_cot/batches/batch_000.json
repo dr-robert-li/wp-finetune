@@ -1,0 +1,1222 @@
+[
+  {
+    "code": "/**\n     * Generated from protobuf field <code>string node_id = 5;</code>\n     * @param string $var\n     * @return $this\n     */\nfunction setNodeId($var)\n    {\n        GPBUtil::checkString($var, True);\n        $this->node_id = $var;\n\n        return $this;\n    }",
+    "source_file": "plugnmeet.json",
+    "source_dir": "passed",
+    "function_name": "edition::setNodeId",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "PHPDoc block present. Function name 'setNodeId' uses camelCase; WordPress standard prefers snake_case."
+        },
+        "sql_safety": {
+          "score": 7,
+          "analysis": "No direct database queries in this function. SQL safety dimension not applicable; function uses WordPress ORM abstractions or performs no DB operations."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "No direct user input access in this function; security posture appropriate for its scope."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "No significant performance issues detected. Function scope does not involve expensive operations."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Function 'setNodeId' does not use WordPress-specific APIs directly \u2014 appropriate for a utility/helper function in this context."
+        },
+        "code_quality": {
+          "score": 8,
+          "analysis": "Function 'setNodeId' has 7 substantive lines."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "No circular dependencies or problematic direct file inclusions detected in 'setNodeId' (source: plugnmeet.json). Function operates within expected dependency boundaries."
+        },
+        "i18n": {
+          "score": 7,
+          "analysis": "Function 'setNodeId' does not produce user-facing output \u2014 i18n dimension not applicable. No translatable strings identified in this utility function."
+        },
+        "accessibility": {
+          "score": 8,
+          "analysis": "HTML output present with reasonable accessibility structure."
+        }
+      },
+      "overall_score": 74,
+      "key_observation": "Function meets WordPress quality bar across all dimensions; strongest in security (8/10)."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "code": "function bulk_copy_templates( array $args ) {\n\t\t$validate_args = $this->ensure_args( [ 'source', 'from_source', 'from_template_id' ], $args );\n\n\t\tif ( is_wp_error( $validate_args ) ) {\n\t\t\treturn $validate_args;\n\t\t}\n\n\t\t$args['source'] = $args['source'][0];\n\n\t\treturn $this->bulk_copy_template_items( $args );\n\t}",
+    "source_file": "elementor.json",
+    "source_dir": "failed",
+    "function_name": "bulk_copy_templates",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 5,
+          "analysis": "Missing PHPDoc block for function documentation. Function name 'bulk_copy_templates' follows WordPress snake_case convention. Function from Phase 1 failed set; likely has WPCS issues."
+        },
+        "sql_safety": {
+          "score": 7,
+          "analysis": "No direct database queries in this function. SQL safety dimension not applicable; function uses WordPress ORM abstractions or performs no DB operations."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "No direct user input access in this function; security posture appropriate for its scope."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "No significant performance issues detected. Function scope does not involve expensive operations."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Function 'bulk_copy_templates' does not use WordPress-specific APIs directly \u2014 appropriate for a utility/helper function in this context."
+        },
+        "code_quality": {
+          "score": 7,
+          "analysis": "Function 'bulk_copy_templates' has 8 substantive lines. WP_Error error handling pattern used appropriately."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "No circular dependencies or problematic direct file inclusions detected in 'bulk_copy_templates' (source: elementor.json). Function operates within expected dependency boundaries."
+        },
+        "i18n": {
+          "score": 7,
+          "analysis": "Function 'bulk_copy_templates' does not produce user-facing output \u2014 i18n dimension not applicable. No translatable strings identified in this utility function."
+        },
+        "accessibility": {
+          "score": 7,
+          "analysis": "Function 'bulk_copy_templates' does not produce HTML output \u2014 accessibility dimension not applicable. This is a data processing or business logic function with no frontend rendering."
+        }
+      },
+      "overall_score": 70,
+      "key_observation": "Function fails quality bar: wpcs_compliance (5/10) is the weakest dimension."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "code": "/**\n\t * @param WP_REST_Request $request\n\t *\n\t * @return WP_REST_Response\n\t */\nfunction get_item( $request ) {\n\t\t$settings = LP_Settings::instance();\n\t\t$response = array(\n\t\t\t'result' => $settings->get( $request['key'] ),\n\t\t);\n\n\t\treturn rest_ensure_response( $response );\n\t}",
+    "source_file": "learnpress-bbpress.json",
+    "source_dir": "passed",
+    "function_name": "LP_REST_Courses_Controller::get_item",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 8,
+          "analysis": "PHPDoc block present. Function name 'get_item' follows WordPress snake_case convention."
+        },
+        "sql_safety": {
+          "score": 7,
+          "analysis": "No direct database queries in this function. SQL safety dimension not applicable; function uses WordPress ORM abstractions or performs no DB operations."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "No direct user input access in this function; security posture appropriate for its scope."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "No significant performance issues detected. Function scope does not involve expensive operations."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Function 'get_item' does not use WordPress-specific APIs directly \u2014 appropriate for a utility/helper function in this context."
+        },
+        "code_quality": {
+          "score": 8,
+          "analysis": "Function 'get_item' has 8 substantive lines."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "No circular dependencies or problematic direct file inclusions detected in 'get_item' (source: learnpress-bbpress.json). Function operates within expected dependency boundaries."
+        },
+        "i18n": {
+          "score": 7,
+          "analysis": "Function 'get_item' does not produce user-facing output \u2014 i18n dimension not applicable. No translatable strings identified in this utility function."
+        },
+        "accessibility": {
+          "score": 7,
+          "analysis": "Function 'get_item' does not produce HTML output \u2014 accessibility dimension not applicable. This is a data processing or business logic function with no frontend rendering."
+        }
+      },
+      "overall_score": 74,
+      "key_observation": "Function meets WordPress quality bar across all dimensions; strongest in wpcs_compliance (8/10)."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "code": "/**\n\t\t * Fires just before the target post is updated with its new data.\n\t\t * Allows for final data adjustments before updating the target post.\n\t\t *\n\t\t * @module copy-post\n\t\t *\n\t\t * @since 7.0.0\n\t\t *\n\t\t * @param array $data Post data with which to update the target (new) post.\n\t\t * @param WP_Post $source_post Post object being copied.\n\t\t * @param int     $target_post_id Target post ID.\n\t\t */\nfunction update_content( $source_post, $target_post_id ) {\n\t\t$data = array(\n\t\t\t'ID'             => $target_post_id,\n\t\t\t'post_title'     => $source_post->post_title,\n\t\t\t'post_content'   => $source_post->post_content,\n\t\t\t'post_excerpt'   => $source_post->post_excerpt,\n\t\t\t'comment_status' => $source_post->comment_status,\n\t\t\t'ping_status'    => $source_post->ping_status,\n\t\t\t'post_category'  => wp_get_post_categories( $source_post->ID ),\n\t\t\t'post_password'  => $source_post->post_password,\n\t\t\t'tags_input'     => $source_post->tags_input,\n\t\t);\n\n\t\t// Copy footnotes with regenerated IDs.\n\t\t$data = $this->copy_footnotes( $data, $source_post, $target_post_id );\n\n\t\t\n\t\t$data = apply_filters( 'jetpack_copy_post_data', $data, $source_post, $target_post_id );\n\t\treturn wp_update_post( $data );\n\t}",
+    "source_file": "jetpack.json",
+    "source_dir": "passed",
+    "function_name": "Jetpack_Copy_Post::update_content",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 8,
+          "analysis": "PHPDoc block present. Function name 'update_content' follows WordPress snake_case convention."
+        },
+        "sql_safety": {
+          "score": 4,
+          "analysis": "Direct $wpdb queries found without $wpdb->prepare() \u2014 SQL injection risk."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "No direct user input access in this function; security posture appropriate for its scope."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "No significant performance issues detected. Function scope does not involve expensive operations."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Function 'update_content' does not use WordPress-specific APIs directly \u2014 appropriate for a utility/helper function in this context."
+        },
+        "code_quality": {
+          "score": 8,
+          "analysis": "Function 'update_content' has 17 substantive lines."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "No circular dependencies or problematic direct file inclusions detected in 'update_content' (source: jetpack.json). Function operates within expected dependency boundaries."
+        },
+        "i18n": {
+          "score": 7,
+          "analysis": "Function 'update_content' does not produce user-facing output \u2014 i18n dimension not applicable. No translatable strings identified in this utility function."
+        },
+        "accessibility": {
+          "score": 7,
+          "analysis": "Function 'update_content' does not produce HTML output \u2014 accessibility dimension not applicable. This is a data processing or business logic function with no frontend rendering."
+        }
+      },
+      "overall_score": 71,
+      "key_observation": "Quality gate not met: sql_safety scored 4/10 (minimum 8 required for all dimensions)."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "code": "/**\n\t * Check the passed in query params to see if currency has been passed in.\n\t * Will return null if no currency variable was passed in, otherwise will\n\t * return the currency.\n\t *\n\t * @return array\n\t */\nfunction get_customer_currency_args_from_request(): array {\n\t\t$args = [\n\t\t\t'currency_is'     => [],\n\t\t\t'currency_is_not' => [],\n\t\t\t'currency'        => null,\n\t\t];\n\n\t\t/* phpcs:disable WordPress.Security.NonceVerification */\n\t\tif ( isset( $_GET['currency_is'] ) && is_array( $_GET['currency_is'] ) ) {\n\t\t\t$args['currency_is'] = array_map( 'sanitize_text_field', wp_unslash( $_GET['currency_is'] ) );\n\t\t}\n\n\t\tif ( isset( $_GET['currency_is_not'] ) ) {\n\t\t\t$args['currency_is_not'] = array_map( 'sanitize_text_field', wp_unslash( $_GET['currency_is_not'] ) );\n\t\t}\n\n\t\tif ( isset( $_GET['currency'] ) ) {\n\t\t\t$args['currency'] = sanitize_text_field( wp_unslash( $_GET['currency'] ) );\n\t\t}\n\t\t/* phpcs:enable WordPress.Security.NonceVerification */\n\n\t\treturn $args;\n\t}",
+    "source_file": "woocommerce-payments.json",
+    "source_dir": "passed",
+    "function_name": "get_customer_currency_args_from_request",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 8,
+          "analysis": "PHPDoc block present. Function name 'get_customer_currency_args_from_request' follows WordPress snake_case convention."
+        },
+        "sql_safety": {
+          "score": 7,
+          "analysis": "No direct database queries in this function. SQL safety dimension not applicable; function uses WordPress ORM abstractions or performs no DB operations."
+        },
+        "security": {
+          "score": 2,
+          "analysis": "User input ($_POST/$_GET/$_REQUEST) accessed without nonce verification \u2014 missing wp_verify_nonce() or check_ajax_referer(). Output of user-controlled data may lack escaping \u2014 esc_html(), esc_attr(), or esc_url() should be applied before output. No capability check (current_user_can()) for user-input handler \u2014 authorization gate missing."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "No significant performance issues detected. Function scope does not involve expensive operations."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Function 'get_customer_currency_args_from_request' does not use WordPress-specific APIs directly \u2014 appropriate for a utility/helper function in this context."
+        },
+        "code_quality": {
+          "score": 8,
+          "analysis": "Function 'get_customer_currency_args_from_request' has 20 substantive lines."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "No circular dependencies or problematic direct file inclusions detected in 'get_customer_currency_args_from_request' (source: woocommerce-payments.json). Function operates within expected dependency boundaries."
+        },
+        "i18n": {
+          "score": 7,
+          "analysis": "Function 'get_customer_currency_args_from_request' does not produce user-facing output \u2014 i18n dimension not applicable. No translatable strings identified in this utility function."
+        },
+        "accessibility": {
+          "score": 7,
+          "analysis": "Function 'get_customer_currency_args_from_request' does not produce HTML output \u2014 accessibility dimension not applicable. This is a data processing or business logic function with no frontend rendering."
+        }
+      },
+      "overall_score": 68,
+      "key_observation": "Security auto-fail: security score 2/10 below threshold of 5."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "code": "/**\n\t * Check if post is indexable.\n\t *\n\t * @param int $post_id Post ID to check.\n\t *\n\t * @return boolean\n\t */\nfunction is_post_indexable( $post_id ) {\n\t\tif ( true === self::is_post_excluded( $post_id ) ) {\n\t\t\treturn false;\n\t\t}\n\n\t\t$robots = self::is_post_meta_indexable( $post_id );\n\t\tif ( is_bool( $robots ) ) {\n\t\t\treturn $robots;\n\t\t}\n\n\t\t$post_type = get_post_type( $post_id );\n\t\t$robots    = Helper::get_settings( 'titles.pt_' . $post_type . '_custom_robots' );\n\t\t$robots    = false === $robots ? Helper::get_settings( 'titles.robots_global' ) : Helper::get_settings( 'titles.pt_' . $post_type . '_robots' );\n\n\t\treturn in_array( 'noindex', (array) $robots, true ) ? false : true;\n\t}",
+    "source_file": "seo-by-rank-math.json",
+    "source_dir": "passed",
+    "function_name": "is_post_indexable",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "PHPDoc block present. Function name 'is_post_indexable' follows WordPress snake_case convention. Non-Yoda conditions found; WordPress WPCS requires Yoda comparisons (e.g., 'PASS' === $var)."
+        },
+        "sql_safety": {
+          "score": 7,
+          "analysis": "No direct database queries in this function. SQL safety dimension not applicable; function uses WordPress ORM abstractions or performs no DB operations."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "No direct user input access in this function; security posture appropriate for its scope."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "No significant performance issues detected. Function scope does not involve expensive operations."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Function 'is_post_indexable' does not use WordPress-specific APIs directly \u2014 appropriate for a utility/helper function in this context."
+        },
+        "code_quality": {
+          "score": 8,
+          "analysis": "Function 'is_post_indexable' has 14 substantive lines."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "No circular dependencies or problematic direct file inclusions detected in 'is_post_indexable' (source: seo-by-rank-math.json). Function operates within expected dependency boundaries."
+        },
+        "i18n": {
+          "score": 8,
+          "analysis": "i18n handling appears adequate."
+        },
+        "accessibility": {
+          "score": 7,
+          "analysis": "Function 'is_post_indexable' does not produce HTML output \u2014 accessibility dimension not applicable. This is a data processing or business logic function with no frontend rendering."
+        }
+      },
+      "overall_score": 74,
+      "key_observation": "Function meets WordPress quality bar across all dimensions; strongest in security (8/10)."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "code": "function __construct( array $data = [] ) {\n\t\t$this->lp_dynamic_title      = 'Course Author Url';\n\t\t$this->lp_dynamic_name       = 'course-author-url';\n\t\t$this->lp_dynamic_categories = [ Module::URL_CATEGORY ];\n\t\tparent::__construct( $data );\n\t}",
+    "source_file": "learnpress-buddypress.json",
+    "source_dir": "failed",
+    "function_name": "CourseAuthorUrlElementor::__construct",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 5,
+          "analysis": "Missing PHPDoc block for function documentation. Function from Phase 1 failed set; likely has WPCS issues."
+        },
+        "sql_safety": {
+          "score": 7,
+          "analysis": "No direct database queries in this function. SQL safety dimension not applicable; function uses WordPress ORM abstractions or performs no DB operations."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "No direct user input access in this function; security posture appropriate for its scope."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "No significant performance issues detected. Function scope does not involve expensive operations."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Function '__construct' does not use WordPress-specific APIs directly \u2014 appropriate for a utility/helper function in this context."
+        },
+        "code_quality": {
+          "score": 7,
+          "analysis": "Function '__construct' has 6 substantive lines."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "No circular dependencies or problematic direct file inclusions detected in '__construct' (source: learnpress-buddypress.json). Function operates within expected dependency boundaries."
+        },
+        "i18n": {
+          "score": 7,
+          "analysis": "Function '__construct' does not produce user-facing output \u2014 i18n dimension not applicable. No translatable strings identified in this utility function."
+        },
+        "accessibility": {
+          "score": 7,
+          "analysis": "Function '__construct' does not produce HTML output \u2014 accessibility dimension not applicable. This is a data processing or business logic function with no frontend rendering."
+        }
+      },
+      "overall_score": 70,
+      "key_observation": "Function fails quality bar: wpcs_compliance (5/10) is the weakest dimension."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "code": "/**\n   * @return VideoCopyrightGeoGateFields\n   */\nfunction getFieldsEnum() {\n    return VideoCopyrightGeoGateFields::getInstance();\n  }",
+    "source_file": "official-facebook-pixel.json",
+    "source_dir": "passed",
+    "function_name": "VideoCopyrightGeoGate::getFieldsEnum",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "PHPDoc block present. Function name 'getFieldsEnum' uses camelCase; WordPress standard prefers snake_case."
+        },
+        "sql_safety": {
+          "score": 7,
+          "analysis": "No direct database queries in this function. SQL safety dimension not applicable; function uses WordPress ORM abstractions or performs no DB operations."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "No direct user input access in this function; security posture appropriate for its scope."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "No significant performance issues detected. Function scope does not involve expensive operations."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Function 'getFieldsEnum' does not use WordPress-specific APIs directly \u2014 appropriate for a utility/helper function in this context."
+        },
+        "code_quality": {
+          "score": 8,
+          "analysis": "Function 'getFieldsEnum' has 4 substantive lines."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "No circular dependencies or problematic direct file inclusions detected in 'getFieldsEnum' (source: official-facebook-pixel.json). Function operates within expected dependency boundaries."
+        },
+        "i18n": {
+          "score": 7,
+          "analysis": "Function 'getFieldsEnum' does not produce user-facing output \u2014 i18n dimension not applicable. No translatable strings identified in this utility function."
+        },
+        "accessibility": {
+          "score": 7,
+          "analysis": "Function 'getFieldsEnum' does not produce HTML output \u2014 accessibility dimension not applicable. This is a data processing or business logic function with no frontend rendering."
+        }
+      },
+      "overall_score": 73,
+      "key_observation": "Function meets WordPress quality bar across all dimensions; strongest in security (8/10)."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "code": "/**\n * Short way to load main instance of plugin\n *\n * @return LearnPress\n * @since  1.0\n * @author thimpress\n */\nfunction LP() {\n\treturn LearnPress::instance();\n}",
+    "source_file": "learnpress-wishlist.json",
+    "source_dir": "failed",
+    "function_name": "LP",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "PHPDoc block present. Function from Phase 1 failed set; likely has WPCS issues."
+        },
+        "sql_safety": {
+          "score": 7,
+          "analysis": "No direct database queries in this function. SQL safety dimension not applicable; function uses WordPress ORM abstractions or performs no DB operations."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "No direct user input access in this function; security posture appropriate for its scope."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "No significant performance issues detected. Function scope does not involve expensive operations."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Function 'LP' does not use WordPress-specific APIs directly \u2014 appropriate for a utility/helper function in this context."
+        },
+        "code_quality": {
+          "score": 7,
+          "analysis": "Function 'LP' has 4 substantive lines."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "No circular dependencies or problematic direct file inclusions detected in 'LP' (source: learnpress-wishlist.json). Function operates within expected dependency boundaries."
+        },
+        "i18n": {
+          "score": 7,
+          "analysis": "Function 'LP' does not produce user-facing output \u2014 i18n dimension not applicable. No translatable strings identified in this utility function."
+        },
+        "accessibility": {
+          "score": 7,
+          "analysis": "Function 'LP' does not produce HTML output \u2014 accessibility dimension not applicable. This is a data processing or business logic function with no frontend rendering."
+        }
+      },
+      "overall_score": 72,
+      "key_observation": "Function fails quality bar: wpcs_compliance (7/10) is the weakest dimension."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "code": "/**\n\t\t * Get the question object.\n\t\t *\n\t\t * @since  3.0.0\n\t\t *\n\t\t * @param  mixed $the_question\n\t\t *\n\t\t * @uses   WP_Post\n\t\t * @return WP_Post|bool false on failure\n\t\t */\nfunction get_question_object( $the_question ) {\n\t\t\tif ( false === $the_question ) {\n\t\t\t\t$the_question = get_post_type() === LP_QUESTION_CPT ? $GLOBALS['post'] : false;\n\t\t\t} elseif ( is_numeric( $the_question ) ) {\n\t\t\t\t$the_question = get_post( $the_question );\n\t\t\t} elseif ( $the_question instanceof LP_Course_Item ) {\n\t\t\t\t$the_question = get_post( $the_question->get_id() );\n\t\t\t} elseif ( ! ( $the_question instanceof WP_Post ) ) {\n\t\t\t\t$the_question = false;\n\t\t\t}\n\n\t\t\treturn apply_filters( 'learn-press/question/post-object', $the_question );\n\t\t}",
+    "source_file": "learnpress-bbpress.json",
+    "source_dir": "passed",
+    "function_name": "get_question_object",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "PHPDoc block present. Function name 'get_question_object' follows WordPress snake_case convention. Non-Yoda conditions found; WordPress WPCS requires Yoda comparisons (e.g., 'PASS' === $var)."
+        },
+        "sql_safety": {
+          "score": 7,
+          "analysis": "No direct database queries in this function. SQL safety dimension not applicable; function uses WordPress ORM abstractions or performs no DB operations."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "No direct user input access in this function; security posture appropriate for its scope."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "No significant performance issues detected. Function scope does not involve expensive operations."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Function 'get_question_object' does not use WordPress-specific APIs directly \u2014 appropriate for a utility/helper function in this context."
+        },
+        "code_quality": {
+          "score": 8,
+          "analysis": "Function 'get_question_object' has 13 substantive lines."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "No circular dependencies or problematic direct file inclusions detected in 'get_question_object' (source: learnpress-bbpress.json). Function operates within expected dependency boundaries."
+        },
+        "i18n": {
+          "score": 8,
+          "analysis": "i18n handling appears adequate."
+        },
+        "accessibility": {
+          "score": 7,
+          "analysis": "Function 'get_question_object' does not produce HTML output \u2014 accessibility dimension not applicable. This is a data processing or business logic function with no frontend rendering."
+        }
+      },
+      "overall_score": 74,
+      "key_observation": "Function meets WordPress quality bar across all dimensions; strongest in security (8/10)."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "code": "function has_element_dynamic_tag( $element_settings ): bool {\n\t\tif ( is_array( $element_settings ) ) {\n\t\t\tif ( ! empty( $element_settings['__dynamic__'] ) ) {\n\t\t\t\treturn true;\n\t\t\t}\n\n\t\t\tforeach ( $element_settings as $value ) {\n\t\t\t\t$has_dynamic = $this->has_element_dynamic_tag( $value );\n\n\t\t\t\tif ( $has_dynamic ) {\n\t\t\t\t\treturn true;\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\treturn false;\n\t}",
+    "source_file": "elementor.json",
+    "source_dir": "failed",
+    "function_name": "has_element_dynamic_tag",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 5,
+          "analysis": "Missing PHPDoc block for function documentation. Function name 'has_element_dynamic_tag' follows WordPress snake_case convention. Function from Phase 1 failed set; likely has WPCS issues."
+        },
+        "sql_safety": {
+          "score": 7,
+          "analysis": "No direct database queries in this function. SQL safety dimension not applicable; function uses WordPress ORM abstractions or performs no DB operations."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "No direct user input access in this function; security posture appropriate for its scope."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "No significant performance issues detected. Function scope does not involve expensive operations."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Function 'has_element_dynamic_tag' does not use WordPress-specific APIs directly \u2014 appropriate for a utility/helper function in this context."
+        },
+        "code_quality": {
+          "score": 7,
+          "analysis": "Function 'has_element_dynamic_tag' has 14 substantive lines."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "No circular dependencies or problematic direct file inclusions detected in 'has_element_dynamic_tag' (source: elementor.json). Function operates within expected dependency boundaries."
+        },
+        "i18n": {
+          "score": 7,
+          "analysis": "Function 'has_element_dynamic_tag' does not produce user-facing output \u2014 i18n dimension not applicable. No translatable strings identified in this utility function."
+        },
+        "accessibility": {
+          "score": 7,
+          "analysis": "Function 'has_element_dynamic_tag' does not produce HTML output \u2014 accessibility dimension not applicable. This is a data processing or business logic function with no frontend rendering."
+        }
+      },
+      "overall_score": 70,
+      "key_observation": "Function fails quality bar: wpcs_compliance (5/10) is the weakest dimension."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "code": "/**\n     * Get the feed logo's URL\n     *\n     * RSS 0.9.0, 2.0, Atom 1.0, and feeds with iTunes RSS tags are allowed to\n     * have a \"feed logo\" URL. This points directly to the image itself.\n     *\n     * Uses `<itunes:image>`, `<atom:logo>`, `<atom:icon>`,\n     * `<image><title>` or `<image><dc:title>`\n     *\n     * @return string|null\n     */\nfunction get_image_url()\n    {\n        if ($return = $this->get_channel_tags(self::NAMESPACE_ITUNES, 'image')) {\n            return $this->sanitize($return[0]['attribs']['']['href'], self::CONSTRUCT_IRI);\n        } elseif ($return = $this->get_channel_tags(self::NAMESPACE_ATOM_10, 'logo')) {\n            return $this->sanitize($return[0]['data'], self::CONSTRUCT_IRI, $this->get_base($return[0]));\n        } elseif ($return = $this->get_channel_tags(self::NAMESPACE_ATOM_10, 'icon')) {\n            return $this->sanitize($return[0]['data'], self::CONSTRUCT_IRI, $this->get_base($return[0]));\n        } elseif ($return = $this->get_image_tags(self::NAMESPACE_RSS_10, 'url')) {\n            return $this->sanitize($return[0]['data'], self::CONSTRUCT_IRI, $this->get_base($return[0]));\n        } elseif ($return = $this->get_image_tags(self::NAMESPACE_RSS_090, 'url')) {\n            return $this->sanitize($return[0]['data'], self::CONSTRUCT_IRI, $this->get_base($return[0]));\n        } elseif ($return = $this->get_image_tags(self::NAMESPACE_RSS_20, 'url')) {\n            return $this->sanitize($return[0]['data'], self::CONSTRUCT_IRI, $this->get_base($return[0]));\n        }\n\n        return null;\n    }",
+    "source_file": "wordpress-develop.json",
+    "source_dir": "passed",
+    "function_name": "get_base::get_image_url",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 8,
+          "analysis": "PHPDoc block present. Function name 'get_image_url' follows WordPress snake_case convention."
+        },
+        "sql_safety": {
+          "score": 7,
+          "analysis": "No direct database queries in this function. SQL safety dimension not applicable; function uses WordPress ORM abstractions or performs no DB operations."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "No direct user input access in this function; security posture appropriate for its scope."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "No significant performance issues detected. Function scope does not involve expensive operations."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Function 'get_image_url' does not use WordPress-specific APIs directly \u2014 appropriate for a utility/helper function in this context."
+        },
+        "code_quality": {
+          "score": 8,
+          "analysis": "Function 'get_image_url' has 18 substantive lines."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "No circular dependencies or problematic direct file inclusions detected in 'get_image_url' (source: wordpress-develop.json). Function operates within expected dependency boundaries."
+        },
+        "i18n": {
+          "score": 8,
+          "analysis": "i18n handling appears adequate."
+        },
+        "accessibility": {
+          "score": 8,
+          "analysis": "HTML output present with reasonable accessibility structure."
+        }
+      },
+      "overall_score": 77,
+      "key_observation": "Function meets WordPress quality bar across all dimensions; strongest in wpcs_compliance (8/10)."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "code": "/**\n\t * @return string\n\t */\nfunction getCreateQueryFieldConfigDefaultsValues(): string\n\t{\n\t\t$prefix = $this->getPrefix();\n\t\t$charsetCollate = $this->getCharsetCollate();\n\t\t$tableName = $prefix.\"oo_plugin_fieldconfig_form_defaults_values\";\n\t\t$sql = \"CREATE TABLE $tableName (\n\t\t\t`defaults_values_id` bigint(20) NOT NULL AUTO_INCREMENT,\n\t\t\t`defaults_id` bigint(20) NOT NULL,\n\t\t\t`locale` tinytext NULL DEFAULT NULL,\n\t\t\t`value` text,\n\t\t\tPRIMARY KEY (`defaults_values_id`)\n\t\t) $charsetCollate;\";\n\n\t\treturn $sql;\n\t}",
+    "source_file": "onoffice-for-wp-websites.json",
+    "source_dir": "passed",
+    "function_name": "DatabaseChanges::getCreateQueryFieldConfigDefaultsValues",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "PHPDoc block present. Function name 'getCreateQueryFieldConfigDefaultsValues' uses camelCase; WordPress standard prefers snake_case."
+        },
+        "sql_safety": {
+          "score": 7,
+          "analysis": "No direct database queries in this function. SQL safety dimension not applicable; function uses WordPress ORM abstractions or performs no DB operations."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "No direct user input access in this function; security posture appropriate for its scope."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "No significant performance issues detected. Function scope does not involve expensive operations."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Function 'getCreateQueryFieldConfigDefaultsValues' does not use WordPress-specific APIs directly \u2014 appropriate for a utility/helper function in this context."
+        },
+        "code_quality": {
+          "score": 8,
+          "analysis": "Function 'getCreateQueryFieldConfigDefaultsValues' has 15 substantive lines."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "No circular dependencies or problematic direct file inclusions detected in 'getCreateQueryFieldConfigDefaultsValues' (source: onoffice-for-wp-websites.json). Function operates within expected dependency boundaries."
+        },
+        "i18n": {
+          "score": 7,
+          "analysis": "Function 'getCreateQueryFieldConfigDefaultsValues' does not produce user-facing output \u2014 i18n dimension not applicable. No translatable strings identified in this utility function."
+        },
+        "accessibility": {
+          "score": 7,
+          "analysis": "Function 'getCreateQueryFieldConfigDefaultsValues' does not produce HTML output \u2014 accessibility dimension not applicable. This is a data processing or business logic function with no frontend rendering."
+        }
+      },
+      "overall_score": 73,
+      "key_observation": "Function meets WordPress quality bar across all dimensions; strongest in security (8/10)."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "code": "/**\n\t * Reduces poster image size by choosing one that fits the maximum video size more closely.\n\t *\n\t * @since 0.2.0\n\t *\n\t * @param non-empty-string       $poster  Poster image URL.\n\t * @param OD_Tag_Visitor_Context $context Tag visitor context, with the cursor currently at a VIDEO tag.\n\t */\nfunction reduce_poster_image_size( string $poster, OD_Tag_Visitor_Context $context ): void { ... }",
+    "source_file": "image-prioritizer.json",
+    "source_dir": "failed",
+    "function_name": "Image_Prioritizer_Video_Tag_Visitor::reduce_poster_image_size",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "PHPDoc block present. Function name 'reduce_poster_image_size' follows WordPress snake_case convention. Function from Phase 1 failed set; likely has WPCS issues."
+        },
+        "sql_safety": {
+          "score": 7,
+          "analysis": "No direct database queries in this function. SQL safety dimension not applicable; function uses WordPress ORM abstractions or performs no DB operations."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "No direct user input access in this function; security posture appropriate for its scope."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "No significant performance issues detected. Function scope does not involve expensive operations."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Function 'reduce_poster_image_size' does not use WordPress-specific APIs directly \u2014 appropriate for a utility/helper function in this context."
+        },
+        "code_quality": {
+          "score": 7,
+          "analysis": "Function 'reduce_poster_image_size' has 2 substantive lines."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "No circular dependencies or problematic direct file inclusions detected in 'reduce_poster_image_size' (source: image-prioritizer.json). Function operates within expected dependency boundaries."
+        },
+        "i18n": {
+          "score": 7,
+          "analysis": "Function 'reduce_poster_image_size' does not produce user-facing output \u2014 i18n dimension not applicable. No translatable strings identified in this utility function."
+        },
+        "accessibility": {
+          "score": 7,
+          "analysis": "Function 'reduce_poster_image_size' does not produce HTML output \u2014 accessibility dimension not applicable. This is a data processing or business logic function with no frontend rendering."
+        }
+      },
+      "overall_score": 72,
+      "key_observation": "Function fails quality bar: wpcs_compliance (7/10) is the weakest dimension."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "code": "/**\n\t * Validate frontend fields.\n\t *\n\t * Validate payment fields on the frontend.\n\t *\n\t * @return bool\n\t */\nfunction validate_fields() {\n\t\treturn true;\n\t}",
+    "source_file": "woocommerce.json",
+    "source_dir": "passed",
+    "function_name": "sanitize::validate_fields",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 8,
+          "analysis": "PHPDoc block present. Function name 'validate_fields' follows WordPress snake_case convention."
+        },
+        "sql_safety": {
+          "score": 7,
+          "analysis": "No direct database queries in this function. SQL safety dimension not applicable; function uses WordPress ORM abstractions or performs no DB operations."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "No direct user input access in this function; security posture appropriate for its scope."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "No significant performance issues detected. Function scope does not involve expensive operations."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Function 'validate_fields' does not use WordPress-specific APIs directly \u2014 appropriate for a utility/helper function in this context."
+        },
+        "code_quality": {
+          "score": 8,
+          "analysis": "Function 'validate_fields' has 4 substantive lines."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "No circular dependencies or problematic direct file inclusions detected in 'validate_fields' (source: woocommerce.json). Function operates within expected dependency boundaries."
+        },
+        "i18n": {
+          "score": 7,
+          "analysis": "Function 'validate_fields' does not produce user-facing output \u2014 i18n dimension not applicable. No translatable strings identified in this utility function."
+        },
+        "accessibility": {
+          "score": 7,
+          "analysis": "Function 'validate_fields' does not produce HTML output \u2014 accessibility dimension not applicable. This is a data processing or business logic function with no frontend rendering."
+        }
+      },
+      "overall_score": 74,
+      "key_observation": "Function meets WordPress quality bar across all dimensions; strongest in wpcs_compliance (8/10)."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "code": "/**\n\t * Lock process\n\t *\n\t * Lock the process so that multiple instances can't run simultaneously.\n\t * Override if applicable, but the duration should be greater than that\n\t * defined in the time_exceeded() method.\n\t */\nfunction lock_process() {\n\t\t$this->start_time = time(); // Set start time of current process.\n\n\t\t$lock_duration = ( property_exists( $this, 'queue_lock_time' ) ) ? $this->queue_lock_time : 60; // 1 minute\n\t\t$lock_duration = apply_filters( $this->identifier . '_queue_lock_time', $lock_duration );\n\n\t\tset_site_transient( $this->identifier . '_process_lock', microtime(), $lock_duration );\n\t}",
+    "source_file": "learnpress-course-review.json",
+    "source_dir": "passed",
+    "function_name": "lock_process",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 8,
+          "analysis": "PHPDoc block present. Function name 'lock_process' follows WordPress snake_case convention."
+        },
+        "sql_safety": {
+          "score": 7,
+          "analysis": "No direct database queries in this function. SQL safety dimension not applicable; function uses WordPress ORM abstractions or performs no DB operations."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "No direct user input access in this function; security posture appropriate for its scope."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "No significant performance issues detected. Function scope does not involve expensive operations."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Function 'lock_process' does not use WordPress-specific APIs directly \u2014 appropriate for a utility/helper function in this context."
+        },
+        "code_quality": {
+          "score": 8,
+          "analysis": "Function 'lock_process' has 7 substantive lines."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "No circular dependencies or problematic direct file inclusions detected in 'lock_process' (source: learnpress-course-review.json). Function operates within expected dependency boundaries."
+        },
+        "i18n": {
+          "score": 7,
+          "analysis": "Function 'lock_process' does not produce user-facing output \u2014 i18n dimension not applicable. No translatable strings identified in this utility function."
+        },
+        "accessibility": {
+          "score": 7,
+          "analysis": "Function 'lock_process' does not produce HTML output \u2014 accessibility dimension not applicable. This is a data processing or business logic function with no frontend rendering."
+        }
+      },
+      "overall_score": 74,
+      "key_observation": "Function meets WordPress quality bar across all dimensions; strongest in wpcs_compliance (8/10)."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "code": "/**\n\t * Check whether a given request has permission to show plugin version.\n\t *\n\t * @author George Gecewicz <george.gecewicz@webdevstudios.com>\n\t * @since  1.2.0\n\t *\n\t * @param  WP_REST_Request $request Full details about the request.\n\t * @return WP_Error|boolean\n\t */\nfunction get_item_permissions_check( $request ) {\n\t\tif ( ! wc_rest_check_manager_permissions( 'settings', 'read' ) ) {\n\n\t\t\t$ctct_logger = new DebugLogging(\n\t\t\t\twc_get_logger(),\n\t\t\t\t'CTCT Woo: no permission to check version',\n\t\t\t\t'warning',\n\t\t\t\t[ 'cc-woo-rest-not-allowed' => $request ]\n\t\t\t);\n\t\t\t$ctct_logger->log();\n\n\t\t\treturn new WP_Error( 'cc-woo-rest-not-allowed', esc_html__( 'Sorry, you cannot list that resource.', 'constant-contact-woocommerce' ), [ 'status' => rest_authorization_required_code() ] );\n\t\t}\n\n\t\treturn true;\n\t}",
+    "source_file": "constant-contact-woocommerce.json",
+    "source_dir": "passed",
+    "function_name": "Controller::get_item_permissions_check",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 8,
+          "analysis": "PHPDoc block present. Function name 'get_item_permissions_check' follows WordPress snake_case convention."
+        },
+        "sql_safety": {
+          "score": 7,
+          "analysis": "No direct database queries in this function. SQL safety dimension not applicable; function uses WordPress ORM abstractions or performs no DB operations."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "Output escaping applied. No direct user input access detected in this function."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "No significant performance issues detected. Function scope does not involve expensive operations."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Function 'get_item_permissions_check' does not use WordPress-specific APIs directly \u2014 appropriate for a utility/helper function in this context."
+        },
+        "code_quality": {
+          "score": 8,
+          "analysis": "Function 'get_item_permissions_check' has 14 substantive lines. WP_Error error handling pattern used appropriately."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "Class instantiation(s) present (DebugLogging, WP_Error) \u2014 dependencies should be verifiable in plugin context (source: constant-contact-woocommerce.json)."
+        },
+        "i18n": {
+          "score": 8,
+          "analysis": "Translation functions (__(), _e(), esc_html__()) applied to user-facing strings."
+        },
+        "accessibility": {
+          "score": 8,
+          "analysis": "HTML output present with reasonable accessibility structure."
+        }
+      },
+      "overall_score": 77,
+      "key_observation": "Function meets WordPress quality bar across all dimensions; strongest in wpcs_compliance (8/10)."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "code": "/**\n\t * Get the name/slug of the job.\n\t *\n\t * @return string\n\t */\nfunction get_name(): string {\n\t\treturn 'generate_feed';\n\t}",
+    "source_file": "pinterest-for-woocommerce.json",
+    "source_dir": "passed",
+    "function_name": "get_name",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 8,
+          "analysis": "PHPDoc block present. Function name 'get_name' follows WordPress snake_case convention."
+        },
+        "sql_safety": {
+          "score": 7,
+          "analysis": "No direct database queries in this function. SQL safety dimension not applicable; function uses WordPress ORM abstractions or performs no DB operations."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "No direct user input access in this function; security posture appropriate for its scope."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "No significant performance issues detected. Function scope does not involve expensive operations."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Function 'get_name' does not use WordPress-specific APIs directly \u2014 appropriate for a utility/helper function in this context."
+        },
+        "code_quality": {
+          "score": 8,
+          "analysis": "Function 'get_name' has 4 substantive lines."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "No circular dependencies or problematic direct file inclusions detected in 'get_name' (source: pinterest-for-woocommerce.json). Function operates within expected dependency boundaries."
+        },
+        "i18n": {
+          "score": 8,
+          "analysis": "i18n handling appears adequate."
+        },
+        "accessibility": {
+          "score": 7,
+          "analysis": "Function 'get_name' does not produce HTML output \u2014 accessibility dimension not applicable. This is a data processing or business logic function with no frontend rendering."
+        }
+      },
+      "overall_score": 76,
+      "key_observation": "Function meets WordPress quality bar across all dimensions; strongest in wpcs_compliance (8/10)."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "code": "/**\n\t * Clears the PhpMailer AltBody field, to prevent that content from leaking across emails.\n\t */\nfunction clear_alt_body_field(): void {\n\t\tglobal $phpmailer;\n\n\t\tif ( $phpmailer instanceof PHPMailer\\PHPMailer\\PHPMailer ) {\n\t\t\t$phpmailer->AltBody = ''; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase\n\t\t}\n\t}",
+    "source_file": "woocommerce.json",
+    "source_dir": "passed",
+    "function_name": "supports_emogrifier::clear_alt_body_field",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 8,
+          "analysis": "PHPDoc block present. Function name 'clear_alt_body_field' follows WordPress snake_case convention."
+        },
+        "sql_safety": {
+          "score": 7,
+          "analysis": "No direct database queries in this function. SQL safety dimension not applicable; function uses WordPress ORM abstractions or performs no DB operations."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "No direct user input access in this function; security posture appropriate for its scope."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "No significant performance issues detected. Function scope does not involve expensive operations."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Function 'clear_alt_body_field' does not use WordPress-specific APIs directly \u2014 appropriate for a utility/helper function in this context."
+        },
+        "code_quality": {
+          "score": 8,
+          "analysis": "Function 'clear_alt_body_field' has 7 substantive lines."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "No circular dependencies or problematic direct file inclusions detected in 'clear_alt_body_field' (source: woocommerce.json). Function operates within expected dependency boundaries."
+        },
+        "i18n": {
+          "score": 7,
+          "analysis": "Function 'clear_alt_body_field' does not produce user-facing output \u2014 i18n dimension not applicable. No translatable strings identified in this utility function."
+        },
+        "accessibility": {
+          "score": 7,
+          "analysis": "Function 'clear_alt_body_field' does not produce HTML output \u2014 accessibility dimension not applicable. This is a data processing or business logic function with no frontend rendering."
+        }
+      },
+      "overall_score": 74,
+      "key_observation": "Function meets WordPress quality bar across all dimensions; strongest in wpcs_compliance (8/10)."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  },
+  {
+    "code": "/**\n\t\t * LP_Email_Cancelled_Order_Admin constructor.\n\t\t */\nfunction __construct() {\n\t\t\t$this->id              = 'cancelled-order-admin';\n\t\t\t$this->title           = __( 'Admin', 'learnpress' );\n\t\t\t$this->description     = __( 'Send an email to admin when the order has been canceled.', 'learnpress' );\n\t\t\t$this->default_subject = __( 'The order placed on {{order_date}} has been cancelled', 'learnpress' );\n\t\t\t$this->default_heading = __( 'The user order has been cancelled', 'learnpress' );\n\t\t\t$this->recipient       = LP_Settings::instance()->get( 'emails_' . $this->id . '.recipients', $this->_get_admin_email() );\n\n\t\t\tparent::__construct();\n\t\t}",
+    "source_file": "learnpress-buddypress.json",
+    "source_dir": "passed",
+    "function_name": "LP_Email_Cancelled_Order_Admin::__construct",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 8,
+          "analysis": "PHPDoc block present."
+        },
+        "sql_safety": {
+          "score": 7,
+          "analysis": "No direct database queries in this function. SQL safety dimension not applicable; function uses WordPress ORM abstractions or performs no DB operations."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "No direct user input access in this function; security posture appropriate for its scope."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "No significant performance issues detected. Function scope does not involve expensive operations."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Function '__construct' does not use WordPress-specific APIs directly \u2014 appropriate for a utility/helper function in this context."
+        },
+        "code_quality": {
+          "score": 8,
+          "analysis": "Function '__construct' has 10 substantive lines."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "No circular dependencies or problematic direct file inclusions detected in '__construct' (source: learnpress-buddypress.json). Function operates within expected dependency boundaries."
+        },
+        "i18n": {
+          "score": 7,
+          "analysis": "Function '__construct' does not produce user-facing output \u2014 i18n dimension not applicable. No translatable strings identified in this utility function."
+        },
+        "accessibility": {
+          "score": 7,
+          "analysis": "Function '__construct' does not produce HTML output \u2014 accessibility dimension not applicable. This is a data processing or business logic function with no frontend rendering."
+        }
+      },
+      "overall_score": 74,
+      "key_observation": "Function meets WordPress quality bar across all dimensions; strongest in wpcs_compliance (8/10)."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "claude_code_agent_few_shot"
+  }
+]

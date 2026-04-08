@@ -1,0 +1,122 @@
+[
+  {
+    "code": "/**\r\n * Set_parameters_to_check Set the parameters to perform the service check.\r\n *\r\n * @param  boolean $is_aruba_server Set to true if the site is on aruba server.\r\n * @param  boolean $service_is_active Set to true if the service is active.\r\n * @param  boolean $service_is_activabile Set to true if the service is activabile.\r\n * @param  string  $service_status The value of x-aruba-cache header def is ''.\r\n * @return void\r\n */\nfunction AHSC_set_parameters_to_check(\r\n\t$is_aruba_server,\r\n\t$service_is_active,\r\n\t$service_is_activabile,\r\n\t$service_status = ''\r\n) {\r\n\tglobal $check_parameters;\r\n\t$check_parameters['is_aruba_server']       = $is_aruba_server;\r\n\t$check_parameters['service_is_active' ]    = $service_is_active;\r\n\t$check_parameters['service_is_activabile'] = $service_is_activabile;\r\n\t$check_parameters['service_status']        = $service_status;\r\n}",
+    "source_file": "aruba-hispeed-cache.json",
+    "source_dir": "passed",
+    "function_name": "AHSC_set_parameters_to_check"
+  },
+  {
+    "code": "function can_load() {\n    if ( class_exists('Wc_Pakettikauppa') ) {\n      add_action(\n        'admin_notices',\n        function() {\n          echo '<div class=\"notice notice-error\">';\n          echo '<p>' . $this->text->activated_core_plugin_error() . '</p>';\n          echo '</div>';\n        }\n      );\n\n      return false;\n    }\n\n    return true;\n  }",
+    "source_file": "posti-shipping.json",
+    "source_dir": "failed",
+    "function_name": "Woo_Posti_Shipping::can_load"
+  },
+  {
+    "code": "/**\n\t * Get product from api args.\n\t *\n\t * @return array.\n\t * @throws \\Exception\n\t */\nfunction get_shipping_product() {\n\t\t$checked_features = Utils::get_selected_label_features( $this->api_args['backend_data'] );\n\t\t$shipping_feature = $this->get_selected_shipping_features();\n\t\t$from_country     = $this->api_args['store_address']['country'];\n\t\t$to_country       = $this->api_args['shipping_address']['country'];\n\t\t$to_state         = $this->api_args['shipping_address']['state'];\n\n\t\t$features = array_keys( $checked_features );\n\t\t$code_map = Mapping::products_data();\n\n\t\t$selected_product = array();\n\t\t$destination      = Utils::get_shipping_zone( $to_country, $to_state );\n\t\tif ( empty( $code_map[ $from_country ][ $destination ][ $shipping_feature ] ) ) {\n\t\t\treturn $selected_product;\n\t\t}\n\t\tforeach ( $code_map[ $from_country ][ $destination ][ $shipping_feature ] as $product ) {\n\t\t\tif ( empty( $product['combination'] ) && empty( $selected_product ) ) {\n\t\t\t\t$selected_product = $product;\n\t\t\t\tcontinue;\n\t\t\t}\n\t\t\t$is_this_it = true;\n\t\t\tforeach ( $features as $feature ) {\n\t\t\t\tif ( ! in_array( $feature, $product['combination'] ) ) {\n\t\t\t\t\t$is_this_it = false;\n\t\t\t\t}\n\t\t\t}\n\t\t\tforeach ( $product['combination'] as $combination ) {\n\t\t\t\tif ( ! in_array( $combination, $features ) ) {\n\t\t\t\t\t$is_this_it = false;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tif ( $is_this_it ) {\n\t\t\t\t$selected_product = $product;\n\t\t\t}\n\t\t}\n\n\t\treturn $selected_product;\n\t}",
+    "source_file": "woo-postnl.json",
+    "source_dir": "passed",
+    "function_name": "Item_Info::get_shipping_product"
+  },
+  {
+    "code": "/** @param ViewProperty $pViewProperty */\nfunction setViewProperty(ViewProperty $pViewProperty)\n\t\t{ $this->_pView = $pViewProperty; }",
+    "source_file": "onoffice-for-wp-websites.json",
+    "source_dir": "passed",
+    "function_name": "GeoSearchBuilderFromInputVars::setViewProperty"
+  },
+  {
+    "code": "function getReferencedEnums() {\n    $ref_enums = array();\n    return $ref_enums;\n  }",
+    "source_file": "official-facebook-pixel.json",
+    "source_dir": "failed",
+    "function_name": "AdAccountAdsRecommendedAudios::getReferencedEnums"
+  },
+  {
+    "code": "/**\n\t * Gets REST route instances.\n\t *\n\t * @since 1.119.0\n\t *\n\t * @return REST_Route[] List of REST_Route objects.\n\t */\nfunction get_rest_routes() {\n\t\treturn array(\n\t\t\tnew REST_Route(\n\t\t\t\t'core/site/data/site-health-tag-placement-test',\n\t\t\t\tarray(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'methods'             => WP_REST_Server::READABLE,\n\t\t\t\t\t\t'callback'            => array( $this->tag_placement, 'tag_placement_test' ),\n\t\t\t\t\t\t'permission_callback' => function () {\n\t\t\t\t\t\t\treturn current_user_can( 'view_site_health_checks' );\n\t\t\t\t\t\t},\n\t\t\t\t\t),\n\t\t\t\t)\n\t\t\t),\n\t\t);\n\t}",
+    "source_file": "google-site-kit.json",
+    "source_dir": "passed",
+    "function_name": "REST_Site_Health_Controller::get_rest_routes"
+  },
+  {
+    "code": "function get_xml(){\n\t\treturn array( 'REQUEST' => $this->request_xml, 'RESPONSE' => $this->response_xml );\n\t}",
+    "source_file": "polldaddy.json",
+    "source_dir": "failed",
+    "function_name": "get_xml"
+  },
+  {
+    "code": "/**\n\t * Check if the product's terms (categories and tags) allow it to sync.\n\t *\n\t * @return bool\n\t */\nfunction passes_product_terms_check(): bool {\n\t\ttry {\n\t\t\t$this->validate_product_terms();\n\t\t} catch ( ProductExcludedException $e ) {\n\t\t\treturn false;\n\t\t} catch ( ProductInvalidException $e ) {\n\t\t\treturn false;\n\t\t}\n\n\t\treturn true;\n\t}",
+    "source_file": "facebook-for-woocommerce.json",
+    "source_dir": "passed",
+    "function_name": "ProductValidator::passes_product_terms_check"
+  },
+  {
+    "code": "/**\n\t * Return or initialize $valid_query_vars.\n\t *\n\t * @return array\n\t */\nfunction get_valid_query_vars() {\n\t\tif ( ! empty( $this->valid_query_vars ) ) {\n\t\t\treturn $this->valid_query_vars;\n\t\t}\n\n\t\t$valid_query_vars       = array_keys( ( new WP_Query() )->fill_query_vars( array() ) );\n\t\t$this->valid_query_vars = array_merge(\n\t\t\t$valid_query_vars,\n\t\t\t// fill_query_vars doesn't include these vars so we need to add them manually.\n\t\t\tarray(\n\t\t\t\t'date_query',\n\t\t\t\t'exact',\n\t\t\t\t'ignore_sticky_posts',\n\t\t\t\t'lazy_load_term_meta',\n\t\t\t\t'meta_compare_key',\n\t\t\t\t'meta_compare',\n\t\t\t\t'meta_query',\n\t\t\t\t'meta_type_key',\n\t\t\t\t'meta_type',\n\t\t\t\t'nopaging',\n\t\t\t\t'offset',\n\t\t\t\t'order',\n\t\t\t\t'orderby',\n\t\t\t\t'page',\n\t\t\t\t'post_type',\n\t\t\t\t'posts_per_page',\n\t\t\t\t'suppress_filters',\n\t\t\t\t'tax_query',\n\t\t\t)\n\t\t);\n\n\t\treturn $this->valid_query_vars;\n\t}",
+    "source_file": "woocommerce.json",
+    "source_dir": "passed",
+    "function_name": "ProductQuery::get_valid_query_vars"
+  },
+  {
+    "code": "/**\n\t * Generates the list table rows.\n\t *\n\t * @since 3.1.0\n\t */\nfunction display_rows() {\n\t\tforeach ( $this->items as $user ) {\n\t\t\t$class = '';\n\n\t\t\t$status_list = array(\n\t\t\t\t'spam'    => 'site-spammed',\n\t\t\t\t'deleted' => 'site-deleted',\n\t\t\t);\n\n\t\t\tforeach ( $status_list as $status => $col ) {\n\t\t\t\tif ( $user->$status ) {\n\t\t\t\t\t$class .= \" $col\";\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t?>\n\t\t\t<tr class=\"<?php echo trim( $class ); ?>\">\n\t\t\t\t<?php $this->single_row_columns( $user ); ?>\n\t\t\t</tr>\n\t\t\t<?php\n\t\t}\n\t}",
+    "source_file": "wordpress-develop.json",
+    "source_dir": "passed",
+    "function_name": "display_rows"
+  },
+  {
+    "code": "/**\n\t * Maybe remove assigned item\n\t *\n\t * @param WP_Post $post\n\t *\n\t * @editor tungnx\n\t * @todo Review and move to place correct\n\t */\nfunction maybe_remove_assigned( $post = null ) {\n\t\tglobal $wpdb;\n\n\t\tif ( ! $post ) {\n\t\t\treturn;\n\t\t}\n\n\t\t$post_type   = $post->post_type;\n\t\t$post_status = $post->post_status;\n\n\t\t// If we are updating question\n\t\tif ( LP_QUESTION_CPT === $post_type ) {\n\n\t\t\t// If question is not published then delete it from quizzes\n\t\t\tif ( $post_status !== 'publish' ) {\n\t\t\t\t$query = $wpdb->prepare(\n\t\t\t\t\t\"\n                    DELETE FROM {$wpdb->learnpress_quiz_questions}\n                    WHERE question_id = %d\n                \t\",\n\t\t\t\t\t$post->ID\n\t\t\t\t);\n\t\t\t\t$wpdb->query( $query );\n\t\t\t}\n\t\t}",
+    "source_file": "learnpress-wishlist.json",
+    "source_dir": "passed",
+    "function_name": "maybe_remove_assigned"
+  },
+  {
+    "code": "/**\n\t * Constructor.\n\t */\nfunction __construct() {\n\t\t$this->widget_cssclass    = 'woocommerce widget_recent_reviews';\n\t\t$this->widget_description = __( 'Display a list of recent reviews from your store.', 'woocommerce' );\n\t\t$this->widget_id          = 'woocommerce_recent_reviews';\n\t\t$this->widget_name        = __( 'Recent Product Reviews', 'woocommerce' );\n\t\t$this->settings           = array(\n\t\t\t'title'  => array(\n\t\t\t\t'type'  => 'text',\n\t\t\t\t'std'   => __( 'Recent reviews', 'woocommerce' ),\n\t\t\t\t'label' => __( 'Title', 'woocommerce' ),\n\t\t\t),\n\t\t\t'number' => array(\n\t\t\t\t'type'  => 'number',\n\t\t\t\t'step'  => 1,\n\t\t\t\t'min'   => 1,\n\t\t\t\t'max'   => '',\n\t\t\t\t'std'   => 10,\n\t\t\t\t'label' => __( 'Number of reviews to show', 'woocommerce' ),\n\t\t\t),\n\t\t);\n\n\t\tparent::__construct();\n\t}",
+    "source_file": "woocommerce.json",
+    "source_dir": "failed",
+    "function_name": "WC_Widget_Recent_Reviews::__construct"
+  },
+  {
+    "code": "/**\n * Renders server-side dimensions styles to the block wrapper.\n * This block support uses the `render_block` hook to ensure that\n * it is also applied to non-server-rendered blocks.\n *\n * @param  string $block_content Rendered block content.\n * @param  array  $block         Block object.\n * @return string                Filtered block content.\n */\nfunction gutenberg_render_dimensions_support( $block_content, $block ) {\n\t$block_type               = WP_Block_Type_Registry::get_instance()->get_registered( $block['blockName'] );\n\t$block_attributes         = ( isset( $block['attrs'] ) && is_array( $block['attrs'] ) ) ? $block['attrs'] : array();\n\t$has_aspect_ratio_support = block_has_support( $block_type, array( 'dimensions', 'aspectRatio' ), false );\n\n\tif (\n\t\t! $has_aspect_ratio_support ||\n\t\twp_should_skip_block_supports_serialization( $block_type, 'dimensions', 'aspectRatio' )\n\t) {\n\t\treturn $block_content;\n\t}\n\n\t$dimensions_block_styles                = array();\n\t$dimensions_block_styles['aspectRatio'] = $block_attributes['style']['dimensions']['aspectRatio'] ?? null;\n\n\t// To ensure the aspect ratio does not get overridden by `minHeight` or `height` unset any existing rule.\n\tif (\n\t\tisset( $dimensions_block_styles['aspectRatio'] )\n\t) {\n\t\t$dimensions_block_styles['minHeight'] = 'unset';\n\t\t$dimensions_block_styles['height']    = 'unset';\n\t} elseif (\n\t\tisset( $block_attributes['style']['dimensions']['minHeight'] ) ||\n\t\tisset( $block_attributes['minHeight'] ) ||\n\t\tisset( $block_attributes['style']['dimensions']['height'] ) ||\n\t\tisset( $block_attributes['height'] )\n\t) {\n\t\t$dimensions_block_styles['aspectRatio'] = 'unset';\n\t}\n\n\t$styles = gutenberg_style_engine_get_styles( array( 'dimensions' => $dimensions_block_styles ) );\n\n\tif ( ! empty( $styles['css'] ) ) {\n\t\t// Inject dimensions styles to the first element, presuming it's the wrapper, if it exists.\n\t\t$tags = new WP_HTML_Tag_Processor( $block_content );\n\n\t\tif ( $tags->next_tag() ) {\n\t\t\t$existing_style = $tags->get_attribute( 'style' );\n\t\t\t$updated_style  = '';\n\n\t\t\tif ( ! empty( $existing_style ) ) {\n\t\t\t\t$updated_style = $existing_style;\n\t\t\t\tif ( ! str_ends_with( $existing_style, ';' ) ) {\n\t\t\t\t\t$updated_style .= ';';\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t$updated_style .= $styles['css'];\n\t\t\t$tags->set_attribute( 'style', $updated_style );\n\n\t\t\tif ( ! empty( $styles['classnames'] ) ) {\n\t\t\t\tforeach ( explode( ' ', $styles['classnames'] ) as $class_name ) {\n\t\t\t\t\tif (\n\t\t\t\t\t\tstr_contains( $class_name, 'aspect-ratio' ) &&\n\t\t\t\t\t\t! isset( $block_attributes['style']['dimensions']['aspectRatio'] )\n\t\t\t\t\t) {\n\t\t\t\t\t\tcontinue;\n\t\t\t\t\t}\n\t\t\t\t\t$tags->add_class( $class_name );\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\treturn $tags->get_updated_html();\n\t}\n\n\treturn $block_content;\n}",
+    "source_file": "gutenberg.json",
+    "source_dir": "passed",
+    "function_name": "gutenberg_render_dimensions_support"
+  },
+  {
+    "code": "/**\n\t * Add form fields for PostNL.\n\t *\n\t * @param Array $form_fields List of instance form fields.\n\t *\n\t * @return Array\n\t */\nfunction instance_form_fields( $form_fields ) {\n\t\t// Change title default value.\n\t\t$form_fields['title']['default'] = $this->method_title;\n\n\t\t// Minimum for free shipping.\n\t\t$currency_symbol = get_woocommerce_currency_symbol();\n\n\t\t$form_fields['minimum_for_free_shipping'] = array(\n\t\t\t// Translators: %s is the currency symbol.\n\t\t\t'title'    => sprintf( esc_html__( 'Free shipping from %s', 'postnl-for-woocommerce' ), $currency_symbol ),\n\t\t\t'type'     => 'number',\n\t\t\t'desc_tip' => esc_html__( 'Keep empty if you don\u2019t want to use Free shipping', 'postnl-for-woocommerce' ),\n\t\t\t'default'  => 0,\n\t\t);\n\n\t\treturn $form_fields;\n\t}",
+    "source_file": "woo-postnl.json",
+    "source_dir": "passed",
+    "function_name": "PostNL::instance_form_fields"
+  },
+  {
+    "code": "function create($attributes = array())\n    {\n        $attributes = $this->setFile($attributes);\n\n        return parent::create($attributes);\n    }",
+    "source_file": "woo-razorpay.json",
+    "source_dir": "failed",
+    "function_name": "Document::create"
+  },
+  {
+    "code": "/**\n * Retrieve an array of comment data about comment $comment_id.\n *\n * @since 0.71\n * @deprecated 2.7.0 Use get_comment()\n * @see get_comment()\n *\n * @param int $comment_id The ID of the comment\n * @param int $no_cache Whether to use the cache (cast to bool)\n * @param bool $include_unapproved Whether to include unapproved comments\n * @return array The comment data\n */\nfunction get_commentdata( $comment_id, $no_cache = 0, $include_unapproved = false ) {\n\t_deprecated_function( __FUNCTION__, '2.7.0', 'get_comment()' );\n\treturn get_comment($comment_id, ARRAY_A);\n}",
+    "source_file": "wordpress-develop.json",
+    "source_dir": "passed",
+    "function_name": "get_commentdata"
+  },
+  {
+    "code": "/**\n\t\t * No requires logged in?\n\t\t */\nfunction register_ajax( $action, $function, $priority = 5 ) {\n\t\tif ( is_array( $action ) ) {\n\t\t\tforeach ( $action as $args ) {\n\t\t\t\tif ( ! empty( $args['action'] ) && ! empty( $args['callback'] ) ) {\n\t\t\t\t\tself::register_ajax( $args['action'], $args['callback'], ! empty( $args['priority'] ) ? $args['priority'] : 5 );\n\t\t\t\t}\n\t\t\t}\n\n\t\t\treturn;\n\t\t}\n\t\t$actions = self::parse_action( $action );\n\n\t\tif ( isset( $actions['nonce'] ) ) {\n\t\t\tadd_filter( 'learn-press/ajax/verify-none/' . $actions['action'], array( __CLASS__, 'verify_nonce' ) );\n\t\t}\n\n\t\tadd_action( 'learn-press/ajax/' . $actions['action'], $function, $priority );\n\n\t\t\n\t\tif ( isset( $actions['nopriv'] ) ) {\n\t\t\tadd_action( 'learn-press/ajax/no-priv/' . $actions['action'], $function, $priority );\n\t\t}\n\t}",
+    "source_file": "learnpress-wishlist.json",
+    "source_dir": "passed",
+    "function_name": "LP_Request::register_ajax"
+  },
+  {
+    "code": "/**\n\t * Overwrite parent method to prevent script registration.\n\t *\n\t * It is necessary to register and enqueues assets during the render\n\t * phase because we want to load assets only if the block has the content.\n\t */\nfunction register_block_type_assets() {\n\t\treturn null;\n\t}",
+    "source_file": "woocommerce.json",
+    "source_dir": "passed",
+    "function_name": "ProductAverageRating::register_block_type_assets"
+  },
+  {
+    "code": "function getReferencedEnums() {\n    $ref_enums = array();\n    return $ref_enums;\n  }",
+    "source_file": "official-facebook-pixel.json",
+    "source_dir": "failed",
+    "function_name": "AppLinks::getReferencedEnums"
+  },
+  {
+    "code": "function field_maximum_cart_value() {\n\t\t$this->textField( self::OPTION_NAME, 'maximum_cart_value', 1000 );\n\t}",
+    "source_file": "bs-payone-woocommerce.json",
+    "source_dir": "failed",
+    "function_name": "AddressChecks::field_maximum_cart_value"
+  }
+]

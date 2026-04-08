@@ -1,0 +1,122 @@
+[
+  {
+    "code": "/**\n\t * Sanitize setting value based on its type.\n\t *\n\t * @param mixed $value          Setting value.\n\t * @param array $setting_config Setting configuration.\n\t * @return mixed Sanitized value.\n\t */\nfunction sanitize_setting_value( $value, $setting_config ) {\n\t\t$type = $setting_config['type'] ?? 'text';\n\n\t\t// Use the Settings_Sanitize class for proper sanitization.\n\t\t$settings_sanitize = $this->settings_sanitize;\n\n\t\t// Check if we have a specific sanitizer for this type.\n\t\tif ( is_callable( array( $settings_sanitize, \"sanitize_{$type}",
+    "source_file": "where-did-they-go-from-here.json",
+    "source_dir": "passed",
+    "function_name": "sanitize_setting_value"
+  },
+  {
+    "code": "/**\n\t * Cache a rate limit.\n\t *\n\t * @param string $action_id Identifier of the action.\n\t * @param object $current_limit Current limit object with expiry and retries remaining.\n\t * @return bool\n\t */\nfunction set_cache( $action_id, $current_limit ): bool {\n\t\treturn wp_cache_set( self::get_cache_key( $action_id ), $current_limit, self::CACHE_GROUP );\n\t}",
+    "source_file": "woocommerce.json",
+    "source_dir": "passed",
+    "function_name": "set_cache"
+  },
+  {
+    "code": "function getReferencedEnums() {\n    $ref_enums = array();\n    return $ref_enums;\n  }",
+    "source_file": "official-facebook-pixel.json",
+    "source_dir": "failed",
+    "function_name": "AdCampaignGroupMetricsMetadata::getReferencedEnums"
+  },
+  {
+    "code": "/**\n\t * Constructor.\n\t *\n\t * @param int    $product_id The product ID.\n\t * @param string $idempotency_key The idempotency key.\n\t */\nfunction __construct( int $product_id, string $idempotency_key = '' ) {\n\t\t$this->product_id      = $product_id;\n\t\t$this->idempotency_key = $idempotency_key;\n\t}",
+    "source_file": "woocommerce.json",
+    "source_dir": "passed",
+    "function_name": "WC_WCCOM_Site_Installation_Manager::__construct"
+  },
+  {
+    "code": "/**\n\t * Initialize the tiled gallery.\n\t */\nfunction init() {\n\t\tif ( self::gallery_already_redefined() ) {\n\t\t\treturn;\n\t\t}\n\n\t\t$gallery = new Jetpack_Tiled_Gallery();\n\t\tadd_filter( 'post_gallery', array( $gallery, 'gallery_shortcode' ), 1001, 2 );\n\t}",
+    "source_file": "jetpack.json",
+    "source_dir": "passed",
+    "function_name": "Image_CDN::init"
+  },
+  {
+    "code": "/**\n\t\t * Gets an array of all registered integration's script handles for the editor.\n\t\t *\n\t\t * @return string[]\n\t\t */\nfunction get_all_registered_editor_script_handles()\n\t\t{\n\t\t}",
+    "source_file": "woocommerce-paypal-payments.json",
+    "source_dir": "passed",
+    "function_name": "IntegrationRegistry::get_all_registered_editor_script_handles"
+  },
+  {
+    "code": "/**\n\t * Jetpack_Subscribe_Overlay instance init.\n\t */\nfunction init() {\n\t\tif ( self::$instance === null ) {\n\t\t\tself::$instance = new Jetpack_Subscribe_Overlay();\n\t\t}\n\n\t\treturn self::$instance;\n\t}",
+    "source_file": "jetpack.json",
+    "source_dir": "passed",
+    "function_name": "Jetpack_Subscribe_Overlay::init"
+  },
+  {
+    "code": "/**\n     * Generated from protobuf field <code>bool replay_enabled = 6;</code>\n     * @return bool\n     */\nfunction getReplayEnabled()\n    {\n        return $this->replay_enabled;\n    }",
+    "source_file": "plugnmeet.json",
+    "source_dir": "passed",
+    "function_name": "agent_dispatches::getReplayEnabled"
+  },
+  {
+    "code": "/**\r\n\t * Constructor.\r\n\t *\r\n\t * @since 3.0.9\r\n\t * @access public\r\n\t */\nfunction __construct() {\r\n\t\tadd_filter( 'http_request_args', [ $this, 'http_request' ], 10, 2 );\r\n\t\tadd_action( 'kirki_field_init', [ $this, 'field_init_variables' ], 10, 2 );\r\n\t}",
+    "source_file": "jupiterx-core.json",
+    "source_dir": "passed",
+    "function_name": "Util::__construct"
+  },
+  {
+    "code": "/**\n\t * Retrieves the caption for an attachment.\n\t *\n\t * @param int $attachment_id Attachment ID.\n\t *\n\t * @return string The caption when found, empty string when no caption is found.\n\t */\nfunction get_caption( $attachment_id ) {\n\t\t$caption = \\wp_get_attachment_caption( $attachment_id );\n\t\tif ( ! empty( $caption ) ) {\n\t\t\treturn $caption;\n\t\t}\n\n\t\t$caption = \\get_post_meta( $attachment_id, '_wp_attachment_image_alt', true );\n\t\tif ( ! empty( $caption ) ) {\n\t\t\treturn $caption;\n\t\t}\n\n\t\treturn '';\n\t}",
+    "source_file": "wordpress-seo.json",
+    "source_dir": "passed",
+    "function_name": "Image_Helper::get_caption"
+  },
+  {
+    "code": "/**\n\t * Constructor.\n\t */\nfunction __construct() {\n\t\t$this->id             = 'wc_square_gift_card_sent';\n\t\t$this->title          = __( 'Square Gift Card Sent', 'woocommerce-square' );\n\t\t$this->customer_email = true;\n\t\t$this->description    = __( 'This email is sent to the recipient of the Square Gift Card.', 'woocommerce-square' );\n\t\t$this->template_html  = 'emails/gift-card-sent.php';\n\t\t$this->template_plain = 'emails/plain/gift-card-sent.php';\n\t\t$this->placeholders   = array(\n\t\t\t'{square_gift_card_sender_name}'    => '',\n\t\t\t'{square_gift_card_number}'         => '',\n\t\t\t'{square_gift_card_balance}'        => '',\n\t\t\t'{square_gift_card_recipient_name}' => '',\n\t\t\t'{square_gift_card_sender_message}' => '',\n\t\t);\n\n\t\t// Call parent constructor.\n\t\tparent::__construct();\n\n\t\tadd_filter( 'woocommerce_email_preview_placeholders', array( $this, 'set_dummy_placeholders' ), 10, 2 );\n\t\tadd_filter( 'woocommerce_email_preview_dummy_order', array( $this, 'set_dummy_order' ), 10, 2 );\n\t}",
+    "source_file": "woocommerce-square.json",
+    "source_dir": "failed",
+    "function_name": "WC_Square_Gift_Card_Sent::__construct"
+  },
+  {
+    "code": "function getAdSetsByLabels(array $fields = array(), array $params = array(), $pending = false) {\n    $this->assureId();\n\n    $param_types = array(\n      'ad_label_ids' => 'list<string>',\n      'operator' => 'operator_enum',\n    );\n    $enums = array(\n      'operator_enum' => AdSetOperatorValues::getInstance()->getValues(),\n    );\n\n    $request = new ApiRequest(\n      $this->api,\n      $this->data['id'],\n      RequestInterface::METHOD_GET,\n      '/adsetsbylabels',\n      new AdSet(),\n      'EDGE',\n      AdSet::getFieldsEnum()->getValues(),\n      new TypeChecker($param_types, $enums)\n    );\n    $request->addParams($params);\n    $request->addFields($fields);\n    return $pending ? $request : $request->execute();\n  }",
+    "source_file": "official-facebook-pixel.json",
+    "source_dir": "failed",
+    "function_name": "AdAccount::getAdSetsByLabels"
+  },
+  {
+    "code": "/**\n\t * Handle the woocommerce_before_order_object_save hook.\n\t *\n\t * Captures the customer ID before save to detect changes.\n\t *\n\t * @param \\WC_Order $order The order being saved.\n\t *\n\t * @return void\n\t *\n\t * @since 10.6.0\n\t *\n\t * @internal\n\t */\nfunction handle_before_order_save( $order ): void {\n\t\tif ( ! $order instanceof \\WC_Order || 'shop_order' !== $order->get_type() ) {\n\t\t\treturn;\n\t\t}\n\n\t\t$order_id = $order->get_id();\n\t\tif ( $order_id > 0 ) {\n\t\t\t$this->pre_save_customer_ids[ $order_id ] = (int) $order->get_data()['customer_id'];\n\t\t}\n\t}",
+    "source_file": "woocommerce.json",
+    "source_dir": "passed",
+    "function_name": "OrdersVersionStringInvalidator::handle_before_order_save"
+  },
+  {
+    "code": "/**\n\t * Whether the given gateway is enabled.\n\t */\nfunction gateway_enabled( string $method_id ): bool {\n\t\treturn $this->payment_settings->is_method_enabled( $method_id );\n\t}",
+    "source_file": "woocommerce-paypal-payments.json",
+    "source_dir": "passed",
+    "function_name": "SettingsProvider::gateway_enabled"
+  },
+  {
+    "code": "function getInstance() {\n\t\tif ( is_null( self::$_instance ) ) {\n\t\t\tself::$_instance = new self();\n\t\t}\n\n\t\treturn self::$_instance;\n\t}",
+    "source_file": "learnpress-bbpress.json",
+    "source_dir": "failed",
+    "function_name": "QuizQuestionsDB::getInstance"
+  },
+  {
+    "code": "/**\n\t * Save variation gallery data as a meta box.\n\t *\n\t * @param int $variation_id variation ID.\n\t * @param int $i loop id.\n\t * @since 3.1.0\n\t */\nfunction save_variation_gallery_data( $variation_id, $i ) {\n\t\t$gallery_images = filter_input( INPUT_POST, 'jupiterx_variation_gallery_image_id', FILTER_DEFAULT, FILTER_FORCE_ARRAY );\n\t\t$gallery_images = $gallery_images[ $i ];\n\n\t\tif ( substr( $gallery_images, -1 ) === ',' ) {\n\t\t\t$gallery_images = substr( $gallery_images, 0, -1 );\n\t\t}\n\n\t\tupdate_post_meta( $variation_id, 'jupiterx_variation_gallery_image_id', $gallery_images );\n\t}",
+    "source_file": "jupiterx-core.json",
+    "source_dir": "passed",
+    "function_name": "Module::save_variation_gallery_data"
+  },
+  {
+    "code": "/**\n\t * Recursively sanitize array fields.\n\t *\n\t * @param array $array The array to sanitize.\n\t *\n\t * @return array The sanitized array.\n\t */\nfunction sanitize_array_fields( $array ) {\n\t\t$sanitized_array = [];\n\t\tforeach ( $array as $key => $value ) {\n\t\t\t$key = sanitize_key( $key );\n\t\t\tif ( is_array( $value ) ) {\n\t\t\t\t$sanitized_array[ $key ] = $this->sanitize_array_fields( $value );\n\t\t\t} else {\n\t\t\t\t$sanitized_array[ $key ] = sanitize_text_field( wp_unslash( $value ) );\n\t\t\t}\n\t\t}\n\n\t\treturn $sanitized_array;\n\t}",
+    "source_file": "plugnmeet.json",
+    "source_dir": "passed",
+    "function_name": "Plugnmeet_Admin::sanitize_array_fields"
+  },
+  {
+    "code": "/**\n * acf_get_textarea_input\n *\n * Returns the HTML of a textarea input.\n *\n * @date    3/02/2014\n * @since   5.0.0\n *\n * @param   array $attrs The array of attrs.\n * @return  string\n */\nfunction acf_get_textarea_input( $attrs = array() ) {\n\t$value = '';\n\tif ( isset( $attrs['value'] ) ) {\n\t\t$value = $attrs['value'];\n\t\tunset( $attrs['value'] );\n\t}\n\treturn sprintf( '<textarea %s>%s</textarea>', acf_esc_attrs( $attrs ), esc_textarea( $value ) );\n}",
+    "source_file": "advanced-custom-fields.json",
+    "source_dir": "passed",
+    "function_name": "acf_get_textarea_input"
+  },
+  {
+    "code": "/**\n\t * Initialize the admin page controller logic.\n\t */\nfunction init_page_controller() {\n\t\t// We only need to make sure the controller is instantiated since the hooking is done in the constructor.\n\t\tPageController::get_instance();\n\t}",
+    "source_file": "woocommerce.json",
+    "source_dir": "passed",
+    "function_name": "WC_Admin::init_page_controller"
+  },
+  {
+    "code": "/**\n   * @deprecated getEndpoint function is deprecated\n   */\nfunction getEndpoint() {\n    return 'event_source_groups';\n  }",
+    "source_file": "official-facebook-pixel.json",
+    "source_dir": "passed",
+    "function_name": "EventSourceGroup::getEndpoint"
+  }
+]

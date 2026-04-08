@@ -1,0 +1,122 @@
+[
+  {
+    "code": "/**\n\t\t * This function will remove a loop\n\t\t *\n\t\t * @type    function\n\t\t * @date    3/03/2016\n\t\t * @since   5.3.2\n\t\t *\n\t\t * @param   $i (mixed)\n\t\t * @return  (boolean) true on success\n\t\t */\nfunction remove_loop( $i = 'active' ) {\n\n\t\t\t// i\n\t\t\t$i = $this->get_i( $i );\n\n\t\t\t// bail early if no set\n\t\t\tif ( ! $this->is_loop( $i ) ) {\n\t\t\t\treturn false;\n\t\t\t}\n\n\t\t\t// remove\n\t\t\tunset( $this->loops[ $i ] );\n\n\t\t\t// reset keys\n\t\t\t$this->loops = array_values( $this->loops );\n\n\t\t\t// PHP 7.2 no longer resets array keys for empty value\n\t\t\tif ( $this->is_empty() ) {\n\t\t\t\t$this->loops = array();\n\t\t\t}\n\t\t}",
+    "source_file": "advanced-custom-fields.json",
+    "source_dir": "failed",
+    "function_name": "acf_loop::remove_loop"
+  },
+  {
+    "code": "/**\n\t * Adds admin notices.\n\t *\n\t * @since 4.5.0\n\t */\nfunction add_admin_notices() {\n\t\t$base_location      = wc_get_base_location();\n\t\t$is_plugin_settings = $this->get_plugin()->is_payment_gateway_configuration_page( $this->get_id() );\n\t\t$is_connected       = $this->get_plugin()->get_settings_handler()->is_connected() && $this->get_plugin()->get_settings_handler()->get_location_id();\n\t\t$is_enabled         = $this->is_enabled() && $is_connected;\n\n\t\t// Add a notice for cash app pay if the base location is not the US.\n\t\tif ( ( $is_enabled || $is_plugin_settings ) && isset( $base_location['country'] ) && 'US' !== $base_location['country'] ) {\n\n\t\t\t$this->get_plugin()->get_admin_notice_handler()->add_admin_notice(\n\t\t\t\tsprintf(\n\t\t\t\t\t/* translators: Placeholders: %1$s - <strong> tag, %2$s - </strong> tag, %3$s - 2-character country code, %4$s - comma separated list of 2-character country codes */\n\t\t\t\t\t__( '%1$sCash App Pay (Square):%2$s Your base country is %3$s, but Cash App Pay can\u2019t accept transactions from merchants outside of US.', 'woocommerce-square' ),\n\t\t\t\t\t'<strong>',\n\t\t\t\t\t'</strong>',\n\t\t\t\t\tesc_html( $base_location['country'] )\n\t\t\t\t),\n\t\t\t\t'wc-square-cash-app-pay-base-location',\n\t\t\t\tarray(\n\t\t\t\t\t'notice_class' => 'notice-error',\n\t\t\t\t)\n\t\t\t);\n\t\t}\n\n\t\t// Add a notice to enable cash app pay and start accept payments using cash app pay.\n\t\tif ( $is_connected && ! $this->is_enabled() && ! $is_plugin_settings && isset( $base_location['country'] ) && 'US' === $base_location['country'] ) {\n\t\t\t$this->get_plugin()->get_admin_notice_handler()->add_admin_notice(\n\t\t\t\tsprintf(\n\t\t\t\t\t/* translators: Placeholders: %1$s - <a> tag, %2$s - </a> tag */\n\t\t\t\t\t__( 'You are ready to accept payments using Cash App Pay (Square)! %1$sEnable it%2$s now to start accepting payments.', 'woocommerce-square' ),\n\t\t\t\t\t'<a href=\"' . esc_url( $this->get_plugin()->get_payment_gateway_configuration_url( $this->get_id() ) ) . '\">',\n\t\t\t\t\t'</a>'\n\t\t\t\t),\n\t\t\t\t'wc-square-enable-cash-app-pay',\n\t\t\t\tarray(\n\t\t\t\t\t'always_show_on_settings' => false,\n\t\t\t\t)\n\t\t\t);\n\t\t}\n\t}",
+    "source_file": "woocommerce-square.json",
+    "source_dir": "failed",
+    "function_name": "Cash_App_Pay_Gateway::add_admin_notices"
+  },
+  {
+    "code": "function getSelf(array $fields = array(), array $params = array(), $pending = false) {\n    $this->assureId();\n\n    $param_types = array(\n    );\n    $enums = array(\n    );\n\n    $request = new ApiRequest(\n      $this->api,\n      $this->data['id'],\n      RequestInterface::METHOD_GET,\n      '/',\n      new ThirdPartyPartnerLiftRequest(),\n      'NODE',\n      ThirdPartyPartnerLiftRequest::getFieldsEnum()->getValues(),\n      new TypeChecker($param_types, $enums)\n    );\n    $request->addParams($params);\n    $request->addFields($fields);\n    return $pending ? $request : $request->execute();\n  }",
+    "source_file": "official-facebook-pixel.json",
+    "source_dir": "failed",
+    "function_name": "ThirdPartyPartnerLiftRequest::getSelf"
+  },
+  {
+    "code": "/**\n\t * Returns whether to apply the post-specific view transition names for the given animation alias.\n\t *\n\t * @since 1.0.0\n\t *\n\t * @param string               $alias Slug or alias to reference the animation with. May be used to alter the\n\t *                                    animation's behavior.\n\t * @param array<string, mixed> $args  Optional. Animation arguments. Default is the animation's default arguments.\n\t * @return bool True if the post-specific view transition names should be applied, false otherwise.\n\t */\nfunction use_animation_post_transition_names( string $alias, array $args = array() ): bool {\n\t\tif ( ! isset( $this->alias_map[ $alias ] ) ) {\n\t\t\treturn true;\n\t\t}\n\n\t\treturn $this->registered_animations[ $this->alias_map[ $alias ] ]->use_post_transition_names( $alias, $args );\n\t}",
+    "source_file": "web-worker-offloading.json",
+    "source_dir": "passed",
+    "function_name": "PLVT_View_Transition_Animation_Registry::use_animation_post_transition_names"
+  },
+  {
+    "code": "/**\n\t\t * Some routes or features like onboarding hide the wp-admin navigation and masterbar.\n\t\t * Setting `woocommerce_admin_is_loading` to true allows us to premeptively hide these\n\t\t * elements while the JS app loads.\n\t\t * This class needs to be removed by those feature components (like <ProfileWizard />).\n\t\t *\n\t\t * @param bool $is_loading If WooCommerce Admin is loading a fullscreen view.\n\t\t * @since 6.5.0\n\t\t */\nfunction add_admin_body_classes( $admin_body_class = '' ) {\n\t\tif ( ! PageController::is_admin_or_embed_page() || PageController::is_modern_settings_page() ) {\n\t\t\treturn $admin_body_class;\n\t\t}\n\n\t\t$classes   = explode( ' ', trim( $admin_body_class ) );\n\t\t$classes[] = 'woocommerce-admin-page';\n\t\tif ( PageController::is_embed_page() ) {\n\t\t\t$classes[] = 'woocommerce-embed-page';\n\t\t}\n\n\t\t// Add page ID as a class.\n\t\t$page_id = PageController::get_instance()->get_current_screen_id();\n\t\tif ( $page_id ) {\n\t\t\t$classes[] = $page_id;\n\t\t}\n\n\t\t\n\t\t$is_loading = apply_filters( 'woocommerce_admin_is_loading', false );\n\n\t\tif ( PageController::is_admin_page() && $is_loading ) {\n\t\t\t$classes[] = 'woocommerce-admin-is-loading';\n\t\t}\n\n\t\t$admin_body_class = implode( ' ', array_unique( $classes ) );\n\t\treturn \" $admin_body_class \";\n\t}",
+    "source_file": "woocommerce.json",
+    "source_dir": "passed",
+    "function_name": "add_filter::add_admin_body_classes"
+  },
+  {
+    "code": "/**\n\t\t * @param string $selector\n\t\t *\n\t\t * @return integer\n\t\t */\nfunction getCssSelectorPrecedence( $selector ) {\n\t\t\t$selectorKey = md5( $selector );\n\t\t\tif ( !isset( $this->caches[self::CACHE_KEY_SELECTOR][$selectorKey] ) ) {\n\t\t\t\t$precedence = 0;\n\t\t\t\t$value      = 100;\n\t\t\t\t// ids: worth 100, classes: worth 10, elements: worth 1\n\t\t\t\t$search = array( '\\\\#', '\\\\.', '' );\n\n\t\t\t\tforeach ( $search as $s ) {\n\t\t\t\t\tif ( trim( $selector == '' ) ) {\n\t\t\t\t\t\tbreak;\n\t\t\t\t\t}\n\t\t\t\t\t$number   = 0;\n\t\t\t\t\t$selector = preg_replace( '/' . $s . '\\\\w+/', '', $selector, - 1, $number );\n\t\t\t\t\t$precedence += ( $value * $number );\n\t\t\t\t\t$value /= 10;\n\t\t\t\t}\n\t\t\t\t$this->caches[self::CACHE_KEY_SELECTOR][$selectorKey] = $precedence;\n\t\t\t}\n\n\t\t\treturn $this->caches[self::CACHE_KEY_SELECTOR][$selectorKey];\n\t\t}",
+    "source_file": "learnpress-buddypress.json",
+    "source_dir": "passed",
+    "function_name": "Emogrifier::getCssSelectorPrecedence"
+  },
+  {
+    "code": "/**\n     * Normalize value\n     *\n     * @param array|Number $value\n     *\n     * @return array|Number\n     */\nfunction normalizeValue($value)\n    {\n        $value = $this->coerceForExpression($this->reduce($value));\n\n        if ($value instanceof Number) {\n            return $value;\n        }\n\n        switch ($value[0]) {\n            case Type::T_LIST:\n                $value = $this->extractInterpolation($value);\n\n                if ($value[0] !== Type::T_LIST) {\n                    return [Type::T_KEYWORD, $this->compileValue($value)];\n                }\n\n                foreach ($value[2] as $key => $item) {\n                    $value[2][$key] = $this->normalizeValue($item);\n                }\n\n                if (! empty($value['enclosing'])) {\n                    unset($value['enclosing']);\n                }\n\n                if ($value[1] === '' && count($value[2]) > 1) {\n                    $value[1] = ' ';\n                }\n\n                return $value;\n\n            case Type::T_STRING:\n                return [$value[0], '\"', [$this->compileStringContent($value)]];\n\n            case Type::T_INTERPOLATE:\n                return [Type::T_KEYWORD, $this->compileValue($value)];\n\n            default:\n                return $value;\n        }\n    }",
+    "source_file": "wp-scss.json",
+    "source_dir": "failed",
+    "function_name": "normalizeValue"
+  },
+  {
+    "code": "/**\n     * Generated from protobuf field <code>string file_path = 3;</code>\n     * @return string\n     */\nfunction getFilePath()\n    {\n        return $this->file_path;\n    }",
+    "source_file": "plugnmeet.json",
+    "source_dir": "passed",
+    "function_name": "RoomUploadedFileMetadata::getFilePath"
+  },
+  {
+    "code": "/**\r\n         * Override default i18n text phrases.\r\n         *\r\n         * @author Vova Feldman (@svovaf)\r\n         * @since  1.1.6\r\n         *\r\n         * @param string[] string $key_value\r\n         *\r\n         * @uses   fs_override_i18n()\r\n         */\nfunction override_i18n( $key_value ) {\r\n            fs_override_i18n( $key_value, $this->_slug );\r\n        }",
+    "source_file": "woo-product-reviews-shortcode.json",
+    "source_dir": "passed",
+    "function_name": "override_i18n"
+  },
+  {
+    "code": "function getFieldTypes() {\n    return array(\n      'geo_targeting_type' => 'string',\n    );\n  }",
+    "source_file": "official-facebook-pixel.json",
+    "source_dir": "failed",
+    "function_name": "CatalogBasedTargetingFields::getFieldTypes"
+  },
+  {
+    "code": "/**\n\t * Update a customer.\n\t *\n\t * @param string $customer_id   ID of customer to update.\n\t * @param array  $customer_data Data to be updated.\n\t *\n\t * @throws API_Exception Error updating customer.\n\t */\nfunction update_customer( $customer_id, $customer_data = [] ) {\n\t\tif ( null === $customer_id || '' === trim( $customer_id ) ) {\n\t\t\tthrow new API_Exception(\n\t\t\t\t__( 'Customer ID is required', 'woocommerce-payments' ),\n\t\t\t\t'wcpay_mandatory_customer_id_missing',\n\t\t\t\t400\n\t\t\t);\n\t\t}\n\n\t\tif ( ! preg_match( '/^\\w+$/', $customer_id ) ) {\n\t\t\tthrow new API_Exception(\n\t\t\t\t__( 'Route param validation failed.', 'woocommerce-payments' ),\n\t\t\t\t'wcpay_route_validation_failure',\n\t\t\t\t400\n\t\t\t);\n\t\t}\n\n\t\t$this->request(\n\t\t\t$customer_data,\n\t\t\tself::CUSTOMERS_API . '/' . $customer_id,\n\t\t\tself::POST\n\t\t);\n\t}",
+    "source_file": "woocommerce-payments.json",
+    "source_dir": "passed",
+    "function_name": "update_customer"
+  },
+  {
+    "code": "/**\n\t * Get the connected user's subscriptions.\n\t *\n\t * @return array\n\t *\n\t * phpcs:ignore Squiz.Commenting.FunctionCommentThrowTag.Missing -- As we wrap the throw in a try/catch.\n\t */\nfunction get_subscriptions() {\n\t\t$cache_key = '_woocommerce_helper_subscriptions';\n\t\t$data      = get_transient( $cache_key );\n\t\tif ( false !== $data ) {\n\t\t\tif ( is_array( $data ) ) {\n\t\t\t\treturn $data;\n\t\t\t}\n\t\t\t// Cached data is corrupted, delete and fetch fresh.\n\t\t\tdelete_transient( $cache_key );\n\t\t}\n\n\t\ttry {\n\t\t\t$request_uri = wp_unslash( $_SERVER['REQUEST_URI'] ?? '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized\n\t\t\t$source      = '';\n\t\t\tif ( false !== stripos( $request_uri, 'wc/v3/marketplace/refresh' ) ) :\n\t\t\t\t$source = 'refresh-button';\n\t\t\telseif ( false !== stripos( $request_uri, 'my-subscriptions' ) ) :\n\t\t\t\t$source = 'my-subscriptions';\n\t\t\telseif ( false !== stripos( $request_uri, 'plugins.php' ) ) :\n\t\t\t\t$source = 'plugins';\n\t\t\telseif ( false !== stripos( $request_uri, 'wc-admin' ) ) :\n\t\t\t\t$source = 'inbox-notes';\n\t\t\telseif ( false !== stripos( $request_uri, 'admin-ajax.php' ) ) :\n\t\t\t\t$source = 'heartbeat-api';\n\t\t\telseif ( false !== stripos( $request_uri, 'installer' ) ) :\n\t\t\t\t$source = 'wccom-site-installer';\n\t\t\telseif ( defined( 'WP_CLI' ) && WP_CLI ) :\n\t\t\t\t$source = 'wc-cli';\n\t\t\tendif;\n\n\t\t\t// Obtain the connected user info.\n\t\t\t$request = WC_Helper_API::get(\n\t\t\t\t'subscriptions',\n\t\t\t\tarray(\n\t\t\t\t\t'authenticated' => true,\n\t\t\t\t\t'query_string'  => '' !== $source ? esc_url( '?source=' . $source ) : '',\n\t\t\t\t)\n\t\t\t);\n\n\t\t\tif ( is_wp_error( $request ) ) {\n\t\t\t\tset_transient( $cache_key, array(), 15 * MINUTE_IN_SECONDS );\n\n\t\t\t\tthrow new Exception( $request->get_error_message(), (int) $request->get_error_data() );\n\t\t\t}\n\n\t\t\t$code = wp_remote_retrieve_response_code( $request );\n\t\t\tif ( 200 !== $code ) {\n\t\t\t\tset_transient( $cache_key, array(), 15 * MINUTE_IN_SECONDS );\n\n\t\t\t\tthrow new Exception( self::get_message_for_response_code( $code ), $code );\n\t\t\t}\n\n\t\t\t$data = json_decode( wp_remote_retrieve_body( $request ), true );\n\t\t\tif ( ! is_array( $data ) ) {\n\t\t\t\tset_transient( $cache_key, array(), 15 * MINUTE_IN_SECONDS );\n\n\t\t\t\tthrow new Exception( __( 'WooCommerce.com API returned an invalid response.', 'woocommerce' ), 422 );\n\t\t\t}\n\n\t\t\tset_transient( $cache_key, $data, 3 * HOUR_IN_SECONDS );\n\n\t\t\t// Remove notice after successful API call as it's no longer applicable.\n\t\t\tself::remove_api_error_notice();\n\t\t\treturn $data;\n\t\t} catch ( Exception $e ) {\n\t\t\tif ( $e->getCode() < 404 ) {\n\t\t\t\tself::remove_api_error_notice();\n\t\t\t} else {\n\t\t\t\t// Only show error notice in case there is no proper communication with WCCOM.\n\t\t\t\tself::log( 'Error getting subscriptions: ' . $e->getMessage(), 'error' );\n\t\t\t\tself::add_api_error_notice();\n\t\t\t}\n\t\t}\n\n\t\treturn array();\n\t}",
+    "source_file": "woocommerce.json",
+    "source_dir": "passed",
+    "function_name": "get_subscriptions"
+  },
+  {
+    "code": "/**\n\t * @version 1.0.0\n\t * @since 4.2.2\n\t * [delete_local_file delete file when record is deleted]\n\t * @param  string $file_path [description]\n\t */\nfunction delete_local_file( $file_path = '' ) {\n\t\t$file_init = LP_WP_Filesystem::instance();\n\t\tif ( $file_init->file_exists( $file_path ) ) {\n\t\t\t$file_init->unlink( $file_path );\n\t\t}\n\t}",
+    "source_file": "learnpress-wishlist.json",
+    "source_dir": "passed",
+    "function_name": "LP_Material_Files_DB::delete_local_file"
+  },
+  {
+    "code": "/**\n\t * Get tax behavior (inclusive/exclusive).\n\t *\n\t * @since 10.5.0\n\t * @param \\WC_Product $product Product object.\n\t * @return string|null Tax behavior or null.\n\t */\nfunction get_tax_behavior( \\WC_Product $product ): ?string {\n\t\t$prices_include_tax = get_option( 'woocommerce_prices_include_tax' );\n\t\treturn 'yes' === $prices_include_tax ? 'inclusive' : 'exclusive';\n\t}",
+    "source_file": "woocommerce-gateway-stripe.json",
+    "source_dir": "passed",
+    "function_name": "WC_Stripe_Agentic_Commerce_Product_Mapper::get_tax_behavior"
+  },
+  {
+    "code": "/**\n     * Generated from protobuf field <code>string room_title = 1;</code>\n     * @param string $var\n     * @return $this\n     */\nfunction setRoomTitle($var)\n    {\n        GPBUtil::checkString($var, True);\n        $this->room_title = $var;\n\n        return $this;\n    }",
+    "source_file": "plugnmeet.json",
+    "source_dir": "passed",
+    "function_name": "ActiveRoomInfo::setRoomTitle"
+  },
+  {
+    "code": "/**\n\t * Return timezone string\n\t *\n\t * @since  1.0.0\n\t * @return string Timezone string\n\t */\nfunction field_timezone() {\n\t\t$value = '';\n\n\t\t// Is timezone arg set?\n\t\tif ( $this->args( 'timezone' ) ) {\n\t\t\t$value = $this->args( 'timezone' );\n\t\t} // End if.\n\t\t// Is there another meta key with a timezone stored as its value we should use?\n\t\telseif ( $this->args( 'timezone_meta_key' ) ) {\n\t\t\t$value = $this->get_data( $this->args( 'timezone_meta_key' ) );\n\t\t}\n\n\t\treturn $value;\n\t}",
+    "source_file": "cmb2.json",
+    "source_dir": "passed",
+    "function_name": "field_timezone"
+  },
+  {
+    "code": "/**\n\t\t * Set new type of question.\n\t\t * Update _lp_type meta to new type.\n\t\t *\n\t\t * @param string $type\n\t\t *\n\t\t * @return bool\n\t\t */\nfunction set_type( $type = '' ) {\n\n\t\t\tif ( ! $type ) {\n\t\t\t\treturn false;\n\t\t\t}\n\n\t\t\tif ( ! learn_press_is_support_question_type( $type ) ) {\n\t\t\t\treturn false;\n\t\t\t}\n\n\t\t\t// Change to new type and update meta value\n\t\t\t$this->_question_type = $type;\n\t\t\tupdate_post_meta( $this->get_id(), '_lp_type', $type );\n\n\t\t\treturn true;\n\t\t}",
+    "source_file": "learnpress-buddypress.json",
+    "source_dir": "passed",
+    "function_name": "set_type"
+  },
+  {
+    "code": "function getConfigDirAbs()\n    {\n        return self::getWebPExpressContentDirAbs() . '/config';\n    }",
+    "source_file": "webp-express.json",
+    "source_dir": "failed",
+    "function_name": "Paths::getConfigDirAbs"
+  },
+  {
+    "code": "function __construct(string $name)\n    {\n        $this->name = $name;\n    }",
+    "source_file": "wp-scss.json",
+    "source_dir": "failed",
+    "function_name": "PlaceholderSelector::__construct"
+  },
+  {
+    "code": "/**\n\t * Main MasVideos_Emails Instance.\n\t *\n\t * Ensures only one instance of MasVideos_Emails is loaded or can be loaded.\n\t *\n\t * @since 1.0.0\n\t * @static\n\t * @return MasVideos_Emails Main instance\n\t */\nfunction instance() {\n\t\tif ( is_null( self::$_instance ) ) {\n\t\t\tself::$_instance = new self();\n\t\t}\n\t\treturn self::$_instance;\n\t}",
+    "source_file": "masvideos.json",
+    "source_dir": "passed",
+    "function_name": "MasVideos_Emails::instance"
+  }
+]
