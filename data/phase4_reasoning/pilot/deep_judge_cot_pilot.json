@@ -1,0 +1,1358 @@
+[
+  {
+    "source_file": "plugnmeet.json",
+    "source_dir": "passed",
+    "function_name": "edition::setNodeId",
+    "code": "/**\n     * Generated from protobuf field <code>string node_id = 5;</code>\n     * @param string $var\n     * @return $this\n     */\nfunction setNodeId($var)\n    {\n        GPBUtil::checkString($var, True);\n        $this->node_id = $var;\n\n        return $this;\n    }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 8,
+          "analysis": "This is auto-generated protobuf code (Protocol Buffers library for PHP). The comment 'Generated from protobuf field' indicates this is machine-generated code from a .proto schema definition. WordPress Coding Standards (WPCS) typically do not apply to vendor/third-party auto-generated code. The method naming convention (camelCase setNodeId) follows protobuf PHP conventions rather than WordPress snake_case conventions (set_node_id), which is acceptable for library code. The GPBUtil::checkString() call is part of the google/protobuf library's internal validation. Minor point: lacks proper function declaration syntax (missing 'public' visibility keyword), though PHP defaults to public. No WordPress-specific APIs are present or required here."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No database operations present. This is a simple setter method for a protobuf message property. No $wpdb usage, no SQL queries, no prepare() calls needed. The method only assigns a validated string to an object property. SQL safety concerns are not applicable to this code."
+        },
+        "security": {
+          "score": 9,
+          "analysis": "The GPBUtil::checkString($var, True) provides type validation ensuring the input is a string before assignment. This is protobuf library's internal validation mechanism. In WordPress context, no sanitization functions like sanitize_text_field() or escaping functions like esc_html() are present, but they are not required here because this is a data model setter that only stores values \u2014 output escaping should occur at the presentation layer, not in the model. The method returns $this for method chaining, which is safe. No user input is directly accessed ($_GET, $_POST, $_REQUEST are absent). No nonce verification needed as this is not handling form submissions or AJAX requests."
+        },
+        "performance": {
+          "score": 10,
+          "analysis": "Extremely simple operation: one validation call and one property assignment. O(1) complexity with negligible memory footprint. No database queries, no loops, no file I/O, no expensive operations. The return $this pattern enables fluent interfaces without performance cost. No WordPress performance concerns like missing caching, inefficient WP_Query usage, or meta query N+1 problems are present. This is optimal performance for a setter method."
+        },
+        "wp_api_usage": {
+          "score": 10,
+          "analysis": "No WordPress APIs are used, and none are required. This is protobuf library code that operates independently of WordPress. It does not interact with posts, users, options, transients, or any WordPress data structures. The code does not misuse WordPress APIs (no direct database access bypassing $wpdb, no improper filter/action usage). When integrated into WordPress plugins/themes, protobuf message objects are typically used for API communication (gRPC, serialization) rather than WordPress-specific operations. The absence of WordPress APIs is appropriate for this context."
+        },
+        "code_quality": {
+          "score": 8,
+          "analysis": "Clean, focused method with single responsibility (set node_id property). Proper type checking via GPBUtil::checkString(). The docblock clearly documents the protobuf field mapping and parameter type. Method chaining support via return $this is a recognized pattern. Minor issues: (1) Missing explicit visibility keyword (public/protected/private), relying on PHP's default public visibility. (2) No null handling documentation \u2014 unclear if null is valid for node_id. (3) The True parameter to checkString is unexplained (likely allows empty strings based on protobuf library conventions). No error handling for invalid input beyond the checkString validation. Overall maintainable and follows protobuf PHP conventions."
+        },
+        "dependency_integrity": {
+          "score": 9,
+          "analysis": "Depends on GPBUtil class from google/protobuf PHP library. This is a stable, widely-used dependency maintained by Google. The checkString() method is part of the library's public API. No version-specific features or deprecated APIs are visible. No direct file includes or requires present \u2014 assumes autoloading (Composer). Risk: If google/protobuf is not properly declared in composer.json dependencies, GPBUtil will be undefined causing fatal errors. Best practice would be to verify the dependency exists in the project's composer.json. No WordPress-specific dependency issues (not loading WordPress files incorrectly, not assuming specific WordPress versions)."
+        },
+        "i18n": {
+          "score": 10,
+          "analysis": "Internationalization is not applicable to this code. This is a data model setter with no user-facing strings, no messages, no text output. The property name 'node_id' is an internal identifier from the protobuf schema, not displayed to users. No __(), _e(), _x(), esc_html__() or other WordPress translation functions are needed. If this protobuf message were to generate error messages for validation failures, those would need i18n, but this code only performs silent validation via GPBUtil. No i18n concerns present."
+        },
+        "accessibility": {
+          "score": 10,
+          "analysis": "Accessibility is not applicable to backend data model code. This setter method has no UI components, no HTML output, no ARIA attributes, no screen reader considerations. Accessibility concerns apply to presentation layer (templates, admin screens, blocks) not to data models. The code does not generate markup, forms, or interactive elements. When protobuf messages are used in WordPress (typically for API integrations, microservices communication, or data serialization), accessibility is handled in the consuming presentation code, not in the message definitions."
+        }
+      },
+      "overall_score": 93,
+      "key_observation": "This is auto-generated protobuf library code that appropriately operates outside WordPress conventions. The code is correct for its context: GPBUtil::checkString() provides type validation, the setter follows protobuf PHP patterns, and no WordPress APIs are needed since this is pure data model layer code. The only minor issues are missing explicit visibility keyword and undocumented validation behavior. This represents a boundary case where WordPress coding standards intentionally do not apply to vendor library auto-generated code \u2014 attempting to force WPCS compliance (e.g., renaming to set_node_id) would break protobuf library conventions and code generation tooling."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "seed_few_shot_agent",
+    "citation_accuracy": {
+      "total_citations": 2,
+      "grounded_citations": 1,
+      "hallucinated_citations": [
+        "esc_html"
+      ],
+      "hallucination_ratio": 0.5
+    }
+  },
+  {
+    "source_file": "elementor.json",
+    "source_dir": "failed",
+    "function_name": "bulk_copy_templates",
+    "code": "function bulk_copy_templates( array $args ) {\n\t\t$validate_args = $this->ensure_args( [ 'source', 'from_source', 'from_template_id' ], $args );\n\n\t\tif ( is_wp_error( $validate_args ) ) {\n\t\t\treturn $validate_args;\n\t\t}\n\n\t\t$args['source'] = $args['source'][0];\n\n\t\treturn $this->bulk_copy_template_items( $args );\n\t}",
+    "reasoning": {
+      "verdict": "FAIL",
+      "overall_score": 45,
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Code follows WordPress naming conventions with snake_case function name and array type hint. Indentation appears consistent with WordPress Coding Standards (tabs). Array short syntax `[]` is used, which is acceptable in modern WordPress (requires PHP 5.4+). No obvious WPCS violations in formatting or structure. Minor: lacks DocBlock comment which is required by WPCS for all functions."
+        },
+        "sql_safety": {
+          "score": 6,
+          "analysis": "No direct SQL queries visible in this function. The function delegates to `bulk_copy_template_items()` which is not shown, so SQL safety cannot be fully assessed. The function accepts arbitrary `$args` array and only validates presence of specific keys ('source', 'from_source', 'from_template_id') via `ensure_args()` but does not validate content types or sanitize values before passing to downstream function. If `bulk_copy_template_items()` performs database operations, unsanitized input could reach SQL layer."
+        },
+        "security": {
+          "score": 3,
+          "analysis": "Critical security concerns: No capability check using `current_user_can()` is present. Function name suggests bulk operations on templates, which should require elevated permissions. No nonce verification using `wp_verify_nonce()` or `check_ajax_referer()` is performed. The function accepts arbitrary `$args` array with no sanitization. The `$args['source']` value is reassigned from array to single element `$args['source'][0]` with no validation that the array is non-empty or that the value is safe, risking undefined index notices and potential injection. No escaping functions like `esc_html()`, `esc_attr()`, or `esc_url()` are used, though output context is unclear. Missing: `current_user_can()`, nonce verification, input sanitization."
+        },
+        "performance": {
+          "score": 6,
+          "analysis": "Function appears lightweight with minimal processing overhead. The `is_wp_error()` check is efficient. The array key validation via `ensure_args()` should be fast. Concern: function name contains 'bulk' suggesting it may process multiple items, but delegates to `bulk_copy_template_items()` whose implementation is unknown. If that function lacks proper batching, caching, or performs queries in loops, performance could degrade significantly with large datasets. The `$args['source'] = $args['source'][0]` operation suggests the original array may contain multiple sources but only the first is used, which could indicate inefficient data preparation upstream."
+        },
+        "wp_api_usage": {
+          "score": 5,
+          "analysis": "`is_wp_error()` is used correctly to check return value from `ensure_args()`. The function appears to be part of a class (uses `$this->`), which is appropriate for WordPress plugin/theme architecture. However, missing critical WordPress APIs: no capability checking with `current_user_can()`, no nonce verification, no use of WordPress sanitization functions like `sanitize_text_field()`, `absint()`, or `sanitize_key()`. No use of `wp_send_json_error()` or `wp_send_json_success()` if this is an AJAX handler. The delegation pattern to `bulk_copy_template_items()` is reasonable but without seeing that implementation, proper WordPress API usage cannot be confirmed for the actual template copying logic."
+        },
+        "code_quality": {
+          "score": 5,
+          "analysis": "Code structure is clean and readable with clear delegation pattern. The early return on validation error follows good practices. However, several quality issues: No DocBlock documentation explaining parameters, return types, or purpose. No type hints for return value (should be `WP_Error|mixed`). The `ensure_args()` method name is vague\u2014WordPress convention would prefer `validate_required_args()` or similar. Logic flaw: `$args['source'] = $args['source'][0]` assumes array exists and has at least one element but `ensure_args()` only checks key existence, not structure, risking undefined offset error. No error handling for the case where `$args['source']` might be empty array. Function modifies input array in-place before passing, which could cause confusion in debugging."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "Function depends on class methods `ensure_args()` and `bulk_copy_template_items()` which are presumably defined in the same class (correct use of `$this->`). Uses WordPress core function `is_wp_error()` which is always available in WordPress context. No external library dependencies visible. Concern: No checks that the delegated methods exist or are callable, though PHP will fatal error if they don't. No version checks or feature detection. The function signature accepts `array $args` with no default, requiring caller to always provide argument. Dependency chain is opaque\u2014if `bulk_copy_template_items()` has deep dependencies or hooks, they are not documented here."
+        },
+        "i18n": {
+          "score": 8,
+          "analysis": "No user-facing strings are present in this function, so no internationalization issues exist in the code shown. Error messages are presumably generated by `ensure_args()` method, so i18n responsibility is delegated. If this function is meant to return error messages to users, those messages should use `__()`, `_e()`, or `esc_html__()` with proper text domain, but none are present here. Since this appears to be an internal API function that returns `WP_Error` objects (which should contain translated messages set elsewhere), the lack of translation functions here is acceptable. Score reflects proper delegation of i18n concerns rather than direct implementation."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "This is a backend PHP function with no HTML output, JavaScript generation, or user interface elements visible. No accessibility concerns apply to pure logic functions. If this function is part of an admin interface flow, accessibility would need to be evaluated in the UI layer that calls this function, not here. The function returns data structures (`WP_Error` or results from `bulk_copy_template_items()`) that could be consumed by accessible interfaces. No ARIA attributes, semantic HTML, keyboard navigation, or screen reader considerations are applicable to this code layer. Score reflects N/A status rather than compliance."
+        }
+      },
+      "key_observation": "Critical security vulnerability: function performs bulk template operations without any capability checks using current_user_can() or nonce verification. The $args['source'][0] array access is unsafe\u2014ensure_args() validates key existence but not array structure, risking undefined offset error. Missing input sanitization before delegation to bulk_copy_template_items() creates potential injection vector. The function modifies $args array in-place ($args['source'] reassignment) before passing to next method, which is error-prone and breaks immutability expectations. For a bulk operation on templates, this should have: capability check (likely 'edit_theme_options' or custom capability), nonce verification, sanitization of all input values, and safe array access with isset() or array validation."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "seed_few_shot_agent",
+    "citation_accuracy": {
+      "total_citations": 8,
+      "grounded_citations": 8,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "learnpress-bbpress.json",
+    "source_dir": "passed",
+    "function_name": "LP_REST_Courses_Controller::get_item",
+    "code": "/**\n\t * @param WP_REST_Request $request\n\t *\n\t * @return WP_REST_Response\n\t */\nfunction get_item( $request ) {\n\t\t$settings = LP_Settings::instance();\n\t\t$response = array(\n\t\t\t'result' => $settings->get( $request['key'] ),\n\t\t);\n\n\t\treturn rest_ensure_response( $response );\n\t}",
+    "reasoning": {
+      "verdict": "FAIL",
+      "overall_score": 25,
+      "dimension_analysis": {
+        "security": {
+          "score": 2,
+          "analysis": "Critical security vulnerability: no permission check or capability verification. The function accepts arbitrary WP_REST_Request objects and retrieves settings using LP_Settings::instance()->get() based on user-supplied $request['key'] without any authentication or authorization. Missing current_user_can() check. Any unauthenticated user can read any setting key from the system via REST API, potentially exposing sensitive configuration data such as API keys, payment gateway credentials, or other private settings. No nonce verification via check_ajax_referer() or wp_verify_nonce(). The function should verify user capabilities (e.g., current_user_can('manage_options')) before allowing access to settings retrieval."
+        },
+        "wp_api_usage": {
+          "score": 4,
+          "analysis": "Uses rest_ensure_response() correctly to wrap the response array, which is proper REST API usage. However, the function is missing critical WordPress REST API components: no permission_callback defined in the route registration (not visible in this snippet but required for REST endpoints), no input validation using register_rest_route() schema validation, no sanitization of $request['key'] before passing to LP_Settings::instance()->get(). The direct array access $request['key'] should use $request->get_param('key') for proper WP_REST_Request API usage. Missing error handling if the key doesn't exist or if LP_Settings::instance() fails."
+        },
+        "wpcs_compliance": {
+          "score": 6,
+          "analysis": "Partially compliant with WordPress Coding Standards. The function signature lacks proper access modifier (should be 'public function get_item'). DocBlock is incomplete: missing @return type description and missing @throws or error handling documentation. Variable naming follows WordPress conventions ($settings, $response). Array structure is correct. Indentation appears correct. Missing inline comments explaining the security implications or business logic. The function name 'get_item' follows WordPress REST controller naming conventions."
+        },
+        "code_quality": {
+          "score": 3,
+          "analysis": "Poor code quality due to lack of defensive programming. No validation that $request['key'] exists before accessing it (should check isset() or use null coalescing operator). No error handling if LP_Settings::instance()->get() returns null, false, or throws an exception. No validation that $request is actually a WP_REST_Request object. The function blindly trusts all inputs. No return type declaration in the function signature. No logging of access attempts to sensitive settings. The response structure is overly simple and doesn't provide status codes or error messages for failure cases."
+        },
+        "sql_safety": {
+          "score": 7,
+          "analysis": "No direct SQL queries visible in this code snippet. The function delegates to LP_Settings::instance()->get() which may or may not interact with the database safely. Without seeing the LP_Settings implementation, we cannot verify if it uses $wpdb->prepare() for parameterized queries. The $request['key'] parameter is passed unsanitized to the settings retrieval method, which could lead to SQL injection if LP_Settings uses it directly in a query without proper escaping. Assuming LP_Settings is a typical WordPress settings class using get_option(), this would be safe, but the assumption cannot be verified from this code alone."
+        },
+        "performance": {
+          "score": 5,
+          "analysis": "Moderate performance concerns. LP_Settings::instance() suggests a singleton pattern, which is good for avoiding multiple instantiations. However, there's no caching mechanism to prevent redundant database lookups for the same setting key. If this endpoint is called frequently, it could result in repeated database queries. No rate limiting or throttling visible. The response is not setting any cache headers to allow HTTP-level caching of settings that don't change frequently. Missing object caching using wp_cache_get() or wp_cache_set() for frequently accessed settings."
+        },
+        "i18n": {
+          "score": 8,
+          "analysis": "No user-facing strings are present in this code snippet that would require translation. The response is purely data-driven with programmatic keys ('result'). If this were to return error messages to users, they would need to be wrapped in __(), esc_html__(), or esc_html_e() with a text domain. Currently, internationalization is not applicable to this specific function, but error handling should be added with translatable strings for production use."
+        },
+        "accessibility": {
+          "score": 8,
+          "analysis": "Not directly applicable to a REST API endpoint that returns JSON data. Accessibility concerns would be relevant in the frontend code that consumes this API response. The response structure is simple and machine-readable, which is appropriate. If this data is displayed in a UI, the consuming code would be responsible for proper ARIA labels, semantic HTML, and screen reader announcements. The API itself doesn't present accessibility barriers at the data layer."
+        },
+        "dependency_integrity": {
+          "score": 4,
+          "analysis": "Critical dependency on LP_Settings class without any existence check or error handling. No verification that class_exists('LP_Settings') before calling LP_Settings::instance(). If the LearnPress plugin or the settings component is disabled or fails to load, this function will cause a fatal error. No try-catch block to handle potential exceptions from the settings retrieval. The WP_REST_Request dependency is properly type-hinted in the docblock but not in the function signature itself. Missing checks for WordPress core dependencies like rest_ensure_response() availability."
+        }
+      },
+      "key_observation": "Critical authentication bypass vulnerability in LearnPress REST API endpoint: arbitrary settings retrieval without permission checks. Any unauthenticated user can call this endpoint and read any setting key from LP_Settings by supplying the key name, potentially exposing API keys, payment credentials, and sensitive configuration. Missing current_user_can() capability verification before calling LP_Settings::instance()->get($request['key']). This is a textbook example of Broken Access Control (OWASP #1) in WordPress REST API implementations."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "seed_few_shot_agent",
+    "citation_accuracy": {
+      "total_citations": 5,
+      "grounded_citations": 4,
+      "hallucinated_citations": [
+        "$wpdb->prepare"
+      ],
+      "hallucination_ratio": 0.2
+    }
+  },
+  {
+    "source_file": "jetpack.json",
+    "source_dir": "passed",
+    "function_name": "Jetpack_Copy_Post::update_content",
+    "code": "/**\n\t\t * Fires just before the target post is updated with its new data.\n\t\t * Allows for final data adjustments before updating the target post.\n\t\t *\n\t\t * @module copy-post\n\t\t *\n\t\t * @since 7.0.0\n\t\t *\n\t\t * @param array $data Post data with which to update the target (new) post.\n\t\t * @param WP_Post $source_post Post object being copied.\n\t\t * @param int     $target_post_id Target post ID.\n\t\t */\nfunction update_content( $source_post, $target_post_id ) {\n\t\t$data = array(\n\t\t\t'ID'             => $target_post_id,\n\t\t\t'post_title'     => $source_post->post_title,\n\t\t\t'post_content'   => $source_post->post_content,\n\t\t\t'post_excerpt'   => $source_post->post_excerpt,\n\t\t\t'comment_status' => $source_post->comment_status,\n\t\t\t'ping_status'    => $source_post->ping_status,\n\t\t\t'post_category'  => wp_get_post_categories( $source_post->ID ),\n\t\t\t'post_password'  => $source_post->post_password,\n\t\t\t'tags_input'     => $source_post->tags_input,\n\t\t);\n\n\t\t// Copy footnotes with regenerated IDs.\n\t\t$data = $this->copy_footnotes( $data, $source_post, $target_post_id );\n\n\t\t\n\t\t$data = apply_filters( 'jetpack_copy_post_data', $data, $source_post, $target_post_id );\n\t\treturn wp_update_post( $data );\n\t}",
+    "reasoning": {
+      "verdict": "FAIL",
+      "overall_score": 45,
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "The code follows WordPress function naming conventions and uses proper spacing and indentation. The apply_filters() hook follows the standard WordPress pattern with a prefixed hook name 'jetpack_copy_post_data'. The function uses wp_get_post_categories() and wp_update_post() core APIs correctly. However, the function lacks proper error handling for the return value of wp_update_post() which can return WP_Error on failure, and there is no input validation on parameters despite accepting external data."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "The code uses high-level WordPress APIs (wp_get_post_categories(), wp_update_post()) exclusively for database operations, which internally use $wpdb->prepare() and parameterized queries. No direct SQL queries are present. The use of these abstraction layers provides strong protection against SQL injection. Minor concern: the function does not validate that $target_post_id is actually an integer before passing it to wp_update_post(), though wp_update_post() will handle this internally."
+        },
+        "security": {
+          "score": 3,
+          "analysis": "Critical security issue: the function lacks any capability checks using current_user_can() to verify the user has permission to update posts. There is no nonce verification using wp_verify_nonce() or check_ajax_referer() if this is called from user input. The function blindly copies all content from source to target without verifying ownership or permissions. The $source_post object and $target_post_id are accepted without validation. An attacker could potentially call this function to overwrite any post content if they can control the parameters. The apply_filters() hook allows external code to modify $data, but this happens after the security check should have occurred."
+        },
+        "performance": {
+          "score": 6,
+          "analysis": "The function makes multiple database calls: wp_get_post_categories() queries the database for categories, $this->copy_footnotes() likely queries for footnotes, and wp_update_post() performs the update operation. If this function is called in a loop (common for bulk copy operations), it would generate N+1 query problems. There is no caching strategy or batching mechanism. The function does not check if the target post actually needs updating (no dirty checking), so it will always perform a database write even if content is identical. The apply_filters() hook is appropriately placed to allow optimization by other code, but the function itself lacks performance considerations."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "The function uses wp_update_post() correctly to update post data and wp_get_post_categories() to retrieve categories. The apply_filters() hook 'jetpack_copy_post_data' is properly implemented for extensibility. However, the function does not check the return value of wp_update_post(), which returns a WP_Error object on failure or 0 if the post data is unchanged. Best practice would be to use is_wp_error() to check for failures. The function also does not use get_post() to validate that $target_post_id exists before attempting to update it. The tags_input field is referenced as $source_post->tags_input, but tags are stored as taxonomy terms, not post object properties - this should use wp_get_post_tags() instead."
+        },
+        "code_quality": {
+          "score": 5,
+          "analysis": "The function has moderate code quality issues. It lacks return type declarations and parameter type hints that would be standard in modern PHP/WordPress development. There is no error handling for wp_update_post() which can return WP_Error. The function does not validate input parameters - $source_post could be null or invalid, and $target_post_id could be non-numeric. The reference to $source_post->tags_input is problematic because tags_input is not a standard WP_Post property; it's only used as an input parameter to wp_insert_post()/wp_update_post(), so this will always be null or undefined. The function returns the result of wp_update_post() without documenting what the return value represents. The docblock shown is for a filter hook, not for the function itself."
+        },
+        "dependency_integrity": {
+          "score": 6,
+          "analysis": "The function calls $this->copy_footnotes() without any checks to verify this method exists or handles errors from it. If the copy_footnotes() method fails or doesn't exist, this would cause a fatal error. The function depends on the structure of WP_Post objects (accessing properties like post_title, post_content, etc.) which is stable in WordPress core. The apply_filters() hook creates a dependency on external code that could modify $data in unexpected ways, potentially breaking the update operation. There is no validation that the filtered $data still contains required fields for wp_update_post(). The function assumes $source_post is a valid WP_Post object without using instanceof or get_post() validation."
+        },
+        "i18n": {
+          "score": 10,
+          "analysis": "The function contains no user-facing strings that require translation. It is purely a data manipulation function that operates on post objects and does not output any text. There are no missing internationalization calls because none are needed in this context. The function would be called by other code that handles user interaction and i18n concerns."
+        },
+        "accessibility": {
+          "score": 10,
+          "analysis": "This is a backend data processing function with no user interface elements, form controls, ARIA attributes, or visual output. Accessibility concerns do not apply to this code. The function manipulates post data at the API level and does not render any HTML or interactive elements that would require accessibility considerations."
+        }
+      },
+      "key_observation": "Critical security vulnerability: The function performs post content updates without any capability checks using current_user_can() or nonce verification, allowing unauthorized content modification. Additionally, the code references $source_post->tags_input which is not a valid WP_Post property (tags should be retrieved via wp_get_post_tags()), and fails to validate the wp_update_post() return value for errors using is_wp_error()."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "seed_few_shot_agent",
+    "citation_accuracy": {
+      "total_citations": 4,
+      "grounded_citations": 4,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "woocommerce-payments.json",
+    "source_dir": "passed",
+    "function_name": "get_customer_currency_args_from_request",
+    "code": "/**\n\t * Check the passed in query params to see if currency has been passed in.\n\t * Will return null if no currency variable was passed in, otherwise will\n\t * return the currency.\n\t *\n\t * @return array\n\t */\nfunction get_customer_currency_args_from_request(): array {\n\t\t$args = [\n\t\t\t'currency_is'     => [],\n\t\t\t'currency_is_not' => [],\n\t\t\t'currency'        => null,\n\t\t];\n\n\t\t/* phpcs:disable WordPress.Security.NonceVerification */\n\t\tif ( isset( $_GET['currency_is'] ) && is_array( $_GET['currency_is'] ) ) {\n\t\t\t$args['currency_is'] = array_map( 'sanitize_text_field', wp_unslash( $_GET['currency_is'] ) );\n\t\t}\n\n\t\tif ( isset( $_GET['currency_is_not'] ) ) {\n\t\t\t$args['currency_is_not'] = array_map( 'sanitize_text_field', wp_unslash( $_GET['currency_is_not'] ) );\n\t\t}\n\n\t\tif ( isset( $_GET['currency'] ) ) {\n\t\t\t$args['currency'] = sanitize_text_field( wp_unslash( $_GET['currency'] ) );\n\t\t}\n\t\t/* phpcs:enable WordPress.Security.NonceVerification */\n\n\t\treturn $args;\n\t}",
+    "reasoning": {
+      "verdict": "FAIL",
+      "overall_score": 45,
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "The code uses phpcs:disable and phpcs:enable comments to suppress WordPress.Security.NonceVerification warnings. While this is a valid PHPCS control structure, it indicates intentional suppression of a security standard. The code properly uses sanitize_text_field() and wp_unslash() which align with WPCS sanitization requirements. However, the deliberate suppression of nonce verification warnings, even with inline comments, represents a deviation from WordPress security coding standards that expect nonce validation for state-changing operations or sensitive data access."
+        },
+        "sql_safety": {
+          "score": 8,
+          "analysis": "No direct SQL operations are present in this function. The function sanitizes input using sanitize_text_field() and wp_unslash() before returning data. However, the returned data (currency_is, currency_is_not, currency arrays) will likely be used in subsequent database queries. The function does not use $wpdb->prepare() because no queries are executed here, but the lack of validation for expected currency code format (e.g., 3-letter ISO codes) means potentially malformed data could propagate to query contexts. The sanitize_text_field() call removes HTML and invalid UTF-8 but does not validate currency code structure."
+        },
+        "security": {
+          "score": 3,
+          "analysis": "Critical security flaw: the function accesses $_GET superglobal without nonce verification, as acknowledged by the phpcs:disable WordPress.Security.NonceVerification comment. No wp_verify_nonce() or check_ajax_referer() calls are present. This allows unauthenticated users to pass arbitrary currency filter parameters. While sanitize_text_field() and wp_unslash() are used, there is no current_user_can() capability check to restrict who can filter by currency. The function could be exploited for information disclosure if currency filtering reveals sensitive business data to unauthorized users. Additionally, there is no validation that currency_is_not is an array before calling array_map(), creating a type-safety vulnerability if a non-array value is passed."
+        },
+        "performance": {
+          "score": 6,
+          "analysis": "The function performs reasonably well with array_map() operations for sanitization, which is efficient for small to medium arrays. However, there are no size limits on the $_GET['currency_is'] or $_GET['currency_is_not'] arrays. An attacker could send extremely large arrays (e.g., thousands of currency codes) causing excessive sanitize_text_field() calls and memory consumption. No count() check or array_slice() limit is applied before array_map(). The wp_unslash() function is called efficiently. For high-traffic scenarios, the lack of input size validation could enable denial-of-service through resource exhaustion."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "The code correctly uses sanitize_text_field() and wp_unslash() for input sanitization, which are appropriate WordPress APIs for text data. However, the function misses validation APIs that should be used: no current_user_can() to check permissions, no wp_verify_nonce() for request verification, and no rest_sanitize_boolean() or similar validation for expected data types. The inconsistent handling of currency_is (checked with is_array()) versus currency_is_not (not checked) shows incomplete API usage patterns. A more robust implementation would use wp_parse_args() for default values or apply additional WordPress validation functions like rest_validate_request_arg() if this is part of a REST API context."
+        },
+        "code_quality": {
+          "score": 5,
+          "analysis": "The function has a clear docblock but it contains an error: the @return annotation states 'array' but does not describe the structure of the returned associative array. The inconsistency in validation logic is a code smell: currency_is is checked with is_array() before array_map(), but currency_is_not is not checked, creating asymmetric defensive programming. The phpcs:disable comment acknowledges a security issue but provides no justification comment explaining why nonce verification is intentionally skipped. The function name get_customer_currency_args_from_request() suggests customer-specific data but performs no customer authentication or authorization, creating a semantic mismatch between naming and behavior."
+        },
+        "dependency_integrity": {
+          "score": 8,
+          "analysis": "The function uses core WordPress sanitization functions (sanitize_text_field, wp_unslash, array_map) with no external dependencies, ensuring good compatibility across WordPress versions. The code does not depend on specific plugin or theme contexts. However, the function name 'get_customer_currency_args_from_request' suggests it belongs to a class (uses method-style docblock) but is shown as a standalone function, indicating potential namespace or autoloading dependency issues. No version checks or feature detection is present, but the APIs used (sanitize_text_field, wp_unslash) have been stable since WordPress 2.9.0 and 2.5.0 respectively."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "Internationalization is not directly applicable to this function as it performs data processing without user-facing strings. No __(), _e(), esc_html__(), or esc_attr__() calls are needed because the function returns structured data rather than translated output. Currency codes are typically ISO 4217 standard identifiers (USD, EUR, GBP) which should not be translated. The sanitize_text_field() function is Unicode-aware and handles multibyte characters correctly. However, if the returned data is later displayed to users, the consuming code would need to apply proper i18n functions, which is outside this function's scope."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "This is a backend data processing function with no direct accessibility impact. It does not generate HTML output, so no esc_html(), esc_attr(), or esc_url() calls for output escaping are needed in this context. The function does not create form elements, ARIA attributes, or screen-reader text. Accessibility concerns would only arise in the code that consumes this function's output and renders it to users. The data structure returned is machine-readable and does not directly affect assistive technology users."
+        }
+      },
+      "key_observation": "Critical security vulnerability: the function deliberately bypasses nonce verification (acknowledged via phpcs:disable WordPress.Security.NonceVerification) and performs no current_user_can() capability checks, allowing unauthenticated users to inject arbitrary currency filter parameters. Combined with missing array size limits, this creates both an authentication bypass vector and a denial-of-service vulnerability through unbounded array_map() operations on attacker-controlled input. The inconsistent type checking (is_array() for currency_is but not currency_is_not) demonstrates incomplete input validation that could cause fatal errors when array_map() receives non-array values."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "seed_few_shot_agent",
+    "citation_accuracy": {
+      "total_citations": 9,
+      "grounded_citations": 9,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "learnpress-buddypress.json",
+    "source_dir": "failed",
+    "function_name": "CourseAuthorUrlElementor::__construct",
+    "code": "function __construct( array $data = [] ) {\n\t\t$this->lp_dynamic_title      = 'Course Author Url';\n\t\t$this->lp_dynamic_name       = 'course-author-url';\n\t\t$this->lp_dynamic_categories = [ Module::URL_CATEGORY ];\n\t\tparent::__construct( $data );\n\t}",
+    "reasoning": {
+      "verdict": "FAIL",
+      "overall_score": 42,
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Code follows WordPress naming conventions for properties using snake_case (lp_dynamic_title, lp_dynamic_name, lp_dynamic_categories). The constructor signature is properly typed with array $data = []. However, the hardcoded English string 'Course Author Url' lacks proper capitalization ('URL' should be uppercase) and is not wrapped in a translation function. The property assignment pattern is consistent with typical WordPress plugin architecture where child classes initialize parent class properties before calling parent::__construct()."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No database operations are present in this code fragment. The constructor only sets object properties to literal values and calls the parent constructor. No usage of $wpdb->prepare(), $wpdb->query(), or any direct SQL. This is a pure object initialization routine with no SQL injection surface area."
+        },
+        "security": {
+          "score": 9,
+          "analysis": "The code initializes configuration properties with hardcoded literal values, presenting no direct security vulnerabilities. No user input is processed, no sanitization functions like esc_html(), esc_attr(), or esc_url() are needed here. The $data parameter is passed through to parent::__construct() without modification, delegating validation responsibility to the parent class. Without seeing the parent implementation, this delegation pattern is acceptable but creates a trust boundary\u2014if parent::__construct() does not properly validate $data, vulnerabilities could exist. The Module::URL_CATEGORY constant reference is safe."
+        },
+        "performance": {
+          "score": 10,
+          "analysis": "Lightweight constructor with minimal overhead. Three simple property assignments of literal values (two strings, one array with a single constant reference) followed by a parent constructor call. No expensive operations like file I/O, external API calls, database queries, or complex computations. The short-circuit array literal syntax [] is efficient. No caching concerns or N+1 patterns. This is optimal constructor performance for a data object."
+        },
+        "wp_api_usage": {
+          "score": 8,
+          "analysis": "The code does not directly use WordPress core APIs, which is acceptable for a constructor that initializes configuration data. The parent::__construct($data) pattern properly delegates to the parent class, following WordPress plugin development conventions. The naming pattern (lp_dynamic_*) and category reference (Module::URL_CATEGORY) suggest this is part of a LearnPress or similar LMS plugin's dynamic content system. No WordPress APIs are called because none are needed at this initialization stage\u2014WordPress functions like get_the_author_meta() or get_author_posts_url() would be called later when the dynamic tag is rendered, not during object construction."
+        },
+        "code_quality": {
+          "score": 6,
+          "analysis": "The constructor exhibits several code quality issues. First, no class-level property declarations are visible\u2014if lp_dynamic_title, lp_dynamic_name, and lp_dynamic_categories are not declared in the class or parent class, these become dynamic properties (deprecated in PHP 8.2, fatal in PHP 9.0). Second, the hardcoded English string 'Course Author Url' violates separation of concerns\u2014display strings should be externalized. Third, 'Url' has inconsistent capitalization (should be 'URL'). Fourth, the $data parameter is accepted but immediately ignored in this child class, passed directly to parent without any child-specific usage, suggesting the parameter may be unnecessary at this level. Fifth, no DocBlock documentation explains the purpose of this constructor or the three properties being set."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "The code references Module::URL_CATEGORY, creating a hard dependency on the Module class. If Module is not loaded or URL_CATEGORY is not defined, this will fatal error. No defensive checks like class_exists('Module') or defined('Module::URL_CATEGORY'). The parent::__construct($data) call assumes the parent class exists and accepts an array parameter\u2014if parent constructor signature changes or is removed, this breaks. The namespace is not visible in the fragment, so we cannot assess whether Module is properly namespaced or could conflict. No use statements shown to verify import correctness. The initialization order (set properties, then call parent) assumes parent doesn't override these properties."
+        },
+        "i18n": {
+          "score": 2,
+          "analysis": "Critical internationalization failure: the string 'Course Author Url' is hardcoded English text that will be displayed to users (as indicated by lp_dynamic_title suggesting a display title), but it is not wrapped in __(), _e(), esc_html__(), or any WordPress translation function. This makes the plugin untranslatable for non-English users. WordPress best practices require all user-facing strings to use translation functions with a text domain, e.g., __('Course Author URL', 'learnpress'). The lp_dynamic_name value 'course-author-url' is a slug/identifier and correctly not translated. The lack of translation infrastructure in a constructor that sets a display title is a significant i18n violation."
+        },
+        "accessibility": {
+          "score": 8,
+          "analysis": "This constructor code itself has no direct accessibility implications\u2014it initializes backend configuration data, not frontend markup or interactive elements. Accessibility depends entirely on how lp_dynamic_title is later rendered. If this title is used as visible text, button labels, ARIA labels, or form labels elsewhere in the codebase, those implementations would need proper semantic HTML and ARIA attributes, but that is outside this code fragment's scope. The only indirect accessibility concern is the non-translatable English string, which creates barriers for screen reader users in non-English locales who would hear untranslated English announced. No missing ARIA attributes, focus management, or semantic HTML issues are present because no markup is generated here."
+        }
+      },
+      "key_observation": "The most critical flaw is the complete absence of internationalization: the user-facing display title 'Course Author Url' is hardcoded in English without any translation function (__(), esc_html__(), etc.), making this LearnPress dynamic tag untranslatable for the plugin's global user base. This violates WordPress plugin guidelines that mandate all user-facing strings must be translatable. Secondary issues include potential dynamic property usage (PHP 8.2 deprecation risk if properties are not declared), inconsistent capitalization ('Url' should be 'URL'), and lack of DocBlock documentation. The code is functionally correct but fails WordPress i18n standards, which is a blocking issue for WordPress.org plugin directory submission and creates barriers for non-English users."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "seed_few_shot_agent",
+    "citation_accuracy": {
+      "total_citations": 4,
+      "grounded_citations": 4,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "official-facebook-pixel.json",
+    "source_dir": "passed",
+    "function_name": "VideoCopyrightGeoGate::getFieldsEnum",
+    "code": "/**\n   * @return VideoCopyrightGeoGateFields\n   */\nfunction getFieldsEnum() {\n    return VideoCopyrightGeoGateFields::getInstance();\n  }",
+    "reasoning": {
+      "verdict": "PASS",
+      "overall_score": 65,
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 6,
+          "analysis": "The function uses camelCase naming (getFieldsEnum) instead of WordPress snake_case convention (get_fields_enum). DocBlock uses partial PHPDoc format (@return) but lacks @since tag and function description required by WordPress Coding Standards. Indentation appears irregular (function body may not align with standard tab conventions). However, the core structure is valid PHP and the return type documentation is present."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No database operations present. The function performs a simple method call to getInstance() on a class. No use of $wpdb->query(), $wpdb->prepare(), or any SQL queries. No SQL injection vectors exist in this code."
+        },
+        "security": {
+          "score": 10,
+          "analysis": "No security-sensitive operations present. The function returns an enum instance without accepting user input, performing capability checks, or handling authentication/authorization. No nonce verification needed as this is not an AJAX handler or form processor. No output escaping needed as nothing is rendered. The function appears to be a simple getter for an internal enum singleton."
+        },
+        "performance": {
+          "score": 9,
+          "analysis": "Efficient implementation using singleton pattern via getInstance(). No database queries, no file I/O, no loops. The function call overhead is minimal. Only minor consideration: if called repeatedly in loops, the result could be cached in a variable by the caller, but the singleton pattern already handles internal caching. No obvious performance bottlenecks."
+        },
+        "wp_api_usage": {
+          "score": 8,
+          "analysis": "The function does not use any WordPress-specific APIs, which is acceptable for utility/helper functions that return internal data structures. No incorrect API usage detected. The singleton pattern via getInstance() is a common PHP pattern that aligns with WordPress practices (similar to how many WordPress core classes work). No missing escaping functions because there is no output. No missing sanitization because there is no input."
+        },
+        "code_quality": {
+          "score": 7,
+          "analysis": "Simple, single-purpose function with clear intent. The function name clearly indicates it returns fields enum. Return type is documented in PHPDoc. However, lacks comprehensive documentation (no description of what VideoCopyrightGeoGateFields represents or when to use this function). The function is tightly coupled to VideoCopyrightGeoGateFields class but this appears intentional for enum pattern. No error handling, but getInstance() pattern typically guarantees a valid return."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "Depends on VideoCopyrightGeoGateFields class being autoloaded or included. No explicit require/include statements, suggesting reliance on autoloader (acceptable in modern WordPress plugins using Composer or custom autoloaders). No checks for class existence via class_exists(), which could cause fatal errors if the dependency is missing. The singleton pattern assumes the class is always available. For a plugin component, this is reasonable if proper autoloading is configured."
+        },
+        "i18n": {
+          "score": 10,
+          "analysis": "No user-facing strings present. The function returns an object instance, not translatable text. No missing __(), _e(), esc_html__(), or esc_attr__() calls because none are needed. Internationalization concerns do not apply to this code."
+        },
+        "accessibility": {
+          "score": 10,
+          "analysis": "No HTML output, no user interface elements, no form controls, no ARIA attributes needed. This is a backend utility function that returns a data structure. Accessibility considerations (screen reader support, keyboard navigation, semantic markup) do not apply to non-rendering code."
+        }
+      },
+      "key_observation": "This is a simple getter function that returns a singleton enum instance. The primary issue is WPCS non-compliance: uses camelCase (getFieldsEnum) instead of WordPress-required snake_case (get_fields_enum), and lacks complete PHPDoc documentation (@since tag, function description). No security, SQL, or functional defects present. The function is performant and appropriate for its apparent purpose as an internal utility. While not following WordPress naming conventions, it would function correctly in a WordPress environment."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "seed_few_shot_agent",
+    "citation_accuracy": {
+      "total_citations": 3,
+      "grounded_citations": 3,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "learnpress-wishlist.json",
+    "source_dir": "failed",
+    "function_name": "LP",
+    "code": "/**\n * Short way to load main instance of plugin\n *\n * @return LearnPress\n * @since  1.0\n * @author thimpress\n */\nfunction LP() {\n\treturn LearnPress::instance();\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "overall_score": 75,
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 8,
+          "analysis": "Function follows WordPress naming conventions with uppercase prefix LP(). DocBlock uses proper WordPress tags (@return, @since, @author). Minor: function name is all-caps which while allowed, deviates from typical snake_case pattern for functions in WordPress core (e.g., wp_doing_ajax()). The pattern of short uppercase functions is common in plugins (e.g., WC() in WooCommerce) but not strictly WPCS-compliant."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No database operations present. Function is a simple singleton accessor that returns an object instance. No use of $wpdb, no raw queries, no SQL injection vectors."
+        },
+        "security": {
+          "score": 10,
+          "analysis": "No security operations required. Function performs no privileged actions, accepts no user input, performs no capability checks, and does not output data. It is a pure accessor method returning an object reference. No nonce verification, capability checks via current_user_can(), or escaping functions like esc_html() are needed in this context."
+        },
+        "performance": {
+          "score": 10,
+          "analysis": "Optimal implementation for singleton access pattern. Single method call to LearnPress::instance() with no loops, no file I/O, no database queries. This helper function adds negligible overhead (one function call) while improving code readability. The singleton pattern itself ensures only one instance is created."
+        },
+        "wp_api_usage": {
+          "score": 10,
+          "analysis": "No WordPress APIs are invoked directly in this function. It serves as a convenience wrapper around the plugin's own singleton pattern. This is a standard pattern seen in major plugins like WooCommerce with WC() and Easy Digital Downloads with EDD(). Does not misuse or bypass any WordPress APIs."
+        },
+        "code_quality": {
+          "score": 9,
+          "analysis": "Clean, single-responsibility function following singleton accessor pattern. Well-documented with proper DocBlock. Returns typed object (LearnPress). Only minor concern: the @since 1.0 tag is somewhat vague without specific version number (e.g., 1.0.0). The function name LP() is terse but acceptable as a convenience alias for a heavily-used main class accessor."
+        },
+        "dependency_integrity": {
+          "score": 8,
+          "analysis": "Function assumes LearnPress class exists and has a static instance() method. No explicit class_exists() check before calling LearnPress::instance(). In proper plugin architecture, this function would be defined after the main class is loaded, but there's a theoretical risk if load order is incorrect. However, this pattern is standard in WordPress plugins where the helper function is defined in the same file or immediately after class definition."
+        },
+        "i18n": {
+          "score": 10,
+          "analysis": "No translatable strings present. Function contains only code logic with no user-facing text. No calls to __(), _e(), esc_html__(), or other translation functions are needed or expected in this context."
+        },
+        "accessibility": {
+          "score": 10,
+          "analysis": "Function produces no HTML output, UI elements, or user-facing content. Accessibility concerns (aria-label, semantic HTML, screen reader compatibility) are not applicable to backend utility functions that return object instances."
+        }
+      },
+      "key_observation": "Standard WordPress plugin singleton accessor pattern (similar to WooCommerce's WC() function). Clean implementation with proper documentation. Minor concern: lacks defensive class_exists() check before calling LearnPress::instance(), creating theoretical dependency risk if load order fails, though this is standard practice when helper is defined immediately after class in same plugin bootstrap file."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "seed_few_shot_agent",
+    "citation_accuracy": {
+      "total_citations": 2,
+      "grounded_citations": 2,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "learnpress-bbpress.json",
+    "source_dir": "passed",
+    "function_name": "get_question_object",
+    "code": "/**\n\t\t * Get the question object.\n\t\t *\n\t\t * @since  3.0.0\n\t\t *\n\t\t * @param  mixed $the_question\n\t\t *\n\t\t * @uses   WP_Post\n\t\t * @return WP_Post|bool false on failure\n\t\t */\nfunction get_question_object( $the_question ) {\n\t\t\tif ( false === $the_question ) {\n\t\t\t\t$the_question = get_post_type() === LP_QUESTION_CPT ? $GLOBALS['post'] : false;\n\t\t\t} elseif ( is_numeric( $the_question ) ) {\n\t\t\t\t$the_question = get_post( $the_question );\n\t\t\t} elseif ( $the_question instanceof LP_Course_Item ) {\n\t\t\t\t$the_question = get_post( $the_question->get_id() );\n\t\t\t} elseif ( ! ( $the_question instanceof WP_Post ) ) {\n\t\t\t\t$the_question = false;\n\t\t\t}\n\n\t\t\treturn apply_filters( 'learn-press/question/post-object', $the_question );\n\t\t}",
+    "reasoning": {
+      "verdict": "FAIL",
+      "overall_score": 42,
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 6,
+          "analysis": "The code uses WordPress core APIs appropriately for post retrieval: get_post_type(), get_post(), and apply_filters(). Direct access to $GLOBALS['post'] follows a common WordPress pattern, though best practice would prefer get_post() with no arguments. The filter hook naming uses forward slashes ('learn-press/question/post-object') which is unconventional compared to standard WordPress underscore or dash conventions (e.g., 'learn_press_question_post_object'). DocBlock formatting follows WPCS @param and @return standards with proper spacing and type hints."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "No direct database queries are present. The function relies entirely on WordPress core APIs get_post() and get_post_type(), which internally use $wpdb->prepare() for safe parameterized queries. No SQL injection vectors are present in this code segment."
+        },
+        "security": {
+          "score": 3,
+          "analysis": "Critical security flaw: the apply_filters() hook at the end returns unsanitized, untrusted data. Any plugin hooking 'learn-press/question/post-object' can replace the WP_Post object with arbitrary content (string, array, object, null). If calling code assumes the return value is always WP_Post|false and uses it without type checking (e.g., $question->post_title), this creates PHP fatal errors or exploitation vectors. The function promises '@return WP_Post|bool false on failure' but doesn't enforce this contract after the filter runs. No capability checks via current_user_can() are present \u2014 any user context can call this function and receive question post objects, potentially exposing draft or private content depending on how get_post() handles post_status internally."
+        },
+        "performance": {
+          "score": 7,
+          "analysis": "The function calls get_post() potentially multiple times in the same request context if called repeatedly with numeric IDs, without any object caching layer. WordPress core get_post() does use wp_cache internally, so repeated calls with the same ID are mitigated. The $GLOBALS['post'] access is performant. However, the instanceof checks and conditional branches are efficient. No N+1 query patterns are introduced by this specific function, though calling code could create such patterns if looping."
+        },
+        "wp_api_usage": {
+          "score": 5,
+          "analysis": "Incorrect API usage: accessing $GLOBALS['post'] directly instead of using get_post() with no arguments or get_queried_object() for the current post in the loop. The get_post_type() call without arguments retrieves the current post type, which is correct for global context but fragile \u2014 if called outside the loop or main query, it may return unexpected results. The constant LP_QUESTION_CPT is plugin-defined, not core WordPress. The apply_filters() placement at the end allows filter callbacks to completely override type safety, which violates the principle that internal functions should maintain data integrity before exposing extension points."
+        },
+        "code_quality": {
+          "score": 4,
+          "analysis": "Type safety violation: the DocBlock promises '@return WP_Post|bool false on failure' but apply_filters() can return any type, breaking this contract. No validation exists post-filter to ensure the returned value matches the documented type. The function accepts 'mixed $the_question' which is overly broad \u2014 more specific union types (int|WP_Post|LP_Course_Item|false) would improve clarity. The elseif chain is fragile: if $the_question is an unexpected type (e.g., string 'hello', array), it falls through to the final else, setting $the_question = false, but this masks type errors rather than handling them explicitly. No error logging or doing_it_wrong() call alerts developers to misuse."
+        },
+        "dependency_integrity": {
+          "score": 8,
+          "analysis": "The function depends on the LP_Course_Item class and LP_QUESTION_CPT constant being defined, but includes no class_exists() or defined() checks. If LearnPress core fails to load properly or load order changes, this will cause fatal errors. The instanceof check for LP_Course_Item will throw a fatal error if the class doesn't exist. Core WordPress dependencies (get_post, get_post_type, WP_Post, apply_filters) are always available, so those are safe."
+        },
+        "i18n": {
+          "score": 10,
+          "analysis": "No user-facing strings are present in this function. It is purely a data retrieval utility with no output, error messages, or translatable content. Internationalization is not applicable to this code segment."
+        },
+        "accessibility": {
+          "score": 10,
+          "analysis": "This is a backend data retrieval function with no frontend output, UI elements, or user interaction. Accessibility considerations (ARIA attributes, semantic HTML, keyboard navigation, screen reader support) are not applicable to this code segment."
+        }
+      },
+      "key_observation": "Critical type safety violation: apply_filters('learn-press/question/post-object', $the_question) can return any data type, completely bypassing the documented '@return WP_Post|bool false' contract. Calling code expecting a WP_Post object will fatally error if a filter callback returns a string, array, or null. This is a common WordPress plugin anti-pattern where filter hooks placed at function exit destroy type guarantees, creating fragile cross-plugin compatibility issues. The security dimension compounds this: no capability checks mean any user context can retrieve question objects, and the unvalidated filter output creates exploitation potential if downstream code uses the return value in privileged operations."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "seed_few_shot_agent",
+    "citation_accuracy": {
+      "total_citations": 2,
+      "grounded_citations": 2,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "elementor.json",
+    "source_dir": "failed",
+    "function_name": "has_element_dynamic_tag",
+    "code": "function has_element_dynamic_tag( $element_settings ): bool {\n\t\tif ( is_array( $element_settings ) ) {\n\t\t\tif ( ! empty( $element_settings['__dynamic__'] ) ) {\n\t\t\t\treturn true;\n\t\t\t}\n\n\t\t\tforeach ( $element_settings as $value ) {\n\t\t\t\t$has_dynamic = $this->has_element_dynamic_tag( $value );\n\n\t\t\t\tif ( $has_dynamic ) {\n\t\t\t\t\treturn true;\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\treturn false;\n\t}",
+    "reasoning": {
+      "verdict": "FAIL",
+      "overall_score": 42,
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "The code follows WordPress Coding Standards for basic structure: proper brace placement, indentation, and spacing. The function name uses snake_case as expected. The return type declaration uses `: bool` which is valid PHP 7.0+ syntax and acceptable in modern WordPress (5.9+ requires PHP 7.0). However, the function lacks a DocBlock comment which is required by WPCS for all functions, especially public/protected methods. Missing `@param` annotation for $element_settings and `@return` annotation for the boolean return value. The method visibility modifier (public/private/protected) is also missing, which is required by WPCS for class methods."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No database operations are present in this code. The function performs array traversal and does not interact with $wpdb->prepare(), $wpdb->get_results(), $wpdb->query(), or any other WordPress database APIs. SQL injection is not applicable to this code segment. This appears to be a utility function for checking data structures, not database access."
+        },
+        "security": {
+          "score": 4,
+          "analysis": "The function recursively processes untrusted input ($element_settings) without validation or sanitization. If $element_settings comes from user input, POST data, or any external source, this creates multiple security concerns: (1) No type validation before is_array() check - could receive objects with __toString() magic methods or other unexpected types. (2) No depth limit on recursion - an attacker could craft deeply nested arrays to cause stack exhaustion (stack overflow attack). (3) No array size limit - processing arbitrary-sized arrays could cause memory exhaustion. (4) The function checks for '__dynamic__' key which suggests this is Elementor page builder code processing dynamic tags, but there's no sanitization of the tag content or validation that the structure conforms to expected schema. Missing: input validation, recursion depth counter with max limit (e.g., if ($depth > 100) return false), and ideally use of wp_unslash() if data comes from $_POST or similar superglobals."
+        },
+        "performance": {
+          "score": 3,
+          "analysis": "Critical performance issues exist: (1) Unbounded recursion without depth limiting - for deeply nested arrays (1000+ levels), this will cause stack overflow and fatal errors. (2) No memoization or caching - if the same $element_settings array is checked multiple times, the entire recursive traversal repeats. (3) Array traversal uses foreach without early termination optimization for non-array values - every element is checked even after finding a dynamic tag. (4) The function allocates a new stack frame for every nested array level and every array element, causing O(n*m) memory usage where n is depth and m is breadth. For Elementor with complex page structures (hundreds of widgets, each with settings arrays), this could execute thousands of recursive calls per page load. Missing: depth parameter with max limit, result caching via transients or object cache if called multiple times with same data, and early return optimization to avoid unnecessary recursion after finding the first match."
+        },
+        "wp_api_usage": {
+          "score": 6,
+          "analysis": "The code does not use any WordPress-specific APIs - it relies only on native PHP functions (is_array(), empty(), foreach). This is context-dependent: if this is a WordPress plugin/theme function, it should potentially use WordPress helper functions. The '__dynamic__' key check suggests this is Elementor-specific code for detecting dynamic tags in element settings. However, there's no usage of: (1) apply_filters() to allow developers to modify the dynamic tag detection logic, (2) wp_cache_get()/wp_cache_set() for performance optimization if called repeatedly, (3) _doing_it_wrong() to provide developer warnings if invalid data structure is passed. For a utility function in a major page builder, the lack of filter hooks reduces extensibility. The function appears to be a class method (uses $this) but without seeing the full class context, it's unclear if this integrates properly with WordPress object cache or hooks system."
+        },
+        "code_quality": {
+          "score": 5,
+          "analysis": "Multiple code quality issues: (1) Missing DocBlock documentation - no explanation of what 'dynamic tag' means, what structure $element_settings should have, or usage examples. (2) Recursive function without safety guards - no depth limit, no cycle detection if array contains circular references (PHP arrays can reference themselves). (3) Variable naming inconsistency - $has_dynamic is assigned in loop but could be eliminated with direct return. (4) The foreach loop processes ALL elements even after finding a match - should use 'return true' directly instead of assigning to $has_dynamic and then checking. (5) No type validation - is_array() check happens inside function body but parameter has no type hint (should be mixed or array|mixed with PHP 8.0+). (6) The function silently returns false for non-array inputs, making debugging difficult - should potentially log or throw exception for unexpected input types. Better implementation would be: if (!is_array($element_settings)) { return false; } at the start, then check '__dynamic__' key, then foreach with direct 'return true' on match."
+        },
+        "dependency_integrity": {
+          "score": 8,
+          "analysis": "The function has minimal external dependencies - only uses PHP built-in functions (is_array(), empty()). No WordPress core function dependencies that could break across versions. The '__dynamic__' key check is an internal Elementor convention, suggesting this is part of the Elementor page builder plugin. Potential dependency risk: if Elementor changes the dynamic tag structure from using '__dynamic__' key to a different convention, this function breaks silently (returns false negatives). However, since this appears to be internal Elementor code (not a public API), backward compatibility is controlled by the same codebase. No evidence of relying on deprecated WordPress functions or third-party library versions. The method uses $this which indicates class context, but without seeing class dependencies, can't fully assess if it properly handles object cache or requires specific PHP extensions."
+        },
+        "i18n": {
+          "score": 10,
+          "analysis": "Internationalization is not applicable to this function. It returns only boolean values (true/false) and does not output any user-facing strings, error messages, or UI text. There are no calls to __(), _e(), esc_html__(), esc_attr__() or other i18n functions, nor should there be - this is a pure utility function for data structure analysis. If this function were to be extended with error messages or debugging output, those would need to be wrapped in translation functions with a text domain (likely 'elementor'), but in its current state, no i18n issues exist."
+        },
+        "accessibility": {
+          "score": 10,
+          "analysis": "Accessibility is not applicable to this function. This is backend PHP logic for detecting dynamic tags in data structures - it does not generate HTML, output ARIA attributes, create UI components, or interact with the DOM. Accessibility would be relevant for the code that USES this function's return value to conditionally render UI elements, but the detection logic itself has no a11y implications. No screen reader concerns, keyboard navigation issues, or semantic HTML problems are possible in pure data processing functions like this."
+        }
+      },
+      "key_observation": "This is a recursive array traversal function from Elementor page builder that lacks critical safety guards: no recursion depth limit (enables stack overflow attacks with deeply nested arrays), no input validation (processes untrusted data without type checking), and no performance optimization (no memoization despite potentially repeated calls on the same data). The function will cause fatal errors if given maliciously crafted input with 1000+ nesting levels or circular references. Missing depth parameter with max limit (e.g., $depth = 0, if ($depth > 100) return false) and missing result caching via wp_cache_get()/wp_cache_set(). This is a boundary case because unbounded recursion in PHP has a default limit (xdebug.max_nesting_level or memory_limit dependent) but that limit is far too high for web request context - an attacker can craft input that exhausts resources before hitting PHP's safety limits. Production-ready recursive functions in WordPress must implement explicit depth limiting and input validation."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "seed_few_shot_agent",
+    "citation_accuracy": {
+      "total_citations": 4,
+      "grounded_citations": 2,
+      "hallucinated_citations": [
+        "$wpdb->prepare",
+        "wp_unslash"
+      ],
+      "hallucination_ratio": 0.5
+    }
+  },
+  {
+    "source_file": "onoffice-for-wp-websites.json",
+    "source_dir": "passed",
+    "function_name": "DatabaseChanges::getCreateQueryFieldConfigDefaultsValues",
+    "code": "/**\n\t * @return string\n\t */\nfunction getCreateQueryFieldConfigDefaultsValues(): string\n\t{\n\t\t$prefix = $this->getPrefix();\n\t\t$charsetCollate = $this->getCharsetCollate();\n\t\t$tableName = $prefix.\"oo_plugin_fieldconfig_form_defaults_values\";\n\t\t$sql = \"CREATE TABLE $tableName (\n\t\t\t`defaults_values_id` bigint(20) NOT NULL AUTO_INCREMENT,\n\t\t\t`defaults_id` bigint(20) NOT NULL,\n\t\t\t`locale` tinytext NULL DEFAULT NULL,\n\t\t\t`value` text,\n\t\t\tPRIMARY KEY (`defaults_values_id`)\n\t\t) $charsetCollate;\";\n\n\t\treturn $sql;\n\t}",
+    "reasoning": {
+      "verdict": "FAIL",
+      "overall_score": 32,
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 4,
+          "analysis": "The method uses WordPress-style function naming (camelCase instead of snake_case violates WPCS), but correctly retrieves charset/collation via getCharsetCollate() method (presumably wrapping $wpdb->get_charset_collate()). Variable naming ($tableName, $charsetCollate) follows camelCase instead of WordPress-standard snake_case. The SQL string construction pattern is acceptable for schema definitions. Tab indentation appears correct. Missing phpDoc type hints for return value in docblock (should be @return string with description of what SQL is returned)."
+        },
+        "sql_safety": {
+          "score": 3,
+          "analysis": "The table name is constructed by concatenating getPrefix() (presumably $wpdb->prefix) with a hardcoded string, which is acceptable for CREATE TABLE statements. However, the method does not use $wpdb->prepare() \u2014 this is partially justified because CREATE TABLE DDL cannot use parameterized queries in MySQL, but the table name itself should ideally be escaped using esc_sql() or validated to prevent injection if getPrefix() source is untrusted. The column definitions are hardcoded literals (no user input), making them safe. No evidence of input sanitization for the prefix value. The bigint(20) and tinytext types are defined correctly without user-controlled values."
+        },
+        "security": {
+          "score": 5,
+          "analysis": "The function generates DDL (Data Definition Language) SQL, which is typically executed during plugin activation or update. No capability check (current_user_can()) is present in this method \u2014 the calling code must verify permissions before executing this SQL. No nonce verification (wp_verify_nonce() or check_ajax_referer()) is present, but this may be appropriate if called only during controlled installation hooks. The table schema itself includes no access control or user_id foreign keys, meaning the calling code must implement authorization separately. The method returns raw SQL as a string rather than executing it, delegating security responsibility to the caller."
+        },
+        "performance": {
+          "score": 6,
+          "analysis": "The CREATE TABLE statement defines a PRIMARY KEY on defaults_values_id (AUTO_INCREMENT), which provides good performance for inserts and lookups by ID. However, there is no INDEX on the defaults_id foreign key column, which will cause poor JOIN performance when querying related records. The locale column is defined as tinytext (255 bytes max, stored off-row) instead of VARCHAR(10) or VARCHAR(20), wasting space and harming index efficiency if locale needs indexing. The value column is defined as text (65KB max, stored off-row), which is appropriate for large content but prevents indexing \u2014 if queries filter/search by value, performance will be poor. Missing composite index on (defaults_id, locale) if queries commonly filter by both."
+        },
+        "wp_api_usage": {
+          "score": 4,
+          "analysis": "The method calls getPrefix() instead of directly accessing $wpdb->prefix, which is acceptable abstraction but adds indirection. It calls getCharsetCollate() instead of $wpdb->get_charset_collate(), again acceptable if wrapping the core API. The method does NOT use dbDelta() for table creation \u2014 dbDelta() is the recommended WordPress API for creating/updating tables because it handles schema changes idempotently and safely. Instead, this raw SQL is presumably passed to $wpdb->query() by the caller, which will fail silently if the table already exists (no IF NOT EXISTS clause). The WordPress Codex explicitly recommends dbDelta() for plugin table creation, and this code bypasses it entirely. No use of $wpdb->prepare() even though the table name concatenation could theoretically benefit from validation."
+        },
+        "code_quality": {
+          "score": 5,
+          "analysis": "The method name getCreateQueryFieldConfigDefaultsValues() is excessively long and unclear \u2014 what is a 'FieldConfigDefaultsValues'? The table name oo_plugin_fieldconfig_form_defaults_values is 46 characters, approaching MySQL's 64-character limit and making queries verbose. The phpDoc block contains only @return string with no description of purpose, parameters, exceptions, or usage context. The method has no error handling \u2014 if getPrefix() or getCharsetCollate() return empty/invalid values, the SQL will be malformed. The hardcoded table name suffix should be a class constant for reusability. No validation that the prefix is non-empty or alphanumeric. The SQL string uses double quotes for the outer string and backticks for identifiers, which is correct, but the mixed quote style (some columns backticked, PRIMARY KEY backticked) is inconsistent."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "The method depends on getPrefix() and getCharsetCollate() methods, which are presumably defined in the same class (not visible in snippet). If these methods are inherited or injected, there's no guarantee they exist at runtime. The table schema defines defaults_id as a foreign key (by naming convention) but includes no FOREIGN KEY constraint, meaning referential integrity must be maintained in application code rather than the database \u2014 deletions in the parent table will leave orphaned records. The PRIMARY KEY on defaults_values_id is correctly defined. No ENGINE specification means InnoDB is used by default in modern MySQL, which supports transactions. The lack of IF NOT EXISTS means executing this SQL twice will cause an error, breaking idempotency."
+        },
+        "i18n": {
+          "score": 8,
+          "analysis": "The method generates database schema DDL, which is not user-facing and should not be internationalized. The locale column in the schema is explicitly designed to store locale identifiers (e.g., 'en_US', 'de_DE'), suggesting the plugin handles multilingual data at the application level. Column names and table names are in English, which is standard practice and not an i18n issue. No hardcoded user-facing strings are present that would require __(), _e(), or esc_html__(). The schema design (separate locale column) follows WordPress i18n best practices for storing translated field values. Minor concern: tinytext for locale is oversized (255 bytes) when locale codes are typically 5-10 characters."
+        },
+        "accessibility": {
+          "score": 10,
+          "analysis": "This method generates database schema SQL and has no user interface component, frontend output, or HTML rendering. Accessibility concerns (ARIA labels, semantic HTML, keyboard navigation, screen reader compatibility) are not applicable to DDL generation code. The table schema itself does not store accessibility metadata, but that would be handled in separate tables or columns depending on the plugin's domain. No defects in this dimension because the code has no accessibility surface area."
+        }
+      },
+      "key_observation": "The method generates CREATE TABLE DDL but bypasses WordPress's recommended dbDelta() API, uses unindexed foreign key column (defaults_id) that will cause JOIN performance degradation, includes no IF NOT EXISTS clause breaking idempotency, and oversizes the locale column as tinytext instead of VARCHAR. The table name construction does not use esc_sql() to validate the prefix, and no FOREIGN KEY constraint enforces referential integrity for defaults_id, delegating data consistency to application code. Real-world impact: executing this SQL twice fails with 'table already exists' error; queries joining on defaults_id will perform full table scans without an index."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "seed_few_shot_agent",
+    "citation_accuracy": {
+      "total_citations": 5,
+      "grounded_citations": 4,
+      "hallucinated_citations": [
+        "esc_html"
+      ],
+      "hallucination_ratio": 0.2
+    }
+  },
+  {
+    "source_file": "image-prioritizer.json",
+    "source_dir": "failed",
+    "function_name": "Image_Prioritizer_Video_Tag_Visitor::reduce_poster_image_size",
+    "code": "/**\n\t * Reduces poster image size by choosing one that fits the maximum video size more closely.\n\t *\n\t * @since 0.2.0\n\t *\n\t * @param non-empty-string       $poster  Poster image URL.\n\t * @param OD_Tag_Visitor_Context $context Tag visitor context, with the cursor currently at a VIDEO tag.\n\t */\nfunction reduce_poster_image_size( string $poster, OD_Tag_Visitor_Context $context ): void { ... }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "overall_score": 45,
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 8,
+          "analysis": "Function naming follows WordPress snake_case convention. PHPDoc block present with @since tag and parameter documentation including type declarations. The non-empty-string type hint is a modern PHP annotation that may not be standard WPCS practice but is valid. Missing @return tag in PHPDoc since function returns void. Overall structure is compliant with minor documentation incompleteness."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No database operations present in the function signature. Function appears to handle image URL manipulation based on its name and parameters, not database queries. No $wpdb usage visible. Not applicable to this code segment."
+        },
+        "security": {
+          "score": 3,
+          "analysis": "Critical security concern: the function accepts a poster image URL string but the implementation is hidden (...). Based on the signature, there is no evidence of sanitization or validation. The parameter is typed as non-empty-string but this does not guarantee the URL is safe. If this URL is output anywhere without esc_url() or used in HTML attributes without esc_attr(), it creates XSS vulnerability. The function should either validate the input URL or ensure output escaping, but neither is evident from the signature. The OD_Tag_Visitor_Context suggests this may modify DOM output, making URL sanitization critical."
+        },
+        "performance": {
+          "score": 7,
+          "analysis": "Function purpose is to reduce poster image size, which is a performance optimization itself. The void return type and context parameter suggest this may modify state or output directly. Without seeing the implementation (...), cannot assess if it uses WordPress image size APIs efficiently (wp_get_attachment_image_src(), wp_get_attachment_image_url() with size parameters). The approach of choosing a better-fitting size is sound for performance, but actual implementation details are hidden."
+        },
+        "wp_api_usage": {
+          "score": 4,
+          "analysis": "Function signature shows custom types (OD_Tag_Visitor_Context, non-empty-string) suggesting a plugin/theme-specific implementation. No WordPress core APIs are visible in the signature. For poster image size reduction, this should ideally use wp_get_attachment_image_src() or similar WordPress media APIs to select appropriate image sizes from registered thumbnails, but there's no evidence of this. The function appears to reinvent image size selection logic rather than leveraging WordPress's built-in responsive image capabilities. Missing integration with WordPress media handling APIs."
+        },
+        "code_quality": {
+          "score": 6,
+          "analysis": "Function has clear, descriptive name indicating its purpose. Type hints are present for parameters (string, OD_Tag_Visitor_Context) and return type (void). PHPDoc includes @since version tag and parameter descriptions. However, implementation is completely hidden (...) making it impossible to assess actual code quality, error handling, or edge case management. The non-empty-string type hint is good for preventing empty values but doesn't validate URL format. Missing @return void documentation in PHPDoc."
+        },
+        "dependency_integrity": {
+          "score": 5,
+          "analysis": "Function depends on OD_Tag_Visitor_Context class which is not a WordPress core class. This appears to be a custom dependency, likely from a plugin (possibly an Optimization Detective or similar performance plugin based on 'OD_' prefix). No evidence of dependency injection or fallback handling if OD_Tag_Visitor_Context is unavailable. The coupling to this custom class creates a hard dependency that could break if the parent plugin/library is missing or changes its API. No checks for class_exists() or interface compatibility visible."
+        },
+        "i18n": {
+          "score": 10,
+          "analysis": "Function operates on image URLs and appears to be purely functional/computational based on its signature. No user-facing strings, error messages, or translatable content visible in the signature. Internationalization is not applicable to this type of utility function that manipulates URLs. No translation functions needed for this specific code segment."
+        },
+        "accessibility": {
+          "score": 4,
+          "analysis": "Function modifies poster images for VIDEO tags based on the context parameter description. Poster images serve as accessibility features by providing visual context before video playback. However, there's no evidence the function preserves or enhances accessibility attributes. It should ensure that when selecting a different poster image size, any associated alt text or aria labels are maintained. The function lacks parameters or documentation indicating it handles accessibility metadata. Reducing image size for performance should not compromise the semantic meaning or alternative text that assistive technologies rely on, but there's no visible safeguard for this."
+        }
+      },
+      "key_observation": "Function signature reveals a security vulnerability: accepts a poster URL string without visible sanitization or escaping mechanisms. If this URL is output to HTML (likely given the VIDEO tag context mentioned in PHPDoc), it must be escaped with esc_url() before rendering. The hidden implementation (...) prevents verification that proper output escaping occurs. Additionally, the function uses a custom OD_Tag_Visitor_Context dependency rather than WordPress core media APIs, suggesting reinvented functionality that bypasses WordPress's built-in responsive image handling and srcset generation capabilities."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "seed_few_shot_agent",
+    "citation_accuracy": {
+      "total_citations": 2,
+      "grounded_citations": 2,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "woocommerce.json",
+    "source_dir": "passed",
+    "function_name": "sanitize::validate_fields",
+    "code": "/**\n\t * Validate frontend fields.\n\t *\n\t * Validate payment fields on the frontend.\n\t *\n\t * @return bool\n\t */\nfunction validate_fields() {\n\t\treturn true;\n\t}",
+    "reasoning": {
+      "verdict": "FAIL",
+      "overall_score": 15,
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 4,
+          "analysis": "The function uses WordPress-style snake_case naming (validate_fields) which is correct, but the DocBlock format is malformed: the opening /** is indented with tabs when it should align at column 1, and the summary line 'Validate frontend fields.' is redundant with the description 'Validate payment fields on the frontend.' WPCS documentation standards require the short description to be distinct and meaningful, not merely repeated. The @return annotation documents 'bool' but provides no context about what true/false represents. For a validation function in a payment gateway context, the DocBlock should document @return bool True if validation passes, false otherwise, and should include @since tag."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No database operations present. The function contains only 'return true;' with no calls to $wpdb, get_posts(), WP_Query, or any other database interaction. Score reflects absence of SQL operations rather than correct implementation."
+        },
+        "security": {
+          "score": 1,
+          "analysis": "Critical security failure: this is a payment gateway validation hook (standard WooCommerce pattern where validate_fields() is called during checkout) that unconditionally returns true, meaning it accepts ANY input without validation. Real implementations must validate card numbers, expiry dates, CVV codes, and other payment fields using sanitize_text_field(), preg_match() for format validation, and wc_add_notice() to report errors. The function performs zero nonce verification (no wp_verify_nonce() or check_ajax_referer()), zero input sanitization (no sanitize_text_field(), sanitize_email()), zero validation logic, and zero error reporting. This allows attackers to submit malformed payment data, empty required fields, or inject malicious payloads into payment processing. A correct implementation would check $_POST fields, validate formats, call $this->add_error() or wc_add_notice() for invalid data, and return false on failure."
+        },
+        "performance": {
+          "score": 10,
+          "analysis": "No performance issues detected. The function executes a single return statement with no loops, no external HTTP requests (no wp_remote_get(), wp_remote_post()), no database queries, and no file I/O. However, the score reflects absence of performance problems rather than evidence of optimization, since a stub function naturally has minimal overhead."
+        },
+        "wp_api_usage": {
+          "score": 2,
+          "analysis": "Severely incorrect WordPress/WooCommerce API usage. In WooCommerce payment gateway classes (extending WC_Payment_Gateway), validate_fields() is a hook method called automatically during checkout processing. The expected pattern is: (1) retrieve POST data via $_POST or filter_input(), (2) validate using WooCommerce helpers like wc_clean() for sanitization, (3) report errors via wc_add_notice($message, 'error') which integrates with WooCommerce's notice system, and (4) return false if validation fails to halt checkout. This implementation ignores all WooCommerce validation APIs (wc_add_notice(), wc_clean()), performs no $_POST inspection, and unconditionally returns true, bypassing the entire validation framework. Real gateway code requires wc_add_notice() calls and conditional return values."
+        },
+        "code_quality": {
+          "score": 2,
+          "analysis": "The function is a non-functional stub with severe code quality issues. It violates the principle of least surprise: a method named validate_fields() that always returns true regardless of input is misleading and dangerous. There is no validation logic, no input inspection, no error conditions, and no conditional branching. The DocBlock claims it 'validates payment fields on the frontend' but the implementation validates nothing. This is either placeholder code shipped to production (common in low-quality plugins/themes) or intentionally disabled validation (a security anti-pattern). Maintainability is compromised because developers expecting real validation will be misled by the method name and documentation. A correct implementation would be 15-50 lines checking multiple fields with clear error messages."
+        },
+        "dependency_integrity": {
+          "score": 8,
+          "analysis": "No explicit dependencies declared or loaded in this function fragment. The method signature suggests it is part of a WooCommerce gateway class (validate_fields is a WC_Payment_Gateway hook), implying a dependency on WooCommerce being active, but this cannot be verified from the code fragment alone. There are no wp_enqueue_script(), wp_enqueue_style(), require_once, or class existence checks (class_exists('WooCommerce')). Score reflects the narrow scope of the fragment; in a complete class file, missing class_exists('WC_Payment_Gateway') checks before class extension would be a dependency_integrity failure."
+        },
+        "i18n": {
+          "score": 10,
+          "analysis": "No user-facing strings present in this stub function, so no internationalization is required. A real validate_fields() implementation would need multiple translatable error messages wrapped in __() or esc_html__() calls, such as __('Please enter a valid card number.', 'text-domain') and __('CVV is required.', 'text-domain'), passed to wc_add_notice(). The absence of i18n here is a consequence of the absent validation logic, not a standalone i18n issue. Score reflects no i18n violations in the code present, though a complete implementation would require extensive i18n."
+        },
+        "accessibility": {
+          "score": 10,
+          "analysis": "No HTML output, ARIA attributes, or user interface rendering in this backend validation function. Accessibility concerns would arise in the frontend form markup (requiring proper <label> associations, aria-describedby for error messages, aria-invalid on failed fields), but validate_fields() is a server-side hook that only returns boolean values. The WooCommerce notice system (wc_add_notice()) that should be called here does render accessible error messages when used correctly, but this function calls no such APIs. Score reflects absence of accessibility code rather than correct implementation."
+        }
+      },
+      "key_observation": "This is a skeleton validate_fields() payment gateway validation method that unconditionally returns true without performing any validation, sanitization, or error reporting. In WooCommerce payment gateways (extending WC_Payment_Gateway), this method is automatically invoked during checkout to validate credit card numbers, expiry dates, CVV codes, and billing information. The correct implementation pattern requires: (1) retrieving and sanitizing $_POST payment fields using wc_clean() or sanitize_text_field(), (2) applying format validation via preg_match() or WooCommerce validation helpers, (3) calling wc_add_notice($message, 'error') for each validation failure to display user-friendly error messages, and (4) returning false to halt checkout when validation fails. This stub bypasses all validation, allowing invalid or malicious payment data to proceed to processing\u2014a critical security and functional failure. The pattern appears in low-quality WooCommerce extensions where developers ship non-functional placeholder code to production."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "seed_few_shot_agent",
+    "citation_accuracy": {
+      "total_citations": 4,
+      "grounded_citations": 2,
+      "hallucinated_citations": [
+        "esc_html",
+        "sanitize_text_field"
+      ],
+      "hallucination_ratio": 0.5
+    }
+  },
+  {
+    "source_file": "learnpress-course-review.json",
+    "source_dir": "passed",
+    "function_name": "lock_process",
+    "code": "/**\n\t * Lock process\n\t *\n\t * Lock the process so that multiple instances can't run simultaneously.\n\t * Override if applicable, but the duration should be greater than that\n\t * defined in the time_exceeded() method.\n\t */\nfunction lock_process() {\n\t\t$this->start_time = time(); // Set start time of current process.\n\n\t\t$lock_duration = ( property_exists( $this, 'queue_lock_time' ) ) ? $this->queue_lock_time : 60; // 1 minute\n\t\t$lock_duration = apply_filters( $this->identifier . '_queue_lock_time', $lock_duration );\n\n\t\tset_site_transient( $this->identifier . '_process_lock', microtime(), $lock_duration );\n\t}",
+    "reasoning": {
+      "verdict": "FAIL",
+      "overall_score": 35,
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Code follows WordPress naming conventions (snake_case for function and property names). The use of apply_filters() follows WordPress plugin API patterns. However, the PHPDoc block is malformed: the opening /** is followed by what appears to be a complete docblock, but the function declaration lacks proper separation, suggesting a formatting issue. Property access uses correct syntax. Minor formatting inconsistencies do not constitute major WPCS violations, but the docblock structure should be corrected."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No SQL operations present in this code. The function uses set_site_transient() which is a WordPress API that handles database operations internally with proper sanitization. No direct database access, no use of $wpdb, no raw queries. This dimension is not applicable to the functionality being implemented."
+        },
+        "security": {
+          "score": 4,
+          "analysis": "The lock mechanism lacks critical security controls. First, there is no capability check (no current_user_can()) to verify who can trigger this process lock. Second, the apply_filters() call on line 'apply_filters( $this->identifier . '_queue_lock_time', $lock_duration )' allows arbitrary code to modify the lock duration without any validation of the returned value - a filter could return a negative number, zero, or an extremely large value, all of which could break the locking mechanism or create denial-of-service conditions. Third, the $this->identifier is concatenated directly into the transient name and filter name without validation, which could allow injection if the identifier property is ever user-controllable or comes from untrusted input. The microtime() value stored as the lock value is not validated or sanitized, though this is lower risk since microtime() returns a known format."
+        },
+        "performance": {
+          "score": 5,
+          "analysis": "The function uses set_site_transient() which on multisite installations writes to the database and can be slow. For high-frequency background processes, this creates unnecessary database load. The lock duration defaults to 60 seconds, but there's no validation that the filtered value is reasonable - a filter could return 86400 (24 hours) or higher, causing locks to persist far longer than intended and blocking legitimate process execution. The use of microtime() as the lock value (rather than a simple boolean or timestamp) adds unnecessary data but is not a major performance issue. More critically, there is no check whether a lock already exists before calling set_site_transient(), meaning this function will overwrite an existing lock, defeating the entire purpose of process locking. A proper implementation should use get_site_transient() first to check for an existing lock, but this adds an additional database query."
+        },
+        "wp_api_usage": {
+          "score": 3,
+          "analysis": "Critical misuse of WordPress transient API for process locking. The function calls set_site_transient() unconditionally without first checking if a lock exists via get_site_transient(). This means every call to lock_process() will overwrite any existing lock, completely defeating the stated purpose of preventing 'multiple instances from running simultaneously'. The correct pattern requires: (1) get_site_transient() to check if lock exists, (2) return false or exit if locked, (3) only set_site_transient() if not locked. Additionally, set_site_transient() accepts an expiration time in seconds, but this code passes microtime() as the VALUE (second parameter) and $lock_duration as the EXPIRATION (third parameter). The microtime() should not be the stored value - typical implementations store the timestamp when the lock expires (time() + $lock_duration) or simply a boolean true. The apply_filters() call is correctly used but dangerously allows unvalidated modification of the lock duration with no bounds checking."
+        },
+        "code_quality": {
+          "score": 4,
+          "analysis": "The function claims to 'Lock the process so that multiple instances can't run simultaneously' per the docblock, but the implementation does not actually prevent concurrent execution - it unconditionally sets a transient without checking if one already exists. This is a fundamental logic error. The property_exists() check for 'queue_lock_time' is good defensive programming. However, there is no corresponding unlock_process() method visible, and no error handling if set_site_transient() fails (it can return false). The $this->start_time assignment is unrelated to locking and creates unclear responsibility - time tracking and lock acquisition should be separate concerns. The variable naming is clear, but the overall design is flawed: a lock mechanism that doesn't check for existing locks is not a lock."
+        },
+        "dependency_integrity": {
+          "score": 6,
+          "analysis": "The code depends on set_site_transient() and apply_filters() which are WordPress core functions available in all WordPress installations. There is an implicit dependency on $this->identifier being defined elsewhere in the class, but no validation that this property exists or contains a valid string - if undefined, it would create transients and filters with malformed names like '_process_lock'. The property_exists() check for 'queue_lock_time' shows awareness of optional dependencies, but the same defensive check is missing for 'identifier' which is mandatory. No checks for minimum WordPress version requirements, though set_site_transient() has been available since WP 3.0. The apply_filters() hook creates an external dependency on any code that hooks into '{$identifier}_queue_lock_time', but there's no validation of the returned value type or range."
+        },
+        "i18n": {
+          "score": 10,
+          "analysis": "No user-facing strings present in this code. The function performs internal process management with no output, error messages, or UI elements that would require translation. The docblock comment is in English but docblocks are not translated in WordPress. This dimension is not applicable to the functionality being implemented."
+        },
+        "accessibility": {
+          "score": 10,
+          "analysis": "This is a backend process management function with no user interface, HTML output, JavaScript interaction, or screen reader considerations. Accessibility concerns do not apply to internal lock mechanisms. The function does not render any content or handle user input that would require accessible markup or ARIA attributes."
+        }
+      },
+      "key_observation": "Fatal logic flaw in WordPress transient-based locking: the function unconditionally calls set_site_transient() without first checking via get_site_transient() whether a lock already exists, meaning it overwrites existing locks and completely fails to prevent concurrent process execution as documented. Additionally, apply_filters() allows unvalidated external modification of the lock duration with no bounds checking, and the use of microtime() as the transient value (rather than an expiration timestamp) suggests misunderstanding of the transient API pattern. This is a common anti-pattern in WordPress background processing libraries where the lock method doesn't actually lock."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "seed_few_shot_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "constant-contact-woocommerce.json",
+    "source_dir": "passed",
+    "function_name": "Controller::get_item_permissions_check",
+    "code": "/**\n\t * Check whether a given request has permission to show plugin version.\n\t *\n\t * @author George Gecewicz <george.gecewicz@webdevstudios.com>\n\t * @since  1.2.0\n\t *\n\t * @param  WP_REST_Request $request Full details about the request.\n\t * @return WP_Error|boolean\n\t */\nfunction get_item_permissions_check( $request ) {\n\t\tif ( ! wc_rest_check_manager_permissions( 'settings', 'read' ) ) {\n\n\t\t\t$ctct_logger = new DebugLogging(\n\t\t\t\twc_get_logger(),\n\t\t\t\t'CTCT Woo: no permission to check version',\n\t\t\t\t'warning',\n\t\t\t\t[ 'cc-woo-rest-not-allowed' => $request ]\n\t\t\t);\n\t\t\t$ctct_logger->log();\n\n\t\t\treturn new WP_Error( 'cc-woo-rest-not-allowed', esc_html__( 'Sorry, you cannot list that resource.', 'constant-contact-woocommerce' ), [ 'status' => rest_authorization_required_code() ] );\n\t\t}\n\n\t\treturn true;\n\t}",
+    "reasoning": {
+      "verdict": "FAIL",
+      "overall_score": 58,
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Code follows WordPress naming conventions for methods (get_item_permissions_check) and uses esc_html__() for translatable strings with proper text domain 'constant-contact-woocommerce'. DocBlock formatting follows WordPress standards with @author, @since, @param, and @return tags. However, the inconsistent indentation (mix of spaces/tabs) and the orphaned function declaration (appears to be a method but lacks class context in the snippet) suggest WPCS formatting issues. The use of short array syntax [] is acceptable in modern WordPress but the overall structure suggests this is a method extracted from a class without proper context."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No database operations present in this code. No SQL queries, no $wpdb usage, no direct database interaction. This is a REST API permission callback that performs only authorization checks and logging. SQL safety is not applicable but scores perfectly due to absence of risk."
+        },
+        "security": {
+          "score": 6,
+          "analysis": "Uses wc_rest_check_manager_permissions() to verify WooCommerce manager-level permissions for 'settings' resource with 'read' capability. Returns WP_Error with rest_authorization_required_code() on failure, which is the correct REST API authorization pattern. Uses esc_html__() to escape the error message. However, the function logs the entire $request object to the logger without sanitization, which could expose sensitive data (headers, authentication tokens, user data) in log files. The context array [ 'cc-woo-rest-not-allowed' => $request ] passes unsanitized request data directly to wc_get_logger(). No validation of $request parameter type before use. Missing explicit capability checks like current_user_can() as a defense-in-depth measure."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "Lightweight permission check with minimal overhead. Single call to wc_rest_check_manager_permissions() which is an efficient capability check. Logging only occurs on permission denial (the exception path), not on success, which is good practice. Instantiates DebugLogging class and calls wc_get_logger() only when needed. No database queries, no expensive operations in the hot path. Minor concern: creating a DebugLogging instance and calling log() on every unauthorized request could accumulate overhead if the endpoint receives many unauthorized requests, but this is acceptable for security logging. No caching considerations needed for a permission check."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Correctly implements REST API permission callback pattern returning boolean true or WP_Error. Uses rest_authorization_required_code() to generate appropriate HTTP status code (typically 401 or 403). Uses WooCommerce-specific wc_rest_check_manager_permissions() for capability checking and wc_get_logger() for logging, which are appropriate for WooCommerce context. Uses esc_html__() for i18n. However, the function signature and context suggest this should be a class method (likely extending WP_REST_Controller) but is shown as standalone. Missing type hints for $request (should be WP_REST_Request) in the actual function signature for PHP 7+ compatibility. The @return annotation shows 'WP_Error|boolean' but WordPress REST API best practice is to return WP_Error|true specifically."
+        },
+        "code_quality": {
+          "score": 5,
+          "analysis": "Mixed quality indicators. Positive: comprehensive DocBlock with author attribution, proper error handling with descriptive messages, separation of concerns with dedicated logging class. Negative: function appears orphaned from its class context (indentation and structure suggest it's a method). The permission check logic is inverted (checks failure first with negation) making it slightly harder to read than checking success. Creating a DebugLogging instance with four parameters for a simple log message is verbose - direct call to wc_get_logger()->warning() would be clearer. The log message 'CTCT Woo: no permission to check version' references 'version' but the DocBlock says 'show plugin version' and error message says 'list that resource' - inconsistent terminology. Magic string 'cc-woo-rest-not-allowed' repeated in both log context and WP_Error code without a class constant. Logging an entire $request object (potentially large) rather than specific relevant fields."
+        },
+        "dependency_integrity": {
+          "score": 6,
+          "analysis": "Hard dependency on WooCommerce (wc_rest_check_manager_permissions, wc_get_logger) and custom DebugLogging class without any existence checks. No verification that WooCommerce is active before calling wc_* functions - if WooCommerce is deactivated, this will cause fatal errors. No check that DebugLogging class exists before instantiation. The function assumes it's in a WooCommerce REST API context but doesn't validate this. Should wrap WooCommerce function calls in function_exists() or class_exists() checks, or declare WooCommerce as a hard requirement in plugin headers with activation hooks to verify it. The dependency on rest_authorization_required_code() is safe as it's a WordPress core REST API function, but no fallback if REST API is disabled."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "Correctly uses esc_html__() for the user-facing error message with proper text domain 'constant-contact-woocommerce'. The string 'Sorry, you cannot list that resource.' is translatable and will be picked up by translation parsers. Text domain matches the plugin slug convention. Only minor issue: the log message 'CTCT Woo: no permission to check version' is hardcoded English in the DebugLogging constructor and not translatable, but log messages are typically not translated as they're for developers/admins. The DocBlock comments are in English but documentation is typically not translated. Overall excellent i18n implementation for user-facing strings."
+        },
+        "accessibility": {
+          "score": 10,
+          "analysis": "Not applicable to this code. This is a backend REST API permission callback that returns JSON responses to programmatic requests, not user-facing HTML/UI. No markup, no interactive elements, no visual output. Accessibility concerns (ARIA labels, keyboard navigation, screen reader support, color contrast) do not apply to REST API authorization logic. The error message is semantic and descriptive which aids accessibility if consumed by a frontend, but the backend code itself has no accessibility surface area. Scores perfectly due to no violations in applicable scope."
+        }
+      },
+      "key_observation": "WooCommerce REST API permission callback with correct authorization pattern (wc_rest_check_manager_permissions, rest_authorization_required_code, WP_Error response) but critically logs entire unsanitized $request object potentially exposing sensitive data, lacks WooCommerce availability checks that would cause fatal errors if WooCommerce is deactivated, and shows code quality issues with verbose logging instantiation and inconsistent terminology between DocBlock ('plugin version'), log message ('check version'), and error ('list that resource')."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "seed_few_shot_agent",
+    "citation_accuracy": {
+      "total_citations": 2,
+      "grounded_citations": 2,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "pinterest-for-woocommerce.json",
+    "source_dir": "passed",
+    "function_name": "get_name",
+    "code": "/**\n\t * Get the name/slug of the job.\n\t *\n\t * @return string\n\t */\nfunction get_name(): string {\n\t\treturn 'generate_feed';\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "overall_score": 85,
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 9,
+          "analysis": "Method follows WordPress Coding Standards for naming conventions (snake_case for method name 'get_name'), uses proper DocBlock formatting with @return annotation, and includes type hints (string return type). The method name 'generate_feed' follows WordPress job/action naming patterns commonly seen in WP-Cron and background processing. Minor deduction: the DocBlock mentions 'name/slug' but doesn't clarify the distinction or document the actual return value ('generate_feed'). No WordPress-specific APIs are present in this getter method, which is appropriate for its scope."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No database operations are present. This is a simple getter method returning a hardcoded string constant 'generate_feed'. No $wpdb methods, direct queries, or database interactions exist. The method poses no SQL injection risk as it contains no dynamic data or database calls."
+        },
+        "security": {
+          "score": 10,
+          "analysis": "The method returns a hardcoded string literal 'generate_feed' with no user input, no file system operations, no privilege checks needed (it's a getter for internal job identification), and no output context requiring escaping. No security-sensitive operations like wp_verify_nonce(), current_user_can(), or sanitization functions are needed or missing. The return value appears to be used internally for job identification rather than user-facing output."
+        },
+        "performance": {
+          "score": 10,
+          "analysis": "Optimal performance: O(1) operation returning a string literal. No database queries, no external API calls, no loops, no object instantiation. This is a pure getter method with negligible memory footprint and CPU overhead. No caching mechanisms like wp_cache_get() are needed for a constant return value."
+        },
+        "wp_api_usage": {
+          "score": 10,
+          "analysis": "No WordPress APIs are used, which is correct for this context. This appears to be part of a job/task class (likely implementing an interface or abstract class based on the method signature). The return value 'generate_feed' follows WordPress job naming conventions seen in WP-Cron and Action Scheduler patterns. No WordPress APIs are missing because none are needed for a simple identifier getter."
+        },
+        "code_quality": {
+          "score": 8,
+          "analysis": "Clean, focused method with single responsibility (SRP compliant). Uses PHP 7.0+ return type declaration for type safety. The hardcoded return value 'generate_feed' could be improved by using a class constant (e.g., const JOB_NAME = 'generate_feed'; return self::JOB_NAME;) for better maintainability and to prevent magic strings. The DocBlock is adequate but could be more descriptive about what 'generate_feed' represents in the application context. Method visibility is implicit (likely public), which should be explicit per strict coding standards."
+        },
+        "dependency_integrity": {
+          "score": 9,
+          "analysis": "No external dependencies, WordPress core functions, or third-party libraries are invoked. The method is self-contained. Context suggests this implements an interface method (common pattern in job queue systems like Action Scheduler or custom background processing). The return value 'generate_feed' appears to be a stable identifier that other system components depend on for job registration/execution. Minor concern: without seeing the interface/abstract class definition, there's potential for contract violation if the expected format differs (e.g., if a unique ID vs. slug distinction matters)."
+        },
+        "i18n": {
+          "score": 10,
+          "analysis": "The return value 'generate_feed' is a programmatic identifier/slug, not user-facing text, so internationalization via __(), _e(), or esc_html__() would be incorrect. Job identifiers and slugs must remain constant across locales for system functionality. If this value were displayed to users, it would need translation, but as an internal job name/slug, it correctly remains untranslated."
+        },
+        "accessibility": {
+          "score": 10,
+          "analysis": "Not applicable to this code. This is a backend method returning a job identifier with no HTML output, no UI components, no ARIA attributes, no user-facing elements, and no screen reader considerations. Accessibility concerns do not apply to internal programmatic identifiers. No WordPress accessibility APIs like wp_kses() or esc_html() are needed or missing in this context."
+        }
+      },
+      "key_observation": "This is a well-formed getter method returning a hardcoded job identifier following WordPress background processing patterns. The only improvement would be extracting the magic string 'generate_feed' to a class constant for better maintainability and explicit method visibility declaration. The method correctly avoids internationalization of programmatic identifiers and requires no WordPress APIs for its intended purpose as an internal job name provider."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "seed_few_shot_agent",
+    "citation_accuracy": {
+      "total_citations": 4,
+      "grounded_citations": 3,
+      "hallucinated_citations": [
+        "esc_html"
+      ],
+      "hallucination_ratio": 0.25
+    }
+  },
+  {
+    "source_file": "woocommerce.json",
+    "source_dir": "passed",
+    "function_name": "supports_emogrifier::clear_alt_body_field",
+    "code": "/**\n\t * Clears the PhpMailer AltBody field, to prevent that content from leaking across emails.\n\t */\nfunction clear_alt_body_field(): void {\n\t\tglobal $phpmailer;\n\n\t\tif ( $phpmailer instanceof PHPMailer\\PHPMailer\\PHPMailer ) {\n\t\t\t$phpmailer->AltBody = ''; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase\n\t\t}\n\t}",
+    "reasoning": {
+      "verdict": "FAIL",
+      "overall_score": 58,
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 8,
+          "analysis": "The code includes an inline phpcs:ignore directive for WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase on the $phpmailer->AltBody line, which is appropriate because AltBody is a property name defined by the external PHPMailer library using camelCase convention rather than WordPress snake_case standard. The function uses void return type (PHP 7.1+), which is valid but requires WordPress minimum PHP version support. The use of instanceof with a fully-qualified namespace (PHPMailer\\PHPMailer\\PHPMailer) is correct. However, accessing the global $phpmailer directly without any verification that it has been initialized is a WPCS pattern violation \u2014 WordPress coding standards expect globals to be checked before use, and the code does check instanceof but does not verify the global was set first."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No SQL operations, database queries, or $wpdb methods are present in this code. Not applicable."
+        },
+        "security": {
+          "score": 7,
+          "analysis": "The function clears sensitive content (the AltBody field) to prevent data leakage between emails, which is a security-positive intent. However, there are two concerns: (1) The function does not verify any capability or permission before modifying global state \u2014 no current_user_can() or similar check exists, meaning any code context can invoke this; (2) The function modifies a global object without any nonce verification or action hooks that would allow security plugins to audit or intercept the modification. The lack of capability checks is particularly concerning if this function is callable from user-facing contexts. The docblock states it prevents 'content from leaking across emails' but does not document what contexts should call it or what permissions are required."
+        },
+        "performance": {
+          "score": 9,
+          "analysis": "The function performs a single global variable access, one instanceof check, and one string assignment \u2014 all O(1) operations with negligible overhead. No loops, no database queries, no file I/O. The performance impact is minimal. The only minor concern is that accessing global $phpmailer on every invocation could theoretically be optimized by passing the instance as a parameter, but this is a micro-optimization and does not represent a real-world performance issue for a function whose purpose is to clear a single string property."
+        },
+        "wp_api_usage": {
+          "score": 4,
+          "analysis": "The code accesses the global $phpmailer variable directly, which is a WordPress convention for the PHPMailer instance used by wp_mail(). However, WordPress best practice is to use the 'phpmailer_init' action hook to safely interact with the PHPMailer object rather than manipulating the global directly. The WordPress core function wp_mail() fires do_action_ref_array('phpmailer_init', array(&$phpmailer)) immediately before sending, which is the documented and hook-based way to modify PHPMailer properties. By accessing the global directly and clearing AltBody outside the phpmailer_init hook context, this code risks race conditions or timing issues \u2014 if called before wp_mail() initializes the object, $phpmailer may not exist; if called after send(), it may be too late or affect the wrong email. No WordPress hooks (add_action, add_filter) are used. The function does not integrate with the WordPress email API surface (wp_mail, wp_mail_failed, etc.) and instead treats $phpmailer as a raw global, which is fragile and not future-proof."
+        },
+        "code_quality": {
+          "score": 6,
+          "analysis": "The function is documented with a single-line docblock that describes intent ('prevent content from leaking across emails') but lacks a full WordPress-standard DocBlock with @since, @return void, and @global PHPMailer $phpmailer tags. The function name clear_alt_body_field() is descriptive and follows WordPress naming conventions (lowercase with underscores). The instanceof check prevents fatal errors if $phpmailer is not a PHPMailer object, which is defensive programming. However, the code has a critical flaw: it does not check if the global $phpmailer is set before accessing it. In PHP, global $phpmailer; does not guarantee the variable exists; if it has never been initialized, $phpmailer will be null, and the instanceof check will correctly return false, but this is relying on implicit null-safety rather than explicit isset($phpmailer) validation. The function signature uses void return type, which is good for type safety but not documented in the docblock. The function is a standalone function rather than a class method, which may or may not be appropriate depending on the plugin/theme architecture \u2014 no context is provided."
+        },
+        "dependency_integrity": {
+          "score": 3,
+          "analysis": "The function has a hard dependency on the global $phpmailer variable being initialized and being an instance of PHPMailer\\PHPMailer\\PHPMailer, but it does not enforce or validate when or how this dependency is satisfied. WordPress core initializes $phpmailer inside wp_mail() only when wp_mail() is called, meaning this function will silently fail (do nothing) if invoked before any email is sent in the request lifecycle. There is no require_once, no class_exists() check for PHPMailer, and no version check. The fully-qualified namespace PHPMailer\\PHPMailer\\PHPMailer is used, which implies the code expects PHPMailer 6.x+ (namespaced version), but WordPress bundled PHPMailer 5.x until WordPress 5.5 (August 2020). If this code runs on WordPress < 5.5, the instanceof check will always fail because the class name would be just 'PHPMailer' not 'PHPMailer\\PHPMailer\\PHPMailer'. No minimum WordPress version is documented, and no compatibility shim or fallback is provided. The function is not hooked into any WordPress action that would guarantee $phpmailer is initialized, creating a silent failure mode."
+        },
+        "i18n": {
+          "score": 10,
+          "analysis": "No user-facing strings, no text output, no translatable content. The function only assigns an empty string to an object property. Internationalization is not applicable to this code."
+        },
+        "accessibility": {
+          "score": 10,
+          "analysis": "No HTML output, no UI elements, no ARIA attributes, no screen reader content. This is a backend utility function that manipulates an email object property. Accessibility concerns do not apply."
+        }
+      },
+      "key_observation": "This function attempts to prevent email content leakage by clearing PHPMailer's AltBody property, but violates WordPress best practices by directly manipulating the global $phpmailer instead of using the 'phpmailer_init' action hook. The hard dependency on PHPMailer\\PHPMailer\\PHPMailer (namespaced, version 6.x+) will silently fail on WordPress < 5.5 which bundled PHPMailer 5.x with no namespace, and the function has no lifecycle guarantees \u2014 it will do nothing if called before wp_mail() initializes the global. The lack of capability checks (current_user_can) means any code context can modify global email state. This is a D6 dependency_integrity and D5 wp_api_usage failure: the correct WordPress pattern is add_action('phpmailer_init', function($phpmailer) { $phpmailer->AltBody = ''; }) rather than a standalone function accessing the global."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "seed_few_shot_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "learnpress-buddypress.json",
+    "source_dir": "passed",
+    "function_name": "LP_Email_Cancelled_Order_Admin::__construct",
+    "code": "/**\n\t\t * LP_Email_Cancelled_Order_Admin constructor.\n\t\t */\nfunction __construct() {\n\t\t\t$this->id              = 'cancelled-order-admin';\n\t\t\t$this->title           = __( 'Admin', 'learnpress' );\n\t\t\t$this->description     = __( 'Send an email to admin when the order has been canceled.', 'learnpress' );\n\t\t\t$this->default_subject = __( 'The order placed on {{order_date}} has been cancelled', 'learnpress' );\n\t\t\t$this->default_heading = __( 'The user order has been cancelled', 'learnpress' );\n\t\t\t$this->recipient       = LP_Settings::instance()->get( 'emails_' . $this->id . '.recipients', $this->_get_admin_email() );\n\n\t\t\tparent::__construct();\n\t\t}",
+    "reasoning": {
+      "verdict": "FAIL",
+      "overall_score": 58,
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 8,
+          "analysis": "Code follows WordPress naming conventions with snake_case for properties (e.g., $this->id, $this->default_subject, $this->default_heading) and prefixes the class with 'LP_' for namespace isolation. However, the comment style uses an incorrect opening tag '/**' on line 1 followed by indentation that suggests misalignment, which violates WPCS DocBlock formatting standards. The constructor method lacks a proper DocBlock describing parameters, return type, or purpose beyond the placeholder comment."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No database operations are present in this code. The only data retrieval is through LP_Settings::instance()->get() which is a settings API abstraction layer. No use of $wpdb or direct SQL queries appears in this constructor."
+        },
+        "security": {
+          "score": 7,
+          "analysis": "The recipient email is retrieved via LP_Settings::instance()->get() with a fallback to $this->_get_admin_email(). While no direct user input is processed here, the code does not validate or sanitize the email address retrieved from settings. If the settings value is compromised or contains malicious data, this could be used in email headers without validation. The code should use sanitize_email() or is_email() to validate the recipient before storing it in $this->recipient. No capability checks are present, though this is a constructor and capability checks would typically occur where this class is instantiated."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "LP_Settings::instance() uses the singleton pattern which is generally acceptable for performance. However, calling ->get() in the constructor means this database/option lookup happens every time the email object is constructed, even if the email is never sent. For better performance, recipient retrieval could be lazy-loaded only when needed. The parent::__construct() call at the end is appropriate but we cannot assess its performance impact without seeing the parent class implementation."
+        },
+        "wp_api_usage": {
+          "score": 6,
+          "analysis": "The code uses __() for internationalization which is correct WordPress API usage. However, the retrieval of admin email through a custom method _get_admin_email() instead of the native get_option('admin_email') or get_bloginfo('admin_email') suggests potential API misuse. The LP_Settings::instance()->get() pattern reimplements WordPress's get_option() functionality without clear justification. The settings key 'emails_' . $this->id . '.recipients' uses dot notation which is non-standard for WordPress options (wp_options typically uses underscores or array serialization). No use of wp_mail() is visible here, but this is a constructor so actual mailing would occur elsewhere."
+        },
+        "code_quality": {
+          "score": 6,
+          "analysis": "The constructor initializes multiple properties but lacks type hints (available in PHP 7.0+, and WordPress minimum is PHP 7.4 as of WP 6.0+). Property declarations are missing from the visible code, making it unclear if these are properly defined in the class. The malformed DocBlock comment suggests copy-paste errors or automated generation without cleanup. The magic property assignment pattern ($this->id, $this->title, etc.) without visible property declarations reduces IDE support and static analysis capability. The method _get_admin_email() is referenced but not shown, and the underscore prefix suggests it's private, which is appropriate. The parent::__construct() call should ideally be documented regarding what initialization occurs in the parent class."
+        },
+        "dependency_integrity": {
+          "score": 5,
+          "analysis": "The code depends on LP_Settings::instance() and a parent class constructor parent::__construct() without any existence checks or error handling. If LP_Settings class is not loaded or the parent class is unavailable, this will cause fatal errors. No class_exists() or method_exists() checks are present. The code assumes the LearnPress plugin architecture is fully loaded but provides no graceful degradation. The _get_admin_email() method is called without checking if it exists, though being in the same class this is generally acceptable. The hardcoded text domain 'learnpress' in __() calls is correct but there's no verification that the text domain is loaded."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "All user-facing strings use __() with the 'learnpress' text domain consistently. The strings include 'Admin', 'Send an email to admin when the order has been canceled.', 'The order placed on {{order_date}} has been cancelled', and 'The user order has been cancelled'. These are properly wrapped for translation. The template variable {{order_date}} is correctly placed outside the translation function, allowing translators to reposition it. Minor issue: no translator comments are provided to explain the context of 'Admin' or the {{order_date}} placeholder, which would help translators understand how these strings are used."
+        },
+        "accessibility": {
+          "score": 10,
+          "analysis": "This is a backend email class constructor with no user-facing UI elements, form controls, or interactive components. Accessibility considerations do not apply to this code segment. The strings defined here may eventually appear in admin interfaces or emails, but this constructor itself has no accessibility concerns. Email content accessibility would be handled in the template rendering layer, not in this initialization code."
+        }
+      },
+      "key_observation": "This email class constructor demonstrates a common WordPress plugin pattern of reimplementing core WordPress APIs unnecessarily: LP_Settings::instance()->get() duplicates get_option() functionality, and _get_admin_email() likely reimplements get_option('admin_email'). The settings key structure 'emails_cancelled-order-admin.recipients' uses dot notation incompatible with WordPress's native options API (which expects array serialization or underscored keys). Most critically, the recipient email address retrieved from settings is stored in $this->recipient without validation using sanitize_email() or is_email(), creating a potential security issue if that value is later used in email headers. This represents a boundary case where following object-oriented patterns (custom settings abstraction) actually introduces maintenance burden and bypasses WordPress's built-in sanitization conventions."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "seed_few_shot_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "vindi-payment-gateway.json",
+    "source_dir": "passed",
+    "function_name": "VindiWebhooks::query_order_by_metas",
+    "code": "/**\n   * @param array $metas\n   *\n   * @return WP_Query\n   */\nfunction query_order_by_metas(array $metas)\n    {\n    $args = array(\n      'post_type' => 'shop_order',\n      'meta_query' => $metas,\n      'post_status' => 'any',\n    );\n\n    return new WP_Query($args);\n    }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "overall_score": 35,
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 4,
+          "analysis": "Mixed indentation style: function declaration uses 4 spaces, but internal code block appears to use 2 spaces. The opening brace is on a new line (acceptable but inconsistent with WordPress Coding Standards which prefer same-line braces for functions). Array formatting uses proper spacing around '=>' operators. DocBlock is incomplete: missing @return tag description and no parameter type documentation beyond 'array'."
+        },
+        "sql_safety": {
+          "score": 7,
+          "analysis": "The function uses WP_Query with hardcoded 'post_type' => 'shop_order', which is safe. However, the critical flaw is that $metas array is passed directly to 'meta_query' without any validation or sanitization. While WP_Query internally uses $wpdb->prepare() for the generated SQL, the meta_query structure itself is not validated. An attacker passing a malformed meta_query array could cause unexpected database queries or errors. No use of $wpdb->prepare() is visible because WP_Query abstracts it, but the input validation layer is completely missing."
+        },
+        "security": {
+          "score": 2,
+          "analysis": "Critical security flaw: no capability check (current_user_can() is absent), no nonce verification (wp_verify_nonce() or check_ajax_referer() not present), and no input validation on the $metas parameter. The function accepts an arbitrary array that directly controls database query conditions via meta_query. An attacker could pass specially crafted meta_query arrays to enumerate private order data, bypass intended query restrictions, or cause performance degradation. The 'post_status' => 'any' widens the attack surface by including all order statuses (draft, pending, trash, private). No authentication or authorization barriers exist."
+        },
+        "performance": {
+          "score": 4,
+          "analysis": "Several performance anti-patterns: (1) 'post_status' => 'any' forces WP_Query to include all statuses, adding complexity to the WHERE clause; (2) No 'posts_per_page' or 'no_found_rows' parameters means WP_Query will perform an additional COUNT(*) query for pagination and may return unlimited results; (3) No 'fields' => 'ids' optimization, so full post objects are loaded; (4) Arbitrary meta_query from unvalidated input could create unindexed database queries (e.g., meta_value LIKE '%term%') causing table scans on wp_postmeta. No caching strategy visible."
+        },
+        "wp_api_usage": {
+          "score": 6,
+          "analysis": "Uses WP_Query correctly for instantiation but misses several best practices: (1) Should use 'type' => 'shop_order' which is the proper WooCommerce CPT name if this is WooCommerce-related, or verify the post type exists; (2) No use of wp_reset_postdata() documented (though not strictly required if WP_Query object is returned, the caller must handle it); (3) Missing recommended parameters like 'no_found_rows' => true for performance when pagination isn't needed; (4) No error handling if WP_Query fails or returns empty results; (5) The function returns WP_Query object directly, which is acceptable but unconventional\u2014most WordPress code returns the results array or processes the loop internally."
+        },
+        "code_quality": {
+          "score": 4,
+          "analysis": "Poor defensive programming: no input validation on $metas (could be empty, malformed, or malicious), no type checking beyond the array type hint (which only validates the outer structure, not the nested meta_query format), no return type declaration (PHP 7.0+ supports : WP_Query), no error handling, and no logging. The function name 'query_order_by_metas' is misleading\u2014it doesn't ORDER BY metas, it FILTERS by metas (meta_query is a WHERE clause, not ORDER BY). DocBlock lacks @throws, @since, and proper description. Single responsibility principle is followed, but the function is too permissive."
+        },
+        "dependency_integrity": {
+          "score": 5,
+          "analysis": "The function depends on 'shop_order' post type existing (likely WooCommerce), but performs no verification via post_type_exists('shop_order'). If WooCommerce is deactivated or the post type name changes, WP_Query will silently return zero results with no error. No version checking for WooCommerce compatibility. The function assumes WP_Query is available (core API, safe), but doesn't verify the meta_query structure matches the expected WordPress format, which could break on WordPress core updates if meta_query API changes (unlikely but possible)."
+        },
+        "i18n": {
+          "score": 10,
+          "analysis": "No user-facing strings present in this code, so internationalization is not applicable. The function is purely internal logic with no output, error messages, or UI elements requiring translation via __(), _e(), or esc_html__()."
+        },
+        "accessibility": {
+          "score": 10,
+          "analysis": "No HTML output, UI elements, or frontend rendering in this function. Accessibility concerns (ARIA attributes, semantic HTML, keyboard navigation) are not applicable to this backend query function."
+        }
+      },
+      "key_observation": "Critical authorization bypass: function accepts arbitrary meta_query array with no capability check (current_user_can() missing), no nonce verification, and no input validation, allowing any caller to query all WooCommerce orders ('post_status' => 'any') with attacker-controlled conditions. Similar to CVE-2024-4... pattern where nonce \u2260 authorization\u2014even if called from a nonce-protected context, the function itself enforces no access control. Combined with performance risk: unbounded query (no posts_per_page limit) with potentially unindexed meta queries could enable DoS. The function name is also misleading: meta_query filters results, it does not order them\u2014there is no 'orderby' parameter."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "seed_few_shot_agent",
+    "citation_accuracy": {
+      "total_citations": 5,
+      "grounded_citations": 4,
+      "hallucinated_citations": [
+        "$wpdb->prepare"
+      ],
+      "hallucination_ratio": 0.2
+    }
+  },
+  {
+    "source_file": "blocks-animation.json",
+    "source_dir": "failed",
+    "function_name": "Form_Emails_Storing::apply_hooks_on_draft_transition",
+    "code": "/**\n\t * Apply the 'after_submit' action when changing the status from 'draft' to 'unread'.\n\t *\n\t * @param WP_Post $post The post.\n\t */\nfunction apply_hooks_on_draft_transition( $post ) {\n\t\tif ( self::FORM_RECORD_TYPE !== $post->post_type ) {\n\t\t\treturn;\n\t\t}\n\n\t\t$meta = get_post_meta( $post->ID, self::FORM_RECORD_META_KEY, true );\n\n\t\tif ( ! isset( $meta['dump'] ) || empty( $meta['dump']['value'] ) ) {\n\t\t\treturn;\n\t\t}\n\n\t\t$form_data = Form_Data_Request::create_from_dump( $meta['dump']['value'] );\n\t\t$form_data->mark_as_duplicate();\n\t\t$form_options = Form_Settings_Data::get_form_setting_from_wordpress_options( $form_data->get_data_from_payload( 'formOption' ) );\n\t\t$form_data->set_form_options( $form_options );\n\t\t$form_data = Form_Server::pull_fields_options_for_form( $form_data );\n\n\t\tdo_action( 'otter_form_on_submission_confirmed', $form_data );\n\n\t\tif (\n\t\t\t! isset( $form_data ) ||\n\t\t\t( ! class_exists( 'ThemeIsle\\GutenbergBlocks\\Integration\\Form_Data_Request' ) ) ||\n\t\t\t! ( $form_data instanceof \\ThemeIsle\\GutenbergBlocks\\Integration\\Form_Data_Request )\n\t\t) {\n\t\t\treturn;\n\t\t}\n\n\t\tdo_action( 'otter_form_after_submit', $form_data );\n\t}",
+    "reasoning": {
+      "verdict": "FAIL",
+      "overall_score": 42,
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 6,
+          "analysis": "The function uses WordPress APIs (get_post_meta(), do_action()) following WordPress Coding Standards. However, the code structure has a critical logic flaw: the class_exists() check and instanceof verification for Form_Data_Request occur AFTER the class is already used in Form_Data_Request::create_from_dump() on line 16. The defensive checks on lines 26-31 should precede the actual usage, not follow it. This violates WordPress best practices for defensive programming and would cause fatal errors if the class doesn't exist. The function also lacks proper @since and @access DocBlock tags per WPCS documentation standards."
+        },
+        "sql_safety": {
+          "score": 7,
+          "analysis": "The code uses get_post_meta() to retrieve serialized data from the database, which is a safe WordPress API that handles SQL escaping internally. The post ID ($post->ID) comes from a WP_Post object passed as a parameter, ensuring it's already validated. No direct SQL queries using $wpdb are present. However, the code deserializes data from get_post_meta() without validation of the unserialized structure beyond simple isset() checks, which could be problematic if the meta data has been corrupted or tampered with in the database."
+        },
+        "security": {
+          "score": 3,
+          "analysis": "The function has multiple critical security vulnerabilities. First, it's designed to be called on post status transitions but lacks any capability checks using current_user_can() to verify who can trigger this action. Second, the function processes unserialized data from get_post_meta() and passes it directly to Form_Data_Request::create_from_dump() without validation, creating a potential object injection vulnerability. Third, there's no nonce verification using wp_verify_nonce() or check_ajax_referer() to prevent CSRF attacks if this can be triggered via user action. The code trusts that data in $meta['dump']['value'] is safe and properly structured, but post meta can be modified by anyone with edit_post capabilities, potentially including untrusted data."
+        },
+        "performance": {
+          "score": 5,
+          "analysis": "The function calls get_post_meta() which is a single database query, and the result is cached by WordPress's object cache. However, the function performs complex operations including Form_Data_Request::create_from_dump(), Form_Settings_Data::get_form_setting_from_wordpress_options(), and Form_Server::pull_fields_options_for_form() without any early returns based on cheaper checks. The instanceof check and class_exists() validation happen AFTER these expensive operations complete, meaning all the processing work is wasted if the conditions fail. This is a significant performance anti-pattern: defensive checks should occur before expensive operations, not after. Additionally, two separate do_action() calls fire custom hooks that could trigger multiple plugin callbacks, amplifying performance impact."
+        },
+        "wp_api_usage": {
+          "score": 4,
+          "analysis": "The function misuses WordPress APIs and patterns in several ways. First, it performs a class_exists() check for 'ThemeIsle\\GutenbergBlocks\\Integration\\Form_Data_Request' AFTER already calling Form_Data_Request::create_from_dump() - this will cause a fatal error if the class doesn't exist, making the defensive check completely ineffective. Second, the function checks isset($form_data) after $form_data is unconditionally assigned on line 16, making this check meaningless. Third, the do_action() calls follow WordPress hook conventions correctly, but the second action 'otter_form_after_submit' fires only if redundant conditions pass. The function appears to be a transition hook callback but doesn't verify the transition states (from 'draft' to 'unread') as mentioned in the DocBlock - it only checks post_type."
+        },
+        "code_quality": {
+          "score": 4,
+          "analysis": "The code exhibits poor logic flow and dead code. The isset($form_data) check on line 27 is impossible to fail since $form_data is unconditionally assigned on line 16 - this is dead code. The class_exists() and instanceof checks on lines 28-30 should occur BEFORE line 16 where the class is used, not after. The function processes the entire form submission workflow (creating form data, marking as duplicate, pulling field options) before validating that the necessary class exists, wasting CPU cycles. The DocBlock states the function handles 'draft' to 'unread' transitions, but the code never validates the actual status transition - it only checks post_type. There's also a code smell where mark_as_duplicate() is called on line 17, but the function's purpose per DocBlock is to 'apply after_submit action', not to mark submissions as duplicates."
+        },
+        "dependency_integrity": {
+          "score": 3,
+          "analysis": "The function has a critical dependency integrity failure. It calls Form_Data_Request::create_from_dump() on line 16, then checks if class_exists('ThemeIsle\\GutenbergBlocks\\Integration\\Form_Data_Request') on line 28. If the class doesn't exist (e.g., during plugin updates, dependency conflicts, or autoloader failures), the code will fatal error on line 16 before the defensive check executes. The proper pattern would be to verify class_exists() BEFORE using the class. Additionally, the code depends on Form_Settings_Data and Form_Server classes without any existence checks, assuming they're always available. The function also references self::FORM_RECORD_TYPE and self::FORM_RECORD_META_KEY constants that are defined elsewhere, creating tight coupling without fallback mechanisms."
+        },
+        "i18n": {
+          "score": 8,
+          "analysis": "The code contains no user-facing strings, translation functions (__(), _e(), esc_html__(), etc.), or output that would require internationalization. All operations are backend processing: retrieving post meta, creating objects, and firing action hooks. The function is purely programmatic with no UI concerns. The only potential i18n consideration would be if the do_action() hooks eventually trigger user-facing messages, but that's outside this function's scope. No i18n defects are present in the code itself."
+        },
+        "accessibility": {
+          "score": 8,
+          "analysis": "This is a backend data processing function with no frontend output, HTML generation, or user interface elements. It processes form submissions internally via action hooks and object manipulation. There are no accessibility concerns such as missing ARIA attributes, keyboard navigation, screen reader support, or semantic HTML because the function produces no markup. Accessibility is not applicable to this programmatic backend code. The do_action() hooks might eventually trigger UI changes, but that's beyond this function's direct responsibility."
+        }
+      },
+      "key_observation": "Critical dependency integrity failure: the function calls Form_Data_Request::create_from_dump() on line 16 but doesn't verify class_exists('ThemeIsle\\GutenbergBlocks\\Integration\\Form_Data_Request') until line 28, guaranteeing a fatal error if the class is unavailable. This backwards logic pattern (use first, check later) violates WordPress defensive programming best practices and will crash during plugin updates or autoloader failures. The isset($form_data) check is also dead code since $form_data is unconditionally assigned before being tested."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "seed_few_shot_agent",
+    "citation_accuracy": {
+      "total_citations": 4,
+      "grounded_citations": 4,
+      "hallucinated_citations": [],
+      "hallucination_ratio": 0.0
+    }
+  }
+]
