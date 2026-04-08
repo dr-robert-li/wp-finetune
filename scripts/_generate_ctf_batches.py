@@ -560,11 +560,49 @@ def process_ctf_batch(batch_num):
     return len(examples)
 
 
+def normalize_for_dedup(code: str) -> str:
+    """Strip PHP comments and collapse whitespace for normalization check.
+
+    Mirrors the normalize_code() logic in merge_reasoning_batches.py so
+    we can pre-validate that corrected code differs after normalization.
+    """
+    if not code:
+        return ""
+    no_comments = re.sub(r"/\*.*?\*/", "", code, flags=re.DOTALL)
+    no_comments = re.sub(r"//.*?$", "", no_comments, flags=re.MULTILINE)
+    return re.sub(r"\s+", " ", no_comments).strip()
+
+
+def has_detectable_critical_high(fn: dict) -> bool:
+    """Return True if detect_issues() finds at least one critical or high severity issue
+    AND generate_corrected_code() produces a corrected version that differs from the
+    original after normalization (i.e., the fix is executable, not just PHPDoc).
+
+    Pre-filters partition candidates so every accepted example passes the
+    corrected_identical_to_defective merge gate.
+    """
+    code = fn.get("code", "")
+    fn_name = fn.get("function_name", "unknown")
+    source_file = fn.get("source_file", "")
+    issues = detect_issues(code, fn_name, source_file)
+
+    if not any(v.get("severity") in ("critical", "high") for v in issues.values()):
+        return False
+
+    # Verify the fix actually changes executable code (not just PHPDoc)
+    corrected = generate_corrected_code(code, fn_name, issues)
+    return normalize_for_dedup(corrected) != normalize_for_dedup(code)
+
+
 def partition_input_batches(num_batches: int = 10, batch_size: int = 20,
                              seed: int = 42) -> int:
     """Partition filtered Phase 1 failed functions into input batch files.
 
-    Uses load_failed_functions_filtered() — only functions with concrete defects.
+    Uses load_failed_functions_filtered() — only functions with concrete Phase 1
+    defects — then further filters to functions where detect_issues() finds at
+    least one critical/high severity issue. This ensures generate_corrected_code()
+    can always make a real executable change (not just PHPDoc-only diffs).
+
     Writes _input_batch_{NN:02d}.json files to the batches directory.
 
     Returns: number of functions written to input batches.
@@ -574,6 +612,16 @@ def partition_input_batches(num_batches: int = 10, batch_size: int = 20,
     if len(fns) < 200:
         print(f"BLOCKED: Only {len(fns)} filtered functions found — need > 200. "
               "Check source filter field names.")
+        return 0
+
+    # Secondary filter: only functions with detectable critical/high issues
+    before = len(fns)
+    fns = [fn for fn in fns if has_detectable_critical_high(fn)]
+    print(f"Secondary filter (detect_issues critical/high): {len(fns)}/{before} functions qualify")
+
+    if len(fns) < 200:
+        print(f"BLOCKED: Only {len(fns)} functions have detectable critical/high issues — "
+              "need > 200 for robust batch generation.")
         return 0
 
     batches_dir = PROJECT_ROOT / "data" / "phase4_reasoning" / "critique_then_fix" / "batches"
