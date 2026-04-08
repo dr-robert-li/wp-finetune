@@ -1,136 +1,8 @@
 [
   {
-    "code": "/**\n\t * Adds post columns to the /wp-admin/post.php page for amp_validated_url.\n\t *\n\t * @return array The filtered post columns.\n\t */\nfunction add_single_post_columns() {\n\t\treturn [\n\t\t\t'cb'                          => '<input type=\"checkbox\" />',\n\t\t\t'error_code'                  => __( 'Error', 'amp' ),\n\t\t\t'error_type'                  => __( 'Type', 'amp' ),\n\t\t\t'details'                     => sprintf(\n\t\t\t\t'%s<span class=\"dashicons dashicons-editor-help tooltip-button\" tabindex=\"0\"></span><div class=\"tooltip\" hidden data-content=\"%s\"></div>',\n\t\t\t\tesc_html__( 'Context', 'amp' ),\n\t\t\t\tesc_attr(\n\t\t\t\t\tsprintf(\n\t\t\t\t\t\t'<h3>%s</h3><p>%s</p>',\n\t\t\t\t\t\tesc_html__( 'Context', 'amp' ),\n\t\t\t\t\t\tesc_html__( 'The parent element of where the error occurred.', 'amp' )\n\t\t\t\t\t)\n\t\t\t\t)\n\t\t\t),\n\t\t\t'sources_with_invalid_output' => __( 'Sources', 'amp' ),\n\t\t\t'status'                      => sprintf(\n\t\t\t\t'%s<span class=\"dashicons dashicons-editor-help tooltip-button\" tabindex=\"0\"></span><div class=\"tooltip\" hidden data-content=\"%s\"></div>',\n\t\t\t\tesc_html__( 'Markup Status', 'amp' ),\n\t\t\t\tesc_attr(\n\t\t\t\t\tsprintf(\n\t\t\t\t\t\t'<h3>%s</h3><p>%s</p>',\n\t\t\t\t\t\tesc_html__( 'Markup Status', 'amp' ),\n\t\t\t\t\t\tesc_html__( 'When invalid markup is removed it will not block a URL from being served as AMP; the validation error will be sanitized, where the offending markup is stripped from the response to ensure AMP validity. If invalid AMP markup is kept, then URLs is occurs on will not be served as AMP pages.', 'amp' )\n\t\t\t\t\t)\n\t\t\t\t)\n\t\t\t),\n\t\t\t'reviewed'                    => sprintf(\n\t\t\t\t'%s<span class=\"dashicons dashicons-editor-help tooltip-button\" tabindex=\"0\"></span><div class=\"tooltip\" hidden data-content=\"%s\"></div>',\n\t\t\t\tesc_html__( 'Reviewed', 'amp' ),\n\t\t\t\tesc_attr(\n\t\t\t\t\tsprintf(\n\t\t\t\t\t\t'<h3>%s</h3><p>%s</p>',\n\t\t\t\t\t\tesc_html__( 'Reviewed', 'amp' ),\n\t\t\t\t\t\tesc_html__( 'Confirm that the action being taken on the invalid markup (causing a validation error) has been seen and approved.', 'amp' )\n\t\t\t\t\t)\n\t\t\t\t)\n\t\t\t),\n\t\t];\n\t}",
-    "source_file": "amp.json",
-    "function_name": "has_filter::add_single_post_columns",
-    "critical_failures": [
-      "Form inputs without labels or ARIA"
-    ],
-    "low_score_dims": [
-      "accessibility"
-    ]
-  },
-  {
-    "code": "function restore_default_settings( $parameters ) {\n\t\tglobal $wp_cache_config_file, $wp_cache_config_file_sample;\n\n\t\tif ( file_exists( $wp_cache_config_file_sample ) ) {\n\t\t\tcopy( $wp_cache_config_file_sample, $wp_cache_config_file );\n\t\t\t$cache_page_secret = md5( gmdate( 'H:i:s' ) . wp_rand() );\n\t\t\twp_cache_setting( 'cache_page_secret', $cache_page_secret );\n\n\t\t\tif ( function_exists( \"opcache_invalidate\" ) ) {\n\t\t\t\t@opcache_invalidate( $wp_cache_config_file );\n\t\t\t}\n\t\t}\n\t\twpsc_set_default_gc( true );\n\t}",
-    "source_file": "wp-super-cache.json",
-    "function_name": "WP_Super_Cache_Rest_Update_Settings::restore_default_settings",
-    "critical_failures": [
-      "Missing nonce verification / permission check: This is a REST API method that restores plugin defaults (a destructive state-changing operation) but contains no capability check (e.g., current_user_can()) or nonce/REST permission enforcement visible within the function itself. The function signature accepts $parameters but never validates authorization.",
-      "Suppressed error with @ operator on opcache_invalidate() \u2014 silencing errors is an anti-pattern and hides file-system failures.",
-      "Uses direct PHP file functions (copy()) instead of WP_Filesystem API for file operations.",
-      "md5(gmdate('H:i:s') . wp_rand()) is a weak secret generation pattern \u2014 gmdate is low-entropy; should use wp_generate_password() or random_bytes() for security tokens.",
-      "The $parameters argument is accepted but never used or validated, suggesting incomplete implementation.",
-      "security_auto_fail"
-    ],
-    "low_score_dims": [
-      "wpcs_compliance",
-      "security",
-      "wp_api_usage",
-      "code_quality"
-    ]
-  },
-  {
-    "code": "function setup_shipping() {\r\n      return __('Shipping', 'woo-pakettikauppa');\r\n    }",
-    "source_file": "posti-shipping.json",
-    "function_name": "Text::setup_shipping",
-    "critical_failures": [
-      "Missing PHPDoc block"
-    ],
-    "low_score_dims": []
-  },
-  {
-    "code": "function enqueue() {\n\t\t$asset_path = HELLO_THEME_SCRIPTS_PATH . $this->handle . '.asset.php';\n\t\t$asset_url = HELLO_THEME_SCRIPTS_URL;\n\n\t\tif ( ! file_exists( $asset_path ) ) {\n\t\t\tthrow new \\Exception( $asset_path . ' - You need to run `npm run build` for the \"hello-elementor\" first.' );\n\t\t}\n\n\t\t$script_asset = require $asset_path;\n\n\t\tforeach ( $this->dependencies as $dependency ) {\n\t\t\t$script_asset['dependencies'][] = $dependency;\n\t\t}\n\n\t\twp_enqueue_script(\n\t\t\t$this->handle,\n\t\t\t$asset_url . \"$this->handle.js\",\n\t\t\t$script_asset['dependencies'],\n\t\t\t$script_asset['version'],\n\t\t\ttrue\n\t\t);\n\n\t\t\\wp_set_script_translations( $this->handle, 'hello-elementor' );\n\t}",
-    "source_file": "hello-elementor.json",
-    "function_name": "Script::enqueue",
-    "critical_failures": [
-      "missing_phpdoc"
-    ],
-    "low_score_dims": []
-  },
-  {
-    "code": "/**\n     * Register to credits activate event\n     * @param mixed $callback\n     *\n     * @return void\n     */\nfunction registerEnableCreditsAction($callback)\n    {\n        add_action(self::ENABLE_CREDITS_ACTION, $callback);\n    }",
-    "source_file": "woocommerce-mercadopago.json",
-    "function_name": "Plugin::registerEnableCreditsAction",
-    "critical_failures": [
-      "camelCase method naming violates WPCS (WordPress requires snake_case)"
-    ],
-    "low_score_dims": [
-      "wpcs_compliance"
-    ]
-  },
-  {
-    "code": "function libRed($args)\n    {\n        $color = $this->coerceColor($args[0]);\n\n        if (\\is_null($color)) {\n            throw $this->error('Error: argument `$color` of `red($color)` must be a color');\n        }\n\n        return new Number((int) $color[1], '');\n    }",
-    "source_file": "wp-scss.json",
-    "function_name": "libRed",
-    "critical_failures": [
-      "missing_phpdoc"
-    ],
-    "low_score_dims": []
-  },
-  {
-    "code": "/**\n\t * @return int\n\t */\nfunction get_minimum_preload_interval() {\n\t\tglobal $wpdb;\n\t\t$count = $this->get_post_count();\n\t\tif ( $count > 1000 ) {\n\t\t\t$min_refresh_interval = 720;\n\t\t} else {\n\t\t\t$min_refresh_interval = 30;\n\t\t}\n\n\t\treturn $min_refresh_interval;\n\t}",
-    "source_file": "wp-super-cache.json",
-    "function_name": "get_minimum_preload_interval",
-    "critical_failures": [],
-    "low_score_dims": [
-      "wpcs_compliance",
-      "code_quality"
-    ]
-  },
-  {
-    "code": "/**\n\t * Check whether the current element of the iterator is acceptable.\n\t *\n\t * @link https://php.net/manual/en/filteriterator.accept.php\n\t * @return bool true if the current element is acceptable, otherwise false.\n\t */\nfunction accept() {\n\t\t$directory = $this->getInnerIterator()->current();\n\n\t\tif ( ! $directory->isDir() ) {\n\t\t\treturn true;\n\t\t}\n\n\t\tforeach ( $this->included_dirs as $included_dir ) {\n\t\t\tif ( ! preg_match( $included_dir, $directory->getPathname() ) ) {\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\n\t\treturn true;\n\t}",
-    "source_file": "amp-wp.json",
-    "function_name": "DirectoryFilter::accept",
-    "critical_failures": [
-      "test/bin/docs code, excluded from training data"
-    ],
-    "low_score_dims": [
-      "wpcs_compliance",
-      "code_quality"
-    ]
-  },
-  {
-    "code": "/**\n\t\t * Print out the settings fields for a particular settings section\n\t\t *\n\t\t * @global $wp_settings_fields Storage array of settings fields and their pages/sections\n\t\t *\n\t\t * @param  string $page    Slug title of the admin page who's settings fields you want to show.\n\t\t * @param  string $section Slug title of the settings section who's fields you want to show.\n\t\t * @return string\n\t\t *\n\t\t * @access public\n\t\t * @since  2.0\n\t\t */\nfunction do_settings_fields( $page, $section ) {\n\t\t\tglobal $wp_settings_fields;\n\n\t\t\tif ( ! isset( $wp_settings_fields ) || ! isset( $wp_settings_fields[ $page ] ) || ! isset( $wp_settings_fields[ $page ][ $section ] ) ) {\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\tforeach ( (array) $wp_settings_fields[ $page ][ $section ] as $field ) {\n\n\t\t\t\t$conditions = '';\n\n\t\t\t\tif ( isset( $field['args']['condition'] ) && ! empty( $field['args']['condition'] ) ) {\n\n\t\t\t\t\t$conditions  = ' data-condition=\"' . esc_attr( $field['args']['condition'] ) . '\"';\n\t\t\t\t\t$conditions .= isset( $field['args']['operator'] ) && in_array( $field['args']['operator'], array( 'and', 'AND', 'or', 'OR' ), true ) ? ' data-operator=\"' . esc_attr( $field['args']['operator'] ) . '\"' : '';\n\t\t\t\t}\n\n\t\t\t\t// Build the setting CSS class.\n\t\t\t\tif ( isset( $field['args']['class'] ) && ! empty( $field['args']['class'] ) ) {\n\n\t\t\t\t\t$classes = explode( ' ', $field['args']['class'] );\n\n\t\t\t\t\tforeach ( $classes as $key => $value ) {\n\t\t\t\t\t\t$classes[ $key ] = $value . '-wrap';\n\t\t\t\t\t}\n\n\t\t\t\t\t$class = 'format-settings ' . implode( ' ', $classes );\n\t\t\t\t} else {\n\n\t\t\t\t\t$class = 'format-settings';\n\t\t\t\t}\n\n\t\t\t\techo '<div id=\"setting_' . esc_attr( $field['id'] ) . '\" class=\"' . esc_attr( $class ) . '\"' . $conditions . '>'; // phpcs:ignore\n\n\t\t\t\techo '<div class=\"format-setting-wrap\">';\n\n\t\t\t\tif ( 'textblock' !== $field['args']['type'] && ! empty( $field['title'] ) ) {\n\n\t\t\t\t\techo '<div class=\"format-setting-label\">';\n\n\t\t\t\t\techo '<h3 class=\"label\">' . wp_kses_post( $field['title'] ) . '</h3>';\n\n\t\t\t\t\techo '</div>';\n\t\t\t\t}\n\n\t\t\t\tcall_user_func( $field['callback'], $field['args'] );\n\n\t\t\t\techo '</div>';\n\n\t\t\t\techo '</div>';\n\t\t\t}\n\t\t}",
-    "source_file": "option-tree.json",
-    "function_name": "OT_Settings::do_settings_fields",
-    "critical_failures": [
-      "Reimplements do_settings_fields() from WP core; missing @param/@return; mixes output and logic"
-    ],
-    "low_score_dims": []
-  },
-  {
-    "code": "function preventDirectAccess($filename)\n    {\n        // Protect against directly accessing webp-on-demand.php\n        // Only protect on Apache. We know for sure that the method is not reliable on nginx.\n        // We have not tested on litespeed yet, so we dare not.\n        if (self::isApache() && (!self::isNginxHandlingImages())) {\n            if (strpos($_SERVER['REQUEST_URI'], $filename) !== false) {\n                self::exitWithError(\n                    'It seems you are visiting this file (plugins/webp-express/wod/' . $filename . ') directly. We do not allow this.'\n                );\n                exit;\n            }\n        }\n    }",
-    "source_file": "webp-express.json",
-    "function_name": "WodConfigLoader::preventDirectAccess",
-    "critical_failures": [
-      "Missing PHPDoc block",
-      "Missing input sanitization"
-    ],
-    "low_score_dims": []
-  },
-  {
-    "code": "function gutenberg_get_migrated_active_templates() {\n\t// Query all templates in the database. See `get_block_templates`.\n\t$wp_query_args = array(\n\t\t'post_status'         => 'publish',\n\t\t'post_type'           => 'wp_template',\n\t\t'posts_per_page'      => -1,\n\t\t'no_found_rows'       => true,\n\t\t'lazy_load_term_meta' => false,\n\t\t'tax_query'           => array(\n\t\t\tarray(\n\t\t\t\t'taxonomy' => 'wp_theme',\n\t\t\t\t'field'    => 'name',\n\t\t\t\t'terms'    => get_stylesheet(),\n\t\t\t),\n\t\t),\n\t\t// Only get templates that are not inactive by default.\n\t\t'meta_query'          => array(\n\t\t\t'relation' => 'OR',\n\t\t\tarray(\n\t\t\t\t'key'     => 'is_inactive_by_default',\n\t\t\t\t'compare' => 'NOT EXISTS',\n\t\t\t),\n\t\t\tarray(\n\t\t\t\t'key'     => 'is_inactive_by_default',\n\t\t\t\t'value'   => false,\n\t\t\t\t'compare' => '=',\n\t\t\t),\n\t\t),\n\t);\n\n\t$template_query   = new WP_Query( $wp_query_args );\n\t$active_templates = array();\n\n\tforeach ( $template_query->posts as $post ) {\n\t\t$active_templates[ $post->post_name ] = $post->ID;\n\t}\n\n\treturn $active_templates;\n}",
-    "source_file": "gutenberg.json",
-    "function_name": "gutenberg_get_migrated_active_templates",
-    "critical_failures": [
-      "Missing PHPDoc block"
-    ],
-    "low_score_dims": []
-  },
-  {
-    "code": "/**\n\t * If the inclusive language analysis should be loaded in Free.\n\t *\n\t * It should always be loaded when Premium is not active. If Premium is active, it depends on the version. Some\n\t * Premium versions also have inclusive language code (when it was still a Premium only feature) which would result\n\t * in rendering the analysis twice. In those cases, the analysis should be only loaded from the Premium side.\n\t *\n\t * @return bool If the inclusive language analysis should be loaded.\n\t */\nfunction is_current_version_supported(): bool {\n\t\t$is_premium      = $this->product_helper->is_premium();\n\t\t$premium_version = $this->product_helper->get_premium_version();\n\n\t\treturn ! $is_premium\n\t\t\t\t|| \\version_compare( $premium_version, '19.6-RC0', '>=' )\n\t\t\t\t|| \\version_compare( $premium_version, '19.2', '==' );\n\t}",
-    "source_file": "wordpress-seo.json",
-    "function_name": "Inclusive_Language_Analysis::is_current_version_supported",
-    "critical_failures": [
-      "Missing @since tag in PHPDoc block \u2014 required by WordPress coding standards for all public/protected methods",
-      "PHPDoc @return description is incomplete/informal ('If the inclusive language analysis should be loaded' should be 'Whether the inclusive language analysis should be loaded')"
-    ],
-    "low_score_dims": []
-  },
-  {
-    "code": "/**\n     * Save meta box data.\n     *\n     * @param int     $post_id\n     * @param WP_Post $post\n     */\nfunction save( $post_id, $post ) {\n        $classname = MasVideos_Video_Factory::get_video_classname( $post_id );\n        $video = new $classname( $post_id );\n        $attachment_ids = isset( $_POST['video_image_gallery'] ) ? array_filter( explode( ',', masvideos_clean( $_POST['video_image_gallery'] ) ) ) : array();\n\n        $video->set_gallery_image_ids( $attachment_ids );\n        $video->save();\n    }",
-    "source_file": "masvideos.json",
-    "function_name": "MasVideos_Meta_Box_Video_Images::save",
+    "code": "/**\n     * Check for Komoju IPN or Session Response\n     */\nfunction check_response($_handled)\n    {\n        // callback from session page\n        if (isset($_GET['session_id'])) {\n            $session = $this->get_session($_GET['session_id']);\n            $order   = $this->get_order_from_komoju_session($session, $this->invoice_prefix);\n\n            // null payment on a session indicates incomplete payment flow\n            if ($session->status === 'completed' && !is_null($order)) {\n                $success_url = $this->gateway->get_return_url($order);\n                wp_redirect($success_url);\n            } elseif (is_null($session)) {\n                $checkout_url = wc_get_checkout_url();\n                wp_redirect($checkout_url);\n                wc_add_notice(\n                    __('Encountered an issue communicating with KOMOJU. Please wait a moment and try again.'),\n                    'error'\n                );\n            } elseif (is_null($order)) {\n                $checkout_url = wc_get_checkout_url();\n                wp_redirect($checkout_url);\n            } else {\n                $payment_url = $order->get_checkout_payment_url(false);\n                wp_redirect($payment_url);\n            }\n\n            return true;\n        }\n\n        // Quick setup POST from KOMOJU\n        if (isset($_POST['secret_key'])) {\n            $this->quick_setup($_POST);\n\n            return true;\n        }\n\n        // Webhook (IPN)\n        $entityBody = file_get_contents('php://input');\n        if (!empty($entityBody) && $this->validate_hmac($entityBody)) {\n            $webhookEvent = new WC_Gateway_Komoju_Webhook_Event($entityBody);\n\n            // NOTE: direct function call doesn't work\n            do_action('valid_komoju_standard_ipn_request', $webhookEvent);\n\n            return true;\n        }\n\n        wp_die('Failed to verify KOMOJU authenticity', 'Komoju IPN', ['response' => 401]);\n    }",
+    "source_file": "komoju-japanese-payments.json",
+    "function_name": "WC_Gateway_Komoju_IPN_Handler::check_response",
     "critical_failures": [
       "Unsanitized user input from superglobals"
     ],
@@ -139,92 +11,218 @@
     ]
   },
   {
-    "code": "/**\n\t\t\t * Filter: 'wpseo_prev_rel_link' - Allow changing link rel output by Yoast SEO.\n\t\t\t *\n\t\t\t * @param string $unsigned The full `<link` element.\n\t\t\t */\nfunction present( $output_tag = true ) {\n\t\t$output = parent::present();\n\n\t\tif ( ! empty( $output ) ) {\n\t\t\t\n\t\t\treturn \\apply_filters( 'wpseo_prev_rel_link', $output );\n\t\t}\n\n\t\treturn '';\n\t}",
-    "source_file": "wordpress-seo.json",
-    "function_name": "Rel_Prev_Presenter::present",
+    "code": "/**\n\t * Show the log page contents for file log handler.\n\t */\nfunction status_logs_file() {\n\t\t$logs = self::scan_log_files();\n\n\t\tif ( ! empty( $_REQUEST['log_file'] ) && isset( $logs[ sanitize_title( wp_unslash( $_REQUEST['log_file'] ) ) ] ) ) { // WPCS: input var ok, CSRF ok.\n\t\t\t$viewed_log = $logs[ sanitize_title( wp_unslash( $_REQUEST['log_file'] ) ) ]; // WPCS: input var ok, CSRF ok.\n\t\t} elseif ( ! empty( $logs ) ) {\n\t\t\t$viewed_log = current( $logs );\n\t\t}\n\n\t\t$handle = ! empty( $viewed_log ) ? self::get_log_file_handle( $viewed_log ) : '';\n\n\t\tif ( ! empty( $_REQUEST['handle'] ) ) { // WPCS: input var ok, CSRF ok.\n\t\t\tself::remove_log();\n\t\t}\n\n\t\tinclude_once __DIR__ . '/views/html-admin-page-status-logs.php';\n\t}",
+    "source_file": "woocommerce.json",
+    "function_name": "render::status_logs_file",
     "critical_failures": [
-      "Function signature declares parameter `$output_tag = true` but the parameter is never used anywhere in the function body \u2014 dead/misleading parameter",
-      "PHPDoc block is misplaced and describes the filter's parameter, not the function itself \u2014 missing proper @param, @return, @since tags for the method",
-      "Unused parameter `$output_tag` indicates the method signature does not match the parent class interface correctly, or is vestigial dead code"
+      "Handles POST/REQUEST data without nonce verification"
     ],
     "low_score_dims": [
-      "wpcs_compliance",
-      "code_quality"
+      "security"
     ]
   },
   {
-    "code": "function wpsupercache_uninstall() {\n\tglobal $wp_cache_config_file, $cache_path;\n\n\twpsc_remove_advanced_cache();\n\n\tif ( file_exists( $wp_cache_config_file ) ) {\n\t\tunlink( $wp_cache_config_file );\n\t}\n\n\twp_cache_remove_index();\n\n\tif ( ! empty( $cache_path ) ) {\n\t\t@unlink( $cache_path . '.htaccess' );\n\t\t@unlink( $cache_path . 'meta' );\n\t\t@unlink( $cache_path . 'supercache' );\n\t}\n\n\twp_clear_scheduled_hook( 'wp_cache_check_site_hook' );\n\twp_clear_scheduled_hook( 'wp_cache_gc' );\n\twp_clear_scheduled_hook( 'wp_cache_gc_watcher' );\n\twp_cache_disable_plugin();\n\tdelete_site_option( 'wp_super_cache_index_detected' );\n}",
+    "code": "/**\n\t * Display the author picker (or upload errors).\n\t */\nfunction display_author_step() {\n\t\tif ( isset( $_REQUEST['id'] ) ) {\n\t\t\t$err = $this->handle_select( wp_unslash( $_REQUEST['id'] ) );\n\t\t} else {\n\t\t\t$err = $this->handle_upload();\n\t\t}\n\t\tif ( is_wp_error( $err ) ) {\n\t\t\t$this->display_error( $err );\n\t\t\treturn;\n\t\t}\n\n\t\t$data = $this->get_data_for_attachment( $this->id );\n\t\tif ( is_wp_error( $data ) ) {\n\t\t\t$this->display_error( $data );\n\t\t\treturn;\n\t\t}\n\n\t\trequire __DIR__ . '/templates/select-options.php';\n\t}",
+    "source_file": "rara-one-click-demo-import.json",
+    "function_name": "WXR_Import_UI::display_author_step",
+    "critical_failures": [
+      "Missing nonce verification"
+    ],
+    "low_score_dims": [
+      "security"
+    ]
+  },
+  {
+    "code": "/**\n\t * @throws Exception\n\t */\nfunction remove( $order_id ) {\n\t\t$order = wc_get_order( $order_id );\n\n\t\tif ( ! $order ) {\n\t\t\tthrow new Exception( __( 'Failed to delete test order',\n\t\t\t\t'bm-woocommerce' ) );\n\t\t}\n\n\t\tblue_media()->get_woocommerce_logger()->log_debug(\n\t\t\tsprintf( '[Order_Creator] [remove] [Attempt] [Order id: %s] [autopay_test_order meta: %s]',\n\t\t\t\tprint_r( $order_id, true ),\n\t\t\t\tprint_r( $order->get_meta( 'autopay_test_order' ), true )\n\t\t\t)\n\t\t);\n\n\t\tif ( $order->get_meta( 'autopay_test_order' ) === '1' ) {\n\t\t\t$items = $order->get_items();\n\t\t\tforeach ( $items as $item ) {\n\t\t\t\t$product_id = $item->get_product_id();\n\t\t\t\tif ( get_post_meta( $product_id,\n\t\t\t\t\t\t'autopay_test_product',\n\t\t\t\t\t\ttrue ) === 'true' ) {\n\t\t\t\t\t$order->remove_item( $item->get_id() );\n\t\t\t\t\twp_trash_post( $product_id );\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t$order->delete();\n\n\t\t\tblue_media()->get_woocommerce_logger()->log_debug(\n\t\t\t\tsprintf( '[Order_Creator] [remove] [Done] [Order id: %s]',\n\t\t\t\t\tprint_r( $order_id, true )\n\t\t\t\t)\n\t\t\t);\n\t\t} else {\n\t\t\tthrow new Exception( __( 'Failed to delete test order',\n\t\t\t\t'bm-woocommerce' ) );\n\t\t}\n\t}",
+    "source_file": "platnosci-online-blue-media.json",
+    "function_name": "Order_Creator::remove",
+    "critical_failures": [
+      "Debug statements in production code"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "/**\n\t * Export submissions with ajax.\n\t */\nfunction export_submissions() {\n\t\t$nonce = isset( $_POST['_nonce'] ) ? sanitize_text_field( $_POST['_nonce'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended\n\t\tif ( ! wp_verify_nonce( $nonce, 'otter_form_export_submissions' ) ) {\n\t\t\twp_die( esc_html( __( 'Invalid nonce.', 'otter-pro' ) ) );\n\t\t}\n\n\t\t// Export submissions.\n\t\trequire_once ABSPATH . 'wp-admin/includes/export.php';\n\t\tob_start();\n\t\texport_wp( array( 'content' => self::FORM_RECORD_TYPE ) );\n\t\t$export = ob_get_clean();\n\n\t\techo ent2ncr( $export ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped\n\t\twp_die();\n\t}",
+    "source_file": "blocks-animation.json",
+    "function_name": "Form_Emails_Storing::export_submissions",
+    "critical_failures": [
+      "Missing capability check (current_user_can()) before performing the export operation \u2014 any authenticated or unauthenticated user who can forge or obtain the nonce can trigger an export of potentially sensitive form submission data.",
+      "The phpcs:ignore comment on the nonce line says 'NonceVerification.Recommended', implying the suppressant was added to silence a warning rather than address the underlying issue correctly \u2014 though a nonce IS checked, the suppression comment is misleading and the field name '_nonce' is non-standard.",
+      "Unescaped output of `ent2ncr( $export )` suppressed with a phpcs:ignore comment \u2014 while `export_wp` output is trusted WP-generated XML, the blanket suppression without documented justification is a code quality concern.",
+      "No PHPDoc @param, @return, or @since tags present, violating WordPress coding standards for class methods."
+    ],
+    "low_score_dims": [
+      "security"
+    ]
+  },
+  {
+    "code": "/**\n\t * Add shortcode, example: [archive]\n\t *\n\t * @uses   shortcode_atts\n\t * @since  0.0.1\n\t *\n\t * @param  array  $atts\n\t * @param  string $content\n\t *\n\t * @return string | array $archived_posts\n\t */\nfunction add_shortcode( $atts, $content = NULL ) {\n\n\t\textract(\n\t\t\t$attribute = shortcode_atts(\n\t\t\t\tarray(\n\t\t\t\t\t'count'         => - 1, // count or -1 for all posts\n\t\t\t\t\t'category'      => '', // Show posts associated with certain categories.\n\t\t\t\t\t'tag'           => '', // Show posts associated with certain tags.\n\t\t\t\t\t'post_status'   => 'publish', // status or all for all posts\n\t\t\t\t\t'echo'          => 'true', // echo or give an array for use external\n\t\t\t\t\t'return_markup' => 'ul', // markup before echo title, content\n\t\t\t\t\t'title_markup'  => 'li', // markup before item\n\t\t\t\t\t'content'       => 'false', // view also content?\n\t\t\t\t\t'debug'         => 'false', // debug mor vor view an array\n\t\t\t\t), $atts\n\t\t\t)\n\t\t);\n\n\t\t$args = array(\n\t\t\t'post_type'      => self::$post_type_1,\n\t\t\t'post_status'    => $attribute[ 'post_status' ],\n\t\t\t'posts_per_page' => $attribute[ 'count' ],\n\t\t\t'cat'            => $attribute[ 'category' ],\n\t\t\t'tag'            => $attribute[ 'tag' ],\n\t\t);\n\n\t\t$archived_posts = '';\n\n\t\t$posts = new WP_Query( $args );\n\t\tif ( $posts->have_posts() ) {\n\n\t\t\twhile ( $posts->have_posts() ) {\n\n\t\t\t\t$posts->the_post();\n\t\t\t\t$post_id = get_the_ID();\n\n\t\t\t\tif ( 'true' === $attribute[ 'echo' ] ) {\n\t\t\t\t\t$archived_posts .= '<' . $attribute[ 'title_markup' ] . '><a href=\"' .\n\t\t\t\t\t\tget_permalink( $post_id ) . '\" title=\"' . get_the_title() . '\" >' .\n\t\t\t\t\t\tget_the_title() . '</a>';\n\t\t\t\t\tif ( 'true' === $attribute[ 'content' ] ) {\n\t\t\t\t\t\t$archived_posts .= apply_filters( 'the_content', get_the_content() );\n\t\t\t\t\t}\n\t\t\t\t\t$archived_posts .= '</' . $attribute[ 'title_markup' ] . '>';\n\t\t\t\t} else {\n\t\t\t\t\t//(array) $archived_post = new stdClass();\n\t\t\t\t\t$archived_post            = array();\n\t\t\t\t\t$archived_post->post_id   = $post_id;\n\t\t\t\t\t$archived_post->title     = get_the_title();\n\t\t\t\t\t$archived_post->permalink = get_permalink( $post_id );\n\t\t\t\t\t$archived_post->content   = apply_filters( 'the_content', get_the_content() );\n\t\t\t\t\t$archived_posts[ ]        = $archived_post;\n\t\t\t\t}\n\t\t\t}\n\n\t\t}\n\n\t\twp_reset_postdata();\n\n\t\t$archived_posts = '<' . $attribute[ 'return_markup' ] . '>' . $archived_posts . '</' . $attribute[ 'return_markup' ] . '>';\n\t\t$archived_posts = apply_filters( 'fb_get_archive', $archived_posts );\n\n\t\tif ( 'true' === $attribute[ 'debug' ] ) {\n\t\t\techo '<h1>Debug Archived Posts</h1><pre>';\n\t\t\tvar_dump( $archived_posts );\n\t\t\techo '</pre>';\n\t\t}\n\n\t\treturn $archived_posts;\n\t}",
+    "source_file": "archive.json",
+    "function_name": "add_shortcode",
+    "critical_failures": [
+      "Uses extract()"
+    ],
+    "low_score_dims": [
+      "security"
+    ]
+  },
+  {
+    "code": "/**\n\t * Save account details table.\n\t */\nfunction save_account_details() {\n\n\t\t$accounts = array();\n\n\t\t// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verification already handled in WC_Admin_Settings::save()\n\t\tif ( isset( $_POST['bacs_account_name'] ) && isset( $_POST['bacs_account_number'] ) && isset( $_POST['bacs_bank_name'] )\n\t\t\t&& isset( $_POST['bacs_sort_code'] ) && isset( $_POST['bacs_iban'] ) && isset( $_POST['bacs_bic'] ) ) {\n\n\t\t\t$account_names   = wc_clean( wp_unslash( $_POST['bacs_account_name'] ) );\n\t\t\t$account_numbers = wc_clean( wp_unslash( $_POST['bacs_account_number'] ) );\n\t\t\t$bank_names      = wc_clean( wp_unslash( $_POST['bacs_bank_name'] ) );\n\t\t\t$sort_codes      = wc_clean( wp_unslash( $_POST['bacs_sort_code'] ) );\n\t\t\t$ibans           = wc_clean( wp_unslash( $_POST['bacs_iban'] ) );\n\t\t\t$bics            = wc_clean( wp_unslash( $_POST['bacs_bic'] ) );\n\n\t\t\tforeach ( $account_names as $i => $name ) {\n\t\t\t\tif ( ! isset( $account_names[ $i ] ) ) {\n\t\t\t\t\tcontinue;\n\t\t\t\t}\n\n\t\t\t\t$accounts[] = array(\n\t\t\t\t\t'account_name'   => $account_names[ $i ],\n\t\t\t\t\t'account_number' => $account_numbers[ $i ],\n\t\t\t\t\t'bank_name'      => $bank_names[ $i ],\n\t\t\t\t\t'sort_code'      => $sort_codes[ $i ],\n\t\t\t\t\t'iban'           => $ibans[ $i ],\n\t\t\t\t\t'bic'            => $bics[ $i ],\n\t\t\t\t);\n\t\t\t}\n\t\t}\n\t\t// phpcs:enable\n\n\t\tdo_action( 'woocommerce_update_option', array( 'id' => 'woocommerce_bacs_accounts' ) );\n\t\tupdate_option( 'woocommerce_bacs_accounts', $accounts );\n\t}",
+    "source_file": "woocommerce.json",
+    "function_name": "WC_Gateway_BACS::save_account_details",
+    "critical_failures": [
+      "Handles POST/REQUEST data without nonce verification"
+    ],
+    "low_score_dims": [
+      "security"
+    ]
+  },
+  {
+    "code": "/**\n\t\t\t * ==================\n\t\t\t * Enforces the update of payment methods to 'enabled' based on the capabilities\n\t\t\t * provided during the NOX onboarding process.\n\t\t\t *\n\t\t\t * @see WC_Payments_Onboarding_Service::update_enabled_payment_methods_ids\n\t\t\t * ==================\n\t\t\t */\nfunction init_stripe_onboarding( string $setup_mode, string $wcpay_connect_from, array $additional_args = [] ): string {\n\t\tif ( ! in_array( $setup_mode, [ 'live', 'test', 'test_drive' ], true ) ) {\n\t\t\t$setup_mode = 'live';\n\t\t}\n\t\t// Flag to collect payout requirements.\n\t\t$collect_payout_requirements = ! empty( $_GET['collect_payout_requirements'] ) && 'true' === $_GET['collect_payout_requirements'];\n\n\t\t// Make sure the onboarding test mode DB flag is set.\n\t\tWC_Payments_Onboarding_Service::set_test_mode( 'live' !== $setup_mode );\n\n\t\tif ( ! $collect_payout_requirements ) {\n\t\t\t// Clear onboarding related account options if this is an initial onboarding attempt.\n\t\t\tWC_Payments_Onboarding_Service::clear_account_options();\n\t\t}\n\n\t\t/*\n\t\t * If we are in the middle of an embedded onboarding, or this is an attempt to finalize PO, go to the KYC page.\n\t\t * In this case, we don't need to generate a return URL from Stripe, and we can rely on the JS logic to generate the session.\n\t\t */\n\t\tif ( $this->onboarding_service->is_embedded_kyc_in_progress() || $collect_payout_requirements ) {\n\t\t\t// We want to carry over the connect link from value because with embedded KYC\n\t\t\t// there is no interim step for the user.\n\t\t\t$additional_args['from'] = WC_Payments_Onboarding_Service::get_from();\n\n\t\t\treturn $this->get_onboarding_kyc_url( $additional_args );\n\t\t}\n\n\t\t// Else, go on with the normal onboarding redirect logic.\n\t\t$return_url = $this->get_onboarding_return_url( $wcpay_connect_from );\n\t\tif ( ! empty( $additional_args ) ) {\n\t\t\t$return_url = add_query_arg( $additional_args, $return_url );\n\t\t}\n\n\t\t$self_assessment_data = isset( $_GET['self_assessment'] ) ? wc_clean( wp_unslash( $_GET['self_assessment'] ) ) : [];\n\n\t\tif ( 'test_drive' === $setup_mode ) {\n\t\t\t// If we get to the overview page, we want to show the success message.\n\t\t\t$return_url = add_query_arg( 'wcpay-sandbox-success', 'true', $return_url );\n\t\t} elseif ( 'test' === $setup_mode ) {\n\t\t\t// If we get to the overview page, we want to show the success message.\n\t\t\t$return_url = add_query_arg( 'wcpay-sandbox-success', 'true', $return_url );\n\t\t}\n\n\t\t$site_data = [\n\t\t\t'site_username' => wp_get_current_user()->user_login,\n\t\t\t'site_locale'   => get_locale(),\n\t\t];\n\n\t\t$user_data    = $this->onboarding_service->get_onboarding_user_data();\n\t\t$account_data = $this->onboarding_service->get_account_data(\n\t\t\t$setup_mode,\n\t\t\t$self_assessment_data,\n\t\t\t// These are starting capabilities for the account.\n\t\t\t// They are collected by the payment method step of the\n\t\t\t// WC Payments settings page native onboarding experience.\n\t\t\t$this->onboarding_service->get_capabilities_from_request()\n\t\t);\n\n\t\t$onboarding_data = $this->payments_api_client->get_onboarding_data(\n\t\t\t'live' === $setup_mode,\n\t\t\t$return_url,\n\t\t\t$site_data,\n\t\t\tWC_Payments_Utils::array_filter_recursive( $user_data ), // nosemgrep: audit.php.lang.misc.array-filter-no-callback -- output of array_filter is escaped.\n\t\t\tWC_Payments_Utils::array_filter_recursive( $account_data ), // nosemgrep: audit.php.lang.misc.array-filter-no-callback -- output of array_filter is escaped.\n\t\t\tWC_Payments_Onboarding_Service::get_actioned_notes(),\n\t\t\t$collect_payout_requirements,\n\t\t\t$this->onboarding_service->get_referral_code()\n\t\t);\n\n\t\t// Check if we should enable WooPay by default respecing the WooPay value from capabilities request list.\n\t\t$should_enable_woopay = $this->onboarding_service->should_enable_woopay(\n\t\t\tfilter_var( $onboarding_data['woopay_enabled_by_default'] ?? false, FILTER_VALIDATE_BOOLEAN ),\n\t\t\t$this->onboarding_service->get_capabilities_from_request()\n\t\t);\n\n\t\t$is_test_mode           = in_array( $setup_mode, [ 'test', 'test_drive' ], true );\n\t\t$account_already_exists = isset( $onboarding_data['url'] ) && false === $onboarding_data['url'];\n\n\t\t// Only store the 'woopay_enabled_by_default' flag in a transient, to be enabled later, if\n\t\t// it should be enabled and the account doesn't already exist, or we are in test mode.\n\t\tif ( $should_enable_woopay && ( ! $account_already_exists || $is_test_mode ) ) {\n\t\t\tset_transient( self::WOOPAY_ENABLED_BY_DEFAULT_TRANSIENT, $should_enable_woopay, DAY_IN_SECONDS );\n\t\t}\n\n\t\t// If an account already exists for this site and/or there is no need for KYC verifications, we're done.\n\t\t// Our platform will respond with a `false` URL in this case.\n\t\tif ( $account_already_exists ) {\n\t\t\t// Set the gateway options.\n\t\t\t$gateway = WC_Payments::get_gateway();\n\t\t\t$gateway->update_option( 'enabled', 'yes' );\n\t\t\t$gateway->update_option( 'test_mode', empty( $onboarding_data['is_live'] ) ? 'yes' : 'no' );\n\n\t\t\t\n\t\t\t$capabilities = $this->onboarding_service->get_capabilities_from_request();\n\n\t\t\t// Activate enabled Payment Methods IDs.\n\t\t\tif ( ! empty( $capabilities ) ) {\n\t\t\t\t$this->onboarding_service->update_enabled_payment_methods_ids( $gateway, $capabilities );\n\t\t\t}\n\n\t\t\t// Store a state after completing KYC for tracks. This is stored temporarily in option because\n\t\t\t// user might not have agreed to TOS yet.\n\t\t\tupdate_option( '_wcpay_onboarding_stripe_connected', [ 'is_existing_stripe_account' => true ] );\n\n\t\t\t// Clean up any existing onboarding state.\n\t\t\tdelete_transient( self::ONBOARDING_STATE_TRANSIENT );\n\t\t\t// Clear the embedded KYC in progress option, since the onboarding flow is now complete.\n\t\t\t$this->onboarding_service->clear_embedded_kyc_in_progress();\n\n\t\t\treturn add_query_arg(\n\t\t\t\t[ 'wcpay-connection-success' => '1' ],\n\t\t\t\t$return_url\n\t\t\t);\n\t\t}\n\n\t\t// Save the onboarding state for a day.\n\t\t// This is used to verify the state when finalizing the onboarding and connecting the account.\n\t\t// On finalizing the onboarding, the transient gets deleted.\n\t\tset_transient( self::ONBOARDING_STATE_TRANSIENT, $onboarding_data['state'] ?? '', DAY_IN_SECONDS );\n\n\t\treturn (string) ( $onboarding_data['url'] ?? '' );\n\t}",
+    "source_file": "woocommerce-payments.json",
+    "function_name": "WC_Payments_Account::init_stripe_onboarding",
+    "critical_failures": [
+      "state-changing operation reads superglobals without nonce verification"
+    ],
+    "low_score_dims": [
+      "security"
+    ]
+  },
+  {
+    "code": "/**\n * Update file paths to support multiple files for 2.1\n *\n * @return void\n */\nfunction wc_update_210_file_paths() {\n\tglobal $wpdb;\n\n\t// Upgrade file paths to support multiple file paths + names etc.\n\t$existing_file_paths = $wpdb->get_results( \"SELECT meta_value, meta_id FROM {$wpdb->postmeta}",
+    "source_file": "woocommerce.json",
+    "function_name": "wc_update_210_file_paths",
+    "critical_failures": [
+      "SQL query with dynamic values without $wpdb->prepare()"
+    ],
+    "low_score_dims": [
+      "sql_safety"
+    ]
+  },
+  {
+    "code": "/**\n\t * Check if the current page is the homepage.\n\t *\n\t * @return bool\n\t */\nfunction is_homepage() {\n\t\t/* phpcs:disable WordPress.Security.NonceVerification */\n\t\treturn isset( $_GET['page'] ) &&\n\t\t\t'wc-admin' === $_GET['page'] &&\n\t\t\t! isset( $_GET['path'] );\n\t\t/* phpcs: enable */\n\t}",
+    "source_file": "woocommerce.json",
+    "function_name": "OnboardingSetupWizard::is_homepage",
+    "critical_failures": [
+      "Missing input sanitization"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "/**\n\t * Generate a JSON response given an array of data\n\t *\n\t * @since 2.1\n\t * @param array $data the response data\n\t * @return string\n\t */\nfunction generate_response( $data ) {\n\t\tif ( isset( $_GET['_jsonp'] ) ) {\n\n\t\t\tif ( ! apply_filters( 'woocommerce_api_jsonp_enabled', true ) ) {\n\t\t\t\tWC()->api->server->send_status( 400 );\n\t\t\t\treturn wp_json_encode( array( array( 'code' => 'woocommerce_api_jsonp_disabled', 'message' => __( 'JSONP support is disabled on this site', 'woocommerce-legacy-rest-api' ) ) ) );\n\t\t\t}\n\n\t\t\t$jsonp_callback = $_GET['_jsonp'];\n\n\t\t\tif ( ! wp_check_jsonp_callback( $jsonp_callback ) ) {\n\t\t\t\tWC()->api->server->send_status( 400 );\n\t\t\t\treturn wp_json_encode( array( array( 'code' => 'woocommerce_api_jsonp_callback_invalid', __( 'The JSONP callback function is invalid', 'woocommerce-legacy-rest-api' ) ) ) );\n\t\t\t}\n\n\t\t\tWC()->api->server->header( 'X-Content-Type-Options', 'nosniff' );\n\n\t\t\t// Prepend '/**/' to mitigate possible JSONP Flash attacks.\n\t\t\t// https://miki.it/blog/2014/7/8/abusing-jsonp-with-rosetta-flash/\n\t\t\treturn '/**/' . $jsonp_callback . '(' . wp_json_encode( $data ) . ')';\n\t\t}\n\n\t\treturn wp_json_encode( $data );\n\t}",
+    "source_file": "woocommerce-legacy-rest-api.json",
+    "function_name": "WC_API_JSON_Handler::generate_response",
+    "critical_failures": [
+      "Missing input sanitization"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "/**\n\t\t * Get database tables for current site\n\t\t *\n\t\t * @author Sofyan Sitorus <sofyan@artbees.net>\n\t\t */\nfunction get_tables() {\n\t\t\tglobal $wpdb;\n\t\t\t$exclude_tables = [\n\t\t\t\t$wpdb->base_prefix . 'users',\n\t\t\t\t$wpdb->base_prefix . 'usermeta',\n\t\t\t\t$wpdb->prefix . 'woocommerce_sessions',\n\t\t\t\t$wpdb->prefix . 'woocommerce_attribute_taxonomies',\n\t\t\t];\n\t\t\t$multi_site_tables = [\n\t\t\t\t$wpdb->base_prefix . 'blogs',\n\t\t\t\t$wpdb->base_prefix . 'blog_versions',\n\t\t\t\t$wpdb->base_prefix . 'signups',\n\t\t\t\t$wpdb->base_prefix . 'site',\n\t\t\t\t$wpdb->base_prefix . 'sitemeta',\n\t\t\t\t$wpdb->base_prefix . 'sitecategories',\n\t\t\t\t$wpdb->base_prefix . 'registration_log',\n\t\t\t];\n\t\t\t$current_site_tables = [];\n\t\t\t$current_blog_id     = get_current_blog_id();\n\t\t\t$tables              = $wpdb->get_results( 'SHOW FULL TABLES', ARRAY_N );\n\t\t\tforeach ( $tables as $table ) {\n\t\t\t\tif ( isset( $table[1] ) && 'VIEW' == $table[1] ) {\n\t\t\t\t\tcontinue;\n\t\t\t\t}\n\n\t\t\t\tif ( in_array( $table[0], $exclude_tables, true ) ) {\n\t\t\t\t\tcontinue;\n\t\t\t\t}\n\n\t\t\t\tif ( is_multisite() ) {\n\t\t\t\t\tif ( in_array( $table[0], $multi_site_tables, true ) ) {\n\t\t\t\t\t\tcontinue;\n\t\t\t\t\t}\n\n\t\t\t\t\tif ( is_main_site( $current_blog_id ) ) {\n\t\t\t\t\t\t$regex = '/^' . $wpdb->prefix . '([0-9])+/i';\n\t\t\t\t\t\tif ( preg_match( $regex, $table[0] ) ) {\n\t\t\t\t\t\t\tcontinue;\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\n\t\t\t\t\tif ( 0 === strpos( $table[0], $wpdb->prefix ) ) {\n\t\t\t\t\t\t$current_site_tables[] = $table[0];\n\t\t\t\t\t}\n\t\t\t\t} else {\n\t\t\t\t\t$current_site_tables[] = $table[0];\n\t\t\t\t}\n\t\t\t}\n\n\t\t\treturn $current_site_tables;\n\t\t}",
+    "source_file": "jupiterx-core.json",
+    "function_name": "JupiterX_Core_Control_Panel_Database_Manager::get_tables",
+    "critical_failures": [
+      "SQL injection risk: dynamic values in query without $wpdb->prepare()"
+    ],
+    "low_score_dims": [
+      "sql_safety"
+    ]
+  },
+  {
+    "code": "function wp_supercache_awaitingmoderation_admin() {\n\tglobal $cache_awaitingmoderation, $wp_cache_config_file, $valid_nonce;\n\n\t$cache_awaitingmoderation = '' === $cache_awaitingmoderation ? '0' : $cache_awaitingmoderation;\n\n\tif ( isset( $_POST['cache_awaitingmoderation'] ) && $valid_nonce ) {\n\t\t$cache_awaitingmoderation = (int) $_POST['cache_awaitingmoderation'];\n\t\twp_cache_replace_line( '^ *\\$cache_awaitingmoderation', \"\\$cache_awaitingmoderation = '$cache_awaitingmoderation';\", $wp_cache_config_file );\n\t\t$changed = true;\n\t} else {\n\t\t$changed = false;\n\t}\n\t$id = 'awaitingmoderation-section';\n\t?>\n\t\t<fieldset id=\"<?php echo $id; ?>\" class=\"options\">\n\t\t<h4><?php _e( 'Awaiting Moderation', 'wp-super-cache' ); ?></h4>\n\t\t<form name=\"wp_manager\" action=\"\" method=\"post\">\n\t\t<label><input type=\"radio\" name=\"cache_awaitingmoderation\" value=\"1\" <?php if ( $cache_awaitingmoderation ) { echo 'checked=\"checked\" '; } ?>/> <?php _e( 'Enabled', 'wp-super-cache' ); ?></label>\n\t\t<label><input type=\"radio\" name=\"cache_awaitingmoderation\" value=\"0\" <?php if ( ! $cache_awaitingmoderation ) { echo 'checked=\"checked\" '; } ?>/> <?php _e( 'Disabled', 'wp-super-cache' ); ?></label>\n\t\t<p><?php _e( 'Enables or disables plugin to Remove the text \"Your comment is awaiting moderation.\" when someone leaves a moderated comment.', 'wp-super-cache' ); ?></p>\n\t\t<?php\n\t\tif ( $changed ) {\n\t\t\tif ( $cache_awaitingmoderation ) {\n\t\t\t\t$status = __( 'enabled', 'wp-super-cache' );\n\t\t\t} else {\n\t\t\t\t$status = __( 'disabled', 'wp-super-cache' );\n\t\t\t}\n\t\t\techo '<p><strong>' . sprintf( __( 'Awaiting Moderation is now %s', 'wp-super-cache' ), $status ) . '</strong></p>';\n\t\t}\n\t\techo '<div class=\"submit\"><input class=\"button-primary\" ' . SUBMITDISABLED . 'type=\"submit\" value=\"' . __( 'Update', 'wp-super-cache' ) . '\" /></div>';\n\t\twp_nonce_field( 'wp-cache' );\n\t?>\n\t</form>\n\t</fieldset>\n\t<?php\n}",
     "source_file": "wp-super-cache.json",
-    "function_name": "wpsupercache_uninstall",
+    "function_name": "wp_supercache_awaitingmoderation_admin",
     "critical_failures": [
-      "Uses error-suppressing @ operator on unlink() calls, which hides filesystem errors instead of handling them properly",
-      "Direct use of unlink() instead of WP_Filesystem API for file operations",
-      "No capability check (current_user_can()) before performing destructive uninstall operations",
-      "No nonce verification present \u2014 though this may be an uninstall hook callback, the lack of any authorization check is a security concern",
-      "Missing PHPDoc block entirely \u2014 no @since, @return, @global annotations"
-    ],
-    "low_score_dims": [
-      "security",
-      "code_quality"
-    ]
-  },
-  {
-    "code": "/**\n\t * @doesNotPerformAssertions\n\t */\nfunction test_update_item() {\n\t\t// We are testing filters, not controller update_item().\n\t}",
-    "source_file": "gutenberg.json",
-    "function_name": "Tests_Resolve_Patterns_In_Template_Parts::test_update_item",
-    "critical_failures": [
-      "test code, excluded from training data"
+      "Nonce is placed AFTER form inputs are rendered and AFTER state-changing POST handling \u2014 nonce field is output at the bottom of the form but the nonce check relies on a global $valid_nonce rather than verifying inline with wp_verify_nonce() or check_admin_referer(); this pattern is fragile and the actual verification is deferred to an external global that cannot be audited here",
+      "Unescaped output: `echo $id` without escaping in `id=\"<?php echo $id; ?>\"` \u2014 should use esc_attr()",
+      "Missing capability check: no `current_user_can()` before processing POST data or rendering admin UI",
+      "Output of `__( 'Update', 'wp-super-cache' )` in submit button value attribute is unescaped \u2014 should use esc_attr__()",
+      "The status string concatenated via sprintf is echoed without escaping \u2014 should use esc_html()",
+      "Missing PHPDoc block entirely",
+      "security_auto_fail"
     ],
     "low_score_dims": [
       "wpcs_compliance",
-      "sql_safety",
       "security",
-      "performance",
-      "wp_api_usage",
       "code_quality",
-      "dependency_integrity",
-      "i18n",
-      "accessibility"
+      "dependency_integrity"
     ]
   },
   {
-    "code": "function response_part( $pos ) {\n\t\tif ( !isset( $this->response->demands->demand ) )\n\t\t\treturn false;\n\n\t\tif ( is_array( $this->response->demands->demand ) ) {\n\t\t\tif ( isset( $this->response->demands->demand[$pos] ) )\n\t\t\t\treturn $this->response->demands->demand[$pos];\n\t\t\treturn false;\n\t\t}\n\n\t\tif ( 0 === $pos )\n\t\t\treturn $this->response->demands->demand;\n\n\t\treturn false;\n\t}",
-    "source_file": "polldaddy.json",
-    "function_name": "response_part",
+    "code": "/**\r\n     * Change the content of each column of the table list\r\n     *\r\n     * @param $column string The current column\r\n     * @param $post_id int The current post ID\r\n     *\r\n     * @return void\r\n     * @since  1.0\r\n     * @author Antonino Scarfi' <antonino.scarfi@yithemes.com>\r\n     */\nfunction cptu_change_columns( $column, $post_id ) {\r\n        $post = get_post( $post_id );\r\n        extract( $this->_cpt_args( $post ) );\r\n\r\n        switch ( $column ) {\r\n            case 'actions' :\r\n                echo '<a href=\"' . admin_url( \"post.php?post={$post_id}&action=edit\" ) . '\" class=\"button-secondary\">' . sprintf( __( 'Edit %s', 'yith-plugin-fw' ), ucfirst( $this->_labels['singular'] ) ) . '</a> ';\r\n                echo '<a href=\"' . admin_url( 'edit.php?post_type=' . get_post_meta( $post_id, '_post_type', true ) ) . '\" class=\"button-secondary\">' . sprintf( __( 'View %s', 'yith-plugin-fw' ), $label_plural ) . '</a> ';\r\n                break;\r\n        }",
+    "source_file": "yith-woocommerce-ajax-search.json",
+    "function_name": "cptu_change_columns",
     "critical_failures": [
-      "Missing PHPDoc block"
-    ],
-    "low_score_dims": []
-  },
-  {
-    "code": "/**\n\t * Transform the API request/response data into a string suitable for logging\n\t *\n\t * @since 3.0.0\n\t * @param array $data\n\t * @return string\n\t */\nfunction get_api_log_message( $data ) {\n\n\t\t$messages = array();\n\n\t\t$messages[] = isset( $data['uri'] ) && $data['uri'] ? 'Request' : 'Response';\n\n\t\tforeach ( (array) $data as $key => $value ) {\n\t\t\t// print_r here is necessary to dump request / response data for logging purposes.\n\t\t\t// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r\n\t\t\t$messages[] = trim( sprintf( '%s: %s', $key, is_array( $value ) || ( is_object( $value ) && 'stdClass' === get_class( $value ) ) ? print_r( (array) $value, true ) : $value ) );\n\t\t}\n\n\t\treturn implode( \"\\n\", $messages ) . \"\\n\";\n\t}",
-    "source_file": "woocommerce-square.json",
-    "function_name": "Plugin::get_api_log_message",
-    "critical_failures": [
-      "Contains debug statements"
+      "Uses extract()"
     ],
     "low_score_dims": [
-      "code_quality"
+      "security"
     ]
   },
   {
-    "code": "/**\n\t * Get html edit question type multiple choice.\n\t *\n\t * @param QuestionPostModel $questionPostModel\n\t *\n\t * @return string\n\t */\nfunction html_answer_type_sorting_choice_old( QuestionPostModel $questionPostModel ): string {\n\t\t$answers   = $questionPostModel->get_answer_option();\n\t\t$answers[] = null;\n\n\t\t$html_answers = '';\n\t\tforeach ( $answers as $answer ) {\n\t\t\t$is_clone           = true;\n\t\t\t$title              = '';\n\t\t\t$question_answer_id = 0;\n\n\t\t\tif ( ! is_null( $answer ) ) {\n\t\t\t\t$is_clone            = false;\n\t\t\t\t$questionAnswerModel = new QuestionAnswerModel( $answer );\n\t\t\t\t$title               = $questionAnswerModel->title;\n\t\t\t\t$question_answer_id  = $questionAnswerModel->question_answer_id;\n\t\t\t}\n\n\t\t\t$html_answers .= sprintf(\n\t\t\t\t'<div class=\"lp-question-answer-item %s\" data-answer-id=\"%d\">\n\t\t\t\t\t<span class=\"drag lp-icon-drag\" title=\"Drag to reorder section\"></span>\n\t\t\t\t\t<span class=\"lp-icon-spinner\"></span>\n\t\t\t\t\t<input type=\"text\" class=\"%s\" name=\"%s\" value=\"%s\" />\n\t\t\t\t\t<span class=\"lp-icon-trash-o lp-btn-delete-question-answer\"></span>\n\t\t\t\t</div>',\n\t\t\t\t$is_clone ? 'clone lp-hidden' : '',\n\t\t\t\tesc_attr( $question_answer_id ),\n\t\t\t\t'lp-question-answer-title-input lp-auto-save-question-answer',\n\t\t\t\t'lp-question-answer-title-input',\n\t\t\t\tesc_attr( $title )\n\t\t\t);\n\t\t}\n\n\t\t$html_answers .= sprintf(\n\t\t\t'<div class=\"lp-question-answer-item-add-new\">\n\t\t\t\t<span class=\"lp-icon-plus\" title=\"Add answer option\"></span>\n\t\t\t\t<input type=\"text\" class=\"%1$s\" name=\"%1$s\" value=\"\" data-mess-empty-title=\"%2$s\" />\n\t\t\t\t<button type=\"button\" class=\"button lp-btn-add-question-answer lp-btn-edit-primary\">%3$s</button>\n\t\t\t</div>',\n\t\t\t'lp-question-answer-title-new-input',\n\t\t\tesc_attr__( 'Answer title is required', 'learnpress' ),\n\t\t\t__( 'Add Option', 'learnpress' )\n\t\t);\n\n\t\t$section = [\n\t\t\t'header'  => sprintf(\n\t\t\t\t'<div class=\"lp-question-choice-header\">\n\t\t\t\t<span>%s</span><span>%s</span>\n\t\t\t</div>',\n\t\t\t\t__( 'Answers', 'learnpress' ),\n\t\t\t\t__( 'Corrects', 'learnpress' )\n\t\t\t),\n\t\t\t'answers' => $html_answers,\n\t\t];\n\n\t\treturn Template::combine_components( $section );\n\t}",
-    "source_file": "learnpress-wishlist.json",
-    "function_name": "render_edit_question::html_answer_type_sorting_choice_old",
+    "code": "function ajax_meta_box() {\n      check_ajax_referer(str_replace('wc_', '', $this->core->prefix) . '-meta-box', 'security');\n\n      $error_count = count($this->get_errors());\n\n      if ( ! is_numeric($_POST['post_id']) ) {\n        $this->add_admin_notice(__('Received Post ID is not a number', 'woo-pakettikauppa'), 'error');\n        wp_die('', '', 501);\n      }\n      $this->save_ajax_metabox((int) $_POST['post_id']);\n\n      if ( count($this->get_errors()) !== $error_count ) {\n        foreach ( $this->get_errors() as $error ) {\n          $this->add_admin_notice($error, 'error');\n        }\n        wp_die('', '', 501);\n      }\n\n      $this->meta_box(wc_get_order((int) $_POST['post_id']));\n      wp_die();\n    }",
+    "source_file": "posti-shipping.json",
+    "function_name": "Admin::ajax_meta_box",
     "critical_failures": [
-      "Form inputs without associated labels"
-    ],
-    "low_score_dims": []
-  },
-  {
-    "code": "/**\n     * Get plugin file url\n     *\n     * @param string $path\n     * @param string $extension\n     * @param bool $ignoreSuffix\n     *\n     * @return string\n     */\nfunction getPluginFileUrl(string $path): string\n    {\n        return plugins_url($path, MP_PLUGIN_FILE);\n    }",
-    "source_file": "woocommerce-mercadopago.json",
-    "function_name": "Url::getPluginFileUrl",
-    "critical_failures": [
-      "camelCase method naming violates WPCS (WordPress requires snake_case)"
+      "Missing PHPDoc block",
+      "Uses superglobal without sanitization"
     ],
     "low_score_dims": [
-      "wpcs_compliance"
+      "security"
     ]
+  },
+  {
+    "code": "/**\n     * Process final HPP response before processing the order\n     * @return void\n     */\nfunction process_hpp_final(): void\n    {\n        $logger = wc_get_logger();\n        $context = array( 'source' => 'globalpayments_hpp' );\n        \n        // Validate and sanitize POST data\n        if ( !isset( $_POST['X-GP-Signature'] ) || !isset( $_POST['gateway_response'] ) ) {\n            if ( $this->debug ) {\n                $logger->error( 'Missing required POST data in HPP final', $context );\n            }\n            wp_die( __( 'Missing required data', 'globalpayments-gateway-provider-for-woocommerce' ), 400 );\n        }\n    \n        $signature = sanitize_text_field( wp_unslash ( $_POST['X-GP-Signature'] ) );\n        $gateway_response_json = wp_unslash( $_POST['gateway_response'] );\n\n        \n        // Clean the JSON data\n        $gateway_response_json = $this->sanitize_hpp_json_input( $gateway_response_json );\n        \n        if ( !$this->validate_hpp_return_signature( $gateway_response_json, $signature ) ) {\n            if ( $this->debug ) {\n                $logger->error( 'HPP final signature validation failed', $context );\n            }\n            wp_die( __( 'Invalid signature', 'globalpayments-gateway-provider-for-woocommerce' ), 403 );\n        }\n\n        $gateway_data = json_decode( $gateway_response_json, true );\n        if ( !is_array( $gateway_data ) || empty( $gateway_data ) ) {\n            if ( $this->debug ) {\n                $logger->error( 'HPP Callback Processing: Failed to parse gateway data', $context );\n            }\n            wp_die( __( 'Invalid response data', 'globalpayments-gateway-provider-for-woocommerce'), 400);\n        }\n\n        // Extract order and process the result\n        $order_id = HppResponseParser::extract_order_id( $gateway_data );\n        $order_id = absint( $order_id );\n        \n        $order = wc_get_order( $order_id );\n        \n        if ( !$order instanceof WC_Order ) {\n            if ( $this->debug ) {\n                $logger->error( 'HPP Callback Processing: Order not found',  $context );\n            }\n            wp_die( __( 'Order not found', 'globalpayments-gateway-provider-for-woocommerce' ), 404 );\n        }\n\n        // Process the payment result directly (following AbstractApm pattern)\n        $is_successful = HppResponseParser::is_successful_payment( $gateway_data );\n        \n        if ( $is_successful ) {\n            $transaction_id = $gateway_data['id'] ?? '';\n            \n            // Handle installments BEFORE payment_complete() to ensure data is available in emails\n            if ( $this->has_installments( $gateway_data ) ) {\n                $this->save_installment_data( $order, $gateway_data );\n            }\n\n            $order->payment_complete( $transaction_id );\n            $order->add_order_note(\n                sprintf(\n                    __( 'Payment completed via HPP. Transaction ID: %s', 'globalpayments-gateway-provider-for-woocommerce' ),\n                    $transaction_id\n                )\n            );\n\n            wp_redirect( $order->get_checkout_order_received_url() );\n        } else if( HppResponseParser::is_pending_payment( $gateway_data ) ) {\n\n        $transaction_id = $gateway_data['id'] ?? '';\n        $pending_note = sprintf(\n                    __( 'Payment is pending. Transaction ID: %s',\n                     'globalpayments-gateway-provider-for-woocommerce' ),\n                    $transaction_id );\n        if( \"PENDING\" === strtoupper( $order->get_status() ) ){\n            $order->add_order_note( $pending_note );\n        }else{\n            $order->update_status( \"pending\" , $pending_note );\n        }\n\n        wp_redirect( $order->get_checkout_order_received_url() );\n\n        }else {\n            $error_message = HppResponseParser::get_error_message( $gateway_data );\n\n            if ( $this->debug ) {\n                $logger->error( 'HPP Callback Processing: Payment failed, updating order status', array_merge( $context, [\n                    'error_message' => $error_message,\n                ]));\n            }\n            \n            $order->update_status( 'failed', $error_message );\n            wc_add_notice( $error_message, 'error' );\n\n           wp_redirect( wc_get_checkout_url() );\n        }\n        \n        exit;\n    }",
+    "source_file": "global-payments-woocommerce.json",
+    "function_name": "process_hpp_final",
+    "critical_failures": [
+      "Missing nonce verification on state-changing AJAX handler"
+    ],
+    "low_score_dims": [
+      "security"
+    ]
+  },
+  {
+    "code": "/**\n\t\t * Log debug by printing it as notice.\n\t\t *\n\t\t * @param string $message Debug message.\n\t\t * @param string $type    Notice type.\n\t\t */\nfunction debug( $message, $type = 'notice' ) {\n      // phpcs:ignore WordPress.Security.NonceVerification.Missing --- No input from $_POST is used as input.\n\t\t\tif ( WC_Connect_Functions::is_cart() || WC_Connect_Functions::is_checkout() || isset( $_POST['update_cart'] ) || WC_Connect_Functions::is_store_api_call() ) {\n\t\t\t\t$debug_message = sprintf( '%s (%s:%d)', $message, esc_html( $this->title ), $this->instance_id );\n\t\t\t\t$this->logger->debug( $debug_message, $type );\n\t\t\t\t$this->logger->log( $debug_message, __CLASS__ );\n\t\t\t}\n\t\t}",
+    "source_file": "woocommerce-services.json",
+    "function_name": "WC_Connect_Shipping_Method::debug",
+    "critical_failures": [
+      "Security auto-fail: score < 5",
+      "Accesses superglobals without nonce verification"
+    ],
+    "low_score_dims": [
+      "security"
+    ]
+  },
+  {
+    "code": "/**\n\t * Clear all logs from the DB.\n\t *\n\t * @return bool True if flush was successful.\n\t */\nfunction flush() {\n\t\tglobal $wpdb;\n\n\t\treturn $wpdb->query( \"TRUNCATE TABLE {$wpdb->prefix}",
+    "source_file": "woocommerce.json",
+    "function_name": "flush",
+    "critical_failures": [
+      "SQL query with dynamic values without $wpdb->prepare()"
+    ],
+    "low_score_dims": [
+      "sql_safety"
+    ]
+  },
+  {
+    "code": "/**\n\t * Sets the `$comment_status` global based on the current request.\n\t *\n\t * @global string $comment_status\n\t *\n\t * @return void\n\t */\nfunction set_review_status() : void {\n\t\tglobal $comment_status;\n\n\t\t$comment_status = sanitize_text_field( wp_unslash( $_REQUEST['comment_status'] ?? 'all' ) ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited\n\n\t\tif ( ! in_array( $comment_status, [ 'all', 'moderated', 'approved', 'spam', 'trash' ], true ) ) {\n\t\t\t$comment_status = 'all'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited\n\t\t}\n\t}",
+    "source_file": "woocommerce.json",
+    "function_name": "ReviewsListTable::set_review_status",
+    "critical_failures": [
+      "Handles POST/REQUEST data without nonce verification"
+    ],
+    "low_score_dims": [
+      "security"
+    ]
+  },
+  {
+    "code": "/**\n\t * Get the content type for the response\n\t *\n\t * @since 2.1\n\t * @return string\n\t */\nfunction get_content_type() {\n\n\t\treturn sprintf( '%s; charset=%s', isset( $_GET['_jsonp'] ) ? 'application/javascript' : 'application/json', get_option( 'blog_charset' ) );\n\t}",
+    "source_file": "woocommerce-legacy-rest-api.json",
+    "function_name": "WC_API_JSON_Handler::get_content_type",
+    "critical_failures": [
+      "Missing input sanitization"
+    ],
+    "low_score_dims": []
   }
 ]
