@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: executing
-stopped_at: "Phase 4.1 context gathered — seed expansion strategy, issue #1 pipeline reorder accepted"
-last_updated: "2026-04-07T23:45:21.775Z"
+stopped_at: "Phase 04.1-02 CHECKPOINT: Task 3 human-verify gate — pilot batches ready for review"
+last_updated: "2026-04-08T03:08:36.736Z"
 progress:
-  total_phases: 19
+  total_phases: 16
   completed_phases: 2
   total_plans: 12
-  completed_plans: 9
-  percent: 33
+  completed_plans: 10
+  percent: 26
 ---
 
 # Project State
@@ -66,6 +66,7 @@ Progress: [██░░░░░░░░] 26% (phases 1, 2, 3, 4 partial, 6 com
 | Phase 06-adaptive-training-planner P03 | 8 | 2 tasks | 3 files |
 | Phase 06-adaptive-training-planner P04 | 5 | 2 tasks | 0 files |
 | Phase 04-evaluation P02 | 6 | 1 tasks | 1 files |
+| Phase 04.1 P02 | 142 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -97,6 +98,7 @@ Recent decisions affecting current work:
 - [Phase 06-adaptive-training-planner]: adaptive-planner skill is a thin wrapper: all decision logic stays in scripts/adaptive_planner.py
 - [Phase 04-evaluation]: Task 2 execution deferred: CUDA unavailable in current Python env (cpu-only torch); GPU execution requires correct CUDA-enabled environment activation on DGX Spark
 - [Phase 04-evaluation]: run_eval_and_wpbench_for_ratio keeps vLLM alive between eval_gen, eval_judge, and wp-bench for same ratio to avoid restart overhead
+- [Phase 04.1-02]: Model name claude-sonnet-4-6-20250514 does not exist; correct name is claude-sonnet-4-5 for this API key
 
 ### Pending Todos
 
@@ -134,6 +136,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-04-07T21:52:46.701Z
-Stopped at: Phase 4.1 context gathered — seed expansion strategy, issue #1 pipeline reorder accepted
-Resume file: .planning/phases/04.1-reasoning-data-generation-inserted/04.1-CONTEXT.md
+Last session: 2026-04-08T03:08:29.453Z
+Stopped at: Phase 04.1-02 CHECKPOINT: Task 3 human-verify gate — pilot batches ready for review
+Resume file: None
