@@ -174,7 +174,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 04.1-01-PLAN.md — Seed import + deep judge CoT generation script (seed data import, few-shot agent generation with 9-dimension quality gate)
+- [x] 04.1-01-PLAN.md — Seed import + deep judge CoT generation script (seed data import, few-shot agent generation with 9-dimension quality gate)
 - [ ] 04.1-02-PLAN.md — Critique-then-fix generation script + pilot execution of both streams with human review gate
 - [ ] 04.1-03-PLAN.md — Bulk generation of both streams (deep judge CoT + critique-then-fix) after pilot approval
 
