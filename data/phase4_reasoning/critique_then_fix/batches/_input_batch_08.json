@@ -1,221 +1,93 @@
 [
   {
-    "code": "function release_lock( string $action ): void {\n\t\tdelete_transient( self::LOCK_KEY );\n\t\t$this->logger->debug( \"Webhook lock released for '$action'.\" );\n\t}",
-    "source_file": "woocommerce-paypal-payments.json",
-    "function_name": "WebhookOrchestrator::release_lock",
+    "code": "/**\n\t * Prepare children for save.\n\t *\n\t * @return array\n\t */\nfunction prepare_children() {\n\t\treturn isset( $_POST['grouped_products'] ) ? array_filter( array_map( 'intval', (array) $_POST['grouped_products'] ) ) : array(); // phpcs:ignore WordPress.Security.NonceVerification.Missing\n\t}",
+    "source_file": "woocommerce.json",
+    "function_name": "WC_Meta_Box_Product_Data::prepare_children",
     "critical_failures": [
-      "Below threshold on: wpcs_compliance"
-    ],
-    "low_score_dims": []
-  },
-  {
-    "code": "function reactivate()\n    {\n        $config = Config::loadConfigAndFix(false);  // false, because we do not need to test if quality detection is working\n\n        if ($config === false) {\n            Messenger::addMessage(\n                'error',\n                'The config file seems to have gone missing. You will need to reconfigure WebP Express ' .\n                    '<a href=\"' . Paths::getSettingsUrl() . '\">(here)</a>.'\n            );\n        } else {\n            $rulesResult = HTAccess::saveRules($config, false);\n\n            $rulesSaveSuccess = $rulesResult[0];\n            if ($rulesSaveSuccess) {\n                Messenger::addMessage(\n                    'success',\n                    'WebP Express re-activated successfully.<br>' .\n                        'The image redirections are in effect again.<br><br>' .\n                        'Just a quick reminder: If you at some point change the upload directory or move Wordpress, ' .\n                        'the <i>.htaccess</i> files will need to be regenerated.<br>' .\n                        'You do that by re-saving the settings ' .\n                        '<a href=\"' . Paths::getSettingsUrl() . '\">(here)</a>'\n                );\n            } else {\n                Messenger::addMessage(\n                    'warning',\n                    'WebP Express could not regenerate the rewrite rules<br>' .\n                        'You need to change some permissions. Head to the ' .\n                        '<a href=\"' . Paths::getSettingsUrl() . '\">settings page</a> ' .\n                        'and try to save the settings there (it will provide more information about the problem)'\n                );\n            }\n\n            HTAccess::showSaveRulesMessages($rulesResult);\n        }\n    }",
-    "source_file": "webp-express.json",
-    "function_name": "PluginActivate::reactivate",
-    "critical_failures": [
-      "Missing PHPDoc block"
-    ],
-    "low_score_dims": []
-  },
-  {
-    "code": "/**\n     * Gets expiration date option\n     */\nfunction getCheckoutExpirationDate(): string\n    {\n        return $this->get_option(static::CHECKOUT_EXPIRATION_DATE_OPTION, static::CHECKOUT_EXPIRATION_DATE_DEFAULT);\n    }",
-    "source_file": "woocommerce-mercadopago.json",
-    "function_name": "TicketGateway::getCheckoutExpirationDate",
-    "critical_failures": [
-      "camelCase method naming violates WPCS (WordPress requires snake_case)"
-    ],
-    "low_score_dims": [
-      "wpcs_compliance"
-    ]
-  },
-  {
-    "code": "/**\n\t\t\t * Indexable instance.\n\t\t\t *\n\t\t\t * @var Indexable $indexable\n\t\t\t */\nfunction find_for_home_page( $auto_create = true ) {\n\t\t$indexable = \\wp_cache_get( 'home-page', 'yoast-seo-indexables' );\n\t\tif ( ! $indexable ) {\n\t\t\t\n\t\t\t$indexable = $this->query()->where( 'object_type', 'home-page' )->find_one();\n\n\t\t\tif ( $auto_create && ! $indexable ) {\n\t\t\t\t$indexable = $this->builder->build_for_home_page();\n\t\t\t}\n\n\t\t\t$indexable = $this->upgrade_indexable( $indexable );\n\n\t\t\t\\wp_cache_set( 'home-page', $indexable, 'yoast-seo-indexables', ( 5 * \\MINUTE_IN_SECONDS ) );\n\t\t}\n\n\t\treturn $indexable;\n\t}",
-    "source_file": "wordpress-seo.json",
-    "function_name": "Indexable_Repository::find_for_home_page",
-    "critical_failures": [
-      "Missing @param and @return PHPDoc tags on the function itself; the existing docblock appears to document a variable, not the function signature \u2014 public API method lacks proper documentation",
-      "Falsy check `! $indexable` is problematic: if wp_cache_get returns false legitimately (cache miss) vs. a stored false value, the cache-negative caching scenario is not handled, but more critically if build_for_home_page() or upgrade_indexable() returns null/false, that false/null value is cached and will be returned on subsequent calls without attempting rebuild",
-      "upgrade_indexable() is called even when the indexable was successfully retrieved from cache (no \u2014 wait, it's inside the cache-miss block), but upgrade_indexable() is called even if $indexable is still falsy after build_for_home_page() fails, potentially caching a null/false result"
-    ],
-    "low_score_dims": []
-  },
-  {
-    "code": "/**\n\t\t * Filter: 'wpseo_indexing_get_limited_unindexed_count_background' - Allow changing the amount of unindexed objects that can be indexed in the background,\n\t\t * and allow for a maximum number of items counted to improve performance.\n\t\t *\n\t\t * @param int       $unindexed_count The amount of unindexed objects.\n\t\t * @param int|false $limit           Limit the number of unindexed objects that need to be counted.\n\t\t *                                   False if it doesn't need to be limited.\n\t\t */\nfunction get_limited_filtered_unindexed_count_background( $limit ) {\n\t\t$unindexed_count = $this->get_limited_unindexed_count( $limit, $this->background_indexing_actions );\n\n\t\tif ( $unindexed_count > $limit ) {\n\t\t\treturn $unindexed_count;\n\t\t}\n\n\t\t\n\t\treturn \\apply_filters( 'wpseo_indexing_get_limited_unindexed_count_background', $unindexed_count, $limit );\n\t}",
-    "source_file": "wordpress-seo.json",
-    "function_name": "Indexing_Helper::get_limited_filtered_unindexed_count_background",
-    "critical_failures": [
-      "Logic bug: when $limit is `false`, the comparison `$unindexed_count > $limit` evaluates as `$unindexed_count > 0` (PHP coerces false to 0), causing the filter to be skipped for any positive unindexed count \u2014 the documented `false` case is never handled correctly.",
-      "PHPDoc block is misplaced: the docblock is written above the function but inside the class body with incorrect indentation, and critically it belongs to the apply_filters call rather than the function itself \u2014 the function has no proper @param or @return annotations for its own signature.",
-      "No @since tag in the PHPDoc block, violating WordPress Coding Standards for public API methods.",
-      "Blank line with trailing whitespace exists between the early-return block and the return statement, indicating dead/inconsistent formatting."
-    ],
-    "low_score_dims": [
-      "code_quality"
-    ]
-  },
-  {
-    "code": "/** This filter is documented in src/integrations/front-end-integration.php */\nfunction canonical( $echo = true, $un_paged = false, $no_override = false ) {\n\t\t_deprecated_function( __METHOD__, 'Yoast SEO 14.0' );\n\n\t\t$presentation = $this->get_current_page_presentation();\n\t\t$presenter    = new Canonical_Presenter();\n\n\t\t\n\t\t$presenter->presentation = $presentation;\n\t\t$presenter->helpers      = $this->helpers;\n\t\t$presenter->replace_vars = $this->replace_vars;\n\n\t\tif ( ! $echo ) {\n\t\t\treturn $presenter->get();\n\t\t}\n\n\t\techo $presenter->present();\n\t}",
-    "source_file": "wordpress-seo.json",
-    "function_name": "__call::canonical",
-    "critical_failures": [
-      "Unescaped output: `echo $presenter->present()` outputs HTML without any escaping wrapper; the output of `present()` is not verified to be safe, and no `wp_kses()`, `esc_html()`, or similar escaping is applied at the call site",
-      "Function signature accepts parameters ($un_paged, $no_override) that are declared but never used, indicating dead/misleading API surface"
+      "Handles POST/REQUEST data without nonce verification",
+      "Missing input sanitization"
     ],
     "low_score_dims": [
       "security"
     ]
   },
   {
-    "code": "function register_additional_actions() {\n      add_action('wp_ajax_pakettikauppa_blocks_get_pickup_points', array($this, 'get_pickup_points_callback'));\n      add_action('wp_ajax_nopriv_pakettikauppa_blocks_get_pickup_points', array($this, 'get_pickup_points_callback'));\n      add_action('wp_ajax_pakettikauppa_blocks_get_custom_pickup_points', array($this, 'get_pickup_points_by_free_input_callback'));\n      add_action('wp_ajax_nopriv_pakettikauppa_blocks_get_custom_pickup_points', array($this, 'get_pickup_points_by_free_input_callback'));\n    }",
-    "source_file": "posti-shipping.json",
-    "function_name": "Wc_Blocks_Integration::register_additional_actions",
+    "code": "/**\n\t * Maybe prrocess a clicked \"Duplicate form\" link.\n\t *\n\t * @since 2.8.0\n\t */\nfunction maybe_duplicate_form() {\n\t\tif ( empty( $_GET ) ) {\n\t\t\treturn;\n\t\t}\n\n\t\tif (\n\t\t\tisset( $_GET['ctct_duplicate_form'] ) &&\n\t\t\tcheck_admin_referer( 'ctct_duplicate_form', 'ctct_duplicate_form' )\n\t\t) {\n\t\t\tif ( ! isset( $_GET['post_id'] ) ) {\n\t\t\t\twp_die( esc_html__( 'No form to duplicate has been supplied.', 'constant-contact-forms' ) );\n\t\t\t}\n\n\t\t\t$returned_id = $this->duplicate_form( absint( $_GET['post_id'] ) );\n\n\t\t\t$success = 'false';\n\t\t\tif ( $returned_id ) {\n\t\t\t\t$success = 'true';\n\t\t\t}\n\n\t\t\twp_safe_redirect(\n\t\t\t\tadd_query_arg(\n\t\t\t\t\t[\n\t\t\t\t\t\t'ctct_duplicate_form_success' => $success\n\t\t\t\t\t],\n\t\t\t\t\tadmin_url( 'edit.php?post_type=ctct_forms' )\n\t\t\t\t)\n\t\t\t);\n\t\t\texit();\n\t\t}\n\t}",
+    "source_file": "constant-contact-forms.json",
+    "function_name": "ConstantContact_CPTS::maybe_duplicate_form",
     "critical_failures": [
-      "Missing PHPDoc block"
-    ],
-    "low_score_dims": []
-  },
-  {
-    "code": "function test_flat_border_with_custom_color() {\n\t\t$block_type  = self::register_bordered_block_with_support(\n\t\t\t'test/flat-border-with-custom-color',\n\t\t\tarray(\n\t\t\t\t'__experimentalBorder' => array(\n\t\t\t\t\t'color' => true,\n\t\t\t\t\t'width' => true,\n\t\t\t\t\t'style' => true,\n\t\t\t\t),\n\t\t\t)\n\t\t);\n\t\t$block_attrs = array(\n\t\t\t'style' => array(\n\t\t\t\t'border' => array(\n\t\t\t\t\t'color' => '#72aee6',\n\t\t\t\t\t'width' => '2px',\n\t\t\t\t\t'style' => 'dashed',\n\t\t\t\t),\n\t\t\t),\n\t\t);\n\t\t$actual      = gutenberg_apply_border_support( $block_type, $block_attrs );\n\t\t$expected    = array(\n\t\t\t'class' => 'has-border-color',\n\t\t\t'style' => 'border-color:#72aee6;border-style:dashed;border-width:2px;',\n\t\t);\n\n\t\t$this->assertSame( $expected, $actual );\n\t}",
-    "source_file": "gutenberg.json",
-    "function_name": "WP_Block_Supports_Border_Test::test_flat_border_with_custom_color",
-    "critical_failures": [
-      "test code, excluded from training data"
+      "Accessing superglobals without nonce verification"
     ],
     "low_score_dims": [
-      "wpcs_compliance",
-      "sql_safety",
-      "security",
-      "performance",
-      "wp_api_usage",
-      "code_quality",
-      "dependency_integrity",
-      "i18n",
-      "accessibility"
+      "security"
     ]
   },
   {
-    "code": "/**\n * Loads view transitions based on the current configuration.\n *\n * @since 1.0.0\n */\nfunction plvt_load_view_transitions(): void {\n\tif ( ! current_theme_supports( 'view-transitions' ) ) {\n\t\treturn;\n\t}\n\n\t// Instantiate transition animation registry and register available animations on it.\n\t$animation_registry = new PLVT_View_Transition_Animation_Registry();\n\tplvt_register_view_transition_animations( $animation_registry );\n\n\t// Use an inline style to avoid an extra request.\n\t$stylesheet = '@view-transition { navigation: auto; }';\n\twp_register_style( 'plvt-view-transitions', false, array(), null ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion\n\twp_add_inline_style( 'plvt-view-transitions', $stylesheet );\n\twp_enqueue_style( 'plvt-view-transitions' );\n\n\t$theme_support = get_theme_support( 'view-transitions' );\n\n\t/*\n\t * Add the animation stylesheet for the default animation, if any.\n\t */\n\t$default_animation_args       = isset( $theme_support['default-animation-args'] ) ? (array) $theme_support['default-animation-args'] : array();\n\t$default_animation_stylesheet = $animation_registry->get_animation_stylesheet( $theme_support['default-animation'], $default_animation_args );\n\t$default_animation_stylesheet = plvt_inject_animation_duration( $default_animation_stylesheet, absint( $theme_support['default-animation-duration'] ) );\n\twp_add_inline_style( 'plvt-view-transitions', '@media (prefers-reduced-motion: no-preference) {' . $default_animation_stylesheet . '}' );\n\n\t/*\n\t * No point in loading the script if no specific view transition names are configured.\n\t */\n\tif (\n\t\t( ! is_array( $theme_support['global-transition-names'] ) || count( $theme_support['global-transition-names'] ) === 0 ) &&\n\t\t( ! is_array( $theme_support['post-transition-names'] ) || count( $theme_support['post-transition-names'] ) === 0 )\n\t) {\n\t\treturn;\n\t}\n\n\t$animations_js_config = array(\n\t\t'default' => array(\n\t\t\t'useGlobalTransitionNames' => $animation_registry->use_animation_global_transition_names( $theme_support['default-animation'], $default_animation_args ),\n\t\t\t'usePostTransitionNames'   => $animation_registry->use_animation_post_transition_names( $theme_support['default-animation'], $default_animation_args ),\n\t\t),\n\t);\n\n\t$config = array(\n\t\t'postSelector'          => $theme_support['post-selector'],\n\t\t'globalTransitionNames' => $theme_support['global-transition-names'],\n\t\t'postTransitionNames'   => $theme_support['post-transition-names'],\n\t\t'animations'            => $animations_js_config,\n\t);\n\n\t// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents\n\t$src_script = file_get_contents( plvt_get_asset_path( 'js/view-transitions.js' ) );\n\tif ( false === $src_script || '' === $src_script ) {\n\t\t// This clause should never be entered, but is needed to please PHPStan. Can't hurt to be safe.\n\t\treturn;\n\t}\n\n\t$init_script = sprintf(\n\t\t'plvtInitViewTransitions( %s )',\n\t\twp_json_encode( $config, JSON_FORCE_OBJECT | JSON_HEX_TAG | JSON_UNESCAPED_SLASHES )\n\t);\n\n\t/*\n\t * This must be in the <head>, not in the footer.\n\t * This is because the pagereveal event listener must be added before the first rAF occurs since that is when the event fires. See <https://issues.chromium.org/issues/40949146#comment10>.\n\t * An inline script is used to avoid an extra request.\n\t */\n\twp_register_script( 'plvt-view-transitions', false, array(), null, array() ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion\n\twp_add_inline_script( 'plvt-view-transitions', $src_script );\n\twp_add_inline_script( 'plvt-view-transitions', $init_script );\n\twp_enqueue_script( 'plvt-view-transitions' );\n}",
-    "source_file": "optimization-detective.json",
-    "function_name": "plvt_load_view_transitions",
+    "code": "function wp_cache_time_update() {\n\tglobal $cache_max_time, $wp_cache_config_file, $valid_nonce, $cache_schedule_type, $cache_scheduled_time, $cache_schedule_interval, $cache_time_interval, $cache_gc_email_me;\n\tif ( isset( $_POST[ 'action' ] ) && $_POST[ 'action' ] == 'expirytime' ) {\n\n\t\tif ( false == $valid_nonce )\n\t\t\treturn false;\n\n\t\tif( !isset( $cache_schedule_type ) ) {\n\t\t\t$cache_schedule_type = 'interval';\n\t\t\twp_cache_replace_line('^ *\\$cache_schedule_type', \"\\$cache_schedule_type = '$cache_schedule_type';\", $wp_cache_config_file);\n\t\t}\n\n\t\tif( !isset( $cache_scheduled_time ) ) {\n\t\t\t$cache_scheduled_time = '00:00';\n\t\t\twp_cache_replace_line('^ *\\$cache_scheduled_time', \"\\$cache_scheduled_time = '$cache_scheduled_time';\", $wp_cache_config_file);\n\t\t}\n\n\t\tif( !isset( $cache_max_time ) ) {\n\t\t\t$cache_max_time = 3600;\n\t\t\twp_cache_replace_line('^ *\\$cache_max_time', \"\\$cache_max_time = $cache_max_time;\", $wp_cache_config_file);\n\t\t}\n\n\t\tif ( !isset( $cache_time_interval ) ) {\n\t\t\t$cache_time_interval = $cache_max_time;\n\t\t\twp_cache_replace_line('^ *\\$cache_time_interval', \"\\$cache_time_interval = '$cache_time_interval';\", $wp_cache_config_file);\n\t\t}\n\n\t\tif ( isset( $_POST['wp_max_time'] ) ) {\n\t\t\t$cache_max_time = (int)$_POST['wp_max_time'];\n\t\t\twp_cache_replace_line('^ *\\$cache_max_time', \"\\$cache_max_time = $cache_max_time;\", $wp_cache_config_file);\n\t\t\t// schedule gc watcher\n\t\t\tif ( false == wp_next_scheduled( 'wp_cache_gc_watcher' ) )\n\t\t\t\twp_schedule_event( time()+600, 'hourly', 'wp_cache_gc_watcher' );\n\t\t}\n\n\t\tif ( isset( $_POST[ 'cache_gc_email_me' ] ) ) {\n\t\t\t$cache_gc_email_me = 1;\n\t\t\twp_cache_replace_line('^ *\\$cache_gc_email_me', \"\\$cache_gc_email_me = $cache_gc_email_me;\", $wp_cache_config_file);\n\t\t} else {\n\t\t\t$cache_gc_email_me = 0;\n\t\t\twp_cache_replace_line('^ *\\$cache_gc_email_me', \"\\$cache_gc_email_me = $cache_gc_email_me;\", $wp_cache_config_file);\n\t\t}\n\t\tif ( isset( $_POST[ 'cache_schedule_type' ] ) && $_POST[ 'cache_schedule_type' ] == 'interval' && isset( $_POST['cache_time_interval'] ) ) {\n\t\t\twp_clear_scheduled_hook( 'wp_cache_gc' );\n\t\t\t$cache_schedule_type = 'interval';\n\t\t\tif ( (int)$_POST[ 'cache_time_interval' ] == 0 )\n\t\t\t\t$_POST[ 'cache_time_interval' ] = 600;\n\t\t\t$cache_time_interval = (int)$_POST[ 'cache_time_interval' ];\n\t\t\twp_schedule_single_event( time() + $cache_time_interval, 'wp_cache_gc' );\n\t\t\twp_cache_replace_line('^ *\\$cache_schedule_type', \"\\$cache_schedule_type = '$cache_schedule_type';\", $wp_cache_config_file);\n\t\t\twp_cache_replace_line('^ *\\$cache_time_interval', \"\\$cache_time_interval = '$cache_time_interval';\", $wp_cache_config_file);\n\t\t} else { // clock\n\t\t\twp_clear_scheduled_hook( 'wp_cache_gc' );\n\t\t\t$cache_schedule_type = 'time';\n\t\t\tif ( !isset( $_POST[ 'cache_scheduled_time' ] ) ||\n\t\t\t\t$_POST[ 'cache_scheduled_time' ] == '' ||\n\t\t\t\t5 != strlen( $_POST[ 'cache_scheduled_time' ] ) ||\n\t\t\t\t\":\" != substr( $_POST[ 'cache_scheduled_time' ], 2, 1 )\n\t\t\t)\n\t\t\t\t$_POST[ 'cache_scheduled_time' ] = '00:00';\n\n\t\t\t$cache_scheduled_time = $_POST[ 'cache_scheduled_time' ];\n\n\t\t\tif ( ! preg_match( '/[0-9][0-9]:[0-9][0-9]/', $cache_scheduled_time ) ) {\n\t\t\t\t$cache_scheduled_time = '00:00';\n\t\t\t}\n\t\t\t$schedules = wp_get_schedules();\n\t\t\tif ( !isset( $cache_schedule_interval ) )\n\t\t\t\t$cache_schedule_interval = 'daily';\n\t\t\tif ( isset( $_POST[ 'cache_schedule_interval' ] ) && isset( $schedules[ $_POST[ 'cache_schedule_interval' ] ] ) )\n\t\t\t\t$cache_schedule_interval = $_POST[ 'cache_schedule_interval' ];\n\t\t\twp_cache_replace_line('^ *\\$cache_schedule_type', \"\\$cache_schedule_type = '$cache_schedule_type';\", $wp_cache_config_file);\n\t\t\twp_cache_replace_line('^ *\\$cache_schedule_interval', \"\\$cache_schedule_interval = '{$cache_schedule_interval}';\", $wp_cache_config_file);\n\t\t\twp_cache_replace_line('^ *\\$cache_scheduled_time', \"\\$cache_scheduled_time = '$cache_scheduled_time';\", $wp_cache_config_file);\n\t\t\twp_schedule_event( strtotime( $cache_scheduled_time ), $cache_schedule_interval, 'wp_cache_gc' );\n\t\t}\n\t}",
+    "source_file": "wp-super-cache.json",
+    "function_name": "wp_cache_time_update",
     "critical_failures": [
-      "direct_file_operations"
-    ],
-    "low_score_dims": []
-  },
-  {
-    "code": "/**\n\t *\n\t */\nfunction render()\n\t{\n\t\tparent::render();\n\n\t\t$id = HtmlIdGenerator::generateByString($this->_id);\n\t\techo '<p>'\n            .'<input type=\"button\" class=\"inputFieldCheckboxButton button\" name=\"'\n                .esc_attr($id).'\" value=\"'.esc_html__('Add to List >>', 'onoffice-for-wp-websites').'\" '\n                .'data-onoffice-category=\"'.esc_attr($this->getLabel()).'\"'\n                // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- renderAdditionalAttributes() returns escaped attributes\n                . $this->renderAdditionalAttributes().'>'\n            .'</p>';\n\t}",
-    "source_file": "onoffice-for-wp-websites.json",
-    "function_name": "InputFieldCheckboxButtonRenderer::render",
-    "critical_failures": [
-      "Form inputs without labels"
-    ],
-    "low_score_dims": [
-      "accessibility"
-    ]
-  },
-  {
-    "code": "/**\n\t * @return void\n\t */\nfunction init() {\n\t\tif ( ! self::user_can_view() ) {\n\t\t\tdo_action( 'qm/cease' );\n\t\t\treturn;\n\t\t}\n\n\t\tif ( ! defined( 'DONOTCACHEPAGE' ) ) {\n\t\t\tdefine( 'DONOTCACHEPAGE', 1 );\n\t\t}\n\n\t\tadd_action( 'send_headers', 'nocache_headers' );\n\t}",
-    "source_file": "query-monitor.json",
-    "function_name": "init",
-    "critical_failures": [
-      "Missing @since tag in PHPDoc block \u2014 required by WordPress Coding Standards for public/protected methods",
-      "PHPDoc block is incomplete \u2014 no @param documented (even if none, the class context and method purpose should be documented)"
-    ],
-    "low_score_dims": []
-  },
-  {
-    "code": "function transfer($attributes = array())\n    {\n        $relativeUrl = $this->getEntityUrl() . $this->id . '/transfers';\n\n        return $this->request('POST', $relativeUrl, $attributes);\n    }",
-    "source_file": "woo-razorpay.json",
-    "function_name": "Payment::transfer",
-    "critical_failures": [
-      "Missing PHPDoc block"
-    ],
-    "low_score_dims": [
-      "wpcs_compliance"
-    ]
-  },
-  {
-    "code": "/**\n\t\t * This function will setup the field type data\n\t\t *\n\t\t * @since   5.0.0\n\t\t */\nfunction initialize() {\n\n\t\t\t// vars\n\t\t\t$this->name     = 'output';\n\t\t\t$this->label    = 'output';\n\t\t\t$this->public   = false;\n\t\t\t$this->defaults = array(\n\t\t\t\t'html' => false,\n\t\t\t);\n\t\t}",
-    "source_file": "advanced-custom-fields.json",
-    "function_name": "acf_field_output::initialize",
-    "critical_failures": [
-      "User-facing label string 'output' is hardcoded without a translation wrapper (e.g., __('output', 'acf'))"
-    ],
-    "low_score_dims": [
-      "wpcs_compliance",
-      "i18n"
-    ]
-  },
-  {
-    "code": "/**\n\t * Build the error email.\n\t *\n\t * @param Form_Data_Request $form_data The form request data.\n\t * @return string\n\t * @since 2.0.3\n\t */\nfunction build_error_email( $form_data ) {\n\t\treturn '\n\t\t<!doctype html>\n\t\t<html xmlns=\"http://www.w3.org/1999/xhtml\">\n\t\t<head>\n\t\t\t<meta http-equiv=\"Content-Type\" content=\"text/html;\" charset=\"utf-8\"/>\n\t\t\t<!-- view port meta tag -->\n\t\t\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n\t\t\t<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"/>\n\t\t\t<title>'\n\t\t\t. esc_html__( 'Mail From: ', 'otter-blocks' ) . sanitize_email( get_site_option( 'admin_email' ) ) .\n\t\t\t'</title>\n\t\t</head>\n\t\t<body>'\n\t\t\t. apply_filters( 'otter_form_email_render_body_error', $form_data ) .\n\t\t\"<div>\n\t\t\t<h3> <?php esc_html_e( 'Submitted form content', 'otter-blocks' ); ?> </h3>\n\t\t\t<div style=\\\"padding: 10px; border: 1px dashed black;\\\">\"\n\t\t\t. apply_filters( 'otter_form_email_render_body', $form_data ) .\n\t\t\t'</div>\n\t\t</div>\n\t\t</body>\n\t\t</html>';\n\t}",
-    "source_file": "blocks-animation.json",
-    "function_name": "Form_Email::build_error_email",
-    "critical_failures": [
-      "PHP tags `<?php esc_html_e(...); ?>` embedded literally inside a PHP string \u2014 this is dead code that will be output as raw text in the email HTML, not executed. The translation call never fires and the raw PHP syntax appears in the email.",
-      "Unescaped output: `apply_filters('otter_form_email_render_body_error', $form_data)` and `apply_filters('otter_form_email_render_body', $form_data)` are inserted directly into HTML without escaping. If filter callbacks return user-controlled data, this is an XSS vector.",
-      "Missing `@param` type documentation is minor, but the PHPDoc block does not describe the return value semantics, and the method signature does not match a proper class method (missing visibility modifier `public/private/protected`).",
+      "Security: Nonce check relies on a pre-computed global $valid_nonce instead of calling wp_verify_nonce() directly in the handler \u2014 this is not a safe pattern and bypasses the intent of nonce verification (the check may have been done in a different context or not at all by the time this function runs).",
+      "Security: No capability check (current_user_can()) before processing POST data and modifying config files \u2014 any logged-in user could trigger this handler.",
+      "Security: $cache_scheduled_time from $_POST is assigned to a variable and passed to strtotime() without sanitization beyond a basic regex that is too loose (preg_match '/[0-9][0-9]:[0-9][0-9]/' does not anchor the pattern, allowing additional characters).",
+      "Code Quality: Function is missing a closing brace in the extracted snippet (possible truncation), but the overall structure is deeply nested with multiple responsibilities.",
+      "WPCS: Missing PHPDoc block entirely.",
+      "WPCS: Non-Yoda conditions used throughout (e.g., '$_POST[\"action\"] == \"expirytime\"' instead of '\"expirytime\" == $_POST[\"action\"]').",
+      "WPCS: Inconsistent spacing around array keys and control structures.",
+      "Code Quality: Relies entirely on global state ($valid_nonce, $cache_max_time, etc.) with no encapsulation; function has too many responsibilities (validation, config file writing, cron scheduling).",
+      "Code Quality: Direct mutation of $_POST values (e.g., '$_POST[\"cache_time_interval\"] = 600') is a poor practice.",
+      "Security AUTO-FAIL: Security dimension scored below 5 due to absent capability check and unreliable nonce verification pattern.",
       "security_auto_fail"
     ],
     "low_score_dims": [
       "wpcs_compliance",
       "security",
       "code_quality",
-      "i18n",
-      "accessibility"
+      "dependency_integrity"
     ]
   },
   {
-    "code": "function set_help_tabs( $screen_type ) {\n\t\tswitch ( $screen_type ) {\n\t\t\tcase 'list':\n\t\t\t\t$this->screen->add_help_tab( array(\n\t\t\t\t\t'id' => 'list_overview',\n\t\t\t\t\t'title' => __( 'Overview', 'contact-form-7' ),\n\t\t\t\t\t'content' => $this->content( 'list_overview' ),\n\t\t\t\t) );\n\n\t\t\t\t$this->screen->add_help_tab( array(\n\t\t\t\t\t'id' => 'list_available_actions',\n\t\t\t\t\t'title' => __( 'Available Actions', 'contact-form-7' ),\n\t\t\t\t\t'content' => $this->content( 'list_available_actions' ),\n\t\t\t\t) );\n\n\t\t\t\t$this->sidebar();\n\n\t\t\t\treturn;\n\t\t\tcase 'edit':\n\t\t\t\t$this->screen->add_help_tab( array(\n\t\t\t\t\t'id' => 'edit_overview',\n\t\t\t\t\t'title' => __( 'Overview', 'contact-form-7' ),\n\t\t\t\t\t'content' => $this->content( 'edit_overview' ),\n\t\t\t\t) );\n\n\t\t\t\t$this->screen->add_help_tab( array(\n\t\t\t\t\t'id' => 'edit_form_tags',\n\t\t\t\t\t'title' => __( 'Form-tags', 'contact-form-7' ),\n\t\t\t\t\t'content' => $this->content( 'edit_form_tags' ),\n\t\t\t\t) );\n\n\t\t\t\t$this->screen->add_help_tab( array(\n\t\t\t\t\t'id' => 'edit_mail_tags',\n\t\t\t\t\t'title' => __( 'Mail-tags', 'contact-form-7' ),\n\t\t\t\t\t'content' => $this->content( 'edit_mail_tags' ),\n\t\t\t\t) );\n\n\t\t\t\t$this->sidebar();\n\n\t\t\t\treturn;\n\t\t\tcase 'integration':\n\t\t\t\t$this->screen->add_help_tab( array(\n\t\t\t\t\t'id' => 'integration_overview',\n\t\t\t\t\t'title' => __( 'Overview', 'contact-form-7' ),\n\t\t\t\t\t'content' => $this->content( 'integration_overview' ),\n\t\t\t\t) );\n\n\t\t\t\t$this->sidebar();\n\n\t\t\t\treturn;\n\t\t}\n\t}",
-    "source_file": "contact-form-7.json",
-    "function_name": "WPCF7_Help_Tabs::set_help_tabs",
+    "code": "/**\n\t * Returns true if the current page is the admin configuration page for a gateway\n\t *\n\t * @since 3.0.0\n\t *\n\t * @param string $gateway_id the gateway ID\n\t * @return boolean true if the current page is the admin configuration page for the gateway\n\t */\nfunction is_payment_gateway_configuration_page( $gateway_id ) {\n\t\t// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Not required, only comparing against known string, read-only action.\n\t\treturn isset( $_GET['page'] ) && 'wc-settings' === $_GET['page'] &&\n\t\tisset( $_GET['tab'] ) && 'checkout' === $_GET['tab'] &&\n\t\tisset( $_GET['section'] ) && $gateway_id === $_GET['section'];\n\t\t// phpcs:enable WordPress.Security.NonceVerification.Recommended\n\t}",
+    "source_file": "woocommerce-square.json",
+    "function_name": "is_payment_gateway_configuration_page",
     "critical_failures": [
-      "missing_phpdoc"
-    ],
-    "low_score_dims": []
-  },
-  {
-    "code": "function fetchSetting()\n    {\n        $Wc_Razorpay_Loader = new WC_Razorpay();\n\n        $setting = $Wc_Razorpay_Loader->getSetting('key_id') . \":\" . $Wc_Razorpay_Loader->getSetting('key_secret');\n\n        return $setting;\n    }",
-    "source_file": "woo-razorpay.json",
-    "function_name": "RZP_Route::fetchSetting",
-    "critical_failures": [
-      "Missing PHPDoc block"
+      "Security auto-fail: score < 5",
+      "Accesses superglobals without nonce verification"
     ],
     "low_score_dims": [
-      "wpcs_compliance"
+      "security"
     ]
   },
   {
-    "code": "function test_note_get_items_permissions_mixed_post_authors() {\n\t\t$author_post_id = $this->create_test_post_with_note( 'author' );\n\t\t$editor_post_id = $this->create_test_post_with_note( 'editor' );\n\n\t\twp_set_current_user( self::$author_id );\n\n\t\t$request = new WP_REST_Request( 'GET', '/wp/v2/comments' );\n\t\t$request->set_param( 'post', array( $author_post_id, $editor_post_id ) );\n\t\t$request->set_param( 'type', 'note' );\n\t\t$request->set_param( 'status', 'all' );\n\t\t$request->set_param( 'per_page', 100 );\n\t\t$request->set_param( 'context', 'edit' );\n\t\t$response = rest_get_server()->dispatch( $request );\n\n\t\t$this->assertErrorResponse( 'rest_forbidden_context', $response, 403 );\n\n\t\twp_delete_post( $author_post_id, true );\n\t\twp_delete_post( $editor_post_id, true );\n\t}",
-    "source_file": "gutenberg.json",
-    "function_name": "WP_Test_REST_Comments_Controller_Gutenberg::test_note_get_items_permissions_mixed_post_authors",
+    "code": "function processGetFolder() {\n\n        Validate::postHasKey('args');\n\n        //$args = json_decode(sanitize_text_field(stripslashes($_POST['args'])), true);\n\n        $args = self::getArgs();\n        if (!array_key_exists('path', $args)) {\n            throw new \\Exception('\"path\" argument missing for command');\n        }\n\n        $path = SanityCheck::noStreamWrappers($args['path']);\n        //$pathTokens = explode('/', $path);\n        if ($path == '') {\n            $result = [\n                'children' => [\n                    [\n                      'name' => '/',\n                      'isDir' => true,\n                      'nickname' => 'scope'\n                    ]\n                ]\n            ];\n            return $result;\n        }\n\n        $config = Config::loadConfigAndFix();\n        $rootIds = Paths::getImageRootIds();\n        if ($path == '/') {\n            $rootIds = Paths::filterOutSubRoots($config['scope']);\n            $result = ['children'=>[]];\n            foreach ($rootIds as $rootId) {\n                $result['children'][] = [\n                    'name' => $rootId,\n                    'isDir' => true,\n                ];\n            }\n            return $result;\n        }\n        list($absPath, $relPath, $rootId) = self::analyzePathReceived($path);\n\n        $listOptions = BulkConvert::defaultListOptions($config);\n        $listOptions['root'] = Paths::getAbsDirById($rootId);\n\n        $listOptions['filter']['only-unconverted'] = false;\n        $listOptions['flattenList'] = false;\n        $listOptions['max-depth'] = 0;\n\n        //throw new \\Exception('Invalid rootId' . print_r($listOptions));\n\n        $list = BulkConvert::getListRecursively($relPath, $listOptions);\n\n        return ['children' => $list];\n    }",
+    "source_file": "webp-express.json",
+    "function_name": "WCFMApi::processGetFolder",
     "critical_failures": [
-      "test code, excluded from training data"
+      "Missing PHPDoc block",
+      "Handles POST/REQUEST data without nonce verification",
+      "Debug statements in production code"
     ],
     "low_score_dims": [
-      "wpcs_compliance",
-      "sql_safety",
       "security",
-      "performance",
-      "wp_api_usage",
-      "code_quality",
-      "dependency_integrity",
-      "i18n",
-      "accessibility"
+      "code_quality"
     ]
   },
   {
-    "code": "function score_threshold(): float {\n\t\treturn floatval( $this->integration->get_option( 'score_threshold', 0.5 ) );\n\t}",
-    "source_file": "woocommerce-paypal-payments.json",
-    "function_name": "Recaptcha::score_threshold",
+    "code": "/**\n\t * Prevent PPEC Credit showing up in the admin, because it shares its settings\n\t * with the PayPal Checkout class.\n\t *\n\t * @param array $sections List of sections in checkout\n\t *\n\t * @return array Sections in checkout\n\t */\nfunction filter_checkout_sections( $sections ) {\n\n\t\t$paypal_sections = array(\n\t\t\t'wc_gateway_ppec_with_paypal',\n\t\t);\n\n\t\t$card_sections = array(\n\t\t\t'wc_gateway_ppec_with_paypal_credit',\n\t\t);\n\n\t\t$current_section = isset( $_GET['section'] ) ? $_GET['section'] : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash\n\n\t\t// If the current section is a paypal section, remove the card section,\n\t\t// otherwise, remove the paypal section\n\t\t$sections_to_remove = in_array( $current_section, $paypal_sections, true ) ? $card_sections : $paypal_sections;\n\n\t\t// And, let's also remove simplify commerce from the sections if it is not enabled and it is not the\n\t\t// current section. (Note: The option will be empty if it has never been enabled)\n\n\t\t$simplify_commerce_options = get_option( 'woocommerce_simplify_commerce_settings', array() );\n\t\tif ( empty( $simplify_commerce_options ) || ( 'no' === $simplify_commerce_options['enabled'] ) ) {\n\t\t\tif ( 'wc_gateway_simplify_commerce' !== $current_section ) {\n\t\t\t\t$sections_to_remove[] = 'wc_gateway_simplify_commerce';\n\t\t\t}\n\t\t\tif ( 'wc_addons_gateway_simplify_commerce' !== $current_section ) {\n\t\t\t\t$sections_to_remove[] = 'wc_addons_gateway_simplify_commerce';\n\t\t\t}\n\t\t}\n\n\t\tforeach ( $sections_to_remove as $section_to_remove ) {\n\t\t\tunset( $sections[ $section_to_remove ] );\n\t\t}\n\n\t\treturn $sections;\n\n\t}",
+    "source_file": "pp-express-wc4jp.json",
+    "function_name": "WC_Gateway_PPEC_Admin_Handler::filter_checkout_sections",
     "critical_failures": [
-      "Below threshold on: wpcs_compliance"
+      "Uses superglobal without sanitization",
+      "Missing nonce verification"
     ],
-    "low_score_dims": []
+    "low_score_dims": [
+      "security"
+    ]
   },
   {
-    "code": "/**\n\t * Function to check exists token instancead\n\t *\n\t * @return json\n\t */\nfunction verifyToken() {\n\n\t\tWpNonceValidatorHelper::check( $_GET[ self::WP_NONCE ], 'tokens' );\n\n\t\t$token_data = ( new Token() )->get();\n\t\t$exists     = ( new TokenService() )->isValid( $token_data );\n\n\t\treturn wp_send_json(\n\t\t\tarray(\n\t\t\t\t'exists_token' => $exists,\n\t\t\t),\n\t\t\t200\n\t\t);\n\t}",
-    "source_file": "melhor-envio-cotacao.json",
-    "function_name": "TokenController::verifyToken",
+    "code": "/**\n\t\t * set params $_POST['lp_no_check_referer'] = 1\n\t\t * for case: send request when user not login, but get request when user logged\n\t\t * @editor tungnx\n\t\t * @modify 4.1.4\n\t\t */\nfunction maybe_handle() {\n\t\t// Don't lock up other requests while processing\n\t\tsession_write_close();\n\n\t\t\n\t\tif( ! isset( $_POST['lp_no_check_referer'] ) ) {\n\t\t\tcheck_ajax_referer( $this->identifier, 'nonce' );\n\t\t}\n\n\t\t$this->handle();\n\n\t\twp_die();\n\t}",
+    "source_file": "learnpress-course-review.json",
+    "function_name": "WP_Async_Request::maybe_handle",
     "critical_failures": [
       "Unsanitized user input from superglobals"
     ],
@@ -224,14 +96,143 @@
     ]
   },
   {
-    "code": "function wp_cache_phase2() {\n\tglobal $wp_cache_gzip_encoding, $super_cache_enabled, $cache_rebuild_files, $cache_enabled, $wp_cache_gmt_offset, $wp_cache_blog_charset;\n\n\tif ( $cache_enabled == false ) {\n\t\twp_cache_debug( 'wp_cache_phase2: Caching disabled! Exit' );\n\t\tdefine( 'WPSCSHUTDOWNMESSAGE', __( 'Caching disabled. Page not cached.', 'wp-super-cache' ) );\n\t\tadd_action( 'wp_footer', 'wpsc_shutdown_message' );\n\t\treturn false;\n\t}\n\n\tif ( wp_cache_user_agent_is_rejected() ) {\n\t\twp_cache_debug( 'wp_cache_phase2: No caching to do as user agent rejected.' );\n\t\treturn false;\n\t}\n\n\tif ( ob_get_level() > 1 ) {\n\t\tglobal $wp_super_cache_late_init;\n\t\twp_cache_debug( '***********************************************************************************' );\n\t\twp_cache_debug( '* An extra output buffer has been detected. Check your plugins, themes,           *' );\n\t\twp_cache_debug( '* mu-plugins, and other custom code as this may interfere with caching.           *' );\n\n\t\tif ( isset( $wp_super_cache_late_init ) && $wp_super_cache_late_init ) {\n\t\t\twp_cache_debug( '* Late init is enabled. This allows third-party code to run before WP Super Cache *' );\n\t\t\twp_cache_debug( '* sets up an output buffer. That code may have set up the output buffer.          *' );\n\t\t}\n\t\twp_cache_debug( '***********************************************************************************' );\n\t}\n\n\twp_cache_debug( 'In WP Cache Phase 2', 5 );\n\n\t$wp_cache_gmt_offset   = get_option( 'gmt_offset' ); // caching for later use when wpdb is gone. https://wordpress.org/support/topic/224349\n\t$wp_cache_blog_charset = get_option( 'blog_charset' );\n\n\twp_cache_mutex_init();\n\tif ( function_exists( 'add_action' ) && ( ! defined( 'WPLOCKDOWN' ) || constant( 'WPLOCKDOWN' ) == '0' ) ) {\n\t\twp_cache_debug( 'Setting up WordPress actions', 5 );\n\n\t\tadd_action( 'template_redirect', 'wp_super_cache_query_vars' );\n\t\tadd_filter( 'wp_redirect_status', 'wpsc_catch_http_status_code' );\n\t\tadd_filter( 'status_header', 'wpsc_catch_status_header', 10, 2 );\n\t\tadd_filter( 'supercache_filename_str', 'wp_cache_check_mobile' );\n\n\t\twpsc_register_post_hooks();\n\n\t\tdo_cacheaction( 'add_cacheaction' );\n\t}\n\n\tif ( wpsc_is_backend() ) {\n\t\twp_cache_debug( 'Not caching wp-admin requests.', 5 );\n\t\treturn false;\n\t}\n\n\tif ( wpsc_is_get_query() ) {\n\t\twp_cache_debug( 'Supercache caching disabled. Only using wp-cache. Non empty GET request. ' . wpsc_dump_get_request(), 5 );\n\t\t$super_cache_enabled = false;\n\t}\n\n\tif ( defined( 'WPSC_VARY_HEADER' ) ) {\n\t\tif ( WPSC_VARY_HEADER != '' ) {\n\t\t\theader( 'Vary: ' . WPSC_VARY_HEADER );\n\t\t}\n\t} else {\n\t\theader( 'Vary: Accept-Encoding, Cookie' );\n\t}\n\n\tob_start( 'wp_cache_ob_callback' );\n\twp_cache_debug( 'Created output buffer', 4 );\n\n\t// restore old supercache file temporarily\n\tif ( ( $_SERVER['REQUEST_METHOD'] !== 'POST' && empty( $_POST ) ) && $super_cache_enabled && $cache_rebuild_files ) {\n\t\t$user_info = wp_cache_get_cookies_values();\n\n\t\tif ( empty( $user_info )\n\t\t\t|| true === apply_filters( 'do_createsupercache', $user_info )\n\t\t) {\n\t\t\twpcache_do_rebuild( get_current_url_supercache_dir() );\n\t\t}\n\t}\n\n\tschedule_wp_gc();\n}",
-    "source_file": "wp-super-cache.json",
-    "function_name": "wp_cache_phase2",
+    "code": "function requesturipow_init() {\n    if(isset($_REQUEST['q'])) {\n        $_SERVER['REQUEST_URI'] = \"/\" . $_REQUEST[\"q\"];\n    } else {\n        if (empty($_SERVER['QUERY_STRING'])) {\n            $_SERVER['REQUEST_URI'] = $_SERVER['SCRIPT_NAME'];\n        } else {\n            $_SERVER['REQUEST_URI'] = $_SERVER['SCRIPT_NAME'] . \"?\" . $_SERVER['QUERY_STRING'];\n        }\n    }\n}",
+    "source_file": "permalink-fix-disable-canonical-redirects-pack.json",
+    "function_name": "requesturipow_init",
     "critical_failures": [
-      "Unescaped `WPSC_VARY_HEADER` constant value passed directly to `header()` without sanitization \u2014 while a constant is not direct user input, this is an unvalidated string injection into an HTTP header, a potential header injection vector if the constant is populated from untrusted sources.",
-      "Missing PHPDoc block entirely for a public-facing function that is part of the plugin's core API.",
-      "Loose comparison used for boolean check: `$cache_enabled == false` instead of `false === $cache_enabled` (Yoda condition also violated).",
-      "Direct use of `$_SERVER['REQUEST_METHOD']` and `$_POST` without sanitization, though here used only for comparison/empty check \u2014 marginally acceptable but inconsistent with WordPress coding standards."
+      "Form input without nonce verification"
+    ],
+    "low_score_dims": [
+      "security"
+    ]
+  },
+  {
+    "code": "/**\n\t * Hooked on before `process_legacy_payment` and logs any data recording during\n\t * the checkout process on client-side.\n\t *\n\t * If the checkout recorded an error, skip validating the checkout fields by setting the\n\t * 'error' status on the PaymentResult.\n\t *\n\t * @since 2.5\n\t * @param PaymentContext $context Holds context for the payment.\n\t * @param PaymentResult  $result  Result of the payment.\n\t */\nfunction log_js_data( PaymentContext $context, PaymentResult &$result ) {\n\t\tif ( 'square_credit_card' === $context->payment_method ) {\n\t\t\tif ( ! empty( $context->payment_data['log-data'] ) ) {\n\t\t\t\t$log_data = json_decode( $context->payment_data['log-data'], true );\n\n\t\t\t\tif ( ! empty( $log_data ) ) {\n\t\t\t\t\tforeach ( $log_data as $data ) {\n\t\t\t\t\t\t$message = sprintf( \"[Checkout Block] Square.js Response:\\n %s\", print_r( wc_clean( $data ), true ) ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r\n\t\t\t\t\t\t$this->plugin->log( $message, $this->get_gateway()->get_id() );\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tif ( ! empty( $context->payment_data['checkout-notices'] ) ) {\n\t\t\t\t$payment_details                    = $result->payment_details;\n\t\t\t\t$payment_details['checkoutNotices'] = $context->payment_data['checkout-notices'];\n\n\t\t\t\t$result->set_payment_details( $payment_details );\n\t\t\t\t$result->set_status( 'error' );\n\t\t\t}\n\t\t}\n\t}",
+    "source_file": "woocommerce-square.json",
+    "function_name": "array_flip::log_js_data",
+    "critical_failures": [
+      "Contains debug statements"
+    ],
+    "low_score_dims": [
+      "code_quality"
+    ]
+  },
+  {
+    "code": "/**\n\t * Reset API credentials if merchant clicked the reset credential link.\n\t *\n\t * When API credentials empty, the connect button will be displayed again,\n\t * allowing merchant to reconnect with other account.\n\t *\n\t * When WooCommerce Branding is active, this handler may not be invoked as\n\t * screen ID may evaluates to something else.\n\t *\n\t * @since 1.2.0\n\t */\nfunction maybe_reset_api_credentials() {\n\t\tif ( empty( $_GET['reset_ppec_api_credentials'] ) ) {\n\t\t\treturn;\n\t\t}\n\n\t\tif ( empty( $_GET['reset_nonce'] ) || ! wp_verify_nonce( $_GET['reset_nonce'], 'reset_ppec_api_credentials' ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash\n\t\t\treturn;\n\t\t}\n\n\t\t$settings = wc_gateway_ppec()->settings;\n\t\t$env      = $settings->_environment;\n\t\tif ( ! empty( $_GET['environment'] ) ) {\n\t\t\t$env = $_GET['environment']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash\n\t\t}\n\t\t$prefix = 'sandbox' === $env ? 'sandbox_' : '';\n\n\t\tforeach ( array( 'api_username', 'api_password', 'api_signature', 'api_certificate' ) as $key ) {\n\t\t\t$key              = $prefix . $key;\n\t\t\t$settings->{$key} = '';\n\t\t}\n\n\t\t// Save environment too as when it switches to another env and merchant\n\t\t// click the reset they'd expect to save the environment too.\n\t\t$settings->environment = 'sandbox' === $env ? 'sandbox' : 'live';\n\n\t\t$settings->save();\n\n\t\twp_safe_redirect( wc_gateway_ppec()->get_admin_setting_link() );\n\t}",
+    "source_file": "pp-express-wc4jp.json",
+    "function_name": "WC_Gateway_PPEC_Admin_Handler::maybe_reset_api_credentials",
+    "critical_failures": [
+      "Uses superglobal without sanitization"
+    ],
+    "low_score_dims": [
+      "security"
+    ]
+  },
+  {
+    "code": "function actions(): void\n    {\n        RequestActions::request($this->action_hook, function ($action) {\n\n            $response = false;\n\n            switch ($action) {\n\n                case 'reset_options':\n                    $response = wps('wpopt')->settings->reset();\n                    Rewriter::reload();\n                    break;\n\n                case 'restore_options':\n                    $response = wps('wpopt')->moduleHandler->upgrade();\n                    break;\n\n                case 'export_options':\n\n                    require_once WPS_ADDON_PATH . 'Exporter.class.php';\n\n                    $exporter = new Exporter();\n\n                    $exporter->set_raw(wps('wpopt')->settings->export());\n                    $exporter->format('text');\n                    $exporter->download('wpopt-export.conf');\n\n                    unset($exporter);\n\n                    break;\n\n                case 'import_options':\n                    $response = wps('wpopt')->settings->import($_REQUEST['conf_data']);\n                    $response &= wps('wpopt')->moduleHandler->upgrade();\n                    break;\n            }\n\n            if ($response) {\n                $this->add_notices('success', __('Action was correctly executed', $this->context));\n            }\n            else {\n                $this->add_notices('warning', __('Action execution failed', $this->context));\n            }\n        });\n    }",
+    "source_file": "wp-optimizer.json",
+    "function_name": "Mod_Settings::actions",
+    "critical_failures": [
+      "Security auto-fail: score < 5",
+      "Accesses superglobals without nonce verification"
+    ],
+    "low_score_dims": [
+      "security"
+    ]
+  },
+  {
+    "code": "/**\n\t * Layout popup to generate course curriculum with AI\n\t */\nfunction layout_popup() {\n\t\ttry {\n\t\t\tif ( ! function_exists( 'get_current_screen' ) ) {\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\t$screen  = get_current_screen();\n\t\t\t$screens = [\n\t\t\t\tLP_COURSE_CPT,\n\t\t\t];\n\t\t\tif ( ! $screen || in_array( $screen, $screens ) ) {\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\t$this->config = Config::instance()->get( 'open-ai-modal', 'settings' );\n\n\t\t\t$components = [\n\t\t\t\t'wrap-script-template'     => '<script type=\"text/template\" id=\"lp-tmpl-edit-course-curriculum-ai\">',\n\t\t\t\t'wrap'                     => '<div class=\"lp-generate-data-ai-wrap\">',\n\t\t\t\t'btn-close'                =>\n\t\t\t\t\t'<button type=\"button\" class=\"lp-btn-close-ai-popup\">\n\t\t\t\t\t<i class=\"lp-icon-remove\"></i>\n\t\t\t\t</button>',\n\t\t\t\t'h2'                       => sprintf(\n\t\t\t\t\t'<div class=\"content-title\">%s</div>',\n\t\t\t\t\tesc_html__( 'Generate Course Sections Curriculum', 'learnpress' )\n\t\t\t\t),\n\t\t\t\t'header'                   => $this->html_step_header(),\n\t\t\t\t'form'                     => '<form class=\"lp-form-generate-data-ai\">',\n\t\t\t\t'wrap-fields'              => '<div class=\"lp-form-fields\">',\n\t\t\t\t'step_1'                   => $this->html_step_1(),\n\t\t\t\t'step_2'                   => $this->html_step_2(),\n\t\t\t\t'step_3'                   => $this->html_step_3(),\n\t\t\t\t'step_4'                   => $this->html_step_4(),\n\t\t\t\t'wrap-fields-end'          => '</div>',\n\t\t\t\t'buttons'                  => sprintf(\n\t\t\t\t\t'<div class=\"button-actions\" data-step=\"1\" data-step-max=\"4\">\n\t\t\t\t\t<button class=\"btn btn-secondary lp-btn-step lp-hidden\"\n\t\t\t\t\tdata-step-show=\"2,3,4\"\n\t\t\t\t\tdata-action=\"prev\" type=\"button\">&larr; %s\n\t\t\t\t\t</button>\n\t\t\t\t\t<button class=\"btn btn-primary lp-btn-step\"\n\t\t\t\t\t\tdata-step-show=\"1\"\n\t\t\t\t\t\tdata-action=\"next\" type=\"button\">%s &rarr;\n\t\t\t\t\t</button>\n\t\t\t\t\t<button class=\"lp-button btn-primary lp-btn-generate-prompt lp-hidden\"\n\t\t\t\t\t\tdata-step-show=\"2\"\n\t\t\t\t\t\tdata-send=\"%s\" type=\"button\">%s\n\t\t\t\t\t</button>\n\t\t\t\t\t<button class=\"lp-button btn-primary lp-btn-call-open-ai lp-hidden\"\n\t\t\t\t\t\tdata-step-show=\"3\"\n\t\t\t\t\t\tdata-send=\"%s\" type=\"button\">%s\n\t\t\t\t\t</button>\n\t\t\t\t\t<button class=\"lp-button btn-primary lp-btn-apply-curriculum lp-hidden\"\n\t\t\t\t\t\tdata-step-show=\"4\"\n\t\t\t\t\t\tdata-send=\"%s\" type=\"button\">%s\n\t\t\t\t\t</button>\n\t\t\t\t</div>',\n\t\t\t\t\tesc_html__( 'Previous', 'learnpress' ),\n\t\t\t\t\tesc_html__( 'Next', 'learnpress' ),\n\t\t\t\t\tTemplate::convert_data_to_json(\n\t\t\t\t\t\t[\n\t\t\t\t\t\t\t'action'         => 'openai_generate_prompt',\n\t\t\t\t\t\t\t'lp-prompt-type' => 'course-curriculum', // define type prompt to generate title.\n\t\t\t\t\t\t\t'id_url'         => 'generate_prompt_openai',\n\t\t\t\t\t\t]\n\t\t\t\t\t),\n\t\t\t\t\tesc_html__( 'Generate Prompt', 'learnpress' ),\n\t\t\t\t\tTemplate::convert_data_to_json(\n\t\t\t\t\t\t[\n\t\t\t\t\t\t\t'action'         => 'openai_generate_data',\n\t\t\t\t\t\t\t'lp-prompt-type' => 'course-curriculum', // define type prompt to generate title.\n\t\t\t\t\t\t\t'id_url'         => 'submit_to_openai',\n\t\t\t\t\t\t]\n\t\t\t\t\t),\n\t\t\t\t\tesc_html__( 'Generate Sections Course', 'learnpress' ),\n\t\t\t\t\tTemplate::convert_data_to_json(\n\t\t\t\t\t\t[\n\t\t\t\t\t\t\t'action' => 'openai_create_course_sections',\n\t\t\t\t\t\t\t'id_url' => 'openai_create_course_sections',\n\t\t\t\t\t\t]\n\t\t\t\t\t),\n\t\t\t\t\tesc_html__( 'Apply Sections Data To Curriculum', 'learnpress' ),\n\t\t\t\t),\n\t\t\t\t'form-end'                 => '</form>',\n\t\t\t\t'wrap-end'                 => '</div>',\n\t\t\t\t'wrap-script-template-end' => '</script>',\n\t\t\t];\n\n\t\t\techo Template::combine_components( $components );\n\t\t} catch ( Throwable $e ) {\n\t\t\tLP_Debug::error_log( $e );\n\t\t}\n\t}",
+    "source_file": "learnpress-course-review.json",
+    "function_name": "AdminEditCourseCurriculumWithAITemplate::layout_popup",
+    "critical_failures": [
+      "Form inputs without associated labels"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "/**\n\t\t * set params $_POST['lp_no_check_referer'] = 1\n\t\t * for case: send request when user not login, but get request when user logged\n\t\t * @editor tungnx\n\t\t * @modify 4.1.4\n\t\t */\nfunction maybe_handle() {\n\t\t// Don't lock up other requests while processing\n\t\tsession_write_close();\n\n\t\t\n\t\t/*if ( ! isset( $_POST['lp_no_check_referer'] ) ) {\n\t\t\tcheck_ajax_referer( $this->identifier, 'nonce' );\n\t\t}*/\n\n\t\tif ( isset( $_POST['_nonce'] ) && $this->verify_async_nonce( $_POST['_nonce'] ) ) {\n\t\t\tif ( ! is_user_logged_in() ) {\n\t\t\t\t$this->identifier = \"nopriv_$this->identifier\";\n\t\t\t}\n\n\t\t\t$this->handle();\n\t\t}\n\n\t\twp_die();\n\t}",
+    "source_file": "learnpress-bbpress.json",
+    "function_name": "maybe_handle",
+    "critical_failures": [
+      "Unsanitized user input from superglobals"
+    ],
+    "low_score_dims": [
+      "security"
+    ]
+  },
+  {
+    "code": "/**\n     * @return array\n     */\nfunction getRequest()\n    {\n        return $_REQUEST;\n    }",
+    "source_file": "pagarme-payments-for-woocommerce.json",
+    "function_name": "AdditionalInformation::getRequest",
+    "critical_failures": [
+      "Form input without nonce verification"
+    ],
+    "low_score_dims": [
+      "security"
+    ]
+  },
+  {
+    "code": "/**\n\t * Get sources for 404 log items.\n\t *\n\t * @return array\n\t */\nfunction get_sources_for_log() {\n\t\t$logs = isset( $_REQUEST['log'] ) ? array_map( 'absint', $_REQUEST['log'] ) : [];\n\t\t$logs = Monitor_DB::get_logs(\n\t\t\t[\n\t\t\t\t'ids'     => $logs,\n\t\t\t\t'orderby' => '',\n\t\t\t\t'limit'   => 1000,\n\t\t\t]\n\t\t);\n\n\t\t$sources = [];\n\t\tforeach ( $logs['logs'] as $log ) {\n\t\t\tif ( empty( $log['uri'] ) ) {\n\t\t\t\tcontinue;\n\t\t\t}\n\t\t\t$sources[] = [\n\t\t\t\t'pattern'    => $log['uri'],\n\t\t\t\t'comparison' => 'exact',\n\t\t\t];\n\t\t}\n\n\t\treturn $sources;\n\t}",
+    "source_file": "seo-by-rank-math.json",
+    "function_name": "Admin::get_sources_for_log",
+    "critical_failures": [
+      "Handles POST/REQUEST data without nonce verification",
+      "Missing input sanitization"
+    ],
+    "low_score_dims": [
+      "security"
+    ]
+  },
+  {
+    "code": "function _delete_post( $post_id ) {\n\t\tglobal $wpdb;\n\t\t$wpdb->query( \"DELETE FROM {$wpdb->postmeta}",
+    "source_file": "learnpress-wishlist.json",
+    "function_name": "_delete_post",
+    "critical_failures": [
+      "Unprepared SQL query with potential dynamic values"
+    ],
+    "low_score_dims": [
+      "sql_safety"
+    ]
+  },
+  {
+    "code": "/**\n\t * Pushes settings onto the WooCommerce Admin global settings object (wcSettings).\n\t *\n\t * @param mixed $settings The settings object we're amending.\n\t *\n\t * @return mixed $settings\n\t */\nfunction add_marketplace_settings( $settings ) {\n\t\tif ( ! WC_Helper::is_site_connected() && isset( $_GET['connect'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended\n\t\t\twp_safe_redirect( self::get_connection_url() );\n\t\t\texit;\n\t\t}\n\n\t\t$auth_user_data  = WC_Helper_Options::get( 'auth_user_data', array() );\n\t\t$auth_user_email = isset( $auth_user_data['email'] ) ? $auth_user_data['email'] : '';\n\n\t\t// Get the all installed themes and plugins. Knowing this will help us decide to show Add to Store button on product cards.\n\t\t$installed_products = array_merge( WC_Helper::get_local_plugins(), WC_Helper::get_local_themes() );\n\t\t$installed_products = array_map(\n\t\t\tfunction ( $product ) {\n\t\t\t\treturn $product['slug'];\n\t\t\t},\n\t\t\t$installed_products\n\t\t);\n\n\t\t$blog_name = get_bloginfo( 'name' );\n\n\t\t$settings['wccomHelper'] = array(\n\t\t\t'isConnected'                => WC_Helper::is_site_connected(),\n\t\t\t'connectURL'                 => self::get_connection_url(),\n\t\t\t'reConnectURL'               => self::get_connection_url( true ),\n\t\t\t'userEmail'                  => $auth_user_email,\n\t\t\t'userAvatar'                 => get_avatar_url( $auth_user_email, array( 'size' => '48' ) ),\n\t\t\t'storeCountry'               => wc_get_base_location()['country'],\n\t\t\t'storeName'                  => $blog_name ? $blog_name : '',\n\t\t\t'inAppPurchaseURLParams'     => WC_Admin_Addons::get_in_app_purchase_url_params(),\n\t\t\t'installedProducts'          => $installed_products,\n\t\t\t'mySubscriptionsTabLoaded'   => WC_Helper_Options::get( 'my_subscriptions_tab_loaded' ),\n\t\t\t'wooUpdateManagerInstalled'  => WC_Woo_Update_Manager_Plugin::is_plugin_installed(),\n\t\t\t'wooUpdateManagerActive'     => WC_Woo_Update_Manager_Plugin::is_plugin_active(),\n\t\t\t'wooUpdateManagerInstallUrl' => WC_Woo_Update_Manager_Plugin::generate_install_url(),\n\t\t\t'wooUpdateManagerPluginSlug' => WC_Woo_Update_Manager_Plugin::WOO_UPDATE_MANAGER_SLUG,\n\t\t\t'dismissNoticeNonce'         => wp_create_nonce( 'dismiss_notice' ),\n\t\t\t'trackingAllowed'            => 'yes' === get_option( 'woocommerce_allow_tracking' ),\n\t\t);\n\n\t\t// This data is only used in the `Extensions` screen, so only populate it there.\n\t\t// More specifically, it's used in `My Subscriptions`, however, switching tabs doesn't require\n\t\t// a page reload, so we just check for `path` (/extensions), rather than `tab` (my-subscriptions).\n\t\tif ( ! empty( $_GET['path'] ) && '/extensions' === $_GET['path'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended\n\t\t\t$settings['wccomHelper']['wooUpdateCount']          = WC_Helper_Updater::get_updates_count_based_on_site_status();\n\t\t\t$settings['wccomHelper']['connected_notice']        = PluginsHelper::get_wccom_connected_notice( $auth_user_email );\n\t\t\t$settings['wccomHelper']['woocomConnectNoticeType'] = WC_Helper_Updater::get_woo_connect_notice_type();\n\n\t\t\tif ( WC_Helper::is_site_connected() ) {\n\t\t\t\t$settings['wccomHelper']['subscription_expired_notice']  = PluginsHelper::get_expired_subscription_notice( false );\n\t\t\t\t$settings['wccomHelper']['subscription_expiring_notice'] = PluginsHelper::get_expiring_subscription_notice( false );\n\t\t\t\t$settings['wccomHelper']['subscription_missing_notice']  = PluginsHelper::get_missing_subscription_notice();\n\t\t\t\t$settings['wccomHelper']['connection_url_notice']        = WC_Woo_Helper_Connection::get_connection_url_notice();\n\t\t\t\t$settings['wccomHelper']['has_host_plan_orders']         = WC_Woo_Helper_Connection::has_host_plan_orders();\n\t\t\t\t$settings['wccomHelper']['maybe_deleted_connection']     = WC_Woo_Helper_Connection::get_deleted_connection_notice();\n\t\t\t} else {\n\t\t\t\t$settings['wccomHelper']['disconnected_notice'] = PluginsHelper::get_wccom_disconnected_notice();\n\t\t\t}\n\t\t}\n\n\t\treturn $settings;\n\t}",
+    "source_file": "woocommerce.json",
+    "function_name": "WC_Helper_Admin::add_marketplace_settings",
+    "critical_failures": [
+      "Missing input sanitization"
+    ],
+    "low_score_dims": []
+  },
+  {
+    "code": "function auxin_widget_button_callback( $atts, $shortcode_content = null ){\n\n    // Defining default attributes\n    $default_atts = array(\n        'label'         => 'Button',\n        'size'          => 'medium',\n        'border'        => '',\n        'style'         => '',\n        'uppercase'     => '1',\n        'dark'          => '0',\n        'icon'          => '',\n        'icon_align'    => 'default',\n        'color_name'    => 'carmine-pink',\n        'link'          => '',\n        'target'        => '_self',\n\n        'extra_classes' => '', // custom css class names for this element\n        'custom_el_id'  => '',\n        'base_class'    => 'aux-widget-button'\n    );\n\n    $result = auxin_get_widget_scafold( $atts, $default_atts, $shortcode_content );\n    extract( $result['parsed_atts'] );\n\n\n\n\n    // --------------------------------------------\n    $btn_css_classes = array( 'aux-button' );\n    $btn_css_classes[] = 'aux-' . $size;    // size\n    $btn_css_classes[] = 'aux-' . $border;  // border form\n    $btn_css_classes[] = 'aux-' . $style;   // appearance\n    $btn_css_classes[] = 'aux-' . $color_name;   // appearance\n\n\n    if( auxin_is_true( $uppercase ) ){\n        $btn_css_classes[] = 'aux-uppercase';   // text form\n    }\n    if( auxin_is_true( $dark ) ){\n        $btn_css_classes[] = 'aux-dark-text';   // text color\n    }\n    if( $icon_align !== \"default\" ){\n        $btn_css_classes[] = 'aux-icon-' . $icon_align;   // icon align\n    }\n\n    if( ! empty( $extra_classes ) ) {\n        $btn_css_classes[] =  $extra_classes;\n    }\n\n    $button_class_attr = auxin_make_html_class_attribute( $btn_css_classes );\n\n\n    $label = empty( $label ) ? $shortcode_content : $label;\n\n    $btn_content  = '<span class=\"aux-overlay\"></span>';\n    $btn_label    = '<span class=\"aux-text\">'. auxin_do_cleanup_shortcode( $label ) .'</span>';\n    $btn_icon     = $icon ? '<span class=\"aux-icon '. esc_attr($icon) .'\"></span>' : '';\n\n    // if icon is aligned on left\n    if( false !== strpos( $icon_align, 'left') ){\n        $btn_content .= $btn_icon . $btn_label;\n    } else {\n        $btn_content .= $btn_label. $btn_icon;\n    }\n\n    $btn_tag  = empty( $link ) ? 'button' : 'a';\n    $btn_href = empty( $link ) ? '' : ' href=\"'. $link .'\" target=\"'. $target .'\" ';\n\n\n    $output = '';\n\n    // widget custom output -----------------------\n\n    $output .= \"<$btn_tag $btn_href $button_class_attr>\";\n    $output .= $btn_content;\n    $output .= \"</$btn_tag>\";\n\n    return $output;\n}",
+    "source_file": "auxin-elements.json",
+    "function_name": "auxin_widget_button_callback",
+    "critical_failures": [
+      "Uses extract()"
+    ],
+    "low_score_dims": [
+      "security"
+    ]
+  },
+  {
+    "code": "/**\n *\n *\n * @param  array  $atts              The array containing the parsed values from shortcode, it should be same as defined params above.\n * @param  string $shortcode_content The shorcode content\n * @return string                    The output of element markup\n */\nfunction auxin_widget_recent_posts_timeline_callback( $atts, $shortcode_content = null ){\n\n    global $aux_content_width;\n\n    // Defining default attributes\n    $default_atts = array(\n        'title'                       => '', // header title\n        'cat'                         => ' ',\n        'num'                         => '8',\n        'only_posts__in'              => '', // display only these post IDs. array or string comma separated\n        'include'                     => '',  // include these post IDs in result too. array or string comma separated\n        'exclude'                     => '',  // exclude these post IDs from result. array or string comma separated\n        'paged'                       => '',\n        'offset'                      => '',\n        'order_by'                    => 'date',\n        'order'                       => 'DESC',\n        'exclude_without_media'       => 0,\n        'exclude_custom_post_formats' => 0,\n        'exclude_quote_link'          => 1,\n        'exclude_post_formats_in'     => array(), // the list od post formats to exclude\n        'show_media'                  => true,\n        'show_excerpt'                => true,\n        'excerpt_len'                 => '160',\n        'image_aspect_ratio'          => 0.75,\n        'display_title'               => true,\n        'show_info'                   => true,\n        'author_or_readmore'          => 'readmore',\n        'timeline_alignment'          => 'center',\n        'display_like'                => true,\n        'display_categories'          => true,\n        'tag'                         => '',\n        'extra_classes'               => '',\n        'custom_el_id'                => '',\n        'reset_query'                 => true,\n        'use_wp_query'                => false, // true to use the global wp_query, false to use internal custom query\n        'wp_query_args'               => array(), // additional wp_query args\n        'base_class'                  => 'aux-widget-recent-posts-timeline aux-column-post-entry'\n    );\n\n    $result = auxin_get_widget_scafold( $atts, $default_atts, $shortcode_content );\n    extract( $result['parsed_atts'] );\n\n    // get content width\n    global $aux_content_width;\n\n    // show \"author\" or \"readmore\" btn in footer\n    if( $author_or_readmore == 'readmore') {\n        $show_readmore      = true;\n        $show_author_footer = false;\n    } else {\n        $show_author_footer = true;\n        $show_readmore      = false;\n    }\n\n    // specify the post formats that should be excluded -------\n    $exclude_post_formats_in = (array) $exclude_post_formats_in;\n\n    if( $exclude_custom_post_formats ){\n        $exclude_post_formats_in = array_merge( $exclude_post_formats_in, array( 'aside', 'gallery', 'image', 'link', 'quote', 'video', 'audio' ) );\n    }\n    if( $exclude_quote_link ){\n        $exclude_post_formats_in[] = 'quote';\n        $exclude_post_formats_in[] = 'link';\n    }\n    $exclude_post_formats_in = array_unique( $exclude_post_formats_in );\n\n    // --------------\n\n    ob_start();\n\n    global $wp_query;\n\n    if( ! $use_wp_query ){\n\n        // create wp_query to get latest items -----------\n        $args = array(\n            'post_type'               => 'post',\n            'orderby'                 => $order_by,\n            'order'                   => $order,\n            'offset'                  => $offset,\n            'paged'                   => $paged,\n            'cat'                     => $cat,\n            'post__not_in'            => array_filter( explode( ',', $exclude ) ),\n            'post__in'                => array_filter( explode( ',', $include ) ),\n            'post_status'             => 'publish',\n            'posts_per_page'          => $num,\n            'ignore_sticky_posts'     => 1,\n            'include_posts__in'       => $include, // include posts in this liat\n            'posts__not_in'           => $exclude, // exclude posts in this list\n            'posts__in'               => $only_posts__in, // only posts in this list\n\n            'exclude_without_media'   => $exclude_without_media,\n            'exclude_post_formats_in' => $exclude_post_formats_in\n        );\n\n        // ---------------------------------------------------------------------\n\n        // add the additional query args if available\n        if( $wp_query_args ){\n            $args = wp_parse_args( $args, $wp_query_args );\n        }\n\n        // pass the args through the auxin query parser\n        $wp_query = new WP_Query( auxin_parse_query_args( $args ) );\n    }\n\n    // widget header ------------------------------\n    echo $result['widget_header'];\n    echo $result['widget_title'];\n\n\n    $phone_break_point   = 767;\n    $tablet_break_point  = 992;\n\n    $show_comments       = true; // shows comments icon\n    $wrapper_class       = 'aux-timeline aux-'.$timeline_alignment;\n    $item_class          = 'aux-block';\n    $post_classes        = 'aux-block';\n    $post_info_position  = 'after-title';\n    $previous_post_month = '';\n\n    // calculate the media width\n    $media_width = 'center' == $timeline_alignment ? $aux_content_width / 2 : $aux_content_width;\n\n    // whether any result was found or not\n    $have_posts = $wp_query->have_posts();\n\n\n    if( $wp_query->have_posts() ){\n\n        echo sprintf( '<div class=\"%s\" data-layout=\"%s\">', $wrapper_class, $timeline_alignment );\n\n        while ( $wp_query->have_posts() ) {\n\n            $wp_query->the_post();\n            $post      = $wp_query->post;\n\n            $post_vars = auxin_get_post_format_media(\n                $post,\n                array(\n                    'post_type'          => 'post',\n                    'request_from'       => 'archive',\n                    'media_width'        => $phone_break_point,\n                    'media_size'         => 'large',\n                    'upscale_image'      => true,\n                    'image_from_content' => ! $exclude_without_media, // whether to try to get image from content or not\n                    'add_image_hw'       => false, // whether add width and height attr or not\n                    'image_sizes'        => array(\n                        array( 'min' => '',      'max' => '767px', 'width' => '80vw' ),\n                        array( 'min' => '768px', 'max' => '992px', 'width' => '40vw' ),\n                        array( 'min' => ''     , 'max' => '',      'width' => $media_width.'px' )\n                    ),\n                    'srcset_sizes'  => array(\n                        array( 'width' =>     550, 'height' =>     550 * $image_aspect_ratio ),\n                        array( 'width' => 2 * 550, 'height' => 2 * 550 * $image_aspect_ratio ),\n                        array( 'width' => 4 * 550, 'height' => 4 * 550 * $image_aspect_ratio )\n                    )\n                )\n            );\n\n            extract( $post_vars );\n\n            // get the post format\n            $the_format = get_post_format( $post );\n\n            // get current post month\n            $post_month = date( 'm', strtotime( get_the_date() ) );\n\n            // add month label on timeline main line\n            if( $post_month != $previous_post_month ){\n            ?><span class=\"aux-date-label\"><?php the_time(); ?></span><?php\n            }\n\n            include( locate_template( 'templates/theme-parts/entry/post-column.php' ) );\n            $previous_post_month = $post_month;\n        }\n\n        echo \"</div>\";\n    }\n\n    if( $reset_query ){\n        wp_reset_query();\n    }\n\n    // return false if no result found\n    if( ! $have_posts ){\n        ob_get_clean();\n        return false;\n    }\n\n    // widget footer -----------------------\n    echo $result['widget_footer'];\n\n    return ob_get_clean();\n}",
+    "source_file": "auxin-elements.json",
+    "function_name": "auxin_widget_recent_posts_timeline_callback",
+    "critical_failures": [
+      "Unescaped variable output",
+      "Uses extract()"
+    ],
+    "low_score_dims": [
+      "security"
+    ]
+  },
+  {
+    "code": "/**\n\t * Creates PayPal order from the given PayPal/Venmo vault ID.\n\t *\n\t * @throws RuntimeException When request fails.\n\t */\nfunction create_order(\n\t\tstring $vault_id,\n\t\tstring $custom_id,\n\t\tstring $invoice_id,\n\t\tWC_Order $wc_order,\n\t\tstring $payment_source_name = 'paypal'\n\t): Order {\n\t\t$intent = strtoupper( $this->settings_provider->payment_intent() ) === 'AUTHORIZE' ? 'AUTHORIZE' : 'CAPTURE';\n\t\t$items  = array( $this->purchase_unit_factory->from_wc_cart( null, false, $wc_order->get_payment_method() ) );\n\n\t\t// phpcs:disable WordPress.Security.NonceVerification\n\t\t$pay_for_order = wc_clean( wp_unslash( $_GET['pay_for_order'] ?? '' ) );\n\t\t$order_key     = wc_clean( wp_unslash( $_GET['key'] ?? '' ) );\n\t\t// phpcs:enable\n\t\tif ( $pay_for_order && $order_key === $wc_order->get_order_key() ) {\n\t\t\t$items = array( $this->purchase_unit_factory->from_wc_order( $wc_order ) );\n\t\t}\n\n\t\t$data = array(\n\t\t\t'intent'         => $intent,\n\t\t\t'purchase_units' => array_map(\n\t\t\t\tstatic function ( PurchaseUnit $item ): array {\n\t\t\t\t\treturn $item->to_array();\n\t\t\t\t},\n\t\t\t\t$items\n\t\t\t),\n\t\t\t'payment_source' => array(\n\t\t\t\t$payment_source_name => array(\n\t\t\t\t\t'vault_id'           => $vault_id,\n\t\t\t\t\t'experience_context' => array(\n\t\t\t\t\t\t'payment_method_preference' => 'IMMEDIATE_PAYMENT_REQUIRED',\n\t\t\t\t\t),\n\t\t\t\t),\n\t\t\t),\n\t\t\t'custom_id'      => $custom_id,\n\t\t\t'invoice_id'     => $invoice_id,\n\t\t);\n\n\t\t$bearer = $this->bearer->bearer();\n\t\t$url    = trailingslashit( $this->host ) . 'v2/checkout/orders';\n\t\t$args   = array(\n\t\t\t'method'  => 'POST',\n\t\t\t'headers' => array(\n\t\t\t\t'Authorization'     => 'Bearer ' . $bearer->token(),\n\t\t\t\t'Content-Type'      => 'application/json',\n\t\t\t\t'PayPal-Request-Id' => uniqid( 'ppcp-', true ),\n\t\t\t),\n\t\t\t'body'    => wp_json_encode( $data ),\n\t\t);\n\n\t\t$response = $this->request( $url, $args );\n\t\tif ( $response instanceof WP_Error ) {\n\t\t\tthrow new RuntimeException( $response->get_error_message() );\n\t\t}\n\n\t\t$json        = json_decode( $response['body'] );\n\t\t$status_code = (int) wp_remote_retrieve_response_code( $response );\n\t\tif ( ! in_array( $status_code, array( 200, 201 ), true ) ) {\n\t\t\t$error = new PayPalApiException( $json, $status_code );\n\t\t\t$this->logger->warning( $error->getMessage() );\n\t\t\tthrow $error;\n\t\t}\n\n\t\treturn $this->order_factory->from_paypal_response( $json );\n\t}",
+    "source_file": "woocommerce-paypal-payments.json",
+    "function_name": "CapturePayPalPayment::create_order",
+    "critical_failures": [
+      "Security auto-fail: score < 5",
+      "Accesses superglobals without nonce verification"
     ],
     "low_score_dims": [
       "security"
