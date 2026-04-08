@@ -22,6 +22,27 @@ from collections import Counter
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+# ---------------------------------------------------------------------------
+# Bogus-template blacklist gate (REVIEWS concern #2 followup, 2026-04-08)
+# ---------------------------------------------------------------------------
+# These patterns were inserted by the _generate_ctf_batches.py generator into
+# nearly every corrected_code block as generic fallback boilerplate. They
+# reference an undefined $args variable, pass `php -l` (syntax-only) but throw
+# "Undefined variable $args" at runtime. Any example whose corrected_code matches
+# one of these patterns is rejected outright regardless of other gate metrics.
+CTF_BOGUS_PATTERNS = [
+    re.compile(r"Defensive:\s*Added input sanitization per WPCS review"),
+    re.compile(r"Input validation added per code quality review"),
+    re.compile(r"if\s*\(\s*empty\(\s*\$args\s*\)\s*&&\s*func_num_args\("),
+    re.compile(r"\$sanitized_input\s*=\s*array_map\(\s*['\"]sanitize_text_field['\"]"),
+]
+
+
+def has_bogus_template(corrected_code: str) -> bool:
+    """Return True if corrected_code contains a templated bogus fix snippet."""
+    return any(p.search(corrected_code) for p in CTF_BOGUS_PATTERNS)
+
+
 # Acceptance thresholds (from review feedback HIGH concern #3)
 COT_THRESHOLDS = {
     "parse_failure_rate_max": 0.02,
@@ -167,6 +188,7 @@ def merge_stream(stream: str) -> dict:
     lint_valid_count = 0
     lint_skipped_count = 0
     differs_count = 0
+    bogus_template_rejection_count = 0
 
     batch_files = sorted(batches_dir.glob("batch_*.json"))
     if not batch_files:
@@ -217,6 +239,13 @@ def merge_stream(stream: str) -> dict:
                 from scripts.generate_deep_judge_cot import verify_citation_accuracy
                 ex["citation_accuracy"] = verify_citation_accuracy(ex.get("reasoning", {}), source_code)
             else:
+                # Bogus-template blacklist gate (REVIEWS concern #2 followup)
+                corrected = ex.get("corrected_code", "") or ""
+                if has_bogus_template(corrected):
+                    bogus_template_rejection_count += 1
+                    rejection_reasons["bogus_template"] += 1
+                    continue
+
                 ok, reason, lint, align = ctf_passes_full_gate(ex)
                 if not ok:
                     rejection_reasons[reason] += 1
@@ -277,6 +306,7 @@ def merge_stream(stream: str) -> dict:
         report["php_lint_pass_rate"] = lint_valid_count / n_lintable
         report["mean_alignment_ratio"] = sum(align_ratios) / len(align_ratios) if align_ratios else 1.0
         report["corrected_code_differs_rate"] = differs_count / n_accepted if n_accepted else 0.0
+        report["bogus_template_rejection_count"] = bogus_template_rejection_count
         thresholds = CTF_THRESHOLDS
         report["thresholds"] = thresholds
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -322,6 +352,7 @@ def merge_stream(stream: str) -> dict:
         print(f"php_lint_pass_rate: {report['php_lint_pass_rate']:.3f}")
         print(f"mean_alignment_ratio: {report['mean_alignment_ratio']:.3f}")
         print(f"corrected_code_differs_rate: {report['corrected_code_differs_rate']:.3f}")
+        print(f"bogus_template_rejection_count: {report['bogus_template_rejection_count']}")
     print(f"PASSED ACCEPTANCE GATE: {report['passed_acceptance_gate']}")
     return report
 
