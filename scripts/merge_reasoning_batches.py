@@ -130,6 +130,45 @@ def cot_passes_full_gate(ex: dict, source_code: str) -> "tuple[bool, str]":
     return True, ""
 
 
+def wrap_class_method_for_lint(code: str, fn_name: str) -> str:
+    """Wrap a PHP class method in a synthetic class scope so `php -l` accepts it.
+
+    `php -l` rejects standalone `public function foo()` as a top-level parse
+    error. Most CtF corrected_code blocks ARE class methods (the source
+    functions came from WordPress plugin classes). This helper detects those
+    and wraps them in `class Shim { ... }`. If the method uses `parent::`,
+    we also add a no-op parent class to satisfy the scope.
+
+    Strips any leading `<?php` tag from the input since php_lint_check adds
+    its own.
+    """
+    stripped = re.sub(r"^\s*<\?php\s*", "", code)
+    stripped = re.sub(r"\?>\s*$", "", stripped)
+
+    needs_class_scope = bool(
+        re.search(r"^\s*(public|private|protected|static|final|abstract)\s+function", stripped, re.MULTILINE)
+        or ("::" in fn_name and "::" not in (fn_name.split("::", 1)[0] or ""))
+    )
+    if not needs_class_scope:
+        return stripped
+
+    cls_name = fn_name.split("::", 1)[0] if "::" in fn_name else "WpFtMergeShim"
+    # Avoid reserved-keyword or invalid class names
+    if cls_name.lower() in {"false", "true", "null", "self", "static", "parent", "class"} or not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", cls_name):
+        cls_name = "WpFtMergeShim"
+
+    if "parent::" in stripped:
+        return (
+            f"class WpFtMergeShimParent {{\n"
+            f"    public function __construct() {{}}\n"
+            f"}}\n"
+            f"class {cls_name} extends WpFtMergeShimParent {{\n"
+            f"{stripped}\n"
+            f"}}"
+        )
+    return f"class {cls_name} {{\n{stripped}\n}}"
+
+
 def ctf_passes_full_gate(ex: dict) -> "tuple[bool, str, dict, dict]":
     """Returns (passed, reason, lint_meta, alignment_meta)."""
     from scripts.generate_critique_then_fix import (
@@ -142,6 +181,7 @@ def ctf_passes_full_gate(ex: dict) -> "tuple[bool, str, dict, dict]":
     critique = ex.get("critique", {})
     corrected = ex.get("corrected_code", "") or ""
     defective = ex.get("defective_code", "") or ""
+    fn_name = ex.get("function_name", "") or ""
     if not critique.get("summary"):
         return False, "no_summary", {}, {}
     dims = critique.get("dimensions", {})
@@ -158,7 +198,11 @@ def ctf_passes_full_gate(ex: dict) -> "tuple[bool, str, dict, dict]":
         return False, "corrected_too_short", {}, {}
     if normalize_code(corrected) == normalize_code(defective):
         return False, "corrected_identical_to_defective", {}, {}
-    lint = php_lint_check(corrected)
+    # Wrap class methods in a synthetic class scope so `php -l` accepts
+    # `public/private/protected/static function ...` — without this wrap
+    # the lint would false-fail ~35% of class-method corrected_code blocks.
+    lint_code = wrap_class_method_for_lint(corrected, fn_name)
+    lint = php_lint_check(lint_code)
     is_skipped = "php not available" in (lint.get("errors") or "")
     if not is_skipped and not lint.get("valid"):
         return False, "php_lint_invalid", lint, {}
