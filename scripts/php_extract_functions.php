@@ -48,13 +48,33 @@ for ($i = 0; $i < count($tokens); $i++) {
         }
 
         // Track class context.
+        // WARNING: T_CLASS is also emitted for the `::class` constant expression
+        // (e.g. Dashboard::class). That is NOT a class declaration — it's a
+        // fully-qualified-name constant. We must skip it, otherwise the extractor
+        // treats the next T_STRING (often a function call like `do_action`) as a
+        // new class name and corrupts class_context for every subsequent method.
+        // Detect `::class` by looking at the previous non-whitespace token: if it
+        // is T_DOUBLE_COLON (`::`), this is the constant, not a declaration.
         if ($token_type === T_CLASS) {
-            // Look ahead for class name.
-            for ($j = $i + 1; $j < count($tokens); $j++) {
-                if (is_array($tokens[$j]) && $tokens[$j][0] === T_STRING) {
-                    $current_class = $tokens[$j][1];
-                    $in_class = true;
-                    break;
+            $prev_is_double_colon = false;
+            for ($k = $i - 1; $k >= 0; $k--) {
+                $pt = $tokens[$k];
+                if (is_array($pt) && $pt[0] === T_WHITESPACE) {
+                    continue;
+                }
+                if (is_array($pt) && $pt[0] === T_DOUBLE_COLON) {
+                    $prev_is_double_colon = true;
+                }
+                break;
+            }
+            if (!$prev_is_double_colon) {
+                // Look ahead for class name.
+                for ($j = $i + 1; $j < count($tokens); $j++) {
+                    if (is_array($tokens[$j]) && $tokens[$j][0] === T_STRING) {
+                        $current_class = $tokens[$j][1];
+                        $in_class = true;
+                        break;
+                    }
                 }
             }
         }
