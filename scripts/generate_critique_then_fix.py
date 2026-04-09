@@ -164,6 +164,14 @@ def php_lint_check(code: str) -> dict:
     Uses 'php -l' to validate syntax. Gracefully degrades if PHP CLI is
     not available.
 
+    NOTE: `php -l` only inspects content inside a `<?php` block; anything
+    before the opening tag is treated as literal HTML and silently passes.
+    Corrected_code blocks in this pipeline start with `/**` or `function`
+    (no opener), so we MUST prefix `<?php` before linting — otherwise PHP
+    treats the whole body as HTML and returns exit 0 regardless of what
+    syntax errors are in the code. This was a silent pipeline bug that
+    caused php_lint.valid=true on mangled code across the entire CtF bulk.
+
     Returns:
         dict with:
             valid: bool -- True if syntax is valid
@@ -171,9 +179,15 @@ def php_lint_check(code: str) -> dict:
     """
     tmp_path = None
     try:
+        # Prefix <?php unless code already has an opener — critical to
+        # avoid the HTML-passthrough false positive described above.
+        if not code.lstrip().startswith("<?"):
+            code_to_lint = "<?php\n" + code
+        else:
+            code_to_lint = code
         with tempfile.NamedTemporaryFile(suffix=".php", delete=False, mode="w",
                                          encoding="utf-8") as tmp:
-            tmp.write(code)
+            tmp.write(code_to_lint)
             tmp_path = tmp.name
 
         result = subprocess.run(
