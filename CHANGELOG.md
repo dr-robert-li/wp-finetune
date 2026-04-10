@@ -5,6 +5,23 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 ## [Unreleased]
 
 ### Changed
+- **Full pipeline refactoring: Anthropic API → Claude Code agents** — Replaced all direct `anthropic.Anthropic()` / `call_with_backoff()` / Batch API calls with `scripts/claude_agent.py` which invokes `claude --print` via subprocess. All LLM work now runs through Claude Code agents (subscription-covered). Affected scripts: `phase1_judge.py`, `phase2_generate.py`, `phase2_judge.py`, `phase2_judge_dataset.py`, `phase3_cot.py`, `generate_critique_then_fix.py`, `generate_deep_judge_cot.py`. Net: -488 lines (removed batch API helpers, backoff retry logic, anthropic imports)
+- **utils.py stripped to core utilities** — Removed `call_with_backoff`, `batch_or_direct`, `make_batch_request`, `submit_batch`, `poll_batch`, `parse_batch_results`. Kept: `extract_json`, `load_checkpoint`, `save_checkpoint`
+- **Skills: explicit model="sonnet" on all Agent() calls** — `run-data-pipeline` judge agent and `run-training` telemetry agents now specify `model="sonnet"` to prevent haiku fallback
+
+### Added
+- **`scripts/claude_agent.py`** — Claude Code CLI wrapper module providing `generate()` and `generate_json()` functions. Uses `claude --print --tools "" --no-session-persistence` for clean text generation via subprocess. Exponential backoff retries (1s, 2s, 4s... capped at 30s). All prompts piped via stdin (no ARG_MAX risk). Stderr logged at DEBUG level for visibility
+- **`extract_corrected_code_from_xml()`** — Added to `generate_critique_then_fix.py` for XML tag fallback extraction of corrected code
+- **`REVIEWS.md`** — Cross-AI review from Gemini + Claude covering pipeline refactoring quality, coherence, and risks. Consensus: refactoring clean, data volume (665 examples) needs attention
+
+### Fixed
+- **Phase 1 re-extraction with ::class bug fix** — Re-ran `phase1_extract.py` on all 225 repos. Previous extraction had ~137 corrupted entries from PHP `::class` constant misidentification. Result: 137,320 functions extracted, 0 corrupted entries
+- **Phase 1 re-judging with real Claude Code agents** — Full re-judge of all 204 repos using 13 parallel spawned agents (not heuristic scoring). Result: 84,970 passed (89.9%), 9,544 failed (10.1%). Eliminates the ~30% false-positive rate from `agent_judge.py` heuristic labels
+- **`claude_agent.py` retry backoff** (cross-AI review fix) — Added exponential backoff between retries; was firing immediately without delay
+- **`claude_agent.py` stdin-only** (cross-AI review fix) — Removed inline CLI argument path for prompts; always uses stdin to avoid ARG_MAX shell limits
+- **`merge_dataset.py` messages format** — Now handles both old (instruction/response) and new (messages) format for judge training data
+
+### Changed
 - **Phase 11 GRPO: gen-only → dual-mode (gen + judge reasoning)** — Phase 4 triage showed gen is solved (0.99+ PHPCS) but judge is the bottleneck (Spearman 0.57, only 30/70 produces parseable output). GRPO-05 promoted from optional scope note to hard requirement. Judge receives equal or greater GRPO budget. Judge rewards: score-reasoning consistency (Claude evaluator agent) + fix correctness (PHPCS/security scanner)
 - **Phase 4 triage: 30/70 wins** — Only ratio producing parseable judge output (497 valid pairs). Spearman gate lowered from 0.85 to 0.50 (aspirational → achievable). Triage decisions recorded in PROJECT.md Key Decisions table
 - **README** — Phase 4 marked complete, v1.2 marked next, v3.0 shows dual-mode GRPO

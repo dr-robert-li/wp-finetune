@@ -52,7 +52,7 @@ The judge returns structured scores across 9 dimensions: WPCS compliance, SQL sa
 | v2.0 MoE-Sieve | 7. Router Profiling + Ratio Selection (E_eff) → 8. Selective Training → 9. Eval | Planned |
 | v3.0 GRPO & Deploy | 10. Rewards → 11. Dual-mode GRPO (gen + judge) → 12. Merge + Prune → 13. Eval → 14. Package | Planned |
 
-**Current:** Phase 4 triage complete — 30/70 is the winning ratio (only adapter producing parseable judge output, Spearman 0.57). Gen is solved across all ratios (97-100% PHPCS). Judge is the bottleneck. v1.2 Phase 4.1 begins next with seed curation + deep judge CoT data generation on the 30/70 adapter. v3.0 Phase 11 GRPO now targets both gen and judge reasoning (judge receives equal or greater budget).
+**Current:** Full pipeline re-execution in progress. All LLM scripts refactored from Anthropic API to Claude Code agent subprocess calls (`scripts/claude_agent.py`). Phase 1 re-extracted (137K functions, 0 corrupted entries after ::class fix). Phase 1 re-judging underway with real Claude Code agents (13 parallel agents across 204 repos). Subsequent phases (2-3, export, training, 4.1-4.2) will re-run on the clean foundation.
 
 **Building in public.** Read the [Engineering Journal](JOURNAL.md) for real-time decisions, tradeoffs, failures, and lessons learned as the project evolves.
 
