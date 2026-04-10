@@ -120,6 +120,21 @@ def merge_all():
     if cot_dir.exists():
         for f in sorted(cot_dir.glob("*.json")):
             for item in json.loads(f.read_text()):
+                # Support messages format (from Claude Code agents)
+                if "messages" in item and isinstance(item["messages"], list):
+                    msgs = item["messages"]
+                    if len(msgs) >= 2:
+                        examples.append({
+                            "messages": msgs,
+                            "metadata": item.get("metadata", {
+                                "source": "cot",
+                                "task_type": "gen",
+                                "has_cot": True,
+                            }),
+                        })
+                    continue
+
+                # Old format: instruction/response/reasoning
                 instr = item.get("instruction", "")
                 resp = item.get("response", "")
                 reasoning = item.get("reasoning", "") or item.get("cot_reasoning", "")
