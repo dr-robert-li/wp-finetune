@@ -77,25 +77,41 @@ def merge_all():
     if jt_dir.exists():
         for f in sorted(jt_dir.glob("*.json")):
             for item in json.loads(f.read_text()):
-                instr = item.get("instruction", "")
-                if not instr.strip():
-                    continue
-                resp = item.get("response", {})
-                resp_str = json.dumps(resp, indent=2) if isinstance(resp, dict) else str(resp)
-                if not instr.startswith("<wp_judge>"):
-                    instr = f"<wp_judge> {instr}"
-                examples.append({
-                    "messages": [
-                        {"role": "user", "content": instr},
-                        {"role": "assistant", "content": resp_str},
-                    ],
-                    "metadata": {
-                        "source": "judge_training",
-                        "quality_tier": item.get("quality_tier", ""),
-                        "training_tags": item.get("training_tags", []),
-                        "task_type": "judge",
-                    },
-                })
+                # Support both old (instruction/response) and new (messages) format
+                if "messages" in item:
+                    msgs = item["messages"]
+                    if len(msgs) >= 2:
+                        user_msg = msgs[0].get("content", "")
+                        asst_msg = msgs[1].get("content", "")
+                        if not user_msg.strip():
+                            continue
+                        examples.append({
+                            "messages": msgs,
+                            "metadata": item.get("metadata", {
+                                "source": "judge_training",
+                                "task_type": "judge",
+                            }),
+                        })
+                else:
+                    instr = item.get("instruction", "")
+                    if not instr.strip():
+                        continue
+                    resp = item.get("response", {})
+                    resp_str = json.dumps(resp, indent=2) if isinstance(resp, dict) else str(resp)
+                    if not instr.startswith("<wp_judge>"):
+                        instr = f"<wp_judge> {instr}"
+                    examples.append({
+                        "messages": [
+                            {"role": "user", "content": instr},
+                            {"role": "assistant", "content": resp_str},
+                        ],
+                        "metadata": {
+                            "source": "judge_training",
+                            "quality_tier": item.get("quality_tier", ""),
+                            "training_tags": item.get("training_tags", []),
+                            "task_type": "judge",
+                        },
+                    })
     print(f"  Judge training: {len(examples) - s}")
 
     # 4. CoT reasoning (wp_gen with reasoning)
