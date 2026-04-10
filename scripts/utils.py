@@ -100,7 +100,6 @@ def load_checkpoint(phase: str, checkpoint_dir: Optional[Path] = None) -> dict:
     empty_state = {
         "completed": [],
         "failed": [],
-        "batch_job_ids": [],
         "timestamp": None,
     }
 

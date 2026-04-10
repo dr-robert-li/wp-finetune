@@ -12,13 +12,17 @@ Usage:
 """
 
 import json
+import logging
 import os
 import subprocess
-import tempfile
+import sys
+import time
 from pathlib import Path
 from typing import Optional
 
 from scripts.utils import extract_json
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -71,23 +75,28 @@ def generate(
     last_error = None
     for attempt in range(max_retries):
         try:
-            if use_file:
-                return _generate_via_file(prompt, system, model, timeout)
-            else:
-                return _generate_inline(prompt, system, model, timeout)
+            # Always use stdin to avoid shell argument length limits.
+            return _generate_via_stdin(prompt, system, model, timeout)
         except subprocess.TimeoutExpired:
             last_error = f"Timeout after {timeout}s (attempt {attempt + 1}/{max_retries})"
+            logger.warning("Claude agent timeout (attempt %d/%d)", attempt + 1, max_retries)
         except subprocess.CalledProcessError as e:
             stderr = e.stderr or ""
             # Transient errors worth retrying: overloaded, rate limited
             if any(kw in stderr.lower() for kw in ("overloaded", "rate limit", "529", "503")):
                 last_error = f"Transient error (attempt {attempt + 1}): {stderr[:200]}"
+                logger.warning("Transient error (attempt %d/%d): %s", attempt + 1, max_retries, stderr[:200])
             else:
                 raise RuntimeError(
                     f"Claude agent failed (exit {e.returncode}): {stderr[:500]}"
                 ) from e
         except Exception as e:
             raise RuntimeError(f"Claude agent unexpected error: {e}") from e
+
+        # Exponential backoff between retries (1s, 2s, 4s, ...)
+        backoff = min(2 ** attempt, 30)
+        logger.info("Retrying in %ds...", backoff)
+        time.sleep(backoff)
 
     raise RuntimeError(f"Claude agent failed after {max_retries} retries: {last_error}")
 
@@ -128,39 +137,16 @@ def _build_cmd(system: Optional[str], model: str) -> list[str]:
     return cmd
 
 
-def _generate_inline(
+def _generate_via_stdin(
     prompt: str,
     system: Optional[str],
     model: str,
     timeout: int,
 ) -> str:
-    """Generate with prompt passed as CLI argument."""
-    cmd = _build_cmd(system, model)
-    cmd.append(prompt)
+    """Generate with prompt piped via stdin.
 
-    result = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-        env=_agent_env(),
-    )
-
-    if result.returncode != 0:
-        raise subprocess.CalledProcessError(
-            result.returncode, cmd, result.stdout, result.stderr
-        )
-
-    return result.stdout.strip()
-
-
-def _generate_via_file(
-    prompt: str,
-    system: Optional[str],
-    model: str,
-    timeout: int,
-) -> str:
-    """Generate with prompt piped via stdin (for large prompts)."""
+    Always uses stdin to avoid shell argument length limits (ARG_MAX).
+    """
     cmd = _build_cmd(system, model)
 
     result = subprocess.run(
@@ -171,6 +157,10 @@ def _generate_via_file(
         timeout=timeout,
         env=_agent_env(),
     )
+
+    # Log stderr for debugging even on success.
+    if result.stderr and result.stderr.strip():
+        logger.debug("Claude agent stderr: %s", result.stderr.strip()[:500])
 
     if result.returncode != 0:
         raise subprocess.CalledProcessError(
