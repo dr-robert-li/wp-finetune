@@ -342,9 +342,9 @@ if $OBSERVE and not Path("models/Qwen3-30B-A3B/config.json").exists():
     mkdir -p $DOWNLOAD_TDIR
 
     # Invoke wp-finetune:observe-data-pipeline inline — spawn its 3 agents:
-    Agent(description="Telemetry: pipeline progress", prompt="...write to {DOWNLOAD_TDIR}/pipeline-progress.md...", run_in_background=true)
-    Agent(description="Telemetry: system resources", prompt="...write to {DOWNLOAD_TDIR}/system-resources.md...", run_in_background=true)
-    Agent(description="Telemetry: disk I/O", prompt="...write to {DOWNLOAD_TDIR}/disk-io.md...", run_in_background=true)
+    Agent(model="sonnet", description="Telemetry: pipeline progress", prompt="...write to {DOWNLOAD_TDIR}/pipeline-progress.md...", run_in_background=true)
+    Agent(model="sonnet", description="Telemetry: system resources", prompt="...write to {DOWNLOAD_TDIR}/system-resources.md...", run_in_background=true)
+    Agent(model="sonnet", description="Telemetry: disk I/O", prompt="...write to {DOWNLOAD_TDIR}/disk-io.md...", run_in_background=true)
 ```
 
 ```python

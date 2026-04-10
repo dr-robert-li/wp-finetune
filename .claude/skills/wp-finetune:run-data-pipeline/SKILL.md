@@ -40,9 +40,10 @@ python scripts/{script}.py
 ```
 
 **If type is "agent" and step is "judge_repos":**
-For each batch in `batches`, spawn a parallel `general-purpose` agent:
+For each batch in `batches`, spawn a parallel agent with explicit model:
 ```
 Agent(
+  model="sonnet",
   description="Judge repos: {batch_repos}",
   prompt="You are a WordPress code quality judge. Read config/judge_system.md.
   Judge all functions in these repos: {batch_repos}.

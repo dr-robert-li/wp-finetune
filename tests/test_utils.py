@@ -1,12 +1,12 @@
-"""Unit tests for scripts/utils.py — RED phase stubs.
+"""Unit tests for scripts/utils.py.
 
-All tests should FAIL with ImportError until scripts/utils.py is implemented.
+Tests checkpoint persistence and JSON extraction utilities.
+Batch API helpers and call_with_backoff were removed — all LLM work
+now goes through scripts/claude_agent.py (Claude Code CLI).
 """
 import json
 import sys
-import os
 from pathlib import Path
-from unittest.mock import patch, MagicMock, call
 import pytest
 
 # Add project root to path
@@ -14,10 +14,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from scripts.utils import (
     extract_json,
-    call_with_backoff,
     load_checkpoint,
     save_checkpoint,
-    batch_or_direct,
 )
 
 
@@ -82,80 +80,8 @@ def test_checkpoint_atomic(tmp_path):
     assert not (tmp_path / "test_checkpoint.tmp").exists()
 
 
-# ---------------------------------------------------------------------------
-# call_with_backoff tests
-# ---------------------------------------------------------------------------
-
-def test_backoff_retries():
-    """Retries on RateLimitError up to max_retries, then raises."""
-    import anthropic
-
-    mock_client = MagicMock()
-    rate_limit_error = anthropic.RateLimitError(
-        message="rate limited",
-        response=MagicMock(status_code=429, headers={}),
-        body=None,
-    )
-    success_response = MagicMock()
-    mock_client.messages.create.side_effect = [
-        rate_limit_error,
-        rate_limit_error,
-        rate_limit_error,
-        success_response,
-    ]
-
-    with patch("time.sleep"):
-        result = call_with_backoff(
-            mock_client,
-            max_retries=5,
-            model="claude-sonnet-4-6",
-            max_tokens=10,
-            messages=[{"role": "user", "content": "hi"}],
-        )
-
-    assert mock_client.messages.create.call_count == 4
-    assert result is success_response
-
-
-def test_backoff_retry_after():
-    """Uses retry_after attribute from RateLimitError when present."""
-    import anthropic
-
-    mock_client = MagicMock()
-
-    # Create error with retry_after attribute
-    error = anthropic.RateLimitError(
-        message="rate limited",
-        response=MagicMock(status_code=429, headers={}),
-        body=None,
-    )
-    error.retry_after = 2.5
-
-    success_response = MagicMock()
-    mock_client.messages.create.side_effect = [error, success_response]
-
-    sleep_calls = []
-    with patch("time.sleep", side_effect=lambda t: sleep_calls.append(t)):
-        call_with_backoff(
-            mock_client,
-            max_retries=3,
-            model="claude-sonnet-4-6",
-            max_tokens=10,
-            messages=[{"role": "user", "content": "hi"}],
-        )
-
-    assert len(sleep_calls) >= 1
-    # Should sleep for at least retry_after (2.5) and at most retry_after + 10% jitter
-    assert 2.5 <= sleep_calls[0] <= 2.75
-
-
-# ---------------------------------------------------------------------------
-# batch_or_direct tests
-# ---------------------------------------------------------------------------
-
-def test_routing_threshold():
-    """batch_or_direct threshold is at 50 items."""
-    assert batch_or_direct(0) == "direct"
-    assert batch_or_direct(49) == "direct"
-    assert batch_or_direct(50) == "batch"
-    assert batch_or_direct(51) == "batch"
+def test_checkpoint_missing_returns_empty(tmp_path):
+    """load_checkpoint for nonexistent phase returns empty state."""
+    loaded = load_checkpoint("nonexistent", checkpoint_dir=tmp_path)
+    assert loaded["completed"] == []
+    assert loaded["failed"] == []

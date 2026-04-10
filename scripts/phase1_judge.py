@@ -10,28 +10,18 @@ Outputs:
 """
 
 import json
-import re
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
-from dotenv import load_dotenv
-load_dotenv(Path(__file__).resolve().parent.parent / ".env")
-
-import anthropic
 import yaml
 
+from scripts.claude_agent import generate_json
 from scripts.utils import (
     extract_json,
-    call_with_backoff,
     load_checkpoint,
     save_checkpoint,
-    batch_or_direct,
-    make_batch_request,
-    submit_batch,
-    poll_batch,
-    parse_batch_results,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -208,25 +198,17 @@ def _apply_security_auto_fail(result: dict, func: dict) -> dict:
     return result
 
 
-def judge_function(func: dict, client: anthropic.Anthropic, system: str) -> dict:
-    """Send a function to Claude for quality assessment using backoff."""
+def judge_function(func: dict, system: str) -> dict:
+    """Send a function to Claude for quality assessment via Claude Code agent."""
     prompt = _make_judge_prompt(func)
 
     try:
-        response = call_with_backoff(
-            client,
-            model="claude-sonnet-4-6-20250514",
-            max_tokens=1024,
-            system=system,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        text = response.content[0].text
-        result = extract_json(text)
+        result = generate_json(prompt, system=system)
         if result is None:
             return {
                 "function_name": func["function_name"],
                 "verdict": "FAIL",
-                "notes": "Judge parse error: extract_json returned None",
+                "notes": "Judge parse error: generate_json returned None",
                 "scores": {},
                 "critical_failures": ["parse_fail"],
                 "dependency_chain": [],
@@ -245,63 +227,6 @@ def judge_function(func: dict, client: anthropic.Anthropic, system: str) -> dict
         }
 
 
-def _sanitize_custom_id(repo_name: str, index: int, func_name: str) -> str:
-    """Build a Batch API custom_id matching ^[a-zA-Z0-9_-]{1,64}$.
-
-    Strips all characters outside [a-zA-Z0-9_-] and truncates to 64 chars.
-    Includes the index to guarantee uniqueness even after sanitization.
-    """
-    safe_repo = re.sub(r"[^a-zA-Z0-9_-]", "-", repo_name)
-    safe_func = re.sub(r"[^a-zA-Z0-9_-]", "-", func_name)
-    raw = f"{safe_repo}_{index}_{safe_func}"
-    return raw[:64]
-
-
-def judge_functions_batch(
-    functions: list[dict],
-    client: anthropic.Anthropic,
-    system: str,
-    repo_name: str,
-) -> list[dict]:
-    """Judge many functions via the Batch API, return assessments in order."""
-    requests = []
-    for i, func in enumerate(functions):
-        custom_id = _sanitize_custom_id(repo_name, i, func["function_name"])
-        prompt = _make_judge_prompt(func)
-        requests.append(make_batch_request(custom_id, system, prompt))
-
-    print(f"  [{repo_name}] Submitting batch of {len(requests)} functions...")
-    batch_id = submit_batch(client, requests)
-    print(f"  [{repo_name}] Batch submitted: {batch_id} — polling...")
-
-    results_raw = poll_batch(client, batch_id)
-    successes, failures = parse_batch_results(results_raw)
-
-    # Build custom_id -> result map
-    result_map = {s["_custom_id"]: s for s in successes}
-
-    assessments = []
-    for i, func in enumerate(functions):
-        custom_id = _sanitize_custom_id(repo_name, i, func["function_name"])
-        if custom_id in result_map:
-            assessment = result_map[custom_id]
-            assessment = _apply_security_auto_fail(assessment, func)
-        else:
-            assessment = {
-                "function_name": func["function_name"],
-                "verdict": "FAIL",
-                "notes": "Batch item failed or parse error",
-                "scores": {},
-                "critical_failures": ["batch_fail"],
-                "dependency_chain": [],
-                "training_tags": [],
-            }
-        assessments.append(assessment)
-
-    print(f"  [{repo_name}] Batch done: {len(successes)} succeeded, {len(failures)} failed")
-    return assessments
-
-
 def main():
     PASSED_DIR.mkdir(parents=True, exist_ok=True)
     FAILED_DIR.mkdir(parents=True, exist_ok=True)
@@ -314,12 +239,9 @@ def main():
         print("No extracted files found. Run phase1_extract.py first.")
         sys.exit(1)
 
-    client = anthropic.Anthropic()  # Uses ANTHROPIC_API_KEY env var.
-
     checkpoint = load_checkpoint("phase1_judge")
     completed_repos = set(checkpoint["completed"])
     failed_repos = list(checkpoint["failed"])
-    batch_job_ids = list(checkpoint["batch_job_ids"])
 
     total_passed = 0
     total_failed = 0
@@ -386,28 +308,19 @@ def main():
             else:
                 phpcs_passed.append(func)
 
-        # Route to batch or direct based on count.
+        # Judge functions via Claude Code agent.
         if phpcs_passed:
-            mode = batch_or_direct(len(phpcs_passed))
-            print(f"  [{repo_name}] Judging {len(phpcs_passed)} functions via {mode} API")
+            print(f"  [{repo_name}] Judging {len(phpcs_passed)} functions via Claude Code agent")
 
-            if mode == "batch":
-                # Batch path: submit all at once, save batch_id to checkpoint.
-                batch_id = None
-                # Check if a batch was already submitted for this repo in a prior run.
-                # (Stored batch_job_ids carry the repo context via prefix.)
-                assessments = judge_functions_batch(phpcs_passed, client, judge_system, repo_name)
-            else:
-                # Direct path: judge one by one with backoff.
-                assessments = []
-                for i, func in enumerate(phpcs_passed):
-                    assessment = judge_function(func, client, judge_system)
-                    assessments.append(assessment)
-                    if (i + 1) % 10 == 0:
-                        p = sum(1 for a in assessments if a.get("verdict") == "PASS")
-                        fail = len(assessments) - p
-                        print(f"  [{repo_name}] Assessed {i + 1}/{len(phpcs_passed)} "
-                              f"(passed: {p}, failed: {fail})")
+            assessments = []
+            for i, func in enumerate(phpcs_passed):
+                assessment = judge_function(func, judge_system)
+                assessments.append(assessment)
+                if (i + 1) % 10 == 0:
+                    p = sum(1 for a in assessments if a.get("verdict") == "PASS")
+                    fail = len(assessments) - p
+                    print(f"  [{repo_name}] Assessed {i + 1}/{len(phpcs_passed)} "
+                          f"(passed: {p}, failed: {fail})")
 
             # Apply assessments to functions.
             for func, assessment in zip(phpcs_passed, assessments):
@@ -436,7 +349,6 @@ def main():
         save_checkpoint("phase1_judge", {
             "completed": list(completed_repos),
             "failed": failed_repos,
-            "batch_job_ids": batch_job_ids,
         })
 
     print(f"\n{'='*50}")

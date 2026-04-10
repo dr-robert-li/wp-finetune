@@ -2,8 +2,8 @@
 """Phase 2, Step 2: Generate synthetic examples to fill coverage gaps.
 
 Reads the gap report from phase2_gap_analysis.py and generates targeted
-synthetic WordPress code using Claude. Real code from Phase 1 is used as
-style anchors to ground the generation.
+synthetic WordPress code using Claude Code agents. Real code from Phase 1
+is used as style anchors to ground the generation.
 """
 
 import itertools
@@ -12,22 +12,10 @@ import random
 import sys
 from pathlib import Path
 
-from dotenv import load_dotenv
-load_dotenv(Path(__file__).resolve().parent.parent / ".env")
-
-import anthropic
 import yaml
 
-from scripts.utils import (
-    call_with_backoff,
-    load_checkpoint,
-    save_checkpoint,
-    batch_or_direct,
-    make_batch_request,
-    submit_batch,
-    poll_batch,
-    parse_batch_results,
-)
+from scripts.claude_agent import generate
+from scripts.utils import load_checkpoint, save_checkpoint
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 GAP_REPORT_PATH = PROJECT_ROOT / "data" / "phase2_synthetic" / "gap_report.json"
@@ -102,29 +90,21 @@ def build_prompt(template: str, anchors: list[str], variation_seed: int,
     return prompt
 
 
-def generate_one(prompt: str, gap_tag: str, client: anthropic.Anthropic) -> dict:
-    """Generate a single synthetic example using call_with_backoff."""
+def generate_one(prompt: str, gap_tag: str) -> dict:
+    """Generate a single synthetic example using Claude Code agent."""
     # Use Opus for contrastive/reasoning, Sonnet for standard generation.
-    model = ("claude-opus-4-6-20250514"
+    model = ("opus"
              if "contrastive" in gap_tag or "cot" in gap_tag
-             else "claude-sonnet-4-6-20250514")
+             else "sonnet")
 
-    response = call_with_backoff(
-        client,
-        model=model,
-        max_tokens=4096,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": prompt}],
-    )
+    response_text = generate(prompt, system=SYSTEM_PROMPT, model=model)
 
     return {
         "source": "synthetic",
         "gap_tag": gap_tag,
         "model": model,
         "prompt": prompt,
-        "body": response.content[0].text,
-        "input_tokens": response.usage.input_tokens,
-        "output_tokens": response.usage.output_tokens,
+        "body": response_text,
     }
 
 
@@ -152,9 +132,7 @@ def main():
     templates = prompt_config.get("templates", {})
     contrastive = prompt_config.get("contrastive_templates", {})
 
-    client = anthropic.Anthropic()
     total_generated = 0
-    total_tokens = 0
 
     # Load checkpoint for resume support.
     checkpoint = load_checkpoint("phase2_generate")
@@ -178,64 +156,21 @@ def main():
 
         print(f"\n  [{gap_tag}] Generating {deficit} examples (have {gap_info['have']}, need {gap_info['need']})...")
 
-        route = batch_or_direct(deficit)
+        for seed in range(deficit):
+            template = tag_templates[seed % len(tag_templates)]
+            prompt = build_prompt(template, anchors, seed, complexities, contexts, constraints)
 
-        if route == "batch":
-            # Build batch requests.
-            batch_requests = []
-            for seed in range(deficit):
-                template = tag_templates[seed % len(tag_templates)]
-                prompt = build_prompt(template, anchors, seed, complexities, contexts, constraints)
-                model = "claude-sonnet-4-6-20250514"
-                batch_requests.append(
-                    make_batch_request(
-                        custom_id=f"{gap_tag}_seed_{seed}",
-                        system=SYSTEM_PROMPT,
-                        user_content=prompt,
-                        model=model,
-                        max_tokens=4096,
-                    )
-                )
-
-            print(f"    Submitting batch of {len(batch_requests)} requests...")
-            batch_id = submit_batch(client, batch_requests)
-            checkpoint["batch_job_ids"].append(batch_id)
-            save_checkpoint("phase2_generate", checkpoint)
-
-            results = poll_batch(client, batch_id)
-            successes, failures = parse_batch_results(results)
-
-            for success in successes:
-                generated.append({
-                    "source": "synthetic",
-                    "gap_tag": gap_tag,
-                    "model": "claude-sonnet-4-6-20250514",
-                    "body": success.get("content", ""),
-                    "batch_id": batch_id,
-                })
-                total_tokens += 0  # Batch tokens not tracked here
+            try:
+                result = generate_one(prompt, gap_tag)
+                generated.append(result)
                 total_generated += 1
 
-            if failures:
-                print(f"    {len(failures)} batch requests failed for {gap_tag}")
+                if (seed + 1) % 10 == 0:
+                    print(f"    Generated {seed + 1}/{deficit}")
 
-        else:
-            for seed in range(deficit):
-                template = tag_templates[seed % len(tag_templates)]
-                prompt = build_prompt(template, anchors, seed, complexities, contexts, constraints)
-
-                try:
-                    result = generate_one(prompt, gap_tag, client)
-                    generated.append(result)
-                    total_tokens += result["input_tokens"] + result["output_tokens"]
-                    total_generated += 1
-
-                    if (seed + 1) % 10 == 0:
-                        print(f"    Generated {seed + 1}/{deficit}")
-
-                except anthropic.APIError as e:
-                    print(f"    API error at seed {seed}: {e}")
-                    continue
+            except Exception as e:
+                print(f"    Error at seed {seed}: {e}")
+                continue
 
         # Save generated examples.
         if generated:
@@ -266,12 +201,11 @@ def main():
                 prompt += f"```php\n{anchors[0][:1000]}\n```\n\n---\n\n" + template
 
             try:
-                result = generate_one(prompt, contrastive_tag, client)
+                result = generate_one(prompt, contrastive_tag)
                 generated.append(result)
-                total_tokens += result["input_tokens"] + result["output_tokens"]
                 total_generated += 1
-            except anthropic.APIError as e:
-                print(f"    API error on contrastive {pair_type}: {e}")
+            except Exception as e:
+                print(f"    Error on contrastive {pair_type}: {e}")
                 continue
 
         if generated:
@@ -305,27 +239,24 @@ def main():
                     filled = template.replace("{context}", context)
 
                     try:
-                        response = call_with_backoff(
-                            client,
-                            model="claude-sonnet-4-6-20250514",
-                            max_tokens=2048,
+                        response_text = generate(
+                            filled,
                             system=SYSTEM_PROMPT,
-                            messages=[{"role": "user", "content": filled}],
+                            model="sonnet",
                         )
                         rejection_examples.append({
                             "source": "synthetic",
                             "gap_tag": f"rejection:proactive_{template_type}",
-                            "model": "claude-sonnet-4-6-20250514",
-                            "body": response.content[0].text,
+                            "model": "sonnet",
+                            "body": response_text,
                             "metadata": {
                                 "task_type": "gen",
                             },
                         })
-                        total_tokens += response.usage.input_tokens + response.usage.output_tokens
                         total_generated += 1
                         rejection_count += 1
-                    except anthropic.APIError as e:
-                        print(f"    API error on rejection {template_type}: {e}")
+                    except Exception as e:
+                        print(f"    Error on rejection {template_type}: {e}")
                         rejection_count += 1  # Count as attempted to avoid infinite loop
                         continue
 
@@ -341,8 +272,6 @@ def main():
     print(f"\n{'='*50}")
     print(f"Phase 2 Generation Complete")
     print(f"  Total generated: {total_generated}")
-    print(f"  Total tokens used: {total_tokens:,}")
-    print(f"  Estimated cost: ~${total_tokens / 1_000_000 * 5:.2f}")
     print(f"\nRun phase2_judge.py next.")
 
 

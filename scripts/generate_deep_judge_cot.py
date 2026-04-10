@@ -18,11 +18,8 @@ import sys
 import argparse
 from pathlib import Path
 
-from dotenv import load_dotenv
-load_dotenv(Path(__file__).resolve().parent.parent / ".env")
-
-import anthropic
-from scripts.utils import extract_json, call_with_backoff, load_checkpoint, save_checkpoint
+from scripts.utils import extract_json, load_checkpoint, save_checkpoint
+from scripts.claude_agent import generate_json
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SEEDS_DIR = PROJECT_ROOT / "data" / "seeds"
@@ -254,15 +251,13 @@ def passes_quality_gate(result: dict, source_code: str = None) -> bool:
 # Core generation function
 # ---------------------------------------------------------------------------
 
-def generate_deep_judge_cot(code: str, source_info: dict, seeds: list,
-                             client: anthropic.Anthropic) -> dict:
+def generate_deep_judge_cot(code: str, source_info: dict, seeds: list) -> dict:
     """Generate a deep judge CoT example for a PHP code snippet.
 
     Args:
         code: PHP source code to analyze
         source_info: Metadata about the code source
         seeds: List of CoT seeds for few-shot context
-        client: Anthropic client
 
     Returns:
         Parsed result dict or None on failure
@@ -295,13 +290,7 @@ Code to analyze:
 Return valid JSON only."""
 
     try:
-        resp = call_with_backoff(
-            client,
-            model="claude-sonnet-4-5",
-            max_tokens=2048,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        result = extract_json(resp.content[0].text)
+        result = generate_json(prompt, model="sonnet")
         return result
     except Exception:
         return None
@@ -396,8 +385,6 @@ def main():
     PILOT_DIR.mkdir(parents=True, exist_ok=True)
     BULK_DIR.mkdir(parents=True, exist_ok=True)
 
-    client = anthropic.Anthropic()
-
     # Load seeds
     seeds = load_seeds()
     if not seeds:
@@ -449,7 +436,7 @@ def main():
             continue
 
         parse_attempts += 1
-        result = generate_deep_judge_cot(func["code"], func, seeds, client)
+        result = generate_deep_judge_cot(func["code"], func, seeds)
 
         if result is None:
             parse_failures += 1

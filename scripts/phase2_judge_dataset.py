@@ -16,21 +16,11 @@ import random
 import sys
 from pathlib import Path
 
-from dotenv import load_dotenv
-load_dotenv(Path(__file__).resolve().parent.parent / ".env")
-
-import anthropic
-
+from scripts.claude_agent import generate_json
 from scripts.utils import (
     extract_json,
-    call_with_backoff,
     load_checkpoint,
     save_checkpoint,
-    batch_or_direct,
-    make_batch_request,
-    submit_batch,
-    poll_batch,
-    parse_batch_results,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -61,7 +51,7 @@ Also provide:
 Return valid JSON only."""
 
 
-def generate_judge_score(code: str, client: anthropic.Anthropic) -> dict:
+def generate_judge_score(code: str) -> dict:
     """Have Claude produce a detailed rubric score for a code sample."""
     prompt = f"""Score this WordPress PHP code:
 
@@ -71,18 +61,7 @@ def generate_judge_score(code: str, client: anthropic.Anthropic) -> dict:
 
 Return your rubric scores as JSON matching the format in your instructions."""
 
-    try:
-        response = call_with_backoff(
-            client,
-            model="claude-sonnet-4-6-20250514",
-            max_tokens=1024,
-            system=JUDGE_SCORER_SYSTEM,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        text = response.content[0].text
-        return extract_json(text)
-    except anthropic.APIError:
-        return None
+    return generate_json(prompt, system=JUDGE_SCORER_SYSTEM)
 
 
 def format_judge_training_example(code: str, scores: dict) -> dict:
@@ -163,58 +142,9 @@ def load_code_samples() -> list[dict]:
     return samples
 
 
-def _score_batch(samples: list[dict], client: anthropic.Anthropic,
-                 judge_system: str) -> list[dict]:
-    """Score a list of samples via batch API. Returns list of (sample, scores) tuples."""
-    batch_requests = []
-    for i, sample in enumerate(samples):
-        prompt = f"""Score this WordPress PHP code:
-
-```php
-{sample['code'][:4000]}
-```
-
-Return your rubric scores as JSON matching the format in your instructions."""
-        batch_requests.append(
-            make_batch_request(
-                custom_id=f"sample_{i}",
-                system=judge_system,
-                user_content=prompt,
-                model="claude-sonnet-4-6-20250514",
-                max_tokens=1024,
-            )
-        )
-
-    print(f"  Submitting batch of {len(batch_requests)} scoring requests...")
-    batch_id = submit_batch(client, batch_requests)
-
-    # Save batch results immediately (they expire after 24h — Pitfall 3).
-    results_cache_path = JUDGE_OUTPUT / f"batch_{batch_id}_raw.json"
-    JUDGE_OUTPUT.mkdir(parents=True, exist_ok=True)
-    results = poll_batch(client, batch_id)
-
-    # Cache raw results to disk immediately.
-    with open(results_cache_path, "w") as f:
-        json.dump([r.model_dump() if hasattr(r, "model_dump") else str(r) for r in results], f, indent=2)
-
-    successes, failures = parse_batch_results(results)
-    result_map = {s["_custom_id"]: s for s in successes}
-
-    scored = []
-    for i, sample in enumerate(samples):
-        custom_id = f"sample_{i}"
-        scores = result_map.get(custom_id)
-        if scores is not None:
-            scores.pop("_custom_id", None)
-            scored.append((sample, scores))
-
-    return scored
-
-
 def main():
     JUDGE_OUTPUT.mkdir(parents=True, exist_ok=True)
 
-    client = anthropic.Anthropic()
     samples = load_code_samples()
 
     if not samples:
@@ -266,14 +196,12 @@ def main():
 
     print(f"Processing {len(pending_samples)} samples (skipped {skipped} capped/completed)")
 
-    route = batch_or_direct(len(pending_samples))
+    # Direct mode: score one at a time via Claude Code agent.
+    for batch_start in range(0, len(pending_samples), 100):
+        batch_slice = pending_samples[batch_start:batch_start + 100]
 
-    if route == "batch" and pending_samples:
-        # Score all pending samples via batch API.
-        just_samples = [s for _, s in pending_samples]
-        scored = _score_batch(just_samples, client, JUDGE_SCORER_SYSTEM)
-
-        for (i, sample), (_, scores) in zip(pending_samples, scored):
+        for i, sample in batch_slice:
+            scores = generate_judge_score(sample["code"])
             if scores is None:
                 continue
 
@@ -290,35 +218,9 @@ def main():
 
             checkpoint["completed"].append(str(i))
 
-        # Save checkpoint after batch.
+        # Save checkpoint every 100 examples.
         save_checkpoint("phase2_judge_dataset", checkpoint)
-
-    else:
-        # Direct mode: score one at a time with call_with_backoff.
-        for batch_start in range(0, len(pending_samples), 100):
-            batch_slice = pending_samples[batch_start:batch_start + 100]
-
-            for i, sample in batch_slice:
-                scores = generate_judge_score(sample["code"], client)
-                if scores is None:
-                    continue
-
-                # Sanity check: high-quality code should score high.
-                overall = scores.get("overall_score", 0)
-                if sample["expected_quality"] == "high" and overall < 50:
-                    continue
-                if sample["expected_quality"] == "low" and overall > 95:
-                    continue
-
-                example = format_judge_training_example(sample["code"], scores)
-                example["metadata"]["source"] = sample["source"]
-                training_examples.append(example)
-
-                checkpoint["completed"].append(str(i))
-
-            # Save checkpoint every 100 examples.
-            save_checkpoint("phase2_judge_dataset", checkpoint)
-            print(f"  Checkpoint saved: {len(training_examples)} examples so far")
+        print(f"  Checkpoint saved: {len(training_examples)} examples so far")
 
     # Save final output.
     output_path = JUDGE_OUTPUT / "judge_training.json"

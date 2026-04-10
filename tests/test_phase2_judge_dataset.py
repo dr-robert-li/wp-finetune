@@ -1,10 +1,7 @@
-"""Tests for phase2_judge_dataset.py — rate limiting and utils.py integration.
+"""Tests for phase2_judge_dataset.py — Claude Code agent integration.
 
-These tests verify that phase2_judge_dataset.py uses the correct hardened
-patterns from utils.py instead of brittle direct API calls and time.sleep.
-
-Behavior-level checks (import inspection) that fail fast if the module
-reverts to the old pattern.
+These tests verify that phase2_judge_dataset.py uses Claude Code agents
+(via claude_agent.py) instead of direct Anthropic API calls.
 """
 import sys
 import inspect
@@ -17,14 +14,20 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import scripts.phase2_judge_dataset as jd
 
 
-def test_rate_limiting_uses_backoff():
-    """call_with_backoff must be imported (not direct client.messages.create + sleep)."""
-    from scripts.utils import call_with_backoff
-    # The module should reference call_with_backoff in its source
+def test_uses_claude_agent():
+    """generate_json from claude_agent must be used for LLM calls."""
     source = inspect.getsource(jd)
-    assert "call_with_backoff" in source, (
-        "phase2_judge_dataset.py must use call_with_backoff for rate limiting "
-        "(PIPE-03 fix from CONCERNS.md)"
+    assert "generate_json" in source, (
+        "phase2_judge_dataset.py must use generate_json from claude_agent "
+        "for LLM-based scoring"
+    )
+
+
+def test_no_anthropic_import():
+    """anthropic must NOT be imported — all LLM work via Claude Code agents."""
+    source = inspect.getsource(jd)
+    assert "import anthropic" not in source, (
+        "phase2_judge_dataset.py must not import anthropic — use claude_agent instead"
     )
 
 
@@ -44,11 +47,11 @@ def test_has_checkpoint():
 
 
 def test_no_time_sleep_request_interval_pattern():
-    """time.sleep(REQUEST_INTERVAL) pattern must be absent — replaced by call_with_backoff."""
+    """time.sleep(REQUEST_INTERVAL) pattern must be absent."""
     source = inspect.getsource(jd)
     assert "REQUEST_INTERVAL" not in source, (
-        "REQUEST_INTERVAL constant must be removed — call_with_backoff handles rate limiting"
+        "REQUEST_INTERVAL constant must be removed"
     )
     assert "time.sleep(REQUEST_INTERVAL)" not in source, (
-        "time.sleep(REQUEST_INTERVAL) must be removed (PIPE-03 fix)"
+        "time.sleep(REQUEST_INTERVAL) must be removed"
     )
