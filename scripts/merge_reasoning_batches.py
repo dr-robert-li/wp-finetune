@@ -80,14 +80,21 @@ def phase1_function_id(source_file: str, function_name: str) -> str:
 
 
 def is_dimension_na(dim_value: dict, min_just: int) -> bool:
-    """A dimension is validly marked N/A if score is null AND analysis contains
-    'not applicable' AND has a justification >= min_just chars after that phrase."""
+    """A dimension is validly marked N/A if score is null AND the analysis
+    provides at least ``min_just`` chars of justification.
+
+    Previous version required the literal phrase 'not applicable' in the
+    analysis, which was too brittle: agents wrote valid justifications like
+    'No user-facing strings in this function' which should count as N/A but
+    didn't. That bug let entries with 3+ null-score dims slip through the
+    max_na_dimensions check (caught by gemini CoT v3 audit 2026-04-10).
+
+    Valid N/A now requires only: score is None AND analysis is a real
+    justification >= min_just characters."""
     if dim_value.get("score") is not None:
         return False
-    analysis = (dim_value.get("analysis") or "").lower()
-    if "not applicable" not in analysis:
-        return False
-    return len(analysis) >= len("not applicable") + min_just
+    analysis = (dim_value.get("analysis") or "").strip()
+    return len(analysis) >= min_just
 
 
 def cot_passes_full_gate(ex: dict, source_code: str) -> "tuple[bool, str]":
