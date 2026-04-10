@@ -13,12 +13,8 @@ import json
 import sys
 from pathlib import Path
 
-from dotenv import load_dotenv
-load_dotenv(Path(__file__).resolve().parent.parent / ".env")
-
-import anthropic
-
-from scripts.utils import call_with_backoff, load_checkpoint, save_checkpoint
+from scripts.claude_agent import generate
+from scripts.utils import load_checkpoint, save_checkpoint
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PHASE1_PASSED = PROJECT_ROOT / "data" / "phase1_extraction" / "output" / "passed"
@@ -130,29 +126,15 @@ def load_judge_training() -> list[dict]:
         return json.load(f)
 
 
-def synthesize_instruction(code: str, client: anthropic.Anthropic) -> str:
+def synthesize_instruction(code: str) -> str:
     """Generate a natural instruction for a code example."""
-    response = call_with_backoff(
-        client,
-        model="claude-sonnet-4-6-20250514",
-        max_tokens=512,
-        messages=[{"role": "user", "content": INSTRUCTION_SYNTH_PROMPT.format(code=code[:3000])}],
-    )
-    return response.content[0].text.strip()
+    return generate(INSTRUCTION_SYNTH_PROMPT.format(code=code[:3000]))
 
 
-def generate_cot(instruction: str, code: str, client: anthropic.Anthropic) -> str:
+def generate_cot(instruction: str, code: str) -> str:
     """Generate chain-of-thought reasoning for a code example."""
-    response = call_with_backoff(
-        client,
-        model="claude-opus-4-6-20250514",  # Opus for reasoning quality.
-        max_tokens=6000,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": COT_WRAPPER_PROMPT.format(
-            instruction=instruction, code=code[:4000]
-        )}],
-    )
-    return response.content[0].text
+    prompt = COT_WRAPPER_PROMPT.format(instruction=instruction, code=code[:4000])
+    return generate(prompt, system=SYSTEM_PROMPT, model="opus")
 
 
 def needs_cot(example: dict) -> bool:
@@ -212,7 +194,6 @@ def main():
     COT_OUTPUT.mkdir(parents=True, exist_ok=True)
     FINAL_DIR.mkdir(parents=True, exist_ok=True)
 
-    client = anthropic.Anthropic()
     all_examples = load_all_passed()
 
     if not all_examples:
@@ -257,15 +238,8 @@ def main():
                     f"why it matters, and how the corrected version fixes it."
                 )
                 try:
-                    cot_response = call_with_backoff(
-                        client,
-                        model="claude-sonnet-4-6-20250514",
-                        max_tokens=2000,
-                        system=SYSTEM_PROMPT,
-                        messages=[{"role": "user", "content": contrastive_prompt}],
-                    )
-                    cot_text = cot_response.content[0].text
-                except anthropic.APIError:
+                    cot_text = generate(contrastive_prompt, system=SYSTEM_PROMPT)
+                except Exception:
                     cot_text = f"Defect: {violation}"
 
                 training_data.append({
@@ -307,11 +281,11 @@ def main():
             instruction = example["prompt"]
         else:
             # Synthesize an instruction for real code.
-            instruction = synthesize_instruction(code, client)
+            instruction = synthesize_instruction(code)
 
         if needs_cot(example):
             # Generate chain-of-thought reasoning.
-            cot = generate_cot(instruction, code, client)
+            cot = generate_cot(instruction, code)
             training_example = format_training_example(example, instruction, cot=cot)
             cot_count += 1
         else:

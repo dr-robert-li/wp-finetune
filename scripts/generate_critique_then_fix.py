@@ -23,12 +23,10 @@ import subprocess
 import tempfile
 import os
 from pathlib import Path
+from typing import Optional
 
-from dotenv import load_dotenv
-load_dotenv(Path(__file__).resolve().parent.parent / ".env")
-
-import anthropic
-from scripts.utils import extract_json, call_with_backoff, load_checkpoint, save_checkpoint
+from scripts.claude_agent import generate
+from scripts.utils import extract_json, load_checkpoint, save_checkpoint
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SEEDS_DIR = PROJECT_ROOT / "data" / "seeds"
@@ -300,18 +298,32 @@ def check_critique_fix_alignment(critique: dict, defective_code: str,
 
 
 # ---------------------------------------------------------------------------
+# XML tag extraction helper
+# ---------------------------------------------------------------------------
+
+def extract_corrected_code_from_xml(text: str) -> Optional[str]:
+    """Extract corrected code from <corrected_code> XML tags in LLM response.
+
+    Fallback extraction when JSON parsing doesn't capture the corrected_code field.
+
+    Returns:
+        Extracted code string, or None if no XML tags found.
+    """
+    match = re.search(r'<corrected_code>([\s\S]+?)</corrected_code>', text)
+    return match.group(1).strip() if match else None
+
+
+# ---------------------------------------------------------------------------
 # Core generation function
 # ---------------------------------------------------------------------------
 
-def generate_critique_then_fix(code: str, source_info: dict, seeds: list,
-                                client: anthropic.Anthropic) -> dict:
+def generate_critique_then_fix(code: str, source_info: dict, seeds: list) -> dict:
     """Generate a critique-then-fix example for a defective PHP code snippet.
 
     Args:
         code: Defective PHP source code
         source_info: Metadata about the code source
         seeds: List of critique-then-fix seeds for few-shot context
-        client: Anthropic client
 
     Returns:
         Parsed result dict (with corrected_code) or None on failure
@@ -351,18 +363,12 @@ Defective PHP Code to critique and fix:
 
 IMPORTANT: corrected_code in your JSON must be the actual corrected PHP source, not wrapped in additional tags. The code must be syntactically valid PHP."""
 
-    # Scale max_tokens with code length: longer code needs more tokens for corrected version
+    # Scale timeout with code length: longer code needs more time for corrected version
     code_len = len(code)
-    max_tokens = min(4096, max(3072, code_len // 2))
+    timeout = min(600, max(300, code_len // 10))
 
     try:
-        resp = call_with_backoff(
-            client,
-            model="claude-sonnet-4-5",
-            max_tokens=max_tokens,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        raw_text = resp.content[0].text
+        raw_text = generate(prompt, model="sonnet", timeout=timeout)
         result = extract_json(raw_text)
 
         if result is None:
@@ -561,8 +567,6 @@ def main():
     PILOT_DIR.mkdir(parents=True, exist_ok=True)
     BULK_DIR.mkdir(parents=True, exist_ok=True)
 
-    client = anthropic.Anthropic()
-
     # Load seeds
     seeds = load_critique_seeds()
     if not seeds:
@@ -616,7 +620,7 @@ def main():
             continue
 
         parse_attempts += 1
-        result = generate_critique_then_fix(func["code"], func, seeds, client)
+        result = generate_critique_then_fix(func["code"], func, seeds)
 
         if result is None:
             parse_failures += 1

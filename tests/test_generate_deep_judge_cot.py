@@ -1,11 +1,11 @@
-"""Wave 0 test stubs for scripts/generate_deep_judge_cot.py.
+"""Tests for scripts/generate_deep_judge_cot.py.
 
-Tests FAIL with ImportError until the production script exists (RED phase).
-Once scripts/generate_deep_judge_cot.py is created in Plan 01 Task 2,
-these tests will pass for all non-API functions.
+Tests non-API functions: quality gates, validation, formatting, seed loading,
+and citation accuracy verification.
 """
 import sys
 import json
+import inspect
 import pytest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
@@ -57,11 +57,7 @@ def test_load_seeds_returns_cot_only():
 
 
 def test_sample_seeds_boundary_weighting():
-    """sample_seeds(seeds, n) produces boundary seeds more often than uniform random.
-
-    Over 200 samples of n=3 from the full seed pool, boundary seeds should appear
-    more than 10% of sampled slots (expected ~20-30% due to 2x weight).
-    """
+    """sample_seeds(seeds, n) produces boundary seeds more often than uniform random."""
     seeds = load_seeds()
     if not seeds:
         pytest.skip("No seeds available")
@@ -80,7 +76,7 @@ def test_sample_seeds_boundary_weighting():
 
 
 # ---------------------------------------------------------------------------
-# Task 2–3: passes_quality_gate
+# Task 2-3: passes_quality_gate
 # ---------------------------------------------------------------------------
 
 
@@ -130,7 +126,8 @@ def test_pilot_dimension_coverage():
                 },
             },
             "dimensions_addressed": list(REQUIRED_DIMENSIONS),
-            "citation_accuracy": {"total_citations": 1, "grounded_citations": 1, "hallucinated_citations": [], "hallucination_ratio": 0.0},
+            "citation_accuracy": {"total_citations": 1, "grounded_citations": 1,
+                                   "hallucinated_citations": [], "hallucination_ratio": 0.0},
         }
         for _ in range(20)
     ]
@@ -156,11 +153,12 @@ def test_pilot_api_citation_check():
                 },
             },
             "dimensions_addressed": list(REQUIRED_DIMENSIONS),
-            "citation_accuracy": {"total_citations": 1, "grounded_citations": 1, "hallucinated_citations": [], "hallucination_ratio": 0.0},
+            "citation_accuracy": {"total_citations": 1, "grounded_citations": 1,
+                                   "hallucinated_citations": [], "hallucination_ratio": 0.0},
         })
     report = validate_pilot_batch(pilot_examples)
-    assert report["distinct_api_citations"] >= 3, (
-        f"Expected >= 3 API citations, got {report['distinct_api_citations']}"
+    assert len(report["api_citations_found"]) >= 3, (
+        f"Expected >= 3 API citations, got {len(report['api_citations_found'])}"
     )
 
 
@@ -178,8 +176,7 @@ def test_format_training_example_schema():
         "code": "<?php function my_function() { return esc_html($x); } ?>",
     }
     result = _make_good_result()
-    ca = {"total_citations": 1, "grounded_citations": 1, "hallucinated_citations": [], "hallucination_ratio": 0.0}
-    example = format_training_example(source_info, result, citation_accuracy=ca)
+    example = format_training_example(source_info, result, source_code=source_info["code"])
     required_keys = [
         "source_file", "source_dir", "function_name", "code",
         "reasoning", "dimensions_addressed", "generation_method", "citation_accuracy",
@@ -189,41 +186,13 @@ def test_format_training_example_schema():
 
 
 # ---------------------------------------------------------------------------
-# Task 6–7: Citation accuracy (addresses review concern #1)
+# Task 6-7: Citation accuracy
 # ---------------------------------------------------------------------------
 
 
 def test_citation_accuracy_rejects_hallucinated_apis():
-    """verify_citation_accuracy() flags APIs cited in analysis but absent from source code.
-
-    Specifically: if analysis text mentions '$wpdb->prepare' but the source code
-    does NOT contain '$wpdb->prepare', verify_citation_accuracy() must return at
-    least one hallucinated citation.
-
-    Furthermore, passes_quality_gate() must return False when hallucination_ratio
-    exceeds CITATION_HALLUCINATION_THRESHOLD.
-    """
-    # Source code has no $wpdb->prepare
-    source_code = "<?php function foo() { global $wpdb; $wpdb->get_results('SELECT * FROM wp_posts'); } ?>"
-    # Analysis falsely claims $wpdb->prepare is used
-    result = {
-        "verdict": "FAIL",
-        "overall_score": 40,
-        "key_observation": "Unsafe query",
-        "dimension_analysis": {
-            "sql_safety": {
-                "score": 2,
-                "analysis": "Uses $wpdb->prepare and check_ajax_referer correctly — actually no, it doesn't prepare the query at all.",
-            },
-            **{
-                d: {"score": 7, "analysis": "ok"}
-                for d in REQUIRED_DIMENSIONS
-                if d != "sql_safety"
-            },
-        },
-    }
-    # Contradiction: analysis says "$wpdb->prepare" is used but it's in the analysis text
-    # as a positive citation while not appearing in source. Build a cleaner hallucination:
+    """verify_citation_accuracy() flags APIs cited in analysis but absent from source code."""
+    source_no_apis = "<?php function foo() { return 1; } ?>"
     result_hallucinating = {
         "verdict": "PASS",
         "overall_score": 85,
@@ -240,7 +209,6 @@ def test_citation_accuracy_rejects_hallucinated_apis():
             },
         },
     }
-    source_no_apis = "<?php function foo() { return 1; } ?>"
     ca = verify_citation_accuracy(result_hallucinating, source_no_apis)
     assert len(ca["hallucinated_citations"]) > 0, (
         f"Expected hallucinated citations, got {ca}"
@@ -248,16 +216,12 @@ def test_citation_accuracy_rejects_hallucinated_apis():
     assert ca["hallucination_ratio"] > 0, (
         f"Expected nonzero hallucination ratio, got {ca['hallucination_ratio']}"
     )
-    # When hallucination_ratio > threshold, passes_quality_gate must return False
     if ca["hallucination_ratio"] > CITATION_HALLUCINATION_THRESHOLD:
         assert passes_quality_gate(result_hallucinating, source_code=source_no_apis) is False
 
 
 def test_citation_accuracy_accepts_grounded_apis():
-    """verify_citation_accuracy() returns 0 hallucinated citations when API is in source.
-
-    Analysis mentions 'esc_html' and source code DOES contain 'esc_html'.
-    """
+    """verify_citation_accuracy() returns 0 hallucinated citations when API is in source."""
     source_code = "<?php echo esc_html($var); ?>"
     result = {
         "verdict": "PASS",
@@ -276,9 +240,17 @@ def test_citation_accuracy_accepts_grounded_apis():
         },
     }
     ca = verify_citation_accuracy(result, source_code)
-    assert ca["hallucination_ratio"] == 0.0, (
-        f"Expected 0.0 hallucination ratio for grounded citation, got {ca}"
-    )
-    assert ca["hallucinated_citations"] == [], (
-        f"Expected no hallucinated citations, got {ca['hallucinated_citations']}"
-    )
+    assert ca["hallucination_ratio"] == 0.0
+    assert ca["hallucinated_citations"] == []
+
+
+# ---------------------------------------------------------------------------
+# No Anthropic API references
+# ---------------------------------------------------------------------------
+
+
+def test_no_anthropic_import():
+    """generate_deep_judge_cot.py must not import anthropic."""
+    import scripts.generate_deep_judge_cot as djc
+    source = inspect.getsource(djc)
+    assert "import anthropic" not in source

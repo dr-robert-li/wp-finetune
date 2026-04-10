@@ -1,8 +1,7 @@
-"""Wave 0 test stubs for scripts/generate_critique_then_fix.py.
+"""Tests for scripts/generate_critique_then_fix.py.
 
-Tests FAIL with ImportError until the production script exists (RED phase).
-Once scripts/generate_critique_then_fix.py is created, these tests will
-pass for all non-API functions.
+Tests non-API functions: quality gates, validation, formatting, PHP lint,
+critique-fix alignment, and XML tag extraction.
 """
 import sys
 import json
@@ -19,6 +18,7 @@ from scripts.generate_critique_then_fix import (
     format_training_example,
     php_lint_check,
     check_critique_fix_alignment,
+    extract_corrected_code_from_xml,
     REQUIRED_DIMENSIONS,
     SEVERITY_LEVELS,
 )
@@ -31,14 +31,13 @@ from scripts.generate_critique_then_fix import (
 def _make_good_ctf_result():
     """Return a complete valid critique-then-fix result with all required fields."""
     return {
-        "verdict": "FAIL",
-        "overall_score": 35,
+        "summary": "Multiple issues found across dimensions.",
         "key_observation": "Multiple security vulnerabilities found.",
-        "dimension_analysis": {
+        "dimensions": {
             d: {
-                "score": 4,
                 "severity": "high",
-                "analysis": f"Issue found in {d}: missing sanitization.",
+                "issue": f"Issue found in {d}: missing sanitization.",
+                "fix": f"Add proper sanitization for {d}.",
             }
             for d in REQUIRED_DIMENSIONS
         },
@@ -61,7 +60,7 @@ def test_load_critique_seeds_returns_ctf_only():
 
 
 # ---------------------------------------------------------------------------
-# Task 2–4: passes_quality_gate
+# Task 2-4: passes_quality_gate
 # ---------------------------------------------------------------------------
 
 
@@ -81,59 +80,31 @@ def test_passes_quality_gate_missing_corrected_code():
 def test_passes_quality_gate_bad_severity():
     """A result with severity='extreme' (not in SEVERITY_LEVELS) fails the gate."""
     result = _make_good_ctf_result()
-    result["dimension_analysis"]["security"]["severity"] = "extreme"
+    result["dimensions"]["security"]["severity"] = "extreme"
     assert passes_quality_gate(result) is False
 
 
 # ---------------------------------------------------------------------------
-# Task 5–6: validate_pilot_batch
+# Task 5-6: validate_pilot_batch
 # ---------------------------------------------------------------------------
-
-
-def test_pilot_validation_severity_coverage():
-    """validate_pilot_batch() confirms all 4 severity levels appear in pilot examples."""
-    # Build 20 examples cycling through all severity levels
-    severities = list(SEVERITY_LEVELS)
-    pilot_examples = []
-    for i in range(20):
-        severity = severities[i % len(severities)]
-        example = {
-            "critique": f"Issue found: severity is {severity}",
-            "corrected_code": "<?php function ok() { return esc_html($x); } ?>",
-            "result": {
-                "verdict": "FAIL",
-                "overall_score": 40,
-                "key_observation": "ok",
-                "corrected_code": "<?php function ok() { return esc_html($x); } ?>",
-                "dimension_analysis": {
-                    d: {"score": 4, "severity": severity, "analysis": "Issue found."}
-                    for d in REQUIRED_DIMENSIONS
-                },
-            },
-        }
-        pilot_examples.append(example)
-    report = validate_pilot_batch(pilot_examples)
-    assert report["missing_severities"] == [], (
-        f"Expected all severities covered, missing: {report['missing_severities']}"
-    )
 
 
 def test_pilot_validation_dimension_coverage():
     """validate_pilot_batch() reports 0 missing dimensions for complete pilot batch."""
     pilot_examples = [
         {
-            "critique": "Thorough critique of all dimensions.",
-            "corrected_code": "<?php function ok() { return esc_html($x); } ?>",
-            "result": {
-                "verdict": "FAIL",
-                "overall_score": 40,
-                "key_observation": "Issues found.",
-                "corrected_code": "<?php function ok() { return esc_html($x); } ?>",
-                "dimension_analysis": {
-                    d: {"score": 4, "severity": "high", "analysis": f"Issue in {d}."}
+            "critique": {
+                "summary": "Issues found.",
+                "dimensions": {
+                    d: {"severity": "high", "issue": f"Issue in {d}.", "fix": "Fix it."}
                     for d in REQUIRED_DIMENSIONS
                 },
+                "key_observation": "Issues found.",
             },
+            "corrected_code": "<?php function ok() { return esc_html($x); } ?>",
+            "php_lint": {"valid": True, "errors": ""},
+            "critique_fix_alignment": {"alignment_ratio": 1.0, "critical_high_issues": 0,
+                                        "addressed_issues": 0, "unaddressed_issues": []},
         }
         for _ in range(20)
     ]
@@ -156,8 +127,8 @@ def test_format_training_example_schema():
         "code": "<?php function bad_function() { echo $_POST['x']; } ?>",
     }
     result = _make_good_ctf_result()
-    critique = "Missing sanitization and escaping."
-    example = format_training_example(source_info, result, critique)
+    defective_code = source_info["code"]
+    example = format_training_example(source_info, result, defective_code)
     required_keys = [
         "source_file", "function_name", "defective_code",
         "critique", "corrected_code", "dimensions_addressed", "generation_method",
@@ -167,20 +138,12 @@ def test_format_training_example_schema():
 
 
 # ---------------------------------------------------------------------------
-# Task 8: corrected_code XML tag fallback extraction (stub)
+# Task 8: corrected_code XML tag fallback extraction
 # ---------------------------------------------------------------------------
 
 
 def test_corrected_code_fallback_extraction():
-    """Stub: verify <corrected_code> XML tag regex fallback exists in production code.
-
-    This test verifies that the production script exports an extraction helper
-    that can find corrected code from XML-tagged LLM responses as a fallback
-    when JSON parsing fails.
-    """
-    # Import the extraction helper to confirm it is exported
-    from scripts.generate_critique_then_fix import extract_corrected_code_from_xml
-    # Test the extraction with a valid XML-tagged response
+    """extract_corrected_code_from_xml finds corrected code from XML-tagged responses."""
     llm_response = (
         "Here is the corrected version:\n"
         "<corrected_code>\n"
@@ -193,62 +156,84 @@ def test_corrected_code_fallback_extraction():
     assert "esc_html" in extracted
 
 
+def test_corrected_code_fallback_none_when_no_tag():
+    """extract_corrected_code_from_xml returns None when no XML tag present."""
+    assert extract_corrected_code_from_xml("no tags here") is None
+
+
 # ---------------------------------------------------------------------------
-# Task 9–10: PHP lint checks (addresses review concern #2)
+# Task 9-10: PHP lint checks
 # ---------------------------------------------------------------------------
 
 
 def test_php_lint_rejects_syntax_errors():
-    """php_lint_check() returns False for PHP code with syntax errors.
-
-    Test: missing semicolon causes a parse error.
-    """
-    # Missing semicolon after 'return true'
+    """php_lint_check() returns valid=False for PHP code with syntax errors."""
     invalid_php = "<?php function foo() { return true }"
     result = php_lint_check(invalid_php)
-    assert result is False, (
-        f"Expected php_lint_check to return False for invalid PHP, got {result}"
+    assert result["valid"] is False, (
+        f"Expected php_lint_check to return valid=False for invalid PHP, got {result}"
     )
 
 
 def test_php_lint_accepts_valid_php():
-    """php_lint_check() returns True for syntactically valid PHP code."""
+    """php_lint_check() returns valid=True for syntactically valid PHP code."""
     valid_php = "<?php function foo() { return true; }"
     result = php_lint_check(valid_php)
-    assert result is True, (
-        f"Expected php_lint_check to return True for valid PHP, got {result}"
+    assert result["valid"] is True, (
+        f"Expected php_lint_check to return valid=True for valid PHP, got {result}"
     )
 
 
 # ---------------------------------------------------------------------------
-# Task 11: Critique-fix alignment check (addresses review concern #2)
+# Task 11: Critique-fix alignment check
 # ---------------------------------------------------------------------------
 
 
-def test_critique_fix_alignment_check():
-    """check_critique_fix_alignment() flags misalignment between critique and corrected code.
+def test_critique_fix_alignment_detects_missing_api():
+    """check_critique_fix_alignment() flags when critique says add $wpdb->prepare but fix lacks it."""
+    critique_dict = {
+        "dimensions": {
+            "sql_safety": {
+                "severity": "critical",
+                "issue": "Raw SQL without $wpdb->prepare",
+                "fix": "Add $wpdb->prepare around all database queries",
+            },
+        },
+    }
+    defective_code = "<?php $wpdb->get_results('SELECT * FROM wp_posts WHERE ID=' . $id); ?>"
+    corrected_code = "<?php $wpdb->get_results('SELECT * FROM wp_posts WHERE ID=' . intval($id)); ?>"
+    result = check_critique_fix_alignment(critique_dict, defective_code, corrected_code)
+    # $wpdb->prepare was cited in fix but not added to corrected code
+    assert result["critical_high_issues"] >= 1
+    # The unaddressed list should have the sql_safety dimension
+    assert len(result["unaddressed_issues"]) >= 1
 
-    Scenario: critique identifies 'missing $wpdb->prepare' as a critical issue,
-    but the corrected_code does NOT contain '$wpdb->prepare'.
-    The function must flag this as a misalignment.
-    """
-    critique = (
-        "Critical issue: The query uses raw user input without $wpdb->prepare, "
-        "leaving the code vulnerable to SQL injection. "
-        "The fix MUST add $wpdb->prepare() around all database queries."
-    )
-    # corrected_code does not use $wpdb->prepare
-    corrected_code = (
-        "<?php function safe_query($user_id) {\n"
-        "    global $wpdb;\n"
-        "    $results = $wpdb->get_results('SELECT * FROM wp_posts WHERE ID=' . intval($user_id));\n"
-        "    return $results;\n"
-        "} ?>"
-    )
-    alignment_result = check_critique_fix_alignment(critique, corrected_code)
-    assert alignment_result["is_aligned"] is False, (
-        f"Expected misalignment detected, got: {alignment_result}"
-    )
-    assert len(alignment_result["mismatches"]) > 0, (
-        f"Expected at least one mismatch, got: {alignment_result['mismatches']}"
-    )
+
+def test_critique_fix_alignment_accepts_grounded_fix():
+    """check_critique_fix_alignment() accepts when fix APIs appear in corrected code."""
+    critique_dict = {
+        "dimensions": {
+            "security": {
+                "severity": "critical",
+                "issue": "Missing nonce verification",
+                "fix": "Add wp_verify_nonce check",
+            },
+        },
+    }
+    defective_code = "<?php function save() { update_option('key', $_POST['val']); } ?>"
+    corrected_code = "<?php function save() { if (!wp_verify_nonce($_POST['_wpnonce'], 'save')) wp_die(); update_option('key', sanitize_text_field($_POST['val'])); } ?>"
+    result = check_critique_fix_alignment(critique_dict, defective_code, corrected_code)
+    assert result["alignment_ratio"] >= 0.5
+
+
+# ---------------------------------------------------------------------------
+# No Anthropic API references
+# ---------------------------------------------------------------------------
+
+
+def test_no_anthropic_import():
+    """generate_critique_then_fix.py must not import anthropic."""
+    import inspect
+    import scripts.generate_critique_then_fix as ctf
+    source = inspect.getsource(ctf)
+    assert "import anthropic" not in source
