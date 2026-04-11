@@ -160,10 +160,10 @@ def main():
 
     # Target: balanced dataset, cap per source.
     max_per_source = {
-        "phase1_passed": 1500,
-        "phase1_failed": 1000,
-        "automated_mutation": 1000,
-        "mutation_original": 500,
+        "phase1_passed": 10000,
+        "phase1_failed": 5000,
+        "automated_mutation": 2000,
+        "mutation_original": 2000,
     }
 
     random.seed(42)
