@@ -352,7 +352,7 @@ def get_status() -> dict:
                     meta = item.get("metadata", {})
                     source = meta.get("source", "")
                     passes = meta.get("passes_threshold", None)
-                    if "synth" in source:
+                    if "synth" in source or "calibrated" in source or "deadzone" in source or "synth" in f.stem or "deadzone" in f.stem:
                         judge_synth += 1
                     elif passes is True or "passed" in source or "pass" in f.stem:
                         judge_high += 1
