@@ -4,9 +4,13 @@ Full pipeline for base-model profiling + sequential adapter eval + triage decisi
 
 Steps:
     0. Setup (output dirs, wp-bench clone)
-    1. Base-model E_eff profiling (gradient-free, all 5 ratios)
-    2. Sequential adapter eval (vLLM LoRA serving per ratio + full eval suite + wp-bench)
+    1. Base-model E_eff profiling (gradient-free, all experiment datasets)
+    2. Sequential adapter eval (vLLM merged-model serving per experiment + full eval suite + wp-bench)
     3. Triage decision (load_eval_results -> triage_ratios -> write_triage_decision)
+
+Adapters and experiments are auto-discovered from disk:
+    - adapters/ directory: any subdirectory with adapter_config.json
+    - output/eval_triage/ directory: any subdirectory (for resuming)
 
 Idempotency: every major step writes a completion marker (.complete file).
 On re-run, steps with existing markers are skipped unless --force is passed.
@@ -14,7 +18,7 @@ On re-run, steps with existing markers are skipped unless --force is passed.
 Usage:
     python scripts/run_eval_triage.py
     python scripts/run_eval_triage.py --skip-wpbench
-    python scripts/run_eval_triage.py --ratios 30_70,50_50
+    python scripts/run_eval_triage.py --experiments qwen3-30b-wp-30_70,qwen3-30b-wp-50_50
     python scripts/run_eval_triage.py --force
     python scripts/run_eval_triage.py --skip-profiling
 """
@@ -58,8 +62,7 @@ if str(PROJECT_ROOT) not in sys.path:
 # Constants
 # ---------------------------------------------------------------------------
 
-ALL_EVAL_RATIOS = ["30_70", "40_60", "50_50"]
-ALL_PROFILE_RATIOS = ["30_70", "40_60", "50_50", "60_40", "70_30"]
+ADAPTERS_DIR = PROJECT_ROOT / "adapters"
 DATASET_BASE = "data/final_dataset"
 OUTPUT_DIR = PROJECT_ROOT / "output"
 PROFILING_DIR = OUTPUT_DIR / "profiling"
@@ -70,13 +73,43 @@ VLLM_HEALTH_TIMEOUT_S = 600   # default: 10 minutes (30B MoE loads ~8 min)
 VLLM_HEALTH_POLL_S = 5
 EVAL_RETRY_DELAY_S = 30
 
-# Completion markers
+# Completion markers (use .format(experiment=...) for per-experiment markers)
 COMPLETION_MARKERS = {
     "profiling": str(PROFILING_DIR / ".complete"),
-    "eval_ratio": str(EVAL_TRIAGE_DIR / "ratio_{ratio}" / ".complete"),
-    "wpbench_ratio": str(EVAL_TRIAGE_DIR / "ratio_{ratio}" / ".wpbench_complete"),
+    "eval_experiment": str(EVAL_TRIAGE_DIR / "{experiment}" / ".complete"),
+    "wpbench_experiment": str(EVAL_TRIAGE_DIR / "{experiment}" / ".wpbench_complete"),
     "triage": str(OUTPUT_DIR / ".triage_complete"),
 }
+
+
+def discover_adapters(adapters_dir: Path = None) -> list[str]:
+    """Auto-discover trained adapter directories.
+
+    Returns sorted list of adapter directory names that contain adapter_config.json.
+    """
+    if adapters_dir is None:
+        adapters_dir = ADAPTERS_DIR
+    if not adapters_dir.exists():
+        return []
+    return sorted([
+        d.name for d in adapters_dir.iterdir()
+        if d.is_dir() and (d / "adapter_config.json").exists()
+    ])
+
+
+def discover_experiments(eval_dir: Path = None) -> list[str]:
+    """Auto-discover experiment directories under eval triage output.
+
+    Returns sorted list of experiment directory names (for resuming prior runs).
+    """
+    if eval_dir is None:
+        eval_dir = EVAL_TRIAGE_DIR
+    if not eval_dir.exists():
+        return []
+    return sorted([
+        d.name for d in eval_dir.iterdir()
+        if d.is_dir() and not d.name.startswith(".")
+    ])
 
 
 def step_complete(marker_path: str) -> bool:
@@ -100,21 +133,21 @@ def clear_marker(marker_path: str) -> None:
         logger.info(f"Cleared marker: {marker_path}")
 
 
-def _clean_stale_results(eval_ratios: list[str]) -> None:
+def _clean_stale_results(experiments: list[str]) -> None:
     """Remove stale result files and markers so --force starts genuinely fresh.
 
-    Clears per-ratio result files (JSON, JSONL, markers, tmp configs) and the
+    Clears per-experiment result files (JSON, JSONL, markers, tmp configs) and the
     triage decision. Profiling results are NOT cleared (they're expensive and
-    ratio-independent).
+    experiment-independent).
     """
     logger.info("--force: cleaning stale result files ...")
     cleaned = 0
 
-    # Per-ratio result files
-    for ratio in eval_ratios:
-        ratio_dir = EVAL_TRIAGE_DIR / f"ratio_{ratio}"
-        if ratio_dir.exists():
-            for f in ratio_dir.iterdir():
+    # Per-experiment result files
+    for experiment in experiments:
+        exp_dir = EVAL_TRIAGE_DIR / experiment
+        if exp_dir.exists():
+            for f in exp_dir.iterdir():
                 f.unlink()
                 cleaned += 1
 
@@ -138,11 +171,11 @@ def _clean_stale_results(eval_ratios: list[str]) -> None:
 # ---------------------------------------------------------------------------
 
 
-def setup_output_dirs(eval_ratios: list[str]) -> None:
+def setup_output_dirs(experiments: list[str]) -> None:
     """Create all output directories."""
     PROFILING_DIR.mkdir(parents=True, exist_ok=True)
-    for ratio in eval_ratios:
-        (EVAL_TRIAGE_DIR / f"ratio_{ratio}").mkdir(parents=True, exist_ok=True)
+    for experiment in experiments:
+        (EVAL_TRIAGE_DIR / experiment).mkdir(parents=True, exist_ok=True)
     logger.info(f"Output directories ready: {OUTPUT_DIR}")
 
 
@@ -172,29 +205,29 @@ def _get_vllm_container_name() -> str:
         return "vllm"
 
 
-def pre_merge_adapters(eval_ratios: list[str]) -> dict[str, bool]:
+def pre_merge_adapters(experiments: list[str]) -> dict[str, bool]:
     """Pre-merge all adapters on HOST before the eval loop.
 
     LoRA serving always fails for Qwen3-30B-A3B due to modules_to_save tensors.
-    Instead of failing per-ratio inside the eval loop, merge all adapters upfront
+    Instead of failing per-experiment inside the eval loop, merge all adapters upfront
     using device_map=cpu (no GPU or container required).
 
-    Returns dict mapping ratio -> success bool.
+    Returns dict mapping experiment -> success bool.
     """
     logger.info("=" * 60)
-    logger.info("PRE-MERGE: Merging adapters for all eval ratios")
+    logger.info("PRE-MERGE: Merging adapters for all experiments")
     logger.info("=" * 60)
 
     merge_script = PROJECT_ROOT / "scripts" / "merge_adapter.py"
     results = {}
 
-    for ratio in eval_ratios:
-        merged_path = PROJECT_ROOT / "models" / f"merged-{ratio}"
-        adapter_path = PROJECT_ROOT / "adapters" / f"qwen3-30b-wp-{ratio}"
+    for experiment in experiments:
+        merged_path = PROJECT_ROOT / "models" / f"merged-{experiment}"
+        adapter_path = ADAPTERS_DIR / experiment
 
         # Check if already merged and verified
         if (merged_path / "config.json").exists():
-            logger.info(f"  {ratio}: merged model already exists at {merged_path}, verifying ...")
+            logger.info(f"  {experiment}: merged model already exists at {merged_path}, verifying ...")
             # Quick token verification via merge_adapter.py idempotency check
             result = subprocess.run(
                 [sys.executable, str(merge_script),
@@ -204,19 +237,19 @@ def pre_merge_adapters(eval_ratios: list[str]) -> dict[str, bool]:
                 timeout=120,
             )
             if result.returncode == 0:
-                logger.info(f"  {ratio}: verified OK")
-                results[ratio] = True
+                logger.info(f"  {experiment}: verified OK")
+                results[experiment] = True
                 continue
             else:
-                logger.warning(f"  {ratio}: verification failed, re-merging ...")
+                logger.warning(f"  {experiment}: verification failed, re-merging ...")
 
         # Check adapter exists
         if not (adapter_path / "adapter_config.json").exists():
-            logger.error(f"  {ratio}: adapter not found at {adapter_path}")
-            results[ratio] = False
+            logger.error(f"  {experiment}: adapter not found at {adapter_path}")
+            results[experiment] = False
             continue
 
-        logger.info(f"  {ratio}: merging {adapter_path} -> {merged_path} (HOST, device_map=cpu) ...")
+        logger.info(f"  {experiment}: merging {adapter_path} -> {merged_path} (HOST, device_map=cpu) ...")
         result = subprocess.run(
             [sys.executable, str(merge_script),
              "--adapter-dir", str(adapter_path),
@@ -225,20 +258,20 @@ def pre_merge_adapters(eval_ratios: list[str]) -> dict[str, bool]:
             timeout=1200,  # 20 min max per merge (30B model is large)
         )
         if result.returncode == 0:
-            logger.info(f"  {ratio}: merge succeeded")
-            results[ratio] = True
+            logger.info(f"  {experiment}: merge succeeded")
+            results[experiment] = True
         else:
-            logger.error(f"  {ratio}: merge FAILED: {result.stderr[:500]}")
+            logger.error(f"  {experiment}: merge FAILED: {result.stderr[:500]}")
             if result.stdout:
-                logger.error(f"  {ratio}: stdout: {result.stdout[:500]}")
-            results[ratio] = False
+                logger.error(f"  {experiment}: stdout: {result.stdout[:500]}")
+            results[experiment] = False
 
     # Summary
     succeeded = [r for r, ok in results.items() if ok]
     failed = [r for r, ok in results.items() if not ok]
     logger.info(f"Pre-merge complete: {len(succeeded)} succeeded, {len(failed)} failed")
     if failed:
-        logger.warning(f"Failed merges: {failed} — these ratios will be skipped during eval")
+        logger.warning(f"Failed merges: {failed} — these experiments will be skipped during eval")
 
     return results
 
@@ -338,7 +371,7 @@ def run_profiling(
         return None
 
     from scripts.profile_base_model import (
-        RATIO_ORDER,
+        discover_dataset_dirs,
         has_downward_eeff_trend,
         profile_base_model,
     )
@@ -357,17 +390,11 @@ def run_profiling(
         )
         abs_tokenizer_path = abs_model_path
 
-    # Build ratio data paths
-    ratio_data_paths = {}
-    for ratio in RATIO_ORDER:
-        data_path = PROJECT_ROOT / DATASET_BASE / f"ratio_{ratio}" / "openai_train.jsonl"
-        if data_path.exists():
-            ratio_data_paths[ratio] = str(data_path)
-        else:
-            logger.warning(f"Ratio {ratio} data not found at {data_path} -- skipping")
+    # Auto-discover dataset directories
+    ratio_data_paths = discover_dataset_dirs(PROJECT_ROOT / DATASET_BASE)
 
     if not ratio_data_paths:
-        raise RuntimeError("No ratio data found. Cannot profile.")
+        raise RuntimeError("No dataset directories found. Cannot profile.")
 
     logger.info(f"Loading extended tokenizer from {abs_tokenizer_path} ...")
     tokenizer = AutoTokenizer.from_pretrained(str(abs_tokenizer_path))
@@ -401,15 +428,12 @@ def run_profiling(
         import numpy as np
 
         means_total = []
-        for ratio in RATIO_ORDER:
-            if ratio in all_ratio_eeffs:
-                vals = [
-                    v for v in all_ratio_eeffs[ratio]["eeff_total"]
-                    if not (isinstance(v, float) and math.isnan(v))
-                ]
-                means_total.append(float(np.nanmean(vals)) if vals else float("nan"))
-            else:
-                means_total.append(float("nan"))
+        for experiment in sorted(all_ratio_eeffs.keys()):
+            vals = [
+                v for v in all_ratio_eeffs[experiment]["eeff_total"]
+                if not (isinstance(v, float) and math.isnan(v))
+            ]
+            means_total.append(float(np.nanmean(vals)) if vals else float("nan"))
 
         if has_downward_eeff_trend(means_total):
             logger.info(
@@ -553,8 +577,8 @@ def _get_vllm_models(endpoint: str) -> list[str]:
         return []
 
 
-def _start_vllm_with_lora(ratio: str) -> subprocess.Popen:
-    """Start vLLM with LoRA adapter for the given ratio.
+def _start_vllm_with_lora(experiment: str) -> subprocess.Popen:
+    """Start vLLM with LoRA adapter for the given experiment.
 
     Returns the process handle. Caller is responsible for stopping it via _stop_vllm.
 
@@ -563,7 +587,7 @@ def _start_vllm_with_lora(ratio: str) -> subprocess.Popen:
     from scripts.dgx_toolbox import get_toolbox
 
     dgx = get_toolbox()
-    adapter_path = f"/workspace/wp-finetune/adapters/qwen3-30b-wp-{ratio}"
+    adapter_path = f"/workspace/wp-finetune/adapters/{experiment}"
     model_path = "/workspace/wp-finetune/models/Qwen3-30B-A3B"
 
     vllm_script = dgx.resolve("vllm")
@@ -576,7 +600,7 @@ def _start_vllm_with_lora(ratio: str) -> subprocess.Popen:
     ]
 
     cmd = [str(vllm_script), model_path] + extra_args
-    logger.info(f"Starting vLLM via DGX Toolbox for ratio {ratio}")
+    logger.info(f"Starting vLLM via DGX Toolbox for experiment {experiment}")
     logger.debug(f"vLLM cmd: {' '.join(cmd)}")
 
     # Set EXTRA_MOUNTS so start-vllm.sh mounts the project directory
@@ -606,7 +630,7 @@ def _stop_vllm(proc: Optional[subprocess.Popen]) -> None:
     logger.info("vLLM process stopped")
 
 
-def _fallback_merge_and_serve(ratio: str) -> Optional[subprocess.Popen]:
+def _fallback_merge_and_serve(experiment: str) -> Optional[subprocess.Popen]:
     """Fallback: serve pre-merged model without LoRA.
 
     Pre-merge step (run at pipeline start) should have already merged all adapters.
@@ -614,14 +638,14 @@ def _fallback_merge_and_serve(ratio: str) -> Optional[subprocess.Popen]:
 
     Returns vLLM process handle for merged model, or None on failure.
     """
-    logger.info(f"LoRA fallback: serving merged model for ratio {ratio} ...")
-    merged_model_path = PROJECT_ROOT / "models" / f"merged-{ratio}"
+    logger.info(f"LoRA fallback: serving merged model for experiment {experiment} ...")
+    merged_model_path = PROJECT_ROOT / "models" / f"merged-{experiment}"
 
     if not merged_model_path.exists():
         # Pre-merge should have handled this, but attempt HOST merge as last resort
         logger.warning(f"Merged model not found at {merged_model_path} — attempting HOST merge ...")
         merge_script = PROJECT_ROOT / "scripts" / "merge_adapter.py"
-        adapter_path = PROJECT_ROOT / "adapters" / f"qwen3-30b-wp-{ratio}"
+        adapter_path = ADAPTERS_DIR / experiment
         result = subprocess.run(
             [sys.executable, str(merge_script),
              "--adapter-dir", str(adapter_path),
@@ -630,12 +654,12 @@ def _fallback_merge_and_serve(ratio: str) -> Optional[subprocess.Popen]:
             timeout=1200,
         )
         if result.returncode != 0:
-            logger.error(f"HOST merge failed for ratio {ratio}: {result.stderr[:500]}")
+            logger.error(f"HOST merge failed for experiment {experiment}: {result.stderr[:500]}")
             return None
-        logger.info(f"HOST merge succeeded for ratio {ratio}")
+        logger.info(f"HOST merge succeeded for experiment {experiment}")
 
     # Serve merged model as full model (no --lora-modules)
-    container_merged_path = f"/workspace/wp-finetune/models/merged-{ratio}"
+    container_merged_path = f"/workspace/wp-finetune/models/merged-{experiment}"
     extra_args = [
         "--max-model-len=4096",
         "--gpu-memory-utilization=0.92",
@@ -646,7 +670,7 @@ def _fallback_merge_and_serve(ratio: str) -> Optional[subprocess.Popen]:
     vllm_script = dgx.resolve("vllm")
 
     cmd = [str(vllm_script), container_merged_path] + extra_args
-    logger.info(f"Serving merged model for ratio {ratio} via DGX Toolbox")
+    logger.info(f"Serving merged model for experiment {experiment} via DGX Toolbox")
 
     env = os.environ.copy()
     env["EXTRA_MOUNTS"] = f"{PROJECT_ROOT}:/workspace/wp-finetune"
@@ -660,8 +684,8 @@ def _fallback_merge_and_serve(ratio: str) -> Optional[subprocess.Popen]:
 # ---------------------------------------------------------------------------
 
 
-def run_eval_for_ratio(
-    ratio: str,
+def run_eval_for_experiment(
+    experiment: str,
     dataset_path: str = "data/final_dataset/openai_test.jsonl",
     force: bool = False,
     limit: int = None,
@@ -669,21 +693,21 @@ def run_eval_for_ratio(
     """Start vLLM, run eval_gen + eval_judge + eval_gate, stop vLLM.
 
     Returns True if eval completed successfully (or was skipped due to marker).
-    Returns False if eval failed -- pipeline continues with next ratio.
+    Returns False if eval failed -- pipeline continues with next experiment.
     """
-    marker = COMPLETION_MARKERS["eval_ratio"].format(ratio=ratio)
+    marker = COMPLETION_MARKERS["eval_experiment"].format(experiment=experiment)
 
     if not force and step_complete(marker):
-        logger.info(f"Skipping eval for ratio {ratio} (already complete, marker: {marker})")
+        logger.info(f"Skipping eval for experiment {experiment} (already complete, marker: {marker})")
         return True
 
     logger.info("=" * 60)
-    logger.info(f"STEP 2: Eval for ratio {ratio}")
+    logger.info(f"STEP 2: Eval for experiment {experiment}")
     logger.info("=" * 60)
 
     from eval import eval_gen, eval_judge, eval_gate
 
-    out_dir = EVAL_TRIAGE_DIR / f"ratio_{ratio}"
+    out_dir = EVAL_TRIAGE_DIR / experiment
     out_dir.mkdir(parents=True, exist_ok=True)
 
     endpoint = _get_vllm_endpoint()
@@ -693,26 +717,26 @@ def run_eval_for_ratio(
     try:
         # Start vLLM with LoRA adapter
         try:
-            vllm_proc = _start_vllm_with_lora(ratio)
+            vllm_proc = _start_vllm_with_lora(experiment)
         except Exception as e:
-            logger.error(f"Failed to start vLLM for ratio {ratio}: {e}")
+            logger.error(f"Failed to start vLLM for experiment {experiment}: {e}")
             return False
 
         # Wait for vLLM health
         if not _wait_for_vllm(endpoint, timeout_s=VLLM_HEALTH_TIMEOUT_S):
             # Check if it's a LoRA loading error and attempt fallback
             logger.warning(
-                f"vLLM failed to start for ratio {ratio}. "
+                f"vLLM failed to start for experiment {experiment}. "
                 f"Attempting merge-and-serve fallback ..."
             )
             _stop_vllm(vllm_proc)
-            vllm_proc = _fallback_merge_and_serve(ratio)
+            vllm_proc = _fallback_merge_and_serve(experiment)
             if vllm_proc is None:
-                logger.error(f"Fallback also failed for ratio {ratio}. Skipping eval.")
+                logger.error(f"Fallback also failed for experiment {experiment}. Skipping eval.")
                 return False
             if not _wait_for_vllm(endpoint, timeout_s=VLLM_HEALTH_TIMEOUT_S):
                 raise RuntimeError(
-                    f"vLLM (merged fallback) failed to become healthy for ratio {ratio} "
+                    f"vLLM (merged fallback) failed to become healthy for experiment {experiment} "
                     f"within {VLLM_HEALTH_TIMEOUT_S}s. "
                     f"Diagnostics: docker logs vllm | tail -100"
                 )
@@ -753,7 +777,7 @@ def run_eval_for_ratio(
                     time.sleep(EVAL_RETRY_DELAY_S)
 
         if not gen_success:
-            logger.error(f"eval_gen failed after 2 attempts for ratio {ratio}. Marking as eval_failed.")
+            logger.error(f"eval_gen failed after 2 attempts for experiment {experiment}. Marking as eval_failed.")
             # Write a failure marker for diagnosis
             (out_dir / ".eval_gen_failed").write_text(f"failed: {datetime.now().isoformat()}\n")
             return False
@@ -779,7 +803,7 @@ def run_eval_for_ratio(
                     time.sleep(EVAL_RETRY_DELAY_S)
 
         if not judge_success:
-            logger.error(f"eval_judge failed after 2 attempts for ratio {ratio}. Marking as eval_failed.")
+            logger.error(f"eval_judge failed after 2 attempts for experiment {experiment}. Marking as eval_failed.")
             (out_dir / ".eval_judge_failed").write_text(f"failed: {datetime.now().isoformat()}\n")
             return False
 
@@ -790,9 +814,9 @@ def run_eval_for_ratio(
                 results_dir=str(out_dir),
             )
             gate_status = "PASS" if passed else "FAIL"
-            logger.info(f"Eval gate for ratio {ratio}: {gate_status}")
+            logger.info(f"Eval gate for experiment {experiment}: {gate_status}")
             # Write gate summary
-            gate_summary = {"ratio": ratio, "passed": passed, "gate_rows": gate_rows}
+            gate_summary = {"experiment": experiment, "passed": passed, "gate_rows": gate_rows}
             (out_dir / "eval_gate_results.json").write_text(
                 json.dumps(gate_summary, indent=2)
             )
@@ -813,30 +837,30 @@ def run_eval_for_ratio(
 # ---------------------------------------------------------------------------
 
 
-def run_wpbench_for_ratio(
-    ratio: str,
+def run_wpbench_for_experiment(
+    experiment: str,
     force: bool = False,
 ) -> bool:
-    """Run wp-bench against the live vLLM endpoint for the given ratio.
+    """Run wp-bench against the live vLLM endpoint for the given experiment.
 
     IMPORTANT: This function assumes vLLM is already running.
     It must be called while vLLM is up (before _stop_vllm).
 
     Returns True if wp-bench completed (or was skipped), False on fatal error.
     """
-    marker = COMPLETION_MARKERS["wpbench_ratio"].format(ratio=ratio)
+    marker = COMPLETION_MARKERS["wpbench_experiment"].format(experiment=experiment)
 
     if not force and step_complete(marker):
-        logger.info(f"Skipping wp-bench for ratio {ratio} (already complete, marker: {marker})")
+        logger.info(f"Skipping wp-bench for experiment {experiment} (already complete, marker: {marker})")
         return True
 
     if not WP_BENCH_DIR.exists():
-        logger.warning(f"wp-bench not found at {WP_BENCH_DIR}. Skipping wp-bench for ratio {ratio}.")
+        logger.warning(f"wp-bench not found at {WP_BENCH_DIR}. Skipping wp-bench for experiment {experiment}.")
         return False
 
-    logger.info(f"Running wp-bench for ratio {ratio} ...")
+    logger.info(f"Running wp-bench for experiment {experiment} ...")
 
-    out_dir = EVAL_TRIAGE_DIR / f"ratio_{ratio}"
+    out_dir = EVAL_TRIAGE_DIR / experiment
     wp_bench_output = out_dir / "wp_bench_results.json"
 
     # Configure wp-bench output path
@@ -853,7 +877,7 @@ def run_wpbench_for_ratio(
         # Update output path
         config["output_path"] = str(wp_bench_output)
 
-        # Write temporary config for this ratio
+        # Write temporary config for this experiment
         tmp_config = out_dir / "wp_bench_config_tmp.yaml"
         with open(tmp_config, "w") as f:
             _yaml.dump(config, f)
@@ -873,10 +897,10 @@ def run_wpbench_for_ratio(
         if result.returncode != 0:
             error_detail = result.stderr[:500] if result.stderr else result.stdout[:500]
             logger.warning(
-                f"wp-bench returned non-zero for ratio {ratio} (exit={result.returncode}): "
+                f"wp-bench returned non-zero for experiment {experiment} (exit={result.returncode}): "
                 f"{error_detail}"
             )
-            logger.warning(f"Continuing without wp-bench for ratio {ratio}.")
+            logger.warning(f"Continuing without wp-bench for experiment {experiment}.")
             wp_bench_output.write_text(json.dumps({
                 "wpbench_score": None,
                 "error": f"exit code {result.returncode}",
@@ -884,15 +908,15 @@ def run_wpbench_for_ratio(
             }))
             return False
 
-        logger.info(f"wp-bench completed for ratio {ratio}: {wp_bench_output}")
+        logger.info(f"wp-bench completed for experiment {experiment}: {wp_bench_output}")
         mark_complete(marker)
         return True
 
     except subprocess.TimeoutExpired:
-        logger.warning(f"wp-bench timed out for ratio {ratio}. Skipping.")
+        logger.warning(f"wp-bench timed out for experiment {experiment}. Skipping.")
         return False
     except Exception as e:
-        logger.warning(f"wp-bench error for ratio {ratio} (non-fatal): {e}")
+        logger.warning(f"wp-bench error for experiment {experiment} (non-fatal): {e}")
         return False
 
 
@@ -901,32 +925,32 @@ def run_wpbench_for_ratio(
 # ---------------------------------------------------------------------------
 
 
-def run_eval_and_wpbench_for_ratio(
-    ratio: str,
+def run_eval_and_wpbench_for_experiment(
+    experiment: str,
     dataset_path: str = "data/final_dataset/openai_test.jsonl",
     skip_wpbench: bool = False,
     force: bool = False,
     health_timeout: int = VLLM_HEALTH_TIMEOUT_S,
     limit: int = None,
 ) -> bool:
-    """Run eval + wp-bench for a ratio, keeping vLLM alive between them.
+    """Run eval + wp-bench for an experiment, keeping vLLM alive between them.
 
     This is the correct integration: vLLM starts, eval runs, wp-bench runs
     against the live endpoint, then vLLM stops.
     """
-    eval_marker = COMPLETION_MARKERS["eval_ratio"].format(ratio=ratio)
-    wpbench_marker = COMPLETION_MARKERS["wpbench_ratio"].format(ratio=ratio)
+    eval_marker = COMPLETION_MARKERS["eval_experiment"].format(experiment=experiment)
+    wpbench_marker = COMPLETION_MARKERS["wpbench_experiment"].format(experiment=experiment)
 
     eval_already_done = not force and step_complete(eval_marker)
     wpbench_already_done = skip_wpbench or (not force and step_complete(wpbench_marker))
 
     if eval_already_done and wpbench_already_done:
-        logger.info(f"Skipping ratio {ratio} (both eval and wp-bench already complete)")
+        logger.info(f"Skipping experiment {experiment} (both eval and wp-bench already complete)")
         return True
 
     from eval import eval_gen, eval_judge, eval_gate
 
-    out_dir = EVAL_TRIAGE_DIR / f"ratio_{ratio}"
+    out_dir = EVAL_TRIAGE_DIR / experiment
     out_dir.mkdir(parents=True, exist_ok=True)
 
     endpoint = _get_vllm_endpoint()
@@ -937,25 +961,25 @@ def run_eval_and_wpbench_for_ratio(
         # Start vLLM with LoRA adapter (unless eval is already done and we only need wp-bench)
         if not eval_already_done:
             try:
-                vllm_proc = _start_vllm_with_lora(ratio)
+                vllm_proc = _start_vllm_with_lora(experiment)
             except Exception as e:
-                logger.error(f"Failed to start vLLM for ratio {ratio}: {e}")
+                logger.error(f"Failed to start vLLM for experiment {experiment}: {e}")
                 return False
 
             # Wait for vLLM
             if not _wait_for_vllm(endpoint, timeout_s=health_timeout):
                 logger.warning(
-                    f"vLLM failed to start for ratio {ratio}. "
+                    f"vLLM failed to start for experiment {experiment}. "
                     f"Attempting merge-and-serve fallback ..."
                 )
                 _stop_vllm(vllm_proc)
-                vllm_proc = _fallback_merge_and_serve(ratio)
+                vllm_proc = _fallback_merge_and_serve(experiment)
                 if vllm_proc is None:
-                    logger.error(f"Fallback also failed for ratio {ratio}. Skipping.")
+                    logger.error(f"Fallback also failed for experiment {experiment}. Skipping.")
                     return False
                 if not _wait_for_vllm(endpoint, timeout_s=health_timeout):
                     raise RuntimeError(
-                        f"vLLM (merged fallback) failed for ratio {ratio} within "
+                        f"vLLM (merged fallback) failed for experiment {experiment} within "
                         f"{health_timeout}s. Check: docker logs vllm | tail -100"
                     )
 
@@ -977,7 +1001,7 @@ def run_eval_and_wpbench_for_ratio(
             gen_success = False
             for attempt in range(2):
                 try:
-                    logger.info(f"Running eval_gen for ratio {ratio} (attempt {attempt + 1}) ...")
+                    logger.info(f"Running eval_gen for experiment {experiment} (attempt {attempt + 1}) ...")
                     eval_gen.run_eval(
                         dataset_path=abs_dataset,
                         limit=limit,
@@ -993,7 +1017,7 @@ def run_eval_and_wpbench_for_ratio(
                         time.sleep(EVAL_RETRY_DELAY_S)
 
             if not gen_success:
-                logger.error(f"eval_gen failed after 2 attempts for ratio {ratio}.")
+                logger.error(f"eval_gen failed after 2 attempts for experiment {experiment}.")
                 (out_dir / ".eval_gen_failed").write_text(f"failed: {datetime.now().isoformat()}\n")
                 return False
 
@@ -1002,7 +1026,7 @@ def run_eval_and_wpbench_for_ratio(
             judge_success = False
             for attempt in range(2):
                 try:
-                    logger.info(f"Running eval_judge for ratio {ratio} (attempt {attempt + 1}) ...")
+                    logger.info(f"Running eval_judge for experiment {experiment} (attempt {attempt + 1}) ...")
                     eval_judge.run_eval(
                         dataset_path=abs_dataset,
                         limit=limit,
@@ -1018,7 +1042,7 @@ def run_eval_and_wpbench_for_ratio(
                         time.sleep(EVAL_RETRY_DELAY_S)
 
             if not judge_success:
-                logger.error(f"eval_judge failed after 2 attempts for ratio {ratio}.")
+                logger.error(f"eval_judge failed after 2 attempts for experiment {experiment}.")
                 (out_dir / ".eval_judge_failed").write_text(f"failed: {datetime.now().isoformat()}\n")
                 return False
 
@@ -1026,8 +1050,8 @@ def run_eval_and_wpbench_for_ratio(
             try:
                 passed, gate_rows = eval_gate.run_gate(results_dir=str(out_dir))
                 gate_status = "PASS" if passed else "FAIL"
-                logger.info(f"Eval gate for ratio {ratio}: {gate_status}")
-                gate_summary = {"ratio": ratio, "passed": passed, "gate_rows": gate_rows}
+                logger.info(f"Eval gate for experiment {experiment}: {gate_status}")
+                gate_summary = {"experiment": experiment, "passed": passed, "gate_rows": gate_rows}
                 (out_dir / "eval_gate_results.json").write_text(
                     json.dumps(gate_summary, indent=2)
                 )
@@ -1039,16 +1063,16 @@ def run_eval_and_wpbench_for_ratio(
 
         else:
             eval_succeeded = True
-            logger.info(f"Eval already done for ratio {ratio}, starting vLLM for wp-bench only ...")
+            logger.info(f"Eval already done for experiment {experiment}, starting vLLM for wp-bench only ...")
             # Still need vLLM for wp-bench.
             # Use the pre-merged model (not LoRA serving) so wp-bench runs
             # against the same weights that will ship — LoRA serving requires
             # --enable-lora which is unnecessary here and has caused instability.
             if not skip_wpbench and not wpbench_already_done:
                 try:
-                    vllm_proc = _fallback_merge_and_serve(ratio)
+                    vllm_proc = _fallback_merge_and_serve(experiment)
                     if vllm_proc is None or not _wait_for_vllm(endpoint, timeout_s=health_timeout):
-                        logger.warning(f"vLLM (merged) failed to start for wp-bench on ratio {ratio}. Skipping wp-bench.")
+                        logger.warning(f"vLLM (merged) failed to start for wp-bench on experiment {experiment}. Skipping wp-bench.")
                         return eval_succeeded
                 except Exception as e:
                     logger.warning(f"Could not start vLLM for wp-bench: {e}")
@@ -1056,7 +1080,7 @@ def run_eval_and_wpbench_for_ratio(
 
         # Run wp-bench while vLLM is still running
         if not skip_wpbench and not wpbench_already_done and vllm_proc is not None:
-            run_wpbench_for_ratio(ratio=ratio, force=force)
+            run_wpbench_for_experiment(experiment=experiment, force=force)
 
     finally:
         _stop_vllm(vllm_proc)
@@ -1080,13 +1104,13 @@ def run_triage(force: bool = False) -> bool:
     if not force and step_complete(triage_marker):
         # Check if any eval marker is newer than triage marker
         triage_mtime = Path(triage_marker).stat().st_mtime
-        for ratio in ALL_EVAL_RATIOS:
-            eval_marker = COMPLETION_MARKERS["eval_ratio"].format(ratio=ratio)
+        for experiment in discover_experiments():
+            eval_marker = COMPLETION_MARKERS["eval_experiment"].format(experiment=experiment)
             if Path(eval_marker).exists():
                 eval_mtime = Path(eval_marker).stat().st_mtime
                 if eval_mtime > triage_mtime:
                     logger.info(
-                        f"Eval marker for ratio {ratio} is newer than triage marker. "
+                        f"Eval marker for experiment {experiment} is newer than triage marker. "
                         f"Re-running triage."
                     )
                     clear_marker(triage_marker)
@@ -1182,7 +1206,7 @@ def run_triage(force: bool = False) -> bool:
 
 
 def run_full_triage(
-    eval_ratios: list[str] = None,
+    experiments: list[str] = None,
     skip_profiling: bool = False,
     skip_wpbench: bool = False,
     force: bool = False,
@@ -1195,7 +1219,7 @@ def run_full_triage(
     """Run the full Phase 4 pipeline: profiling -> eval -> triage.
 
     Args:
-        eval_ratios: Ratios to evaluate (default: ["30_70", "40_60", "50_50"]).
+        experiments: Adapter experiments to evaluate (default: auto-discovered from adapters/).
         skip_profiling: Skip Step 1 (profiling). Still checks for existing results.
         skip_wpbench: Skip wp-bench entirely.
         force: Bypass all completion markers and re-run everything.
@@ -1205,11 +1229,17 @@ def run_full_triage(
         health_timeout: Seconds to wait for vLLM health check.
         limit: Max examples for eval_gen/eval_judge (None = all). Does not affect wp-bench.
     """
-    if eval_ratios is None:
-        eval_ratios = ALL_EVAL_RATIOS
+    if experiments is None:
+        experiments = discover_adapters()
+        if not experiments:
+            logger.error(
+                f"No adapters found in {ADAPTERS_DIR}. "
+                f"Each adapter directory must contain adapter_config.json."
+            )
+            sys.exit(1)
 
     logger.info("Phase 4 Eval Triage pipeline starting ...")
-    logger.info(f"Eval ratios: {eval_ratios}")
+    logger.info(f"Experiments: {experiments}")
     logger.info(f"Skip profiling: {skip_profiling}")
     logger.info(f"Skip wp-bench: {skip_wpbench}")
     logger.info(f"Force re-run: {force}")
@@ -1218,15 +1248,15 @@ def run_full_triage(
 
     # Force: clean stale result files so monitors and idempotency checks start fresh
     if force:
-        _clean_stale_results(eval_ratios)
+        _clean_stale_results(experiments)
 
     # Step 0: Setup
-    setup_output_dirs(eval_ratios)
+    setup_output_dirs(experiments)
     wpbench_available = False
     if not skip_wpbench:
         wpbench_available = setup_wpbench()
         if not wpbench_available:
-            logger.warning("wp-bench setup failed -- will skip wp-bench for all ratios")
+            logger.warning("wp-bench setup failed -- will skip wp-bench for all experiments")
             skip_wpbench = True
 
     # Step 1: Base-model profiling
@@ -1240,22 +1270,22 @@ def run_full_triage(
         logger.info("Skipping profiling (--skip-profiling flag set)")
 
     # Step 1.5: Pre-merge all adapters (LoRA serving always fails for Qwen3-30B-A3B)
-    merge_results = pre_merge_adapters(eval_ratios)
-    merge_failures = [r for r, ok in merge_results.items() if not ok]
+    merge_results = pre_merge_adapters(experiments)
+    merge_failures = [e for e, ok in merge_results.items() if not ok]
     if merge_failures:
-        logger.warning(f"Pre-merge failures: {merge_failures} — these ratios will be skipped")
-        # Remove failed ratios from eval list
-        eval_ratios = [r for r in eval_ratios if merge_results.get(r, False)]
-        if not eval_ratios:
+        logger.warning(f"Pre-merge failures: {merge_failures} — these experiments will be skipped")
+        # Remove failed experiments from eval list
+        experiments = [e for e in experiments if merge_results.get(e, False)]
+        if not experiments:
             logger.error("All adapter merges failed. Cannot proceed with eval.")
             sys.exit(1)
 
     # Step 2: Sequential adapter eval + wp-bench
     eval_failures = []
-    for ratio in eval_ratios:
-        logger.info(f"--- Evaluating ratio {ratio} ---")
-        success = run_eval_and_wpbench_for_ratio(
-            ratio=ratio,
+    for experiment in experiments:
+        logger.info(f"--- Evaluating experiment {experiment} ---")
+        success = run_eval_and_wpbench_for_experiment(
+            experiment=experiment,
             dataset_path=dataset_path,
             skip_wpbench=skip_wpbench,
             force=force,
@@ -1263,8 +1293,8 @@ def run_full_triage(
             limit=limit,
         )
         if not success:
-            eval_failures.append(ratio)
-            logger.warning(f"Eval failed for ratio {ratio} -- continuing with remaining ratios")
+            eval_failures.append(experiment)
+            logger.warning(f"Eval failed for experiment {experiment} -- continuing with remaining experiments")
 
     if eval_failures:
         logger.warning(f"Eval failures: {eval_failures}. Triage will proceed with available results.")
@@ -1290,11 +1320,11 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-    python scripts/run_eval_triage.py                    # Full pipeline
-    python scripts/run_eval_triage.py --skip-wpbench    # Skip wp-bench
-    python scripts/run_eval_triage.py --skip-profiling  # Skip profiling
-    python scripts/run_eval_triage.py --ratios 30_70    # Eval only 30_70
-    python scripts/run_eval_triage.py --force           # Force full re-run
+    python scripts/run_eval_triage.py                                          # Full pipeline (auto-discover adapters)
+    python scripts/run_eval_triage.py --skip-wpbench                          # Skip wp-bench
+    python scripts/run_eval_triage.py --skip-profiling                        # Skip profiling
+    python scripts/run_eval_triage.py --experiments qwen3-30b-wp-30_70        # Eval only one adapter
+    python scripts/run_eval_triage.py --force                                 # Force full re-run
 """,
     )
     parser.add_argument(
@@ -1305,13 +1335,15 @@ Examples:
     parser.add_argument(
         "--skip-wpbench",
         action="store_true",
-        help="Skip wp-bench for all ratios. Triage will use static eval gates only.",
+        help="Skip wp-bench for all experiments. Triage will use static eval gates only.",
     )
     parser.add_argument(
-        "--ratios",
+        "--experiments",
         type=str,
-        default=",".join(ALL_EVAL_RATIOS),
-        help=f"Comma-separated list of ratios to evaluate (default: {','.join(ALL_EVAL_RATIOS)})",
+        default=None,
+        help="Comma-separated list of adapter experiment names to evaluate "
+             "(default: auto-discover from adapters/ directory). "
+             "Each name must match a subdirectory of adapters/ containing adapter_config.json.",
     )
     parser.add_argument(
         "--force",
@@ -1344,8 +1376,8 @@ Examples:
         "--limit",
         type=int,
         default=None,
-        help="Max examples for eval_gen/eval_judge per ratio (default: all). "
-             "Use 500 for a representative sample (~2.8h per ratio instead of ~58h). "
+        help="Max examples for eval_gen/eval_judge per experiment (default: all). "
+             "Use 500 for a representative sample (~2.8h per experiment instead of ~58h). "
              "Does not affect wp-bench (always runs full suite).",
     )
     parser.add_argument(
@@ -1358,12 +1390,14 @@ Examples:
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
 
-    eval_ratios = [r.strip() for r in args.ratios.split(",") if r.strip()]
-    if not eval_ratios:
-        parser.error("--ratios cannot be empty")
+    experiments = None
+    if args.experiments is not None:
+        experiments = [e.strip() for e in args.experiments.split(",") if e.strip()]
+        if not experiments:
+            parser.error("--experiments cannot be empty")
 
     run_full_triage(
-        eval_ratios=eval_ratios,
+        experiments=experiments,
         skip_profiling=args.skip_profiling,
         skip_wpbench=args.skip_wpbench,
         force=args.force,

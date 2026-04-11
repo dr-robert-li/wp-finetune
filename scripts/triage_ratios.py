@@ -1,17 +1,22 @@
-"""Triage decision script for ratio elimination (GATE-02).
+"""Triage decision script for experiment elimination (GATE-02).
 
-Reads per-ratio eval results from output/eval_triage/ and applies elimination
-rules to select surviving ratios for Phase 7 fine-tuned adapter profiling.
+Reads per-experiment eval results from output/eval_triage/ and applies elimination
+rules to select surviving experiments for Phase 7 fine-tuned adapter profiling.
+
+Experiment directories are auto-discovered: any subdirectory of the eval triage
+output that contains an ``eval_gen_results.json`` file is treated as an experiment.
+This replaces the former hardcoded ``ratio_*`` naming convention while remaining
+backward-compatible with it.
 
 Elimination rules (D-12, D-13):
   1. Hard gates (strict > required; value AT threshold FAILS):
      - PHPCS pass rate > 0.95
      - Judge Spearman > 0.85
      - Security pass rate > 0.98
-  2. 5pp rule: eliminated if (best_overall_score - ratio_score) > 0.05
+  2. 5pp rule: eliminated if (best_overall_score - experiment_score) > 0.05
      Exactly 5pp behind SURVIVES (low bar for continuation per D-13).
 
-NO_SURVIVORS handling: if zero ratios pass all gates, returns status="NO_SURVIVORS"
+NO_SURVIVORS handling: if zero experiments pass all gates, returns status="NO_SURVIVORS"
 with recommendation (does not crash).
 
 Usage:
@@ -38,27 +43,60 @@ logger = logging.getLogger(__name__)
 PHPCS_GATE = 0.95       # must be strictly > 0.95
 SPEARMAN_GATE = 0.85    # must be strictly > 0.85
 SECURITY_GATE = 0.98    # must be strictly > 0.98
-ELIMINATION_PP = 0.05   # eliminated if (best - ratio) > 0.05 (strictly greater)
+ELIMINATION_PP = 0.05   # eliminated if (best - experiment) > 0.05 (strictly greater)
 
+# Deprecated: kept for backward compatibility with run_eval_triage.py and
+# profile_base_model.py which import this constant.  New code should use
+# discover_experiments() instead.
 RATIO_ORDER = ["30_70", "40_60", "50_50", "60_40", "70_30"]
+
+# ---------------------------------------------------------------------------
+# Experiment discovery
+# ---------------------------------------------------------------------------
+
+
+def discover_experiments(base_dir: Path) -> list[str]:
+    """Auto-discover experiment directories under the eval triage output.
+
+    Any subdirectory containing ``eval_gen_results.json`` is treated as an
+    experiment.  Results are returned sorted by name for deterministic ordering.
+
+    Args:
+        base_dir: Path to the eval triage output directory.
+
+    Returns:
+        Sorted list of experiment directory names.
+    """
+    if not base_dir.exists():
+        return []
+    return sorted([
+        d.name for d in base_dir.iterdir()
+        if d.is_dir() and (d / "eval_gen_results.json").exists()
+    ])
 
 # ---------------------------------------------------------------------------
 # Result type
 # ---------------------------------------------------------------------------
 
-TriageResult = namedtuple(
-    "TriageResult",
+class TriageResult(namedtuple(
+    "_TriageResult",
     [
         "survivors",
         "eliminated",
-        "best_ratio",
+        "best_experiment",
         "status",
         "wpbench_available",
         "triage_table",
-        "gen_quality_scores",   # dict[ratio, float] — (phpcs + security) / 2
-        "judge_calibrations",   # dict[ratio, float] — spearman correlation
+        "gen_quality_scores",   # dict[experiment, float] — (phpcs + security) / 2
+        "judge_calibrations",   # dict[experiment, float] — spearman correlation
     ],
-)
+)):
+    """Result of GATE-02 triage elimination."""
+
+    @property
+    def best_ratio(self):
+        """Deprecated alias for best_experiment (backward compatibility)."""
+        return self.best_experiment
 
 # ---------------------------------------------------------------------------
 # Data loading
@@ -66,36 +104,36 @@ TriageResult = namedtuple(
 
 
 def load_eval_results(eval_triage_dir: str) -> dict:
-    """Read per-ratio eval JSON files from eval_triage_dir.
+    """Read per-experiment eval JSON files from eval_triage_dir.
 
-    Looks for:
-      {eval_triage_dir}/ratio_{r}/eval_gen_results.json
-      {eval_triage_dir}/ratio_{r}/eval_judge_results.json
-      {eval_triage_dir}/ratio_{r}/wp_bench_results.json   (optional)
+    Auto-discovers experiment directories via :func:`discover_experiments`.
+    For each experiment directory, looks for:
+      {eval_triage_dir}/{experiment}/eval_gen_results.json
+      {eval_triage_dir}/{experiment}/eval_judge_results.json
+      {eval_triage_dir}/{experiment}/wp_bench_results.json   (optional)
 
     Extracts: phpcs_pass_rate, security_pass_rate, spearman (overall),
     overall_mean, wpbench_score (None if missing).
 
     Args:
-        eval_triage_dir: Path to directory containing ratio_* subdirectories.
+        eval_triage_dir: Path to directory containing experiment subdirectories.
 
     Returns:
-        Dict mapping ratio string -> eval result dict.
+        Dict mapping experiment name -> eval result dict.
     """
     base = Path(eval_triage_dir)
+    experiments = discover_experiments(base)
     results = {}
 
-    for ratio in RATIO_ORDER:
-        ratio_dir = base / f"ratio_{ratio}"
-        if not ratio_dir.exists():
-            continue
+    for experiment in experiments:
+        experiment_dir = base / experiment
 
-        gen_path = ratio_dir / "eval_gen_results.json"
-        judge_path = ratio_dir / "eval_judge_results.json"
-        bench_path = ratio_dir / "wp_bench_results.json"
+        gen_path = experiment_dir / "eval_gen_results.json"
+        judge_path = experiment_dir / "eval_judge_results.json"
+        bench_path = experiment_dir / "wp_bench_results.json"
 
         if not gen_path.exists() or not judge_path.exists():
-            logger.warning(f"Missing eval files for ratio {ratio} at {ratio_dir}")
+            logger.warning(f"Missing eval files for experiment {experiment} at {experiment_dir}")
             continue
 
         gen_data = json.loads(gen_path.read_text())
@@ -125,7 +163,7 @@ def load_eval_results(eval_triage_dir: str) -> dict:
                 or bench_data.get("score")
             )
 
-        results[ratio] = {
+        results[experiment] = {
             "phpcs_pass_rate": gen_data.get("phpcs_pass_rate", 0.0),
             "security_pass_rate": gen_data.get("security_pass_rate", 0.0),
             "spearman": spearman,
@@ -183,7 +221,7 @@ def triage_ratios(
     eval_results: dict,
     profiling_summary: Optional[dict] = None,
 ) -> TriageResult:
-    """Apply GATE-02 elimination logic to select surviving ratios.
+    """Apply GATE-02 elimination logic to select surviving experiments.
 
     Hard gates (strict > required -- value AT threshold FAILS):
       - PHPCS pass rate > PHPCS_GATE (0.95)
@@ -192,37 +230,37 @@ def triage_ratios(
 
     5pp rule (per D-13, low bar for continuation):
       - Among gate-passers, compute overall score via compute_overall_score()
-      - Eliminated strictly if (best_score - ratio_score) > ELIMINATION_PP (0.05)
+      - Eliminated strictly if (best_score - experiment_score) > ELIMINATION_PP (0.05)
       - Exactly 5pp behind = NOT eliminated (D-13: only clearly failing are removed)
 
-    NO_SURVIVORS: if no ratios pass all gates, returns status="NO_SURVIVORS" with
+    NO_SURVIVORS: if no experiments pass all gates, returns status="NO_SURVIVORS" with
     recommendation. Does not crash.
 
     Args:
-        eval_results: Dict mapping ratio string -> eval result dict.
-            Required keys per ratio: phpcs_pass_rate, security_pass_rate, spearman.
+        eval_results: Dict mapping experiment name -> eval result dict.
+            Required keys per experiment: phpcs_pass_rate, security_pass_rate, spearman.
         profiling_summary: Optional dict with E_eff data (informational only,
             not used for elimination).
 
     Returns:
         TriageResult namedtuple with:
-            survivors: list[str] -- ratios that passed all gates and 5pp rule
-            eliminated: list[dict] -- {ratio, reason} for each eliminated ratio
-            best_ratio: str|None -- ratio with highest overall score (None if NO_SURVIVORS)
+            survivors: list[str] -- experiments that passed all gates and 5pp rule
+            eliminated: list[dict] -- {experiment, reason} for each eliminated experiment
+            best_experiment: str|None -- experiment with highest overall score (None if NO_SURVIVORS)
             status: str -- "OK" or "NO_SURVIVORS"
-            wpbench_available: bool -- True if any ratio has a wpbench_score
+            wpbench_available: bool -- True if any experiment has a wpbench_score
             triage_table: str -- human-readable markdown summary table
     """
     survivors = []
     eliminated = []
-    # gate_passers: ratio -> gen_quality_score (proportion, used for 5pp elimination)
+    # gate_passers: experiment -> gen_quality_score (proportion, used for 5pp elimination)
     gate_passers = {}
-    # Track both axes for all gate-passing ratios
-    gen_quality_scores_all: dict = {}   # ratio -> gen_quality_score
-    judge_calibrations_all: dict = {}   # ratio -> spearman
+    # Track both axes for all gate-passing experiments
+    gen_quality_scores_all: dict = {}   # experiment -> gen_quality_score
+    judge_calibrations_all: dict = {}   # experiment -> spearman
 
     # Check hard gates
-    for ratio, data in eval_results.items():
+    for experiment, data in eval_results.items():
         phpcs = data.get("phpcs_pass_rate", 0.0)
         security = data.get("security_pass_rate", 0.0)
         spearman = data.get("spearman", 0.0)
@@ -230,7 +268,7 @@ def triage_ratios(
         # Hard gate checks (strictly greater than threshold)
         if phpcs <= PHPCS_GATE:
             eliminated.append({
-                "ratio": ratio,
+                "experiment": experiment,
                 "reason": (
                     f"PHPCS gate failed: {phpcs:.4f} not strictly > {PHPCS_GATE} "
                     f"(strict > {PHPCS_GATE} required)"
@@ -240,7 +278,7 @@ def triage_ratios(
 
         if spearman <= SPEARMAN_GATE:
             eliminated.append({
-                "ratio": ratio,
+                "experiment": experiment,
                 "reason": (
                     f"Spearman gate failed: {spearman:.4f} not strictly > {SPEARMAN_GATE} "
                     f"(strict > {SPEARMAN_GATE} required)"
@@ -250,7 +288,7 @@ def triage_ratios(
 
         if security <= SECURITY_GATE:
             eliminated.append({
-                "ratio": ratio,
+                "experiment": experiment,
                 "reason": (
                     f"Security gate failed: {security:.4f} not strictly > {SECURITY_GATE} "
                     f"(strict > {SECURITY_GATE} required)"
@@ -260,35 +298,35 @@ def triage_ratios(
 
         # Passed all hard gates — track both axes independently
         gen_q = compute_gen_quality_score(phpcs, security)
-        gate_passers[ratio] = gen_q
-        gen_quality_scores_all[ratio] = gen_q
-        judge_calibrations_all[ratio] = spearman
+        gate_passers[experiment] = gen_q
+        gen_quality_scores_all[experiment] = gen_q
+        judge_calibrations_all[experiment] = spearman
 
     # 5pp elimination rule among gate-passers — uses gen_quality_score only
     # (proportions are comparable; spearman is a separate axis)
     if gate_passers:
         best_score = max(gate_passers.values())
-        best_ratio = max(gate_passers, key=lambda r: gate_passers[r])
+        best_experiment = max(gate_passers, key=lambda r: gate_passers[r])
 
-        for ratio, score in gate_passers.items():
+        for experiment, score in gate_passers.items():
             diff = best_score - score
             if diff > ELIMINATION_PP:
                 eliminated.append({
-                    "ratio": ratio,
+                    "experiment": experiment,
                     "reason": (
-                        f"5pp elimination: gen_quality_score {diff:.4f} behind best ({best_ratio}). "
+                        f"5pp elimination: gen_quality_score {diff:.4f} behind best ({best_experiment}). "
                         f"Threshold: strictly > {ELIMINATION_PP}"
                     ),
                 })
             else:
-                survivors.append(ratio)
+                survivors.append(experiment)
     else:
-        best_ratio = None
+        best_experiment = None
 
     # NO_SURVIVORS handling
     if not survivors:
         status = "NO_SURVIVORS"
-        best_ratio = None
+        best_experiment = None
     else:
         status = "OK"
 
@@ -306,7 +344,7 @@ def triage_ratios(
         judge_calibrations=judge_calibrations_all,
         survivors=survivors,
         eliminated=eliminated,
-        best_ratio=best_ratio,
+        best_experiment=best_experiment,
         status=status,
         wpbench_available=wpbench_available,
         profiling_summary=profiling_summary,
@@ -315,7 +353,7 @@ def triage_ratios(
     return TriageResult(
         survivors=survivors,
         eliminated=eliminated,
-        best_ratio=best_ratio,
+        best_experiment=best_experiment,
         status=status,
         wpbench_available=wpbench_available,
         triage_table=triage_table,
@@ -336,12 +374,14 @@ def _build_triage_table(
     judge_calibrations: dict,
     survivors: list,
     eliminated: list,
-    best_ratio: Optional[str],
+    best_experiment: Optional[str],
     status: str,
     wpbench_available: bool,
     profiling_summary: Optional[dict] = None,
 ) -> str:
     """Build a human-readable markdown triage decision table."""
+    experiment_order = sorted(eval_results.keys())
+
     lines = [
         f"STATUS: {status}",
         "",
@@ -349,14 +389,12 @@ def _build_triage_table(
         "",
         "### Hard Gate Results",
         "",
-        "| Ratio | PHPCS Rate | Spearman | Security Rate | PHPCS Gate | Spearman Gate | Security Gate |",
-        "|-------|------------|----------|---------------|------------|---------------|---------------|",
+        "| Experiment | PHPCS Rate | Spearman | Security Rate | PHPCS Gate | Spearman Gate | Security Gate |",
+        "|------------|------------|----------|---------------|------------|---------------|---------------|",
     ]
 
-    for ratio in RATIO_ORDER:
-        if ratio not in eval_results:
-            continue
-        data = eval_results[ratio]
+    for experiment in experiment_order:
+        data = eval_results[experiment]
         phpcs = data.get("phpcs_pass_rate", 0.0)
         spearman = data.get("spearman", 0.0)
         security = data.get("security_pass_rate", 0.0)
@@ -366,7 +404,7 @@ def _build_triage_table(
         security_pass = "PASS" if security > SECURITY_GATE else "FAIL"
 
         lines.append(
-            f"| {ratio} | {phpcs:.4f} | {spearman:.4f} | {security:.4f} "
+            f"| {experiment} | {phpcs:.4f} | {spearman:.4f} | {security:.4f} "
             f"| {phpcs_pass} | {spearman_pass} | {security_pass} |"
         )
 
@@ -375,21 +413,21 @@ def _build_triage_table(
             "",
             "### Generation Quality Ranking — Axis 1: gen_quality_score = (phpcs + security) / 2",
             "",
-            "Both phpcs_rate and security_rate are proportions (0–1); averaging is well-defined.",
+            "Both phpcs_rate and security_rate are proportions (0-1); averaging is well-defined.",
             "The 5pp elimination rule applies to this axis only.",
             "",
-            "| Ratio | Gen Quality Score | Behind Best | Verdict |",
-            "|-------|-------------------|-------------|---------|",
+            "| Experiment | Gen Quality Score | Behind Best | Verdict |",
+            "|------------|-------------------|-------------|---------|",
         ]
         best_score = max(gate_passers.values()) if gate_passers else 0.0
-        for ratio in sorted(gate_passers, key=lambda r: gate_passers[r], reverse=True):
-            score = gate_passers[ratio]
+        for experiment in sorted(gate_passers, key=lambda r: gate_passers[r], reverse=True):
+            score = gate_passers[experiment]
             diff = best_score - score
-            verdict = "BEST" if ratio == best_ratio else (
+            verdict = "BEST" if experiment == best_experiment else (
                 "ELIMINATED (>5pp)" if diff > ELIMINATION_PP else "SURVIVOR"
             )
             lines.append(
-                f"| {ratio} | {score:.4f} | {diff:.4f} | {verdict} |"
+                f"| {experiment} | {score:.4f} | {diff:.4f} | {verdict} |"
             )
 
         lines += [
@@ -399,38 +437,36 @@ def _build_triage_table(
             "Spearman measures judge-GT agreement (rank correlation), not a proportion.",
             "Reported as a separate axis; not mixed into gen_quality_score.",
             "",
-            "| Ratio | Spearman |",
-            "|-------|----------|",
+            "| Experiment | Spearman |",
+            "|------------|----------|",
         ]
-        for ratio in sorted(judge_calibrations, key=lambda r: judge_calibrations[r], reverse=True):
-            spearman_val = judge_calibrations[ratio]
-            lines.append(f"| {ratio} | {spearman_val:.4f} |")
+        for experiment in sorted(judge_calibrations, key=lambda r: judge_calibrations[r], reverse=True):
+            spearman_val = judge_calibrations[experiment]
+            lines.append(f"| {experiment} | {spearman_val:.4f} |")
 
     lines += [
         "",
         "### Survivors",
         "",
-        f"Ratios proceeding to Phase 7: {', '.join(survivors) if survivors else 'NONE'}",
+        f"Experiments proceeding to Phase 7: {', '.join(survivors) if survivors else 'NONE'}",
         "",
-        "### Eliminated Ratios",
+        "### Eliminated Experiments",
         "",
     ]
     for e in eliminated:
-        lines.append(f"- **{e['ratio']}**: {e['reason']}")
+        lines.append(f"- **{e['experiment']}**: {e['reason']}")
     if not eliminated:
         lines.append("- None")
 
     # wp-bench section
     lines += ["", "### wp-bench Scores", ""]
     if wpbench_available:
-        lines.append("| Ratio | wp-bench Score |")
-        lines.append("|-------|----------------|")
-        for ratio in RATIO_ORDER:
-            if ratio not in eval_results:
-                continue
-            score = eval_results[ratio].get("wpbench_score")
+        lines.append("| Experiment | wp-bench Score |")
+        lines.append("|------------|----------------|")
+        for experiment in experiment_order:
+            score = eval_results[experiment].get("wpbench_score")
             if score is not None:
-                lines.append(f"| {ratio} | {score:.1f} |")
+                lines.append(f"| {experiment} | {score:.1f} |")
     else:
         lines.append(
             "wp-bench was skipped (--skip-wpbench). "
@@ -441,8 +477,8 @@ def _build_triage_table(
     # E_eff informational section (if profiling data provided)
     if profiling_summary:
         lines += ["", "### E_eff Summary (Informational)", ""]
-        for ratio, eeff_data in profiling_summary.items():
-            lines.append(f"- **{ratio}**: {eeff_data}")
+        for experiment, eeff_data in profiling_summary.items():
+            lines.append(f"- **{experiment}**: {eeff_data}")
 
     # NO_SURVIVORS recommendation
     if status == "NO_SURVIVORS":
@@ -450,7 +486,7 @@ def _build_triage_table(
             "",
             "### NO_SURVIVORS: Recommendation",
             "",
-            "All ratios failed hard gates. Consider:",
+            "All experiments failed hard gates. Consider:",
             "1. Re-examine training data quality",
             "2. Investigate specific failure dimensions",
             "3. Lower gate thresholds if domain warrants",
@@ -484,11 +520,11 @@ def write_triage_decision(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="GATE-02 triage decision for ratio elimination")
+    parser = argparse.ArgumentParser(description="GATE-02 triage decision for experiment elimination")
     parser.add_argument(
         "--eval-dir",
         default="output/eval_triage",
-        help="Directory containing ratio_* eval subdirectories",
+        help="Directory containing experiment eval subdirectories (auto-discovered)",
     )
     parser.add_argument(
         "--profiling-dir",
@@ -512,7 +548,7 @@ def main():
 
     print(f"STATUS: {triage_result.status}")
     print(f"Survivors: {', '.join(triage_result.survivors) if triage_result.survivors else 'NONE'}")
-    print(f"Best ratio: {triage_result.best_ratio or 'N/A'}")
+    print(f"Best experiment: {triage_result.best_experiment or 'N/A'}")
     print(f"Triage decision written to: {args.output}")
     return 0
 

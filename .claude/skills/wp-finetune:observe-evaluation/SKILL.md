@@ -92,9 +92,9 @@ for (( i=1; i<=MAX_CHECKS; i++ )); do
     mem_available_gb=$(awk "BEGIN {printf \"%.1f\", $available / 1024}")
 
     # Eval-specific: check which ratios have results
-    eval_gen_done=$(ls output/eval_triage/ratio_*/eval_gen_results.json 2>/dev/null | wc -l || echo "0")
-    eval_judge_done=$(ls output/eval_triage/ratio_*/eval_judge_results.json 2>/dev/null | wc -l || echo "0")
-    wpbench_done=$(ls output/eval_triage/ratio_*/wp_bench_results.json 2>/dev/null | wc -l || echo "0")
+    eval_gen_done=$(ls output/eval_triage/*/eval_gen_results.json 2>/dev/null | wc -l || echo "0")
+    eval_judge_done=$(ls output/eval_triage/*/eval_judge_results.json 2>/dev/null | wc -l || echo "0")
+    wpbench_done=$(ls output/eval_triage/*/wp_bench_results.json 2>/dev/null | wc -l || echo "0")
     triage_done=$([[ -f output/triage_decision.md ]] && echo "true" || echo "false")
     # Check vLLM
     vllm_status=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8020/health 2>/dev/null || echo "000")
@@ -132,7 +132,7 @@ Agent(
   LOOP (every 2 minutes):
   1. Check running eval processes: ps aux | grep -E 'run_eval_triage|vllm|wp-bench' | grep -v grep
   2. Check eval output files: ls -la output/eval_triage/ 2>/dev/null
-  3. Check wp-bench results: ls -la output/eval_triage/ratio_*/wp_bench_results.json 2>/dev/null
+  3. Check wp-bench results: ls -la output/eval_triage/*/wp_bench_results.json 2>/dev/null
   4. Check git log for eval commits: git log --oneline -5 | grep -i eval
   5. Append to {TDIR}/eval-progress.md:
      ### {HH:MM:SS}
@@ -183,9 +183,9 @@ Agent(
   prompt="You are an eval result tracking observer. Write observations to {TDIR}/result-tracking.md.
 
   LOOP (every 2 minutes):
-  1. Read eval_gen results if they exist: cat output/eval_triage/ratio_*/eval_gen_results.json 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); print(f\"PHPCS pass: {d.get(\"phpcs_pass_rate\", \"N/A\")}, Security: {d.get(\"security_pass_rate\", \"N/A\")}\")' 2>/dev/null
-  2. Read eval_judge results: cat output/eval_triage/ratio_*/eval_judge_results.json 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); print(f\"Spearman: {d.get(\"spearman_corr\", \"N/A\")}\")' 2>/dev/null
-  3. Read eval_gate results: cat output/eval_triage/ratio_*/eval_gate_results.json 2>/dev/null
+  1. Read eval_gen results if they exist: cat output/eval_triage/*/eval_gen_results.json 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); print(f\"PHPCS pass: {d.get(\"phpcs_pass_rate\", \"N/A\")}, Security: {d.get(\"security_pass_rate\", \"N/A\")}\")' 2>/dev/null
+  2. Read eval_judge results: cat output/eval_triage/*/eval_judge_results.json 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); print(f\"Spearman: {d.get(\"spearman_corr\", \"N/A\")}\")' 2>/dev/null
+  3. Read eval_gate results: cat output/eval_triage/*/eval_gate_results.json 2>/dev/null
   4. Append to {TDIR}/result-tracking.md:
      ### {HH:MM:SS}
      - Generator PHPCS pass rate: {value or pending}

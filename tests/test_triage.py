@@ -17,6 +17,7 @@ from scripts.triage_ratios import (
     TriageResult,
     compute_gen_quality_score,
     compute_overall_score,
+    discover_experiments,
     load_eval_results,
     triage_ratios,
 )
@@ -151,7 +152,7 @@ class TestHardGateElimination:
         }
         outcome = triage_ratios(results)
         assert "30_70" not in outcome.survivors
-        assert any(e["ratio"] == "30_70" for e in outcome.eliminated)
+        assert any(e["experiment"] == "30_70" for e in outcome.eliminated)
 
     def test_phpcs_exactly_at_gate_fails(self):
         """Ratio at exactly 0.95 PHPCS FAILS the gate (strict > 0.95 required)."""
@@ -334,14 +335,14 @@ class TestNoSurvivors:
         results = {r: _make_ratio_result(phpcs_rate=0.50) for r in ["30_70", "40_60"]}
         outcome = triage_ratios(results)
         assert outcome.status == "NO_SURVIVORS"
-        # Recommendation should be in triage_table or best_ratio is None
-        assert outcome.best_ratio is None
+        # Recommendation should be in triage_table or best_experiment is None
+        assert outcome.best_experiment is None
 
-    def test_no_survivors_best_ratio_is_none(self):
-        """NO_SURVIVORS should have best_ratio=None."""
+    def test_no_survivors_best_experiment_is_none(self):
+        """NO_SURVIVORS should have best_experiment=None."""
         results = {r: _make_ratio_result(spearman=0.50) for r in ["30_70", "40_60"]}
         outcome = triage_ratios(results)
-        assert outcome.best_ratio is None
+        assert outcome.best_experiment is None
 
 
 # ---------------------------------------------------------------------------
@@ -349,16 +350,44 @@ class TestNoSurvivors:
 # ---------------------------------------------------------------------------
 
 
-class TestLoadEvalResults:
-    def _write_eval_files(self, tmpdir: Path, ratio: str, gen_data: dict, judge_data: dict):
-        """Write mock eval JSON files for a ratio."""
-        ratio_dir = tmpdir / f"ratio_{ratio}"
-        ratio_dir.mkdir()
-        (ratio_dir / "eval_gen_results.json").write_text(json.dumps(gen_data))
-        (ratio_dir / "eval_judge_results.json").write_text(json.dumps(judge_data))
+class TestDiscoverExperiments:
+    def test_discovers_directories_with_eval_gen(self):
+        """discover_experiments finds dirs containing eval_gen_results.json."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            # Valid experiment directory
+            (tmp / "ratio_30_70").mkdir()
+            (tmp / "ratio_30_70" / "eval_gen_results.json").write_text("{}")
+            # Directory without the marker file -- should be skipped
+            (tmp / "other_dir").mkdir()
+            result = discover_experiments(tmp)
+            assert result == ["ratio_30_70"]
 
-    def test_reads_per_ratio_files(self):
-        """load_eval_results reads per-ratio eval JSON files correctly."""
+    def test_returns_empty_for_nonexistent_dir(self):
+        """discover_experiments returns [] for a path that doesn't exist."""
+        assert discover_experiments(Path("/nonexistent/path")) == []
+
+    def test_sorted_order(self):
+        """Results are sorted alphabetically."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            for name in ["zz_exp", "aa_exp", "mm_exp"]:
+                (tmp / name).mkdir()
+                (tmp / name / "eval_gen_results.json").write_text("{}")
+            result = discover_experiments(tmp)
+            assert result == ["aa_exp", "mm_exp", "zz_exp"]
+
+
+class TestLoadEvalResults:
+    def _write_eval_files(self, tmpdir: Path, experiment: str, gen_data: dict, judge_data: dict):
+        """Write mock eval JSON files for an experiment."""
+        experiment_dir = tmpdir / experiment
+        experiment_dir.mkdir(exist_ok=True)
+        (experiment_dir / "eval_gen_results.json").write_text(json.dumps(gen_data))
+        (experiment_dir / "eval_judge_results.json").write_text(json.dumps(judge_data))
+
+    def test_reads_per_experiment_files(self):
+        """load_eval_results reads per-experiment eval JSON files correctly."""
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp = Path(tmpdir)
             gen_data = {
@@ -369,10 +398,10 @@ class TestLoadEvalResults:
             judge_data = {
                 "overall_spearman": 0.92,
             }
-            self._write_eval_files(tmp, "30_70", gen_data, judge_data)
+            self._write_eval_files(tmp, "ratio_30_70", gen_data, judge_data)
             results = load_eval_results(str(tmp))
-            assert "30_70" in results
-            assert results["30_70"]["phpcs_pass_rate"] == 0.97
+            assert "ratio_30_70" in results
+            assert results["ratio_30_70"]["phpcs_pass_rate"] == 0.97
 
     def test_handles_missing_wpbench(self):
         """load_eval_results handles missing wp-bench results gracefully (wpbench_score=None)."""
@@ -380,10 +409,21 @@ class TestLoadEvalResults:
             tmp = Path(tmpdir)
             gen_data = {"phpcs_pass_rate": 0.97, "security_pass_rate": 0.99, "overall_mean": 82.0}
             judge_data = {"overall_spearman": 0.92}
-            self._write_eval_files(tmp, "30_70", gen_data, judge_data)
+            self._write_eval_files(tmp, "ratio_30_70", gen_data, judge_data)
             # No wp_bench_results.json file written
             results = load_eval_results(str(tmp))
-            assert results["30_70"]["wpbench_score"] is None
+            assert results["ratio_30_70"]["wpbench_score"] is None
+
+    def test_non_ratio_directory_names(self):
+        """load_eval_results works with arbitrary experiment directory names."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            gen_data = {"phpcs_pass_rate": 0.97, "security_pass_rate": 0.99, "overall_mean": 82.0}
+            judge_data = {"overall_spearman": 0.92}
+            self._write_eval_files(tmp, "lora_r16_alpha32", gen_data, judge_data)
+            results = load_eval_results(str(tmp))
+            assert "lora_r16_alpha32" in results
+            assert results["lora_r16_alpha32"]["phpcs_pass_rate"] == 0.97
 
 
 # ---------------------------------------------------------------------------
@@ -401,7 +441,7 @@ class TestTriageOutput:
         eliminated = outcome.eliminated
         assert len(eliminated) >= 1
         assert "reason" in eliminated[0]
-        assert eliminated[0]["ratio"] == "30_70"
+        assert eliminated[0]["experiment"] == "30_70"
 
     def test_wpbench_available_field_present(self):
         """Triage output has 'wpbench_available' boolean field."""
