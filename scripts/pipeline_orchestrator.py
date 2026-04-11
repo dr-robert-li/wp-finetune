@@ -164,10 +164,46 @@ def get_status() -> dict:
     synthetic_passed = count_json_items(JUDGED_DIR, "passed_*.json")
     synthetic_failed = count_json_items(JUDGED_DIR, "failed_*.json")
 
-    # Judge training
-    judge_high = count_json_items(JUDGE_TRAINING_DIR, "high_quality*.json")
-    judge_low = count_json_items(JUDGE_TRAINING_DIR, "low_quality*.json")
-    judge_synth = count_json_items(JUDGE_TRAINING_DIR, "synthetic*.json")
+    # Judge training — count by inspecting metadata.passes_threshold or score ranges
+    # to handle any file naming convention (legacy high_quality*, new real_passed_*, etc.)
+    judge_high = 0
+    judge_low = 0
+    judge_synth = 0
+    if JUDGE_TRAINING_DIR.exists():
+        for f in JUDGE_TRAINING_DIR.glob("*.json"):
+            try:
+                data = json.loads(f.read_text())
+                if not isinstance(data, list):
+                    continue
+                for item in data:
+                    meta = item.get("metadata", {})
+                    source = meta.get("source", "")
+                    passes = meta.get("passes_threshold", None)
+                    if "synth" in source:
+                        judge_synth += 1
+                    elif passes is True or "passed" in source or "pass" in f.stem:
+                        judge_high += 1
+                    elif passes is False or "failed" in source or "fail" in f.stem:
+                        judge_low += 1
+                    else:
+                        # Fallback: check overall_score from metadata or assistant content
+                        score = meta.get("overall_score", None)
+                        if score is None:
+                            # Try parsing from assistant JSON content
+                            msgs = item.get("messages", [])
+                            if len(msgs) >= 2:
+                                try:
+                                    asst = json.loads(msgs[1].get("content", "{}"))
+                                    score = asst.get("overall_score", 50)
+                                    passes = asst.get("passes_threshold")
+                                except (json.JSONDecodeError, TypeError):
+                                    score = 50
+                        if passes is True or (score is not None and score >= 70):
+                            judge_high += 1
+                        else:
+                            judge_low += 1
+            except (json.JSONDecodeError, Exception):
+                pass
 
     # CoT — 4-way split
     cot_gen_pattern = count_json_items(COT_DIR, "cot_real*.json") + count_json_items(COT_DIR, "cot_gen_pattern*.json")
