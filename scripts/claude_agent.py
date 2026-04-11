@@ -173,9 +173,8 @@ def _generate_via_stdin(
 def _agent_env() -> dict:
     """Build environment for agent subprocess.
 
-    Inherits the current environment but sets CLAUDE_CODE_SIMPLE=1 to
-    reduce overhead (no hooks, no auto-memory).
+    Inherits the current environment. Does NOT set CLAUDE_CODE_SIMPLE
+    because that disables OAuth/keychain auth which is required for
+    subscription-based authentication.
     """
-    env = os.environ.copy()
-    env["CLAUDE_CODE_SIMPLE"] = "1"
-    return env
+    return os.environ.copy()
