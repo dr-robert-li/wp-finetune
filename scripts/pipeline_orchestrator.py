@@ -3,48 +3,43 @@
 
 This script is the brain of the pipeline. It:
 1. Scans all output directories to determine current state
-2. Computes dynamic percentage-based targets from actual data
+2. Uses AI reasoning (Claude Code agent) to calibrate training targets
+   backward from experiment requirements (model scale, LoRA config, quality)
 3. Produces a structured action plan (JSON) for Claude Code to execute
 
-Targets are percentage-based, derived from extracted+judged function counts:
-- Judge training: % of passed/failed functions
-- CoT: 4-way split (gen_pattern, judge_rubric, judge_contrastive, security)
-  with floor of 500 per type OR 10% of base, whichever is larger
-- Synthetic: fill taxonomy gaps until gap_report.json shows 0 deficit
+Targets are AI-calibrated based on the experiment config:
+- A Claude Code agent reasons about model scale, LoRA rank, epochs,
+  export ratio, and dedup rate to recommend concrete data targets
+- Calibration is cached and reused until experiment config changes
+- Override with --recalibrate to force fresh AI reasoning
 
 Usage:
-    python scripts/pipeline_orchestrator.py status    # Show current state
-    python scripts/pipeline_orchestrator.py plan      # Show what needs doing
-    python scripts/pipeline_orchestrator.py plan-json # Machine-readable plan
+    python scripts/pipeline_orchestrator.py status        # Show current state
+    python scripts/pipeline_orchestrator.py plan          # Show what needs doing
+    python scripts/pipeline_orchestrator.py plan-json     # Machine-readable plan
     python scripts/pipeline_orchestrator.py status-json
+    python scripts/pipeline_orchestrator.py calibrate     # Force recalibration
+    python scripts/pipeline_orchestrator.py status --recalibrate  # Recalibrate + status
 
 Claude Code reads the plan output and spawns agents accordingly.
 """
 
+import hashlib
 import json
 import sys
 from pathlib import Path
 
+import yaml
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-# ── Percentage-based target config ────────────────────────────────────
-# All targets are derived from the actual judged function counts.
-# Hard numbers are gone — percentages scale with the dataset.
+# ── Calibration config ────────────────────────────────────────────────
 
-TARGET_PERCENTAGES = {
-    # Judge training: % of their respective source pools
-    "judge_high_pct": 0.10,      # 10% of passed functions
-    "judge_low_pct": 0.10,       # 10% of failed functions
-    "judge_synth_pct": 0.10,     # 10% of synthetic passed
-
-    # CoT: 4-way split, each is max(500, 10% of base)
-    "cot_gen_pattern_pct": 0.10,       # 10% of passed (gen pattern reasoning)
-    "cot_judge_rubric_pct": 0.10,      # 10% of (passed + failed) (rubric walkthrough)
-    "cot_judge_contrastive_pct": 0.10, # 10% of failed (contrastive bad→fix)
-    "cot_security_pct": 0.10,          # 10% of security-tagged functions
-}
-
-COT_FLOOR = 500  # Minimum examples per CoT type
+CALIBRATION_CACHE = PROJECT_ROOT / "data" / "checkpoints" / "calibrated_targets.json"
+TRAIN_CONFIG_PATH = PROJECT_ROOT / "config" / "train_config_30_70.yaml"
+EXPORT_GEN_RATIO = 0.40
+EXPORT_JUDGE_RATIO = 0.60
+ESTIMATED_DEDUP_RATE = 0.18  # ~18% of merged examples are duplicates
 
 # ── Paths ────────────────────────────────────────────────────────────
 REPOS_DIR = PROJECT_ROOT / "data" / "phase1_extraction" / "repos"
@@ -107,39 +102,217 @@ def count_security_tagged(passed_dir: Path, failed_dir: Path) -> int:
     return count
 
 
-def compute_targets(status: dict) -> dict:
-    """Compute dynamic targets based on actual data counts.
+def _config_hash() -> str:
+    """Hash the training config to detect when recalibration is needed."""
+    if not TRAIN_CONFIG_PATH.exists():
+        return "no_config"
+    content = TRAIN_CONFIG_PATH.read_text()
+    return hashlib.sha256(content.encode()).hexdigest()[:16]
 
-    All targets scale with the dataset. No hardcoded numbers except
-    the COT_FLOOR minimum per CoT type.
+
+def _load_calibration_cache() -> dict | None:
+    """Load cached calibration if valid (config hasn't changed)."""
+    if not CALIBRATION_CACHE.exists():
+        return None
+    try:
+        cache = json.loads(CALIBRATION_CACHE.read_text())
+        if cache.get("config_hash") == _config_hash():
+            return cache.get("targets")
+    except (json.JSONDecodeError, KeyError):
+        pass
+    return None
+
+
+def _save_calibration_cache(targets: dict) -> None:
+    """Save calibrated targets to cache."""
+    CALIBRATION_CACHE.parent.mkdir(parents=True, exist_ok=True)
+    cache = {
+        "config_hash": _config_hash(),
+        "targets": targets,
+        "calibrated_at": __import__("datetime").datetime.now(
+            __import__("datetime").timezone.utc
+        ).isoformat(),
+    }
+    CALIBRATION_CACHE.write_text(json.dumps(cache, indent=2))
+
+
+def calibrate_targets(status: dict, force: bool = False) -> dict:
+    """Use AI reasoning to determine optimal data targets for training.
+
+    Reads the experiment config (model, LoRA, epochs, current data state)
+    and asks a Claude Code agent to reason about what dataset composition
+    will produce a robust training run. Caches the result.
+
+    Args:
+        status: Current pipeline state from get_status()
+        force: If True, recalibrate even if cache is valid
+
+    Returns:
+        Dict with calibrated target counts for each data category.
     """
-    passed = status["real_passed"]
-    failed = status["real_failed"]
-    total_judged = passed + failed
-    synth_passed = status["synthetic_passed"]
-    security_tagged = status["security_tagged"]
+    if not force:
+        cached = _load_calibration_cache()
+        if cached:
+            return cached
 
-    def cot_target(base: int, pct: float) -> int:
-        """max(COT_FLOOR, pct * base)"""
-        return max(COT_FLOOR, int(base * pct))
+    # Load experiment config for context
+    config = {}
+    if TRAIN_CONFIG_PATH.exists():
+        config = yaml.safe_load(TRAIN_CONFIG_PATH.read_text()) or {}
+
+    model_cfg = config.get("model", {})
+    lora_cfg = config.get("lora", {})
+    training_cfg = config.get("training", {})
+    experiment_cfg = config.get("experiment", {})
+
+    # Build the calibration prompt
+    prompt = f"""You are a machine learning training data strategist. Analyze this experiment
+and recommend concrete data targets for a high-quality fine-tuning run.
+
+## Experiment Config
+
+Model: {model_cfg.get('name', 'unknown')}
+  - Architecture: Mixture-of-Experts (MoE), 128 experts, top-8 routing
+  - Total params: ~30B, Active params per forward: ~3B
+  - Task routing: <wp_gen> (code generation) and <wp_judge> (code quality scoring)
+
+LoRA: r={lora_cfg.get('r', 32)}, alpha={lora_cfg.get('alpha', 64)}, dropout={lora_cfg.get('lora_dropout', 0.05)}
+  - Target modules: {lora_cfg.get('target_modules', [])}
+  - Modules saved (full): {lora_cfg.get('modules_to_save', [])}
+  - Estimated trainable params: ~200M (LoRA) + ~300M (embed+head) ≈ 500M
+
+Training: {training_cfg.get('num_train_epochs', 2)} epochs, batch={training_cfg.get('per_device_train_batch_size', 4)}, grad_accum={training_cfg.get('gradient_accumulation_steps', 4)}
+  - Effective batch: {training_cfg.get('per_device_train_batch_size', 4) * training_cfg.get('gradient_accumulation_steps', 4)}
+  - LR: {training_cfg.get('learning_rate', 0.0002)}, scheduler: {training_cfg.get('lr_scheduler_type', 'cosine')}
+  - Max seq length: {model_cfg.get('max_seq_length', 4096)}
+
+Experiment description: {experiment_cfg.get('description', 'No description')}
+
+## Current Data State
+
+Source pools:
+  - Passed functions (gen candidates): {status['real_passed']:,}
+  - Failed functions (contrastive candidates): {status['real_failed']:,}
+  - Security-tagged functions: {status['security_tagged']:,}
+
+Current training data:
+  - Judge high-quality examples: {status['judge_high']:,}
+  - Judge low-quality examples: {status['judge_low']:,}
+  - CoT gen pattern: {status['cot_gen_pattern']:,}
+  - CoT judge rubric: {status['cot_judge_rubric']:,}
+  - CoT judge contrastive: {status['cot_judge_contrastive']:,}
+  - CoT security: {status['cot_security']:,}
+
+Export constraints:
+  - Gen/Judge ratio: {EXPORT_GEN_RATIO:.0%} / {EXPORT_JUDGE_RATIO:.0%}
+  - Estimated dedup rate: ~{ESTIMATED_DEDUP_RATE:.0%}
+  - Dedup method: SHA256 of assistant content (identical outputs removed)
+
+## Your Task
+
+Reason about optimal dataset composition. Consider:
+1. With ~500M trainable params and 2 epochs, how many unique training examples
+   avoid overfitting while teaching both gen and judge tasks?
+2. The export ratio enforces 40/60 gen/judge. Work backward: if you want N
+   total exported, you need N*0.4 gen and N*0.6 judge AFTER dedup.
+3. Account for ~{ESTIMATED_DEDUP_RATE:.0%} dedup loss — raw targets must overshoot.
+4. Judge training needs enough diversity for calibrated scoring (not all 90-95).
+5. CoT examples are high-value but expensive — how many are needed for
+   reasoning quality without diminishing returns?
+6. Gen examples come from passed functions — effectively unlimited supply (82K+).
+   The binding constraint is judge examples.
+
+Return a JSON object with exactly these keys:
+{{
+  "reasoning": "2-4 sentence explanation of your calibration logic",
+  "recommended_export_target": <int>,
+  "targets": {{
+    "judge_high": <int>,
+    "judge_low": <int>,
+    "judge_synth": <int>,
+    "cot_gen_pattern": <int>,
+    "cot_judge_rubric": <int>,
+    "cot_judge_contrastive": <int>,
+    "cot_security": <int>
+  }}
+}}
+
+Return ONLY valid JSON. No markdown, no explanation outside the JSON."""
+
+    print("  Calibrating targets via Claude Code agent...")
+    try:
+        from scripts.claude_agent import generate_json
+        result = generate_json(prompt, model="sonnet", timeout=120)
+
+        if result and "targets" in result:
+            targets = result["targets"]
+            # Ensure all required keys exist with sane minimums
+            required = [
+                "judge_high", "judge_low", "judge_synth",
+                "cot_gen_pattern", "cot_judge_rubric",
+                "cot_judge_contrastive", "cot_security",
+            ]
+            for key in required:
+                targets.setdefault(key, 500)
+                targets[key] = max(int(targets[key]), 100)  # floor at 100
+
+            # Add metadata
+            targets["_reasoning"] = result.get("reasoning", "")
+            targets["_recommended_export"] = result.get("recommended_export_target", 10000)
+
+            _save_calibration_cache(targets)
+            print(f"  Calibrated: export target {targets['_recommended_export']:,}")
+            print(f"  Reasoning: {targets['_reasoning'][:200]}")
+            return targets
+    except Exception as e:
+        print(f"  Calibration failed: {e}")
+
+    # Fallback: conservative defaults if agent fails
+    print("  Using fallback targets (agent unavailable)")
+    fallback = {
+        "judge_high": 5000,
+        "judge_low": 3000,
+        "judge_synth": 0,
+        "cot_gen_pattern": 2000,
+        "cot_judge_rubric": 1500,
+        "cot_judge_contrastive": 800,
+        "cot_security": 700,
+        "_reasoning": "Fallback: agent unavailable. Conservative defaults for 30B MoE with LoRA r=32.",
+        "_recommended_export": 15000,
+    }
+    _save_calibration_cache(fallback)
+    return fallback
+
+
+def compute_targets(status: dict, recalibrate: bool = False) -> dict:
+    """Compute training data targets using AI-calibrated values.
+
+    Uses cached calibration from calibrate_targets(). Falls back to
+    conservative defaults if calibration hasn't run yet.
+    """
+    calibrated = calibrate_targets(status, force=recalibrate)
 
     return {
         # Phase 1: no target — judge everything extracted
-        "real_code_passed": 0,  # Not a target, natural outcome
+        "real_code_passed": 0,
 
-        # Phase 2: synthetic fills gap deficit (0 = no more needed)
+        # Phase 2: synthetic fills gap deficit
         "synthetic_passed": max(status["gap_deficit"], 0),
 
-        # Phase 2: judge training — % of source pools
-        "judge_high": int(passed * TARGET_PERCENTAGES["judge_high_pct"]),
-        "judge_low": int(failed * TARGET_PERCENTAGES["judge_low_pct"]),
-        "judge_synth": int(synth_passed * TARGET_PERCENTAGES["judge_synth_pct"]),
+        # Phase 2: judge training — AI-calibrated targets
+        "judge_high": calibrated["judge_high"],
+        "judge_low": calibrated["judge_low"],
+        "judge_synth": calibrated.get("judge_synth", 0),
 
-        # Phase 3: CoT — 4-way split, max(500, 10% of base)
-        "cot_gen_pattern": cot_target(passed, TARGET_PERCENTAGES["cot_gen_pattern_pct"]),
-        "cot_judge_rubric": cot_target(total_judged, TARGET_PERCENTAGES["cot_judge_rubric_pct"]),
-        "cot_judge_contrastive": cot_target(failed, TARGET_PERCENTAGES["cot_judge_contrastive_pct"]),
-        "cot_security": cot_target(security_tagged, TARGET_PERCENTAGES["cot_security_pct"]),
+        # Phase 3: CoT — AI-calibrated targets
+        "cot_gen_pattern": calibrated["cot_gen_pattern"],
+        "cot_judge_rubric": calibrated["cot_judge_rubric"],
+        "cot_judge_contrastive": calibrated["cot_judge_contrastive"],
+        "cot_security": calibrated["cot_security"],
+
+        # Metadata
+        "_reasoning": calibrated.get("_reasoning", ""),
+        "_recommended_export": calibrated.get("_recommended_export", 10000),
     }
 
 
@@ -476,19 +649,23 @@ def get_plan(status: dict) -> dict:
         "actions": actions,
         "action_count": len(actions),
         "targets": targets,
-        "percentages": TARGET_PERCENTAGES,
-        "cot_floor": COT_FLOOR,
+        "calibration_reasoning": targets.get("_reasoning", ""),
+        "recommended_export": targets.get("_recommended_export", 0),
     }
 
 
-def print_status(status: dict):
+def print_status(status: dict, recalibrate: bool = False):
     """Pretty-print pipeline status."""
-    targets = compute_targets(status)
+    targets = compute_targets(status, recalibrate=recalibrate)
 
     print("=" * 70)
-    print("  PIPELINE STATUS (percentage-based targets)")
+    print("  PIPELINE STATUS (AI-calibrated targets)")
     print("=" * 70)
     print()
+    if targets.get("_reasoning"):
+        print(f"  Calibration: {targets['_reasoning'][:120]}")
+        print(f"  Export target: {targets.get('_recommended_export', '?'):,}")
+        print()
     print(f"  {'Phase 1: Extract & Judge':─<50}")
     print(f"    Repos cloned:        {status['repos_cloned']:>6}")
     print(f"    Repos extracted:     {status['repos_extracted']:>6}")
@@ -502,15 +679,15 @@ def print_status(status: dict):
     print(f"  {'Phase 2: Synthetic & Judge Training':─<50}")
     print(f"    Synthetic gen:       {status['synthetic_generated']:>6}")
     print(f"    Synthetic passed:    {status['synthetic_passed']:>6}   (gap deficit: {status['gap_deficit']})")
-    _pct_line("Judge high-score", status["judge_high"], targets["judge_high"], "10% of passed")
-    _pct_line("Judge low-score", status["judge_low"], targets["judge_low"], "10% of failed")
-    _pct_line("Judge synth-score", status["judge_synth"], targets["judge_synth"], "10% of synth passed")
+    _pct_line("Judge high-score", status["judge_high"], targets["judge_high"], "AI-calibrated")
+    _pct_line("Judge low-score", status["judge_low"], targets["judge_low"], "AI-calibrated")
+    _pct_line("Judge synth-score", status["judge_synth"], targets["judge_synth"], "AI-calibrated")
     print()
     print(f"  {'Phase 3: CoT (4-way split)':─<50}")
-    _pct_line("Gen Pattern CoT", status["cot_gen_pattern"], targets["cot_gen_pattern"], f"max(500, 10% of {status['real_passed']})")
-    _pct_line("Judge Rubric CoT", status["cot_judge_rubric"], targets["cot_judge_rubric"], f"max(500, 10% of {status['total_judged']})")
-    _pct_line("Judge Contrastive CoT", status["cot_judge_contrastive"], targets["cot_judge_contrastive"], f"max(500, 10% of {status['real_failed']})")
-    _pct_line("Security CoT", status["cot_security"], targets["cot_security"], f"max(500, 10% of {status['security_tagged']})")
+    _pct_line("Gen Pattern CoT", status["cot_gen_pattern"], targets["cot_gen_pattern"], "AI-calibrated")
+    _pct_line("Judge Rubric CoT", status["cot_judge_rubric"], targets["cot_judge_rubric"], "AI-calibrated")
+    _pct_line("Judge Contrastive CoT", status["cot_judge_contrastive"], targets["cot_judge_contrastive"], "AI-calibrated")
+    _pct_line("Security CoT", status["cot_security"], targets["cot_security"], "AI-calibrated")
     print(f"    CoT total:           {status['cot_total']:>6}")
     print()
     print(f"  {'Export':─<50}")
@@ -556,10 +733,11 @@ def print_plan(plan: dict):
 
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else "status"
+    recalibrate = "--recalibrate" in sys.argv
 
     if cmd == "status":
         status = get_status()
-        print_status(status)
+        print_status(status, recalibrate=recalibrate)
     elif cmd == "plan":
         status = get_status()
         plan = get_plan(status)
@@ -573,7 +751,12 @@ if __name__ == "__main__":
     elif cmd == "status-json":
         status = get_status()
         print(json.dumps(status, indent=2, default=str))
+    elif cmd == "calibrate":
+        status = get_status()
+        targets = calibrate_targets(status, force=True)
+        print(json.dumps(targets, indent=2))
     else:
         print(f"Unknown command: {cmd}")
-        print("Usage: python scripts/pipeline_orchestrator.py [status|plan|plan-json|status-json]")
+        print("Usage: python scripts/pipeline_orchestrator.py [status|plan|plan-json|status-json|calibrate]")
+        print("  --recalibrate  Force fresh AI calibration of targets")
         sys.exit(1)
