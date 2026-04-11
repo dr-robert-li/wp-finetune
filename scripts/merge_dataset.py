@@ -10,10 +10,126 @@ by export_dataset.py. Handles:
 """
 
 import json
+import re
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 FINAL_DIR = PROJECT_ROOT / "data" / "final_dataset"
+
+
+# ---------------------------------------------------------------------------
+# Instruction enrichment (Fix 2)
+# ---------------------------------------------------------------------------
+
+def extract_instruction_from_docblock(docblock: str) -> str:
+    """Extract the summary description from a PHPDoc block.
+
+    Parses the first non-tag line after the opening comment marker.
+    Returns the description or empty string if not found.
+    """
+    if not docblock:
+        return ""
+
+    lines = docblock.strip().split("\n")
+    description_parts = []
+
+    for line in lines:
+        # Strip comment markers
+        cleaned = re.sub(r"^\s*/?[*]+\s?/?", "", line).strip()
+        if not cleaned:
+            continue
+        # Stop at @param, @return, @since, @deprecated, etc.
+        if cleaned.startswith("@"):
+            break
+        # Stop at closing comment
+        if cleaned == "/":
+            break
+        description_parts.append(cleaned)
+
+    description = " ".join(description_parts).strip()
+    # Clean up common artifacts
+    description = re.sub(r"\s+", " ", description)
+    # Skip if it's just the function name repeated or too short
+    if len(description) < 10:
+        return ""
+    return description
+
+
+def synthesize_instruction(func: dict) -> str:
+    """Build an instruction from function metadata when no docblock exists.
+
+    Uses function name, hooks, SQL patterns, and dependencies to construct
+    a natural-sounding instruction.
+    """
+    name = func.get("function_name", "")
+    hooks = func.get("hooks_used", [])
+    sql = func.get("sql_patterns", [])
+    deps = func.get("dependencies", [])
+    class_ctx = func.get("class_context", "")
+
+    parts = []
+
+    # Convert function name to natural language
+    # e.g., "get_user_meta_value" -> "get user meta value"
+    clean_name = name.split("::")[-1] if "::" in name else name
+    words = re.sub(r"([A-Z])", r" \1", clean_name)  # camelCase split
+    words = words.replace("_", " ").strip().lower()
+
+    # Build context from detected patterns
+    if sql:
+        sql_types = []
+        if any("prepared" in s for s in sql):
+            sql_types.append("prepared SQL queries")
+        if any("join" in s.lower() for s in sql):
+            sql_types.append("JOIN queries")
+        if any("insert" in s.lower() for s in sql):
+            sql_types.append("database insertions")
+        if sql_types:
+            parts.append(f"using {', '.join(sql_types)}")
+
+    if hooks:
+        hook_names = [h.split("(")[0] for h in hooks[:3]]
+        if any("add_action" in h for h in hooks):
+            parts.append("registering WordPress action hooks")
+        elif any("add_filter" in h for h in hooks):
+            parts.append("applying WordPress filters")
+
+    # Security patterns from dependencies
+    sec_apis = [d for d in deps if d in (
+        "wp_verify_nonce", "check_ajax_referer", "current_user_can",
+        "sanitize_text_field", "esc_html", "esc_attr", "esc_url",
+    )]
+    if sec_apis:
+        parts.append(f"with {', '.join(sec_apis[:2])} for security")
+
+    if class_ctx:
+        parts.append(f"in the {class_ctx} class")
+
+    if parts:
+        return f"Write a WordPress function that {words}, {', '.join(parts)}"
+    elif len(words) > 5:
+        return f"Write a WordPress function that {words}"
+
+    return ""
+
+
+def build_gen_instruction(func: dict) -> str:
+    """Build the best available instruction for a gen training example.
+
+    Priority: docblock description > synthesized from metadata > fallback name-only.
+    """
+    # Try docblock first (available for ~90% of functions)
+    instruction = extract_instruction_from_docblock(func.get("docblock", ""))
+    if instruction:
+        return instruction
+
+    # Try synthesis from metadata
+    instruction = synthesize_instruction(func)
+    if instruction:
+        return instruction
+
+    # Fallback: original name-only format
+    return f"Write a WordPress function: {func.get('function_name', 'unnamed')}"
 
 
 def merge_all():
@@ -29,9 +145,10 @@ def merge_all():
                 if not body.strip():
                     continue
                 tags = func.get("assessment", {}).get("training_tags", func.get("training_tags", []))
+                instruction = build_gen_instruction(func)
                 examples.append({
                     "messages": [
-                        {"role": "user", "content": f"<wp_gen> Write a WordPress function: {func.get('function_name', 'unnamed')}"},
+                        {"role": "user", "content": f"<wp_gen> {instruction}"},
                         {"role": "assistant", "content": body},
                     ],
                     "metadata": {
