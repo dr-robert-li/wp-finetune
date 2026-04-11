@@ -1,3 +1,5 @@
+# DEPRECATED: Legacy ratio-specific config. Use experiment-based configs instead.
+# These reference old data in data/final_dataset/ratio_*/ from pre-refactoring pipeline.
 data:
   test_file: data/final_dataset/ratio_70_30/openai_test.jsonl
   train_file: data/final_dataset/ratio_70_30/openai_train.jsonl

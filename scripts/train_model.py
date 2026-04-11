@@ -437,6 +437,13 @@ def train(args: argparse.Namespace) -> None:
     config_path = resolve_path(args.config) if args.config else CONFIG_PATH
     config = load_config(config_path)
 
+    # --- Log experiment description if present ---
+    experiment = config.get("experiment", {})
+    if experiment.get("description"):
+        print(f"\n{'='*60}")
+        print(f"  EXPERIMENT: {experiment.get('description')}")
+        print(f"{'='*60}\n")
+
     # --- Idempotency check: skip if adapter already trained ---
     output_dir = resolve_path(config["training"]["output_dir"])
     adapter_config = output_dir / "adapter_config.json"

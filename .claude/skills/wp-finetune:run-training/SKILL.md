@@ -1,20 +1,20 @@
 # Skill: wp-finetune:run-training
 
-Run the training pipeline via the DGX Toolbox execution engine. Supports training on one or more dataset ratio exports sequentially, with isolated checkpoints per run.
+Run the training pipeline via the DGX Toolbox execution engine. Supports training on one or more dataset exports sequentially, with isolated checkpoints per experiment.
 
 ## Architecture
 
 ```
 Skill (this file — intent + recovery logic)
-  → dgx_toolbox.py (resolve paths, validate state, manage containers, execute)
-    → Docker commands (generated dynamically from config, not hardcoded)
-      → Python scripts (inside container, idempotent)
-        → Output (adapters/{run_name}/, models/{run_name}-merged/)
+  -> dgx_toolbox.py (resolve paths, validate state, manage containers, execute)
+    -> Docker commands (generated dynamically from config, not hardcoded)
+      -> Python scripts (inside container, idempotent)
+        -> Output (adapters/{experiment_name}/, models/{experiment_name}-merged/)
 ```
 
 ## Telemetry
 
-> Telemetry is **embedded** — this skill spawns observe-data-pipeline (3 agents), observe-training (6 agents), and observe-packaging (3 agents) inline at the appropriate steps. It also invokes review-telemetry after each run and after all runs complete. No need to invoke observe skills separately.
+> Telemetry is **embedded** -- this skill spawns observe-data-pipeline (3 agents), observe-training (6 agents), and observe-packaging (3 agents) inline at the appropriate steps. It also invokes review-telemetry after each run and after all runs complete. No need to invoke observe skills separately.
 
 ## Trigger
 
@@ -37,52 +37,91 @@ Select base model (1 only):
 
 | # | Model | Status | Params | Active | Notes |
 |---|-------|--------|--------|--------|-------|
-| 1 | Qwen/Qwen3-30B-A3B | [Downloaded/Not downloaded] | 30B | ~3B (MoE) | Default — native MoE, proven serving |
+| 1 | Qwen/Qwen3-30B-A3B | [Downloaded/Not downloaded] | 30B | ~3B (MoE) | Default -- native MoE, proven serving |
 | 2 | Qwen/Qwen3-14B | [Downloaded/Not downloaded] | 14B | 14B (dense) | Faster iteration, smaller |
 | 3 | Qwen/Qwen3-8B | [Downloaded/Not downloaded] | 8B | 8B (dense) | Quick experiments |
-| 4 | Custom | — | — | — | Enter HuggingFace model ID |
+| 4 | Custom | -- | -- | -- | Enter HuggingFace model ID |
 ```
 
 If "Custom": ask for the HuggingFace model ID (e.g., `meta-llama/Llama-3-8B`).
 
 Store as `$BASE_MODEL` (HF name) and `$MODEL_LOCAL_DIR` (local path like `models/Qwen3-30B-A3B`).
 
-**Only one base model per training session.** All selected ratios train against the same base.
+**Only one base model per training session.** All selected experiments train against the same base.
 
-### Step 0b: Select dataset exports
+### Step 0b: Select dataset and configure experiment
 
-List available ratio exports and let the user choose one or more:
+List available dataset exports and let the user choose one or more:
 
 ```bash
-ls data/final_dataset/ratio_*/metadata.json
+# Check for legacy ratio-based exports
+ls data/final_dataset/ratio_*/metadata.json 2>/dev/null
+# Check for root-level dataset exports
+ls data/final_dataset/metadata.json 2>/dev/null
+ls data/final_dataset/openai_train.jsonl 2>/dev/null
 ```
 
 Read each metadata.json and present a table:
 ```
 Available dataset exports:
 
-| # | Ratio | Gen    | Judge  | Total  | Train  |
-|---|-------|--------|--------|--------|--------|
-| 1 | 30/70 | ...    | ...    | ...    | ...    |
-| 2 | 40/60 | ...    | ...    | ...    | ...    |
-| ... |
+| # | Dataset                          | Gen    | Judge  | Total  | Train  |
+|---|----------------------------------|--------|--------|--------|--------|
+| 1 | data/final_dataset/ (current)    | ...    | ...    | ...    | ...    |
+| 2 | data/final_dataset/ratio_30_70/  | ...    | ...    | ...    | ...    |
+| 3 | data/final_dataset/ratio_50_50/  | ...    | ...    | ...    | ...    |
+| C | Custom path                      | --     | --     | --     | --     |
 
-Select exports to train (comma-separated, e.g. "2,3,4" or "all"):
+Select dataset(s) to train (comma-separated, e.g. "1,2" or "1"):
 ```
 
-Use AskUserQuestion for selection. Store as `$SELECTED_RATIOS` list.
+If "Custom": ask for the dataset directory path.
+
+Use AskUserQuestion for selection. Store each selection as a `$DATASET_DIR` (path to the dataset directory).
+
+**For each selected dataset, auto-generate an experiment name:**
+
+```python
+import re
+from pathlib import Path
+
+# Derive model short name (e.g., "qwen3-30b" from "Qwen/Qwen3-30B-A3B")
+model_short = BASE_MODEL.split("/")[-1].lower().replace("-a3b", "")
+
+# Find next sequential experiment number from existing adapters/
+existing = sorted(Path("adapters").glob(f"{model_short}_experiment_*"))
+existing_nums = []
+for d in existing:
+    m = re.search(r"_experiment_(\d+)_", d.name)
+    if m:
+        existing_nums.append(int(m.group(1)))
+next_num = max(existing_nums, default=0) + 1
+
+# Generate experiment name
+from datetime import date
+experiment_name = f"{model_short}_experiment_{next_num:03d}_{date.today().strftime('%Y%m%d')}"
+# e.g., "qwen3-30b_experiment_001_20260411"
+```
+
+Allow the user to override the auto-generated name if desired.
+
+Store as `$EXPERIMENTS` list, where each entry contains:
+- `experiment_name`: the experiment identifier (e.g., `qwen3-30b_experiment_001_20260411`)
+- `dataset_dir`: the dataset path (e.g., `data/final_dataset/` or `data/final_dataset/ratio_30_70/`)
+
+**Backward compatibility:** Legacy `ratio_*` directories are still discoverable for dataset selection, but all new runs use the experiment naming convention.
 
 ### Step 0c: Telemetry monitoring
 
-Choose which telemetry collectors to run. Both feed the same **canonical thermal log** — a single JSONL file per run that drives adaptive resource planning (Step 8.5).
+Choose which telemetry collectors to run. Both feed the same **canonical thermal log** -- a single JSONL file per run that drives adaptive resource planning (Step 8.5).
 
 **Note:** Both telemetry modes also record power draw (watts) via `MemoryWatchdogCallback`, which calls `GPUSampler.append_jsonl` every 50 training steps. This provides a continuous within-run power draw record in the canonical JSONL even when external observe agents are not running. The adaptive planner uses `avg_watts` as the primary signal for zone classification when available.
 
-**⚠ Memory impact of telemetry modes (unified memory systems like DGX Spark):**
+**Warning: Memory impact of telemetry modes (unified memory systems like DGX Spark):**
 
 | Mode | Processes | Memory overhead | Impact on training headroom |
 |------|-----------|----------------|---------------------------|
-| Observe | 6-8 Python agents | ~3-4 GB total (~0.4 GB each) | Significant — reduces headroom by 3-4 GB. On a 120 GB system with 25 GB free, this is 12-16% of available headroom. Can push into swap territory with aggressive batch sizes. |
+| Observe | 6-8 Python agents | ~3-4 GB total (~0.4 GB each) | Significant -- reduces headroom by 3-4 GB. On a 120 GB system with 25 GB free, this is 12-16% of available headroom. Can push into swap territory with aggressive batch sizes. |
 | Lightweight | 1 shell script | ~5 MB | Negligible |
 | None | 0 | 0 | None |
 
@@ -95,41 +134,39 @@ Use AskUserQuestion:
 - question: "Select telemetry mode. Both options write to the same canonical thermal log used by adaptive resource planning."
 - multiSelect: false
 - options:
-  - "Observe agents" → set `$TELEMETRY_MODE = "observe"`
-    - description: "Full 6-agent team: GPU metrics, thermal/throttling, training loss, disk I/O, checkpoint integrity, container health. ⚠ Adds ~3-4 GB memory overhead (6-8 Python processes at ~0.4 GB each). Safe if headroom >25 GB."
-  - "Lightweight monitor (Recommended for DGX Spark)" �� set `$TELEMETRY_MODE = "monitor"`
+  - "Observe agents" -> set `$TELEMETRY_MODE = "observe"`
+    - description: "Full 6-agent team: GPU metrics, thermal/throttling, training loss, disk I/O, checkpoint integrity, container health. Warning: Adds ~3-4 GB memory overhead (6-8 Python processes at ~0.4 GB each). Safe if headroom >25 GB."
+  - "Lightweight monitor (Recommended for DGX Spark)" -> set `$TELEMETRY_MODE = "monitor"`
     - description: "Single background script polling nvidia-smi every 10 minutes. Records watts, temp, util, memory to canonical JSONL. ~5 MB overhead. Sufficient for adaptive resource planning."
-  - "None" → set `$TELEMETRY_MODE = "none"`
+  - "None" -> set `$TELEMETRY_MODE = "none"`
 
 **If the user selects "None"**, show a warning via AskUserQuestion:
 - header: "Warning"
-- question: "No telemetry means no adaptive resource planning. Training config will NOT auto-adjust between runs — GPU may be underutilized or overheat without detection. Are you sure?"
+- question: "No telemetry means no adaptive resource planning. Training config will NOT auto-adjust between runs -- GPU may be underutilized or overheat without detection. Are you sure?"
 - options:
-  - "Use observe agents" → set `$TELEMETRY_MODE = "observe"`
-  - "Use lightweight monitor" → set `$TELEMETRY_MODE = "monitor"`
-  - "Disable anyway" → set `$TELEMETRY_MODE = "none"`
+  - "Use observe agents" -> set `$TELEMETRY_MODE = "observe"`
+  - "Use lightweight monitor" -> set `$TELEMETRY_MODE = "monitor"`
+  - "Disable anyway" -> set `$TELEMETRY_MODE = "none"`
 
 Store as `$TELEMETRY_MODE` ("observe" | "monitor" | "none").
 
 Derive convenience flags:
-- `$TELEMETRY = ($TELEMETRY_MODE != "none")` — controls adaptive planning (Step 8.5)
-- `$OBSERVE = ($TELEMETRY_MODE == "observe")` — controls full agent spawning (Steps 4/7/8)
-- `$MONITOR = ($TELEMETRY_MODE == "monitor")` — controls lightweight monitor spawning
+- `$TELEMETRY = ($TELEMETRY_MODE != "none")` -- controls adaptive planning (Step 8.5)
+- `$OBSERVE = ($TELEMETRY_MODE == "observe")` -- controls full agent spawning (Steps 4/7/8)
+- `$MONITOR = ($TELEMETRY_MODE == "monitor")` -- controls lightweight monitor spawning
 
 #### Canonical thermal log
 
 All telemetry collectors (observe agents and lightweight monitor) append to the same canonical file:
 
 ```
-telemetry/training/{model_short}_{date}_{ratio}_thermal.jsonl
+telemetry/training/{experiment_name}_thermal.jsonl
 ```
 
-- `{model_short}` = base model short name (e.g., `qwen3-30b`)
-- `{date}` = date training commenced (e.g., `20260330`)
-- `{ratio}` = dataset ratio (e.g., `30_70`)
-- Example: `telemetry/training/qwen3-30b_20260330_30_70_thermal.jsonl`
+- `{experiment_name}` = full experiment identifier (e.g., `qwen3-30b_experiment_001_20260411`)
+- Example: `telemetry/training/qwen3-30b_experiment_001_20260411_thermal.jsonl`
 
-**JSONL schema** (one line per reading) — GPUSampler output fields:
+**JSONL schema** (one line per reading) -- GPUSampler output fields:
 
 ```jsonl
 {"ts": "2026-03-30T06:57:47Z", "watts": 62.5, "temperature_c": 65, "gpu_util_pct": 82, "mem_available_gb": 28.4, "page_cache_gb": 12.1, "mock": false}
@@ -137,36 +174,36 @@ telemetry/training/{model_short}_{date}_{ratio}_thermal.jsonl
 ```
 
 **Field definitions (GPUSampler canonical schema):**
-- `watts` (float) — GPU power draw from nvidia-smi. `null` if power meter unavailable.
-- `temperature_c` (int) — GPU temperature in Celsius.
-- `gpu_util_pct` (int) — GPU utilization percentage.
-- `mem_available_gb` (float) — Available memory in GB (unified pool on DGX Spark).
-- `page_cache_gb` (float) — Page cache size in GB (from /proc/meminfo).
-- `mock` (bool) — True when sampler is in mock mode (no real hardware).
-- `ts` (str) — ISO 8601 timestamp.
+- `watts` (float) -- GPU power draw from nvidia-smi. `null` if power meter unavailable.
+- `temperature_c` (int) -- GPU temperature in Celsius.
+- `gpu_util_pct` (int) -- GPU utilization percentage.
+- `mem_available_gb` (float) -- Available memory in GB (unified pool on DGX Spark).
+- `page_cache_gb` (float) -- Page cache size in GB (from /proc/meminfo).
+- `mock` (bool) -- True when sampler is in mock mode (no real hardware).
+- `ts` (str) -- ISO 8601 timestamp.
 
 **Note:** The adaptive planner (`scripts/adaptive_planner.parse_telemetry_jsonl`) reads these exact field names. Observers must write this schema. The old field names (`gpu_util`, `temp`, `vram_used_mb`, `sys_ram_used_mb`) are deprecated.
 
 Store the canonical log path as `$THERMAL_LOG` for this run:
 ```python
-THERMAL_LOG = f"telemetry/training/{model_short}_{date}_{ratio}_thermal.jsonl"
+THERMAL_LOG = f"telemetry/training/{experiment_name}_thermal.jsonl"
 ```
 
-This file is the **single source of truth** for adaptive resource planning. Step 8.5a reads only this file — it never parses agent markdown or monitor output directly.
+This file is the **single source of truth** for adaptive resource planning. Step 8.5a reads only this file -- it never parses agent markdown or monitor output directly.
 
 ```
 Collectors (Step 0c)              Canonical log                Downstream consumers
-────────────────────             ──────────────               ────────────────────
-Lightweight monitor ──┐
-                      ├──► {model}_{date}_{ratio}    ──┬──► Step 8.5a: compute avg/peak
-Observe agents ───────┘    _thermal.jsonl              │
-                           (append-only JSONL)         ├──► Step 8.5b: thermal_history.json
-                                                       │    (one summary record per run)
-                                                       │
-                                                       ├──► Step 8.5c: zone classification
-                                                       │
-                                                       └──► Step 8.5d: CRITICAL backoff
-                                                            (lookup last WARM in history)
+--------------------             --------------               --------------------
+Lightweight monitor --+
+                      +---> {experiment_name}         --+---> Step 8.5a: compute avg/peak
+Observe agents -------+     _thermal.jsonl              |
+                            (append-only JSONL)         +---> Step 8.5b: thermal_history.json
+                                                        |     (one summary record per run)
+                                                        |
+                                                        +---> Step 8.5c: zone classification
+                                                        |
+                                                        +---> Step 8.5d: CRITICAL backoff
+                                                             (lookup last WARM in history)
 ```
 
 #### What each mode spawns
@@ -187,13 +224,13 @@ Observe agents ───────┘    _thermal.jsonl              │
 |---------------|---------|---------|
 | Step 7: Train | 1 background agent | Polls nvidia-smi every 10 min, appends to `$THERMAL_LOG` |
 
-No observe agents, no review-telemetry, no per-run summaries. Only the canonical thermal log is produced — sufficient for adaptive resource planning.
+No observe agents, no review-telemetry, no per-run summaries. Only the canonical thermal log is produced -- sufficient for adaptive resource planning.
 
 **Lifecycle (observe mode):**
 1. Spawn observe agents in background before the long-running step
 2. Agents append to their markdown files AND to `$THERMAL_LOG` (thermal/GPU agents)
 3. Execute the step (download/train/merge)
-4. Touch `_stop` file — agents write Final Summary and exit
+4. Touch `_stop` file -- agents write Final Summary and exit
 5. Invoke review-telemetry to consolidate into `_summary.md`
 6. Proceed to next step
 
@@ -201,7 +238,7 @@ No observe agents, no review-telemetry, no per-run summaries. Only the canonical
 1. Spawn single monitor agent before training
 2. Monitor appends to `$THERMAL_LOG` every 10 minutes
 3. Execute training
-4. Touch `_stop` — monitor exits
+4. Touch `_stop` -- monitor exits
 5. Proceed to next step (no review-telemetry)
 
 **Between runs (both modes):** Step 8.5 reads `$THERMAL_LOG`, computes aggregates, updates `thermal_history.json`, adjusts config.
@@ -210,16 +247,16 @@ No observe agents, no review-telemetry, no per-run summaries. Only the canonical
 
 ### Step 0d: Confirm training plan
 
-Present a full summary of what will happen and ask for explicit confirmation. Training runs are long (6-12 hours per ratio) and expensive — mistakes here are costly.
+Present a full summary of what will happen and ask for explicit confirmation. Training runs are long (6-12 hours per experiment) and expensive -- mistakes here are costly.
 
 ```
-╔══════════════════════════════════════════════════════════════╗
-║  TRAINING PLAN — PLEASE REVIEW                               ║
-╚══════════════════════════════════════════════════════════════╝
++--------------------------------------------------------------+
+|  TRAINING PLAN -- PLEASE REVIEW                              |
++--------------------------------------------------------------+
 
   Base model:    {BASE_MODEL}
   Local path:    {MODEL_LOCAL_DIR}
-  Status:        [Downloaded ✓ / Not yet downloaded]
+  Status:        [Downloaded / Not yet downloaded]
 
   LoRA config:   r={r}, alpha={alpha}, dropout={dropout}
   Target modules: {target_modules}
@@ -229,25 +266,25 @@ Present a full summary of what will happen and ask for explicit confirmation. Tr
   Learning rate: {lr} ({scheduler})
   Precision:     bf16
 
-  Telemetry:     {TELEMETRY ? "✓ Enabled (observe-training + review)" : "✗ Disabled"}
+  Telemetry:     {TELEMETRY ? "Enabled (observe-training + review)" : "Disabled"}
 
-  Runs planned:  {len(SELECTED_RATIOS)}
-  Est. duration: ~{len(SELECTED_RATIOS) * 6}-{len(SELECTED_RATIOS) * 12} hours total
+  Runs planned:  {len(EXPERIMENTS)}
+  Est. duration: ~{len(EXPERIMENTS) * 6}-{len(EXPERIMENTS) * 12} hours total
 
-  ┌─────┬─────────────────────────────┬──────────┬────────────────────────────────┐
-  │ Run │ Dataset                     │ Train ex │ Output                         │
-  ├─────┼─────────────────────────────┼──────────┼────────────────────────────────┤
-  │  1  │ ratio_50_50 (gen=30K j=30K) │ 48,796   │ adapters/{run_name_1}/         │
-  │  2  │ ratio_60_40 (gen=46K j=30K) │ 60,996   │ adapters/{run_name_2}/         │
-  │ ... │                             │          │                                │
-  └─────┴─────────────────────────────┴──────────┴────────────────────────────────┘
+  +-----+--------------------------------------------+----------+---------------------------------------+
+  | Run | Experiment                                 | Dataset                               | Output                                |
+  +-----+--------------------------------------------+---------------------------------------+---------------------------------------+
+  |  1  | qwen3-30b_experiment_001_20260411          | data/final_dataset/ (48,796 train)    | adapters/qwen3-30b_experiment_001_... |
+  |  2  | qwen3-30b_experiment_002_20260411          | data/final_dataset/ratio_30_70/ (...)  | adapters/qwen3-30b_experiment_002_... |
+  | ... |                                            |                                       |                                       |
+  +-----+--------------------------------------------+---------------------------------------+---------------------------------------+
 
   Disk required: ~{estimate}GB per run (adapter + checkpoints)
   Memory required: ~70GB (Qwen3-30B-A3B bf16 + LoRA optimizer states)
 
-──────────────────────────────────────────────────────────────
-→ Type "confirmed" to start training, or describe changes
-──────────────────────────────────────────────────────────────
+--------------------------------------------------------------
+-> Type "confirmed" to start training, or describe changes
+--------------------------------------------------------------
 ```
 
 Read the base config from `config/train_config.yaml` to populate LoRA and training hyperparameters in the summary. Check disk space with `df -h .` and model download status with `ls models/*/config.json`.
@@ -256,20 +293,20 @@ Use AskUserQuestion:
 - header: "Training Plan Confirmation"
 - question: "Review the plan above. Start training?"
 - options:
-  - "Confirmed — start training" → proceed to Step 1
-  - "Change model" → go back to Step 0a
-  - "Change ratios" → go back to Step 0b
-  - "Change telemetry" → go back to Step 0c
-  - "Change hyperparameters" → tell user to edit config/train_config.yaml, then re-run
-  - "Abort" → exit skill
+  - "Confirmed -- start training" -> proceed to Step 1
+  - "Change model" -> go back to Step 0a
+  - "Change dataset/experiment" -> go back to Step 0b
+  - "Change telemetry" -> go back to Step 0c
+  - "Change hyperparameters" -> tell user to edit config/train_config.yaml, then re-run
+  - "Abort" -> exit skill
 
 **Do NOT proceed to Step 1 until the user explicitly confirms.**
 
-**For each selected ratio**, execute Steps 1-8 below with run-specific paths:
-- `run_name` = `{model_short}-wp-{ratio}` (e.g., `qwen3-30b-wp-50_50`)
-- `data_dir` = `data/final_dataset/ratio_{ratio}/`
-- `adapter_dir` = `adapters/{run_name}/`
-- `merged_dir` = `models/{run_name}-merged/`
+**For each experiment in `$EXPERIMENTS`**, execute Steps 1-8 below with run-specific paths:
+- `experiment_name` = the experiment identifier (e.g., `qwen3-30b_experiment_001_20260411`)
+- `dataset_dir` = the selected dataset path (e.g., `data/final_dataset/`)
+- `adapter_dir` = `adapters/{experiment_name}/`
+- `merged_dir` = `models/{experiment_name}-merged/`
 
 ### Step 1: Configure run
 
@@ -284,16 +321,16 @@ base_config = yaml.safe_load(open("config/train_config.yaml"))
 base_config["model"]["name"] = BASE_MODEL           # e.g. "Qwen/Qwen3-30B-A3B"
 base_config["model"]["local_dir"] = MODEL_LOCAL_DIR  # e.g. "./models/Qwen3-30B-A3B"
 
-# Override data paths for this ratio
-base_config["data"]["train_file"] = f"data/final_dataset/ratio_{ratio}/openai_train.jsonl"
-base_config["data"]["val_file"] = f"data/final_dataset/ratio_{ratio}/openai_val.jsonl"
-base_config["data"]["test_file"] = f"data/final_dataset/ratio_{ratio}/openai_test.jsonl"
+# Override data paths for this experiment's dataset
+base_config["data"]["train_file"] = f"{dataset_dir}/openai_train.jsonl"
+base_config["data"]["val_file"] = f"{dataset_dir}/openai_val.jsonl"
+base_config["data"]["test_file"] = f"{dataset_dir}/openai_test.jsonl"
 
 # Override output dir for run isolation
-base_config["training"]["output_dir"] = f"./adapters/{run_name}"
+base_config["training"]["output_dir"] = f"./adapters/{experiment_name}"
 
 # Write run config
-run_config_path = f"config/train_config_{ratio}.yaml"
+run_config_path = f"config/train_config_{experiment_name}.yaml"
 yaml.dump(base_config, open(run_config_path, "w"))
 ```
 
@@ -307,14 +344,14 @@ result = dgx.validate(["toolbox", "config", "memory:70"])
 print(result.report())
 if not result.ok:
     for f in result.failures:
-        print(f"  FIX: {f.name} — {f.message}")
+        print(f"  FIX: {f.name} -- {f.message}")
     # STOP
 ```
 
-Also verify the ratio-specific training data exists:
+Also verify the experiment's training data exists:
 ```python
 from pathlib import Path
-train_file = Path(f"data/final_dataset/ratio_{ratio}/openai_train.jsonl")
+train_file = Path(f"{dataset_dir}/openai_train.jsonl")
 if not train_file.exists():
     print(f"ERROR: Training data not found: {train_file}")
     # STOP
@@ -327,11 +364,11 @@ ready = dgx.ensure_ready("unsloth_studio")
 print(ready.report())
 if not ready.ok:
     for f in ready.failures:
-        print(f"  ISSUE: {f.name} — {f.message}")
+        print(f"  ISSUE: {f.name} -- {f.message}")
     # STOP
 ```
 
-### Step 4: Download model (idempotent — shared across runs)
+### Step 4: Download model (idempotent -- shared across runs)
 
 **If `$TELEMETRY` and model not yet downloaded**, spawn observe-data-pipeline before download:
 
@@ -341,7 +378,7 @@ if $OBSERVE and not Path("models/Qwen3-30B-A3B/config.json").exists():
     DOWNLOAD_TDIR = f"telemetry/data-pipeline/{timestamp}"
     mkdir -p $DOWNLOAD_TDIR
 
-    # Invoke wp-finetune:observe-data-pipeline inline — spawn its 3 agents:
+    # Invoke wp-finetune:observe-data-pipeline inline -- spawn its 3 agents:
     Agent(model="sonnet", description="Telemetry: pipeline progress", prompt="...write to {DOWNLOAD_TDIR}/pipeline-progress.md...", run_in_background=true)
     Agent(model="sonnet", description="Telemetry: system resources", prompt="...write to {DOWNLOAD_TDIR}/system-resources.md...", run_in_background=true)
     Agent(model="sonnet", description="Telemetry: disk I/O", prompt="...write to {DOWNLOAD_TDIR}/disk-io.md...", run_in_background=true)
@@ -363,7 +400,7 @@ if $OBSERVE and DOWNLOAD_TDIR:
     touch $DOWNLOAD_TDIR/_stop   # agents write Final Summary and exit
 ```
 
-### Step 5: Extend tokenizer (idempotent — shared across runs)
+### Step 5: Extend tokenizer (idempotent -- shared across runs)
 
 ```python
 result = dgx.execute(
@@ -376,14 +413,14 @@ print(result.summary())
 
 ### Step 6: Dry run and warmup probe (per-run config)
 
-**6a: Dry run** — validates config without processing real data:
+**6a: Dry run** -- validates config without processing real data:
 
 ```python
 result = dgx.execute(
     "unsloth_studio",
     "python", "-m", "scripts.train_model",
     "--dry-run",
-    "--config", f"config/train_config_{ratio}.yaml",
+    "--config", f"config/train_config_{experiment_name}.yaml",
     capture=True,
 )
 print(result.stdout)
@@ -394,7 +431,7 @@ if not result.ok:
 
 **Present dry run output to user.** If it shows errors, fix them. If valid, proceed to 6b.
 
-**6b: Warmup probe** — only runs if `telemetry/training/_warmup_probe_required` exists (written by Step 8.5 adaptive-planner when a batch size increase was proposed).
+**6b: Warmup probe** -- only runs if `telemetry/training/_warmup_probe_required` exists (written by Step 8.5 adaptive-planner when a batch size increase was proposed).
 
 On DGX Spark unified memory, a failed batch size allocation can cause a driver-level deadlock (system freeze, no clean CUDA OOM). The warmup probe runs a small number of real training steps at the proposed batch size to confirm memory survives before committing to the full run.
 
@@ -405,7 +442,7 @@ if probe_flag.exists():
     probe_meta = json.loads(probe_flag.read_text())
     probe_steps = 5  # from config/adaptive_planning.yaml probe.steps
 
-    print(f"Warmup probe flagged — running {probe_steps} steps at batch_size={probe_meta['proposed_batch']}")
+    print(f"Warmup probe flagged -- running {probe_steps} steps at batch_size={probe_meta['proposed_batch']}")
 
     # Run training with the probe config (3-5 real steps)
     result = dgx.execute(
@@ -420,27 +457,27 @@ if probe_flag.exists():
         # Write probe results for adaptive-planner to evaluate in next Step 8.5
         import json
         from pathlib import Path
-        # Record success telemetry — read current memory state
+        # Record success telemetry -- read current memory state
         probe_results = {"status": "ok", "results_path": probe_meta["results_path"]}
         Path("telemetry/training/_probe_results.json").write_text(
             json.dumps(probe_results))
-        print(f"Probe PASSED — proceeding with batch_size={probe_meta['proposed_batch']}")
+        print(f"Probe PASSED -- proceeding with batch_size={probe_meta['proposed_batch']}")
     else:
-        # Probe failed — revert to rollback config
+        # Probe failed -- revert to rollback config
         import shutil
         shutil.copy(probe_meta["rollback_config_path"], "config/train_config.yaml")
-        print(f"Probe FAILED — reverted to previous batch size")
+        print(f"Probe FAILED -- reverted to previous batch size")
         # Re-run dry run with reverted config before proceeding
         dgx.execute("unsloth_studio", "python", "-m", "scripts.train_model",
-                    "--dry-run", "--config", f"config/train_config_{ratio}.yaml")
+                    "--dry-run", "--config", f"config/train_config_{experiment_name}.yaml")
 
-    # Always delete the flag — consumed regardless of outcome
+    # Always delete the flag -- consumed regardless of outcome
     probe_flag.unlink()
 
     # Log probe result
     with open("telemetry/training/adaptive_adjustments.md", "a") as f:
         status = "PASSED" if result.ok else "FAILED"
-        f.write(f"\n### Warmup probe ({status}) — {ratio}\n"
+        f.write(f"\n### Warmup probe ({status}) -- {experiment_name}\n"
                 f"- Proposed batch: {probe_meta['proposed_batch']}\n"
                 f"- Outcome: {'committed' if result.ok else 'reverted to rollback config'}\n")
 ```
@@ -451,11 +488,11 @@ if probe_flag.exists():
 
 ```python
 # Canonical thermal log path for this run
-THERMAL_LOG = f"telemetry/training/{model_short}_{date}_{ratio}_thermal.jsonl"
+THERMAL_LOG = f"telemetry/training/{experiment_name}_thermal.jsonl"
 Path(THERMAL_LOG).parent.mkdir(parents=True, exist_ok=True)
 ```
 
-**If `$OBSERVE`** — spawn full 6-agent observe-training team. The thermal and GPU agents append to both their markdown files AND `$THERMAL_LOG`:
+**If `$OBSERVE`** -- spawn full 6-agent observe-training team. The thermal and GPU agents append to both their markdown files AND `$THERMAL_LOG`:
 
 ```
 TRAIN_TDIR = f"telemetry/training/{timestamp}"
@@ -469,23 +506,23 @@ Agent(
     {\"ts\": \"...\", \"watts\": N_or_null, \"temperature_c\": N, \"gpu_util_pct\": N, \"mem_available_gb\": N, \"page_cache_gb\": N, \"mock\": false}
   LOOP (30s):
     1. nvidia-smi --query-gpu=memory.used,memory.total,utilization.gpu,temperature.gpu --format=csv,noheader,nounits
-    2. free -m | grep Mem → parse used and total system RAM
-    3. If nvidia-smi memory reports [N/A]: set vram_used_mb=null (unified memory — sys_ram IS GPU memory)
+    2. free -m | grep Mem -> parse used and total system RAM
+    3. If nvidia-smi memory reports [N/A]: set vram_used_mb=null (unified memory -- sys_ram IS GPU memory)
     4. Append to gpu-metrics.md AND {THERMAL_LOG}
     5. WARNING if memory > 90%. CRITICAL (warn+log only, do NOT stop training) if memory >= 98%.
        Memory issues are caught pre-training by Step 2 (validate memory >= 70GB) and Step 6 (dry run).
-       During training, memory CRITICAL is observational — the OS/driver will OOM-kill if truly exhausted.
+       During training, memory CRITICAL is observational -- the OS/driver will OOM-kill if truly exhausted.
     6. WARNING if util < 50% 3x.
-  STOP: {TRAIN_TDIR}/_stop exists → write Final Summary → exit.",
+  STOP: {TRAIN_TDIR}/_stop exists -> write Final Summary -> exit.",
   run_in_background=true
 )
 
-# Thermal/Throttling Observer (every 30s) — includes live thermal guard
+# Thermal/Throttling Observer (every 30s) -- includes live thermal guard
 Agent(
   description="Telemetry: thermal/throttling",
   prompt="You are a GPU thermal observer. Write to {TRAIN_TDIR}/thermal-throttling.md.
-  LOOP (30s): nvidia-smi temp/power/throttle → append. WARNING > 82C. CRITICAL >= 85C → touch {TRAIN_TDIR}/_thermal_pause.
-  STOP: {TRAIN_TDIR}/_stop exists → write Final Summary → exit.",
+  LOOP (30s): nvidia-smi temp/power/throttle -> append. WARNING > 82C. CRITICAL >= 85C -> touch {TRAIN_TDIR}/_thermal_pause.
+  STOP: {TRAIN_TDIR}/_stop exists -> write Final Summary -> exit.",
   run_in_background=true
 )
 
@@ -493,9 +530,9 @@ Agent(
 Agent(
   description="Telemetry: training metrics",
   prompt="You are a training metrics observer. Write to {TRAIN_TDIR}/training-metrics.md.
-  LOOP (60s): docker logs → grep loss/step/epoch. Check trainer_state.json, MLflow logs.
+  LOOP (60s): docker logs -> grep loss/step/epoch. Check trainer_state.json, MLflow logs.
   WARNING if loss increases 3x. CRITICAL if loss > 10 or grad_norm > 100.
-  STOP: {TRAIN_TDIR}/_stop exists → write Final Summary → exit.",
+  STOP: {TRAIN_TDIR}/_stop exists -> write Final Summary -> exit.",
   run_in_background=true
 )
 
@@ -504,7 +541,7 @@ Agent(
   description="Telemetry: disk I/O",
   prompt="You are a disk I/O observer. Write to {TRAIN_TDIR}/disk-io.md.
   LOOP (60s): iostat, df, du adapters/. WARNING if iowait > 20% or disk > 85%.
-  STOP: {TRAIN_TDIR}/_stop exists → write Final Summary → exit.",
+  STOP: {TRAIN_TDIR}/_stop exists -> write Final Summary -> exit.",
   run_in_background=true
 )
 
@@ -514,7 +551,7 @@ Agent(
   prompt="You are a checkpoint integrity observer. Write to {TRAIN_TDIR}/checkpoint-integrity.md.
   LOOP (5m): ls checkpoints, verify adapter_config.json valid, safetensors > 0 bytes, tokenizer present.
   WARNING if no new checkpoint in 30m. CRITICAL if 0-byte safetensors.
-  STOP: {TRAIN_TDIR}/_stop exists → write Final Summary → exit.",
+  STOP: {TRAIN_TDIR}/_stop exists -> write Final Summary -> exit.",
   run_in_background=true
 )
 
@@ -524,12 +561,12 @@ Agent(
   prompt="You are a container health observer. Write to {TRAIN_TDIR}/container-monitor.md.
   LOOP (60s): docker ps, docker stats, top processes, dmesg OOM check.
   WARNING if container not running. CRITICAL if OOM killer detected.
-  STOP: {TRAIN_TDIR}/_stop exists → write Final Summary → exit.",
+  STOP: {TRAIN_TDIR}/_stop exists -> write Final Summary -> exit.",
   run_in_background=true
 )
 ```
 
-**If `$MONITOR`** — spawn single lightweight agent that only writes to `$THERMAL_LOG`:
+**If `$MONITOR`** -- spawn single lightweight agent that only writes to `$THERMAL_LOG`:
 
 ```
 Agent(
@@ -541,13 +578,13 @@ Agent(
 
   LOOP (every 600 seconds):
   1. Run: nvidia-smi --query-gpu=power.draw,temperature.gpu,utilization.gpu --format=csv,noheader,nounits  (HOST, not docker exec)
-  2. Run: free -m | grep Mem → parse total, used, available system RAM (HOST)
+  2. Run: free -m | grep Mem -> parse total, used, available system RAM (HOST)
   3. Parse watts from power.draw, temperature_c from temperature.gpu, gpu_util_pct from utilization.gpu.
   4. Compute mem_available_gb = available / 1024, page_cache_gb from /proc/meminfo Cached / 1024 / 1024
   5. Append one JSONL line to {THERMAL_LOG}:
      {\"ts\": \"YYYY-MM-DDTHH:MM:SSZ\", \"watts\": N, \"temperature_c\": N, \"gpu_util_pct\": N, \"mem_available_gb\": N, \"page_cache_gb\": N, \"mock\": false}
   6. If temperature_c >= 83: also touch telemetry/training/_thermal_pause
-  7. Check if telemetry/training/_stop exists → exit
+  7. Check if telemetry/training/_stop exists -> exit
   8. Sleep 600 seconds, repeat
 
   STOP: telemetry/training/_stop file exists OR after 84 checks (14 hours).",
@@ -563,10 +600,10 @@ Check for existing checkpoints from a prior interrupted run. If found, pass `--r
 from pathlib import Path
 import re
 
-adapter_dir = Path(f"adapters/{run_name}")
+adapter_dir = Path(f"adapters/{experiment_name}")
 checkpoints = sorted(adapter_dir.glob("checkpoint-*"), key=lambda p: int(re.search(r"\d+", p.name).group())) if adapter_dir.exists() else []
 
-train_cmd = ["python", "-m", "scripts.train_model", "--config", f"config/train_config_{ratio}.yaml"]
+train_cmd = ["python", "-m", "scripts.train_model", "--config", f"config/train_config_{experiment_name}.yaml"]
 
 if checkpoints:
     latest_ckpt = checkpoints[-1]
@@ -577,12 +614,12 @@ if checkpoints:
 result = dgx.execute(
     "unsloth_studio",
     *train_cmd,
-    idempotency_check=f"adapters/{run_name}/adapter_config.json",
-    timeout=None,  # No timeout — training takes 6-12 hours
+    idempotency_check=f"adapters/{experiment_name}/adapter_config.json",
+    timeout=None,  # No timeout -- training takes 6-12 hours
 )
 print(result.summary())
 if not result.ok:
-    print(f"Training failed for {run_name}. Check MLflow logs: mlflow ui --backend-store-uri mlruns/")
+    print(f"Training failed for {experiment_name}. Check MLflow logs: mlflow ui --backend-store-uri mlruns/")
     print("To resume: run this skill again (idempotency will skip completed runs)")
 ```
 
@@ -596,7 +633,7 @@ if $MONITOR:
 
 # Check for live thermal guard trigger (both modes write this)
 if Path("telemetry/training/_thermal_pause").exists():
-    print("⚠ THERMAL EVENT detected during training — adaptive planning will apply CRITICAL backoff")
+    print("THERMAL EVENT detected during training -- adaptive planning will apply CRITICAL backoff")
     Path("telemetry/training/_thermal_pause").unlink()  # reset for next run
 ```
 
@@ -614,8 +651,8 @@ mkdir -p $MERGE_TDIR
 Agent(
   description="Telemetry: merge progress",
   prompt="You are a merge progress observer. Write to {MERGE_TDIR}/quantization-progress.md.
-  LOOP (2m): ps aux for merge process, nvidia-smi, check output files in models/{run_name}-merged/.
-  STOP: {MERGE_TDIR}/_stop exists → write Final Summary → exit.",
+  LOOP (2m): ps aux for merge process, nvidia-smi, check output files in models/{experiment_name}-merged/.
+  STOP: {MERGE_TDIR}/_stop exists -> write Final Summary -> exit.",
   run_in_background=true
 )
 
@@ -625,7 +662,7 @@ Agent(
   prompt="You are a file integrity observer. Write to {MERGE_TDIR}/file-integrity.md.
   LOOP (5m): verify config.json valid, safetensors > 0 bytes, special tokens in tokenizer.
   CRITICAL if 0-byte files or missing config. CRITICAL if wp_gen/wp_judge missing.
-  STOP: {MERGE_TDIR}/_stop exists → write Final Summary → exit.",
+  STOP: {MERGE_TDIR}/_stop exists -> write Final Summary -> exit.",
   run_in_background=true
 )
 
@@ -634,7 +671,7 @@ Agent(
   description="Telemetry: size tracking",
   prompt="You are a size tracking observer. Write to {MERGE_TDIR}/size-tracking.md.
   LOOP (2m): du -sh merged dir, df -h disk free. WARNING if disk free < 50GB.
-  STOP: {MERGE_TDIR}/_stop exists → write Final Summary → exit.",
+  STOP: {MERGE_TDIR}/_stop exists -> write Final Summary -> exit.",
   run_in_background=true
 )
 ```
@@ -645,14 +682,14 @@ Agent(
 result = dgx.execute(
     "unsloth_studio",
     "python", "-m", "scripts.merge_adapter",
-    "--adapter-dir", f"adapters/{run_name}",
-    "--output-dir", f"models/{run_name}-merged",
-    idempotency_check=f"models/{run_name}-merged/config.json",
+    "--adapter-dir", f"adapters/{experiment_name}",
+    "--output-dir", f"models/{experiment_name}-merged",
+    idempotency_check=f"models/{experiment_name}-merged/config.json",
 )
 print(result.summary())
 if not result.ok:
-    print(f"Merge failed. Adapter is safe at adapters/{run_name}/")
-    print(f"Fallback: serve with vLLM --lora-modules adapters/{run_name}")
+    print(f"Merge failed. Adapter is safe at adapters/{experiment_name}/")
+    print(f"Fallback: serve with vLLM --lora-modules adapters/{experiment_name}")
 ```
 
 **8c: Stop packaging telemetry.**
@@ -664,7 +701,7 @@ if $OBSERVE:
 
 **8d: Invoke review-telemetry to consolidate this run (observe mode only).**
 
-If `$OBSERVE`, invoke `wp-finetune:review-telemetry` inline — read all agent reports from this run's telemetry dirs and produce `_summary.md`:
+If `$OBSERVE`, invoke `wp-finetune:review-telemetry` inline -- read all agent reports from this run's telemetry dirs and produce `_summary.md`:
 
 ```
 # Review training telemetry
@@ -677,7 +714,7 @@ Read all .md files in $MERGE_TDIR
 Write: $MERGE_TDIR/_summary.md
 
 # Print summary to conversation
-print(f"Run {run_name} complete. Telemetry summary:")
+print(f"Run {experiment_name} complete. Telemetry summary:")
 print(f"  Training: {TRAIN_TDIR}/_summary.md")
 print(f"  Packaging: {MERGE_TDIR}/_summary.md")
 print(f"  Canonical thermal log: {THERMAL_LOG}")
@@ -685,12 +722,12 @@ print(f"  Canonical thermal log: {THERMAL_LOG}")
 
 If `$MONITOR` (no agent reports to review), just print the canonical log path:
 ```
-print(f"Run {run_name} complete. Thermal log: {THERMAL_LOG}")
+print(f"Run {experiment_name} complete. Thermal log: {THERMAL_LOG}")
 ```
 
 ### Step 8.5: Adaptive resource planning (between runs)
 
-**After each run's merge completes and before the next ratio starts**, invoke the adaptive-planner skill to analyze telemetry and adjust config for the next run.
+**After each run's merge completes and before the next experiment starts**, invoke the adaptive-planner skill to analyze telemetry and adjust config for the next run.
 
 **Requires `$TELEMETRY = true`.** If telemetry is disabled, skip this step entirely (config stays static across all runs).
 
@@ -698,7 +735,7 @@ print(f"Run {run_name} complete. Thermal log: {THERMAL_LOG}")
 Invoke skill: wp-finetune:adaptive-planner
   Variables:
     $THERMAL_LOG = {path to canonical JSONL for the completed run}
-    $RATIO = {current ratio just completed, e.g. "30_70"}
+    $EXPERIMENT = {current experiment just completed, e.g. "qwen3-30b_experiment_001_20260411"}
     $TELEMETRY = $TELEMETRY
 ```
 
@@ -715,10 +752,10 @@ If a warmup probe is required (`telemetry/training/_warmup_probe_required` exist
 - If probe passes: new batch size is committed for that run
 - If probe fails: config reverts to the pre-probe values and training proceeds safely
 
-**After Step 8.5**, regenerate the next ratio's config overlay using the updated base config before proceeding to Step 1 of the next ratio.
+**After Step 8.5**, regenerate the next experiment's config overlay using the updated base config before proceeding to Step 1 of the next experiment.
 
 > **Implementation note:** All decision logic (zone classification, ladder rungs, coupling, anchor lookups) lives in
-> `scripts/adaptive_planner.py` — a tested Python module created in Phase 06 Plan 01. The skill is a thin
+> `scripts/adaptive_planner.py` -- a tested Python module created in Phase 06 Plan 01. The skill is a thin
 > orchestration wrapper. Do NOT re-implement the algorithm here.
 
 #### 8.5 historical reference (deprecated inline implementation)
@@ -729,7 +766,7 @@ to implement new logic. The `scripts/adaptive_planner.py` module supersedes all 
 
 #### 8.5a: Collect metrics from canonical thermal log
 
-Read the canonical JSONL thermal log for the completed run. This file is the single source of truth — it contains readings from whichever collector was active (observe agents, lightweight monitor, or both).
+Read the canonical JSONL thermal log for the completed run. This file is the single source of truth -- it contains readings from whichever collector was active (observe agents, lightweight monitor, or both).
 
 ```python
 import json
@@ -742,8 +779,8 @@ for line in Path(THERMAL_LOG).read_text().splitlines():
         readings.append(json.loads(line))
 
 if not readings:
-    print(f"WARNING: No thermal data in {THERMAL_LOG} — skipping adaptive planning")
-    # Skip to next ratio
+    print(f"WARNING: No thermal data in {THERMAL_LOG} -- skipping adaptive planning")
+    # Skip to next experiment
 
 gpu_utils = [r["gpu_util_pct"] for r in readings]
 gpu_temps = [r["temperature_c"] for r in readings]
@@ -760,18 +797,18 @@ Compute:
 - `num_readings = len(readings)`
 - `sources = set(r.get("source", "unknown") for r in readings)`
 
-Memory (uses canonical GPUSampler schema — `mem_available_gb` from free -m):
+Memory (uses canonical GPUSampler schema -- `mem_available_gb` from free -m):
 - `min_available_gb = min(mem_available) if mem_available else 0`
 - `avg_available_gb = sum(mem_available) / len(mem_available) if mem_available else 0`
 - `avg_page_cache_gb = sum(page_cache) / len(page_cache) if page_cache else 0`
-- `mem_headroom_gb = min_available_gb` — available memory IS headroom on unified memory
+- `mem_headroom_gb = min_available_gb` -- available memory IS headroom on unified memory
 
-**Peak RAM with safety margin** (unified memory only — dataloader workers cause transient spikes between samples):
+**Peak RAM with safety margin** (unified memory only -- dataloader workers cause transient spikes between samples):
 - `safe_headroom_gb = min_available_gb`
 - On unified memory, **`safe_headroom_gb` is used for all scaling decisions**
 - The 10-min sample interval misses sub-minute spikes from worker buffer refills, so apply a **5 GB safety margin** on unified memory: `effective_headroom_gb = safe_headroom_gb - 5`
 
-**OOM detection** — check if the run died before completing:
+**OOM detection** -- check if the run died before completing:
 ```python
 # Check if training completed or was OOM-killed
 # Signs of OOM: GPU util drops to <10% in final readings while RAM is >95%
@@ -783,7 +820,7 @@ likely_oom = (
     any(a < 2.0 for a in final_mem_available)  # less than 2 GB available = likely OOM
 )
 ```
-If `likely_oom` is True, treat as a **memory CRITICAL** event — apply memory backoff (8.5d-mem) regardless of thermal zone.
+If `likely_oom` is True, treat as a **memory CRITICAL** event -- apply memory backoff (8.5d-mem) regardless of thermal zone.
 
 #### 8.5b: Update thermal history
 
@@ -796,7 +833,7 @@ from pathlib import Path
 history_file = Path("telemetry/training/thermal_history.json")
 history = json.loads(history_file.read_text()) if history_file.exists() else []
 
-config = yaml.safe_load(open(f"config/train_config_{ratio}.yaml"))
+config = yaml.safe_load(open(f"config/train_config_{experiment_name}.yaml"))
 
 # Classify thermal zone
 if peak_temp >= 83:
@@ -812,7 +849,7 @@ else:
 
 # Append this run's record
 history.append({
-    "ratio": ratio,
+    "experiment": experiment_name,
     "zone": zone,
     "peak_temp": peak_temp,
     "avg_temp": avg_temp,
@@ -840,21 +877,21 @@ history_file.write_text(json.dumps(history, indent=2))
 
 #### 8.5c: Apply thermal and memory safety rules
 
-**If `likely_oom` is True**, skip thermal scaling entirely and jump to **8.5d-mem (memory backoff)** — an OOM overrides all thermal decisions.
+**If `likely_oom` is True**, skip thermal scaling entirely and jump to **8.5d-mem (memory backoff)** -- an OOM overrides all thermal decisions.
 
-**Thermal zones** (GPU temperature in °C) — only applied when `likely_oom` is False:
+**Thermal zones** (GPU temperature in C) -- only applied when `likely_oom` is False:
 
 | Zone | Temp Range | Action |
 |------|-----------|--------|
-| CRITICAL | ≥ 85°C peak | **PAUSE.** Backoff to last WARM config (see 8.5d). Alert user. Wait for temp < 75°C before next run. |
-| HOT | 78-84°C peak | Reduce `batch_size` by 1 (min 1). Increase `grad_accum` to maintain eff_batch. Log warning. |
-| WARM | 72-77°C peak | Hold current config. This is the target zone — no changes needed. |
-| COOL | 65-71°C avg | Headroom available. Proceed to utilization scaling (8.5e). |
-| COLD | < 65°C avg | Significant headroom. Aggressive scaling in 8.5e. |
+| CRITICAL | >= 85C peak | **PAUSE.** Backoff to last WARM config (see 8.5d). Alert user. Wait for temp < 75C before next run. |
+| HOT | 78-84C peak | Reduce `batch_size` by 1 (min 1). Increase `grad_accum` to maintain eff_batch. Log warning. |
+| WARM | 72-77C peak | Hold current config. This is the target zone -- no changes needed. |
+| COOL | 65-71C avg | Headroom available. Proceed to utilization scaling (8.5e). |
+| COLD | < 65C avg | Significant headroom. Aggressive scaling in 8.5e. |
 
-#### 8.5d: CRITICAL backoff — restore last WARM config
+#### 8.5d: CRITICAL backoff -- restore last WARM config
 
-When a CRITICAL thermal event occurs, do NOT simply halve the batch size — instead, **restore the exact config from the last run that registered WARM**. This is the last known-safe operating point.
+When a CRITICAL thermal event occurs, do NOT simply halve the batch size -- instead, **restore the exact config from the last run that registered WARM**. This is the last known-safe operating point.
 
 ```python
 if zone == "CRITICAL":
@@ -866,24 +903,24 @@ if zone == "CRITICAL":
         new_batch = last_warm["batch_size"]
         new_accum = last_warm["grad_accum"]
         new_workers = last_warm["dataloader_num_workers"]
-        reason = f"CRITICAL backoff → restored config from {last_warm['ratio']} (last WARM: peak {last_warm['peak_temp']}°C)"
+        reason = f"CRITICAL backoff -> restored config from {last_warm['experiment']} (last WARM: peak {last_warm['peak_temp']}C)"
     else:
-        # No WARM history exists — fall back to conservative defaults
+        # No WARM history exists -- fall back to conservative defaults
         new_batch = max(config["training"]["per_device_train_batch_size"] // 2, 1)
         new_accum = max(eff_batch // new_batch, 1)
         new_workers = 4
-        reason = f"CRITICAL backoff → halved batch (no WARM history available)"
+        reason = f"CRITICAL backoff -> halved batch (no WARM history available)"
 
     # Alert user
     # Use AskUserQuestion:
     #   header: "THERMAL ALERT"
-    #   question: "GPU hit {peak_temp}°C during {ratio}. Backing off to last WARM config
-    #              (batch={new_batch}, accum={new_accum} from {last_warm['ratio']}).
+    #   question: "GPU hit {peak_temp}C during {experiment_name}. Backing off to last WARM config
+    #              (batch={new_batch}, accum={new_accum} from {last_warm['experiment']}).
     #              Continue?"
     #   options: "Continue with safe config" / "Abort remaining runs"
 
     # Wait for cooldown before next run
-    # Poll GPU temp every 30s until < 75°C
+    # Poll GPU temp every 30s until < 75C
 ```
 
 **If HOT:** Step down incrementally (not a full backoff):
@@ -892,7 +929,7 @@ elif zone == "HOT":
     new_batch = max(batch_size - 1, 1)
     new_accum = max(eff_batch // new_batch, 1)
     new_workers = workers  # keep unchanged
-    reason = f"HOT zone ({peak_temp}°C) — reduced batch by 1"
+    reason = f"HOT zone ({peak_temp}C) -- reduced batch by 1"
 ```
 
 #### 8.5d-mem: Memory backoff (OOM recovery)
@@ -911,34 +948,34 @@ if likely_oom:
         new_batch = last_safe["batch_size"]
         new_accum = last_safe["grad_accum"]
         new_workers = max(last_safe["dataloader_num_workers"] - 1, 2)  # step down 1 from last safe, floor 2
-        new_persistent_workers = True  # always enable after OOM — eliminates respawn spikes
+        new_persistent_workers = True  # always enable after OOM -- eliminates respawn spikes
         reason = (
-            f"OOM RECOVERY → restored config from {last_safe['ratio']} "
-            f"(batch={new_batch}, workers={last_safe['dataloader_num_workers']}→{new_workers}) "
+            f"OOM RECOVERY -> restored config from {last_safe['experiment']} "
+            f"(batch={new_batch}, workers={last_safe['dataloader_num_workers']}->{new_workers}) "
             f"+ persistent_workers=true"
         )
     else:
-        # No safe history — fall back to conservative defaults
+        # No safe history -- fall back to conservative defaults
         new_batch = 2
         new_accum = max(eff_batch // new_batch, 1)
         new_workers = 2
         new_persistent_workers = True
-        reason = "OOM RECOVERY → conservative defaults (no safe history available)"
+        reason = "OOM RECOVERY -> conservative defaults (no safe history available)"
 
     # Alert user
     # Use AskUserQuestion:
     #   header: "MEMORY ALERT"
-    #   question: "Run {ratio} appears to have been OOM-killed (GPU idle + RAM at {peak_ram_gb:.0f}/{mem_total_gb:.0f} GB).
+    #   question: "Run {experiment_name} appears to have been OOM-killed (GPU idle + RAM at {peak_ram_gb:.0f}/{mem_total_gb:.0f} GB).
     #              Restoring last safe config: batch={new_batch}, accum={new_accum}, workers={new_workers}, persistent_workers=true.
     #              Continue?"
     #   options: "Continue with safe config" / "Abort remaining runs"
 
-    # Skip 8.5e entirely — go straight to 8.5f
+    # Skip 8.5e entirely -- go straight to 8.5f
 ```
 
 #### 8.5e: Thermal exploitation ladder (only if thermal zone is COOL or COLD, and `likely_oom` is False)
 
-When thermal and memory headroom exist, exploit them using a **prioritized ladder** that applies zero-memory changes first, then low-memory changes, and only touches batch size as a last resort. Each rung is applied independently — multiple rungs can fire in one planning step.
+When thermal and memory headroom exist, exploit them using a **prioritized ladder** that applies zero-memory changes first, then low-memory changes, and only touches batch size as a last resort. Each rung is applied independently -- multiple rungs can fire in one planning step.
 
 ```python
 headroom = effective_headroom_gb if is_unified_memory else mem_headroom_gb
@@ -954,12 +991,12 @@ new_eval_steps = config["training"]["eval_steps"]
 
 **Rung 1: `prefetch_factor`** (near-zero memory cost, ~200 MB per worker per increment)
 
-Increases how many batches each worker pre-loads into the queue. Directly addresses GPU idle gaps between batch consumption and next batch arrival. Cost: ~200 MB × num_workers per +1 increment.
+Increases how many batches each worker pre-loads into the queue. Directly addresses GPU idle gaps between batch consumption and next batch arrival. Cost: ~200 MB x num_workers per +1 increment.
 
 ```python
 if avg_gpu_util < 80% and new_prefetch < 4:
-    new_prefetch = min(new_prefetch + 1, 4)  # cap at 4 — diminishing returns beyond this
-    reason_parts.append(f"prefetch_factor {config['training'].get('dataloader_prefetch_factor', 2)}→{new_prefetch} (reduce GPU idle gaps)")
+    new_prefetch = min(new_prefetch + 1, 4)  # cap at 4 -- diminishing returns beyond this
+    reason_parts.append(f"prefetch_factor {config['training'].get('dataloader_prefetch_factor', 2)}->{new_prefetch} (reduce GPU idle gaps)")
 ```
 
 **Rung 2: `save_steps`** (zero memory cost, reduces checkpoint write stalls)
@@ -968,8 +1005,8 @@ Each checkpoint save serializes ~3.3 GB adapter weights to disk, stalling the GP
 
 ```python
 if avg_gpu_util < 80% and new_save_steps < 400:
-    new_save_steps = min(new_save_steps * 2, 400)  # cap at 400 — watchdog covers the gap
-    reason_parts.append(f"save_steps {config['training']['save_steps']}→{new_save_steps} (fewer checkpoint stalls)")
+    new_save_steps = min(new_save_steps * 2, 400)  # cap at 400 -- watchdog covers the gap
+    reason_parts.append(f"save_steps {config['training']['save_steps']}->{new_save_steps} (fewer checkpoint stalls)")
 ```
 
 **Rung 3: `eval_steps`** (zero memory cost, reduces eval pauses)
@@ -979,10 +1016,10 @@ Eval runs the val set (~5K examples) in inference mode, pausing training. Less f
 ```python
 if avg_gpu_util < 80% and new_eval_steps < 200:
     new_eval_steps = min(new_eval_steps * 2, 200)  # cap at 200
-    reason_parts.append(f"eval_steps {config['training']['eval_steps']}→{new_eval_steps} (fewer eval pauses)")
+    reason_parts.append(f"eval_steps {config['training']['eval_steps']}->{new_eval_steps} (fewer eval pauses)")
 ```
 
-**Rung 4: Batch size +1** (last resort — model-scale-aware, requires warmup probe)
+**Rung 4: Batch size +1** (last resort -- model-scale-aware, requires warmup probe)
 
 Only attempted when rungs 1-3 are maxed out AND the model scale permits it. On unified memory (DGX Spark), a failed allocation can cause a driver-level deadlock (system freeze, no clean CUDA OOM), so batch scaling requires a **warmup probe** in Step 6 of the next run.
 
@@ -992,10 +1029,10 @@ The practical batch ceiling depends on model size (from DGX Spark UGC):
 
 | Model Scale | Params | Batch Ceiling | Min Headroom | Notes |
 |---|---|---|---|---|
-| Small | ≤1B | 64 | 15% of total | I/O bound — batch freely |
-| Medium | 1B-13B | 16 | 20% of total | Balanced — room to explore |
+| Small | <=1B | 64 | 15% of total | I/O bound -- batch freely |
+| Medium | 1B-13B | 16 | 20% of total | Balanced -- room to explore |
 | Large | 13B-30B | 8 | 25% of total | Model dominates |
-| XL | 30B+ | 4 | 30% of total | At the cliff — batch increase rarely safe |
+| XL | 30B+ | 4 | 30% of total | At the cliff -- batch increase rarely safe |
 
 The **85% memory ceiling rule** (stop before 85% of total memory) is the universal safety gate, but larger models need even more margin because their activation memory scales non-linearly with batch size.
 
@@ -1004,7 +1041,7 @@ import re
 
 # Detect model scale from model name or param count
 model_name = config["model"]["name"]  # e.g., "Qwen/Qwen3-30B-A3B"
-# Extract param count from name (e.g., "30B" → 30)
+# Extract param count from name (e.g., "30B" -> 30)
 param_match = re.search(r"(\d+)[Bb]", model_name)
 param_billions = int(param_match.group(1)) if param_match else 0
 
@@ -1024,7 +1061,7 @@ elif param_billions >= 1:
 else:
     batch_ceiling = 64
     min_headroom_pct = 0.15
-    scale_label = "Small (≤1B)"
+    scale_label = "Small (<=1B)"
 
 min_headroom_gb = mem_total_gb * min_headroom_pct
 mem_usage_pct = peak_ram_gb / mem_total_gb
@@ -1041,13 +1078,13 @@ if rungs_1_to_3_maxed and below_ceiling and has_headroom and below_85pct and gpu
         new_batch = proposed_batch
         new_accum = max(eff_batch // new_batch, 1)
         reason_parts.append(
-            f"batch_size {batch_size}→{new_batch} (scale={scale_label}, ceiling={batch_ceiling}, "
+            f"batch_size {batch_size}->{new_batch} (scale={scale_label}, ceiling={batch_ceiling}, "
             f"mem={mem_usage_pct:.0%}, headroom={headroom:.0f}/{min_headroom_gb:.0f} GB min, "
             f"util={avg_gpu_util:.0f}%); REQUIRES warmup probe in Step 6"
         )
 elif rungs_1_to_3_maxed and not below_ceiling:
     reason_parts.append(
-        f"batch_size held at {batch_size} (AT CEILING for {scale_label} — "
+        f"batch_size held at {batch_size} (AT CEILING for {scale_label} -- "
         f"UGC reports batch {batch_ceiling} is practical max for {param_billions}B model on Spark)"
     )
 elif rungs_1_to_3_maxed and not has_headroom:
@@ -1062,15 +1099,15 @@ elif rungs_1_to_3_maxed and not has_headroom:
 If no rungs fired (already well-utilized or no headroom):
 ```python
 if not reason_parts:
-    reason_parts.append(f"hold config (util={avg_gpu_util:.0f}%, headroom={headroom:.0f} GB — no changes needed)")
+    reason_parts.append(f"hold config (util={avg_gpu_util:.0f}%, headroom={headroom:.0f} GB -- no changes needed)")
 ```
 
-**Worker scaling** — adjust `dataloader_num_workers` conservatively:
-- Only increase workers if `avg_gpu_util < 70%` AND `headroom > 15` — low GPU util with tight memory means workers are NOT the bottleneck
+**Worker scaling** -- adjust `dataloader_num_workers` conservatively:
+- Only increase workers if `avg_gpu_util < 70%` AND `headroom > 15` -- low GPU util with tight memory means workers are NOT the bottleneck
 - Increase by 1 at a time (not doubling)
 - **Hard cap**: `min(cpu_count // 2, 6)` on unified memory, `min(cpu_count // 2, 16)` on discrete GPU
-- If `headroom < 5` for **2 consecutive runs**: **decrease** workers by 1 (min 2) — sustained memory pressure confirmed. A single run below 5 GB could be a transient spike; requiring 2 consecutive runs avoids unnecessary worker reduction that hurts GPU utilization.
-- The watchdog (2 GB threshold) handles acute within-run pressure — the planner handles structural cross-run trends.
+- If `headroom < 5` for **2 consecutive runs**: **decrease** workers by 1 (min 2) -- sustained memory pressure confirmed. A single run below 5 GB could be a transient spike; requiring 2 consecutive runs avoids unnecessary worker reduction that hurts GPU utilization.
+- The watchdog (2 GB threshold) handles acute within-run pressure -- the planner handles structural cross-run trends.
 
 ```python
 if is_unified_memory:
@@ -1087,20 +1124,20 @@ sustained_pressure = (
 
 if headroom < 5 and sustained_pressure:
     new_workers = max(workers - 1, 2)
-    reason_parts.append(f"workers {workers}→{new_workers} (sustained pressure: headroom <5 GB for 2 consecutive runs)")
+    reason_parts.append(f"workers {workers}->{new_workers} (sustained pressure: headroom <5 GB for 2 consecutive runs)")
 elif avg_gpu_util < 70% and headroom > 15 and workers < max_workers:
     new_workers = workers + 1
-    reason_parts.append(f"workers {workers}→{new_workers} (GPU starving, headroom OK)")
+    reason_parts.append(f"workers {workers}->{new_workers} (GPU starving, headroom OK)")
 else:
     new_workers = workers
 
 reason = "; ".join(reason_parts)
 ```
 
-**Persistent workers** — always preserve the current setting. If `dataloader_persistent_workers` was enabled (especially after an OOM recovery), never disable it automatically:
+**Persistent workers** -- always preserve the current setting. If `dataloader_persistent_workers` was enabled (especially after an OOM recovery), never disable it automatically:
 ```python
 new_persistent_workers = config["training"].get("dataloader_persistent_workers", False)
-# Once enabled, persistent_workers stays on — it stabilizes memory and improves GPU util
+# Once enabled, persistent_workers stays on -- it stabilizes memory and improves GPU util
 ```
 
 #### 8.5f: Apply and log adjustment
@@ -1129,20 +1166,20 @@ yaml.dump(base_config, open("config/train_config.yaml", "w"))
 
 # Log the adjustment
 adjustment_log = f"""
-### Adaptive adjustment after {ratio}
-- Thermal zone: {zone} (peak={peak_temp}°C, avg={avg_temp}°C)
+### Adaptive adjustment after {experiment_name}
+- Thermal zone: {zone} (peak={peak_temp}C, avg={avg_temp}C)
 - GPU util: avg={avg_gpu_util}%, peak={peak_gpu_util}%
 - Memory: peak={peak_ram_gb:.0f}/{mem_total_gb:.0f} GB, effective_headroom={effective_headroom_gb:.0f} GB [{'unified' if is_unified_memory else 'discrete VRAM'}]
 - OOM detected: {likely_oom}
 - Thermal ladder applied:
-  - prefetch_factor: {old_prefetch} → {new_prefetch} (rung 1)
-  - save_steps: {old_save} → {new_save_steps} (rung 2)
-  - eval_steps: {old_eval} → {new_eval_steps} (rung 3)
-  - batch_size: {old_batch} → {new_batch} (rung 4 — last resort)
-- grad_accum: {old_accum} → {new_accum}
-- eff_batch: {old_batch * old_accum} → {new_batch * new_accum}
-- workers: {old_workers} → {new_workers}
-- persistent_workers: {old_persistent} → {new_persistent_workers}
+  - prefetch_factor: {old_prefetch} -> {new_prefetch} (rung 1)
+  - save_steps: {old_save} -> {new_save_steps} (rung 2)
+  - eval_steps: {old_eval} -> {new_eval_steps} (rung 3)
+  - batch_size: {old_batch} -> {new_batch} (rung 4 -- last resort)
+- grad_accum: {old_accum} -> {new_accum}
+- eff_batch: {old_batch * old_accum} -> {new_batch * new_accum}
+- workers: {old_workers} -> {new_workers}
+- persistent_workers: {old_persistent} -> {new_persistent_workers}
 - thermal_history: {len(history)} runs recorded, {len([h for h in history if h['zone']=='WARM'])} WARM, {len([h for h in history if h.get('likely_oom')])} OOM
 - reason: {reason}
 """
@@ -1157,45 +1194,45 @@ print(adjustment_log)
 if new_batch > old_batch:
     # Write a flag file that Step 6 checks
     Path("telemetry/training/_warmup_probe_required").write_text(
-        f"batch_size increased {old_batch}→{new_batch} by adaptive planner\n"
+        f"batch_size increased {old_batch}->{new_batch} by adaptive planner\n"
         f"Run 1 real training step and verify MemAvailable > {OOM_WATCHDOG_THRESHOLD_MB} MB\n"
         f"If probe fails: revert to batch_size={old_batch}, grad_accum={old_accum}\n"
     )
-    print(f"  ⚠ Warmup probe flagged for next run (batch {old_batch}→{new_batch})")
+    print(f"  Warmup probe flagged for next run (batch {old_batch}->{new_batch})")
 ```
 
 **Step 6 warmup probe** (added behavior when `_warmup_probe_required` exists):
 
 After the normal dry run succeeds, if the warmup probe flag exists:
 1. Run `python -m scripts.train_model --config <run_config> --max-steps 1` (1 real step)
-2. Read `/proc/meminfo` → check `MemAvailable > 2048 MB`
+2. Read `/proc/meminfo` -> check `MemAvailable > 2048 MB`
 3. If OK: delete the flag, proceed to Step 7
 4. If OOM or `MemAvailable < 2048 MB`: revert batch_size in config, delete the flag, re-run dry run, proceed with safe config
 5. Log probe result to `adaptive_adjustments.md`
 
-**Then regenerate the next ratio's config overlay** using the updated base config before proceeding to Step 1 of the next ratio.
+**Then regenerate the next experiment's config overlay** using the updated base config before proceeding to Step 1 of the next experiment.
 
 #### 8.5g: Live thermal guard during training (Step 7)
 
 During long-running training (Step 7), the telemetry observer agents should also implement a **live thermal guard**:
 
-- If any check sees GPU temp ≥ 85°C: immediately touch `telemetry/training/_thermal_pause`
+- If any check sees GPU temp >= 85C: immediately touch `telemetry/training/_thermal_pause`
 - The orchestrator checks for `_thermal_pause` periodically (or after training completes)
 - If `_thermal_pause` exists when training ends (regardless of exit code):
   1. Record the thermal event in `thermal_history.json` and `adaptive_adjustments.md`
-  2. Apply CRITICAL backoff rules (8.5d) — restore last WARM config
+  2. Apply CRITICAL backoff rules (8.5d) -- restore last WARM config
   3. Ask user before continuing
 
 This ensures we never cook the GPU across multi-day sequential runs.
 
 #### Thermal history file format
 
-`telemetry/training/thermal_history.json` — append-only array of run records:
+`telemetry/training/thermal_history.json` -- append-only array of run records:
 
 ```json
 [
   {
-    "ratio": "30_70",
+    "experiment": "qwen3-30b_experiment_001_20260411",
     "zone": "COOL",
     "peak_temp": 70,
     "avg_temp": 65,
@@ -1218,7 +1255,7 @@ This ensures we never cook the GPU across multi-day sequential runs.
     "eff_batch": 16
   },
   {
-    "ratio": "40_60",
+    "experiment": "qwen3-30b_experiment_002_20260411",
     "zone": "COOL",
     "peak_temp": 79,
     "avg_temp": 68,
@@ -1243,7 +1280,7 @@ This ensures we never cook the GPU across multi-day sequential runs.
 ]
 ```
 
-This file persists across skill invocations — if the user re-runs `/run-training` after a context reset, the thermal history from prior runs is preserved and the adaptive logic picks up where it left off.
+This file persists across skill invocations -- if the user re-runs `/run-training` after a context reset, the thermal history from prior runs is preserved and the adaptive logic picks up where it left off.
 
 ### Step 9: Report (after all runs complete)
 
@@ -1252,11 +1289,11 @@ This file persists across skill invocations — if the user re-runs `/run-traini
 ```python
 status = dgx.status_report()
 print(f"\nTraining runs complete:")
-for ratio in selected_ratios:
-    run_name = f"qwen3-30b-wp-{ratio}"
-    adapter_exists = Path(f"adapters/{run_name}/adapter_config.json").exists()
-    merged_exists = Path(f"models/{run_name}-merged/config.json").exists()
-    print(f"  {run_name}: adapter={'✓' if adapter_exists else '✗'}  merged={'✓' if merged_exists else '✗'}")
+for exp in experiments:
+    experiment_name = exp["experiment_name"]
+    adapter_exists = Path(f"adapters/{experiment_name}/adapter_config.json").exists()
+    merged_exists = Path(f"models/{experiment_name}-merged/config.json").exists()
+    print(f"  {experiment_name}: adapter={'Y' if adapter_exists else 'N'}  merged={'Y' if merged_exists else 'N'}")
 ```
 
 **9b: Invoke final cross-run review-telemetry.**
@@ -1270,9 +1307,9 @@ Read telemetry/training/adaptive_adjustments.md
 
 # If $OBSERVE: also read per-run _summary.md files for richer data
 if $OBSERVE:
-    for each ratio in selected_ratios:
-        Read telemetry/training/{ratio_timestamp}/_summary.md
-        Read telemetry/packaging/{ratio_timestamp}/_summary.md
+    for each experiment in experiments:
+        Read telemetry/training/{experiment_timestamp}/_summary.md
+        Read telemetry/packaging/{experiment_timestamp}/_summary.md
         Extract: final_loss, training_duration, alerts
 
 # Write cross-run comparison summary
@@ -1280,20 +1317,20 @@ Write telemetry/training/cross_run_summary.md:
 
     # Cross-Run Training Summary
     ## Config Progression (adaptive resource planning)
-    | Run | Ratio | batch | accum | workers | Zone | Peak Temp | Avg Util | Duration |
-    |-----|-------|-------|-------|---------|------|-----------|----------|----------|
-    | 1   | 30/70 | 4     | 4     | 4       | COOL | 70°C      | 73%      | 33h      |
-    | 2   | 40/60 | 8     | 2     | 8       | WARM | 74°C      | 85%      | 18h      |
+    | Run | Experiment                          | batch | accum | workers | Zone | Peak Temp | Avg Util | Duration |
+    |-----|-------------------------------------|-------|-------|---------|------|-----------|----------|----------|
+    | 1   | qwen3-30b_experiment_001_20260411   | 4     | 4     | 4       | COOL | 70C       | 73%      | 33h      |
+    | 2   | qwen3-30b_experiment_002_20260411   | 8     | 2     | 8       | WARM | 74C       | 85%      | 18h      |
     | ... |
 
     ## Canonical Thermal Logs
-    {List all JSONL files: telemetry/training/{model}_{date}_{ratio}_thermal.jsonl}
+    {List all JSONL files: telemetry/training/{experiment_name}_thermal.jsonl}
 
     ## Alerts Across All Runs
     {Consolidated WARNING/CRITICAL events from _summary.md files (observe) or thermal logs (monitor)}
 
     ## Recommendations
-    {Which ratio had best loss? Any thermal concerns? Suggested eval order.}
+    {Which experiment had best loss? Any thermal concerns? Suggested eval order.}
 
 print(f"\nTelemetry reports: telemetry/training/")
 print(f"Cross-run summary: telemetry/training/cross_run_summary.md")
@@ -1304,7 +1341,7 @@ print(f"Adaptive adjustments: telemetry/training/adaptive_adjustments.md")
 **9c: Next steps.**
 
 ```
-print(f"\nNext: /wp-finetune:run-evaluation to compare model quality across ratios")
+print(f"\nNext: /wp-finetune:run-evaluation to compare model quality across experiments")
 ```
 
 ## Checkpoint Storage
@@ -1313,13 +1350,13 @@ Each training run produces isolated artifacts:
 
 ```
 adapters/
-  qwen3-30b-wp-30_70/       # LoRA adapter for 30/70 ratio
+  qwen3-30b_experiment_001_20260411/       # LoRA adapter for experiment 001
     adapter_config.json
     adapter_model.safetensors
     checkpoint-200/          # Intermediate checkpoints
     checkpoint-400/
     ...
-  qwen3-30b-wp-50_50/       # LoRA adapter for 50/50 ratio
+  qwen3-30b_experiment_002_20260411/       # LoRA adapter for experiment 002
     adapter_config.json
     adapter_model.safetensors
     ...
@@ -1327,21 +1364,21 @@ adapters/
 
 models/
   Qwen3-30B-A3B/             # Shared base model (not per-run)
-  qwen3-30b-wp-30_70-merged/  # Merged model for 30/70 ratio
-  qwen3-30b-wp-50_50-merged/  # Merged model for 50/50 ratio
+  qwen3-30b_experiment_001_20260411-merged/  # Merged model for experiment 001
+  qwen3-30b_experiment_002_20260411-merged/  # Merged model for experiment 002
   ...
 
 config/
-  train_config.yaml           # Base config
-  train_config_30_70.yaml     # Per-run config overlay
-  train_config_50_50.yaml     # Per-run config overlay
+  train_config.yaml                                  # Base config
+  train_config_qwen3-30b_experiment_001_20260411.yaml  # Per-run config overlay
+  train_config_qwen3-30b_experiment_002_20260411.yaml  # Per-run config overlay
   ...
 ```
 
-**Why isolated:** Each ratio produces a different model. Keeping them separate lets you:
-- Run eval on each to find the best ratio
-- Serve any model via vLLM (`--model models/qwen3-30b-wp-50_50-merged/`)
-- Roll back to any ratio without retraining
+**Why isolated:** Each experiment produces a different model. Keeping them separate lets you:
+- Run eval on each to find the best configuration
+- Serve any model via vLLM (`--model models/qwen3-30b_experiment_001_20260411-merged/`)
+- Roll back to any experiment without retraining
 - Compare MLflow runs side-by-side (`mlflow ui --backend-store-uri mlruns/`)
 
 ## Recovery Logic
@@ -1353,12 +1390,12 @@ config/
 | Deps missing | `validate(["deps:unsloth_studio"])` fails | `ensure_ready()` installs them |
 | OOM | `validate(["memory:70"])` fails | Report top consumers, suggest `docker stop` |
 | Download interrupted | `execute()` returns non-zero | Re-run (resume support built in) |
-| Training interrupted | `execute()` returns non-zero | Re-run skill — auto-detects checkpoints and passes `--resume` |
+| Training interrupted | `execute()` returns non-zero | Re-run skill -- auto-detects checkpoints and passes `--resume` |
 | Merge fails | `execute()` returns non-zero | Adapter is safe, suggest `--lora-modules` fallback |
 | GPU not accessible | `validate(["gpu:unsloth_studio"])` fails | Check container has `--gpus all` |
-| Previous run exists | Idempotency check finds adapter | Skip to next ratio |
+| Previous run exists | Idempotency check finds adapter | Skip to next experiment |
 
-**Key principle:** Every step is idempotent. Re-running the skill picks up where it left off — completed runs are skipped, interrupted runs resume from the latest checkpoint.
+**Key principle:** Every step is idempotent. Re-running the skill picks up where it left off -- completed runs are skipped, interrupted runs resume from the latest checkpoint.
 
 ## Telemetry Integration
 
@@ -1367,19 +1404,19 @@ Background telemetry agents (spawned by `/observe-training`) can poll:
 ```python
 dgx = get_toolbox()
 status = dgx.status_report()
-# status["containers"] — running container states
-# status["memory"] — system memory
-# status["artifacts"] — pipeline progress (what exists on disk)
-# status["execution_log"] — recent command results
-# status["endpoints"] — vLLM/LiteLLM URLs for inference monitoring
+# status["containers"] -- running container states
+# status["memory"] -- system memory
+# status["artifacts"] -- pipeline progress (what exists on disk)
+# status["execution_log"] -- recent command results
+# status["endpoints"] -- vLLM/LiteLLM URLs for inference monitoring
 ```
 
 ## Key Constraints
 
-- `load_in_4bit=False` — QLoRA off-limits for MoE
-- `output_router_logits=True` — MoE load balancing monitoring
-- `modules_to_save=["embed_tokens", "lm_head"]` — special token embeddings
-- Base config from `config/train_config.yaml`, per-run overlay in `config/train_config_{ratio}.yaml`
+- `load_in_4bit=False` -- QLoRA off-limits for MoE
+- `output_router_logits=True` -- MoE load balancing monitoring
+- `modules_to_save=["embed_tokens", "lm_head"]` -- special token embeddings
+- Base config from `config/train_config.yaml`, per-run overlay in `config/train_config_{experiment_name}.yaml`
 - All paths from `config/dgx_toolbox.yaml`
 - Adapter saved separately before merge (defense-in-depth)
 - Pinned versions: transformers==4.56.2, trl==0.24.0, datasets==4.3.0, bitsandbytes==0.48.0

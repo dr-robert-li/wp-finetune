@@ -33,7 +33,30 @@ WP_GEN_ID = 151669    # <wp_gen> token ID in extended tokenizer
 WP_JUDGE_ID = 151670  # <wp_judge> token ID in extended tokenizer
 PAD_TOKEN_ID = 151643  # Qwen3 pad token -- also accept tokenizer.pad_token_id at runtime
 
+# Legacy constant — kept for backward compat with tests/imports. New code
+# should use discover_dataset_dirs() instead.
 RATIO_ORDER = ["30_70", "40_60", "50_50", "60_40", "70_30"]
+
+
+def discover_dataset_dirs(final_dataset_dir: Path) -> dict[str, str]:
+    """Auto-discover dataset directories containing openai_train.jsonl.
+
+    Searches both the root directory and any subdirectories (ratio_*, experiment_*, etc.).
+    Returns dict mapping directory name to the openai_train.jsonl path.
+    """
+    results = {}
+    # Check root
+    root_train = final_dataset_dir / "openai_train.jsonl"
+    if root_train.exists():
+        results["current"] = str(root_train)
+    # Check subdirectories
+    if final_dataset_dir.exists():
+        for d in sorted(final_dataset_dir.iterdir()):
+            if d.is_dir():
+                train_file = d / "openai_train.jsonl"
+                if train_file.exists():
+                    results[d.name] = str(train_file)
+    return results
 
 logger = logging.getLogger(__name__)
 
@@ -581,14 +604,12 @@ def main():
     # Load extended tokenizer (NOT base tokenizer)
     tokenizer = AutoTokenizer.from_pretrained(str(tokenizer_path))
 
-    # Build ratio data paths
-    ratio_data_paths = {}
-    for ratio in RATIO_ORDER:
-        data_path = project_root / "data" / "final_dataset" / f"ratio_{ratio}" / "openai_train.jsonl"
-        if data_path.exists():
-            ratio_data_paths[ratio] = str(data_path)
-        else:
-            print(f"Warning: ratio {ratio} data not found at {data_path}")
+    # Auto-discover dataset directories (ratio_*, experiment_*, root)
+    ratio_data_paths = discover_dataset_dirs(project_root / "data" / "final_dataset")
+    if not ratio_data_paths:
+        print("ERROR: No dataset directories with openai_train.jsonl found")
+        sys.exit(1)
+    print(f"Discovered {len(ratio_data_paths)} dataset(s): {list(ratio_data_paths.keys())}")
 
     # Load model in bfloat16
     from transformers import AutoModelForCausalLM
