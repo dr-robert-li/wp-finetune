@@ -52,6 +52,19 @@ def extract_instruction_from_docblock(docblock: str) -> str:
     # Skip if it's just the function name repeated or too short
     if len(description) < 10:
         return ""
+    # Skip degenerate docblocks that teach nothing about intent
+    degenerate = {
+        "constructor", "constructor.", "destructor", "destructor.",
+        "init", "init.", "initialize", "initialize.",
+        "setup", "setup.", "register", "register.",
+        "{@inheritdoc}", "{@inheritDoc}",
+        "render", "render.", "display", "display.",
+    }
+    if description.lower().strip(".") in {d.strip(".") for d in degenerate}:
+        return ""
+    # Skip single-word descriptions
+    if " " not in description.strip():
+        return ""
     return description
 
 
