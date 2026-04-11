@@ -1,7 +1,7 @@
 data:
-  test_file: data/final_dataset/ratio_30_70/openai_test.jsonl
-  train_file: data/final_dataset/ratio_30_70/openai_train.jsonl
-  val_file: data/final_dataset/ratio_30_70/openai_val.jsonl
+  test_file: data/final_dataset/openai_test.jsonl
+  train_file: data/final_dataset/openai_train.jsonl
+  val_file: data/final_dataset/openai_val.jsonl
 eval:
   gen_dimension_targets:
     D2_security: 0.95
