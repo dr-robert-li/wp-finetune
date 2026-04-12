@@ -1176,11 +1176,11 @@ def run_triage(force: bool = False) -> bool:
     print("\n" + "=" * 60)
     print(f"TRIAGE RESULT: STATUS={triage_result.status}")
     print(f"Survivors:  {', '.join(triage_result.survivors) if triage_result.survivors else 'NONE'}")
-    print(f"Best ratio: {triage_result.best_ratio or 'N/A'}")
+    print(f"Best experiment: {triage_result.best_experiment or 'N/A'}")
     if triage_result.eliminated:
         print("Eliminated:")
         for e in triage_result.eliminated:
-            print(f"  - {e['ratio']}: {e['reason']}")
+            print(f"  - {e.get('experiment', e.get('ratio', '?'))}: {e['reason']}")
     print(f"wp-bench available: {triage_result.wpbench_available}")
     print(f"Triage decision written to: {triage_output}")
     print("=" * 60 + "\n")
