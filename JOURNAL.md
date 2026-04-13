@@ -4,6 +4,72 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-04-13 — Full pipeline cascade: from data rot to retrained model to humbling eval
+
+### What happened in 5 days
+
+What was supposed to be "run Phase 4.1 bulk generation, then proceed to 4.2" turned into a full pipeline cascade — re-extraction, re-judging, re-generation, data quality fixes, retraining, and eval. 50 commits. The trigger was discovering the training data I'd been building on was rotten.
+
+### The cross-AI review that stopped everything
+
+I ran the training dataset through a cross-AI quality review (Gemini + Claude) before training experiment_001. The verdict was WEAK — do not train. The findings:
+
+- **75% judge training duplication.** 8,525 of 11,400 judge examples were near-identical. The agents had templated scores instead of analysing each function individually. The model would have memorised a modal score vector, not learned to judge.
+- **Gen instructions too weak.** Function name only, no intent or context. "Create a function called `get_posts`" teaches the model nothing about *why* the function exists.
+- **Score dead zone 65-79.** Bimodal distribution — everything clustered at either 50-60 or 90-100. No intermediate examples for the model to calibrate against.
+
+I'd been focused on volume (scaling to 11K+ judge examples) when the real problem was signal quality. More data of the same low quality would have made the model confidently wrong.
+
+### The cascade that followed
+
+Fixing the data quality meant touching everything upstream:
+
+1. **`::class` extraction bug.** Found during re-extraction — PHP `::class` constants were being parsed as class declarations, corrupting function boundaries. Re-extracted all 204 repos from scratch.
+2. **Replaced all Anthropic API calls with Claude Code agents.** The API-based pipeline was producing templated outputs (the root cause of the 75% duplication). Claude Code agents with full context produce genuine per-function analysis. Removed 980 lines, added 492. Zero `anthropic` imports remain.
+3. **Re-judged all repos** with real Claude Code agents instead of API batch calls.
+4. **Re-ran Phase 2** (synthetic judge training) and **Phase 4.1** (CoT + CtF) on the clean data.
+5. **Enriched gen instructions** from docblocks and metadata — functions now carry intent, not just names.
+6. **AI-calibrated training targets** replaced hardcoded caps. The orchestrator now discovers judge training examples by metadata, not file globs.
+
+### The CtF bogus-fix problem
+
+During the Phase 4.1 critique-then-fix generation, the audit caught a systematic failure: agents were producing "fixes" that were just the original code with cosmetic changes (variable renames, comment additions) while claiming they'd fixed security issues. The merge gate's quality checks caught these — `differs >= 0.95` rejected them — but I had to tighten the source filter to only use defect-confirmed Phase 1 failures and regenerate the entire CtF bulk. Two regeneration cycles before the output passed audit (17/20 cross-AI, 20/20 human).
+
+This taught me that CtF is the hardest generation task. CoT reasoning about *why* code is bad is easier for agents than producing *actually correct fixes*. The fix must compile, pass lint, and be meaningfully different from the input. Agents that can articulate a security problem will still produce a "fix" that doesn't actually address it.
+
+### Experiment_001: retrained on clean data
+
+After the cascade, the clean dataset: 15,358 train + 1,919 val examples. Trained on DGX Spark for 14.4 hours (2 epochs, loss 0.298). The training itself was uneventful — the work was in the data.
+
+### Eval results: humbling
+
+The full eval (1,921 examples, 13.3 hours) showed:
+
+| Metric | experiment_001 | Previous 30/70 | Change |
+|--------|---------------|----------------|--------|
+| PHPCS | 91.8% | 100% | -8.2pp |
+| Security | 100% | 100% | — |
+| Judge parse rate | 13.2% | 99.4% | -86.2pp |
+| Spearman | 0.096 (p=0.23) | 0.570 (p=0.000) | -0.474 |
+
+Gen quality dropped below the 95% PHPCS gate. But the real problem is judge: only 13.2% of judge outputs parse (157/1,189). The previous 30/70 had 99.4% parse rate. The model produces `<think></think>` tags followed by JSON, but 87% of outputs fail the parser.
+
+The 64-example investigation (first 500 test examples) showed all 64 judge examples *do* parse — the 87% failure rate is concentrated in a specific subset. Score compression is visible: model clusters at 70-79 (mean 77.9) vs GT at 90-99 (mean 89.6). Systematic -12 point underscore. Variance is preserved (stdev 5.4 vs 5.5) but the mean is shifted down — the model learned rank ordering but not scale.
+
+### What I learned
+
+1. **Data quality reviews before training are non-negotiable.** The cross-AI review saved me from training on 75% duplicate data. The 14.4 hours of training time would have been wasted. This should be a permanent gate in the pipeline.
+
+2. **Agent-generated data requires the same scrutiny as the model itself.** I treated the Claude Code agents as reliable data factories. They're not — they template, they produce bogus fixes, they duplicate. Every generation step needs a quality gate with measurable thresholds, not just "run and hope."
+
+3. **The cascade problem is real.** A bug in Phase 1 extraction (`::class`) propagated through every downstream phase. The entire pipeline had to re-run. This argues for checksums and provenance tracking at every stage — which the Phase 4.1 hardening (SHA-256 manifests, contamination checks) now provides.
+
+4. **Judge capability regressed despite cleaner data.** This is the most concerning finding. The original 30/70 trained on the "rotten" data had better judge metrics. Either the data fixes removed something the judge pathway needed, or the experiment_001 configuration differs in a way that hurts judge learning. Investigation needed — possibly the experiment naming refactor changed the training mix in a way that reduced judge example proportion.
+
+5. **CtF is harder than CoT.** Reasoning about defects is a different (and easier) capability than producing correct fixes. The generation pipeline needs separate quality thresholds for each stream.
+
+---
+
 ## 2026-04-08 — Phase 4.1 bulk generation underway; plans hardened against council review
 
 ### Bulk generation commenced
