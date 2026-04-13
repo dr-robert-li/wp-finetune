@@ -305,9 +305,13 @@ def run_eval(
 
     # Per-example debug records
     pair_records: list[dict] = []
+    skipped_records: list[dict] = []
 
-    # JSONL output path (sibling of main output)
+    # JSONL output paths (siblings of main output)
     pairs_path = Path(output_path).with_suffix(".pairs.jsonl")
+    skipped_path = Path(output_path).with_name(
+        Path(output_path).stem + "_skipped.jsonl"
+    )
 
     for i, example in enumerate(examples):
         messages = example["messages"]
@@ -329,17 +333,31 @@ def run_eval(
         except Exception as e:
             print(f"  [{i}] Model error: {e}", file=sys.stderr)
             skipped += 1
+            skipped_records.append({
+                "index": i, "reason": "api_error",
+                "error": str(e)[:500], "response": "",
+            })
             continue
 
         # Parse dimension scores from response
         parsed = parse_judge_response(generated)
         if parsed is None or "overall_score" not in parsed:
             skipped += 1
+            skipped_records.append({
+                "index": i, "reason": "parse_fail",
+                "response": generated[:2000],
+                "parsed_keys": list(parsed.keys()) if parsed else None,
+            })
             continue
 
         model_overall = parsed.get("overall_score")
         if not isinstance(model_overall, (int, float)):
             skipped += 1
+            skipped_records.append({
+                "index": i, "reason": "type_error",
+                "response": generated[:500],
+                "overall_score_value": repr(model_overall),
+            })
             continue
 
         # Ground truth: extract from test example's assistant response.
@@ -463,6 +481,19 @@ def run_eval(
         for rec in pair_records:
             pf.write(json.dumps(rec) + "\n")
     print(f"Per-example pairs saved to {pairs_path}", file=sys.stderr)
+
+    # Save skipped examples JSONL for diagnostic analysis
+    if skipped_records:
+        with skipped_path.open("w") as sf:
+            for rec in skipped_records:
+                sf.write(json.dumps(rec) + "\n")
+        # Print skip reason summary
+        reasons = {}
+        for rec in skipped_records:
+            r = rec["reason"]
+            reasons[r] = reasons.get(r, 0) + 1
+        print(f"Skipped {len(skipped_records)} examples: {reasons}", file=sys.stderr)
+        print(f"Skipped details saved to {skipped_path}", file=sys.stderr)
 
     # Print human-readable correlation table to stderr
     _print_correlation_table(summary)
