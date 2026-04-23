@@ -1,0 +1,602 @@
+[
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_UI::__construct",
+    "code": "function __construct() {\n\t\t$this->google_api_key_option     = A3_RESPONSIVE_SLIDER_KEY . '_google_api_key';\n\t\t$this->google_map_api_key_option = A3_RESPONSIVE_SLIDER_KEY . '_google_map_api_key';\n\t\t$this->toggle_box_open_option    = A3_RESPONSIVE_SLIDER_KEY . '_toggle_box_open';\n\t\t$this->version_transient         = A3_RESPONSIVE_SLIDER_KEY . '_licinfo';\n\n\t\tif ( defined( 'A3_RESPONSIVE_SLIDER_G_FONTS' ) ) {\n\t\t\t$this->is_load_google_fonts = (boolean) A3_RESPONSIVE_SLIDER_G_FONTS;\n\t\t}\n\n\t\t$this->support_url = 'https://wordpress.org/support/plugin/a3-responsive-slider/';\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Follows WP coding standards: uses defined() checks, boolean casting, proper option key naming conventions."},
+        "sql_safety": {"score": 9, "analysis": "No SQL queries. Uses get_option/get_transient which are safe WP API calls."},
+        "security": {"score": 7, "analysis": "Uses get_magic_quotes_gpc() which is deprecated in PHP 5.4+ and removed in 7.0 — harmless but outdated. No sensitive data handling issues."},
+        "performance": {"score": 8, "analysis": "O(1) constructor with no heavy operations. Lightweight property assignments only."},
+        "wp_api_usage": {"score": 7, "analysis": "Uses defined() and proper constant naming. Good use of WP option key prefixes."},
+        "code_quality": {"score": 7, "analysis": "Clean initialization logic. Magic quotes check is legacy dead code but no functional impact."},
+        "dependency_integrity": {"score": 7, "analysis": "References A3_RESPONSIVE_SLIDER_KEY and A3_RESPONSIVE_SLIDER_G_FONTS constants which are defined elsewhere in the plugin."},
+        "i18n": {"score": 9, "analysis": "No user-facing strings in constructor. Support URL is external resource, not a translatable string."},
+        "accessibility": {"score": 9, "analysis": "Constructor has no UI output. No accessibility concerns."}
+      },
+      "overall_score": 80,
+      "key_observation": "Clean constructor with legacy get_magic_quotes_gpc() check that is harmless dead code on modern PHP."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 2,
+      "grounded_citations": 2,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_UI::admin_pages",
+    "code": "function admin_pages() {\n\t\t$admin_pages = apply_filters( $this->plugin_name . '_admin_pages', $this->admin_pages );\n\n\t\treturn (array)$admin_pages;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Proper WP filter usage with correct naming convention."},
+        "sql_safety": {"score": 9, "analysis": "No SQL. Pure PHP array manipulation."},
+        "security": {"score": 8, "analysis": "No user input processed. Return type casting prevents type confusion."},
+        "performance": {"score": 9, "analysis": "O(n) filter application on small admin_pages array. Negligible overhead."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct use of apply_filters with plugin-prefixed filter name."},
+        "code_quality": {"score": 8, "analysis": "Concise, single-responsibility method. Type casting for safety."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on $this->admin_pages being initialized in __construct."},
+        "i18n": {"score": 9, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 9, "analysis": "Backend data accessor, no UI concerns."}
+      },
+      "overall_score": 84,
+      "key_observation": "Minimal, well-formed filter hook passthrough with defensive type casting."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_UI::is_valid_google_map_api_key",
+    "code": "function is_valid_google_map_api_key( $cache=true ) {\n\t\t$is_valid = false;\n\n\t\t$this->google_map_api_key  = get_option( $this->google_map_api_key_option, '' );\n\t\t$google_map_api_key_enable = get_option( $this->google_map_api_key_option . '_enable', 0 );\n\n\t\tif ( '' != trim( $this->google_map_api_key ) && 1 == $google_map_api_key_enable ) {\n\n\t\t\t$google_map_api_key_status = get_transient( $this->google_map_api_key_option . '_status' );\n\n\t\t\tif ( ! $cache ) {\n\t\t\t\t$google_map_api_key_status = null;\n\t\t\t}\n\n\t\t\tif ( ! $google_map_api_key_status ) {\n\t\t\t\t$is_valid = $this->validate_google_map_api_key( $this->google_map_api_key );\n\t\t\t} elseif ( 'valid' == $google_map_api_key_status ) {\n\t\t\t\t$is_valid = true;\n\t\t\t}\n\n\t\t}\n\n\t\treturn $is_valid;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Uses == instead of === for comparison per WP standards. trim() on get_option result is reasonable."},
+        "sql_safety": {"score": 8, "analysis": "Uses WP get_option/get_transient which are safe. No raw SQL."},
+        "security": {"score": 6, "analysis": "Cache invalidation via non-cache path is logically sound. The function correctly validates API key without exposing it. Note: the method name lacks 'is_' or 'has_' prefix consistency but this is minor."},
+        "performance": {"score": 7, "analysis": "Caching logic is good but the non-cache path sets transient to null rather than deleting it, which means get_transient may return false on next call. The logic works but is slightly inconsistent."},
+        "wp_api_usage": {"score": 7, "analysis": "Proper use of get_option and get_transient. Cache bypass via null assignment is non-standard but functionally correct."},
+        "code_quality": {"score": 6, "analysis": "The cache bypass pattern (setting transient to null instead of delete_transient) is a code smell. Should use delete_transient for clarity."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on validate_google_map_api_key which makes wp_remote_get to Google Maps API."},
+        "i18n": {"score": 9, "analysis": "No user-facing strings in this validation function."},
+        "accessibility": {"score": 9, "analysis": "Backend logic only, no UI concerns."}
+      },
+      "overall_score": 73,
+      "key_observation": "Cache bypass uses null assignment instead of delete_transient — functionally works but is non-standard WP pattern."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 2,
+      "grounded_citations": 2,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_UI::validate_google_map_api_key",
+    "code": "function validate_google_map_api_key( $g_key = '' ) {\n\t\t$g_key = trim( $g_key );\n\t\t$is_valid = false;\n\n\t\tif ( ! empty( $g_key ) ) {\n\t\t\t$respone_api = wp_remote_get( \"https://maps.googleapis.com/maps/api/geocode/json?address=Australia&key=\" . $g_key,\n\t\t\t\tarray(\n\t\t\t\t\t'sslverify' => false,\n\t\t\t\t\t'timeout'   => 45\n\t\t\t\t)\n\t\t\t);\n\n\t\t\t$response_map = array();\n\n\t\t\t// Check it is a valid request\n\t\t\tif ( ! is_wp_error( $respone_api ) ) {\n\n\t\t\t\t$json_string = version_compare( PHP_VERSION, '7.4', '>=' ) || get_magic_quotes_gpc() ? stripslashes( $respone_api['body'] ) : $respone_api['body']; // @codingStandardsIgnoreLine // phpcs:ignore\n\t\t\t\t$response_map = json_decode( $json_string, true );\n\n\t\t\t\t// Make sure that the valid response from google is not an error message\n\t\t\t\tif ( ! isset( $response_map['error_message'] ) ) {\n\t\t\t\t\t$is_valid = true;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tif ( $is_valid ) {\n\t\t\t\t$google_map_api_key_status = 'valid';\n\t\t\t} else {\n\t\t\t\t$google_map_api_key_status = 'invalid';\n\t\t\t}\n\n\t\t\t//caching google map api status for 24 hours\n\t\t\tset_transient( $this->google_map_api_key_option . '_status', $google_map_api_key_status, 86400 );\n\t\t}\n\n\t\treturn $is_valid;\n\t}",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 5, "analysis": "Variable name typo 'respone_api' instead of 'response_api'. Uses get_magic_quotes_gpc() which was removed in PHP 7.0. The version_compare check for PHP 7.4+ is incorrect — stripslashes on JSON is only needed for magic_quotes, not PHP version."},
+        "sql_safety": {"score": 9, "analysis": "No SQL. Uses wp_remote_get safely."},
+        "security": {"score": 3, "analysis": "CRITICAL: sslverify => false disables SSL certificate verification for external API call. This allows man-in-the-middle attacks on API key validation. Also exposes API key in URL query string. The stripslashes logic is incorrect — json_decode handles escaped content natively regardless of PHP version."},
+        "performance": {"score": 6, "analysis": "45s timeout is excessive for API validation. The transient caching helps amortize the cost. wp_remote_get is blocking."},
+        "wp_api_usage": {"score": 5, "analysis": "sslverify should never be false in production. json_decode should handle JSON body directly without stripslashes."},
+        "code_quality": {"score": 5, "analysis": "Typo in variable name (respone_api). Magic quotes handling is dead code on PHP 7+. Incorrect version_compare logic for stripslashes. The condition is overly complex."},
+        "dependency_integrity": {"score": 6, "analysis": "Depends on external Google Maps API being available. No fallback if API is unreachable."},
+        "i18n": {"score": 8, "analysis": "No user-facing strings. Error messages are stored as constants in transient."},
+        "accessibility": {"score": 9, "analysis": "Backend validation, no UI concerns."}
+      },
+      "overall_score": 45,
+      "key_observation": "Critical security flaw: sslverify=false on external API call combined with incorrect magic_quotes handling dead code."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 3,
+      "grounded_citations": 3,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_UI::update_google_map_api_key",
+    "code": "function update_google_map_api_key() {\n\t\tif ( ! current_user_can( 'manage_options' ) ) {\n\t\t\treturn false;\n\t\t}\n\n\t\tcheck_admin_referer( 'save_settings_' . $this->plugin_name );\n\n\t\t// Enable Google Map API Key\n\t\tif ( isset( $_POST[ $this->google_map_api_key_option . '_enable' ] ) ) {\n\n\t\t\t$old_google_map_api_key_enable = get_option( $this->google_map_api_key_option . '_enable', 0 );\n\n\t\t\tupdate_option( $this->google_map_api_key_option . '_enable', 1 );\n\n\t\t\t$option_value = trim( sanitize_text_field( wp_unslash( $_POST[ $this->google_map_api_key_option ] ) ) );\n\t\t\tupdate_option( $this->google_map_api_key_option, $option_value );\n\n\t\t\tif ( 1 != $old_google_map_api_key_enable ) {\n\t\t\t\t// Clear cached of google map api key status\n\t\t\t\tdelete_transient( $this->google_map_api_key_option . '_status' );\n\t\t\t}\n\n\t\t// Disable Google Map API Key\n\t\t} elseif ( isset( $_POST[ $this->google_map_api_key_option ] ) ) {\n\t\t\t$old_google_map_api_key_enable = get_option( $this->google_map_api_key_option . '_enable', 0 );\n\n\t\t\tupdate_option( $this->google_map_api_key_option . '_enable', 0 );\n\n\t\t\t$option_value = trim( sanitize_text_field( wp_unslash( $_POST[ $this->google_map_api_key_option ] ) ) );\n\t\t\tupdate_option( $this->google_map_api_key_option, $option_value );\n\n\t\t\tif ( 0 != $old_google_map_api_key_enable ) {\n\t\t\t\t// Clear cached of google map api key status\n\t\t\t\tdelete_transient( $this->google_map_api_key_option . '_status' );\n\t\t\t}\n\t\t}\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Uses check_admin_referer and current_user_can. wp_unslash with sanitize_text_field is correct WP pattern."},
+        "sql_safety": {"score": 8, "analysis": "Uses update_option which is the WP-safe way to store data."},
+        "security": {"score": 7, "analysis": "Has nonce check and capability check. Uses wp_unslash and sanitize_text_field on $_POST data. However, there is code duplication between enable/disable branches that could be consolidated."},
+        "performance": {"score": 7, "analysis": "Two get_option calls and two update_option calls in the disable branch are redundant. Could be optimized."},
+        "wp_api_usage": {"score": 7, "analysis": "Correct use of current_user_can, check_admin_referer, sanitize_text_field, wp_unslash, update_option, delete_transient."},
+        "code_quality": {"score": 5, "analysis": "Significant code duplication between enable and disable branches. The option_value assignment logic is identical in both branches. Should be refactored."},
+        "dependency_integrity": {"score": 7, "analysis": "Correctly deletes transient after option change, maintaining cache consistency."},
+        "i18n": {"score": 9, "analysis": "No user-facing strings. All logic is internal."},
+        "accessibility": {"score": 9, "analysis": "Backend function, no UI concerns."}
+      },
+      "overall_score": 72,
+      "key_observation": "Correct security checks but significant code duplication between enable/disable branches that should be consolidated."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 2,
+      "grounded_citations": 2,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_UI::get_premium_video_data",
+    "code": "function get_premium_video_data() {\n\t\t$premium_video_data = array(\n\t\t\t\t'box_title'    => __( 'Premium Version Enhanced Features', 'a3-responsive-slider' ),\n\t\t\t\t'image_url'    => A3_RESPONSIVE_SLIDER_IMAGES_URL. '/video.jpg',\n\t\t\t\t'video_url'    => 'https://www.youtube.com/embed/9dGw-ORfMIk?version=3&autoplay=1',\n\t\t\t\t'left_title'   => __( 'Premium Version Enhanced Features', 'a3-responsive-slider' ),\n\t\t\t\t'left_text'    => __( 'a3 Responsi Slider Premium', 'a3-responsive-slider' )\n\t\t\t\t\t\t\t\t\t. \"\\n\\n\" . __( 'Quick Video showing the main (not all) enhanced features that are built into the a3 Responsi Slider Premium version', 'a3-responsive-slider' ),\n\t\t\t\t'right_title'  => __( 'Developer Support and Premium Features', 'a3-responsive-slider' ),\n\t\t\t\t'right_text'   => __( 'Limited Time Offer. Purchase the Premium Version Lifetime License. That is a Lifetime of maintenance updates, feature upgrades and developer support for a once only fee. Offer ending soon.', 'a3-responsive-slider' )\n\t\t\t\t\t\t\t\t\t. \"\\n\\n\" . '<a target=\"_blank\" href=\"'.$this->pro_plugin_page_url.'\" class=\"button-primary\">' . __( 'Get Premium Features and Support', 'a3-responsive-slider' ) . '</a>',\n\t\t\t);\n\n\t\treturn $premium_video_data;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Uses __() for i18n strings correctly. The $this->pro_plugin_page_url is used inside __() which is not ideal but the URL itself is not being translated."},
+        "sql_safety": {"score": 9, "analysis": "No SQL. Pure data return."},
+        "security": {"score": 6, "analysis": "HTML link built with string concatenation is not escaped. The href contains $this->pro_plugin_page_url which should be esc_url(). The target=_blank is present which is good."},
+        "performance": {"score": 8, "analysis": "O(1) array construction. No heavy operations."},
+        "wp_api_usage": {"score": 6, "analysis": "Uses __() correctly for i18n. But the link in right_text should use esc_url() before being embedded in HTML."},
+        "code_quality": {"score": 6, "analysis": "The string concatenation across multiple lines for left_text is hard to read. Building HTML inline without esc_url is a security risk. The $this->pro_plugin_page_url may not be initialized yet."},
+        "dependency_integrity": {"score": 5, "analysis": "Depends on A3_RESPONSIVE_SLIDER_IMAGES_URL constant and $this->pro_plugin_page_url being defined."},
+        "i18n": {"score": 8, "analysis": "Most strings are wrapped in __() correctly. However, building HTML with concatenated strings inside __() can break translation contexts."},
+        "accessibility": {"score": 7, "analysis": "The button link uses target=_blank without rel=noreferrer noopener which is an accessibility concern."}
+      },
+      "overall_score": 68,
+      "key_observation": "Good i18n coverage but builds HTML with unescaped URL and target=_blank link without rel attribute."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 2,
+      "grounded_citations": 2,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_UI::plugin_premium_video_box",
+    "code": "function plugin_premium_video_box( $echo = true ) {\n\t\t$premium_video_data = apply_filters( $this->plugin_name . '_plugin_premium_video_data', $this->get_premium_video_data() );\n\n\t\t$output = '<div id=\"a3_plugin_premium_video_container\">';\n\t\t$output .= '<div class=\"a3rev_panel_container\">';\n\t\t$output .= '<div class=\"a3rev_panel_box\">';\n\t\t$output .= '<div class=\"a3rev_panel_box_handle\">';\n\t\t$output .= '<h3 class=\"a3-plugin-ui-panel-box\">'.$premium_video_data['box_title'].'</h3>';\n\t\t$output .= '</div>';\n\t\t$output .= '<div class=\"a3rev_panel_video_box\">';\n\t\t$output .= $this->plugin_premium_video();\n\t\t$output .= $this->plugin_premium_video_text();\n\t\t$output .= '</div>';\n\t\t$output .= '</div>';\n\t\t$output .= '</div>';\n\t\t$output .= '</div>';\n\n\t\t$output = apply_filters( $this->plugin_name . '_plugin_premium_video', $output );\n\n\t\tif ( $echo )\n\t\t\techo wp_kses_post( $output );\n\t\telse\n\t\t\treturn $output;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Uses wp_kses_post for output sanitization. The box_title is not escaped before HTML embedding but comes from __() which is safe."},
+        "sql_safety": {"score": 9, "analysis": "No SQL."},
+        "security": {"score": 7, "analysis": "wp_kses_post sanitizes output but box_title from filter could contain unsafe content if a filter modifies it. The $premium_video_data['box_title'] should be esc_html() before embedding."},
+        "performance": {"score": 7, "analysis": "String concatenation in a loop could use output buffering or implode. Multiple echo statements are fine for this scale."},
+        "wp_api_usage": {"score": 7, "analysis": "Correct use of apply_filters, wp_kses_post. Good double pattern (echo/return)."},
+        "code_quality": {"score": 6, "analysis": "The HTML building with chained .= is hard to maintain. 8 separate string concatenations for layout could be template-part or output-buffered."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on get_premium_video_data and its sub-methods being available."},
+        "i18n": {"score": 8, "analysis": "box_title should be esc_html__( ) for proper escaping in HTML context."},
+        "accessibility": {"score": 7, "analysis": "HTML structure uses proper heading hierarchy (h3). However, no ARIA attributes for the panel structure."}
+      },
+      "overall_score": 72,
+      "key_observation": "Uses wp_kses_post correctly but box_title should be escaped with esc_html() before HTML embedding."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 2,
+      "grounded_citations": 2,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_UI::plugin_premium_video",
+    "code": "function plugin_premium_video( $echo = false ) {\n\t\t$premium_video_data = apply_filters( $this->plugin_name . '_plugin_premium_video_data', $this->get_premium_video_data() );\n\n\t\twp_enqueue_style('thickbox');\n\t\twp_enqueue_script('thickbox');\n\n\t\t$output = '<div class=\"a3rev_panel_box_left_inside\">';\n\t\t$output .= '<h2>' . $premium_video_data['left_title'] . '</h2>';\n\t\t$output .= '<a class=\"a3-plugin-premium-image thickbox\" title=\"'.esc_attr( $premium_video_data['left_title'] ).'\" href=\"'.esc_url( add_query_arg( array( 'TB_iframe' => 'true', 'width' => 640, 'height' => 360 ), $premium_video_data['video_url'] )  ).'\">';\n\t\t$output .= '<img src=\"'.esc_url( $premium_video_data['image_url'] ).'\" />';\n\t\t$output .= '<div class=\"a3-plugin-premium-video-play\"></div>';\n\t\t$output .= '</a>';\n\t\t$output .= wpautop( $premium_video_data['left_text'] );\n\t\t$output .= '</div>';\n\n\t\tif ( $echo )\n\t\t\techo wp_kses_post( $output );\n\t\telse\n\t\t\treturn $output;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Uses esc_attr and esc_url correctly. wp_enqueue_style/script follows WP conventions."},
+        "sql_safety": {"score": 9, "analysis": "No SQL."},
+        "security": {"score": 7, "analysis": "esc_url and esc_attr used properly on user-controlled data. However, wp_enqueue_style('thickbox') on every call is inefficient and should use admin_enqueue_scripts hook."},
+        "performance": {"score": 5, "analysis": "wp_enqueue_style/script is called on every invocation of this function. These should be batched via admin_enqueue_scripts hook to avoid duplicate registrations."},
+        "wp_api_usage": {"score": 6, "analysis": "Correct esc_url/esc_attr usage. But wp_enqueue should be on hooks not in content generation functions."},
+        "code_quality": {"score": 6, "analysis": "Proper escaping on all outputs. Thickbox enqueue inside a render function is architectural anti-pattern."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on WordPress Thickbox assets being registered."},
+        "i18n": {"score": 8, "analysis": "left_title is used in esc_attr context which is appropriate. left_text is used in wpautop which is fine."},
+        "accessibility": {"score": 7, "analysis": "alt attribute missing on img tag. The title attribute is used which helps but alt is required for images."}
+      },
+      "overall_score": 69,
+      "key_observation": "Proper escaping throughout but thickboard enqueue inside render function is architectural anti-pattern and img lacks alt attribute."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 2,
+      "grounded_citations": 2,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_UI::plugin_premium_video_text",
+    "code": "function plugin_premium_video_text( $echo = false ) {\n\t\t$premium_video_data = apply_filters( $this->plugin_name . '_plugin_premium_video_data', $this->get_premium_video_data() );\n\n\t\t$output = '';\n\t\tif ( '' != trim( $premium_video_data['right_text'] ) ) {\n\t\t\t$output .= '<div class=\"a3rev_panel_box_separate\"></div>';\n\t\t\t$output .= '<div class=\"a3rev_panel_box_right_inside\">';\n\t\t\t$output .= '<h2>' . $premium_video_data['right_title'] . '</h2>';\n\t\t\t$output .= wpautop( $premium_video_data['right_text'] );\n\t\t\t$output .= '</div>';\n\t\t}\n\n\t\tif ( $echo )\n\t\t\techo wp_kses_post( $output );\n\t\telse\n\t\t\treturn $output;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Follows WP conventions with wp_kses_post and double echo/return pattern."},
+        "sql_safety": {"score": 9, "analysis": "No SQL."},
+        "security": {"score": 7, "analysis": "wp_kses_post sanitizes output. right_text comes from get_premium_video_data which has hardcoded strings."},
+        "performance": {"score": 8, "analysis": "O(1) with empty check optimization for empty right_text."},
+        "wp_api_usage": {"score": 7, "analysis": "Correct use of apply_filters, wp_kses_post, wpautop."},
+        "code_quality": {"score": 7, "analysis": "Clean guard clause for empty content. Consistent pattern with sibling functions."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on get_premium_video_data returning expected array structure."},
+        "i18n": {"score": 8, "analysis": "right_title used in HTML context should use esc_html__. right_text passed to wpautop is acceptable as it contains HTML from translation."},
+        "accessibility": {"score": 7, "analysis": "Uses h2 heading. No ARIA labels on panel divs."}
+      },
+      "overall_score": 74,
+      "key_observation": "Clean guard-clause pattern with proper output sanitization, but right_title should use esc_html() in HTML context."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_UI::plugin_extension_boxes",
+    "code": "function plugin_extension_boxes( $echo = false ) {\n\n\t\t\n\t\t$extension_boxes = apply_filters( $this->plugin_name . '_plugin_extension_boxes', array() );\n\n\t\t$output = '';\n\t\tif ( is_array( $extension_boxes ) && count( $extension_boxes ) > 0 ) {\n\t\t\tforeach ( $extension_boxes as $box ) {\n\t\t\t\tif ( ! isset( $box['id'] ) ) $box['id'] = '';\n\t\t\t\tif ( ! isset( $box['class'] ) ) $box['class'] = '';\n\t\t\t\tif ( ! isset( $box['css'] ) ) $box['css'] = '';\n\t\t\t\tif ( ! isset( $box['content'] ) ) $box['content'] = '';\n\n\t\t\t\t$output .= '<div id=\"'. esc_attr( $box['id'] ) .'\" class=\"'. esc_attr( $box['class'] ) .' a3_plugin_panel_extension_box\" style=\"'. esc_attr( $box['css'] ) .'\">';\n\t\t\t\t$output .= $box['content'];\n\t\t\t\t$output .= '</div>';\n\t\t\t}\n\t\t}\n\n\t\tif ( $echo )\n\t\t\techo wp_kses_post( $output );\n\t\telse\n\t\t\treturn $output;\n\t}",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "analysis": "Uses esc_attr for id/class/css attributes. wp_kses_post for output. But the isset defaults with $box variable mutation is non-standard."},
+        "sql_safety": {"score": 9, "analysis": "No SQL."},
+        "security": {"score": 4, "analysis": "CRITICAL: $box['content'] is appended without any sanitization (no esc_html, no wp_kses). If a filter injects malicious content, it passes through unchecked. Only id/class/css are escaped."},
+        "performance": {"score": 8, "analysis": "O(n) over extension_boxes array. Reasonable."},
+        "wp_api_usage": {"score": 6, "analysis": "Correct filter naming. But content should use wp_kses or esc_html before output."},
+        "code_quality": {"score": 6, "analysis": "Four separate isset checks could be consolidated with empty array merge. The unset defaults pattern is readable but verbose."},
+        "dependency_integrity": {"score": 7, "analysis": "Filter provides array structure. Depends on external plugins adding extension boxes."},
+        "i18n": {"score": 7, "analysis": "No i18n in this function. Content comes from filters which may include i18n strings."},
+        "accessibility": {"score": 7, "analysis": "Uses semantic div structure. No ARIA attributes for the extension boxes."}
+      },
+      "overall_score": 61,
+      "key_observation": "Critical: $box['content'] injected via filter passes through without any sanitization or escaping."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 2,
+      "grounded_citations": 2,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_UI::plugin_extension_start",
+    "code": "function plugin_extension_start( $echo = true ) {\n\t\t$output = '<div id=\"a3_plugin_panel_container\">';\n\t\t$output .= '<div id=\"a3_plugin_panel_upgrade_area\">';\n\t\t$output .= '<div id=\"a3_plugin_panel_extensions\">';\n\t\t$output .= $this->plugin_extension_boxes( false );\n\t\t$output .= '</div>';\n\t\t$output .= '</div>';\n\t\t$output .= '<div id=\"a3_plugin_panel_fields\">';\n\n\t\t$output = apply_filters( $this->plugin_name . '_plugin_extension_start', $output );\n\n\t\tif ( $echo )\n\t\t\techo wp_kses_post( $output );\n\t\telse\n\t\t\treturn $output;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Uses wp_kses_post for output sanitization. Filter naming follows conventions."},
+        "sql_safety": {"score": 9, "analysis": "No SQL."},
+        "security": {"score": 7, "analysis": "wp_kses_post sanitizes output. Calls plugin_extension_boxes which has its own escaping for attributes but content pass-through issue noted separately."},
+        "performance": {"score": 8, "analysis": "O(1) with nested call to plugin_extension_boxes."},
+        "wp_api_usage": {"score": 7, "analysis": "Correct filter usage and wp_kses_post. Good double echo/return pattern."},
+        "code_quality": {"score": 7, "analysis": "Clean nesting structure. Consistent with sibling functions."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on plugin_extension_boxes returning properly formatted HTML."},
+        "i18n": {"score": 9, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 6, "analysis": "ID-based div structure without ARIA roles. The nested container pattern lacks semantic meaning for assistive tech."}
+      },
+      "overall_score": 73,
+      "key_observation": "Consistent with sibling patterns. Nested container divs lack ARIA roles for accessibility."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_UI::plugin_extension_end",
+    "code": "function plugin_extension_end( $echo = true ) {\n\t\t$output = '</div>';\n\t\t$output .= '</div>';\n\n\t\t$output = apply_filters( $this->plugin_name . '_plugin_extension_end', $output );\n\n\t\tif ( $echo )\n\t\t\techo wp_kses_post( $output );\n\t\telse\n\t\t\treturn $output;\n\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Simple closing div structure. Uses wp_kses_post correctly."},
+        "sql_safety": {"score": 9, "analysis": "No SQL."},
+        "security": {"score": 8, "analysis": "Only outputs closing divs. wp_kses_post filters any injected content."},
+        "performance": {"score": 9, "analysis": "Trivial O(1) operation."},
+        "wp_api_usage": {"score": 7, "analysis": "Correct filter and wp_kses_post usage."},
+        "code_quality": {"score": 7, "analysis": "Minimal method. Consistent with twin function plugin_extension_start."},
+        "dependency_integrity": {"score": 8, "analysis": "Matches opening divs from plugin_extension_start."},
+        "i18n": {"score": 9, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 7, "analysis": "No UI concerns for a closing div function."}
+      },
+      "overall_score": 81,
+      "key_observation": "Minimal closing div function. Consistent with its opening twin."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_UI::upgrade_top_message",
+    "code": "function upgrade_top_message( $echo = false, $setting_id = '' ) {\n\t\t$upgrade_top_message = sprintf( '<div class=\"pro_feature_top_message\">' \n\t\t\t. __( 'Advanced Settings - Upgrade to the <a href=\"%s\" target=\"_blank\">%s License</a> to activate these settings.', 'a3-responsive-slider' ) \n\t\t\t. '</div>'\n\t\t\t, apply_filters( $this->plugin_name . '_' . $setting_id . '_pro_plugin_page_url', apply_filters( $this->plugin_name . '_pro_plugin_page_url', $this->pro_plugin_page_url ) )\n\t\t\t, apply_filters( $this->plugin_name . '_' . $setting_id . '_pro_version_name', apply_filters( $this->plugin_name . '_pro_version_name', __( 'Pro Version', 'a3-responsive-slider' ) ) )\n\t\t);\n\n\t\t$upgrade_top_message = apply_filters( $this->plugin_name . '_upgrade_top_message', $upgrade_top_message, $setting_id );\n\n\t\tif ( $echo ) echo wp_kses_post( $upgrade_top_message );\n\t\telse return $upgrade_top_message;\n\n\t}",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 5, "analysis": "URL and version name are passed through sprintf into HTML without esc_url or esc_html. The href URL comes from apply_filters which is not safe for direct HTML embedding."},
+        "sql_safety": {"score": 9, "analysis": "No SQL."},
+        "security": {"score": 4, "analysis": "CRITICAL: $this->pro_plugin_page_url is embedded directly into an href attribute via sprintf without esc_url(). The filter value is also unescaped. This is a stored/reflected XSS vector if any filter modifies the URL."},
+        "performance": {"score": 8, "analysis": "O(1) sprintf operation. Multiple filter applications add negligible overhead."},
+        "wp_api_usage": {"score": 5, "analysis": "Should use esc_url() for URLs in HTML and esc_html() for text in HTML. sprintf into HTML is fragile."},
+        "code_quality": {"score": 6, "analysis": "Nested apply_filters for URL and name is complex. Building HTML with sprintf is error-prone."},
+        "dependency_integrity": {"score": 6, "analysis": "Depends on pro_plugin_page_url being defined and filters returning safe values."},
+        "i18n": {"score": 7, "analysis": "Uses __() correctly. But nested sprintf with __ inside can break translation contexts. Pro version name filter applies __() twice which is wrong — the filter result is already translated."},
+        "accessibility": {"score": 6, "analysis": "Link has target=_blank without rel=noreferrer noopener."}
+      },
+      "overall_score": 54,
+      "key_observation": "Multiple XSS vulnerabilities: unescaped URL in href, double translation of pro_version_name filter."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 3,
+      "grounded_citations": 3,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_UI::blue_message_box",
+    "code": "function blue_message_box( $message = '', $width = '600px' ) {\n\t\t$message = '<div class=\"a3rev_blue_message_box_container\" style=\"width:'.$width.'\"><div class=\"a3rev_blue_message_box\">' . $message . '</div></div>';\n\t\t$message = apply_filters( $this->plugin_name . '_blue_message_box', $message );\n\n\t\treturn $message;\n\t}",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 5, "analysis": "No escaping on $message or $width. Inline style with raw width value is a CSS injection vector. Missing wp_kses_post for output."},
+        "sql_safety": {"score": 9, "analysis": "No SQL."},
+        "security": {"score": 3, "analysis": "CRITICAL: $width is embedded directly into inline style attribute — CSS injection via $width parameter. $message is also unescaped. A filter or caller could inject arbitrary HTML/CSS."},
+        "performance": {"score": 9, "analysis": "O(1) string concatenation."},
+        "wp_api_usage": {"score": 5, "analysis": "Should use esc_attr() for $width in style attribute and wp_kses() for $message. Missing output sanitization."},
+        "code_quality": {"score": 5, "analysis": "No input sanitization on two parameters. Should validate $width as numeric/px format."},
+        "dependency_integrity": {"score": 7, "analysis": "Filter allows modification but provides no validation guarantee."},
+        "i18n": {"score": 8, "analysis": "No user-facing strings. Message content comes from caller."},
+        "accessibility": {"score": 7, "analysis": "No ARIA labels for informational message. No role=alert for important messages."}
+      },
+      "overall_score": 49,
+      "key_observation": "CSS injection via unescaped $width parameter and no output sanitization on $message."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 2,
+      "grounded_citations": 2,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_UI::get_version_message",
+    "code": "function get_version_message() {\n\t\t$version_message = '';\n\n\t\t//Getting version number\n\t\t$version_transient = get_transient( $this->version_transient );\n\t\tif ( false !== $version_transient ) {\n\t\t\t$transient_timeout = '_transient_timeout_' . $this->version_transient;\n\t\t\t$timeout = get_option( $transient_timeout, false );\n\t\t\tif ( false === $timeout ) {\n\t\t\t\t$version_message = __( 'You should check now to see if have any new version is available', 'a3-responsive-slider' );\n\t\t\t} elseif ( 'cannot_connect_api' == $version_transient ) {\n\t\t\t\t$version_message = sprintf( __( 'Connection Failure! Please try again. If this issue persists please create a support request on the plugin <a href=\"%s\" target=\"_blank\">a3rev support forum</a>.', 'a3-responsive-slider' ), $this->support_url );\n\t\t\t} else {\n\t\t\t\t$version_info = explode( '||', $version_transient );\n\t\t\t\tif ( FALSE !== stristr( $version_transient, '||' )\n\t\t\t\t\t&& is_array( $version_info )\n\t\t\t\t\t&& isset( $version_info[1] ) && $version_info[1] == 'valid'\n\t\t\t\t\t&& version_compare( A3_RESPONSIVE_SLIDER_VERSION , $version_info[0], '<' ) ) {\n\n\t\t\t\t\t\t$version_message = sprintf( __( 'There is a new version <span class=\"a3rev-ui-new-plugin-version\">%s</span> available, <a href=\"%s\" target=\"_blank\">update now</a> or download direct from <a href=\"%s\" target=\"_blank\">My Account</a> on a3rev.com', 'a3-responsive-slider' ),\n\t\t\t\t\t\t\t$version_info[0],\n\t\t\t\t\t\t\twp_nonce_url( self_admin_url( 'update.php?action=upgrade-plugin&plugin=' . $this->plugin_path ), 'upgrade-plugin_' . $this->plugin_path ),\n\t\t\t\t\t\t\t'https://a3rev.com/my-account/downloads/'\n\t\t\t\t\t\t);\n\t\t\t\t}\n\t\t\t}\n\n\t\t} else {\n\t\t\t$version_message = __( 'You should check now to see if have any new version is available', 'a3-responsive-slider' );\n\t\t}\n\n\t\treturn $version_message;\n\t}",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 5, "analysis": "URL embedded in sprintf without esc_url(). The $version_info[0] version number is placed in HTML without esc_html(). wp_nonce_url is correct but URL is not escaped."},
+        "sql_safety": {"score": 8, "analysis": "Uses get_transient and get_option which are safe WP APIs."},
+        "security": {"score": 4, "analysis": "CRITICAL: $this->support_url is embedded in href without esc_url(). $version_info[0] (from transient data) is placed in HTML without escaping — transient data can be manipulated. wp_nonce_url is correctly used for the update link but the URL itself is not escaped."},
+        "performance": {"score": 7, "analysis": "Uses transient caching for version info. get_option for timeout is an extra DB call that could be avoided."},
+        "wp_api_usage": {"score": 5, "analysis": "wp_nonce_url used correctly but not escaped in sprintf. get_option for _transient_timeout_ is redundant since get_transient already handles this."},
+        "code_quality": {"score": 5, "analysis": "Complex nested conditionals. The transient timeout check is unnecessary — get_transient already indicates validity. version_compare logic is correct but the explode check is redundant with isset."},
+        "dependency_integrity": {"score": 6, "analysis": "Depends on transient being set with 'version||valid' format. If transient format changes, logic breaks."},
+        "i18n": {"score": 6, "analysis": "Strings use __() correctly. But sprintf with __ inside creates translation context issues — translators can't see full string with variable values."},
+        "accessibility": {"score": 6, "analysis": "Links have target=_blank without rel=noreferrer noopener. No ARIA live region for version update messages."}
+      },
+      "overall_score": 54,
+      "key_observation": "Unescaped URLs in sprintf, transient data placed in HTML without escaping, and redundant timeout checking logic."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 3,
+      "grounded_citations": 3,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Init::init",
+    "code": "function init() {\n\n\t\tadd_action( 'plugins_loaded', array( $this, 'add_admin_menu' ), 7 );\n\n\t\t// Filter to add admin pages for Amin UI process\n\t\tadd_filter( $this->plugin_name . '_admin_pages', array( $this, 'add_admin_pages' ) );\n\n\t\t$menu_hook = 'admin_menu';\n\t\tadd_action( $menu_hook, array( $this, 'register_admin_menu' ) );\n\n\t\tadd_action( 'plugins_loaded', array( $this, 'get_all_settings' ), 8 );\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Follows WP conventions for hook priorities. plugins_loaded at priority 7 before admin_menu at default priority is correct ordering."},
+        "sql_safety": {"score": 9, "analysis": "No SQL. Pure hook registration."},
+        "security": {"score": 8, "analysis": "No security concerns. Hook registration is standard WP pattern."},
+        "performance": {"score": 9, "analysis": "O(1) hook registrations. No operations at runtime cost."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct use of add_action/add_filter with proper priorities. Hook names follow WP conventions."},
+        "code_quality": {"score": 8, "analysis": "Clean initialization method. Correct hook priority ordering. Typo 'Amin' in comment but non-functional."},
+        "dependency_integrity": {"score": 7, "analysis": "Requires add_admin_menu, add_admin_pages, register_admin_menu, get_all_settings methods to exist."},
+        "i18n": {"score": 9, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 9, "analysis": "No UI concerns for hook registration."}
+      },
+      "overall_score": 83,
+      "key_observation": "Clean hook registration with correct priorities. Minor typo in comment ('Amin' vs 'Admin')."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Init::register_admin_menu",
+    "code": "function register_admin_menu() {\n\n\t\tif ( is_array( $this->admin_menu ) && count( $this->admin_menu ) > 0 ) {\n\t\t\tforeach ( $this->admin_menu as $menu_item ) {\n\t\t\t\tif ( ! isset( $menu_item['type'] ) || trim( $menu_item['type'] ) == '' ) continue;\n\n\t\t\t\tswitch( $menu_item['type'] ) {\n\n\t\t\t\t\tcase 'menu':\n\n\t\t\t\t\t\t$menu_page = add_menu_page( esc_html( $menu_item['page_title'] ), $menu_item['menu_title'], $menu_item['capability'], $menu_item['menu_slug'] , $menu_item['function'], $menu_item['icon_url'], $menu_item['position'] );\n\n\t\t\t\t\t\tif ( isset( $menu_item['script_function'] ) && trim( $menu_item['script_function'] ) != ''  )\n\t\t\t\t\t\t\tadd_action( \"admin_print_scripts-\" . $menu_page, $menu_item['script_function'] );\n\n\t\t\t\t\tbreak;\n\n\t\t\t\t\tcase 'submenu':\n\n\t\t\t\t\t\t$submenu_page = add_submenu_page( $menu_item['parent_slug'] , esc_html( $menu_item['page_title'] ), $menu_item['menu_title'], $menu_item['capability'], $menu_item['menu_slug'] , $menu_item['function'] );\n\n\t\t\t\t\t\tif ( isset( $menu_item['script_function'] ) && trim( $menu_item['script_function'] ) != ''  )\n\t\t\t\t\t\t\tadd_action( \"admin_print_scripts-\" . $submenu_page, $menu_item['script_function'] );\n\n\t\t\t\t\tbreak;\n\t\t\t\t}\n\t\t\t}\n\n\t\t}\n\n\t}",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 5, "analysis": "page_title is esc_html'd but menu_title, menu_slug, icon_url are not escaped in add_menu_page/add_submenu_page calls. add_action hook name concatenation uses menu_page/ submenu_page variable directly."},
+        "sql_safety": {"score": 9, "analysis": "No SQL."},
+        "security": {"score": 4, "analysis": "CRITICAL: menu_title is not escaped — XSS in admin menu display. icon_url is not escaped — could inject scripts. menu_slug not sanitized. script_function is called as callable without validation. add_menu_page return value used as hook suffix is correct but $submenu_page is not used after add_submenu_page (which returns null)."},
+        "performance": {"score": 7, "analysis": "O(n) over admin_menu array. Reasonable for small arrays."},
+        "wp_api_usage": {"score": 5, "analysis": "add_menu_page parameters should be escaped. add_action with admin_print_scripts-{page} is deprecated — should use admin_enqueue_scripts with proper page hook suffix."},
+        "code_quality": {"score": 6, "analysis": "Code duplication between menu/submenu cases. $submenu_page variable capture is useless since add_submenu_page returns null. Missing esc_html for menu_title."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on $this->admin_menu being properly structured array with required keys."},
+        "i18n": {"score": 7, "analysis": "menu_title is not wrapped in __() for translation. page_title uses esc_html but not esc_html__."},
+        "accessibility": {"score": 7, "analysis": "Menu titles should be translatable. Icon URLs need validation."}
+      },
+      "overall_score": 56,
+      "key_observation": "Multiple XSS vectors: unescaped menu_title and icon_url in admin page registration; add_action with deprecated admin_print_scripts hook."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 2,
+      "grounded_citations": 2,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Slider_Edit::slider_form_action",
+    "code": "function slider_form_action() {\n\t\tif ( ! is_admin() ) return ;\n\n\t\tif ( ( isset( $_POST['bt_create'] ) && current_user_can( 'publish_posts' ) ) || ( isset( $_POST['bt_update'] ) && current_user_can( 'edit_posts' ) ) ) {\n\n\t\t\tif ( isset( $_REQUEST['_slider_wpnonce'] ) ) {\n\t\t\t\t$slider_wpnonce = $_REQUEST['_slider_wpnonce'];\n\t\t\t\t$sid = isset( $_POST['slider_id'] ) ? absint( $_POST['slider_id'] ) : 0;\n\t\t\t\tif ( ! wp_verify_nonce( $slider_wpnonce, 'new-slider_' . $sid ) ) {\n\t\t\t\t\tdie( __( 'Security check' ) );\n\t\t\t\t}\n\t\t\t} else {\n\t\t\t\tdie( __( 'Security check' ) );\n\t\t\t}\n\n\t\t\tif ( is_array( $_POST['slider_settings'] ) ) {\n\t\t\t\t$slider_settings = array_map( 'sanitize_text_field', $_POST['slider_settings'] );\n\t\t\t} else {\n\t\t\t\t$slider_settings = array();\n\t\t\t}\n\n\t\t\tif ( ! isset( $slider_settings['is_auto_start'] ) ) $slider_settings['is_auto_start'] = 0;\n\t\t\tif ( ! isset( $slider_settings['data-cycle-tile-vertical'] ) ) $slider_settings['data-cycle-tile-vertical'] = 'false';\n\t\t\tif ( ! isset( $slider_settings['is_2d_effects'] ) ) $slider_settings['is_2d_effects'] = 1;\n\t\t\tif ( ! isset( $slider_settings['kb_is_auto_start'] ) ) $slider_settings['kb_is_auto_start'] = 0;\n\t\t\t\n\t\t\t// Youtube support\n\t\t\tif ( ! isset( $slider_settings['support_youtube_videos'] ) ) $slider_settings['support_youtube_videos'] = 0;\n\t\t\tif ( ! isset( $slider_settings['is_yt_auto_start'] ) ) $slider_settings['is_yt_auto_start'] = 'false';\n\n\t\t\tif ( ! isset( $slider_settings['is_enable_progressive'] ) ) $slider_settings['is_enable_progressive'] = 0;\n\n\t\t\t$slider_name  = trim( wp_strip_all_tags( addslashes( $_POST['slider_name'] ) ) );\n\t\t\t\n\t\t\t$post_data = array(\n\t\t\t\t'post_title'\t=> $slider_name,\n\t\t\t\t'post_name'\t\t=> sanitize_title( $slider_name ),\n\t\t\t\t'post_type'\t\t=> 'a3_slider',\n\t\t\t);\n\t\t\tif ( isset( $_POST['auto_draft'] ) && $_POST['auto_draft'] == 1 ) $post_data['post_status'] = 'publish';\n\t\t\t\n\t\t\tif ( isset( $_POST['post_ID'] ) ) {\n\t\t\t\t$slider_id = absint( $_POST['post_ID'] );\n\t\t\t\t$post_data['ID'] = $slider_id;\n\t\t\t\t$slider_id = wp_insert_post( $post_data );\n\t\t\t} else {\n\t\t\t\t$slider_id = wp_insert_post( $post_data );\n\t\t\t}\n\t\t\t\n\t\t\tif ( $slider_id > 0 ) {\n\t\t\t\tupdate_post_meta( $slider_id, '_a3_slider_id', $slider_id );\n\t\t\t\tupdate_post_meta( $slider_id, '_a3_slider_settings', $slider_settings );\n\t\t\t\tupdate_post_meta( $slider_id, '_a3_slider_template', addslashes( $_POST['slider_template'] ) );\n\t\t\t\t\n\t\t\t\tif ( isset( $_POST['slider_folders'] ) ) {\n\t\t\t\t\t$slider_folders = array_map( 'intval', $_POST['slider_folders'] );\n    \t\t\t\t$slider_folders = array_unique( $slider_folders );\n\t\t\t\t\twp_set_object_terms( $slider_id, $slider_folders, 'slider_folder' );\n\t\t\t\t} else {\n\t\t\t\t\twp_set_object_terms( $slider_id, NULL, 'slider_folder' );\n\t\t\t\t}\n\t\t\t\t\n\t\t\t\t$photo_galleries = $_REQUEST['photo_galleries'];\n\t\t\t\tif ( count( $photo_galleries ) > 0 ) {\n\t\t\t\t\tRSlider\\Data::remove_slider_images( $slider_id );\n\t\t\t\t\t$order = 0;\n\t\t\t\t\tforeach ( $photo_galleries['image'] as $key => $images ) {\n\t\t\t\t\t\t$show_readmore = 0;\n\t\t\t\t\t\t$open_newtab   = 0;\n\t\t\t\t\t\tif ( isset( $photo_galleries['show_readmore'][$key] ) ) $show_readmore = 1;\n\t\t\t\t\t\tif ( isset( $photo_galleries['open_newtab'][$key] ) ) $open_newtab = 1;\n\t\t\t\t\t\tif ( ! isset( $photo_galleries['video_url'][$key] ) && trim( $images ) != '' ) {\n\t\t\t\t\t\t\t$order++;\n\t\t\t\t\t\t\tRSlider\\Data::insert_row_image( $slider_id, trim( sanitize_text_field( $images ) ), sanitize_text_field( $photo_galleries['link'][$key] ), sanitize_text_field( $photo_galleries['title'][$key] ), sanitize_textarea_field( $photo_galleries['text'][$key] ), sanitize_text_field( $photo_galleries['alt'][$key] ), $order, $show_readmore, $open_newtab );\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\t\n\t\t\t\twp_redirect( 'post.php?post='.$slider_id.'&action=edit&message=4', 301 );\n\t\t\t\texit();\n\t\t\t}\n\t\t}\n\t\t\n\t}",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 5, "analysis": "Uses addslashes() which is wrong for WP — should use wp_slash(). Nonce check uses $_REQUEST instead of $_POST. array_map with sanitize_text_field on multi-dimensional array won't work correctly."},
+        "sql_safety": {"score": 6, "analysis": "Uses wp_insert_post and update_post_meta which are safe. But addslashes before update_post_meta is wrong — WP handles escaping internally. Double addslashes is redundant and harmful."},
+        "security": {"score": 3, "analysis": "CRITICAL: addslashes() is not a security function — use wp_slash() for WP. $_REQUEST used instead of $_POST for nonce (should be $_POST to prevent GET-based attacks). Nonce key 'new-slider_' . $sid could allow brute-force if sid is always 0 on create. wp_redirect without wp_verify_nonce on the redirect target is a minor concern."},
+        "performance": {"score": 6, "analysis": "array_map('sanitize_text_field') on multi-dimensional $_POST won't recursively sanitize. The nested photo_galleries loop processes each image individually."},
+        "wp_api_usage": {"score": 5, "analysis": "Should use wp_slash() not addslashes(). Nonce should come from $_POST not $_REQUEST. wp_redirect URL should use esc_url_raw()."},
+        "code_quality": {"score": 5, "analysis": "84 lines — too long, should be split. array_map on nested array is wrong. Multiple default value assignments scattered. Missing null checks on $_REQUEST['photo_galleries']."},
+        "dependency_integrity": {"score": 6, "analysis": "Depends on RSlider\\Data class existing. photo_galleries array access without isset check causes PHP warnings on missing keys."},
+        "i18n": {"score": 7, "analysis": "Security check message uses __() but should use wp_die() with a second parameter for proper admin formatting."},
+        "accessibility": {"score": 7, "analysis": "No UI rendering. Redirect and exit pattern is correct for form submission."}
+      },
+      "overall_score": 48,
+      "key_observation": "Critical: uses addslashes instead of wp_slash, $_REQUEST for nonce verification, and multi-dimensional array_map won't recursively sanitize."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 3,
+      "grounded_citations": 3,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Slider_Edit::admin_screen_add_edit",
+    "code": "function admin_screen_add_edit( $post ) {\n\t\tadd_action( 'admin_footer', array( '\\A3Rev\\RSlider\\Hook_Filter', 'include_admin_add_script' ) );\n\t\tadd_action( 'admin_footer', array( $GLOBALS[A3_RESPONSIVE_SLIDER_PREFIX.'admin_interface'], 'admin_script_load' ) );\n\t\tadd_action( 'admin_footer', array( $GLOBALS[A3_RESPONSIVE_SLIDER_PREFIX.'admin_interface'], 'admin_css_load' ) );\n\t?>\n    \t<div class=\"a3rev_manager_panel_container\">\n        \t<div class=\"a3rev_panel_container\">\n        \t<?php \n\t\t\t\t$slider_id = get_post_meta( $post->ID, '_a3_slider_id' , true );\n\t\t\t\tif ( empty( $slider_id ) ) $slider_id = 0;\n\t\t\t\tself::slider_edit_page( $slider_id );\n\t\t\t?>\n        \t</div>\n        </div>\n    <?php\n\t}",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 4, "analysis": "Mixing PHP logic with HTML output inline is non-standard. admin_footer hook is wrong for scripts — should use admin_enqueue_scripts. The tab indentation in HTML is inconsistent."},
+        "sql_safety": {"score": 7, "analysis": "Uses get_post_meta which is safe WP API."},
+        "security": {"score": 5, "analysis": "No capability check on the post being edited. $GLOBALS access with string concatenation is fragile. HTML output is not escaped with wp_kses."},
+        "performance": {"score": 5, "analysis": "Adding actions to admin_footer on every post edit screen is wasteful. Should use conditional registration."},
+        "wp_api_usage": {"score": 4, "analysis": "admin_footer is the wrong hook for enqueuing scripts. Should use admin_enqueue_scripts. Direct $GLOBALS manipulation is non-standard."},
+        "code_quality": {"score": 4, "analysis": "Mixes PHP and HTML inline (view logic in function). Global state access via string concatenation. No input validation on $post parameter. The self:: call assumes static context."},
+        "dependency_integrity": {"score": 4, "analysis": "Heavy reliance on $GLOBALS[A3_RESPONSIVE_SLIDER_PREFIX.'admin_interface'] which is fragile. Depends on Hook_Filter class being loaded."},
+        "i18n": {"score": 7, "analysis": "No i18n in this function. slider_edit_page may contain translatable content."},
+        "accessibility": {"score": 6, "analysis": "Inline HTML without ARIA attributes. No keyboard navigation support."}
+      },
+      "overall_score": 44,
+      "key_observation": "Uses wrong hook (admin_footer), mixes PHP/HTML inline, accesses $GLOBALS via string concat, no capability check on post editing."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 2,
+      "grounded_citations": 2,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Fonts_Face::__construct",
+    "code": "function __construct() {\n\t\tparent::__construct();\n\n\t\tif ( ! $this->is_load_google_fonts ) {\n\t\t\t$this->google_fonts = array();\n\t\t\treturn;\n\t\t}\n\n\t\tif ( apply_filters( $this->plugin_name . '_new_google_fonts_enable', true ) ) {\n\t\t\t$this->is_valid_google_api_key();\n\t\t\t$google_fonts = get_option( $this->plugin_name . '_google_font_list', array() );\n\t\t} else {\n\t\t\t$google_fonts = array();\n\t\t}\n\n\t\tif ( ! is_array( $google_fonts ) || count( $google_fonts ) < 1 ) {\n\t\t\t$google_fonts = apply_filters( $this->plugin_name . '_google_fonts', $this->google_fonts );\n\t\t}\n\n\t\tsort( $google_fonts );\n\n\t\t$new_google_fonts = array();\n\t\tforeach ( $google_fonts as $row ) {\n\t\t\t$new_google_fonts[$row['name']]  = $row;\n\t\t}\n\n\t\t$this->google_fonts = $new_google_fonts;\n\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Follows WP patterns. sort() on array values is acceptable."},
+        "sql_safety": {"score": 8, "analysis": "Uses get_option which is safe. No raw SQL."},
+        "security": {"score": 7, "analysis": "Early return guard for is_load_google_fonts is good. get_option with default array is safe."},
+        "performance": {"score": 5, "analysis": "O(n log n) sort + O(n) foreach on google_fonts array. If google_fonts is large (hundreds of fonts), this is noticeable in constructor. get_option DB call every construct."},
+        "wp_api_usage": {"score": 7, "analysis": "Correct use of apply_filters for enable check and fallback. get_option with default is correct."},
+        "code_quality": {"score": 6, "analysis": "Re-indexing array by name key is redundant if $row['name'] already exists as the key. The sort followed by re-index defeats the purpose of sorting."},
+        "dependency_integrity": {"score": 6, "analysis": "Depends on parent constructor running first (is_load_google_fonts set). Depends on is_valid_google_api_key() method. Relies on google_fonts array having 'name' key."},
+        "i18n": {"score": 7, "analysis": "Font names come from external source (Google Fonts API or option). Not directly relevant to i18n."},
+        "accessibility": {"score": 9, "analysis": "No UI concerns for font loading constructor."}
+      },
+      "overall_score": 67,
+      "key_observation": "Sort followed by re-index by name is logically pointless. Early return guard is good. DB call on every construct is inefficient."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 2,
+      "grounded_citations": 2,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  }
+]

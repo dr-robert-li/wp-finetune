@@ -1,0 +1,28 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-04-23T02:55:00.000Z",
+  "phase": "04.1",
+  "phase_name": "reasoning-data-generation-inserted",
+  "phase_dir": ".planning/phases/04.1-reasoning-data-generation-inserted",
+  "plan": null,
+  "task": null,
+  "total_tasks": null,
+  "status": "paused",
+  "completed_tasks": [
+    {"id": "04.1-01", "name": "Pilot reasoning seeds", "status": "done"},
+    {"id": "04.1-02", "name": "Pilot validation", "status": "done"},
+    {"id": "04.1-03", "name": "Bulk reasoning generation + hardened merge + human audit", "status": "done", "commit": "f4ca0b9"}
+  ],
+  "remaining_tasks": [],
+  "blockers": [],
+  "human_actions_pending": [],
+  "decisions": [
+    {"decision": "Phase 4.1 Plan 03 complete — 196 CoT + 179 CtF bulk examples accepted", "rationale": "Both streams passed hardened acceptance gates; human audit approved 20/20 each", "phase": "04.1"},
+    {"decision": "Rejection examples restored from backup (520 -> 500 after dedup)", "rationale": "Lost during backup/restore cycle; critical for teaching proactive security", "phase": "04.1"},
+    {"decision": "Metadata fixed: phase2_complete=true, rejection_examples=500", "rationale": "Pipeline considers Phase 2 incomplete without this flag", "phase": "04.1"},
+    {"decision": "Dedup 15,663 removals validated as true duplicates (same function across classes)", "rationale": "Content-hash verification confirmed identical implementations", "phase": "04.1"}
+  ],
+  "uncommitted_files": [".planning/STATE.md", "data/final_dataset/wordpress_finetune.jsonl", "data/final_dataset/openai_*.jsonl", "data/final_dataset/metadata.json", "data/phase4_reasoning/audit_samples/*.json", "data/phase4_reasoning/deep_judge_cot/batches/*", "data/phase4_reasoning/critique_then_fix/batches/*"],
+  "next_action": "Plan Phase 4.2 (Reasoning Dataset Assembly) — score consistency validation, training mix assembly, export",
+  "context_notes": "Data quality issues found and fixed: (1) 520 rejection examples restored from backup into final dataset, (2) phase2_complete metadata fixed to true. Dedup was correct — 86,542 unique examples after removing 15,663 true duplicates (same function implementations across classes). Phase 4.1 complete with 196 CoT + 179 CtF bulk examples. Phase 2 and 3 gap closures already complete from prior runs. Next: Phase 4.2 planning for reasoning dataset assembly."
+}

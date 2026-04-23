@@ -1,238 +1,362 @@
 [
   {
-    "code": "function construct_from_post_vars() {\n\t\t$post_data = $_POST;\n\n\t\t$encode_to_utf8 = apply_filters( 'payone_tx_log_encode_to_utf8', true );\n\t\tif ( $encode_to_utf8 ) {\n\t\t\tarray_walk_recursive( $post_data, function ( &$entry ) {\n\t\t\t\t$entry = mb_convert_encoding( $entry, 'UTF-8' );\n\t\t\t} );\n\t\t}\n\n\t\t$transaction_id        = isset( $post_data['txid'] ) ? $post_data['txid'] : '';\n\t\t$transaction_log_entry = new Log();\n\t\t$transaction_log_entry->set_data( \\Payone\\Payone\\Api\\DataTransfer::construct_from_array( $post_data ) );\n\t\t$transaction_log_entry->set_transaction_id( $transaction_id );\n\t\t$transaction_log_entry->save();\n\t}",
-    "source_file": "bs-payone-woocommerce.json",
-    "function_name": "Log::construct_from_post_vars",
+    "code": "function __construct()\n    {\n        add_action('init', [$this, 'rometheme_header_post_type']);\n        add_action('admin_footer', [$this, 'menu_ui']);\n        $this->dir = dirname(__FILE__) . '/';\n        $this->url = \\RomeTheme::module_url() . 'HeaderFooter/';\n        add_action('admin_enqueue_scripts', [$this, 'enqueue_style']);\n        add_filter('single_template', array($this, 'load_canvas_template'));\n        add_action(\"wp_ajax_updatepost\", [$this, \"updatepost\"]);\n        add_action(\"wp_ajax_addNewPost\", [$this, \"addNewPost\"]);\n        add_action('wp', [$this, 'header_footer_template']);\n    }",
+    "source_file": "rometheme-for-elementor.json",
+    "function_name": "HeaderFooter::__construct",
     "critical_failures": [
-      "State-changing without nonce"
+      "CRITICAL: State-changing handler missing nonce verification"
+    ],
+    "low_score_dims": [],
+    "substantive_failure_detected": true,
+    "high_stakes_low_dims": []
+  },
+  {
+    "code": "function __construct() {\n\t\tglobal $table_prefix, $wpdb;\n\n\t\tadd_action( 'wp_ajax_save_backup_time', array( &$this, 'save_backup_time' ) );\n\t\tadd_action( 'init', array( &$this, 'init_textdomain' ) );\n\t\tadd_action( 'init', array( &$this, 'set_page_url' ) );\n\t\tadd_action( 'admin_notices', array( &$this, 'update_notice' ) );\n\t\tadd_action( 'wp_db_backup_cron', array( &$this, 'cron_backup' ) );\n\t\tadd_action( 'wp_cron_daily', array( &$this, 'wp_cron_daily' ) );\n\t\tadd_filter( 'cron_schedules', array( &$this, 'add_sched_options' ) );\n\t\tadd_filter( 'wp_db_b_schedule_choices', array( &$this, 'schedule_choices' ) );\n\n\t\t$table_prefix          = ( isset( $table_prefix ) ) ? $table_prefix : $wpdb->prefix;\n\t\t$datum                 = date( 'Ymd_B' );\n\t\t$this->backup_filename = DB_NAME . \"_$table_prefix$datum.sql\";\n\n\t\t$possible_names = array(\n\t\t\t'categories',\n\t\t\t'commentmeta',\n\t\t\t'comments',\n\t\t\t'link2cat',\n\t\t\t'linkcategories',\n\t\t\t'links',\n\t\t\t'options',\n\t\t\t'post2cat',\n\t\t\t'postmeta',\n\t\t\t'posts',\n\t\t\t'terms',\n\t\t\t'term_taxonomy',\n\t\t\t'term_relationships',\n\t\t\t'termmeta',\n\t\t\t'users',\n\t\t\t'usermeta',\n\t\t);\n\n\t\tforeach ( $possible_names as $name ) {\n\t\t\tif ( isset( $wpdb->{$name} ) ) {\n\t\t\t\t$this->core_table_names[] = $wpdb->{$name};\n\t\t\t}\n\t\t}\n\n\t\t$tmp_dir = get_temp_dir();\n\n\t\tif ( isset( $_GET['wp_db_temp_dir'] ) ) {\n\t\t\t$requested_dir = sanitize_text_field( $_GET['wp_db_temp_dir'] );\n\t\t\tif ( is_writeable( $requested_dir ) ) {\n\t\t\t\t$tmp_dir = $requested_dir;\n\t\t\t}\n\t\t}\n\n\t\t$this->backup_dir = trailingslashit( apply_filters( 'wp_db_b_backup_dir', $tmp_dir ) );\n\t\t$this->basename   = 'wp-db-backup';\n\n\t\t$this->referer_check_key = $this->basename . '-download_' . DB_NAME;\n\t\tif ( isset( $_POST['do_backup'] ) ) {\n\t\t\t$this->wp_secure( 'fatal' );\n\t\t\tcheck_admin_referer( $this->referer_check_key );\n\t\t\t$this->can_user_backup( 'main' );\n\n\t\t\t// save exclude prefs\n\t\t\tupdate_option(\n\t\t\t\t'wp_db_backup_excs',\n\t\t\t\tarray(\n\t\t\t\t\t'revisions' => $this->get_revisions_to_exclude(),\n\t\t\t\t\t'spam'      => $this->get_spam_to_exclude(),\n\t\t\t\t)\n\t\t\t);\n\t\t\tswitch ( $_POST['do_backup'] ) {\n\t\t\t\tcase 'backup':\n\t\t\t\t\tadd_action( 'init', array( &$this, 'perform_backup' ) );\n\t\t\t\t\tbreak;\n\t\t\t\tcase 'fragments':\n\t\t\t\t\tadd_action( 'admin_menu', array( &$this, 'admin_menu' ) );\n\t\t\t\t\tbreak;\n\t\t\t}\n\t\t} elseif ( isset( $_GET['fragment'] ) ) {\n\t\t\t$this->can_user_backup( 'frame' );\n\t\t\tadd_action( 'init', array( &$this, 'init' ) );\n\t\t} elseif ( isset( $_GET['backup'] ) ) {\n\t\t\t$this->can_user_backup();\n\t\t\tadd_action( 'init', array( &$this, 'init' ) );\n\t\t} else {\n\t\t\tadd_action( 'admin_menu', array( &$this, 'admin_menu' ) );\n\t\t}\n\t}",
+    "source_file": "wp-db-backup.json",
+    "function_name": "wpdbBackup::__construct",
+    "critical_failures": [
+      "Missing PHPDoc block",
+      "Hardcoded wp_ table prefix instead of $wpdb->prefix",
+      "CRITICAL: Database query inside a loop (N+1 pattern)"
     ],
     "low_score_dims": [
-      "security"
-    ]
-  },
-  {
-    "code": "/**\n\t * Regenerate all lookup table data.\n\t */\nfunction regenerate() {\n\t\tglobal $wpdb;\n\n\t\t$wpdb->query( \"TRUNCATE TABLE $wpdb->wc_category_lookup\" );\n\n\t\t$terms = get_terms(\n\t\t\t'product_cat',\n\t\t\tarray(\n\t\t\t\t'hide_empty' => false,\n\t\t\t\t'fields'     => 'id=>parent',\n\t\t\t)\n\t\t);\n\n\t\t$hierarchy = array();\n\t\t$inserts   = array();\n\n\t\t$this->unflatten_terms( $hierarchy, $terms, 0 );\n\t\t$this->get_term_insert_values( $inserts, $hierarchy );\n\n\t\tif ( ! $inserts ) {\n\t\t\treturn;\n\t\t}\n\n\t\t$insert_string = implode(\n\t\t\t'),(',\n\t\t\tarray_map(\n\t\t\t\tfunction( $item ) {\n\t\t\t\t\treturn implode( ',', $item );\n\t\t\t\t},\n\t\t\t\t$inserts\n\t\t\t)\n\t\t);\n\n\t\t$wpdb->query( \"INSERT IGNORE INTO $wpdb->wc_category_lookup (category_tree_id,category_id) VALUES ({$insert_string}",
-    "source_file": "woocommerce.json",
-    "function_name": "CategoryLookup::regenerate",
-    "critical_failures": [
-      "SQL query with dynamic values without $wpdb->prepare()"
+      "wpcs_compliance"
     ],
-    "low_score_dims": [
-      "sql_safety"
-    ]
+    "substantive_failure_detected": true,
+    "high_stakes_low_dims": []
   },
   {
-    "code": "/**\n\t\t * Filter the object id.\n\t\t *\n\t\t * @since  {{next}}\n\t\t *\n\t\t * @param  integer|string $object_id Object ID.\n\t\t * @param  CMB2           $cmb       This CMB2 object.\n\t\t */\nfunction object_id( $object_id = 0 ) {\n\t\tglobal $pagenow;\n\n\t\tif ( $object_id ) {\n\t\t\t$this->object_id = $object_id;\n\t\t\treturn $this->object_id;\n\t\t}\n\n\t\tif ( $this->object_id ) {\n\t\t\treturn $this->object_id;\n\t\t}\n\n\t\t// Try to get our object ID from the global space.\n\t\tswitch ( $this->object_type() ) {\n\t\t\tcase 'user':\n\t\t\t\t$object_id = isset( $_REQUEST['user_id'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['user_id'] ) ) : $object_id;\n\t\t\t\t$object_id = ! $object_id && 'user-new.php' !== $pagenow && isset( $GLOBALS['user_ID'] ) ? $GLOBALS['user_ID'] : $object_id;\n\t\t\t\tbreak;\n\n\t\t\tcase 'comment':\n\t\t\t\t$object_id = isset( $_REQUEST['c'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['c'] ) ) : $object_id;\n\t\t\t\t$object_id = ! $object_id && isset( $GLOBALS['comments']->comment_ID ) ? $GLOBALS['comments']->comment_ID : $object_id;\n\t\t\t\tbreak;\n\n\t\t\tcase 'term':\n\t\t\t\t$object_id = isset( $_REQUEST['tag_ID'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['tag_ID'] ) ) : $object_id;\n\t\t\t\tbreak;\n\n\t\t\tcase 'options-page':\n\t\t\t\t$key = $this->doing_options_page();\n\t\t\t\tif ( ! empty( $key ) ) {\n\t\t\t\t\t$object_id = $key;\n\t\t\t\t}\n\t\t\t\tbreak;\n\n\t\t\tdefault:\n\t\t\t\t$object_id = isset( $GLOBALS['post']->ID ) ? $GLOBALS['post']->ID : $object_id;\n\t\t\t\t$object_id = isset( $_REQUEST['post'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['post'] ) ) : $object_id;\n\t\t\t\tbreak;\n\t\t}\n\n\t\t\n\t\t$object_id = apply_filters( 'cmb2_set_object_id', $object_id, $this );\n\n\t\t// reset to id or 0.\n\t\t$this->object_id = ! empty( $object_id ) ? $object_id : 0;\n\n\t\treturn $this->object_id;\n\t}",
-    "source_file": "cmb2.json",
-    "function_name": "object_id",
+    "code": "/**\n\t * Test with named font size.\n\t */\nfunction test_with_named_font_size() {\n\t\t$context = array(\n\t\t\t'fontSize' => 'large',\n\t\t);\n\t\t$result  = block_core_shared_navigation_build_css_font_sizes( $context );\n\n\t\t$this->assertCount( 1, $result['css_classes'], 'Should have one CSS class for named font size' );\n\t\t$this->assertSame( 'has-large-font-size', $result['css_classes'][0], 'Should have correct font size class' );\n\t\t$this->assertSame( '', $result['inline_styles'], 'inline_styles should be empty with named font size' );\n\t}",
+    "source_file": "gutenberg.json",
+    "function_name": "Block_Core_Shared_Navigation_Build_Css_Font_Sizes_Test::test_with_named_font_size",
     "critical_failures": [
-      "PHPDoc block is misplaced \u2014 it appears above the function but documents a filter, not the function itself. The function has no proper @param/@return/@since tags directly on it.",
-      "@since tag uses '{{next}}' placeholder \u2014 an unreleased/template token that should never appear in production or training code.",
-      "Uses deprecated $GLOBALS['user_ID'] which has been removed in favor of get_current_user_id() or wp_get_current_user()->ID.",
-      "Unescaped output risk: REQUEST values are sanitized with sanitize_text_field() but integer IDs like user_id, tag_ID, comment ID should be cast to int or absint(), not treated as text strings \u2014 this is semantically wrong for ID values.",
-      "Uses global $pagenow and $GLOBALS directly without proper abstraction, creating brittle global state dependency."
-    ],
-    "low_score_dims": []
-  },
-  {
-    "code": "/**\n * Update user basic information.\n *\n * @param bool $wp_error - Optional. Return WP_Error object in case updating failed.\n *\n * @return bool|mixed|WP_Error\n */\nfunction learn_press_update_user_profile_basic_information( $wp_error = false ) {\n\t$user_id = get_current_user_id();\n\n\tif ( ! $user_id ) {\n\t\treturn new WP_Error( 2, 'The user is invalid' );\n\t}\n\n\t$update_data = array(\n\t\t'ID'           => $user_id,\n\t\t'first_name'   => LP_Request::get_param( 'first_name' ),\n\t\t'last_name'    => LP_Request::get_param( 'last_name' ),\n\t\t'description'  => LP_Request::get_param( 'description', '', 'html' ),\n\t\t'display_name' => LP_Request::get_param( 'account_display_name' ),\n\t\t'user_email'   => LP_Request::get_param( 'account_email' ),\n\t);\n\n\t$update_data = apply_filters( 'learn-press/update-profile-basic-information-data', $update_data );\n\t$update_meta = LP_Helper::sanitize_params_submitted( $_POST['_lp_custom_register'] ?? '' );\n\n\t$return = LP_Forms_Handler::update_user_data( $update_data, $update_meta );\n\n\t// Update for social.\n\t$socials    = LP_Request::get_param( 'user_profile_social' );\n\t$extra_data = get_user_meta( $user_id, '_lp_extra_info', true );\n\n\tif ( ! empty( $extra_data ) ) {\n\t\t$socials = array_merge( $extra_data, $socials );\n\t}\n\n\tupdate_user_meta( $user_id, '_lp_extra_info', $socials );\n\n\tif ( is_wp_error( $return ) ) {\n\t\treturn $wp_error ? $return : false;\n\t}\n\n\treturn $return;\n}",
-    "source_file": "learnpress-buddypress.json",
-    "function_name": "learn_press_update_user_profile_basic_information",
-    "critical_failures": [
-      "Missing nonce verification on state-changing handler with user input"
-    ],
-    "low_score_dims": [
-      "security"
-    ]
-  },
-  {
-    "code": "/**\n\t * Gets all tax rate classes from the database.\n\t *\n\t * @since 3.7.0\n\t * @return array Array of tax class objects consisting of tax_rate_class_id, name, and slug.\n\t */\nfunction get_tax_rate_classes() {\n\t\tglobal $wpdb;\n\n\t\t$cache_key        = 'tax-rate-classes';\n\t\t$tax_rate_classes = wp_cache_get( $cache_key, 'taxes' );\n\n\t\tif ( ! is_array( $tax_rate_classes ) ) {\n\t\t\t$tax_rate_classes = $wpdb->get_results(\n\t\t\t\t\"\n\t\t\t\tSELECT * FROM {$wpdb->wc_tax_rate_classes} ORDER BY name;\n\t\t\t\t\"\n\t\t\t);\n\t\t\twp_cache_set( $cache_key, $tax_rate_classes, 'taxes' );\n\t\t}",
-    "source_file": "woocommerce.json",
-    "function_name": "get_tax_rate_classes",
-    "critical_failures": [
-      "SELECT * without LIMIT"
-    ],
-    "low_score_dims": []
-  },
-  {
-    "code": "function import_json() {\n\t\t$data = json_decode( file_get_contents( $_FILES['iworks_orphan_import_file']['tmp_name'] ), true );\n\t\tif (\n\t\t\tis_array( $data )\n\t\t\t&& isset( $data['Meta'] )\n\t\t\t&& isset( $data['Meta']['plugin'] )\n\t\t\t&& isset( $data['Meta']['plugin']['name'] )\n\t\t\t&& 'Orphans' === $data['Meta']['plugin']['name']\n\t\t\t&& isset( $data['Orphans'] )\n\t\t\t&& is_array( $data['Orphans'] )\n\t\t\t&& ! empty( $data['Orphans'] )\n\t\t) {\n\t\t\tforeach ( $data['Orphans'] as $one ) {\n\t\t\t\tupdate_option( $one['option_name'], $one['option_value'] );\n\t\t\t}\n\t\t\t$this->add_message_success();\n\t\t\treturn;\n\t\t}\n\t\t$this->add_message_fail();\n\t}",
-    "source_file": "sierotki.json",
-    "function_name": "iWorks_Orphans_Import::import_json",
-    "critical_failures": [
-      "missing_phpdoc",
-      "direct_file_operations"
-    ],
-    "low_score_dims": []
-  },
-  {
-    "code": "/**\n\t\t * @phpstan-var QueryStandard|QueryVIP $query\n\t\t */\nfunction process_db_object() {\n\t\t\n\t\tglobal $wp_the_query, $wpdb;\n\n\t\t$this->wpdb = $wpdb;\n\n\t\t// With SAVEQUERIES defined as false, `wpdb::queries` is empty but `wpdb::num_queries` is not.\n\t\tif ( empty( $wpdb->queries ) ) {\n\t\t\t$this->data->total_qs += $wpdb->num_queries;\n\t\t\treturn;\n\t\t}\n\n\t\t$this->data->rows = array();\n\n\t\t$types = array();\n\t\t$has_result = false;\n\t\t$has_trace = false;\n\t\t$i = 0;\n\t\t$request = trim( $wp_the_query->request ?: '' );\n\n\t\tif ( method_exists( $wpdb, 'remove_placeholder_escape' ) ) {\n\t\t\t$request = $wpdb->remove_placeholder_escape( $request );\n\t\t}\n\n\t\t$has_main_query = false;\n\n\t\t\n\t\tforeach ( $wpdb->queries as $query ) {\n\t\t\tif ( isset( $query['query'], $query['elapsed'], $query['debug'] ) ) {\n\t\t\t\t// WordPress.com VIP.\n\t\t\t\t$sql = $query['query'];\n\t\t\t\t$ltime = $query['elapsed'];\n\t\t\t\t$stack = $query['debug'];\n\t\t\t} elseif ( isset( $query[0], $query[1], $query[2] ) ) {\n\t\t\t\t// Standard WP.\n\t\t\t\t$sql = $query[0];\n\t\t\t\t$ltime = $query[1];\n\t\t\t\t$stack = $query[2];\n\n\t\t\t\t// Query Monitor db.php drop-in.\n\t\t\t\tif ( isset( $query['trace'] ) && ( $query['trace'] instanceof QM_Backtrace ) ) {\n\t\t\t\t\t$has_trace = true;\n\t\t\t\t\t$trace = $query['trace'];\n\t\t\t\t}\n\t\t\t\tif ( isset( $query['result'] ) ) {\n\t\t\t\t\t$has_result = true;\n\t\t\t\t\t$result = $query['result'];\n\t\t\t\t}\n\t\t\t} else {\n\t\t\t\t// \u00af\\_(\u30c4)_/\u00af\n\t\t\t\tcontinue;\n\t\t\t}\n\n\t\t\t// @TODO: decide what I want to do with this:\n\t\t\t// phpcs:ignore WordPress.Security.NonceVerification.Recommended\n\t\t\tif ( false !== strpos( $stack, 'wp_admin_bar' ) && ! isset( $_REQUEST['qm_display_admin_bar'] ) ) {\n\t\t\t\tcontinue;\n\t\t\t}\n\n\t\t\t$sql = trim( $sql );\n\t\t\t$type = QM_Util::get_query_type( $sql );\n\n\t\t\t$this->log_type( $type );\n\t\t\t$this->maybe_log_dupe( $sql, $i );\n\n\t\t\t$row = compact( 'sql', 'ltime', 'type' );\n\n\t\t\tif ( false !== strpos( $stack, ' WP->main,' ) ) {\n\t\t\t\t// Ignore comments that are appended to queries by some web hosts.\n\t\t\t\t$match_sql = preg_replace( '#/\\*.*?\\*/\\s*$#s', '', $sql );\n\n\t\t\t\t$is_main_query = ( $request === $match_sql );\n\n\t\t\t\tif ( $is_main_query ) {\n\t\t\t\t\t$has_main_query = true;\n\t\t\t\t\t$row['is_main_query'] = true;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tif ( ! isset( $trace ) ) {\n\t\t\t\t$callers = array_reverse( explode( ',', $stack ) );\n\t\t\t\t$callers = array_map( 'trim', $callers );\n\t\t\t\t$row['stack'] = QM_Backtrace::get_filtered_stack( $callers );\n\t\t\t} else {\n\t\t\t\t$row['trace'] = $trace;\n\t\t\t}\n\n\t\t\tif ( isset( $result ) ) {\n\t\t\t\t$row['result'] = $result;\n\n\t\t\t\tif ( $result instanceof WP_Error ) {\n\t\t\t\t\t$this->data->errors[] = $i;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tif ( self::is_expensive( $row ) ) {\n\t\t\t\t$this->data->expensive[] = $i;\n\t\t\t}\n\n\t\t\t$this->data->rows[ $i ] = $row;\n\t\t\t$i++;\n\t\t}\n\n\t\t$has_main_query = wp_list_filter( $this->data->rows, array(\n\t\t\t'is_main_query' => true,\n\t\t) );\n\n\t\t$this->data->total_qs = count( $this->data->rows );\n\t\t$this->data->has_result = $has_result;\n\t\t$this->data->has_trace = $has_trace;\n\t\t$this->data->has_main_query = ! empty( $has_main_query );\n\n\t\t// Filter out queries that do not have duplicates\n\t\t$this->dupes = array_filter( $this->dupes, array( $this, 'filter_dupe_items' ) );\n\n\t\t// Ignore duplicates from `WP_Query->set_found_posts()`\n\t\tunset( $this->dupes['SELECT FOUND_ROWS()'] );\n\n\t\t$stacks = array();\n\n\t\t// Iterate all queries that have duplicates\n\t\tforeach ( $this->dupes as $sql => $query_ids ) {\n\t\t\t$dupe_data = array(\n\t\t\t\t'query' => $sql,\n\t\t\t\t'count' => count( $query_ids ),\n\t\t\t\t'ltime' => 0,\n\t\t\t\t'callers' => array(),\n\t\t\t\t'components' => array(),\n\t\t\t\t'sources' => array(),\n\t\t\t);\n\n\t\t\tforeach ( $query_ids as $query_id ) {\n\t\t\t\tif ( isset( $this->data->rows[ $query_id ]['trace'] ) ) {\n\t\t\t\t\t$trace = $this->data->rows[ $query_id ]['trace'];\n\t\t\t\t\t$stack = array_column( $trace->get_filtered_trace(), 'id' );\n\t\t\t\t\t$component = $trace->get_component();\n\n\t\t\t\t\t// Populate the component counts for this query\n\t\t\t\t\tif ( isset( $dupe_data['components'][ $component->name ] ) ) {\n\t\t\t\t\t\t$dupe_data['components'][ $component->name ]++;\n\t\t\t\t\t} else {\n\t\t\t\t\t\t$dupe_data['components'][ $component->name ] = 1;\n\t\t\t\t\t}\n\t\t\t\t} else {\n\t\t\t\t\t$stack = $this->data->rows[ $query_id ]['stack'] ?? array();\n\t\t\t\t}\n\n\t\t\t\t// Populate the caller counts for this query\n\t\t\t\tif ( isset( $dupe_data['callers'][ $stack[0] ] ) ) {\n\t\t\t\t\t$dupe_data['callers'][ $stack[0] ]++;\n\t\t\t\t} else {\n\t\t\t\t\t$dupe_data['callers'][ $stack[0] ] = 1;\n\t\t\t\t}\n\n\t\t\t\t// Populate the stack for this query\n\t\t\t\t$stacks[ $sql ][] = $stack;\n\n\t\t\t\t// Populate the time for this query\n\t\t\t\t$dupe_data['ltime'] += $this->data->rows[ $query_id ]['ltime'];\n\t\t\t}\n\n\t\t\t// Get the callers which are common to all stacks for this query\n\t\t\t$common = call_user_func_array( 'array_intersect', $stacks[ $sql ] );\n\n\t\t\t// Remove callers which are common to all stacks for this query\n\t\t\tforeach ( $stacks[ $sql ] as $i => $stack ) {\n\t\t\t\t$stacks[ $sql ][ $i ] = array_values( array_diff( $stack, $common ) );\n\n\t\t\t\t// No uncommon callers within the stack? Just use the topmost caller.\n\t\t\t\tif ( empty( $stacks[ $sql ][ $i ] ) ) {\n\t\t\t\t\t$stacks[ $sql ][ $i ] = array_keys( $dupe_data['callers'] );\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// Wave a magic wand\n\t\t\t$dupe_data['sources'] = array_count_values( array_column( $stacks[ $sql ], 0 ) );\n\n\t\t\t$this->data->dupes[] = $dupe_data;\n\t\t}\n\t}",
-    "source_file": "query-monitor.json",
-    "function_name": "QM_Collector_DB_Queries::process_db_object",
-    "critical_failures": [
-      "Missing PHPDoc block entirely \u2014 function has no @since, @return, or parameter documentation despite being a public-ish method on a named class",
-      "Variable $trace, $result, and $stack are used conditionally but declared without initialization, leading to potential 'undefined variable' usage across loop iterations (e.g., $trace from a previous iteration may bleed into a subsequent one where it was not set)",
-      "Uninitialized variable reuse across loop iterations: `$trace` and `$result` from one query iteration can bleed into the next query that lacks those keys, corrupting data silently",
-      "$has_main_query is first set as a bool then immediately overwritten by wp_list_filter() result \u2014 dead assignment and confusing logic",
-      "// @TODO comment in production code indicates unfinished design decisions left in production",
-      "Function violates single responsibility principle: it processes raw queries, detects duplicates, calculates timing, resolves components, and performs stack analysis all in one method exceeding 100 lines"
+      "test code, excluded from training data"
     ],
     "low_score_dims": [
       "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "substantive_failure_detected": false,
+    "high_stakes_low_dims": [
+      "sql_safety",
+      "security",
+      "wp_api_usage",
       "code_quality"
     ]
   },
   {
-    "code": "/**\r\n     * Register portfolio post types\r\n     *\r\n     * Register the post types for each portfolio created by admin\r\n     *\r\n     * @return void\r\n     * @since 1.0\r\n     * @author Antonino Scarfi' <antonino.scarfi@yithemes.com>\r\n     */\nfunction register_cptu_post_types() {\r\n        $post_types = $this->get_post_types();\r\n        $pts = array();\r\n\r\n        foreach ( $post_types as $pt ) {\r\n\r\n            extract( $this->_cpt_args( $pt ) );\r\n\r\n            $name  = $pt->post_name;\r\n            $title = $pt->post_title;\r\n\r\n            $labels = array(\r\n                'name'               => $title,\r\n                'singular_name'      => $label_singular,\r\n                'add_new'            => sprintf( __( 'Add %s', 'yith-plugin-fw' ), $label_singular ),\r\n                'add_new_item'       => sprintf( __( 'Add New %s', 'yith-plugin-fw' ), $label_singular ),\r\n                'edit_item'          => sprintf( __( 'Edit %s', 'yith-plugin-fw' ), $label_singular ),\r\n                'new_item'           => sprintf( __( 'New %s', 'yith-plugin-fw' ), $label_singular ),\r\n                'all_items'          => sprintf( __( 'All %s', 'yith-plugin-fw' ), $label_plural ),\r\n                'view_item'          => sprintf( __( 'View %s', 'yith-plugin-fw' ), $label_singular ),\r\n                'search_items'       => sprintf( __( 'Search %s', 'yith-plugin-fw' ), $label_plural ),\r\n                'not_found'          => sprintf( __( 'No %s found', 'yith-plugin-fw' ), $label_plural ),\r\n                'not_found_in_trash' => sprintf( __( 'No %s found in Trash', 'yith-plugin-fw' ), $label_plural ),\r\n                'parent_item_colon'  => '',\r\n                'menu_name'          => $title\r\n            );\r\n\r\n            $args = array(\r\n                'labels'             => apply_filters( 'yit_' . $this->_prefix_cpt . $name . '_labels', $labels ),\r\n                'public'             => true,\r\n                'publicly_queryable' => true,\r\n                'show_ui'            => true,\r\n                'show_in_menu'       => false,\r\n                'query_var'          => true,\r\n                'capability_type'    => 'post',\r\n                'hierarchical'       => false,\r\n                'menu_position'      => null,\r\n                'supports'           => array( 'title', 'editor', 'thumbnail' )\r\n            );\r\n\r\n            if ( ! $this->_args['has_single'] ) {\r\n                $args['public'] = false;\r\n                $args['publicly_queryable'] = false;\r\n                $args['query_var'] = false;\r\n            }\r\n\r\n            if ( $this->_args['manage_layouts'] && isset($this->layouts[ $layout ]) && ! $this->layouts[ $layout ]['support']['description'] ) {\r\n                unset( $args['supports'][1] );  // remove 'editor'\r\n            }\r\n\r\n            if ( ! empty( $rewrite ) ) {\r\n                $args['rewrite'] = array( 'slug' => $rewrite );\r\n            }\r\n\r\n            // register post type\r\n            $post_type = yit_avoid_duplicate( str_replace( '-', '_', substr( $this->_prefix_cpt . $name, 0, 16) ), $post_types );\r\n            register_post_type( $post_type, apply_filters( 'yit_' . $this->_prefix_cpt . $name . '_args', $args, $pt ) );  // save the post type in post meta\r\n\r\n            update_post_meta( $pt->ID, '_post_type', $post_type );\r\n            $pts[] = $post_type;\r\n\r\n            // register taxonomy\r\n            if ( $this->_args['has_taxonomy'] && ! empty( $taxonomy ) ) {\r\n\r\n                $labels = array(\r\n                    'name'              => sprintf( _x( '%s Categories', 'taxonomy general name', 'yith-plugin-fw' ), $label_singular ),\r\n                    'singular_name'     => _x( 'Category', 'taxonomy singular name', 'yith-plugin-fw' ),\r\n                    'search_items'      => __( 'Search Categories', 'yith-plugin-fw' ),\r\n                    'all_items'         => __( 'All Categories', 'yith-plugin-fw' ),\r\n                    'parent_item'       => __( 'Parent Category', 'yith-plugin-fw' ),\r\n                    'parent_item_colon' => __( 'Parent Category:', 'yith-plugin-fw' ),\r\n                    'edit_item'         => __( 'Edit Category', 'yith-plugin-fw' ),\r\n                    'update_item'       => __( 'Update Category', 'yith-plugin-fw' ),\r\n                    'add_new_item'      => __( 'Add New Category', 'yith-plugin-fw' ),\r\n                    'new_item_name'     => __( 'New Category Name', 'yith-plugin-fw' ),\r\n                    'menu_name'         => __( 'Category', 'yith-plugin-fw' ),\r\n                );\r\n\r\n                $args = array(\r\n                    'hierarchical'      => true,\r\n                    'labels'            => $labels,\r\n                    'show_ui'           => true,\r\n                    'show_admin_column' => true,\r\n                    'query_var'         => true,\r\n                );\r\n\r\n                if ( ! empty( $taxonomy_rewrite ) ) {\r\n                    $args['rewrite'] = array( 'slug' => $taxonomy_rewrite );\r\n                }\r\n\r\n                register_taxonomy( substr( $taxonomy, 0, 32 ), $post_type, $args );\r\n\r\n            }\r\n\r\n        }\r\n\r\n        wp_cache_set( 'yit_cptu_post_types', $post_types );\r\n    }",
-    "source_file": "yith-woocommerce-ajax-search.json",
-    "function_name": "register_cptu_post_types",
+    "code": "/**\n\t * Tests that passing no context does not store styles.\n\t *\n\t * @covers ::wp_style_engine_get_styles\n\t */\nfunction test_should_not_store_block_styles_without_context() {\n\t\t$block_styles = array(\n\t\t\t'typography' => array(\n\t\t\t\t'fontSize' => '999px',\n\t\t\t),\n\t\t);\n\n\t\tgutenberg_style_engine_get_styles(\n\t\t\t$block_styles,\n\t\t\tarray(\n\t\t\t\t'selector' => '#font-size-rulez',\n\t\t\t)\n\t\t);\n\n\t\t$all_stores = WP_Style_Engine_CSS_Rules_Store_Gutenberg::get_stores();\n\n\t\t$this->assertEmpty( $all_stores );\n\t}",
+    "source_file": "gutenberg.json",
+    "function_name": "WP_Style_Engine_Test::test_should_not_store_block_styles_without_context",
     "critical_failures": [
-      "Uses extract()"
-    ],
-    "low_score_dims": [
-      "security"
-    ]
-  },
-  {
-    "code": "function search_box($text, $input_id)\n    {\n        $search_data = isset($_REQUEST['s']) ? sanitize_text_field($_REQUEST['s']) : '';\n\n        $input_id = $input_id . '-search-input';\n        ?>\n        <p class=\"search-box\">\n            <label class=\"screen-reader-text\" for=\"<?php echo $input_id ?>\"><?php echo $text; ?>:</label>\n            <input type=\"search\" id=\"<?php echo $input_id ?>\" name=\"s\" value=\"<?php echo esc_attr($search_data); ?>\"/>\n            <?php submit_button($text, 'button', false, false, array('id' => 'search-submit')); ?>\n        </p>\n        <?php\n    }",
-    "source_file": "wp-optimizer.json",
-    "function_name": "ActivityLog::search_box",
-    "critical_failures": [
-      "Security auto-fail: score < 5",
-      "Missing PHPDoc block",
-      "Accesses superglobals without nonce verification"
+      "test code, excluded from training data"
     ],
     "low_score_dims": [
       "wpcs_compliance",
-      "security"
-    ]
-  },
-  {
-    "code": "/**\n * Callback for handling installation/activation of plugin.\n *\n * @since 3.0.0\n */\nfunction perflab_install_activate_plugin_callback(): void {\n\tcheck_admin_referer( 'perflab_install_activate_plugin' );\n\n\trequire_once ABSPATH . 'wp-admin/includes/plugin.php';\n\trequire_once ABSPATH . 'wp-admin/includes/plugin-install.php';\n\trequire_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';\n\trequire_once ABSPATH . 'wp-admin/includes/class-wp-ajax-upgrader-skin.php';\n\n\tif ( ! isset( $_GET['slug'] ) ) {\n\t\twp_die( esc_html__( 'Missing required parameter.', 'performance-lab' ) );\n\t}\n\n\t$plugin_slug = perflab_sanitize_plugin_slug( wp_unslash( $_GET['slug'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- perflab_sanitize_plugin_slug() is a sanitizing function.\n\tif ( null === $plugin_slug ) {\n\t\twp_die( esc_html__( 'Invalid plugin.', 'performance-lab' ) );\n\t}\n\n\t// Install and activate the plugin and its dependencies.\n\t$result = perflab_install_and_activate_plugin( $plugin_slug );\n\tif ( $result instanceof WP_Error ) {\n\t\twp_die( wp_kses_post( $result->get_error_message() ) );\n\t}\n\n\t$url = add_query_arg(\n\t\tarray(\n\t\t\t'page'     => PERFLAB_SCREEN,\n\t\t\t'activate' => $plugin_slug,\n\t\t),\n\t\tadmin_url( 'options-general.php' )\n\t);\n\n\tif ( wp_safe_redirect( $url ) ) {\n\t\texit;\n\t}\n}",
-    "source_file": "embed-optimizer.json",
-    "function_name": "perflab_install_activate_plugin_callback",
-    "critical_failures": [
-      "Accessing superglobals without nonce verification"
-    ],
-    "low_score_dims": [
-      "security"
-    ]
-  },
-  {
-    "code": "function tf_product_render(){   \r\n        $settings = unserialize(base64_decode($_POST['settings']), ['allowed_classes' => false]); \r\n\r\n        $args = array(\r\n            'post_type'             => 'product',\r\n            'post_status'           => 'publish',\r\n            'ignore_sticky_posts'   => 1,\r\n            'posts_per_page' => -1,\r\n        ); \r\n\r\n        $tax_query_tab[] = array(\r\n            'taxonomy' => 'product_visibility',\r\n            'field'    => 'name',\r\n            'terms'    => 'featured',\r\n            'operator' => 'IN',\r\n        );\r\n        if ( isset( $_POST['product_cats'] ) && isset( $_POST['product_tab_badge'] ) && $_POST['product_tab_badge'] == 'sale') {\r\n            if ($_POST['product_cats'] == 'all') {\r\n                $args = array(\r\n                    'post_type' => 'product',\r\n                    'post_status' => 'publish',\r\n                    'tax_query' => $tax_query_tab,\r\n                    'meta_query'    => array(\r\n                        'relation'  => 'AND',\r\n                        array(\r\n                            'key'       => '_sale_price',\r\n                            'value'     => 0,\r\n                            'compare'   => '!='\r\n                        ),\r\n                        array(\r\n                            'key'       => '_sale_price',\r\n                            'value'     => 0,\r\n                            'compare'   => '>'\r\n                        )\r\n                    )\r\n                );\r\n            }else {\r\n                $args = array(\r\n                    'post_type' => 'product',\r\n                    'post_status' => 'publish',\r\n                    'meta_query'    => array(\r\n                        'relation'  => 'AND',\r\n                        array(\r\n                            'key'       => '_sale_price',\r\n                            'value'     => 0,\r\n                            'compare'   => '!='\r\n                        ),\r\n                        array(\r\n                            'key'       => '_sale_price',\r\n                            'value'     => 0,\r\n                            'compare'   => '>'\r\n                        )\r\n                    ),\r\n                    'tax_query' => array(\r\n                        'relation'  => 'AND',\r\n                        array(\r\n                            'taxonomy' => 'product_cat',\r\n                            'field' => 'slug',\r\n                            'terms' => $_POST['product_cats']\r\n                        ),\r\n                        array(\r\n                            'taxonomy' => 'product_visibility',\r\n                            'field' => 'name',\r\n                            'terms'    => 'featured',\r\n                            'operator' => 'IN',\r\n                        )\r\n                    ),\r\n                );\r\n            }            \r\n        } elseif( isset( $_POST['product_cats'] ) && isset( $_POST['product_tab_badge'] ) ) {        \r\n            if ($_POST['product_cats'] == 'all' && $_POST['product_tab_badge'] == 'all') {\r\n                $args = array(  \r\n                    'post_type' => 'product',\r\n                    'post_status' => 'publish',\r\n                    'posts_per_page' => -1,\r\n                    'ignore_sticky_posts'   => 1,\r\n                    'tax_query' => $tax_query_tab,             \r\n                );\r\n            } elseif ($_POST['product_cats'] == 'all') {\r\n                $args = array(\r\n                    'post_type' => 'product',\r\n                    'post_status' => 'publish',\r\n                    'tax_query' => $tax_query_tab,\r\n                    'meta_query'    => array(\r\n                        'relation'  => 'OR',\r\n                        array(\r\n                            'key'       => '_tf_flashsale_text',\r\n                            'value'     => $_POST['product_tab_badge'],\r\n                            'compare'   => '='\r\n                        ),\r\n                        array(\r\n                            'key'       => '_tf_flashsale_text_2',\r\n                            'value'     => $_POST['product_tab_badge'],\r\n                            'compare'   => '='\r\n                        )\r\n                    )\r\n                );\r\n            } elseif ($_POST['product_tab_badge'] == 'all') {\r\n                $args = array(  \r\n                    'post_type' => 'product',\r\n                    'post_status' => 'publish',\r\n                    'posts_per_page' => -1,      \r\n                    'tax_query' => array(\r\n                        'relation'  => 'AND',\r\n                        array(\r\n                            'taxonomy' => 'product_cat',\r\n                            'field' => 'slug',\r\n                            'terms' => $_POST['product_cats']\r\n                        ),\r\n                        array(\r\n                            'taxonomy' => 'product_visibility',\r\n                            'field' => 'name',\r\n                            'terms'    => 'featured',\r\n                            'operator' => 'IN',\r\n                        )\r\n                    ),                \r\n                );\r\n            } else {\r\n                $args = array(\r\n                    'meta_query'    => array(\r\n                        'relation'  => 'OR',\r\n                        array(\r\n                            'key'       => '_tf_flashsale_text',\r\n                            'value'     => $_POST['product_tab_badge'],\r\n                            'compare'   => '='\r\n                        ),\r\n                        array(\r\n                            'key'       => '_tf_flashsale_text_2',\r\n                            'value'     => $_POST['product_tab_badge'],\r\n                            'compare'   => '='\r\n                        )\r\n                    ),\r\n                    'tax_query' => array(\r\n                        'relation'  => 'AND',\r\n                        array(\r\n                            'taxonomy' => 'product_cat',\r\n                            'field' => 'slug',\r\n                            'terms' => $_POST['product_cats']\r\n                        ),\r\n                        array(\r\n                            'taxonomy' => 'product_visibility',\r\n                            'field' => 'name',\r\n                            'terms'    => 'featured',\r\n                            'operator' => 'IN',\r\n                        )\r\n                    ),\r\n                );  \r\n            }  \r\n        } else {\r\n            if( isset( $_POST['product_cats'] ) ){\r\n                $args = array(  \r\n                    'post_type' => 'product',\r\n                    'post_status' => 'publish',\r\n                    'posts_per_page' => -1,      \r\n                    'tax_query' => array(\r\n                        'relation'  => 'AND',\r\n                        array(\r\n                            'taxonomy' => 'product_cat',\r\n                            'field' => 'slug',\r\n                            'terms' => $_POST['product_cats']\r\n                        ),\r\n                        array(\r\n                            'taxonomy' => 'product_visibility',\r\n                            'field' => 'name',\r\n                            'terms'    => 'featured',\r\n                            'operator' => 'IN',\r\n                        )\r\n                    ),                \r\n                );\r\n            }\r\n        }    \r\n        \r\n\r\n        $query_products = new WP_Query( $args );\r\n        if( $query_products->have_posts() ):\r\n            while( $query_products->have_posts() ): $query_products->the_post(); ?>\r\n                <div class=\"product-item\">\r\n                    <div class=\"product-inner\">\r\n                        <?php if( has_post_thumbnail() ): ?>\r\n                            <div class=\"product-thumb\">\r\n                                <a href=\"<?php the_permalink();?>\" class=\"image\">\r\n                                    <?php \r\n                                    if ($settings['custom_sale'] == 'yes') {\r\n                                        echo get_sale_price($settings['product_sale'] ,$settings['sale_style'], $settings['enter_sale_text'], $settings['prefix_sale_percent']);\r\n                                    }else {\r\n                                        woocommerce_show_product_loop_sale_flash();\r\n                                    }\r\n                                    echo get_flash_sale($settings['badge']);\r\n                                    \r\n                                    $get_post_thumbnail = get_post_thumbnail_id();\r\n                                    if ( !empty( wc_get_product()->get_gallery_image_ids() ) ){\r\n                                        $image_id = wc_get_product()->get_gallery_image_ids()[1]; \r\n                                        $image_src = wp_get_attachment_image_src ($image_id, 'full');\r\n                                    }                                               \r\n                                    if ( !empty( wc_get_product()->get_gallery_image_ids() ) && $image_src != '' && $settings['image_hover_gallery'] == 'yes' ):\r\n                                        $image_id = wc_get_product()->get_gallery_image_ids()[1];                                       \r\n                                        ?>\r\n                                        <img src=\"<?php echo \\Elementor\\Group_Control_Image_Size::get_attachment_image_src( $get_post_thumbnail, 'thumbnail', $settings ); ?>\" alt=\"image\" class=\"image_on\">    \r\n                                        <img src=\"<?php echo \\Elementor\\Group_Control_Image_Size::get_attachment_image_src( $image_id, 'thumbnail', $settings ); ?>\" alt=\"image\" class=\"image_off\">\r\n                                        <?php\r\n                                    else: ?>                                            \r\n                                        <img src=\"<?php echo \\Elementor\\Group_Control_Image_Size::get_attachment_image_src( $get_post_thumbnail, 'thumbnail', $settings ); ?>\" alt=\"image\" class=\"<?php echo 'elementor-animation-'.esc_attr($settings['hover_animation']); ?>\">    \r\n                                    <?php endif ?>\r\n                                </a>\r\n\r\n                                <?php if ( $settings['product_layout'] == 'layout-2' ): ?>\r\n                                    <div class=\"product-actions\">\r\n                                        <?php woocommerce_template_loop_add_to_cart(); ?>\r\n                                        <?php \r\n                                        if ( class_exists( 'YITH_WCWL' ) && shortcode_exists( 'yith_wcwl_add_to_wishlist') && $settings['wishlist'] == 'yes' ){\r\n                                            echo do_shortcode( '[yith_wcwl_add_to_wishlist]' );\r\n                                        }\r\n                                        if ( class_exists( 'YITH_Woocompare' ) && $settings['compare'] == 'yes' ){\r\n                                            echo tf_yith_compare_button();\r\n                                        }\r\n                                        if ( class_exists( 'YITH_WCQV' ) && $settings['quickview'] == 'yes' ){\r\n                                            echo tf_yith_quick_view_button();\r\n                                        }                                   \r\n                                        ?>\r\n                                    </div>  \r\n                                <?php endif; ?>\r\n\r\n                                <?php if ( $settings['product_layout'] == 'layout-3' ): ?>\r\n                                    <div class=\"product-actions\">\r\n                                        <?php \r\n                                        if ( class_exists( 'YITH_WCWL' ) && shortcode_exists( 'yith_wcwl_add_to_wishlist') && $settings['wishlist'] == 'yes' ){\r\n                                            echo do_shortcode( '[yith_wcwl_add_to_wishlist]' );\r\n                                        }\r\n                                        if ( class_exists( 'YITH_Woocompare' ) && $settings['compare'] == 'yes' ){\r\n                                            echo tf_yith_compare_button();\r\n                                        }\r\n                                        if ( class_exists( 'YITH_WCQV' ) && $settings['quickview'] == 'yes' ){\r\n                                            echo tf_yith_quick_view_button();\r\n                                        }                                   \r\n                                        ?>\r\n                                    </div>  \r\n                                <?php endif; ?>\r\n\r\n                            </div>\r\n                        <?php endif; ?>\r\n                        <div class=\"product-content\">\r\n                            <h4 class=\"title\"><a href=\"<?php the_permalink();?>\"><?php echo get_the_title();?></a></h4>\r\n                            <?php woocommerce_template_loop_price();?>  \r\n\r\n                            <?php if ($settings['product_layout'] == 'layout-1'): ?>                            \r\n                                <div class=\"product-actions\">\r\n                                    <?php woocommerce_template_loop_add_to_cart(); ?>\r\n                                    <?php \r\n                                    if ( class_exists( 'YITH_WCWL' ) && shortcode_exists( 'yith_wcwl_add_to_wishlist') && $settings['wishlist'] == 'yes' ){\r\n                                        echo do_shortcode( '[yith_wcwl_add_to_wishlist]' );\r\n                                    }\r\n                                    if ( class_exists( 'YITH_Woocompare' ) && $settings['compare'] == 'yes' ){\r\n                                        echo tf_yith_compare_button();\r\n                                    }\r\n                                    if ( class_exists( 'YITH_WCQV' ) && $settings['quickview'] == 'yes' ){\r\n                                        echo tf_yith_quick_view_button();\r\n                                    }                                   \r\n                                    ?>\r\n                                </div>  \r\n                            <?php endif; ?>\r\n\r\n                            <?php if ($settings['product_layout'] == 'layout-3'): ?>                            \r\n                                <div class=\"product-actions\">\r\n                                    <?php woocommerce_template_loop_add_to_cart(); ?>\r\n                                </div>  \r\n                            <?php endif; ?>  \r\n\r\n                        </div>\r\n                    </div>\r\n                </div>\r\n            <?php endwhile;\r\n            wp_reset_postdata();\r\n            wp_die(); \r\n        else:\r\n            echo '<div class=\"no-found\">';\r\n                esc_html_e('No product found', 'themesflat-addons-for-elementor');\r\n            echo '</div>';\r\n            wp_die();\r\n        endif;\r\n        wp_reset_postdata();\r\n    }",
-    "source_file": "themesflat-addons-for-elementor.json",
-    "function_name": "tf_product_render",
-    "critical_failures": [
-      "Accesses superglobals without nonce verification"
-    ],
-    "low_score_dims": [
-      "security"
-    ]
-  },
-  {
-    "code": "/**\n\t * Returns the report data based on normalized parameters.\n\t * Will be called by `get_data` if there is no data in cache.\n\t *\n\t * @override ReportsDataStore::get_noncached_data()\n\t *\n\t * @see get_data\n\t * @param array $query_args Query parameters.\n\t * @return stdClass|WP_Error Data object `{ totals: *, intervals: array, total: int, pages: int, page_no: int }`, or error.\n\t */\nfunction get_noncached_data( $query_args ) {\n\t\tglobal $wpdb;\n\n\t\t$this->initialize_queries();\n\n\t\t$data = (object) array(\n\t\t\t'data'    => array(),\n\t\t\t'total'   => 0,\n\t\t\t'pages'   => 0,\n\t\t\t'page_no' => 0,\n\t\t);\n\n\t\t$this->add_sql_query_params( $query_args );\n\t\t$params = $this->get_limit_params( $query_args );\n\n\t\tif ( isset( $query_args['taxes'] ) && is_array( $query_args['taxes'] ) && ! empty( $query_args['taxes'] ) ) {\n\t\t\t$total_results = count( $query_args['taxes'] );\n\t\t\t$total_pages   = (int) ceil( $total_results / $params['per_page'] );\n\t\t} else {\n\t\t\t$db_records_count = (int) $wpdb->get_var(\n\t\t\t\t// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- cache ok, DB call ok, unprepared SQL ok.\n\t\t\t\t\"SELECT COUNT(*) FROM ( {$this->subquery->get_query_statement()} ) AS tt\"\n\t\t\t);\n\n\t\t\t$total_results = $db_records_count;\n\t\t\t$total_pages   = (int) ceil( $db_records_count / $params['per_page'] );\n\n\t\t\tif ( $query_args['page'] < 1 || $query_args['page'] > $total_pages ) {\n\t\t\t\treturn $data;\n\t\t\t}\n\t\t}",
-    "source_file": "woocommerce.json",
-    "function_name": "get_noncached_data",
-    "critical_failures": [
-      "SQL query with dynamic values without $wpdb->prepare()"
-    ],
-    "low_score_dims": [
-      "sql_safety"
-    ]
-  },
-  {
-    "code": "function render_hidden_input_can_show_attributes() {\n\t\t?>\n\t\t<input type=\"hidden\" id=\"<?php echo esc_attr( self::FIELD_CAN_SHOW_ENHANCED_ATTRIBUTES_ID ); ?>\"\n\t\t\tname=\"<?php echo esc_attr( self::FIELD_CAN_SHOW_ENHANCED_ATTRIBUTES_ID ); ?>\"\n\t\t\tvalue=\"true\"/>\n\t\t<?php\n\t}",
-    "source_file": "facebook-for-woocommerce.json",
-    "function_name": "Enhanced_Catalog_Attribute_Fields::render_hidden_input_can_show_attributes",
-    "critical_failures": [
-      "Missing PHPDoc block",
-      "Form inputs without labels or ARIA"
-    ],
-    "low_score_dims": [
-      "accessibility"
-    ]
-  },
-  {
-    "code": "/**\n\t * Installs and activates missing addons.\n\t *\n\t * @return void\n\t */\nfunction install_and_activate_addons() {\n\t\tif ( ! isset( $_GET['action'] ) || ! \\is_string( $_GET['action'] ) ) {\n\t\t\treturn;\n\t\t}\n\n\t\t// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Reason: We are only strictly comparing action below.\n\t\t$action = \\wp_unslash( $_GET['action'] );\n\t\tif ( $action !== 'install' ) {\n\t\t\treturn;\n\t\t}\n\n\t\t\\check_admin_referer( 'wpseo_addon_installation', 'nonce' );\n\n\t\techo '<div class=\"wrap yoast wpseo_table_page\">';\n\n\t\t\\printf(\n\t\t\t'<h1 id=\"wpseo-title\" class=\"yoast-h1\">%s</h1>',\n\t\t\t\\esc_html__( 'Installing and activating addons', 'wordpress-seo' ),\n\t\t);\n\n\t\t$licensed_addons = $this->addon_manager->get_myyoast_site_information()->subscriptions;\n\n\t\tforeach ( $licensed_addons as $addon ) {\n\t\t\t\\printf( '<p><strong>%s</strong></p>', \\esc_html( $addon->product->name ) );\n\n\t\t\t[ $installed, $output ] = $this->install_addon( $addon->product->slug, $addon->product->download );\n\n\t\t\tif ( $installed ) {\n\t\t\t\t$activation_output = $this->activate_addon( $addon->product->slug );\n\n\t\t\t\t$output = \\array_merge( $output, $activation_output );\n\t\t\t}\n\n\t\t\techo '<p>';\n\t\t\techo \\implode( '<br />', \\array_map( 'esc_html', $output ) );\n\t\t\techo '</p>';\n\t\t}\n\n\t\t\\printf(\n\t\t\t/* translators: %1$s expands to an anchor tag to the admin premium page, %2$s expands to Yoast SEO Premium, %3$s expands to a closing anchor tag */\n\t\t\t\\esc_html__( '%1$s Continue to %2$s%3$s', 'wordpress-seo' ),\n\t\t\t'<a href=\"' . \\esc_url( \\admin_url( 'admin.php?page=' . Plans_Page_Integration::PAGE ) ) . '\">',\n\t\t\t'Yoast SEO Premium',\n\t\t\t'</a>',\n\t\t);\n\n\t\techo '</div>';\n\n\t\texit();\n\t}",
-    "source_file": "wordpress-seo.json",
-    "function_name": "__construct::install_and_activate_addons",
-    "critical_failures": [
-      "I18n: The final printf uses esc_html__() wrapping a string that contains HTML placeholders (%1$s, %3$s), which means esc_html__ will escape the anchor tags injected as arguments, producing broken output. The translation wrapper is incorrectly applied to a string that will receive raw HTML via printf \u2014 the HTML tags should not be inside the translated string passed through esc_html__().",
-      "I18n/Security: 'Yoast SEO Premium' is a hardcoded untranslated string passed directly into printf output without escaping.",
-      "Accessibility: The output HTML lacks semantic structure \u2014 the page renders headings, paragraphs, and an anchor link without ARIA roles or sufficient semantic context for screen readers. The anchor link 'Continue to Yoast SEO Premium' is not wrapped in a <p> or other block element and has no screen-reader-specific context.",
-      "Code Quality: The function calls exit() directly, bypassing WordPress shutdown hooks and making it untestable. This is a known anti-pattern in WordPress development.",
-      "Security: The $addon->product->name, $addon->product->slug, and $addon->product->download values come from an external API (MyYoast). While $addon->product->name is escaped via esc_html() and $output values are mapped through esc_html, the trustworthiness of the data source and whether all vectors are covered is uncertain given no sanitization before use in install_addon/activate_addon calls."
-    ],
-    "low_score_dims": [
-      "i18n"
-    ]
-  },
-  {
-    "code": "/**\n\t\t * This function will hook into the widget update filter and save ACF data\n\t\t *\n\t\t * @type    function\n\t\t * @date    27/05/2015\n\t\t * @since   5.2.3\n\t\t *\n\t\t * @param   $instance (array) widget settings\n\t\t * @param   $new_instance (array) widget settings\n\t\t * @param   $old_instance (array) widget settings\n\t\t * @param   $widget (object) widget info\n\t\t * @return  $instance\n\t\t */\nfunction save_widget( $instance, $new_instance, $old_instance, $widget ) {\n\n\t\t\t// validate nonce if we're not a REST API request.\n\t\t\t// the $_POST object is not available to us to validate if we're in a REST API call.\n\t\t\tif ( ! ( function_exists( 'wp_is_json_request' ) && wp_is_json_request() ) ) {\n\t\t\t\tif ( ! acf_verify_nonce( 'widget' ) ) {\n\t\t\t\t\treturn $instance;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// bail early if not valid (!customize + acf values + nonce).\n\t\t\tif ( isset( $_POST['wp_customize'] ) || ! isset( $new_instance['acf'] ) ) {\n\t\t\t\treturn $instance;\n\t\t\t}\n\n\t\t\t// save\n\t\t\tacf_save_post( \"widget_{$widget->id}",
-    "source_file": "advanced-custom-fields.json",
-    "function_name": "save_widget",
-    "critical_failures": [
-      "Code is truncated/incomplete \u2014 the function body is cut off mid-statement (`acf_save_post( \"widget_{$widget->id}` is never closed), making this an unusable and unassessable code unit",
-      "No capability check (current_user_can()) before saving widget data; only a nonce check is present",
-      "Function is defined in global namespace without a class wrapper or namespace prefix, risking collision in WordPress's global function space",
-      "PHPDoc block uses non-standard '@type' tag and '@date' tag instead of standard '@since', '@param', '@return' only; '@param' entries are missing type hints in proper PHPDoc format"
-    ],
-    "low_score_dims": [
-      "wpcs_compliance",
+      "sql_safety",
       "security",
+      "performance",
+      "wp_api_usage",
       "code_quality",
-      "dependency_integrity"
-    ]
-  },
-  {
-    "code": "/**\n\t\t\t * Fires when a theme is successfully installed.\n\t\t\t *\n\t\t\t * @param string $theme The theme name.\n\t\t\t */\nfunction upload_theme( $request ) {\n\t\tif (\n\t\t\t! isset( $_FILES['pluginzip'] ) || ! isset( $_FILES['pluginzip']['tmp_name'] ) || ! is_uploaded_file( $_FILES['pluginzip']['tmp_name'] ) || ! is_file( $_FILES['pluginzip']['tmp_name'] ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash,  WordPress.Security.ValidatedSanitizedInput.InputNotSanitized\n\t\t\treturn new \\WP_Error( 'woocommerce_rest_invalid_file', __( 'Specified file failed upload test.', 'woocommerce' ) );\n\t\t}\n\n\t\tinclude_once ABSPATH . 'wp-admin/includes/file.php';\n\t\tinclude_once ABSPATH . '/wp-admin/includes/admin.php';\n\t\tinclude_once ABSPATH . '/wp-admin/includes/theme-install.php';\n\t\tinclude_once ABSPATH . '/wp-admin/includes/theme.php';\n\t\tinclude_once ABSPATH . '/wp-admin/includes/class-wp-upgrader.php';\n\t\tinclude_once ABSPATH . '/wp-admin/includes/class-theme-upgrader.php';\n\n\t\t$_GET['package'] = true;\n\t\t$file_upload     = new \\File_Upload_Upgrader( 'pluginzip', 'package' );\n\t\t$upgrader        = new ThemeUpgrader( new ThemeUpgraderSkin() );\n\t\t$install         = $upgrader->install( $file_upload->package );\n\n\t\tif ( $install || is_wp_error( $install ) ) {\n\t\t\t$file_upload->cleanup();\n\t\t}\n\n\t\tif ( ! is_wp_error( $install ) && isset( $install['destination_name'] ) ) {\n\t\t\t$theme  = $install['destination_name'];\n\t\t\t$result = array(\n\t\t\t\t'status'  => 'success',\n\t\t\t\t'message' => $upgrader->strings['process_success'],\n\t\t\t\t'theme'   => $theme,\n\t\t\t);\n\n\t\t\t\n\t\t\tdo_action( 'woocommerce_theme_installed', $theme );\n\t\t} else {\n\t\t\tif ( is_wp_error( $install ) && $install->get_error_code() ) {\n\t\t\t\t$error_message = isset( $upgrader->strings[ $install->get_error_code() ] ) ? $upgrader->strings[ $install->get_error_code() ] : $install->get_error_data();\n\t\t\t} else {\n\t\t\t\t$error_message = $upgrader->strings['process_failed'];\n\t\t\t}\n\n\t\t\t$result = array(\n\t\t\t\t'status'  => 'error',\n\t\t\t\t'message' => $error_message,\n\t\t\t);\n\t\t}\n\n\t\t$response = $this->prepare_item_for_response( $result, $request );\n\t\t$data     = $this->prepare_response_for_collection( $response );\n\n\t\treturn rest_ensure_response( $data );\n\t}",
-    "source_file": "woocommerce.json",
-    "function_name": "Themes::upload_theme",
-    "critical_failures": [
-      "Missing input sanitization"
-    ],
-    "low_score_dims": []
-  },
-  {
-    "code": "function get_super_global_value( $super_global, $key ) {\n\t\tif ( ! isset( $super_global[ $key ] ) ) {\n\t\t\treturn null;\n\t\t}\n\n\t\tif ( $_FILES === $super_global ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing\n\t\t\treturn isset( $super_global[ $key ]['name'] ) ?\n\t\t\t\tself::sanitize_file_name( $super_global[ $key ] ) :\n\t\t\t\tself::sanitize_multi_upload( $super_global[ $key ] );\n\t\t}\n\n\t\treturn wp_kses_post_deep( wp_unslash( $super_global[ $key ] ) );\n\t}",
-    "source_file": "elementor.json",
-    "function_name": "get_super_global_value",
-    "critical_failures": [
-      "Missing PHPDoc block"
-    ],
-    "low_score_dims": []
-  },
-  {
-    "code": "function consulta() {\n        $videos = get_transient( 'xml_video_sitemap_consulta' );\n        if ( $videos === false ) {\n            global $wpdb;\n            \n            $busqueda   = APGSitemapVideo::dame_busqueda();\n            $videos     = $wpdb->get_results( \"(SELECT id, post_title, post_content, post_excerpt, post_date\n                                            FROM $wpdb->posts\n                                            WHERE post_status = 'publish'\n                                                $busqueda\n                                                AND (post_content LIKE '%youtube.com%'\n                                                    OR post_content LIKE '%youtube-nocookie.com%'\n                                                    OR post_content LIKE '%youtu.be%'                              \n                                                    OR post_content LIKE '%dailymotion.com%'\n                                                    OR post_content LIKE '%vimeo.com%')\n                                                OR (post_excerpt LIKE '%youtube.com%'\n                                                    OR post_excerpt LIKE '%youtube-nocookie.com%'\n                                                    OR post_excerpt LIKE '%youtu.be%'                              \n                                                    OR post_excerpt LIKE '%dailymotion.com%'\n                                                    OR post_excerpt LIKE '%vimeo.com%'))\t\t\t\t\t\t\t\t\t\t\t\n                                        UNION ALL\n                                            (SELECT id, post_title, meta_value as 'post_content', post_excerpt, post_date\n                                                FROM $wpdb->posts\n                                                JOIN $wpdb->postmeta\n                                                    ON id = post_id\n                                                        AND meta_key = 'wpex_post_oembed'\n                                                        AND (meta_value LIKE '%youtube.com%'\n                                                            OR meta_value LIKE '%youtube-nocookie.com%'\n                                                            OR meta_value LIKE '%youtu.be%'\n                                                            OR meta_value LIKE '%dailymotion.com%'\n                                                            OR meta_value LIKE '%vimeo.com%')\n                                                WHERE post_status = 'publish'\n                                                    $busqueda)\n                                        UNION ALL\n                                            (SELECT id, post_title, post_excerpt, post_parent, post_date\n                                                FROM $wpdb->posts\n                                                WHERE post_type = 'attachment'\n                                                        AND post_mime_type like 'video%'\n                                                        AND post_parent > 0)\n                                        ORDER BY post_date DESC\" ); //Consulta mejorada con ayuda de Ludo Bonnet [https://github.com/ludobonnet]\n            set_transient( 'xml_video_sitemap_consulta', $videos, 24 * HOUR_IN_SECONDS );\n            APGSitemapVideo::desactivar();\n        }\n        \n        return $videos;\n    }",
-    "source_file": "google-video-sitemap-feed-with-multisite-support.json",
-    "function_name": "APGSitemapVideo::consulta",
-    "critical_failures": [
-      "SQL injection risk: dynamic values in query without $wpdb->prepare()"
-    ],
-    "low_score_dims": [
-      "sql_safety"
-    ]
-  },
-  {
-    "code": "/**\n\t * @param int $page\n\t * @param int $per_page\n\t *\n\t * @return array\n\t */\nfunction get_entries( $page = 1, $per_page = 10 ) {\n\t\tglobal $wpdb;\n\n\t\t$query = 'SELECT id, request, response, created_at\n                  FROM ' . $wpdb->prefix . \\Payone\\Payone\\Api\\Log::TABLE_NAME . ' \n                  ORDER BY created_at DESC\n                  LIMIT ' . ( $page - 1 ) * $per_page . ', ' . $per_page;\n\t\t$rows  = $wpdb->get_results( $query, ARRAY_A );\n\n\t\t$entries = [];\n\t\tforeach ( $rows as $row ) {\n\t\t\t$entries[] = \\Payone\\Payone\\Api\\Log::constructFromDatabase( $row );\n\t\t}\n\n\t\treturn $entries;\n\t}",
-    "source_file": "bs-payone-woocommerce.json",
-    "function_name": "ApiLog::get_entries",
-    "critical_failures": [
-      "Unprepared SQL with dynamic values"
-    ],
-    "low_score_dims": [
-      "sql_safety"
-    ]
-  },
-  {
-    "code": "/**\n\t * Get posts dropdown.\n\t *\n\t * @return void\n\t */\nfunction post_dropdown() {\n\t\t$posts = $this->get_filter( 'post' );\n\n\t\tif ( empty( $posts ) ) {\n\t\t\treturn;\n\t\t}\n\n\t\t// phpcs:ignore WordPress.Security.NonceVerification.Recommended\n\t\t$post = isset( $_GET['post'] ) ? sanitize_text_field( wp_unslash( $_GET['post'] ) ) : '';\n\n\t\t?>\n\t\t<label for=\"filter-by-post\"></label>\n\t\t<select name=\"post\" id=\"filter-by-post\">\n\t\t\t<option value=\"\"><?php esc_html_e( 'All Posts', 'otter-pro' ); ?></option>\n\t\t\t<?php foreach ( $posts as $post_id => $post_title ) : ?>\n\t\t\t\t<option value=\"<?php echo esc_attr( $post_id ); ?>\" <?php selected( $post, $post_id ); ?>><?php echo esc_html( $post_title ); ?></option>\n\t\t\t<?php endforeach; ?>\n\t\t</select>\n\t\t<?php\n\t\twp_nonce_field( 'filter', 'filters_nonce' );\n\t}",
-    "source_file": "blocks-animation.json",
-    "function_name": "Form_Emails_Storing::post_dropdown",
-    "critical_failures": [
-      "The <label for='filter-by-post'> element is empty \u2014 it has no text content, making the associated <select> effectively unlabeled and inaccessible. This is a critical accessibility failure for a form input.",
-      "Nonce field is placed after the closing </select> rather than in a <form> container alongside the input it is meant to protect; the structural placement is misleading and the nonce is not verified at the point of reading $_GET['post'] (phpcs:ignore suppresses the warning but no verification occurs in this function)"
-    ],
-    "low_score_dims": [
+      "dependency_integrity",
+      "i18n",
       "accessibility"
+    ],
+    "substantive_failure_detected": false,
+    "high_stakes_low_dims": [
+      "sql_safety",
+      "security",
+      "wp_api_usage",
+      "code_quality"
     ]
+  },
+  {
+    "code": "function test_get_stylesheet() {\n\t\t$theme_json = new WP_Theme_JSON_Gutenberg(\n\t\t\tarray(\n\t\t\t\t'version'  => WP_Theme_JSON_Gutenberg::LATEST_SCHEMA,\n\t\t\t\t'settings' => array(\n\t\t\t\t\t'color'      => array(\n\t\t\t\t\t\t'text'      => 'value',\n\t\t\t\t\t\t'palette'   => array(\n\t\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t\t'slug'  => 'grey',\n\t\t\t\t\t\t\t\t'color' => 'grey',\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t),\n\t\t\t\t\t\t'gradients' => array(\n\t\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t\t'gradient' => 'linear-gradient(135deg,rgba(0,0,0) 0%,rgb(0,0,0) 100%)',\n\t\t\t\t\t\t\t\t'name'     => 'Custom gradient',\n\t\t\t\t\t\t\t\t'slug'     => 'custom-gradient',\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t),\n\t\t\t\t\t\t'duotone'   => array(\n\t\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t\t'colors' => array( '#333333', '#aaaaaa' ),\n\t\t\t\t\t\t\t\t'name'   => 'Custom Duotone',\n\t\t\t\t\t\t\t\t'slug'   => 'custom-duotone',\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t),\n\t\t\t\t\t),\n\t\t\t\t\t'typography' => array(\n\t\t\t\t\t\t'fontFamilies' => array(\n\t\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t\t'name'       => 'Arial',\n\t\t\t\t\t\t\t\t'slug'       => 'arial',\n\t\t\t\t\t\t\t\t'fontFamily' => 'Arial, serif',\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t),\n\t\t\t\t\t\t'fontSizes'    => array(\n\t\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t\t'slug' => 'small',\n\t\t\t\t\t\t\t\t'size' => '14px',\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t\t'slug' => 'big',\n\t\t\t\t\t\t\t\t'size' => '41px',\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t),\n\t\t\t\t\t),\n\t\t\t\t\t'misc'       => 'value',\n\t\t\t\t\t'blocks'     => array(\n\t\t\t\t\t\t'core/group' => array(\n\t\t\t\t\t\t\t'custom' => array(\n\t\t\t\t\t\t\t\t'base-font'   => 16,\n\t\t\t\t\t\t\t\t'line-height' => array(\n\t\t\t\t\t\t\t\t\t'small'  => 1.2,\n\t\t\t\t\t\t\t\t\t'medium' => 1.4,\n\t\t\t\t\t\t\t\t\t'large'  => 1.8,\n\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t),\n\t\t\t\t\t),\n\t\t\t\t),\n\t\t\t\t'styles'   => array(\n\t\t\t\t\t'color'    => array(\n\t\t\t\t\t\t'text' => 'var:preset|color|grey',\n\t\t\t\t\t),\n\t\t\t\t\t'misc'     => 'value',\n\t\t\t\t\t'elements' => array(\n\t\t\t\t\t\t'link'   => array(\n\t\t\t\t\t\t\t'color' => array(\n\t\t\t\t\t\t\t\t'text'       => '#111',\n\t\t\t\t\t\t\t\t'background' => '#333',\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t),\n\t\t\t\t\t\t'button' => array(\n\t\t\t\t\t\t\t'shadow' => '10px 10px 5px 0px rgba(0,0,0,0.66)',\n\t\t\t\t\t\t),\n\t\t\t\t\t),\n\t\t\t\t\t'blocks'   => array(\n\t\t\t\t\t\t'core/cover'        => array(\n\t\t\t\t\t\t\t'dimensions' => array(\n\t\t\t\t\t\t\t\t'aspectRatio' => '16/9',\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t),\n\t\t\t\t\t\t'core/group'        => array(\n\t\t\t\t\t\t\t'color'      => array(\n\t\t\t\t\t\t\t\t'gradient' => 'var:preset|gradient|custom-gradient',\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t'border'     => array(\n\t\t\t\t\t\t\t\t'radius' => '10px',\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t'dimensions' => array(\n\t\t\t\t\t\t\t\t'minHeight' => '50vh',\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t'elements'   => array(\n\t\t\t\t\t\t\t\t'link' => array(\n\t\t\t\t\t\t\t\t\t'color' => array(\n\t\t\t\t\t\t\t\t\t\t'text' => '#111',\n\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t'spacing'    => array(\n\t\t\t\t\t\t\t\t'padding' => '24px',\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t),\n\t\t\t\t\t\t'core/heading'      => array(\n\t\t\t\t\t\t\t'color'    => array(\n\t\t\t\t\t\t\t\t'text' => '#123456',\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t'elements' => array(\n\t\t\t\t\t\t\t\t'link' => array(\n\t\t\t\t\t\t\t\t\t'color'      => array(\n\t\t\t\t\t\t\t\t\t\t'text'       => '#111',\n\t\t\t\t\t\t\t\t\t\t'background' => '#333',\n\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t'typography' => array(\n\t\t\t\t\t\t\t\t\t\t'fontSize' => '60px',\n\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t),\n\t\t\t\t\t\t'core/media-text'   => array(\n\t\t\t\t\t\t\t'typography' => array(\n\t\t\t\t\t\t\t\t'textAlign' => 'center',\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t),\n\t\t\t\t\t\t'core/post-date'    => array(\n\t\t\t\t\t\t\t'color'    => array(\n\t\t\t\t\t\t\t\t'text' => '#123456',\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t'elements' => array(\n\t\t\t\t\t\t\t\t'link' => array(\n\t\t\t\t\t\t\t\t\t'color' => array(\n\t\t\t\t\t\t\t\t\t\t'background' => '#777',\n\t\t\t\t\t\t\t\t\t\t'text'       => '#555',\n\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t),\n\t\t\t\t\t\t'core/post-excerpt' => array(\n\t\t\t\t\t\t\t'typography' => array(\n\t\t\t\t\t\t\t\t'textColumns' => 2,\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t),\n\t\t\t\t\t\t'core/image'        => array(\n\t\t\t\t\t\t\t'border'  => array(\n\t\t\t\t\t\t\t\t'radius' => array(\n\t\t\t\t\t\t\t\t\t'topLeft'     => '10px',\n\t\t\t\t\t\t\t\t\t'bottomRight' => '1em',\n\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t'spacing' => array(\n\t\t\t\t\t\t\t\t'margin' => array(\n\t\t\t\t\t\t\t\t\t'bottom' => '30px',\n\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t'filter'  => array(\n\t\t\t\t\t\t\t\t'duotone' => 'var:preset|duotone|custom-duotone',\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t),\n\t\t\t\t\t),\n\t\t\t\t\t'spacing'  => array(\n\t\t\t\t\t\t'blockGap' => '24px',\n\t\t\t\t\t),\n\t\t\t\t),\n\t\t\t\t'misc'     => 'value',\n\t\t\t)\n\t\t);\n\n\t\t$variables = ':root{--wp--preset--color--grey: grey;--wp--preset--gradient--custom-gradient: linear-gradient(135deg,rgba(0,0,0) 0%,rgb(0,0,0) 100%);--wp--preset--font-size--small: 14px;--wp--preset--font-size--big: 41px;--wp--preset--font-family--arial: Arial, serif;}.wp-block-group{--wp--custom--base-font: 16;--wp--custom--line-height--small: 1.2;--wp--custom--line-height--medium: 1.4;--wp--custom--line-height--large: 1.8;}';\n\t\t$styles    = static::$base_styles . 'body{color: var(--wp--preset--color--grey);}a:where(:not(.wp-element-button)){background-color: #333;color: #111;}:root :where(.wp-element-button, .wp-block-button__link){box-shadow: 10px 10px 5px 0px rgba(0,0,0,0.66);}:root :where(.wp-block-cover){min-height: unset;aspect-ratio: 16/9;}:root :where(.wp-block-group){background: var(--wp--preset--gradient--custom-gradient);border-radius: 10px;min-height: 50vh;padding: 24px;}:root :where(.wp-block-group a:where(:not(.wp-element-button))){color: #111;}:root :where(.wp-block-heading){color: #123456;}:root :where(.wp-block-heading a:where(:not(.wp-element-button))){background-color: #333;color: #111;font-size: 60px;}:root :where(.wp-block-media-text){text-align: center;}:root :where(.wp-block-post-date){color: #123456;}:root :where(.wp-block-post-date a:where(:not(.wp-element-button))){background-color: #777;color: #555;}:root :where(.wp-block-post-excerpt){column-count: 2;}:root :where(.wp-block-image){margin-bottom: 30px;}:root :where(.wp-block-image img, .wp-block-image .wp-block-image__crop-area, .wp-block-image .components-placeholder){border-top-left-radius: 10px;border-bottom-right-radius: 1em;}:root :where(.wp-block-image img, .wp-block-image .components-placeholder){filter: var(--wp--preset--duotone--custom-duotone);}';\n\t\t$presets   = '.has-grey-color{color: var(--wp--preset--color--grey) !important;}.has-grey-background-color{background-color: var(--wp--preset--color--grey) !important;}.has-grey-border-color{border-color: var(--wp--preset--color--grey) !important;}.has-custom-gradient-gradient-background{background: var(--wp--preset--gradient--custom-gradient) !important;}.has-small-font-size{font-size: var(--wp--preset--font-size--small) !important;}.has-big-font-size{font-size: var(--wp--preset--font-size--big) !important;}.has-arial-font-family{font-family: var(--wp--preset--font-family--arial) !important;}';\n\t\t$all       = $variables . $styles . $presets;\n\n\t\t$this->assertSameCSS( $variables, $theme_json->get_stylesheet( array( 'variables' ) ) );\n\t\t$this->assertSameCSS( $styles, $theme_json->get_stylesheet( array( 'styles' ) ) );\n\t\t$this->assertSameCSS( $presets, $theme_json->get_stylesheet( array( 'presets' ) ) );\n\t\t$this->assertSameCSS( $all, $theme_json->get_stylesheet() );\n\t}",
+    "source_file": "gutenberg.json",
+    "function_name": "WP_Theme_JSON_Gutenberg_Test::test_get_stylesheet",
+    "critical_failures": [
+      "test code, excluded from training data"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "substantive_failure_detected": false,
+    "high_stakes_low_dims": [
+      "sql_safety",
+      "security",
+      "wp_api_usage",
+      "code_quality"
+    ]
+  },
+  {
+    "code": "/**\n\t * @covers ::block_core_navigation_link_register_post_type_variation\n\t */\nfunction test_navigation_link_variations_private_custom_post_type() {\n\t\t$registry       = WP_Block_Type_Registry::get_instance();\n\t\t$nav_link_block = $registry->get_registered( 'core/navigation-link' );\n\t\t// Use property and let __get handle it, so it works for core versions before adding get_variations as well\n\t\t$variations = $nav_link_block->variations;\n\t\t$this->assertNotEmpty( $variations, 'Block has no variations' );\n\t\t$variation = $this->get_variation_by_name( 'private_custom_book', $variations );\n\t\t$this->assertEmpty( $variation, 'Block variation for private post type exists.' );\n\t}",
+    "source_file": "gutenberg.json",
+    "function_name": "Block_Navigation_Link_Variations_Test::test_navigation_link_variations_private_custom_post_type",
+    "critical_failures": [
+      "test code, excluded from training data"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "substantive_failure_detected": false,
+    "high_stakes_low_dims": [
+      "sql_safety",
+      "security",
+      "wp_api_usage",
+      "code_quality"
+    ]
+  },
+  {
+    "code": "/**\n\t * Filter the term redirect URL, to possibly add query vars to filter by term status or type.\n\t *\n\t * On clicking the 'Filter' button on the 'AMP Validation Errors' taxonomy page,\n\t * edit-tags.php processes the POST request that this submits.\n\t * Then, it redirects to a URL to display the page again.\n\t * This filter callback looks for a value for VALIDATION_ERROR_TYPE_QUERY_VAR in the $_POST request.\n\t * That means that the user filtered by error type, like 'js_error'.\n\t * It then passes that value to the redirect URL as a query var,\n\t * So that the taxonomy page will be filtered for that error type.\n\t *\n\t * @see AMP_Validation_Error_Taxonomy::add_error_type_clauses_filter() for the filtering of the 'where' clause, based on the query vars.\n\t * @param string      $url The $url to redirect to.\n\t * @param WP_Taxonomy $tax The WP_Taxonomy object.\n\t * @return string The filtered URL.\n\t */\nfunction add_term_filter_query_var( $url, $tax ) {\n\t\tif (\n\t\t\tself::TAXONOMY_SLUG !== $tax->name\n\t\t\t||\n\t\t\t! isset( $_POST['post_type'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing\n\t\t\t||\n\t\t\tAMP_Validated_URL_Post_Type::POST_TYPE_SLUG !== $_POST['post_type'] // phpcs:ignore WordPress.Security.NonceVerification.Missing\n\t\t) {\n\t\t\treturn $url;\n\t\t}\n\n\t\t// If the error type query var is valid, pass it along in the redirect $url.\n\t\tif (\n\t\t\tisset( $_POST[ self::VALIDATION_ERROR_TYPE_QUERY_VAR ] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing\n\t\t\t&&\n\t\t\tin_array(\n\t\t\t\t$_POST[ self::VALIDATION_ERROR_TYPE_QUERY_VAR ], // phpcs:ignore WordPress.Security.NonceVerification.Missing\n\t\t\t\tarray_merge( self::get_error_types(), [ self::NO_FILTER_VALUE ] ),\n\t\t\t\ttrue\n\t\t\t)\n\t\t) {\n\t\t\t$url = add_query_arg(\n\t\t\t\tself::VALIDATION_ERROR_TYPE_QUERY_VAR,\n\t\t\t\tsanitize_key( wp_unslash( $_POST[ self::VALIDATION_ERROR_TYPE_QUERY_VAR ] ) ), // phpcs:ignore WordPress.Security.NonceVerification.Missing\n\t\t\t\t$url\n\t\t\t);\n\t\t}\n\n\t\t// If the error status query var is valid, pass it along in the redirect $url.\n\t\t$groups = [];\n\t\tif ( isset( $_POST[ self::VALIDATION_ERROR_STATUS_QUERY_VAR ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing\n\t\t\t// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized\n\t\t\t$groups = self::sanitize_term_status( wp_unslash( $_POST[ self::VALIDATION_ERROR_STATUS_QUERY_VAR ] ), [ 'multiple' => true ] );\n\t\t}\n\t\tif ( ! empty( $groups ) ) {\n\t\t\t$url = add_query_arg(\n\t\t\t\t[ self::VALIDATION_ERROR_STATUS_QUERY_VAR => $groups ],\n\t\t\t\t$url\n\t\t\t);\n\t\t} else {\n\t\t\t$url = remove_query_arg( self::VALIDATION_ERROR_STATUS_QUERY_VAR, $url );\n\t\t}\n\n\t\treturn $url;\n\t}",
+    "source_file": "amp.json",
+    "function_name": "AMP_Validation_Error_Taxonomy::add_term_filter_query_var",
+    "critical_failures": [
+      "CRITICAL: State-changing handler missing nonce verification"
+    ],
+    "low_score_dims": [],
+    "substantive_failure_detected": true,
+    "high_stakes_low_dims": []
+  },
+  {
+    "code": "/**\n\t\t * Domain string helper.\n\t\t *\n\t\t * @param string $string A string.\n\t\t * @return string\n\t\t */\nfunction ot_export_php_settings_array() {\n\n\t\t$content              = '';\n\t\t$build_settings       = '';\n\t\t$contextual_help      = '';\n\t\t$sections             = '';\n\t\t$settings             = '';\n\t\t$option_tree_settings = get_option( ot_settings_id(), array() );\n\n\t\t\n\t\tfunction ot_i18n_string( $string ) {\n\t\t\tif ( ! empty( $string ) && isset( $_POST['domain'] ) && ! empty( $_POST['domain'] ) ) { // phpcs:ignore\n\t\t\t\t$domain = str_replace( ' ', '-', trim( sanitize_text_field( wp_unslash( $_POST['domain'] ) ) ) ); // phpcs:ignore\n\t\t\t\treturn \"esc_html__( '$string', '$domain' )\";\n\t\t\t}\n\t\t\treturn \"'$string'\";\n\t\t}\n\n\t\theader( 'Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0' );\n\t\theader( 'Pragma: no-cache ' );\n\t\theader( 'Content-Description: File Transfer' );\n\t\theader( 'Content-Disposition: attachment; filename=\"theme-options.php\"' );\n\t\theader( 'Content-Type: application/octet-stream' );\n\t\theader( 'Content-Transfer-Encoding: binary' );\n\n\t\t// Build contextual help content.\n\t\tif ( isset( $option_tree_settings['contextual_help']['content'] ) ) {\n\t\t\t$help = '';\n\t\t\tforeach ( $option_tree_settings['contextual_help']['content'] as $value ) {\n\t\t\t\t$_id      = isset( $value['id'] ) ? $value['id'] : '';\n\t\t\t\t$_title   = ot_i18n_string( isset( $value['title'] ) ? str_replace( \"'\", \"\\'\", $value['title'] ) : '' );\n\t\t\t\t$_content = ot_i18n_string( isset( $value['content'] ) ? html_entity_decode( str_replace( \"'\", \"\\'\", $value['content'] ) ) : '' );\n\t\t\t\t$help    .= \"\n\t\t\t\tarray(\n\t\t\t\t\t'id'      => '$_id',\n\t\t\t\t\t'title'   => $_title,\n\t\t\t\t\t'content' => $_content,\n\t\t\t\t),\";\n\t\t\t}\n\t\t\t$contextual_help = \"\n\t\t\t'content' => array($help\n\t\t\t),\";\n\t\t}\n\n\t\t// Build contextual help sidebar.\n\t\tif ( isset( $option_tree_settings['contextual_help']['sidebar'] ) ) {\n\t\t\t$_sidebar         = ot_i18n_string( html_entity_decode( str_replace( \"'\", \"\\'\", $option_tree_settings['contextual_help']['sidebar'] ) ) );\n\t\t\t$contextual_help .= \"\n\t\t\t'sidebar' => $_sidebar,\";\n\t\t}\n\n\t\t// Check that $contexual_help has a value and add to $build_settings.\n\t\tif ( '' !== $contextual_help ) {\n\t\t\t$build_settings .= \"\n\t\t'contextual_help' => array($contextual_help\n\t\t),\";\n\t\t}\n\n\t\t// Build sections.\n\t\tif ( isset( $option_tree_settings['sections'] ) ) {\n\t\t\tforeach ( $option_tree_settings['sections'] as $value ) {\n\t\t\t\t$_id       = isset( $value['id'] ) ? $value['id'] : '';\n\t\t\t\t$_title    = ot_i18n_string( isset( $value['title'] ) ? str_replace( \"'\", \"\\'\", $value['title'] ) : '' );\n\t\t\t\t$sections .= \"\n\t\t\tarray(\n\t\t\t\t'id'    => '$_id',\n\t\t\t\t'title' => $_title,\n\t\t\t),\";\n\t\t\t}\n\t\t}\n\n\t\t// Check that $sections has a value and add to $build_settings.\n\t\tif ( '' !== $sections ) {\n\t\t\t$build_settings .= \"\n\t\t'sections'        => array($sections\n\t\t)\";\n\t\t}\n\n\t\t/* build settings */\n\t\tif ( isset( $option_tree_settings['settings'] ) ) {\n\t\t\tforeach ( $option_tree_settings['settings'] as $value ) {\n\t\t\t\t$_id           = isset( $value['id'] ) ? $value['id'] : '';\n\t\t\t\t$_label        = ot_i18n_string( isset( $value['label'] ) ? str_replace( \"'\", \"\\'\", $value['label'] ) : '' );\n\t\t\t\t$_desc         = ot_i18n_string( isset( $value['desc'] ) ? str_replace( \"'\", \"\\'\", $value['desc'] ) : '' );\n\t\t\t\t$_std          = isset( $value['std'] ) ? str_replace( \"'\", \"\\'\", $value['std'] ) : '';\n\t\t\t\t$_type         = isset( $value['type'] ) ? $value['type'] : '';\n\t\t\t\t$_section      = isset( $value['section'] ) ? $value['section'] : '';\n\t\t\t\t$_rows         = isset( $value['rows'] ) ? $value['rows'] : '';\n\t\t\t\t$_post_type    = isset( $value['post_type'] ) ? $value['post_type'] : '';\n\t\t\t\t$_taxonomy     = isset( $value['taxonomy'] ) ? $value['taxonomy'] : '';\n\t\t\t\t$_min_max_step = isset( $value['min_max_step'] ) ? $value['min_max_step'] : '';\n\t\t\t\t$_class        = isset( $value['class'] ) ? $value['class'] : '';\n\t\t\t\t$_condition    = isset( $value['condition'] ) ? $value['condition'] : '';\n\t\t\t\t$_operator     = isset( $value['operator'] ) ? $value['operator'] : '';\n\n\t\t\t\t$choices = '';\n\t\t\t\tif ( isset( $value['choices'] ) && ! empty( $value['choices'] ) ) {\n\t\t\t\t\tforeach ( $value['choices'] as $choice ) {\n\t\t\t\t\t\t$_choice_value = isset( $choice['value'] ) ? str_replace( \"'\", \"\\'\", $choice['value'] ) : '';\n\t\t\t\t\t\t$_choice_label = ot_i18n_string( isset( $choice['label'] ) ? str_replace( \"'\", \"\\'\", $choice['label'] ) : '' );\n\t\t\t\t\t\t$_choice_src   = isset( $choice['src'] ) ? str_replace( \"'\", \"\\'\", $choice['src'] ) : '';\n\t\t\t\t\t\t$choices      .= \"\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'value' => '$_choice_value',\n\t\t\t\t\t\t'label' => $_choice_label,\n\t\t\t\t\t\t'src'   => '$_choice_src',\n\t\t\t\t\t),\";\n\t\t\t\t\t}\n\t\t\t\t\t$choices = \"\n\t\t\t\t'choices'      => array($choices\n\t\t\t\t),\";\n\t\t\t\t}\n\n\t\t\t\t$std = \"'$_std'\";\n\t\t\t\tif ( is_array( $_std ) ) {\n\t\t\t\t\t$std_array = array();\n\t\t\t\t\tforeach ( $_std as $_sk => $_sv ) {\n\t\t\t\t\t\t$std_array[] = \"'$_sk' => '$_sv',\";\n\t\t\t\t\t}\n\t\t\t\t\t$std = 'array(\n' . implode( \",\\n\", $std_array ) . '\n\t\t\t\t\t)';\n\t\t\t\t}\n\n\t\t\t\t$setting_settings = '';\n\t\t\t\tif ( isset( $value['settings'] ) && ! empty( $value['settings'] ) ) {\n\t\t\t\t\tforeach ( $value['settings'] as $setting ) {\n\t\t\t\t\t\t$_setting_id           = isset( $setting['id'] ) ? $setting['id'] : '';\n\t\t\t\t\t\t$_setting_label        = ot_i18n_string( isset( $setting['label'] ) ? str_replace( \"'\", \"\\'\", $setting['label'] ) : '' );\n\t\t\t\t\t\t$_setting_desc         = ot_i18n_string( isset( $setting['desc'] ) ? str_replace( \"'\", \"\\'\", $setting['desc'] ) : '' );\n\t\t\t\t\t\t$_setting_std          = isset( $setting['std'] ) ? $setting['std'] : '';\n\t\t\t\t\t\t$_setting_type         = isset( $setting['type'] ) ? $setting['type'] : '';\n\t\t\t\t\t\t$_setting_rows         = isset( $setting['rows'] ) ? $setting['rows'] : '';\n\t\t\t\t\t\t$_setting_post_type    = isset( $setting['post_type'] ) ? $setting['post_type'] : '';\n\t\t\t\t\t\t$_setting_taxonomy     = isset( $setting['taxonomy'] ) ? $setting['taxonomy'] : '';\n\t\t\t\t\t\t$_setting_min_max_step = isset( $setting['min_max_step'] ) ? $setting['min_max_step'] : '';\n\t\t\t\t\t\t$_setting_class        = isset( $setting['class'] ) ? $setting['class'] : '';\n\t\t\t\t\t\t$_setting_condition    = isset( $setting['condition'] ) ? $setting['condition'] : '';\n\t\t\t\t\t\t$_setting_operator     = isset( $setting['operator'] ) ? $setting['operator'] : '';\n\n\t\t\t\t\t\t$setting_choices = '';\n\t\t\t\t\t\tif ( isset( $setting['choices'] ) && ! empty( $setting['choices'] ) ) {\n\t\t\t\t\t\t\tforeach ( $setting['choices'] as $setting_choice ) {\n\t\t\t\t\t\t\t\t$_setting_choice_value = isset( $setting_choice['value'] ) ? $setting_choice['value'] : '';\n\t\t\t\t\t\t\t\t$_setting_choice_label = ot_i18n_string( isset( $setting_choice['label'] ) ? str_replace( \"'\", \"\\'\", $setting_choice['label'] ) : '' );\n\t\t\t\t\t\t\t\t$_setting_choice_src   = isset( $setting_choice['src'] ) ? str_replace( \"'\", \"\\'\", $setting_choice['src'] ) : '';\n\t\t\t\t\t\t\t\t$setting_choices      .= \"\n\t\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t\t'value' => '$_setting_choice_value',\n\t\t\t\t\t\t\t\t'label' => $_setting_choice_label,\n\t\t\t\t\t\t\t\t'src'   => '$_setting_choice_src',\n\t\t\t\t\t\t\t),\";\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t$setting_choices = \"\n\t\t\t\t\t\t'choices'      => array($setting_choices\n\t\t\t\t\t\t),\";\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\t$setting_std = \"'$_setting_std'\";\n\t\t\t\t\t\tif ( is_array( $_setting_std ) ) {\n\t\t\t\t\t\t\t$setting_std_array = array();\n\t\t\t\t\t\t\tforeach ( $_setting_std as $_ssk => $_ssv ) {\n\t\t\t\t\t\t\t\t$setting_std_array[] = \"'$_ssk' => '$_ssv'\";\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t$setting_std = 'array(\n' . implode( \",\\n\", $setting_std_array ) . '\n\t\t\t\t\t\t\t)';\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\t$setting_settings .= \"\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'id'           => '$_setting_id',\n\t\t\t\t\t\t'label'        => $_setting_label,\n\t\t\t\t\t\t'desc'         => $_setting_desc,\n\t\t\t\t\t\t'std'          => $setting_std,\n\t\t\t\t\t\t'type'         => '$_setting_type',\n\t\t\t\t\t\t'rows'         => '$_setting_rows',\n\t\t\t\t\t\t'post_type'    => '$_setting_post_type',\n\t\t\t\t\t\t'taxonomy'     => '$_setting_taxonomy',\n\t\t\t\t\t\t'min_max_step' => '$_setting_min_max_step',\n\t\t\t\t\t\t'class'        => '$_setting_class',\n\t\t\t\t\t\t'condition'    => '$_setting_condition',\n\t\t\t\t\t\t'operator'     => '$_setting_operator',$setting_choices\n\t\t\t\t\t),\";\n\t\t\t\t\t}\n\t\t\t\t\t$setting_settings = \"\n\t\t\t\t'settings'     => array( $setting_settings\n\t\t\t\t),\";\n\t\t\t\t}\n\t\t\t\t$settings .= \"\n\t\t\tarray(\n\t\t\t\t'id'           => '$_id',\n\t\t\t\t'label'        => $_label,\n\t\t\t\t'desc'         => $_desc,\n\t\t\t\t'std'          => $std,\n\t\t\t\t'type'         => '$_type',\n\t\t\t\t'section'      => '$_section',\n\t\t\t\t'rows'         => '$_rows',\n\t\t\t\t'post_type'    => '$_post_type',\n\t\t\t\t'taxonomy'     => '$_taxonomy',\n\t\t\t\t'min_max_step' => '$_min_max_step',\n\t\t\t\t'class'        => '$_class',\n\t\t\t\t'condition'    => '$_condition',\n\t\t\t\t'operator'     => '$_operator',$choices$setting_settings\n\t\t\t),\";\n\t\t\t}\n\t\t}\n\n\t\t// Check that $sections has a value and add to $build_settings.\n\t\tif ( '' !== $settings ) {\n\t\t\t$build_settings .= \",\n\t\t'settings'        => array($settings\n\t\t)\";\n\t\t}\n\n\t\t$content .= \"<?php\n/**\n * Initialize the custom theme options.\n */\nadd_action( 'init', 'custom_theme_options' );\n\n/**\n * Build the custom settings & update OptionTree.\n */\nfunction custom_theme_options() {\n  \n\t// OptionTree is not loaded yet, or this is not an admin request.\n\tif ( ! function_exists( 'ot_settings_id' ) || ! is_admin() ) {\n\t\treturn false;\n\t}\n\n\t// Get a copy of the saved settings array.\n\t\\$saved_settings = get_option( ot_settings_id(), array() );\n\n\t// Custom settings array that will eventually be passes to the OptionTree Settings API Class.\n\t\\$custom_settings = array($build_settings\n\t);\n\n\t// Allow settings to be filtered before saving.\n\t\\$custom_settings = apply_filters( ot_settings_id() . '_args', \\$custom_settings );\n\n\t// Settings are not the same update the DB.\n\tif ( \\$saved_settings !== \\$custom_settings ) {\n\t\tupdate_option( ot_settings_id(), \\$custom_settings ); \n\t}\n\n\t// Lets OptionTree know the UI Builder is being overridden.\n\tglobal \\$ot_has_custom_theme_options;\n\t\\$ot_has_custom_theme_options = true;\n}\n\";\n\n\t\techo $content; // phpcs:ignore\n\t\tdie();\n\t}",
+    "source_file": "option-tree.json",
+    "function_name": "ot_export_php_settings_array",
+    "critical_failures": [
+      "CRITICAL: State-changing handler missing nonce verification"
+    ],
+    "low_score_dims": [],
+    "substantive_failure_detected": true,
+    "high_stakes_low_dims": []
+  },
+  {
+    "code": "/**\n\t * Enqueues the necessary JavaScript code for the Classic editor.\n\t *\n\t * @return void\n\t */\nfunction enqueue_classic_editor_scripts() {\n\t\tif ( $this->permissions_helper->is_classic_editor() && isset( $_GET['post'] ) ) {\n\t\t\t$id   = \\intval( \\wp_unslash( $_GET['post'] ) );\n\t\t\t$post = \\get_post( $id );\n\n\t\t\tif ( $post !== null && $this->permissions_helper->is_rewrite_and_republish_copy( $post ) ) {\n\t\t\t\t$this->asset_manager->enqueue_strings_script();\n\t\t\t}\n\t\t}\n\t}",
+    "source_file": "duplicate-post.json",
+    "function_name": "Classic_Editor::enqueue_classic_editor_scripts",
+    "critical_failures": [
+      "CRITICAL: State-changing handler missing nonce verification"
+    ],
+    "low_score_dims": [],
+    "substantive_failure_detected": true,
+    "high_stakes_low_dims": []
+  },
+  {
+    "code": "/**\n     * Output view\n     *\n     * @access      private\n     * @since       1.5.0\n     */\nfunction view()\n    {\n\n        $form_id = 0;\n\n        if ( isset($_GET['form_id']) ) {\n\n            $form_id = absint($_GET['form_id']);\n        }\n\n        remove_action( 'wp_head', 'mailerlite_universal_woo_commerce' );\n        ?>\n\n        <html lang=\"en\">\n            <head>\n                <?php wp_head(); ?>\n            </head>\n            <body style=\"overflow:hidden;\">\n                <div style='width: 400px;margin: auto;'>\n                    <?php ( new Form() )->load_mailerlite_form( $form_id ); ?>\n                </div>\n                <style>\n                    .ml_message_wrapper > * {\n                        margin: 0 !important;\n                        padding: 0 !important;\n                    }\n                </style>\n            </body>\n        </html>\n\n        <?php\n    }",
+    "source_file": "official-mailerlite-sign-up-forms.json",
+    "function_name": "Preview::view",
+    "critical_failures": [
+      "CRITICAL: State-changing handler missing nonce verification"
+    ],
+    "low_score_dims": [],
+    "substantive_failure_detected": true,
+    "high_stakes_low_dims": []
+  },
+  {
+    "code": "/**\n\t * Tests the correct scoping of selectors for a style node.\n\t */\nfunction test_scope_style_node_selectors() {\n\t\t$theme_json = new ReflectionClass( 'WP_Theme_JSON_Gutenberg' );\n\n\t\t$func = $theme_json->getMethod( 'scope_style_node_selectors' );\n\t\t$func->setAccessible( true );\n\n\t\t$node = array(\n\t\t\t'name'      => 'core/image',\n\t\t\t'path'      => array( 'styles', 'blocks', 'core/image' ),\n\t\t\t'selector'  => '.wp-block-image',\n\t\t\t'selectors' => array(\n\t\t\t\t'root'       => '.wp-block-image',\n\t\t\t\t'border'     => '.wp-block-image img, .wp-block-image .wp-block-image__crop-area, .wp-block-image .components-placeholder',\n\t\t\t\t'typography' => array(\n\t\t\t\t\t'textDecoration' => '.wp-block-image caption',\n\t\t\t\t),\n\t\t\t\t'filter'     => array(\n\t\t\t\t\t'duotone' => '.wp-block-image img, .wp-block-image .components-placeholder',\n\t\t\t\t),\n\t\t\t),\n\t\t);\n\n\t\t$actual   = $func->invoke( null, '.custom-scope', $node );\n\t\t$expected = array(\n\t\t\t'name'      => 'core/image',\n\t\t\t'path'      => array( 'styles', 'blocks', 'core/image' ),\n\t\t\t'selector'  => '.custom-scope .wp-block-image',\n\t\t\t'selectors' => array(\n\t\t\t\t'root'       => '.custom-scope .wp-block-image',\n\t\t\t\t'border'     => '.custom-scope .wp-block-image img, .custom-scope .wp-block-image .wp-block-image__crop-area, .custom-scope .wp-block-image .components-placeholder',\n\t\t\t\t'typography' => array(\n\t\t\t\t\t'textDecoration' => '.custom-scope .wp-block-image caption',\n\t\t\t\t),\n\t\t\t\t'filter'     => array(\n\t\t\t\t\t'duotone' => '.custom-scope .wp-block-image img, .custom-scope .wp-block-image .components-placeholder',\n\t\t\t\t),\n\t\t\t),\n\t\t);\n\n\t\t$this->assertEquals( $expected, $actual );\n\t}",
+    "source_file": "gutenberg.json",
+    "function_name": "WP_Theme_JSON_Gutenberg_Test::test_scope_style_node_selectors",
+    "critical_failures": [
+      "test code, excluded from training data"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "substantive_failure_detected": false,
+    "high_stakes_low_dims": [
+      "sql_safety",
+      "security",
+      "wp_api_usage",
+      "code_quality"
+    ]
+  },
+  {
+    "code": "/**\n     * Search tv show playlist data for a term and return ids.\n     *\n     * @param  string   $term Search term.\n     * @param  bool     $all_statuses Should we search all statuses or limit to published.\n     * @param  null|int $limit Limit returned results.\n     * @since  1.0.0.\n     * @return array of ids\n     */\nfunction search_tv_show_playlists( $term, $all_statuses = false, $limit = null ) {\n        global $wpdb;\n\n        $post_types    = array( 'tv_show_playlist' );\n        $post_statuses = current_user_can( 'edit_private_tv_show_playlists' ) ? array( 'private', 'publish' ) : array( 'publish' );\n        $type_join     = '';\n        $type_where    = '';\n        $status_where  = '';\n        $limit_query   = '';\n        $term          = masvideos_strtolower( $term );\n\n        // See if search term contains OR keywords.\n        if ( strstr( $term, ' or ' ) ) {\n            $term_groups = explode( ' or ', $term );\n        } else {\n            $term_groups = array( $term );\n        }\n\n        $search_where   = '';\n        $search_queries = array();\n\n        foreach ( $term_groups as $term_group ) {\n            // Parse search terms.\n            if ( preg_match_all( '/\".*?(\"|$)|((?<=[\\t \",+])|^)[^\\t \",+]+/', $term_group, $matches ) ) {\n                $search_terms = $this->get_valid_search_terms( $matches[0] );\n                $count        = count( $search_terms );\n\n                // if the search string has only short terms or stopwords, or is 10+ terms long, match it as sentence.\n                if ( 9 < $count || 0 === $count ) {\n                    $search_terms = array( $term_group );\n                }\n            } else {\n                $search_terms = array( $term_group );\n            }\n\n            $term_group_query = '';\n            $searchand        = '';\n\n            foreach ( $search_terms as $search_term ) {\n                $like              = '%' . $wpdb->esc_like( $search_term ) . '%';\n                $term_group_query .= $wpdb->prepare( \" {$searchand} ( ( posts.post_title LIKE %s) OR ( posts.post_excerpt LIKE %s) OR ( posts.post_content LIKE %s ) )\", $like, $like, $like ); // @codingStandardsIgnoreLine.\n                $searchand         = ' AND ';\n            }\n\n            if ( $term_group_query ) {\n                $search_queries[] = $term_group_query;\n            }\n        }",
+    "source_file": "masvideos.json",
+    "function_name": "MasVideos_TV_Show_Playlist_Data_Store_CPT::search_tv_show_playlists",
+    "critical_failures": [
+      "database query inside a loop (N+1 pattern)"
+    ],
+    "low_score_dims": [],
+    "substantive_failure_detected": true,
+    "high_stakes_low_dims": []
+  },
+  {
+    "code": "/**\n\t * Tests setting a selector to a rule.\n\t *\n\t * @covers ::set_selector\n\t */\nfunction test_should_set_selector() {\n\t\t$selector = '.taggart';\n\t\t$css_rule = new WP_Style_Engine_CSS_Rule_Gutenberg( $selector );\n\n\t\t$this->assertSame( $selector, $css_rule->get_selector(), 'Return value of get_selector() does not match value passed to constructor.' );\n\n\t\t$css_rule->set_selector( '.law-and-order' );\n\n\t\t$this->assertSame( '.law-and-order', $css_rule->get_selector(), 'Return value of get_selector() does not match value passed to set_selector().' );\n\t}",
+    "source_file": "gutenberg.json",
+    "function_name": "test_should_set_selector",
+    "critical_failures": [
+      "test code, excluded from training data"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "substantive_failure_detected": false,
+    "high_stakes_low_dims": [
+      "sql_safety",
+      "security",
+      "wp_api_usage",
+      "code_quality"
+    ]
+  },
+  {
+    "code": "function add_for_page_template( $display, $meta_box ) {\n\t\tif ( 'page-template' !== $meta_box['show_on']['key'] ) {\n\t\t\treturn $display;\n\t\t}\n\n\t\t// Get the current ID\n\t\tif ( isset( $_GET['post'] ) ) {\n\t\t\t$post_id = absint( $_GET['post'] );\n\t\t} elseif ( isset( $_POST['post_ID'] ) ) {\n\t\t\t$post_id = absint( $_POST['post_ID'] );\n\t\t}\n\t\tif ( ! ( isset( $post_id ) || is_page() ) ) {\n\t\t\treturn false;\n\t\t}\n\n\t\t// if we are on an ajax request get the new template\n\t\tif ( isset( $_REQUEST['new_page_template'] ) && ! empty( $_REQUEST['new_page_template'] ) ) {\n\t\t\t$current_template = $_REQUEST['new_page_template'];\n\t\t} else {\n\t\t\t// Get current template\n\t\t\t$current_template = get_post_meta( $post_id, '_wp_page_template', true );\n\t\t}\n\n\t\t// If value isn't an array, turn it into one\n\t\t$meta_box['show_on']['value'] = ! is_array( $meta_box['show_on']['value'] ) ? array( $meta_box['show_on']['value'] ) : $meta_box['show_on']['value'];\n\n\t\t// See if there's a match\n\t\tif ( in_array( $current_template, $meta_box['show_on']['value'] ) ) {\n\t\t\treturn true;\n\t\t} else {\n\t\t\treturn false;\n\t\t}\n\t}",
+    "source_file": "pixtypes.json",
+    "function_name": "cmb_Meta_Box::add_for_page_template",
+    "critical_failures": [
+      "CRITICAL: State-changing handler missing nonce verification"
+    ],
+    "low_score_dims": [],
+    "substantive_failure_detected": true,
+    "high_stakes_low_dims": []
+  },
+  {
+    "code": "function set_up_before_class() {\n\t\tself::$page = self::factory()->post->create_and_get(\n\t\t\tarray(\n\t\t\t\t'post_type'    => 'page',\n\t\t\t\t'post_status'  => 'publish',\n\t\t\t\t'post_name'    => 'tabby',\n\t\t\t\t'post_title'   => 'Tabby cats',\n\t\t\t\t'post_content' => 'Tabby cat content',\n\t\t\t\t'post_excerpt' => 'Tabby cat',\n\t\t\t)\n\t\t);\n\t}",
+    "source_file": "gutenberg.json",
+    "function_name": "Render_Block_Navigation_Submenu_Test::set_up_before_class",
+    "critical_failures": [
+      "test code, excluded from training data"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "substantive_failure_detected": false,
+    "high_stakes_low_dims": [
+      "sql_safety",
+      "security",
+      "wp_api_usage",
+      "code_quality"
+    ]
+  },
+  {
+    "code": "function test_color_with_skipped_serialization_block_supports() {\n\t\t$this->test_block_name = 'test/color-with-skipped-serialization-block-supports';\n\t\tregister_block_type(\n\t\t\t$this->test_block_name,\n\t\t\tarray(\n\t\t\t\t'api_version' => 3,\n\t\t\t\t'attributes'  => array(\n\t\t\t\t\t'style' => array(\n\t\t\t\t\t\t'type' => 'object',\n\t\t\t\t\t),\n\t\t\t\t),\n\t\t\t\t'supports'    => array(\n\t\t\t\t\t'color' => array(\n\t\t\t\t\t\t'text'                            => true,\n\t\t\t\t\t\t'gradients'                       => true,\n\t\t\t\t\t\t'__experimentalSkipSerialization' => true,\n\t\t\t\t\t),\n\t\t\t\t),\n\t\t\t)\n\t\t);\n\n\t\t$registry   = WP_Block_Type_Registry::get_instance();\n\t\t$block_type = $registry->get_registered( $this->test_block_name );\n\t\t$block_atts = array(\n\t\t\t'style' => array(\n\t\t\t\t'color' => array(\n\t\t\t\t\t'text'     => '#d92828',\n\t\t\t\t\t'gradient' => 'linear-gradient(135deg,rgb(6,147,227) 0%,rgb(223,13,13) 46%,rgb(155,81,224) 100%)',\n\t\t\t\t),\n\t\t\t),\n\t\t);\n\n\t\t$actual   = gutenberg_apply_colors_support( $block_type, $block_atts );\n\t\t$expected = array();\n\n\t\t$this->assertSame( $expected, $actual );\n\t}",
+    "source_file": "gutenberg.json",
+    "function_name": "WP_Block_Supports_Colors_Test::test_color_with_skipped_serialization_block_supports",
+    "critical_failures": [
+      "test code, excluded from training data"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "substantive_failure_detected": false,
+    "high_stakes_low_dims": [
+      "sql_safety",
+      "security",
+      "wp_api_usage",
+      "code_quality"
+    ]
+  },
+  {
+    "code": "/**\n\t * Migrate API v2 list IDs associated with forms to the corresponding API v3 list ID.\n\t *\n\t * @since 2.0.0\n\t *\n\t * @return bool True if migration was completed.\n\t */\nfunction migrate_v2_v3_form_lists() {\n\n\t\tif ( ! constant_contact()->get_api()->is_connected() ) {\n\t\t\treturn false;\n\t\t}\n\n\t\t$migrated = get_option( 'ctct_api_v2_v3_migrated', false );\n\n\t\tif ( $migrated ) {\n\t\t\treturn true;\n\t\t}\n\n\t\t$forms_query = new WP_Query(\n\t\t\t[\n\t\t\t\t'post_status'            => [ 'publish', 'draft' ],\n\t\t\t\t'post_type'              => 'ctct_forms',\n\t\t\t\t'update_post_term_cache' => false,\n\t\t\t]\n\t\t);\n\n\t\tif ( ! $forms_query->have_posts() ) {\n\t\t\t// There were no forms to update. Flag the migration as complete.\n\t\t\treturn update_option( 'ctct_api_v2_v3_migrated', true );\n\t\t}\n\n\t\t// Get all the v2 List IDs.\n\t\t$v2_list_ids = [];\n\t\twhile ( $forms_query->have_posts() ) {\n\t\t\t$forms_query->the_post();\n\t\t\t$list_ids = get_post_meta( get_the_ID(), '_ctct_list', true );\n\n\t\t\tif ( is_array( $list_ids ) && ! empty( $list_ids[0] ) ) {\n\t\t\t\tforeach ( $list_ids as $list_id ) {\n\t\t\t\t\t// Only update v2 list IDs.\n\t\t\t\t\tif ( $this->is_v2_list_id( $list_id ) && ! in_array( $list_id, $v2_list_ids, true ) ) {\n\t\t\t\t\t\t$v2_list_ids[] = $list_id;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\t$forms_query->rewind_posts();\n\n\t\t$v2_list_ids_string = implode( ',', $v2_list_ids );\n\n\t\t// Get the list ID cross references.\n\t\t$list_x_refs = [];\n\t\t$list_x_refs = $this->get_v2_list_id_x_refs( $v2_list_ids_string );\n\n\t\t// Iterate over forms and update list IDs.\n\t\twhile ( $forms_query->have_posts() ) {\n\t\t\t$forms_query->the_post();\n\t\t\t$list_ids         = get_post_meta( get_the_ID(), '_ctct_list', true );\n\t\t\t$updated_list_ids = [];\n\n\t\t\tif ( is_array( $list_ids ) && ! empty( $list_ids[0] ) ) {\n\t\t\t\tforeach ( $list_ids as $list_id ) {\n\t\t\t\t\t// V3 List IDs do not need to be modified. We will save them as-is.\n\t\t\t\t\tif ( ! $this->is_v2_list_id( $list_id ) && ! in_array( $list_id, $updated_list_ids, true ) ) {\n\t\t\t\t\t\t$updated_list_ids[] = $list_id;\n\t\t\t\t\t\tcontinue;\n\t\t\t\t\t}\n\n\t\t\t\t\t// Handle v2 list IDs. We need to get their corrsesponding v3 ID.\n\t\t\t\t\tif ( $this->is_v2_list_id( $list_id ) && ! in_array( $list_id, $updated_list_ids, true ) ) {\n\t\t\t\t\t\t$updated_list_id = $this->get_v3_list_id_for_v2_list( $list_id, $list_x_refs );\n\t\t\t\t\t\tif ( ! empty( $updated_list_id ) ) {\n\t\t\t\t\t\t\t$updated_list_ids[] = $updated_list_id;\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// Update the current form's list IDs.\n\t\t\tif ( ! empty( $updated_list_ids ) ) {\n\t\t\t\tupdate_post_meta( get_the_ID(), '_ctct_list', $updated_list_ids );\n\t\t\t}\n\t\t}\n\n\t\t// Set flag indicating that list ID migration is complete.\n\t\treturn update_option( 'ctct_api_v2_v3_migrated', true );\n\t}",
+    "source_file": "constant-contact-forms.json",
+    "function_name": "ConstantContact_Lists::migrate_v2_v3_form_lists",
+    "critical_failures": [
+      "Database query inside loop (N+1 pattern)"
+    ],
+    "low_score_dims": [],
+    "substantive_failure_detected": true,
+    "high_stakes_low_dims": []
+  },
+  {
+    "code": "/**\n\t * Show the log page contents for file log handler.\n\t */\nfunction status_logs_file() {\n\t\t$logs = self::scan_log_files();\n\n\t\tif ( ! empty( $_REQUEST['log_file'] ) && isset( $logs[ sanitize_title( wp_unslash( $_REQUEST['log_file'] ) ) ] ) ) { // WPCS: input var ok, CSRF ok.\n\t\t\t$viewed_log = $logs[ sanitize_title( wp_unslash( $_REQUEST['log_file'] ) ) ]; // WPCS: input var ok, CSRF ok.\n\t\t} elseif ( ! empty( $logs ) ) {\n\t\t\t$viewed_log = current( $logs );\n\t\t}\n\n\t\t$handle = ! empty( $viewed_log ) ? self::get_log_file_handle( $viewed_log ) : '';\n\n\t\tif ( ! empty( $_REQUEST['handle'] ) ) { // WPCS: input var ok, CSRF ok.\n\t\t\tself::remove_log();\n\t\t}\n\n\t\tinclude_once __DIR__ . '/views/html-admin-page-status-logs.php';\n\t}",
+    "source_file": "woocommerce.json",
+    "function_name": "WC_Admin_Status::status_logs_file",
+    "critical_failures": [
+      "Multiple PHPDoc/WPCS issues: missing @since + missing @param/@return",
+      "Missing nonce verification on POST data handler"
+    ],
+    "low_score_dims": [],
+    "substantive_failure_detected": true,
+    "high_stakes_low_dims": []
+  },
+  {
+    "code": "/**\n\t * Tests adding rules to a store and retrieving a generated stylesheet.\n\t *\n\t * @covers ::wp_style_engine_get_stylesheet_from_context\n\t */\nfunction test_should_get_stored_stylesheet_from_context() {\n\t\t$css_rules           = array(\n\t\t\tarray(\n\t\t\t\t'selector'     => '.frodo',\n\t\t\t\t'declarations' => array(\n\t\t\t\t\t'color'        => 'brown',\n\t\t\t\t\t'height'       => '10px',\n\t\t\t\t\t'width'        => '30px',\n\t\t\t\t\t'border-style' => 'dotted',\n\t\t\t\t),\n\t\t\t),\n\t\t\tarray(\n\t\t\t\t'selector'     => '.samwise',\n\t\t\t\t'declarations' => array(\n\t\t\t\t\t'color'        => 'brown',\n\t\t\t\t\t'height'       => '20px',\n\t\t\t\t\t'width'        => '50px',\n\t\t\t\t\t'border-style' => 'solid',\n\t\t\t\t),\n\t\t\t),\n\t\t);\n\t\t$compiled_stylesheet = gutenberg_style_engine_get_stylesheet_from_css_rules(\n\t\t\t$css_rules,\n\t\t\tarray(\n\t\t\t\t'context' => 'test-store',\n\t\t\t)\n\t\t);\n\n\t\t$this->assertSame( $compiled_stylesheet, gutenberg_style_engine_get_stylesheet_from_context( 'test-store' ) );\n\t}",
+    "source_file": "gutenberg.json",
+    "function_name": "WP_Style_Engine_Test::test_should_get_stored_stylesheet_from_context",
+    "critical_failures": [
+      "test code, excluded from training data"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "substantive_failure_detected": false,
+    "high_stakes_low_dims": [
+      "sql_safety",
+      "security",
+      "wp_api_usage",
+      "code_quality"
+    ]
+  },
+  {
+    "code": "/**\n\t\t * Redirects users from ACF 4.0 admin page.\n\t\t *\n\t\t * @since 5.7.6\n\t\t */\nfunction handle_redirection() {\n\t\t\tif ( isset( $_GET['post_type'] ) && $_GET['post_type'] === 'acf' ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended\n\t\t\t\twp_safe_redirect( $this->get_admin_url() );\n\t\t\t\texit;\n\t\t\t}\n\t\t}",
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "ACF_Admin_Field_Groups::handle_redirection",
+    "critical_failures": [
+      "CRITICAL: State-changing handler missing nonce verification"
+    ],
+    "low_score_dims": [],
+    "substantive_failure_detected": true,
+    "high_stakes_low_dims": []
   }
 ]

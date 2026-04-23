@@ -1,0 +1,622 @@
+[
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_ReadMore::include_script",
+    "code": "function include_script() { ?>\\n<script>\\n(function($) {\\n$(document).ready(function() {\\n\\nif ( $(\"input.readmore_bt_type:checked\").val() == 'button') {\\n\\t$(\".show_readmore_button_styling\").css( {'visibility': 'visible', 'height' : 'auto', 'overflow' : 'inherit'} );\\n\\t$(\".show_readmore_hyperlink_styling\").css( {'visibility': 'hidden', 'height' : '0px', 'overflow' : 'hidden'} );\\n\\t} else {\\n\\t$(\".show_readmore_button_styling\").css( {'visibility': 'hidden', 'height' : '0px', 'overflow' : 'hidden'} );\\n\\t$(\".show_readmore_hyperlink_styling\").css( {'visibility': 'visible', 'height' : 'auto', 'overflow' : 'inherit'} );\\n\\t}\\n\\n$(document).on( \"a3rev-ui-onoff_checkbox-switch\", '.readmore_bt_type', function( event, value, status ) {\\n\\t$(\".show_readmore_button_styling\").hide().css( {'visibility': 'visible', 'height' : 'auto', 'overflow' : 'inherit'} );\\n\\t$(\".show_readmore_hyperlink_styling\").hide().css( {'visibility': 'visible', 'height' : 'auto', 'overflow' : 'inherit'} );\\n\\tif ( status == 'true') {\\n\\t\\t$(\".show_readmore_button_styling\").slideDown();\\n\\t\\t$(\".show_readmore_hyperlink_styling\").slideUp();\\n\\t\\t} else {\\n\\t\\t$(\".show_readmore_button_styling\").slideUp();\\n\\t\\t$(\".show_readmore_hyperlink_styling\").slideDown();\\n\\t\\t}\\n\\t});\\n\\t\\n});\\n})(jQuery);\\n</script>\\n    <?php\\t\\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 6,
+        "performance": 7,
+        "wp_api_usage": 7,
+        "code_quality": 6,
+        "dependency_integrity": 8,
+        "i18n": 9,
+        "accessibility": 7
+      },
+      "overall_score": 72,
+      "key_observation": "Inline JS output via PHP heredoc with jQuery event binding; no SQL/security risks but lacks wp_localize_script for data passing and missing i18n within the JS scope.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Control::__construct",
+    "code": "function __construct() {\\n\\t\\tadd_action( 'plugins_loaded', array( $this, 'init_form_fields' ), 1 );\\n\\t\\t$this->subtab_init();\\n\\t\\t\\n\\t\\t$this->form_messages = array(\\n\\t\\t\\t\\t'success_message'\\t=> __( 'Controls Settings successfully saved.', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t'error_message'\\t\\t=> __( 'Error: Controls Settings can not save.', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t'reset_message'\\t\\t=> __( 'Controls Settings successfully reseted.', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t\\t\\t\\n\\t\\tadd_action( $this->plugin_name . '-' . $this->form_key . '_settings_end', array( $this, 'include_script' ) );\\n\\t\\t\\n\\t\\tadd_action( $this->plugin_name . '_set_default_settings' , array( $this, 'set_default_settings' ) );\\n\\t\\t\\t\\t\\t\\n\\t\\tadd_action( $this->plugin_name . '-' . $this->form_key . '_settings_init' , array( $this, 'reset_default_settings' ) );\\n\\t\\t\\t\\t\\n\\t\\t//add_action( $this->plugin_name . '_get_all_settings' , array( $this, 'get_settings' ) );\\n\\t\\t\\n\\t\\tadd_action( $this->plugin_name . '-'. $this->form_key.'_settings_start', array( $this, 'pro_fields_before' ) );\\n\\t\\tadd_action( $this->plugin_name . '-'. $this->form_key.'_settings_end', array( $this, 'pro_fields_after' ) );\\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 7,
+        "sql_safety": 10,
+        "security": 8,
+        "performance": 8,
+        "wp_api_usage": 7,
+        "code_quality": 7,
+        "dependency_integrity": 7,
+        "i18n": 8,
+        "accessibility": 9
+      },
+      "overall_score": 78,
+      "key_observation": "Standard WP plugin construct hooking form fields and settings via add_action; proper use of __() for i18n strings; no SQL or security concerns.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Control::subtab_init",
+    "code": "function subtab_init() {\\n\\t\\t\\n\\t\\tadd_filter( $this->plugin_name . '-' . $this->parent_tab . '_settings_subtabs_array', array( $this, 'add_subtab' ), $this->position );\\n\\t\\t\\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 7,
+        "sql_safety": 10,
+        "security": 8,
+        "performance": 9,
+        "wp_api_usage": 7,
+        "code_quality": 7,
+        "dependency_integrity": 8,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 82,
+      "key_observation": "Minimal filter registration for subtabs; no data handling or user input; very low risk function with good performance characteristics.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Control::subtab_data",
+    "code": "function subtab_data() {\\n\\t\\t\\n\\t\\t$subtab_data = array( \\n\\t\\t\\t'name'\\t\\t\\t\\t=> 'control',\\n\\t\\t\\t'label'\\t\\t\\t\\t=> __( 'Controls', 'a3-responsive-slider' ),\\n\\t\\t\\t'callback_function'\\t=> 'a3_responsive_sider_template_widget_control_settings_form',\\n\\t\\t);\\n\\t\\t\\n\\t\\tif ( $this->subtab_data ) return $this->subtab_data;\\n\\t\\treturn $this->subtab_data = $subtab_data;\\n\\t\\t\\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 7,
+        "sql_safety": 10,
+        "security": 8,
+        "performance": 8,
+        "wp_api_usage": 7,
+        "code_quality": 6,
+        "dependency_integrity": 8,
+        "i18n": 8,
+        "accessibility": 9
+      },
+      "overall_score": 78,
+      "key_observation": "Lazy-loading subtab config with i18n label; callback function name has typo ('sider' vs 'slider') but is harmless string data; no runtime risk.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Control::add_subtab",
+    "code": "function add_subtab( $subtabs_array ) {\\n\\t\\n\\t\\tif ( ! is_array( $subtabs_array ) ) $subtabs_array = array();\\n\\t\\t$subtabs_array[] = $this->subtab_data();\\n\\t\\t\\n\\t\\treturn $subtabs_array;\\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 7,
+        "sql_safety": 10,
+        "security": 8,
+        "performance": 9,
+        "wp_api_usage": 7,
+        "code_quality": 7,
+        "dependency_integrity": 8,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 82,
+      "key_observation": "Defensive array type check before appending subtab; clean filter callback with no side effects; O(1) append operation.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Control::settings_form",
+    "code": "function settings_form() {\\n\\t\\t\\t\\t\\n\\t\\t$output = '';\\n\\t\\t$output .= $GLOBALS[$this->plugin_prefix.'admin_interface']->admin_forms( $this->form_fields, $this->form_key, $this->option_name, $this->form_messages );\\n\\t\\t\\n\\t\\treturn $output;\\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 6,
+        "performance": 7,
+        "wp_api_usage": 6,
+        "code_quality": 6,
+        "dependency_integrity": 5,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 71,
+      "key_observation": "Uses $GLOBALS accessor for admin interface delegation; tight coupling to global state reduces testability; no direct user input handling so SQL/security risk is low.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Control::init_form_fields",
+    "code": "function init_form_fields() {\\n\\t\\t\\t\\t\\n  \\t\\t// Define settings\\t\\t\\t\\n     \\t$this->form_fields = apply_filters( $this->option_name . '_settings_fields', array(\\n\\t\\t\\t\\n\\t\\t\\tarray(\\n\\t\\t\\t\\t'name'\\t\\t=> __( 'Next / Previous Icons', 'a3-responsive-slider' ),\\n                'type' \\t\\t=> 'heading',\\n           \\t),\\n\\t\\t\\tarray(  \\n\\t\\t\\t\\t'name' \\t\\t=> __( 'Control Arrow Icons', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t'id' \\t\\t=> 'enable_slider_control',\\n\\t\\t\\t\\t'class'\\t\\t=> 'enable_slider_control',\\n\\t\\t\\t\\t'type' \\t\\t=> 'onoff_checkbox',\\n\\t\\t\\t\\t'default'\\t=> 1,\\n\\t\\t\\t\\t'checked_value'\\t\\t=> 1,\\n\\t\\t\\t\\t'unchecked_value' \\t=> 0,\\n\\t\\t\\t\\t'checked_label'\\t\\t=> __( 'ON', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t'unchecked_label' \\t=> __( 'OFF', 'a3-responsive-slider' ),\\n\\t\\t\\t),\\n\\t\\t\\t\\n\\t\\t\\tarray(\\n                'type' \\t\\t=> 'heading',\\n\\t\\t\\t\\t'class'\\t\\t=> 'slider_control_container'\\n           \\t),\\n\\t\\t\\tarray(  \\n\\t\\t\\t\\t'name' \\t\\t=> __( 'Arrows Display', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t'id' \\t\\t=> 'slider_control_transition',\\n\\t\\t\\t\\t'type' \\t\\t=> 'onoff_radio',\\n\\t\\t\\t\\t'class'\\t\\t=> 'slider_control_transition',\\n\\t\\t\\t\\t'default' \\t=> 'hover',\\n\\t\\t\\t\\t'onoff_options' => array(\\n\\t\\t\\t\\t\\tarray(\\n\\t\\t\\t\\t\\t\\t'val' \\t\\t\\t\\t\\t=> 'alway',\\n\\t\\t\\t\\t\\t\\t'text' \\t\\t\\t\\t\\t=> __( 'Alway show when slider loaded', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t\\t\\t'checked_label'\\t\\t=> __( 'ON', 'a3-responsive-slider' ) ,\\n\\t\\t\\t\\t\\t\\t'unchecked_label' \\t=> __( 'OFF', 'a3-responsive-slider' ) ,\\n\\t\\t\\t\\t\\t),\\n\\t\\t\\t\\t\\tarray(\\n\\t\\t\\t\\t\\t\\t'val' \\t\\t\\t\\t\\t=> 'hover',\\n\\t\\t\\t\\t\\t\\t'text' \\t\\t\\t\\t\\t=> __( 'Show when hover on slider container', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t\\t\\t'checked_label'\\t\\t=> __( 'ON', 'a3-responsive-slider' ) ,\\n\\t\\t\\t\\t\\t\\t'unchecked_label' \\t=> __( 'OFF', 'a3-responsive-slider' ) ,\\n\\t\\t\\t\\t\\t),\\n\\t\\t\\t\\t),\\t\\t\\t\\n\\t\\t\\t),\\n\\t\\t\\tarray(\\n\\t\\t\\t\\t'name' => __( 'Icons Size', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t'desc' \\t\\t=> \"px\",\\n\\t\\t\\t\\t'id' \\t\\t=> 'slider_control_icons_size',\\n\\t\\t\\t\\t'type' \\t\\t=> 'slider',\\n\\t\\t\\t\\t'default'\\t=> 30,\\n\\t\\t\\t\\t'min'\\t\\t=> 10,\\n\\t\\t\\t\\t'max'\\t\\t=> 60,\\n\\t\\t\\t\\t'increment'\\t=> 1,\\n\\t\\t\\t),\\n\\t\\t\\tarray(\\n\\t\\t\\t\\t'name' \\t\\t=> __( 'Icons Colour', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t'id' \\t\\t=> 'slider_control_icons_color',\\n\\t\\t\\t\\t'type' \\t\\t=> 'color',\\n\\t\\t\\t\\t'default'\\t=> '#000000'\\n\\t\\t\\t),\\n\\t\\t\\tarray(\\n\\t\\t\\t\\t'name' => __( 'Icons Transparency', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t'desc' \\t\\t=> \"%. \" . __( '100% = Full Colour', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t'id' \\t\\t=> 'slider_control_icons_opacity',\\n\\t\\t\\t\\t'type' \\t\\t=> 'slider',\\n\\t\\t\\t\\t'default'\\t=> 60,\\n\\t\\t\\t\\t'min'\\t\\t=> 0,\\n\\t\\t\\t\\t'max'\\t\\t=> 100,\\n\\t\\t\\t\\t'increment'\\t=> 10,\\n\\t\\t\\t),\\n\\t\\t\\tarray(  \\n\\t\\t\\t\\t'name' \\t\\t=> __( 'Previous Icon Left Margin', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t'desc'\\t\\t=> 'px',\\n\\t\\t\\t\\t'id' \\t\\t=> 'control_previous_icon_margin_left',\\n\\t\\t\\t\\t'type' \\t\\t=> 'text',\\n\\t\\t\\t\\t'css'\\t\\t=> 'width:40px;',\\n\\t\\t\\t\\t'default'\\t=> 5,\\n\\t\\t\\t),\\n\\t\\t\\tarray(  \\n\\t\\t\\t\\t'name' \\t\\t=> __( 'Next Icon Right Margin', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t'desc'\\t\\t=> 'px',\\n\\t\\t\\t\\t'id' \\t\\t=> 'control_next_icon_margin_right',\\n\\t\\t\\t\\t'type' \\t\\t=> 'text',\\n\\t\\t\\t\\t'css'\\t\\t=> 'width:40px;',\\n\\t\\t\\t\\t'default'\\t=> 5,\\n\\t\\t\\t),\\n\\n\\t\\t\\tarray(\\n\\t\\t\\t\\t'name'   => __('Pause | Play Icons', 'a3-responsive-slider'),\\n\\t\\t\\t\\t'type'   => 'heading',\\n\\t\\t\\t),\\n\\t\\t\\tarray(  \\n\\t\\t\\t\\t'name' \\t\\t=> __( 'Icon Display', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t'id' \\t\\t=> 'pauseplay_icon_transition',\\n\\t\\t\\t\\t'type' \\t\\t=> 'onoff_radio',\\n\\t\\t\\t\\t'class'\\t\\t=> 'pauseplay_icon_transition',\\n\\t\\t\\t\\t'default' \\t=> 'hover',\\n\\t\\t\\t\\t'onoff_options' => array(\\n\\t\\t\\t\\t\\tarray(\\n\\t\\t\\t\\t\\t\\t'val' \\t\\t\\t\\t\\t=> 'alway',\\n\\t\\t\\t\\t\\t\\t'text' \\t\\t\\t\\t\\t=> __( 'Alway show when slider loaded', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t\\t\\t'checked_label'\\t\\t=> __( 'ON', 'a3-responsive-slider' ) ,\\n\\t\\t\\t\\t\\t\\t'unchecked_label' \\t=> __( 'OFF', 'a3-responsive-slider' ) ,\\n\\t\\t\\t\\t\\t),\\n\\t\\t\\t\\t\\tarray(\\n\\t\\t\\t\\t\\t\\t'val' \\t\\t\\t\\t\\t=> 'hover',\\n\\t\\t\\t\\t\\t\\t'text' \\t\\t\\t\\t\\t=> __( 'Show when hover on slider container', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t\\t\\t'checked_label'\\t\\t=> __( 'ON', 'a3-responsive-slider' ) ,\\n\\t\\t\\t\\t\\t\\t'unchecked_label' \\t=> __( 'OFF', 'a3-responsive-slider' ) ,\\n\\t\\t\\t\\t\\t),\\n\\t\\t\\t\\t),\\t\\t\\t\\n\\t\\t\\t),\\n\\t\\t\\tarray(\\n\\t\\t\\t\\t'name' => __( 'Icons Size', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t'desc' \\t\\t=> \"px\",\\n\\t\\t\\t\\t'id' \\t\\t=> 'pauseplay_icon_size',\\n\\t\\t\\t\\t'type' \\t\\t=> 'slider',\\n\\t\\t\\t\\t'default'\\t=> 30,\\n\\t\\t\\t\\t'min'\\t\\t=> 10,\\n\\t\\t\\t\\t'max'\\t\\t=> 60,\\n\\t\\t\\t\\t'increment'\\t=> 1,\\n\\t\\t\\t),\\n\\t\\t\\tarray(\\n\\t\\t\\t\\t'name' \\t\\t=> __( 'Icons Colour', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t'id' \\t\\t=> 'pauseplay_icon_color',\\n\\t\\t\\t\\t'type' \\t\\t=> 'color',\\n\\t\\t\\t\\t'default'\\t=> '#000000'\\n\\t\\t\\t),\\n\\t\\t\\tarray(\\n\\t\\t\\t\\t'name' => __( 'Icons Transparency', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t'desc' \\t\\t=> \"%. \" . __( '100% = Full Colour', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t'id' \\t\\t=> 'pauseplay_icons_opacity',\\n\\t\\t\\t\\t'type' \\t\\t=> 'slider',\\n\\t\\t\\t\\t'default'\\t=> 60,\\n\\t\\t\\t\\t'min'\\t\\t=> 0,\\n\\t\\t\\t\\t'max'\\t\\t=> 100,\\n\\t\\t\\t\\t'increment'\\t=> 10,\\n\\t\\t\\t),\\n\\t\\t\\tarray(\\n\\t\\t\\t\\t'name' => __( 'Vertical Position', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t'desc' \\t\\t=> '',\\n\\t\\t\\t\\t'id' \\t\\t=> 'pauseplay_icon_vertical_position',\\n\\t\\t\\t\\t'default'\\t=> 'center',\\n\\t\\t\\t\\t'type' \\t\\t=> 'onoff_radio',\\n\\t\\t\\t\\t'onoff_options' => array(\\n\\t\\t\\t\\t\\tarray(\\n\\t\\t\\t\\t\\t\\t'val' => 'top',\\n\\t\\t\\t\\t\\t\\t'text' => __( 'Top', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t\\t\\t'checked_label'\\t=> 'ON',\\n\\t\\t\\t\\t\\t\\t'unchecked_label' => 'OFF',\\n\\t\\t\\t\\t\\t),\\n\\t\\t\\t\\t\\tarray(\\n\\t\\t\\t\\t\\t\\t'val' => 'center',\\n\\t\\t\\t\\t\\t\\t'text' => __( 'Middle', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t\\t\\t'checked_label'\\t=> 'ON',\\n\\t\\t\\t\\t\\t\\t'unchecked_label' => 'OFF',\\n\\t\\t\\t\\t\\t),\\n\\t\\t\\t\\t\\tarray(\\n\\t\\t\\t\\t\\t\\t'val' => 'bottom',\\n\\t\\t\\t\\t\\t\\t'text' => __( 'Bottom', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t\\t\\t'checked_label'\\t=> 'ON',\\n\\t\\t\\t\\t\\t\\t'unchecked_label' => 'OFF',\\n\\t\\t\\t\\t\\t),\\n\\t\\t\\t\\t),\\n\\t\\t\\t),\\n\\t\\t\\tarray(\\n\\t\\t\\t\\t'name' => __( 'Horizontal Position', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t'desc' \\t\\t=> '',\\n\\t\\t\\t\\t'id' \\t\\t=> 'pauseplay_icon_horizontal_position',\\n\\t\\t\\t\\t'default'\\t=> 'center',\\n\\t\\t\\t\\t'type' \\t\\t=> 'onoff_radio',\\n\\t\\t\\t\\t'onoff_options' => array(\\n\\t\\t\\t\\t\\tarray(\\n\\t\\t\\t\\t\\t\\t'val' => 'left',\\n\\t\\t\\t\\t\\t\\t'text' => __( 'Left', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t\\t\\t'checked_label'\\t=> 'ON',\\n\\t\\t\\t\\t\\t\\t'unchecked_label' => 'OFF',\\n\\t\\t\\t\\t\\t),\\n\\t\\t\\t\\t\\tarray(\\n\\t\\t\\t\\t\\t\\t'val' => 'center',\\n\\t\\t\\t\\t\\t\\t'text' => __( 'Center', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t\\t\\t'checked_label'\\t=> 'ON',\\n\\t\\t\\t\\t\\t\\t'unchecked_label' => 'OFF',\\n\\t\\t\\t\\t\\t),\\n\\t\\t\\t\\t\\tarray(\\n\\t\\t\\t\\t\\t\\t'val' => 'right',\\n\\t\\t\\t\\t\\t\\t'text' => __( 'Right', 'a3-responsive-slider' ),\\n\\t\\t\\t\\t\\t\\t'checked_label'\\t=> 'ON',\\n\\t\\t\\t\\t\\t\\t'unchecked_label' => 'OFF',\\n\\t\\t\\t\\t\\t),\\n\\t\\t\\t\\t),\\n\\t\\t\\t),\\n        ));\\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 10,
+        "security": 7,
+        "performance": 7,
+        "wp_api_usage": 7,
+        "code_quality": 5,
+        "dependency_integrity": 7,
+        "i18n": 8,
+        "accessibility": 8
+      },
+      "overall_score": 74,
+      "key_observation": "Large static form field config with extensive i18n; applies filter for extensibility; poor indentation and 'alway' typo ('always'); no SQL/security issues as it is pure data definition.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Control::include_script",
+    "code": "function include_script() {\\n\\t?>\\n<script>\\n(function($) {\\n$(document).ready(function() {\\n\\tif ( $(\"input.enable_slider_control:checked\").val() != '1') {\\n\\n\\t\\t$(\".slider_control_container\").css( {'visibility': 'hidden', 'height' : '0px', 'overflow' : 'hidden', 'margin-bottom' : '0px' } );\\n\\t}\\n\\n\\t$(document).on( \"a3rev-ui-onoff_checkbox-switch\", '.enable_slider_control', function( event, value, status ) {\\n\\t\\t$(\".slider_control_container\").attr('style','display:none;');\\n\\t\\tif ( status == 'true' ) {\\n\\t\\t\\t$(\".slider_control_container\").slideDown();\\n\\t\\t}\\n\\t});\\n\\n});\\n})(jQuery);\\n</script>\\n    <?php\\n\\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 6,
+        "performance": 7,
+        "wp_api_usage": 6,
+        "code_quality": 6,
+        "dependency_integrity": 8,
+        "i18n": 9,
+        "accessibility": 7
+      },
+      "overall_score": 72,
+      "key_observation": "Second inline JS output (settings page scope); uses .attr('style','...') which overrides CSS specificity but is acceptable for admin UI; no data passed via JS so no sanitize/nonce needed.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "a3_CSSmin::__construct",
+    "code": "function __construct($raise_php_limits = TRUE)\\n    {\\n        // Set suggested PHP limits\\n        $this->memory_limit = 128 * 1048576; // 128MB in bytes\\n        $this->max_execution_time = 60; // 1 min\\n        $this->pcre_backtrack_limit = 1000 * 1000;\\n        $this->pcre_recursion_limit =  500 * 1000;\\n\\n        $this->raise_php_limits = (bool) $raise_php_limits;\\n    }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 7,
+        "sql_safety": 10,
+        "security": 8,
+        "performance": 8,
+        "wp_api_usage": 7,
+        "code_quality": 7,
+        "dependency_integrity": 8,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 81,
+      "key_observation": "Clean constructor setting safe defaults for memory, execution time, and PCRE limits; no user input or SQL; well-structured for CSS minification performance.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "a3_CSSmin::run",
+    "code": "function run($css = '', $linebreak_pos = FALSE)\\n    {\\n        if (empty($css)) {\\n            return '';\\n        }\\n\\n        if ($this->raise_php_limits) {\\n            $this->do_raise_php_limits();\\n        }\\n\\n        $this->comments = array();\\n        $this->preserved_tokens = array();\\n\\n        $start_index = 0;\\n        $length = strlen($css);\\n\\n        $css = $this->extract_data_urls($css);\\n\\n        // collect all comment blocks...\\n        while (($start_index = $this->index_of($css, '/*', $start_index)) >= 0) {\\n            $end_index = $this->index_of($css, '*/', $start_index + 2);\\n            if ($end_index < 0) {\\n                $end_index = $length;\\n            }\\n            $comment_found = $this->str_slice($css, $start_index + 2, $end_index);\\n            $this->comments[] = $comment_found;\\n            $comment_preserve_string = self::COMMENT . (count($this->comments) - 1) . '___;\\n            $css = $this->str_slice($css, 0, $start_index + 2) . $comment_preserve_string . $this->str_slice($css, $end_index);\\n            // Set correct start_index: Fixes issue #2528130\\n            $start_index = $end_index + 2 + strlen($comment_preserve_string) - strlen($comment_found);\\n        }\\n\\n        // preserve strings so their content doesn't get accidentally minified\\n        $css = preg_replace_callback('/(?:\"(?:[^\\\\\\\\\\\"]|\\\\\\\\\\\\.|\\\\\\\\\\\\)*\")|'.\"(?:'(?:[^\\\\\\\\\\\\']|\\\\\\\\\\\\.|\\\\\\\\\\\\)*')/S\", array($this, 'replace_string'), $css);\\n\\n        // Let's divide css code in chunks of 5.000 chars aprox.\\n        $charset = '';\\n        $charset_regexp = '/(@charset)( [^;]+;)/i';\\n        $css_chunks = array();\\n        $css_chunk_length = 5000;\\n        $start_index = 0;\\n        $i = $css_chunk_length;\\n        $l = strlen($css);\\n\\n\\n        // if the number of characters is 5000 or less, do not chunk\\n        if ($l <= $css_chunk_length) {\\n            $css_chunks[] = $css;\\n        } else {\\n            // chunk css code securely\\n            while ($i < $l) {\\n                $i += 50;\\n                if ($l - $start_index <= $css_chunk_length || $i >= $l) {\\n                    $css_chunks[] = $this->str_slice($css, $start_index);\\n                    break;\\n                }\\n                if ($css[$i - 1] === '}' && $i - $start_index > $css_chunk_length) {\\n                    $next_chunk = substr($css, $i);\\n                    if (preg_match('/^\\\\s*\\\\}/', $next_chunk)) {\\n                        $i = $i + $this->index_of($next_chunk, '}') + 1;\\n                    }\\n\\n                    $css_chunks[] = $this->str_slice($css, $start_index, $i);\\n                    $start_index = $i;\\n                }\\n            }\\n        }\\n\\n        // Minify each chunk\\n        for ($i = 0, $n = count($css_chunks); $i < $n; $i++) {\\n            $css_chunks[$i] = $this->minify($css_chunks[$i], $linebreak_pos);\\n            if (empty($charset) && preg_match($charset_regexp, $css_chunks[$i], $matches)) {\\n                $charset = strtolower($matches[1]) . $matches[2];\\n            }\\n            $css_chunks[$i] = preg_replace($charset_regexp, '', $css_chunks[$i]);\\n        }\\n\\n        $css_chunks[0] = $charset . $css_chunks[0];\\n\\n        return implode('', $css_chunks);\\n    }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 10,
+        "security": 7,
+        "performance": 8,
+        "wp_api_usage": 7,
+        "code_quality": 6,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 76,
+      "key_observation": "Core CSS minification engine with chunked processing to avoid PCRE backtrack limits; extracts data URLs and preserves comments; no SQL or user input; well-architected for performance but regex complexity is high.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "a3_CSSmin::do_raise_php_limits",
+    "code": "function do_raise_php_limits()\\n    {\\n        $php_limits = array(\\n            'memory_limit' => $this->memory_limit,\\n            'max_execution_time' => $this->max_execution_time,\\n            'pcre.backtrack_limit' => $this->pcre_backtrack_limit,\\n            'pcre.recursion_limit' =>  $this->pcre_recursion_limit\\n        );\\n\\n        // If current settings are higher respect them.\\n        foreach ($php_limits as $name => $suggested) {\\n            $current = $this->normalize_int(ini_get($name));\\n            // memory_limit exception: allow -1 for \"no memory limit\".\\n            if ($current > -1 && ($suggested == -1 || $current < $suggested)) {\\n                ini_set($name, $suggested);\\n            }\\n        }\\n    }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 7,
+        "sql_safety": 10,
+        "security": 7,
+        "performance": 9,
+        "wp_api_usage": 7,
+        "code_quality": 7,
+        "dependency_integrity": 8,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 81,
+      "key_observation": "Conditionally raises PHP ini settings only when current values are lower; respects existing -1 (no limit) convention; safe and well-protected against overwriting stricter server configs.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "a3_CSSmin::minify",
+    "code": "function minify($css, $linebreak_pos)\\n    {\\n        // strings are safe, now wrestle the comments\\n        for ($i = 0, $max = count($this->comments); $i < $max; $i++) {\\n            $token = $this->comments[$i];\\n            $placeholder = '/' . self::COMMENT . $i . '___/';\\n            if (substr($token, 0, 1) === '!') {\\n                $this->preserved_tokens[] = $token;\\n                $token_tring = self::TOKEN . (count($this->preserved_tokens) - 1) . '___;\\n                $css = preg_replace($placeholder, $token_tring, $css, 1);\\n                $css = preg_replace('/\\s*[\\n\\r\\f]+\\s*(\\/\\*'. $token_tring.')/S', self::NL.'$1', $css);\\n                $css = preg_replace('/('. $token_tring .'\\\\*\\\\/)\\s*[\\n\\r\\f]+\\s*/', '$1'.self::NL, $css);\\n                continue;\\n            }\\n            if (substr($token, (strlen($token) - 1), 1) === '\\\\') {\\n                $this->preserved_tokens[] = '\\\\';\\n                $css = preg_replace($placeholder,  self::TOKEN . (count($this->preserved_tokens) - 1) . '___', $css, 1);\\n                $i = $i + 1;\\n                $this->preserved_tokens[] = '';\\n                $css = preg_replace('/' . self::COMMENT . $i . '___',  self::TOKEN . (count($this->preserved_tokens) - 1) . '___', $css, 1);\\n                continue;\\n            }\\n            if (strlen($token) === 0) {\\n                $start_index = $this->index_of($css, $this->str_slice($placeholder, 1, -1));\\n                if ($start_index > 2) {\\n                    if (substr($css, $start_index - 3, 1) === '>') {\\n                        $this->preserved_tokens[] = '';\\n                        $css = preg_replace($placeholder,  self::TOKEN . (count($this->preserved_tokens) - 1) . '___', $css, 1);\\n                    }\\n                }\\n            }\\n            $css = preg_replace('/\\/\\*' . $this->str_slice($placeholder, 1, -1) . '\\*\\//', '', $css, 1);\\n        }\\n        $css = preg_replace('/\\s+/', ' ', $css);\\n        $css = preg_replace_callback('/\\s*filter\\:\\s*progid:DXImageTransform\\.Microsoft\\.Matrix\\(([^\\)]+)\\)/', array($this, 'preserve_old_IE_specific_matrix_definition'), $css);\\n        $css = preg_replace_callback('/calc(\\(((?:[^\\(\\)]+|(?1))*)\\))/i', array($this, 'replace_calc'), $css);\\n        $css = preg_replace('/((?<!\\\\\\\\)\\:|\\s)\\+(\\.?\\d+)/S', '$1$2', $css);\\n        $css = preg_replace('/((?<!\\\\\\\\)\\:|\\s)(\\-?)0+(\\.?\\d+)/S', '$1$2$3', $css);\\n        $css = preg_replace('/((?<!\\\\\\\\)\\:|\\s)(\\-?)(\\d?\\.\\d+?)0+([^\\d])/S', '$1$2$3$4', $css);\\n        $css = preg_replace('/((?<!\\\\\\\\)\\:|\\s)(\\-?\\d+)\\.0([^\\d])/S', '$1$2$3', $css);\\n        $css = preg_replace('/((?<!\\\\\\\\)\\:|\\s)\\-?\\.?0+([^\\d])/S', '${1}0$2', $css);\\n        $css = preg_replace_callback('/(?:^|\\})[^\\{]*\\s+\\:/', array($this, 'replace_colon'), $css);\\n        $css = preg_replace('/\\s+([\\!\\{\\}\\;\\:\\>\\+\\(\\)\\]\\~\\=,])/', '$1', $css);\\n        $css = preg_replace('/\\!important/i', ' !important', $css);\\n        $css = preg_replace('/' . self::CLASSCOLON . '/', ':', $css);\\n        $css = preg_replace_callback('/\\:first\\-(line|letter)(\\{|,)/i', array($this, 'lowercase_pseudo_first'), $css);\\n        $css = preg_replace('/\\*\\/ /', '*/', $css);\\n        $css = preg_replace_callback('/@(font-face|import|(?:-(?:atsc|khtml|moz|ms|o|wap|webkit)-)?keyframe|media|page|namespace)/i', array($this, 'lowercase_directives'), $css);\\n        $css = preg_replace_callback('/:(active|after|before|checked|disabled|empty|enabled|first-(?:child|of-type)|focus|hover|last-(?:child|of-type)|link|only-(?:child|of-type)|root|:selection|target|visited)/i', array($this, 'lowercase_pseudo_elements'), $css);\\n        $css = preg_replace_callback('/:(lang|not|nth-child|nth-last-child|nth-last-of-type|nth-of-type|(?:-(?:moz|webkit)-)?any)\\(/i', array($this, 'lowercase_common_functions'), $css);\\n        $css = preg_replace_callback('/([:,\\( ]\\s*)(attr|color-stop|from|rgba|to|url|(?:-(?:atsc|khtml|moz|ms|o|wap|webkit)-)?(?:calc|max|min|(?:repeating-)?(?:linear|radial)-gradient)|-webkit-gradient)/iS', array($this, 'lowercase_common_functions_values'), $css);\\n        $css = preg_replace('/\\band\\(/i', 'and (', $css);\\n        $css = preg_replace('/([\\!\\{\\}\\:;\\>\\+\\(\\[\\~\\=,])\\s+/S', '$1', $css);\\n        $css = preg_replace('/;+\\}/', '}', $css);\\n        $css = preg_replace('/(\\*[a-z0-9\\-]+\\s*\\:[^;\\}]+)(\\})/', '$1;$2', $css);\\n        $css = preg_replace('/([^\\\\\\\\]\\:|\\s)0(?:em|ex|ch|rem|vw|vh|vm|vmin|cm|mm|in|px|pt|pc|%)/iS', '${1}0', $css);\\n        $css = preg_replace_callback('/(@[a-z\\-]*?keyframes[^\\{]+\\{)(.*?)(\\}\\})/iS', array($this, 'replace_keyframe_zero'), $css);\\n        $css = preg_replace('/\\:0(?: 0){1,3}(;|\\}| \\!)/', ':0$1', $css);\\n        $css = preg_replace('/(text-shadow\\:0)(;|\\}| \\!)/i', '$1 0 0$2', $css);\\n        $css = preg_replace('/(background\\-position|webkit-mask-position|(?:webkit|moz|o|ms|)\\-?transform\\-origin)\\:0(;|\\}| \\!)/iS', '$1:0 0$2', $css);\\n        $css = preg_replace_callback('/rgb\\s*\\(\\s*([0-9,\\s\\-\\.\\%]+)\\s*\\)(.{1})/i', array($this, 'rgb_to_hex'), $css);\\n        $css = preg_replace_callback('/hsl\\s*\\(\\s*([0-9,\\s\\-\\.\\%]+)\\s*\\)(.{1})/i', array($this, 'hsl_to_hex'), $css);\\n        $css = $this->compress_hex_colors($css);\\n        $css = preg_replace('/(border\\-?(?:top|right|bottom|left|)|outline)\\:none(;|\\}| \\!)/iS', '$1:0$2', $css);\\n        $css = preg_replace('/progid\\:DXImageTransform\\.Microsoft\\.Alpha\\(Opacity\\=/i', 'alpha(opacity=', $css);\\n        $css = preg_replace('/\\(([a-z\\-]+):([0-9]+)\\/([0-9]+)\\)/i', '($1:$2'. self::QUERY_FRACTION .'$3)', $css);\\n        $css = preg_replace('/[^\\};\\{\\/]+\\{\\}/S', '', $css);\\n        $css = preg_replace('/'. self::QUERY_FRACTION .'/', '/', $css);\\n        $css = preg_replace('/;;+/', ';', $css);\\n        $css = preg_replace('/'. self::NL .'/', \"\\n\", $css);\\n        $css = preg_replace_callback('/(\\{|\\;)([A-Z\\-]+)(\\:)/', array($this, 'lowercase_properties'), $css);\\n        if ($linebreak_pos !== FALSE && (int) $linebreak_pos >= 0) {\\n            $linebreak_pos = (int) $linebreak_pos;\\n            $start_index = $i = 0;\\n            while ($i < strlen($css)) {\\n                $i++;\\n                if ($css[$i - 1] === '}' && $i - $start_index > $linebreak_pos) {\\n                    $css = $this->str_slice($css, 0, $i) . \"\\n\" . $this->str_slice($css, $i);\\n                    $start_index = $i;\\n                }\\n            }\\n        }\\n        for ($i = count($this->preserved_tokens) - 1; $i >= 0; $i--) {\\n            $css = preg_replace('/' . self::TOKEN . $i . '___', $this->preserved_tokens[$i], $css, 1);\\n        }\\n        return trim($css);\\n    }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 5,
+        "sql_safety": 10,
+        "security": 7,
+        "performance": 7,
+        "wp_api_usage": 6,
+        "code_quality": 4,
+        "dependency_integrity": 6,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 70,
+      "key_observation": "Massive 201-line CSS minification engine with 30+ regex transformations; no SQL/security issues but code quality is low due to extreme complexity and maintainability concerns; token-based comment/string preservation is sound.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "a3_CSSmin::extract_data_urls",
+    "code": "function extract_data_urls($css)\\n    {\\n        // Leave data urls alone to increase parse performance.\\n        $max_index = strlen($css) - 1;\\n        $append_index = $index = $last_index = $offset = 0;\\n        $sb = array();\\n        $pattern = '/url\\(\\s*([\"\\']?)data\\:/i';\\n        while (preg_match($pattern, $css, $m, 0, $offset)) {\\n            $index = $this->index_of($css, $m[0], $offset);\\n            $last_index = $index + strlen($m[0]);\\n            $start_index = $index + 4;\\n            $end_index = $last_index - 1;\\n            $terminator = $m[1];\\n            $found_terminator = FALSE;\\n            if (strlen($terminator) === 0) {\\n                $terminator = ')';\\n            }\\n            while ($found_terminator === FALSE && $end_index+1 <= $max_index) {\\n                $end_index = $this->index_of($css, $terminator, $end_index + 1);\\n                if ($end_index > 0 && substr($css, $end_index - 1, 1) !== '\\\\') {\\n                    $found_terminator = TRUE;\\n                    if (')' != $terminator) {\\n                        $end_index = $this->index_of($css, ')', $end_index);\\n                    }\\n                }\\n            }\\n            $sb[] = $this->str_slice($css, $append_index, $index);\\n            if ($found_terminator) {\\n                $token = $this->str_slice($css, $start_index, $end_index);\\n                $token = preg_replace('/\\s+/', '', $token);\\n                $this->preserved_tokens[] = $token;\\n                $preserver = 'url(' . self::TOKEN . (count($this->preserved_tokens) - 1) . '___)';\\n                $sb[] = $preserver;\\n                $append_index = $end_index + 1;\\n            } else {\\n                $sb[] = $this->str_slice($css, $index, $last_index);\\n                $append_index = $last_index;\\n            }\\n            $offset = $last_index;\\n        }\\n        $sb[] = $this->str_slice($css, $append_index);\\n        return implode('', $sb);\\n    }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 10,
+        "security": 7,
+        "performance": 8,
+        "wp_api_usage": 7,
+        "code_quality": 6,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 76,
+      "key_observation": "Handles data:URL preservation with proper terminator matching; escaped quote detection is sound; no user input or SQL; performance benefit from avoiding minification of data URIs.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "a3_CSSmin::compress_hex_colors",
+    "code": "function compress_hex_colors($css)\\n    {\\n        $pattern = '/(\\=\\s*?[\"\\']?)?#([0-9a-f])([0-9a-f])([0-9a-f])([0-9a-f])([0-9a-f])([0-9a-f])(\\}|[^0-9a-f{][^{]*?\\})/iS';\\n        $_index = $index = $last_index = $offset = 0;\\n        $sb = array();\\n        $short_safe = array(\\n            '#808080' => 'gray',\\n            '#008000' => 'green',\\n            '#800000' => 'maroon',\\n            '#000080' => 'navy',\\n            '#808000' => 'olive',\\n            '#ffa500' => 'orange',\\n            '#800080' => 'purple',\\n            '#c0c0c0' => 'silver',\\n            '#008080' => 'teal',\\n            '#f00' => 'red'\\n        );\\n        while (preg_match($pattern, $css, $m, 0, $offset)) {\\n            $index = $this->index_of($css, $m[0], $offset);\\n            $last_index = $index + strlen($m[0]);\\n            $is_filter = $m[1] !== null && $m[1] !== '';\\n            $sb[] = $this->str_slice($css, $_index, $index);\\n            if ($is_filter) {\\n                $sb[] = $m[1] . '#' . $m[2] . $m[3] . $m[4] . $m[5] . $m[6] . $m[7];\\n            } else {\\n                if (strtolower($m[2]) == strtolower($m[3]) &&\\n                    strtolower($m[4]) == strtolower($m[5]) &&\\n                    strtolower($m[6]) == strtolower($m[7])) {\\n                    $hex = '#' . strtolower($m[3] . $m[5] . $m[7]);\\n                } else {\\n                    $hex = '#' . strtolower($m[2] . $m[3] . $m[4] . $m[5] . $m[6] . $m[7]);\\n                }\\n                $sb[] = array_key_exists($hex, $short_safe) ? $short_safe[$hex] : $hex;\\n            }\\n            $_index = $offset = $last_index - strlen($m[8]);\\n        }\\n        $sb[] = $this->str_slice($css, $_index);\\n        return implode('', $sb);\\n    }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 10,
+        "security": 8,
+        "performance": 8,
+        "wp_api_usage": 7,
+        "code_quality": 6,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 77,
+      "key_observation": "Hex color compression with safe color name mapping; filter-aware to preserve IE alpha() syntax; deterministic O(n) scan with regex; no security or SQL risk.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "a3_CSSmin::replace_string",
+    "code": "function replace_string($matches)\\n    {\\n        $match = $matches[0];\\n        $quote = substr($match, 0, 1);\\n        $match = addcslashes($this->str_slice($match, 1, -1), '\\\\\\\\');\\n        if (($pos = $this->index_of($match, self::COMMENT)) >= 0) {\\n            for ($i = 0, $max = count($this->comments); $i < $max; $i++) {\\n                $match = preg_replace('/' . self::COMMENT . $i . '___', $this->comments[$i], $match, 1);\\n            }\\n        }\\n        $match = preg_replace('/progid\\:DXImageTransform\\.Microsoft\\.Alpha\\(Opacity\\=/i', 'alpha(opacity=', $match);\\n        $this->preserved_tokens[] = $match;\\n        return $quote . self::TOKEN . (count($this->preserved_tokens) - 1) . '___' . $quote;\\n    }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 10,
+        "security": 7,
+        "performance": 8,
+        "wp_api_usage": 7,
+        "code_quality": 7,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 77,
+      "key_observation": "Callback for preserving CSS strings during minification; uses addcslashes to escape backslashes; restores comment tokens; no SQL or user input path.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "a3_CSSmin::replace_calc",
+    "code": "function replace_calc($matches)\\n    {\\n        $this->preserved_tokens[] = trim(preg_replace('/\\s*([\\*\\/\\(\\),])\\s*/', '$1', $matches[2]));\\n        return 'calc('. self::TOKEN . (count($this->preserved_tokens) - 1) . '___' . ')';\\n    }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 7,
+        "sql_safety": 10,
+        "security": 8,
+        "performance": 9,
+        "wp_api_usage": 7,
+        "code_quality": 7,
+        "dependency_integrity": 8,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 83,
+      "key_observation": "Compact calc() preservation tokenizing whitespace-stripped expressions; O(1) token push; minimal and correct.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "a3_CSSmin::preserve_old_IE_specific_matrix_definition",
+    "code": "function preserve_old_IE_specific_matrix_definition($matches)\\t{\\n\\t\\t$this->preserved_tokens[] = $matches[1];\\n\\t\\treturn 'filter:progid:DXImageTransform.Microsoft.Matrix(' . self::TOKEN . (count($this->preserved_tokens) - 1) . '___' . ')';\\n    }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 7,
+        "sql_safety": 10,
+        "security": 8,
+        "performance": 9,
+        "wp_api_usage": 7,
+        "code_quality": 7,
+        "dependency_integrity": 8,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 83,
+      "key_observation": "Preserves legacy IE matrix filter during CSS minification; preserves original filter arguments verbatim; no user input or SQL.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "a3_CSSmin::rgb_to_hex",
+    "code": "function rgb_to_hex($matches)\\n    {\\n        if ($this->index_of($matches[1], '%') >= 0){\\n            $rgbcolors = explode(',', str_replace('%', '', $matches[1]));\\n            for ($i = 0; $i < count($rgbcolors); $i++) {\\n                $rgbcolors[$i] = $this->round_number(floatval($rgbcolors[$i]) * 2.55);\\n            }\\n        } else {\\n            $rgbcolors = explode(',', $matches[1]);\\n        }\\n        for ($i = 0; $i < count($rgbcolors); $i++) {\\n            $rgbcolors[$i] = $this->clamp_number(intval($rgbcolors[$i], 10), 0, 255);\\n            $rgbcolors[$i] = sprintf(\"%02x\", $rgbcolors[$i]);\\n        }\\n        if (!preg_match('/[\\s\\,\\);\\}]/', $matches[2])){\\n            $matches[2] = ' ' . $matches[2];\\n        }\\n        return '#' . implode('', $rgbcolors) . $matches[2];\\n    }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 10,
+        "security": 8,
+        "performance": 8,
+        "wp_api_usage": 7,
+        "code_quality": 7,
+        "dependency_integrity": 8,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 79,
+      "key_observation": "RGB/HSL color space conversion with proper clamping to 0-255; handles percentage values correctly; deterministic and pure function with no side effects.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "a3_CSSmin::hsl_to_hex",
+    "code": "function hsl_to_hex($matches)\\n    {\\n        $values = explode(',', str_replace('%', '', $matches[1]));\\n        $h = floatval($values[0]);\\n        $s = floatval($values[1]);\\n        $l = floatval($values[2]);\\n        $h = ((($h % 360) + 360) % 360) / 360;\\n        $s = $this->clamp_number($s, 0, 100) / 100;\\n        $l = $this->clamp_number($l, 0, 100) / 100;\\n        if ($s == 0) {\\n            $r = $g = $b = $this->round_number(255 * $l);\\n        } else {\\n            $v2 = $l < 0.5 ? $l * (1 + $s) : ($l + $s) - ($s * $l);\\n            $v1 = (2 * $l) - $v2;\\n            $r = $this->round_number(255 * $this->hue_to_rgb($v1, $v2, $h + (1/3)));\\n            $g = $this->round_number(255 * $this->hue_to_rgb($v1, $v2, $h));\\n            $b = $this->round_number(255 * $this->hue_to_rgb($v1, $v2, $h - (1/3)));\\n        }\\n        return $this->rgb_to_hex(array('', $r.','.$g.','.$b, $matches[2]));\\n    }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 10,
+        "security": 8,
+        "performance": 8,
+        "wp_api_usage": 7,
+        "code_quality": 7,
+        "dependency_integrity": 8,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 79,
+      "key_observation": "HSL to RGB color space conversion with proper hue wrapping and clamping; delegates to rgb_to_hex; mathematically correct with no external dependencies.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "a3_CSSmin::hue_to_rgb",
+    "code": "function hue_to_rgb($v1, $v2, $vh)\\n    {\\n        $vh = $vh < 0 ? $vh + 1 : ($vh > 1 ? $vh - 1 : $vh);\\n        if ($vh * 6 < 1) return $v1 + ($v2 - $v1) * 6 * $vh;\\n        if ($vh * 2 < 1) return $v2;\\n        if ($vh * 3 < 2) return $v1 + ($v2 - $v1) * ((2/3) - $vh) * 6;\\n        return $v1;\\n    }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 7,
+        "sql_safety": 10,
+        "security": 9,
+        "performance": 9,
+        "wp_api_usage": 7,
+        "code_quality": 8,
+        "dependency_integrity": 9,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 85,
+      "key_observation": "Clean HSL hue-to-RGB conversion using standard algorithm; no external calls, no side effects; pure mathematical function with constant-time complexity.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  }
+]

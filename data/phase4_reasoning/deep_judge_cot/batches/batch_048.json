@@ -1,0 +1,502 @@
+[
+  {
+    "source_file": "absolute-relative-urls.json",
+    "source_dir": "passed",
+    "function_name": "of_absolute_relative_urls::set_vars",
+    "code": "function set_vars() { $this->del = chr(127); $this->pattern = '(^|href=\\\"|src=\\\"|srcset=\\\"|data-link=\\\"|[0-9]+w, )'; $this->wpurl = untrailingslashit( get_bloginfo( 'wpurl' ) ); $this->url = untrailingslashit( get_bloginfo( 'url' ) ); $this->wpurl = apply_filters( 'of_absolute_relative_urls_wpurl', $this->wpurl, $this->url ); $this->url = apply_filters( 'of_absolute_relative_urls_url', $this->url, $this->wpurl ); rsort( $urls ); $wp_upload = wp_upload_dir(); ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Uses tabs for indentation per WP coding standards. However, chr(127) for delete character is unconventional; get_bloginfo('wpurl') is deprecated in favor of get_bloginfo('url', 'raw')." },
+        "sql_safety": { "score": 10, "analysis": "No SQL queries present. Pure string manipulation and URL processing." },
+        "security": { "score": 7, "analysis": "Uses get_bloginfo which returns sanitized output. apply_filters allows extensibility. No direct user input handling in this method. The regex pattern uses backtick escaping that could be fragile across PHP versions." },
+        "performance": { "score": 8, "analysis": "O(n) where n is number of URLs. rsort is efficient. wp_upload_dir() call is cached internally by WP. Filter chains are reasonable." },
+        "wp_api_usage": { "score": 8, "analysis": "Correctly uses untrailingslashit, apply_filters, wp_upload_dir, get_bloginfo. Proper WP hooks pattern for extensibility." },
+        "code_quality": { "score": 7, "analysis": "Well-structured initialization method. Good use of filters for extensibility. Missing PHPDoc block." },
+        "dependency_integrity": { "score": 8, "analysis": "Uses core WP functions exclusively. No external dependencies required." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings. All text is structural. No i18n concerns." },
+        "accessibility": { "score": 9, "analysis": "Not directly related to accessibility. URL handling is neutral." }
+      },
+      "overall_score": 81,
+      "key_observation": "Clean URL normalization with proper WP filter hooks for extensibility."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "absolute-relative-urls.json",
+    "source_dir": "passed",
+    "function_name": "of_absolute_relative_urls::set_filters",
+    "code": "function set_filters() { $view_filters = array('the_editor_content','the_content','get_the_excerpt'); $save_filters = array('content_save_pre','excerpt_save_pre'); $option_filters = apply_filters( 'of_absolute_relative_urls_option_filters', $option_filters ); foreach( $option_filters as $filter ) { add_filter( 'option_' . $filter, array( $this, 'absolute_url' ) ); add_filter( 'pre_update_option_' . $filter, array( $this, 'relative_url' ) ); } }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Standard WP filter registration pattern. Tab indentation present. Hardcoded filter hook names are correct WP conventions." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Pure filter registration." },
+        "security": { "score": 8, "analysis": "Hook names are hardcoded and validated internally. No user input. The dynamic filter registration is safe because filter names are constructed from known-safe strings." },
+        "performance": { "score": 7, "analysis": "Adds multiple filters dynamically. Each filter callback will be invoked on every the_content/the_editor_content call which could accumulate overhead." },
+        "wp_api_usage": { "score": 9, "analysis": "Correct use of add_filter, apply_filters, get_option('template'), get_option('stylesheet'). Proper WP hook ecosystem integration." },
+        "code_quality": { "score": 7, "analysis": "Clear organization of view vs save filters. The hardcoded widget plugin slugs (black-studio-tinymce, sow-editor) are fragile." },
+        "dependency_integrity": { "score": 7, "analysis": "Hardcodes other plugin slugs in filter names which creates implicit coupling to specific plugins." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings." },
+        "accessibility": { "score": 9, "analysis": "Indirectly improves accessibility by handling editor content URLs correctly." }
+      },
+      "overall_score": 82,
+      "key_observation": "Robust filter registration but fragile hardcoded plugin slug dependencies."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "absolute-relative-urls.json",
+    "source_dir": "passed",
+    "function_name": "of_absolute_relative_urls::filter_post_content",
+    "code": "function filter_post_content( $filter = false, $post = '' ) { if ( $filter ) { if ( empty( $post ) ) { global $post; } $post->post_content = $this->absolute_url( $post->post_content ); $post->post_excerpt = $this->absolute_url( $post->post_excerpt ); wp_cache_replace( $post->ID, $post, 'posts' ); } return $filter; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Uses tabs. Function signature follows WP convention. Missing type hints but WP doesn't enforce them." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Cache operation is the closest to data persistence." },
+        "security": { "score": 6, "analysis": "Modifies $post object directly which bypasses some sanitization. wp_cache_replace without $group parameter is deprecated. Could leave post object in inconsistent state if cache fail." },
+        "performance": { "score": 6, "analysis": "wp_cache_replace call without TTL or proper cache group ($group parameter) may fail silently or corrupt cache. This is a known WP cache API misuse." },
+        "wp_api_usage": { "score": 6, "analysis": "wp_cache_replace() requires 4th $group parameter. Missing it defaults to 'posts' but triggers deprecation notice in WP 4.9+. Should use wp_cache_set() instead for clarity." },
+        "code_quality": { "score": 6, "analysis": "Global $post fallback is a code smell. Should use wp_to_global() pattern. The early return on empty $post after setting global is logically confusing." },
+        "dependency_integrity": { "score": 8, "analysis": "Uses core WP cache API and post object access." },
+        "i18n": { "score": 10, "analysis": "No strings." },
+        "accessibility": { "score": 9, "analysis": "Content filtering is neutral to accessibility." }
+      },
+      "overall_score": 73,
+      "key_observation": "Correct intent but wp_cache_replace misuse without $group parameter is a WP API regression bug."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "acf-page-builder.json",
+    "source_dir": "passed",
+    "function_name": "run_acf_page_builder",
+    "code": "function run_acf_page_builder() { require_once( plugin_dir_path(__FILE__) . '/includes/class.acf_page_builder.php' ); require_once( plugin_dir_path(__FILE__) . '/admin/functions.php' ); require_once( plugin_dir_path(__FILE__) . '/public/functions.php' ); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Standard require_once pattern. plugin_dir_path() is correct WP convention." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 9, "analysis": "require_once is safe. No user input involved." },
+        "performance": { "score": 9, "analysis": "Minimal overhead, just file includes." },
+        "wp_api_usage": { "score": 9, "analysis": "plugin_dir_path() is the correct WP API for plugin-relative paths." },
+        "code_quality": { "score": 7, "analysis": "Simple and clear. Could be consolidated into an autoloader." },
+        "dependency_integrity": { "score": 9, "analysis": "Self-contained plugin dependencies." },
+        "i18n": { "score": 10, "analysis": "No strings." },
+        "accessibility": { "score": 9, "analysis": "Neutral." }
+      },
+      "overall_score": 87,
+      "key_observation": "Simple, correct plugin bootstrap with standard WP path resolution."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "acf-page-builder.json",
+    "source_dir": "passed",
+    "function_name": "get_sections",
+    "code": "function get_sections( $id = '' ) { global $post; if( !$id && isset($post) ) $id = $post->ID; if( !$id ) return false; $pb = new ACF_Page_Builder(); $pb->addFieldsToWP(); $html = $pb->getSectionsHTML( 'acf_page_builder', (string) $id ); return isset($html) ? $html : ''; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Tab indentation. Missing PHPDoc. Short-circuit return is fine." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Relies on ACF's internal data access." },
+        "security": { "score": 8, "analysis": "Post ID cast to string mitigates injection. No direct user input but $id parameter is unchecked type." },
+        "performance": { "score": 7, "analysis": "Instantiates new ACF_Page_Builder every call which may be wasteful. Could be cached." },
+        "wp_api_usage": { "score": 8, "analysis": "global $post pattern is standard WP. (string) cast is good practice." },
+        "code_quality": { "score": 7, "analysis": "Clean public function pattern. isset($html) check is defensive but redundant given the constructor." },
+        "dependency_integrity": { "score": 9, "analysis": "Depends on ACF being loaded first." },
+        "i18n": { "score": 10, "analysis": "No strings." },
+        "accessibility": { "score": 9, "analysis": "Neutral." }
+      },
+      "overall_score": 82,
+      "key_observation": "Standard shortcode/helper pattern with proper $post fallback."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "acf-page-builder.json",
+    "source_dir": "passed",
+    "function_name": "the_sections",
+    "code": "function the_sections( $id = '' ) { $html = get_sections( $id ); echo $html; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Follows WP convention of the_ prefix for echo functions. But echo should use esc_html or wp_kses_post for output sanitization." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 5, "analysis": "Direct echo of HTML without wp_kses_post or esc_html is a XSS vulnerability if get_sections returns untrusted content." },
+        "performance": { "score": 9, "analysis": "Minimal, just delegates to get_sections." },
+        "wp_api_usage": { "score": 8, "analysis": "Standard the_() wrapper pattern (like the_content)." },
+        "code_quality": { "score": 6, "analysis": "Overly trivial. Could use inline function or just document that echo happens." },
+        "dependency_integrity": { "score": 9, "analysis": "Depends on get_sections." },
+        "i18n": { "score": 10, "analysis": "No strings." },
+        "accessibility": { "score": 9, "analysis": "Neutral." }
+      },
+      "overall_score": 74,
+      "key_observation": "Wp_kses_post missing on echo output - XSS risk with unfiltered HTML."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "acf-page-builder.json",
+    "source_dir": "passed",
+    "function_name": "acfpg_init_public",
+    "code": "function acfpg_init_public() { if( is_admin() ) return false; $pb = new ACF_Page_Builder(); add_action('wp_enqueue_scripts', array( $pb, 'enqueuePublic') ); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Tab indentation. is_admin() check is standard. Missing return type." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 9, "analysis": "is_admin() gate is correct for separating admin/public logic." },
+        "performance": { "score": 8, "analysis": "Early return for admin requests avoids unnecessary object creation." },
+        "wp_api_usage": { "score": 9, "analysis": "Correct use of add_action with wp_enqueue_scripts hook. is_admin() is proper WP function." },
+        "code_quality": { "score": 7, "analysis": "Clean separation. Should use add_action('init', 'acfpg_init_public', 1) for proper hook timing." },
+        "dependency_integrity": { "score": 9, "analysis": "Self-contained." },
+        "i18n": { "score": 10, "analysis": "No strings." },
+        "accessibility": { "score": 9, "analysis": "Neutral." }
+      },
+      "overall_score": 84,
+      "key_observation": "Correct public/admin separation with proper WP enqueue hook."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "acf-page-builder.json",
+    "source_dir": "passed",
+    "function_name": "ACF_Page_Builder::__construct",
+    "code": "function __construct() { include_once( ABSPATH . 'wp-admin/includes/plugin.php' ); $this->acf_active = is_plugin_active( 'advanced-custom-fields/acf.php' ) || is_plugin_active( 'advanced-custom-fields-pro/acf.php' ); $this->scf_active = is_plugin_active( 'simple-contact-forms/simple-contact-forms.php' ); $this->supported_formats = array('post_type', 'page_template'); $this->use_bs = function_exists('get_field') ? get_field('acfpb_use_bootstrap') : false; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 8, "analysis": "Standard constructor pattern. include_once for plugin.php is correct WP practice." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. is_plugin_active queries option tables internally." },
+        "security": { "score": 8, "analysis": "function_exists('get_field') check prevents fatal error. No user input exposure." },
+        "performance": { "score": 7, "analysis": "is_plugin_active() does get_option on every call which is somewhat expensive. Could cache the result." },
+        "wp_api_usage": { "score": 8, "analysis": "Correct use of is_plugin_active, function_exists, get_field. ABSPATH usage is standard." },
+        "code_quality": { "score": 7, "analysis": "Constructor side-effect of calling get_field() is unusual. Should separate detection from initialization." },
+        "dependency_integrity": { "score": 7, "analysis": "Hardcodes ACF and SCF plugin slugs as implicit dependencies." },
+        "i18n": { "score": 10, "analysis": "No strings." },
+        "accessibility": { "score": 9, "analysis": "Neutral." }
+      },
+      "overall_score": 80,
+      "key_observation": "Standard plugin dependency detection but constructor should not call get_field()."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "acf-page-builder.json",
+    "source_dir": "passed",
+    "function_name": "ACF_Page_Builder::enqueuePublic",
+    "code": "function enqueuePublic() { wp_enqueue_style( 'acfpb-public', plugin_dir_url( __FILE__ ) . '../public/css/acfpb_styles.css', false, NULL, 'all' ); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Standard enqueue pattern. Tab indentation consistent." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 9, "analysis": "plugin_dir_url() is safe. No user input in CSS path." },
+        "performance": { "score": 9, "analysis": "Single CSS enqueue. Minimal overhead." },
+        "wp_api_usage": { "score": 8, "analysis": "Correct use of wp_enqueue_style with dependencies array (false) and media param ('all'). NULL version is deprecated, should use filemtime or a hardcoded version." },
+        "code_quality": { "score": 7, "analysis": "Simple and correct. NULL version parameter should be replaced with a version string or filemtime." },
+        "dependency_integrity": { "score": 9, "analysis": "No external deps beyond WP core." },
+        "i18n": { "score": 10, "analysis": "No strings." },
+        "accessibility": { "score": 9, "analysis": "CSS enqueue is neutral to accessibility." }
+      },
+      "overall_score": 84,
+      "key_observation": "Correct CSS enqueue with deprecated NULL version parameter."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "acf-page-builder.json",
+    "source_dir": "passed",
+    "function_name": "ACF_Page_Builder::enqueueAdmin",
+    "code": "function enqueueAdmin() { }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 8, "analysis": "Empty method is valid. Stub pattern." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 10, "analysis": "Empty function, no risk." },
+        "performance": { "score": 10, "analysis": "No-op, zero cost." },
+        "wp_api_usage": { "score": 9, "analysis": "Placeholder for future admin asset registration." },
+        "code_quality": { "score": 6, "analysis": "Empty method should have a comment explaining why it's empty or be removed if not needed." },
+        "dependency_integrity": { "score": 10, "analysis": "No deps." },
+        "i18n": { "score": 10, "analysis": "No strings." },
+        "accessibility": { "score": 10, "analysis": "N/A." }
+      },
+      "overall_score": 93,
+      "key_observation": "Empty stub - functionally safe but should document the intent."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "acf-page-builder.json",
+    "source_dir": "passed",
+    "function_name": "ACF_Page_Builder::getSectionsHTML",
+    "code": "function getSectionsHTML( $name, $post_id ) { if( !$this->acf_active ) return ''; if( have_rows( $name, $post_id ) ): $s = 1; $this->html = '<div id=\"acfpb_sections\">'; while ( have_rows( $name, $post_id ) ) : the_row(); ... $this->html .= '<div id=\"' . $id . '\" class=\"' . $class . '\" style=\"' . $style . '\">'; endif; endwhile; return $this->html; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 6, "analysis": "Tab indentation. PHPDoc missing. String concatenation with . is correct WP style." },
+        "sql_safety": { "score": 10, "analysis": "No direct SQL. Uses ACF's have_rows/the_row which handle DB access." },
+        "security": { "score": 5, "analysis": "Major issue: $style from get_sub_field('bg') is used directly in inline style attribute without sanitization. $wrapper class from get_sub_field is concatenated without class sanitization. $id is built from counter but still should be sanitized." },
+        "performance": { "score": 6, "analysis": "String concatenation in loop ($this->html .= ...) causes O(n^2) memory copies. Should use output buffering or array join pattern." },
+        "wp_api_usage": { "score": 6, "analysis": "have_rows/the_row/get_row_layout/get_sub_field are ACF API, not WP core. This is acceptable for an ACF plugin." },
+        "code_quality": { "score": 6, "analysis": "Deeply nested HTML generation is hard to read. $this->html property mutation is a side-effect. Multiple endif/endwhile without indentation levels is fragile." },
+        "dependency_integrity": { "score": 7, "analysis": "Depends on ACF fields being configured correctly." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings." },
+        "accessibility": { "score": 4, "analysis": "Generated HTML uses Bootstrap classes without ARIA roles or semantic elements. img tags lack alt attributes. Layout structure has no role attributes." }
+      },
+      "overall_score": 68,
+      "key_observation": "HTML generation with multiple security gaps: unsanitized style/class injection and missing image alt attributes."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "acf-page-builder.json",
+    "source_dir": "passed",
+    "function_name": "ACF_Page_Builder::getSection_banner",
+    "code": "function getSection_banner() { $class = $this->use_bs ? 'img-responsive' : ''; $html = '<div class=\"banner-holder\">'; $html .= '<img src=\"' . get_sub_field('image') . '\" class=\"' . $class . '\" />'; if( get_sub_field('use_text') ) $html .= '<div class=\"acfpb-hover-text\">' . get_sub_field('text_on_image') . '</div>'; $html .= '</div>'; return $html; }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Standard concatenation pattern." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 4, "analysis": "Critical: get_sub_field('image') URL is used directly in img src without sanitization. get_sub_field('text_on_image') is echoed directly into HTML without wp_kses_post. Potential XSS via ACF field values." },
+        "performance": { "score": 8, "analysis": "Single section render, reasonable performance." },
+        "wp_api_usage": { "score": 8, "analysis": "Correct ACF field retrieval pattern." },
+        "code_quality": { "score": 6, "analysis": "HTML mixed with PHP logic without templating. Missing alt attribute on img tag." },
+        "dependency_integrity": { "score": 8, "analysis": "Depends on ACF image field being configured." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings." },
+        "accessibility": { "score": 3, "analysis": "img tag has no alt attribute. No figure/figcaption semantics. Hover text div has no label." }
+      },
+      "overall_score": 62,
+      "key_observation": "XSS via unsanitized ACF field values in src and text, plus missing alt on images."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "acf-page-builder.json",
+    "source_dir": "passed",
+    "function_name": "ACF_Page_Builder::getSection_button",
+    "code": "function getSection_button() { $class = get_sub_field('button_class'); $text = get_sub_field('button_text'); switch ( get_sub_field('link_to_page') ) { case 'anchor': $href = '#' . get_sub_field('button_anchor'); break; case 'external': $href = get_sub_field('external_link'); break; case 'internal': $href = get_sub_field('internal_link'); break; default: $href = '#'; break; } $html = '<a href=\"' . $href . '\" class=\"' . $class . '\">' . $text . '</a>'; return $html; }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Standard PHP patterns." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 3, "analysis": "Critical: $href from get_sub_field('external_link') is used as anchor href without esc_url sanitization. $text is echoed without wp_kses. $class has no sanitize_html_class. External link is the worst - no URL validation or protocol enforcement." },
+        "performance": { "score": 8, "analysis": "Simple render, fine." },
+        "wp_api_usage": { "score": 8, "analysis": "ACF field API usage correct." },
+        "code_quality": { "score": 7, "analysis": "Clear switch pattern. Could use a map for cleaner structure." },
+        "dependency_integrity": { "score": 8, "analysis": "ACF-dependent." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings." },
+        "accessibility": { "score": 6, "analysis": "Anchor link is semantic but missing rel attributes for external links (noopener noreferrer)." }
+      },
+      "overall_score": 59,
+      "key_observation": "No esc_url on href, no wp_kses on text, no sanitize_html_class on class - full unsanitized data flow to HTML."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "acf-page-builder.json",
+    "source_dir": "passed",
+    "function_name": "ACF_Page_Builder::getSection_content_grid",
+    "code": "function getSection_content_grid() { $blocks = get_sub_field('content_columns'); $html = ''; if( count($blocks) > 0 ) { foreach($blocks as $block) { $html .= '<div class=\"col-sm-' . $block['width'] . ' col-sm-offset-' . $block['offset'] . '\">'; $html .= $block['content']; $html .= '</div>'; }; } return $html; }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Standard pattern." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 4, "analysis": "$block['width'], $block['offset'] used in class attribute without sanitization. $block['content'] echoed directly without wp_kses_post. Bootstrap class injection possible via width/offset values." },
+        "performance": { "score": 8, "analysis": "Linear iteration, fine." },
+        "wp_api_usage": { "score": 8, "analysis": "ACF field API." },
+        "code_quality": { "score": 7, "analysis": "Clean foreach pattern but string concat in loop." },
+        "dependency_integrity": { "score": 8, "analysis": "ACF-dependent." },
+        "i18n": { "score": 10, "analysis": "No strings." },
+        "accessibility": { "score": 7, "analysis": "Bootstrap col-* classes are structural, no ARIA needed but semantic divs could be figure/section." }
+      },
+      "overall_score": 72,
+      "key_observation": "Unsanitized class attributes and raw content output - class injection and XSS via ACF fields."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "acf-page-builder.json",
+    "source_dir": "passed",
+    "function_name": "ACF_Page_Builder::getSection_gallery",
+    "code": "function getSection_gallery() { $images = get_sub_field('images'); switch ( get_sub_field('images_per_row') ) { case '2': $class = 'col-sm-4'; break; ... } foreach($images as $item) { $html .= '<img src=\"' . $item['image'] . '\" />' . '<h4>' . $item['title'] . '</h4>' . '<p>' . $item['caption'] . '</p>'; } }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Standard patterns." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 4, "analysis": "$item['image'] in src without esc_url_raw. $item['title'] and $item['caption'] in HTML without wp_kses_post. $class used in attribute without sanitize_html_class. All ACF values are trusted as safe." },
+        "performance": { "score": 7, "analysis": "Multiple get_sub_field calls in switch could be optimized." },
+        "wp_api_usage": { "score": 8, "analysis": "ACF API correct." },
+        "code_quality": { "score": 6, "analysis": "Switch on images_per_row repeats class definitions. Could be a config map." },
+        "dependency_integrity": { "score": 8, "analysis": "ACF image field required." },
+        "i18n": { "score": 10, "analysis": "No strings." },
+        "accessibility": { "score": 2, "analysis": "Images lack alt attributes. No figure/figcaption. No role=\"group\". Captions not in figcaption elements. Critical accessibility failure." }
+      },
+      "overall_score": 55,
+      "key_observation": "Multiple unsanitized ACF values plus completely missing alt text on gallery images."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "acf-page-builder.json",
+    "source_dir": "passed",
+    "function_name": "ACF_Page_Builder::getSection_raw_html",
+    "code": "function getSection_raw_html() { $html = get_sub_field('html'); return $html; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Simple function." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 6, "analysis": "Returns raw HTML which caller will render. The function itself is neutral but the name 'raw_html' implies intentional unfiltered output. Caller must handle sanitization." },
+        "performance": { "score": 9, "analysis": "Minimal." },
+        "wp_api_usage": { "score": 8, "analysis": "ACF API." },
+        "code_quality": { "score": 7, "analysis": "Clear intent despite the name. Should be documented as intentional passthrough." },
+        "dependency_integrity": { "score": 8, "analysis": "ACF-dependent." },
+        "i18n": { "score": 10, "analysis": "No strings." },
+        "accessibility": { "score": 7, "analysis": "Returns whatever HTML ACF provides, so accessibility depends on input." }
+      },
+      "overall_score": 79,
+      "key_observation": "Intentional raw HTML passthrough - safe as a utility but caller must handle output sanitization."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "acf-page-builder.json",
+    "source_dir": "passed",
+    "function_name": "ACF_Page_Builder::getSection_simple_contact_forms",
+    "code": "function getSection_simple_contact_forms() { if( !function_exists('simple_contact_form') ) return ''; $options = array(); if( get_sub_field('form_title') !== '' ) $options['form_title'] = get_sub_field('form_title'); if( get_sub_field('button') == true ) { $options['button'] = true; $options['form_collapsed'] = true; } $html = simple_contact_form( $options ); return $html; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "function_exists check is good WP practice." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Delegates to another plugin." },
+        "security": { "score": 7, "analysis": "function_exists is good defense-in-depth. Options passed to simple_contact_form are constructed from ACF fields which are untrusted. Should validate option values before passing." },
+        "performance": { "score": 8, "analysis": "Delegates to external function, minimal overhead." },
+        "wp_api_usage": { "score": 7, "analysis": "function_exists is correct WP pattern for optional dependency detection." },
+        "code_quality": { "score": 7, "analysis": "Clear optional dependency pattern. Could be more defensive with is_array() checks on get_sub_field results." },
+        "dependency_integrity": { "score": 6, "analysis": "Hardcoded dependency on 'simple-contact-forms' plugin without explicit plugin header dependency." },
+        "i18n": { "score": 10, "analysis": "No strings." },
+        "accessibility": { "score": 7, "analysis": "Depends on the contact form plugin's accessibility." }
+      },
+      "overall_score": 78,
+      "key_observation": "Correct optional dependency pattern but should validate ACF field values before passing to external function."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "acf-page-builder.json",
+    "source_dir": "passed",
+    "function_name": "ACF_Page_Builder::getSection_wysiwyg",
+    "code": "function getSection_wysiwyg() { $html = get_sub_field('content'); return $html; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Simple passthrough." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 6, "analysis": "Same pattern as getSection_raw_html - raw passthrough. ACF WYSIWYG content may contain any HTML. Caller handles output." },
+        "performance": { "score": 9, "analysis": "Minimal." },
+        "wp_api_usage": { "score": 8, "analysis": "ACF API correct." },
+        "code_quality": { "score": 7, "analysis": "Minimal function, clear intent." },
+        "dependency_integrity": { "score": 8, "analysis": "ACF-dependent." },
+        "i18n": { "score": 10, "analysis": "No strings." },
+        "accessibility": { "score": 7, "analysis": "Depends on ACF content input quality." }
+      },
+      "overall_score": 79,
+      "key_observation": "Identical passthrough pattern to raw_html - intentional design, caller responsible."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "acf-page-builder.json",
+    "source_dir": "passed",
+    "function_name": "acfpg_init_admin",
+    "code": "function acfpg_init_admin() { if( !is_admin() ) return false; $pb = new ACF_Page_Builder(); add_action('wp_enqueue_script', array( $pb, 'enqueueAdmin') ); $pb->addFieldsToWP(); }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "is_admin() check standard." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 7, "analysis": "is_admin() gate provides basic access control but is_admin() can be bypassed in REST API contexts. Missing capability check." },
+        "performance": { "score": 7, "analysis": "Instantiates ACF_Page_Builder on every admin page load regardless of need. Should be on admin_init hook." },
+        "wp_api_usage": { "score": 5, "analysis": "Critical bug: add_action('wp_enqueue_script', ...) should be add_action('admin_enqueue_scripts', ...). 'wp_enqueue_script' is an action, not a hook for enqueuing. This will never fire correctly." },
+        "code_quality": { "score": 6, "analysis": "Hook name 'wp_enqueue_script' is wrong - that's a function, not an action. Should be 'admin_enqueue_scripts'." },
+        "dependency_integrity": { "score": 8, "analysis": "Self-contained." },
+        "i18n": { "score": 10, "analysis": "No strings." },
+        "accessibility": { "score": 9, "analysis": "Admin UI depends on proper CSS/JS loading." }
+      },
+      "overall_score": 68,
+      "key_observation": "Wrong hook name 'wp_enqueue_script' instead of 'admin_enqueue_scripts' means admin assets never load."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "ads-txt.json",
+    "source_dir": "passed",
+    "function_name": "save",
+    "code": "function save() { current_user_can( ADS_TXT_MANAGE_CAPABILITY ) || die; check_admin_referer( 'adstxt_save' ); $_post = stripslashes_deep( $_POST ); $lines = preg_split( '/\\r\\n|\\r|\\n/', $_post['adstxt'] ); $sanitized = array(); $errors = array(); foreach ( $lines as $i => $line ) { $result = validate_line( $line, $line_number, $has_only_placeholder_records ); $sanitized[] = $result['sanitized']; ... } $postarr = array('ID' => $post_id, 'post_title' => 'Ads.txt', 'post_content' => $sanitized, 'post_type' => 'adstxt', 'post_status' => 'publish'); $post_id = wp_insert_post( $postarr ); wp_safe_redirect( esc_url_raw( $_post['_wp_http_referer'] ) . '&updated=true' ); exit; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 8, "analysis": "Good WP coding patterns: current_user_can, check_admin_referer, wp_insert_post, wp_safe_redirect, esc_url_raw. All security fundamentals present." },
+        "sql_safety": { "score": 10, "analysis": "No direct SQL. wp_insert_post handles DB safely with $wpdb prepare internally." },
+        "security": { "score": 8, "analysis": "Excellent: current_user_can check, check_admin_referer nonce verification, stripslashes_deep for input sanitization, wp_safe_redirect, esc_url_raw. validate_line() provides content validation. Minor: $_POST accessed without isset guards on all keys." },
+        "performance": { "score": 7, "analysis": "preg_split on each save is reasonable. validate_line per line is O(n*m). wp_insert_post adds DB overhead but is necessary." },
+        "wp_api_usage": { "score": 9, "analysis": "Correct use of wp_insert_post, wp_safe_redirect, esc_url_raw, current_user_can, check_admin_referer, stripslashes_deep. Proper WP security API integration." },
+        "code_quality": { "score": 7, "analysis": "Comprehensive save flow with validation, error collection, and warning handling. Good separation of concerns. Could benefit from extracting validate_line logic." },
+        "dependency_integrity": { "score": 8, "analysis": "Requires validate_line function and ADS_TXT_MANAGE_CAPABILITY constant." },
+        "i18n": { "score": 9, "analysis": "Errors and warnings arrays suggest i18n-ready messages. Only hardcoded 'Ads.txt' and 'App-ads.txt' titles." },
+        "accessibility": { "score": 8, "analysis": "Admin functionality, accessibility depends on the admin UI wrapper." }
+      },
+      "overall_score": 84,
+      "key_observation": "Well-secured save function with nonce, capability check, and content validation - the gold standard for WP admin handlers."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  }
+]

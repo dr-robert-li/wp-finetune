@@ -1,216 +1,392 @@
 [
   {
-    "code": "/**\n\t * Serach controls.\n\t *\n\t * @since 2.0.0\n\t */\nfunction search_controls() {\n\t\t?>\n\t\t<div class=\"jupiterx-customizer-search-wrapper\">\n\t\t\t<svg><use xlink:href=\"<?php echo esc_url( JupiterX_Customizer_Utils::get_assets_url() ); ?>/img/customizer-icons.svg#search\"></use></svg>\n\t\t\t<input type=\"search\" id=\"jupiterx-customizer-control-search\" autocomplete=\"off\" placeholder=\"<?php echo esc_html__( 'Search options & settings...', 'jupiterx-core' ); ?>\">\n\t\t</div>\n\t\t<?php\n\t}",
-    "source_file": "jupiterx-core.json",
-    "function_name": "JupiterX_Customizer_Section_Container::search_controls",
-    "critical_failures": [],
-    "low_score_dims": [
-      "accessibility"
-    ]
-  },
-  {
-    "code": "/**\n         * login_user handles the $_POST array and logs in users\n         */\nfunction login_user() {\n           \n            if ( ! is_user_logged_in() && ! empty( $_POST['log'] ) && ! empty( $_POST['pwd'] ) ) {\n                $creds = array();\n                $creds['user_login'] = isset( $_POST['log'] ) ? $_POST['log'] : '';\n                $creds['user_password'] = isset( $_POST['pwd'] ) ? $_POST['pwd'] : '';\n                $creds['remember'] = isset( $_POST['rememberme'] ) ? true : false;\n                $user = wp_signon( $creds, false );\n                \n                if ( is_wp_error( $user ) ) {\n                    error_log( 'CIAM WP DEFAULT LOGIN ERROR' . $user->get_error_message() );\n                }\n            }\n            \n            /* action for debug mode */\n            do_action(\"ciam_debug\", __FUNCTION__, func_get_args(), get_class(), \"\");\n        }",
-    "source_file": "loginradius-for-wordpress.json",
-    "function_name": "CIAM_WP_Default_Login::login_user",
+    "code": "function tear_down() {\n\t\t$GLOBALS['wp_theme_directories'] = $this->orig_theme_dir;\n\n\t\t// Clear up the filters to modify the theme root.\n\t\tremove_filter( 'theme_root', array( $this, 'filter_set_theme_root' ) );\n\t\tremove_filter( 'stylesheet_root', array( $this, 'filter_set_theme_root' ) );\n\t\tremove_filter( 'template_root', array( $this, 'filter_set_theme_root' ) );\n\n\t\twp_clean_themes_cache();\n\t\tunset( $GLOBALS['wp_themes'] );\n\t\tWP_Style_Engine_CSS_Rules_Store::remove_all_stores();\n\t\tunregister_block_type( $this->test_block_name );\n\t\t$this->test_block_name = null;\n\t\tparent::tear_down();\n\t}",
+    "source_file": "gutenberg.json",
+    "function_name": "WP_Block_Supports_Background_Test::tear_down",
     "critical_failures": [
-      "Unsanitized user input from superglobals"
-    ],
-    "low_score_dims": [
-      "security"
-    ]
-  },
-  {
-    "code": "function updateDb()\n    {\n        global $wpdb;\n\n        $version = get_option('my_plugin_version', '1.1');\n\n        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');\n\n        $charset_collate = $wpdb->get_charset_collate();\n\n        $table_name = $wpdb->prefix . 'dpdconnect_labels';\n        $sql = \"CREATE TABLE IF NOT EXISTS $table_name (\n            id mediumint(9) NOT NULL AUTO_INCREMENT,\n            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,\n            order_id int(11) NOT NULL,\n            contents mediumblob NOT NULL,\n            type tinyint NOT NULL,\n            shipment_identifier varchar(255) NOT NULL,\n            parcel_numbers varchar(255) NOT NULL,\n            PRIMARY KEY id (id),\n            INDEX created_at (created_at),\n            INDEX order_id_type_created_at (order_id, type, created_at)\n        ) $charset_collate;\";\n        $wpdb->query($sql);\n\n        $table_name = $wpdb->prefix . 'dpdconnect_batches';\n        $sql = \"CREATE TABLE IF NOT EXISTS $table_name (\n            id mediumint(9) NOT NULL AUTO_INCREMENT,\n            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,\n            shipment_count smallint(5) NOT NULL,\n            success_count smallint(5) DEFAULT 0,\n            failure_count smallint(5) DEFAULT 0,\n            status varchar(255) NOT NULL,\n            PRIMARY KEY id (id),\n            INDEX created_at (created_at)\n        ) $charset_collate;\";\n        $wpdb->query($sql);\n\n        $table_name = $wpdb->prefix . 'dpdconnect_jobs';\n        $sql = \"CREATE TABLE IF NOT EXISTS $table_name (\n            id mediumint(9) NOT NULL AUTO_INCREMENT,\n            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,\n            external_id varchar(255) NOT NULL,\n            batch_id varchar(255) NOT NULL,\n            order_id varchar(255) NOT NULL,\n            status varchar(255) NOT NULL,\n            type varchar(255) NOT NULL,\n            error text,\n            state_message text,\n            label_id int(11) NULL,\n            PRIMARY KEY id (id),\n            INDEX created_at (created_at),\n            INDEX batch_id (batch_id),\n            INDEX order_id_type_created_at (order_id, type, created_at)\n        ) $charset_collate;\";\n        $wpdb->query($sql);\n    }",
-    "source_file": "woocommerce-shipping.json",
-    "function_name": "Activate::updateDb",
-    "critical_failures": [
-      "Missing PHPDoc block",
-      "Direct SQL query without $wpdb->prepare()"
+      "test code, excluded from training data"
     ],
     "low_score_dims": [
       "wpcs_compliance",
-      "sql_safety"
-    ]
-  },
-  {
-    "code": "/**\n\t * Make a remote request to PayPal API.\n\t *\n\t * @see https://developer.paypal.com/docs/classic/api/NVPAPIOverview/#creating-an-nvp-request\n\t *\n\t * @param  array $params NVP request parameters\n\t * @return array         NVP response\n\t */\nfunction _request( array $params ) {\n\t\ttry {\n\t\t\t$this->_validate_request();\n\n\t\t\t// First, add in the necessary credential parameters.\n\t\t\t$body = apply_filters( 'woocommerce_paypal_express_checkout_request_body', array_merge( $params, $this->_credential->get_request_params() ) );\n\t\t\t$args = array(\n\t\t\t\t'method'      => 'POST',\n\t\t\t\t'body'        => $body,\n\t\t\t\t'user-agent'  => __CLASS__,\n\t\t\t\t'httpversion' => '1.1',\n\t\t\t\t'timeout'     => 30,\n\t\t\t);\n\n\t\t\t// For cURL transport.\n\t\t\tadd_action( 'http_api_curl', array( $this->_credential, 'configure_curl' ), 10, 3 );\n\n\t\t\twc_gateway_ppec_log( sprintf( '%s: remote request to %s with params: %s', __METHOD__, $this->get_endpoint(), print_r( $body, true ) ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r\n\n\t\t\t$resp = wp_safe_remote_post( $this->get_endpoint(), $args );\n\n\t\t\treturn $this->_process_response( $resp );\n\n\t\t} catch ( Exception $e ) {\n\n\t\t\tremove_action( 'http_api_curl', array( $this->_credential, 'configure_curl' ), 10 );\n\n\t\t\t// TODO: Maybe returns WP_Error ?\n\t\t\t$error = array(\n\t\t\t\t'ACK'             => 'Failure',\n\t\t\t\t'L_ERRORCODE0'    => $e->getCode(),\n\t\t\t\t'L_SHORTMESSAGE0' => 'Error in ' . __METHOD__,\n\t\t\t\t'L_LONGMESSAGE0'  => $e->getMessage(),\n\t\t\t\t'L_SEVERITYCODE0' => 'Error',\n\t\t\t);\n\n\t\t\twc_gateway_ppec_log( sprintf( '%s: returns error: %s', __METHOD__, print_r( $error, true ) ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r\n\n\t\t\treturn $error;\n\t\t}\n\t}",
-    "source_file": "pp-express-wc4jp.json",
-    "function_name": "WC_Gateway_PPEC_Client::_request",
-    "critical_failures": [
-      "Debug statements in production code"
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
     ],
-    "low_score_dims": [
+    "substantive_failure_detected": false,
+    "high_stakes_low_dims": [
+      "sql_safety",
+      "security",
+      "wp_api_usage",
       "code_quality"
     ]
   },
   {
-    "code": "function getWebPExpressContentDirWithDocRoot()\n    {\n        // Get relative path to wp-content\n        // --------------------------------\n        self::$checking = 'Relative path to wp-content dir';\n\n        // Passed in env variable?\n        $wpContentDirRel = self::getEnvPassedInRewriteRule('WPCONTENT');\n        if ($wpContentDirRel === false) {\n            // Passed in QS?\n            if (isset($_GET['wp-content'])) {\n                $wpContentDirRel = SanityCheck::pathWithoutDirectoryTraversal($_GET['wp-content']);\n            } else {\n                // In case above fails, fall back to standard location\n                $wpContentDirRel = 'wp-content';\n            }\n        }\n\n        // Check WebP Express content dir\n        // ---------------------------------\n        self::$checking = 'WebP Express content dir';\n\n        $webExpressContentDirAbs = SanityCheck::absPathExistsAndIsDir(self::$docRoot . '/' . $wpContentDirRel . '/webp-express');\n        return $webExpressContentDirAbs;\n    }",
-    "source_file": "webp-express.json",
-    "function_name": "WodConfigLoader::getWebPExpressContentDirWithDocRoot",
+    "code": "/**\n\t * Adds a \"Public Preview\" view to the post list table.\n\t *\n\t * @since 3.0.0\n\t *\n\t * @param string[] $views An array of available list table views.\n\t * @return string[] Filtered array of available list table views.\n\t */\nfunction add_list_table_view( $views ) {\n\t\t$count = count( self::get_preview_post_ids() );\n\t\tif( ! $count ) {\n\t\t\treturn $views;\n\t\t}\n\n\t\t$screen    = get_current_screen();\n\t\t$post_type = $screen->post_type;\n\n\t\t// Get the count of posts for this post type with public preview status.\n\t\t$query = new WP_Query(\n\t\t\tarray(\n\t\t\t\t'post_type'      => $post_type,\n\t\t\t\t'post__in'       => self::get_preview_post_ids(),\n\t\t\t\t'post_status'    => 'draft',\n\t\t\t\t'posts_per_page' => -1,\n\t\t\t\t'no_found_rows'  => true,\n\t\t\t\t'fields'         => 'ids',\n\t\t\t)\n\t\t);\n\n\t\tif ( ! $query->post_count ) {\n\t\t\treturn $views;\n\t\t}\n\n\t\t$views['public_preview'] = sprintf(\n\t\t\t'<a href=\"%s\"%s>%s <span class=\"count\">(%s)</span></a>',\n\t\t\tesc_url( add_query_arg( array( 'post_type' => $post_type, 'public_preview' => 1 ), 'edit.php' ) ),\n\t\t\tisset( $_GET['public_preview'] ) && '1' === $_GET['public_preview'] ? ' class=\"current\"  aria-current=\"page\"' : '',\n\t\t\t__( 'Public Preview', 'public-post-preview' ),\n\t\t\tnumber_format_i18n( $query->post_count )\n\t\t);\n\n\t\treturn $views;\n\t}",
+    "source_file": "public-post-preview.json",
+    "function_name": "DS_Public_Post_Preview::add_list_table_view",
     "critical_failures": [
-      "Missing PHPDoc block",
-      "Missing input sanitization"
+      "CRITICAL: State-changing handler missing nonce verification"
     ],
-    "low_score_dims": []
+    "low_score_dims": [],
+    "substantive_failure_detected": true,
+    "high_stakes_low_dims": []
   },
   {
-    "code": "/**\r\n     * Add quick links inside the editing page of CPTU and Custom Post Types\r\n     *\r\n     * @return void\r\n     * @since  1.0\r\n     * @author Antonino Scarfi' <antonino.scarfi@yithemes.com>\r\n     */\nfunction add_quick_links_metaboxes() {\r\n        // CPTU\r\n        add_meta_box( $this->_name . '_quick_links', __( 'Quick links', 'yith-plugin-fw' ), array( $this, 'quick_links_cptu_inner' ), $this->_name, 'side', 'high' );\r\n\r\n        // CPTs\r\n        $args = array(\r\n            'post_type' => $this->_name,\r\n            'posts_per_page' => -1,\r\n            'post_status' => 'publish'\r\n        );\r\n        $post_types = get_posts( $args );\r\n\r\n        foreach ( $post_types as $post ) {\r\n            $post_type = get_post_meta( $post->ID, '_post_type', true );\r\n            extract( $this->_cpt_args( $post ) );\r\n            add_meta_box( $post->post_type . '_quick_links', __( 'Quick links', 'yith-plugin-fw' ), array( $this, 'quick_links_cpt_inner' ), $post_type, 'side', 'high' );\r\n        }\r\n    }",
-    "source_file": "yith-woocommerce-ajax-search.json",
-    "function_name": "add_quick_links_metaboxes",
+    "code": "function test_width_style_is_applied() {\n\t\t$this->test_block_name = 'test/width-style-is-applied';\n\t\tregister_block_type(\n\t\t\t$this->test_block_name,\n\t\t\tarray(\n\t\t\t\t'api_version' => 3,\n\t\t\t\t'attributes'  => array(\n\t\t\t\t\t'style' => array(\n\t\t\t\t\t\t'type' => 'object',\n\t\t\t\t\t),\n\t\t\t\t),\n\t\t\t\t'supports'    => array(\n\t\t\t\t\t'dimensions' => array(\n\t\t\t\t\t\t'width' => true,\n\t\t\t\t\t),\n\t\t\t\t),\n\t\t\t)\n\t\t);\n\t\t$registry    = WP_Block_Type_Registry::get_instance();\n\t\t$block_type  = $registry->get_registered( $this->test_block_name );\n\t\t$block_attrs = array(\n\t\t\t'style' => array(\n\t\t\t\t'dimensions' => array(\n\t\t\t\t\t'width' => '300px',\n\t\t\t\t),\n\t\t\t),\n\t\t);\n\n\t\t$actual   = gutenberg_apply_dimensions_support( $block_type, $block_attrs );\n\t\t$expected = array(\n\t\t\t'style' => 'width:300px;',\n\t\t);\n\n\t\t$this->assertSame( $expected, $actual );\n\t}",
+    "source_file": "gutenberg.json",
+    "function_name": "WP_Block_Supports_Dimensions_Test::test_width_style_is_applied",
     "critical_failures": [
-      "Uses extract()"
+      "test code, excluded from training data"
     ],
     "low_score_dims": [
-      "security"
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "substantive_failure_detected": false,
+    "high_stakes_low_dims": [
+      "sql_safety",
+      "security",
+      "wp_api_usage",
+      "code_quality"
     ]
   },
   {
-    "code": "/**\n         * Redirect the page to ciam shortcode page on directly opening the default wordpress page.\n         *\n         */\nfunction custom_page_redirection()\n        {\n            global $pagenow, $ciam_setting;\n            $login_page_id = !empty($ciam_setting['login_page_id']) ? $ciam_setting['login_page_id'] : '';\n            $register_page_id = !empty($ciam_setting['registration_page_id']) ? $ciam_setting['registration_page_id'] : '';\n            $lost_pass_page_id = !empty($ciam_setting['lost_password_page_id']) ? $ciam_setting['lost_password_page_id'] : '';\n\n            if ('wp-login.php' == $pagenow && !is_user_logged_in()) {\n                $url = get_permalink($login_page_id);\n\n                if (isset($_GET['action']) && 'register' == $_GET['action']) {\n                    $url = get_permalink($register_page_id);\n                } elseif (isset($_GET['action']) && 'lostpassword' == $_GET['action']) {\n                    $url = get_permalink($lost_pass_page_id);\n                }\n\n                if ($url) {\n                    do_action(\"ciam_debug\", __FUNCTION__, func_get_args(), get_class(), $url);\n                    wp_redirect($url);\n                    exit();\n                } else {\n                    error_log('USER REGISTRATION NOT CONFIGURED CORRECTLY: Login, Registration or Lost Password page(s) are not set');\n                }\n            }\n\n            /* action for debug mode */\n            do_action(\"ciam_debug\", __FUNCTION__, func_get_args(), get_class(), \"\");\n        }",
-    "source_file": "loginradius-for-wordpress.json",
-    "function_name": "CIAM_Authentication_Loginfunction::custom_page_redirection",
-    "critical_failures": [
-      "Unsanitized user input from superglobals"
-    ],
-    "low_score_dims": [
-      "security"
-    ]
-  },
-  {
-    "code": "/**\n * Modifies revisions data to preserve adstxt argument used in determining\n * where to redirect user returning to editor.\n *\n * @since 1.9.0\n *\n * @param array $revisions_data The bootstrapped data for the revisions screen.\n * @return array Modified bootstrapped data for the revisions screen.\n */\nfunction adstxt_revisions_restore( $revisions_data ) {\n\tif ( isset( $_REQUEST['adstxt'] ) ) { // @codingStandardsIgnoreLine Nonce not required.\n\t\t$revisions_data['restoreUrl'] = add_query_arg(\n\t\t\t'adstxt',\n\t\t\t1,\n\t\t\t$revisions_data['restoreUrl']\n\t\t);\n\t}\n\n\treturn $revisions_data;\n}",
-    "source_file": "ads-txt.json",
-    "function_name": "adstxt_revisions_restore",
-    "critical_failures": [
-      "judge_error"
-    ],
-    "low_score_dims": []
-  },
-  {
-    "code": "/**\n\t\t * Download order CSV file and delete it after download\n\t\t *\n\t\t * @return void\n\t\t */\nfunction download_order_csv_file() {\n\t\t\t$export_id = LP_Request::get_param( 'export_id', '', 'key' );\n\t\t\tif ( ! isset( $_GET['lp_download_order'] ) || empty( $export_id ) ) {\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\t$file = ExportOrderCSVAjax::get_export_csv_path( $export_id );\n\t\t\tif ( ! file_exists( $file ) ) {\n\t\t\t\twp_die( __( 'File not found', 'learnpress' ) );\n\t\t\t} elseif ( ! realpath( $file ) ) {\n\t\t\t\twp_die( __( 'Invalid file path', 'learnpress' ) );\n\t\t\t}\n\n\t\t\t$filename = basename( $file );\n\n\t\t\theader( 'Content-Type: text/csv; charset=UTF-8' );\n\t\t\theader( 'Content-Disposition: attachment; filename=\"' . $filename . '\"' );\n\t\t\theader( 'Content-Length: ' . filesize( $file ) );\n\n\t\t\treadfile( $file );\n\t\t\tunlink( $file );\n\t\t\texit;\n\t\t}",
-    "source_file": "learnpress-wishlist.json",
-    "function_name": "wp_is_post_revision::download_order_csv_file",
-    "critical_failures": [
-      "Unsanitized user input from superglobals"
-    ],
-    "low_score_dims": [
-      "security"
-    ]
-  },
-  {
-    "code": "function admin_header() {\n\t\t?>\n\t\t<script type=\"text/javascript\">\n\t\t//<![CDATA[\n\t\tif ( 'undefined' != typeof addLoadEvent ) {\n\t\t\taddLoadEvent(function() {\n\t\t\t\tvar t = {'extra-tables-list':{name: 'other_tables[]'}, 'include-tables-list':{name: 'wp_cron_backup_tables[]'}};\n\n\t\t\t\tfor ( var k in t ) {\n\t\t\t\t\tt[k].s = null;\n\t\t\t\t\tvar d = document.getElementById(k);\n\t\t\t\t\tif ( ! d )\n\t\t\t\t\t\tcontinue;\n\t\t\t\t\tvar ul = d.getElementsByTagName('ul').item(0);\n\t\t\t\t\tif ( ul ) {\n\t\t\t\t\t\tvar lis = ul.getElementsByTagName('li');\n\t\t\t\t\t\tif ( 2 < lis.length ) {\n\t\t\t\t\t\t\tvar text = document.querySelector('.instructions-container p');\n                            text.style.display = 'block';\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t\tt[k].p = d.getElementsByTagName(\"input\");\n\t\t\t\t\tfor(var i=0; i < t[k].p.length; i++) {\n\t\t\t\t\t\tif(t[k].name == t[k].p[i].getAttribute('name')) {\n\t\t\t\t\t\t\tt[k].p[i].id = k + '-table-' + i;\n                            var label = document.getElementById(t[k].p[i].id).parentNode;\n\t\t\t\t\t\t\tt[k].p[i].onkeyup = label.onclick = function(e) {\n\t\t\t\t\t\t\t\te = e ? e : event;\n\t\t\t\t\t\t\t\tif ( 16  == e.keyCode )\n\t\t\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t\t\tvar match = /([\\w-]*)-table-(\\d*)/.exec(this.querySelector('input').id);\n\t\t\t\t\t\t\t\tvar listname = match[1];\n\t\t\t\t\t\t\t\tvar that = match[2];\n\t\t\t\t\t\t\t\tif ( null === t[listname].s )\n\t\t\t\t\t\t\t\t\tt[listname].s = that;\n\t\t\t\t\t\t\t\telse if ( e.shiftKey ) {\n                                    console.log(this);\n\t\t\t\t\t\t\t\t\tvar start = Math.min(that, t[listname].s) + 1;\n\t\t\t\t\t\t\t\t\tvar end = Math.max(that, t[listname].s);\n                                    this.querySelector('input').checked = true;\n\t\t\t\t\t\t\t\t\tfor( var j=start; j < end; j++)\n\t\t\t\t\t\t\t\t\t\tt[listname].p[j].checked = t[listname].p[j].checked ? false : true;\n\t\t\t\t\t\t\t\t\tt[listname].s = null;\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\t<?php if ( function_exists( 'wp_schedule_event' ) ) : // needs to be at least WP 2.1 for ajax ?>\n\t\t\t\tif ( 'undefined' == typeof XMLHttpRequest )\n\t\t\t\t\tvar xml = new ActiveXObject( navigator.userAgent.indexOf('MSIE 5') >= 0 ? 'Microsoft.XMLHTTP' : 'Msxml2.XMLHTTP' );\n\t\t\t\telse\n\t\t\t\t\tvar xml = new XMLHttpRequest();\n\n\t\t\t\tvar initTimeChange = function() {\n\t\t\t\t\tvar timeWrap = document.getElementById('backup-time-wrap');\n\t\t\t\t\tvar backupTime = document.getElementById('next-backup-time');\n\t\t\t\t\tif ( !! timeWrap && !! backupTime && ( 1 ==\n\t\t\t\t\t<?php\n\t\t\t\t\t\techo (int) ( 'en' == strtolower( substr( get_locale(), 0, 2 ) ) );\n\t\t\t\t\t?>\n\t\t\t\t\t ) ) {\n\t\t\t\t\t\tvar span = document.createElement('span');\n\t\t\t\t\t\tspan.className = 'submit';\n\t\t\t\t\t\tspan.id = 'change-wrap';\n\t\t\t\t\t\tspan.innerHTML = '<input type=\"submit\" id=\"change-backup-time\" name=\"change-backup-time\" value=\"<?php _e( 'Change', 'wp-db-backup' ); ?>\" />';\n\t\t\t\t\t\ttimeWrap.appendChild(span);\n\t\t\t\t\t\tbackupTime.ondblclick = function(e) { span.parentNode.removeChild(span); clickTime(e, backupTime); };\n\t\t\t\t\t\tspan.onclick = function(e) { span.parentNode.removeChild(span); clickTime(e, backupTime); };\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\tvar clickTime = function(e, backupTime) {\n\t\t\t\t\tvar tText = backupTime.innerHTML;\n\t\t\t\t\tbackupTime.innerHTML = '<input type=\"text\" value=\"' + tText + '\" name=\"backup-time-text\" id=\"backup-time-text\" /> <span class=\"submit\"><input type=\"submit\" name=\"save-backup-time\" id=\"save-backup-time\" value=\"<?php _e( 'Save', 'wp-db-backup' ); ?>\" /></span>';\n\t\t\t\t\tbackupTime.ondblclick = null;\n\t\t\t\t\tvar mainText = document.getElementById('backup-time-text');\n\t\t\t\t\tmainText.focus();\n\t\t\t\t\tvar saveTButton = document.getElementById('save-backup-time');\n\t\t\t\t\tif ( !! saveTButton )\n\t\t\t\t\t\tsaveTButton.onclick = function(e) { saveTime(backupTime, mainText); return false; };\n\t\t\t\t\tif ( !! mainText )\n\t\t\t\t\t\tmainText.onkeydown = function(e) {\n\t\t\t\t\t\t\te = e || window.event;\n\t\t\t\t\t\t\tif ( 13 == e.keyCode ) {\n\t\t\t\t\t\t\t\tsaveTime(backupTime, mainText);\n\t\t\t\t\t\t\t\treturn false;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\tvar saveTime = function(backupTime, mainText) {\n\t\t\t\t\tvar tVal = mainText.value;\n\n\t\t\t\t\txml.open('POST', 'admin-ajax.php', true);\n\t\t\t\t\txml.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');\n\t\t\t\t\tif ( xml.overrideMimeType )\n\t\t\t\t\t\txml.setRequestHeader('Connection', 'close');\n\t\t\t\t\txml.send('action=save_backup_time&_wpnonce=<?php echo wp_create_nonce( $this->referer_check_key ); ?>&backup-time='+tVal);\n\t\t\t\t\txml.onreadystatechange = function() {\n\t\t\t\t\t\tif ( 4 == xml.readyState && '0' != xml.responseText ) {\n\t\t\t\t\t\t\tbackupTime.innerHTML = xml.responseText;\n\t\t\t\t\t\t\tinitTimeChange();\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\tinitTimeChange();\n\t\t\t\t<?php endif; // wp_schedule_event exists ?>\n\t\t\t});\n\t\t}\n\t\t//]]>\n\t\t</script>\n\t\t<?php\n\t}",
+    "code": "function build_backup_script() {\n\t\tglobal $table_prefix, $wpdb;\n\n\t\techo '<fieldset class=\"options backup-running\"><legend>' . __( 'Progress', 'wp-db-backup' ) . '</legend>\n\n\t\t<div class=\"panel-heading\">\n\t\t\t<h3>Backup In Progress...</h3>\n\t\t</div>\n\n\t\t<div class=\"panel-content\">\n\t\t\t<div class=\"progress-bar\">\n\t\t\t    <div id=\"progress-status\"></div>\n\t\t\t\t<div id=\"meterbox\" style=\"height:11px;width:80%;padding:3px;border:1px solid #659fff;\"><div id=\"meter\" style=\"color:#fff;height:11px;line-height:11px;background-color:#659fff;width:0%;text-align:center;font-size:6pt;\"></div></div>\n\t\t\t\t<div id=\"progress_message\"></div>'?>\n\t\t\t</div>\n\n\t\t\t<div class=\"info-notice\">\n\t\t\t<img src=\"<?php echo plugin_dir_url( __FILE__ ) . 'assets/warning.svg'; ?>\">\n\t\t\t\t<p>\n\t\t\t\t\tWhilst the backup is in progress, please do not close the browser, reload or change the page, or click the stop or back browser buttons. This would result in the backup failing.\n\t\t\t\t</p>\n\t\t\t</div>\n\n\t\t\t<?php echo '<div id=\"errors\"></div>\n            <iframe id=\"backuploader\" src=\"about:blank\" style=\"display:none;border:none;height:1em;width:1px;\"></iframe>\n\t\t\t</fieldset>\n\t\t\t<script type=\"text/javascript\">\n\t\t\t//<![CDATA[\n\t\t\twindow.onbeforeunload = function() {\n\t\t\t\treturn \"' . __( 'Navigating away from this page will cause your backup to fail.', 'wp-db-backup' ) . '\";\n\t\t\t}\n\t\t\tfunction setMeter(pct) {\n                var meterStatus = document.getElementById(\"progress-status\");\n\t\t\t\tvar meter = document.getElementById(\"meter\");\n\t\t\t\tmeter.style.width = pct + \"%\";\n\t\t\t\tmeterStatus.innerHTML = Math.floor(pct) + \"%\";\n\t\t\t}\n\t\t\tfunction setProgress(str) {\n\t\t\t\tvar progress = document.getElementById(\"progress_message\");\n\t\t\t\tprogress.innerHTML = str;\n\t\t\t}\n\t\t\tfunction addError(str) {\n\t\t\t\tvar errors = document.getElementById(\"errors\");\n\t\t\t\terrors.innerHTML = errors.innerHTML + str + \"<br />\";\n\t\t\t}\n\n\t\t\tfunction backup(table, segment) {\n\t\t\t\tvar fram = document.getElementById(\"backuploader\");\n\t\t\t\tfram.src = \"' . $this->page_url . '&fragment=\" + table + \":\" + segment + \":' . $this->backup_filename . ':&wp_db_temp_dir=' . $this->backup_dir . '\";\n\t\t\t}\n\n\t\t\tvar curStep = 0;\n\n\t\t\tfunction nextStep() {\n\t\t\t\tbackupStep(curStep);\n\t\t\t\tcurStep++;\n\t\t\t}\n\n\t\t\tfunction finishBackup() {\n\t\t\t\tvar fram = document.getElementById(\"backuploader\");\n\t\t\t\tsetMeter(100);\n\t\t';\n\n\t\t$download_uri = add_query_arg( 'backup', $this->backup_filename, $this->page_url );\n\t\tswitch ( $_POST['deliver'] ) {\n\t\t\tcase 'http':\n\t\t\t\techo '\n\t\t\t\tsetProgress(\"' . __( 'Preparing download.', 'wp-db-backup' ) . '\");\n\t\t\t\twindow.onbeforeunload = null;\n\t\t\t\tfram.src = \"' . $download_uri . '\";\n\n\t\t\t\tsetTimeout( function() {\n\t\t\t\t\tvar secondFrame = document.createElement(\"iframe\");\n\t\t\t\t\tsecondFrame.style.display = \"none\";\n\t\t\t\t\tfram.parentNode.insertBefore(secondFrame, fram);\n\t\t\t\t\tsecondFrame.src = \"' . $download_uri . '&download-retry=1\";\n\t\t\t\t}, 30000 );\n\t\t\t';\n\t\t\t\tbreak;\n\t\t\tcase 'smtp':\n\t\t\t\t$email = sanitize_text_field( wp_unslash( $_POST['backup_recipient'] ) );\n\t\t\t\tif ( get_option( 'wpdb_backup_recip' ) != $email ) {\n\t\t\t\t\tupdate_option( 'wpdb_backup_recip', $email );\n\t\t\t\t}\n\t\t\t\techo '\n\t\t\t\tsetProgress(\"' . sprintf( __( 'Your backup has been emailed to %s', 'wp-db-backup' ), $email ) . '\");\n\t\t\t\twindow.onbeforeunload = null;\n\t\t\t\tfram.src = \"' . $download_uri . '&via=email&recipient=' . $email . '\";\n\t\t\t';\n\t\t\t\tbreak;\n\t\t\tdefault:\n\t\t\t\techo '\n\t\t\t\tsetProgress(\"' . __( 'Backup Complete!', 'wp-db-backup' ) . '\");\n\t\t\t\twindow.onbeforeunload = null;\n\t\t\t';\n\t\t}\n\n\t\techo '\n\t\t\t}\n\n\t\t\tfunction backupStep(step) {\n\t\t\t\tswitch(step) {\n\t\t\t\tcase 0: backup(\"\", 0); break;\n\t\t';\n\n\t\t$also_backup = $this->get_post_data_array( 'other_tables' );\n\t\t$core_tables = $this->get_post_data_array( 'core_tables' );\n\t\t$tables      = array_merge( $core_tables, $also_backup );\n\t\t$step_count  = 1;\n\n\t\tforeach ( $tables as $table ) {\n\t\t\t$rec_count    = $wpdb->get_var( \"SELECT count(*) FROM {$table}\" );\n\t\t\t$rec_segments = ceil( $rec_count / DBBWP_ROWS_PER_SEGMENT );\n\t\t\t$table_count  = 0;\n\t\t\tif ( $this->module_check() ) {\n\t\t\t\t$delay      = \"setTimeout('\";\n\t\t\t\t$delay_time = \"', \" . (int) DBBWP_MOD_EVASIVE_DELAY . ')';\n\t\t\t} else {\n\t\t\t\t$delay = $delay_time = ''; }\n\t\t\tdo {\n\t\t\t\techo \"case {$step_count}: {$delay}",
     "source_file": "wp-db-backup.json",
-    "function_name": "admin_header",
-    "critical_failures": [
-      "missing_phpdoc",
-      "form_input_without_label"
-    ],
-    "low_score_dims": []
-  },
-  {
-    "code": "function convertFile($source, $config = null, $convertOptions = null, $converter = null)\n    {\n        try {\n            // Check source\n            // ---------------\n            $checking = 'source path';\n            $source = SanityCheck::absPathExistsAndIsFile($source);\n            //$filename = SanityCheck::absPathExistsAndIsFileInDocRoot($source);\n            // PS: No need to check mime type as the WebPConvert library does that (it only accepts image/jpeg and image/png)\n\n            // Check that source is within a valid image root\n            $activeRootIds = Paths::getImageRootIds();  // Currently, root ids cannot be selected, so all root ids are active.\n            $rootId = Paths::findImageRootOfPath($source, $activeRootIds);\n            if ($rootId === false) {\n                throw new \\Exception('Path of source is not within a valid image root');\n            }\n\n            // Check config\n            // --------------\n            $checking = 'configuration file';\n            if (is_null($config)) {\n                $config = Config::loadConfigAndFix();  // ps: if this fails to load, default config is returned.\n            }\n            if (!is_array($config)) {\n                throw new SanityException('configuration file is corrupt');\n            }\n\n            // Check convert options\n            // -------------------------------\n            $checking = 'configuration file (options)';\n            if (is_null($convertOptions)) {\n                $wodOptions = Config::generateWodOptionsFromConfigObj($config);\n                if (!isset($wodOptions['webp-convert']['convert'])) {\n                    throw new SanityException('conversion options are missing');\n                }\n                $convertOptions = $wodOptions['webp-convert']['convert'];\n            }\n            if (!is_array($convertOptions)) {\n                throw new SanityException('conversion options are missing');\n            }\n\n\n            // Check destination\n            // -------------------------------\n            $checking = 'destination';\n            $destination = self::getDestination($source, $config);\n\n            $destination = SanityCheck::absPath($destination);\n\n            // Check log dir\n            // -------------------------------\n            $checking = 'conversion log dir';\n            if (isset($config['enable-logging']) && $config['enable-logging']) {\n                $logDir = SanityCheck::absPath(Paths::getWebPExpressContentDirAbs() . '/log');\n            } else {\n                $logDir = null;\n            }\n\n\n        } catch (\\Exception $e) {\n            return [\n                'success' => false,\n                'msg' => 'Check failed for ' . $checking . ': '. $e->getMessage(),\n                'log' => '',\n            ];\n        }\n\n        // Done with sanitizing, lets get to work!\n        // ---------------------------------------\n//return false;\n        $result = ConvertHelperIndependent::convert($source, $destination, $convertOptions, $logDir, $converter);\n\n//error_log('looki:' . $source . $converter);\n        // If we are using stack converter, check if Ewww discovered invalid api key\n        //if (is_null($converter)) {\n            if (isset(Ewww::$nonFunctionalApiKeysDiscoveredDuringConversion)) {\n                // We got an invalid or exceeded api key (at least one).\n                //error_log('look:' . print_r(Ewww::$nonFunctionalApiKeysDiscoveredDuringConversion, true));\n                EwwwTools::markApiKeysAsNonFunctional(\n                    Ewww::$nonFunctionalApiKeysDiscoveredDuringConversion,\n                    Paths::getConfigDirAbs()\n                );\n            }\n        //}\n\n        self::updateBiggerThanOriginalMark($source, $destination, $config);\n\n        if ($result['success'] === true) {\n            $result['filesize-original'] = @filesize($source);\n            $result['filesize-webp'] = @filesize($destination);\n            $result['destination-path'] = $destination;\n\n            $destinationOptions = DestinationOptions::createFromConfig($config);\n\n            $rootOfDestination = Paths::destinationRoot($rootId, $destinationOptions);\n\n            $relPathFromImageRootToSource = PathHelper::getRelDir(\n                realpath(Paths::getAbsDirById($rootId)),\n                realpath($source)\n            );\n            $relPathFromImageRootToDest = ConvertHelperIndependent::appendOrSetExtension(\n                $relPathFromImageRootToSource,\n                $config['destination-folder'],\n                $config['destination-extension'],\n                ($rootId == 'uploads')\n            );\n\n            $result['destination-url'] = $rootOfDestination['url'] . '/' . $relPathFromImageRootToDest;\n        }\n        return $result;\n    }",
-    "source_file": "webp-express.json",
-    "function_name": "Convert::convertFile",
+    "function_name": "wpdbBackup::build_backup_script",
     "critical_failures": [
       "Missing PHPDoc block",
-      "Debug statements in production code"
+      "Missing nonce verification on POST data handler",
+      "CRITICAL: Database query inside a loop (N+1 pattern)",
+      "Hardcoded untranslated string(s) in echo: ['\\n\\t\\t\\t\\tsetProgress(', '\\n\\t\\t\\t\\tsetProgress(']",
+      "Image tag without alt attribute"
     ],
     "low_score_dims": [
+      "wpcs_compliance",
+      "performance"
+    ],
+    "substantive_failure_detected": true,
+    "high_stakes_low_dims": []
+  },
+  {
+    "code": "/**\n\t\t\t\t * This filter controls if the method 'process()' from OrderProcessor will be called.\n\t\t\t\t * So you can implement your own for example on subscriptions\n\t\t\t\t *\n\t\t\t\t * - true bool controls execution of 'OrderProcessor::process()'\n\t\t\t\t * - $this \\WC_Payment_Gateway\n\t\t\t\t * - $wc_order \\WC_Order\n\t\t\t\t */\nfunction process_payment( $order_id ) {\n\t\t$wc_order = wc_get_order( $order_id );\n\t\tif ( ! ( $wc_order instanceof WC_Order ) ) {\n\t\t\treturn $this->handle_payment_failure(\n\t\t\t\tnull,\n\t\t\t\tnew GatewayGenericException( new Exception( 'WC order was not found.' ) )\n\t\t\t);\n\t\t}\n\n\t\t\n\t\t//phpcs:disable WordPress.Security.NonceVerification.Recommended\n\t\tif ( isset( $_REQUEST['ppcp-resume-order'] ) && $wc_order->has_status( 'processing' ) ) {\n\t\t\treturn $this->handle_payment_success( $wc_order );\n\t\t}\n\t\t//phpcs:enable WordPress.Security.NonceVerification.Recommended\n\n\t\tdo_action_deprecated( 'woocommerce_paypal_payments_before_process_order', array( $wc_order ), '3.0.1', 'woocommerce_paypal_payments_before_order_process', __( 'Usage of this action is deprecated. Please use the filter woocommerce_paypal_payments_before_order_process instead.', 'woocommerce-paypal-payments' ) );\n\n\t\ttry {\n\t\t\ttry {\n\t\t\t\t\n\t\t\t\t$process = apply_filters( 'woocommerce_paypal_payments_before_order_process', true, $this, $wc_order );\n\t\t\t\tif ( $process ) {\n\t\t\t\t\t$this->order_processor->process( $wc_order );\n\t\t\t\t}\n\n\t\t\t\tdo_action( 'woocommerce_paypal_payments_before_handle_payment_success', $wc_order );\n\n\t\t\t\treturn $this->handle_payment_success( $wc_order );\n\t\t\t} catch ( PayPalOrderMissingException $exc ) {\n\t\t\t\t$order = $this->order_processor->create_order( $wc_order );\n\n\t\t\t\treturn array(\n\t\t\t\t\t'result'   => 'success',\n\t\t\t\t\t'redirect' => ( $this->paypal_checkout_url_factory )( $order->id() ),\n\t\t\t\t);\n\t\t\t}\n\t\t} catch ( PayPalApiException $error ) {\n\t\t\treturn $this->handle_payment_failure(\n\t\t\t\t$wc_order,\n\t\t\t\tnew Exception(\n\t\t\t\t\tMessages::generic_payment_error_message() . ' ' . $error->getMessage(),\n\t\t\t\t\t$error->getCode(),\n\t\t\t\t\t$error\n\t\t\t\t)\n\t\t\t);\n\t\t} catch ( Exception $error ) {\n\t\t\treturn $this->handle_payment_failure( $wc_order, $error );\n\t\t}\n\t}",
+    "source_file": "woocommerce-paypal-payments.json",
+    "function_name": "GooglePayGateway::process_payment",
+    "critical_failures": [
+      "Multiple PHPDoc/WPCS issues: missing @since + missing @param/@return",
+      "Missing nonce verification on POST data handler"
+    ],
+    "low_score_dims": [],
+    "substantive_failure_detected": true,
+    "high_stakes_low_dims": []
+  },
+  {
+    "code": "function set_up() {\n\t\tparent::set_up();\n\t\t$this->test_block_name = null;\n\t\t$this->theme_root      = realpath( __DIR__ . '/../data/themedir1' );\n\t\t$this->orig_theme_dir  = $GLOBALS['wp_theme_directories'];\n\n\t\t// /themes is necessary as theme.php functions assume /themes is the root if there is only one root.\n\t\t$GLOBALS['wp_theme_directories'] = array( WP_CONTENT_DIR . '/themes', $this->theme_root );\n\n\t\tadd_filter( 'theme_root', array( $this, 'filter_set_theme_root' ) );\n\t\tadd_filter( 'stylesheet_root', array( $this, 'filter_set_theme_root' ) );\n\t\tadd_filter( 'template_root', array( $this, 'filter_set_theme_root' ) );\n\t\t// Clear caches.\n\t\twp_clean_themes_cache();\n\t\tunset( $GLOBALS['wp_themes'] );\n\t}",
+    "source_file": "gutenberg.json",
+    "function_name": "WP_Block_Supports_Position_Test::set_up",
+    "critical_failures": [
+      "test code, excluded from training data"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "substantive_failure_detected": false,
+    "high_stakes_low_dims": [
+      "sql_safety",
+      "security",
+      "wp_api_usage",
       "code_quality"
     ]
   },
   {
-    "code": "/**\n     * @param $paymentMethod\n     * @return array\n     * @throws \\Exception\n     */\nfunction dataToFilterFromPost($paymentMethod)\n    {\n        if ($paymentMethod) {\n            return $this->gateway->getPaymentInstance($paymentMethod)->getRequirementsData();\n        }\n        return $_POST;\n    }",
-    "source_file": "pagarme-payments-for-woocommerce.json",
-    "function_name": "PostFormatter::dataToFilterFromPost",
-    "critical_failures": [
-      "Form input without nonce verification"
-    ],
+    "code": "function estimateBitStreamSizeOfEntry($version)\n        {\n            $bits = 0;\n\n            if($version == 0)\n                $version = 1;\n\n            switch($this->mode) {\n                case QR_MODE_NUM:        $bits = QRinput::estimateBitsModeNum($this->size);    break;\n                case QR_MODE_AN:        $bits = QRinput::estimateBitsModeAn($this->size);    break;\n                case QR_MODE_8:            $bits = QRinput::estimateBitsMode8($this->size);    break;\n                case QR_MODE_KANJI:        $bits = QRinput::estimateBitsModeKanji($this->size);break;\n                case QR_MODE_STRUCTURE:    return STRUCTURE_HEADER_BITS;\n                default:\n                    return 0;\n            }\n\n            $l = QRspec::lengthIndicator($this->mode, $version);\n            $m = 1 << $l;\n            $num = (int)(($this->size + $m - 1) / $m);\n\n            $bits += $num * (4 + $l);\n\n            return $bits;\n        }",
+    "source_file": "doqrcode.json",
+    "function_name": "QRinputItem::estimateBitStreamSizeOfEntry",
+    "critical_failures": [],
     "low_score_dims": [
-      "security"
+      "wpcs_compliance",
+      "wp_api_usage"
+    ],
+    "substantive_failure_detected": false,
+    "high_stakes_low_dims": [
+      "wp_api_usage"
     ]
   },
   {
-    "code": "function process_bulk_action()\n    {\n        if (!empty($_REQUEST['filter_action'])) {\n            return false;\n        }\n\n        if (!isset($_POST['_wpnonce']) or !isset($_REQUEST['action'])) {\n            return false;\n        }\n\n        $action = $_REQUEST['action'];\n\n        if (in_array($action, ['delete', 'ignore'])) {\n\n            if (!wp_verify_nonce($_POST['_wpnonce'], 'bulk-media')) {\n                wp_die('Security check failed!');\n            }\n\n            foreach ($_POST['bulk-media'] as $media) {\n                ImagesProcessor::remove(absint($media), $action === 'delete');\n            }\n\n            return true;\n        }\n\n        return false;\n    }",
-    "source_file": "wp-optimizer.json",
-    "function_name": "Media_Table::process_bulk_action",
-    "critical_failures": [
-      "Missing PHPDoc block"
-    ],
-    "low_score_dims": [
-      "wpcs_compliance"
-    ]
-  },
-  {
-    "code": "/**\n * Gets number of shipping methods currently enabled. Used to identify if\n * shipping is configured.\n *\n * @since  2.6.0\n * @param  bool $include_legacy Count legacy shipping methods too.\n * @param  bool $enabled_only   Whether non-legacy shipping methods should be\n *                              restricted to enabled ones. It doesn't affect\n *                              legacy shipping methods. @since 4.3.0.\n * @return int\n */\nfunction wc_get_shipping_method_count( $include_legacy = false, $enabled_only = false ) {\n\tglobal $wpdb;\n\n\t$transient_name    = 'wc_shipping_method_count';\n\t$transient_version = WC_Cache_Helper::get_transient_version( 'shipping' );\n\t$transient_value   = get_transient( $transient_name );\n\t$counts            = array(\n\t\t'legacy'   => 0,\n\t\t'enabled'  => 0,\n\t\t'disabled' => 0,\n\t);\n\n\tif ( ! isset( $transient_value['legacy'], $transient_value['enabled'], $transient_value['disabled'], $transient_value['version'] ) || $transient_value['version'] !== $transient_version ) {\n\t\t// Count activated methods that don't support shipping zones if $include_legacy is true.\n\t\t$methods    = WC()->shipping()->get_shipping_methods();\n\t\t$method_ids = array();\n\n\t\tforeach ( $methods as $method ) {\n\t\t\t$method_ids[] = $method->id;\n\n\t\t\tif ( isset( $method->enabled ) && 'yes' === $method->enabled && ! $method->supports( 'shipping-zones' ) ) {\n\t\t\t\t++$counts['legacy'];\n\t\t\t}\n\t\t}\n\n\t\t// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared\n\t\t$counts['enabled']  = absint( $wpdb->get_var( \"SELECT COUNT(*) FROM {$wpdb->prefix}woocommerce_shipping_zone_methods WHERE is_enabled=1 AND method_id IN ('\" . implode( \"','\", array_map( 'esc_sql', $method_ids ) ) . \"')\" ) );\n\t\t$counts['disabled'] = absint( $wpdb->get_var( \"SELECT COUNT(*) FROM {$wpdb->prefix}",
+    "code": "/**\n * In some cases, the approved download directories table may not have been successfully created during the update to\n * 6.5.0. If this was the case we will need to re-initialize the feature.\n *\n * @return void\n */\nfunction wc_update_651_approved_download_directories() {\n\tglobal $wpdb;\n\n\t$download_directories = wc_get_container()->get( Download_Directories::class );\n\t$directory_sync       = wc_get_container()->get( Download_Directories_Sync::class );\n\n\t// Check if at least 1 row exists, without scanning the entire table.\n\t$is_populated = (bool) $wpdb->get_var(\n\t\t'SELECT 1 FROM ' . $download_directories->get_table() . ' LIMIT 1'\n\t);\n\n\t// If the table contains rules (or does not yet, but a sync is in-progress) we should do nothing else at this point.\n\tif ( $is_populated || $directory_sync->in_progress() ) {\n\t\treturn;\n\t}\n\n\t// Otherwise, it seems reasonable to assume that the feature was not initialized as expected during the update to\n\t// 6.5.0. Let's give that another try.\n\t$directory_sync->init_hooks();\n\t$directory_sync->init_feature( true, false );\n}",
     "source_file": "woocommerce.json",
-    "function_name": "wc_get_shipping_method_count",
+    "function_name": "wc_update_651_approved_download_directories",
     "critical_failures": [
-      "SQL query with dynamic values without $wpdb->prepare()",
-      "Potential N+1: database query inside loop"
+      "Missing @since tag in PHPDoc block",
+      "String concatenation in SQL query without prepare()"
+    ],
+    "low_score_dims": [],
+    "substantive_failure_detected": true,
+    "high_stakes_low_dims": []
+  },
+  {
+    "code": "function test_block_visibility_support_generated_css_with_mobile_viewport_size() {\n\t\t$this->register_visibility_block_with_support(\n\t\t\t'test/viewport-mobile',\n\t\t\tarray( 'visibility' => true )\n\t\t);\n\n\t\t$block = array(\n\t\t\t'blockName' => 'test/viewport-mobile',\n\t\t\t'attrs'     => array(\n\t\t\t\t'metadata' => array(\n\t\t\t\t\t'blockVisibility' => array(\n\t\t\t\t\t\t'viewport' => array(\n\t\t\t\t\t\t\t'mobile' => false,\n\t\t\t\t\t\t),\n\t\t\t\t\t),\n\t\t\t\t),\n\t\t\t),\n\t\t);\n\n\t\t$block_content = '<div>Test content</div>';\n\t\t$result        = gutenberg_render_block_visibility_support( $block_content, $block );\n\n\t\t$this->assertStringContainsString( 'wp-block-hidden-mobile', $result, 'Block should have the visibility class for the mobile viewport size.' );\n\n\t\t$actual_stylesheet = gutenberg_style_engine_get_stylesheet_from_context( 'block-supports' );\n\n\t\t$this->assertSame(\n\t\t\t'@media (width <= 480px){.wp-block-hidden-mobile{display:none !important;}}',\n\t\t\t$actual_stylesheet,\n\t\t\t'CSS should contain mobile visibility rule'\n\t\t);\n\t}",
+    "source_file": "gutenberg.json",
+    "function_name": "WP_Block_Supports_Block_Visibility_Test::test_block_visibility_support_generated_css_with_mobile_viewport_size",
+    "critical_failures": [
+      "test code, excluded from training data"
     ],
     "low_score_dims": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "substantive_failure_detected": false,
+    "high_stakes_low_dims": [
+      "sql_safety",
+      "security",
+      "wp_api_usage",
+      "code_quality"
+    ]
+  },
+  {
+    "code": "/**\n\t\t * Update order question in quiz.\n\t\t *\n\t\t * @param $order\n\t\t *\n\t\t * @return false|int\n\t\t */\nfunction sort_questions( $order ) {\n\t\t\tglobal $wpdb;\n\n\t\t\tforeach ( $order as $index => $question_id ) {\n\t\t\t\t$update = $wpdb->update(\n\t\t\t\t\t$wpdb->learnpress_quiz_questions,\n\t\t\t\t\tarray( 'question_order' => $index + 1 ),\n\t\t\t\t\tarray( 'question_id' => $question_id ),\n\t\t\t\t\tarray( '%d' ),\n\t\t\t\t\tarray( '%d' )\n\t\t\t\t);\n\n\t\t\t\tif ( $update === false ) {\n\t\t\t\t\treturn false;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\treturn true;\n\t\t}",
+    "source_file": "learnpress-wishlist.json",
+    "function_name": "sort_questions",
+    "critical_failures": [
+      "database query inside a loop (N+1 pattern)"
+    ],
+    "low_score_dims": [],
+    "substantive_failure_detected": true,
+    "high_stakes_low_dims": []
+  },
+  {
+    "code": "function toByte()\n        {\n\n            $size = $this->size();\n\n            if($size == 0) {\n                return array();\n            }\n\n            $data = array_fill(0, (int)(($size + 7) / 8), 0);\n            $bytes = (int)($size / 8);\n\n            $p = 0;\n\n            for($i=0; $i<$bytes; $i++) {\n                $v = 0;\n                for($j=0; $j<8; $j++) {\n                    $v = $v << 1;\n                    $v |= $this->data[$p];\n                    $p++;\n                }\n                $data[$i] = $v;\n            }\n\n            if($size & 7) {\n                $v = 0;\n                for($j=0; $j<($size & 7); $j++) {\n                    $v = $v << 1;\n                    $v |= $this->data[$p];\n                    $p++;\n                }\n                $data[$bytes] = $v;\n            }\n\n            return $data;\n        }",
+    "source_file": "doqrcode.json",
+    "function_name": "QRbitstream::toByte",
+    "critical_failures": [],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "wp_api_usage"
+    ],
+    "substantive_failure_detected": false,
+    "high_stakes_low_dims": [
+      "wp_api_usage"
+    ]
+  },
+  {
+    "code": "/**\n\t * Test that filtering by a non-existent block returns empty categories.\n\t *\n\t * @covers ::get_guidelines\n\t */\nfunction test_get_items_block_filter_nonexistent() {\n\t\twp_set_current_user( self::$admin_id );\n\t\t$this->create_guidelines();\n\n\t\t$request = new WP_REST_Request( 'GET', self::REST_BASE );\n\t\t$request->set_param( 'block', 'core/nonexistent' );\n\t\t$response = rest_get_server()->dispatch( $request );\n\t\t$data     = $response->get_data();\n\n\t\t$this->assertSame( 200, $response->get_status() );\n\t\t$this->assertEmpty( (array) $data['guideline_categories'] );\n\t}",
+    "source_file": "gutenberg.json",
+    "function_name": "Gutenberg_Content_Guidelines_REST_Controller_Test::test_get_items_block_filter_nonexistent",
+    "critical_failures": [
+      "test code, excluded from training data"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "substantive_failure_detected": false,
+    "high_stakes_low_dims": [
+      "sql_safety",
+      "security",
+      "wp_api_usage",
+      "code_quality"
+    ]
+  },
+  {
+    "code": "/**\n\t * Updates all the user's active subscriptions payment method with the new payment method.\n\t *\n\t * @since 8.8.0\n\t *\n\t * @param int      $user_id               The user ID.\n\t * @param stdClass $payment_method_object The newly added payment method object.\n\t * @return void\n\t */\nfunction handle_upe_add_payment_method_success( $user_id, $payment_method_object ) {\n\t\t// To avoid errors, exit early if there is no WC_Subscriptions_Change_Payment_Gateway class or the payment method object is not complete.\n\t\tif ( ! class_exists( 'WC_Subscriptions_Change_Payment_Gateway' ) || ! isset( $payment_method_object->id ) ) {\n\t\t\treturn;\n\t\t}\n\n\t\t// Check if the customer has requested to update all subscriptions via a direct request or after returning from the UPE redirect.\n\t\t$should_update_subscriptions = isset( $_POST[ 'wc-' . $this->id . '-update-subs-payment-method-card' ] );\n\t\t$should_update_subscriptions = $should_update_subscriptions || isset( $this->stripe_id, $_GET[ \"wc-stripe-{$this->stripe_id}",
+    "source_file": "woocommerce-gateway-stripe.json",
+    "function_name": "handle_upe_add_payment_method_success",
+    "critical_failures": [
+      "Missing nonce verification on POST data handler"
+    ],
+    "low_score_dims": [],
+    "substantive_failure_detected": true,
+    "high_stakes_low_dims": []
+  },
+  {
+    "code": "/**\n\t * Tests that custom CSS support returns unchanged block when CSS is whitespace only.\n\t *\n\t * @covers ::gutenberg_render_custom_css_support_styles\n\t */\nfunction test_custom_css_support_returns_unchanged_when_css_whitespace_only() {\n\t\t$this->register_custom_css_block_with_support(\n\t\t\t'test/custom-css-whitespace',\n\t\t\tarray( 'customCSS' => true )\n\t\t);\n\n\t\t$parsed_block = array(\n\t\t\t'blockName' => 'test/custom-css-whitespace',\n\t\t\t'attrs'     => array(\n\t\t\t\t'style' => array(\n\t\t\t\t\t'css' => '   ',\n\t\t\t\t),\n\t\t\t),\n\t\t);\n\n\t\t$result = gutenberg_render_custom_css_support_styles( $parsed_block );\n\n\t\t$this->assertArrayNotHasKey( 'className', $result['attrs'], 'Block should not have className added when CSS is whitespace only.' );\n\t}",
+    "source_file": "gutenberg.json",
+    "function_name": "WP_Block_Supports_Custom_CSS_Test::test_custom_css_support_returns_unchanged_when_css_whitespace_only",
+    "critical_failures": [
+      "test code, excluded from training data"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "substantive_failure_detected": false,
+    "high_stakes_low_dims": [
+      "sql_safety",
+      "security",
+      "wp_api_usage",
+      "code_quality"
+    ]
+  },
+  {
+    "code": "/**\n\t * Verifies that EXIF metadata with IPTC data is extracted correctly.\n\t *\n\t * Uses 2004-07-22-DSC_0007.jpg which has both EXIF and IPTC data.\n\t *\n\t * @covers ::create_item\n\t * @covers ::prepare_item_for_response\n\t * @requires extension exif\n\t */\nfunction test_exif_and_iptc_metadata_extracted() {\n\t\twp_set_current_user( self::$admin_id );\n\n\t\t$request = new WP_REST_Request( 'POST', '/wp/v2/media' );\n\t\t$request->set_header( 'Content-Type', 'image/jpeg' );\n\t\t$request->set_header( 'Content-Disposition', 'attachment; filename=2004-07-22-DSC_0007.jpg' );\n\t\t$request->set_param( 'generate_sub_sizes', false );\n\n\t\t$request->set_body( file_get_contents( DIR_TESTDATA . '/images/2004-07-22-DSC_0007.jpg' ) );\n\t\t$response = rest_get_server()->dispatch( $request );\n\t\t$data     = $response->get_data();\n\n\t\t$this->assertSame( 201, $response->get_status() );\n\n\t\t$image_meta = $data['media_details']['image_meta'];\n\n\t\t// Verify EXIF data from camera.\n\t\t$this->assertSame( '6.3', $image_meta['aperture'] );\n\t\t$this->assertSame( 'NIKON D70', $image_meta['camera'] );\n\t\t$this->assertSame( '18', $image_meta['focal_length'] );\n\t\t$this->assertSame( '200', $image_meta['iso'] );\n\n\t\t// Verify IPTC data.\n\t\t$this->assertSame( 'IPTC Creator', $image_meta['credit'] );\n\t\t$this->assertSame( 'IPTC Caption', $image_meta['caption'] );\n\t\t$this->assertSame( 'IPTC Copyright', $image_meta['copyright'] );\n\t\t$this->assertSame( 'IPTC Headline', $image_meta['title'] );\n\t}",
+    "source_file": "gutenberg.json",
+    "function_name": "Gutenberg_REST_Attachments_Controller_Test::test_exif_and_iptc_metadata_extracted",
+    "critical_failures": [
+      "test code, excluded from training data"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "substantive_failure_detected": false,
+    "high_stakes_low_dims": [
+      "sql_safety",
+      "security",
+      "wp_api_usage",
+      "code_quality"
+    ]
+  },
+  {
+    "code": "function test_block_visibility_support_generated_css_with_all_viewport_sizes_hidden() {\n\t\t$this->register_visibility_block_with_support(\n\t\t\t'test/viewport-all-hidden',\n\t\t\tarray( 'visibility' => true )\n\t\t);\n\n\t\t$block = array(\n\t\t\t'blockName' => 'test/viewport-all-hidden',\n\t\t\t'attrs'     => array(\n\t\t\t\t'metadata' => array(\n\t\t\t\t\t'blockVisibility' => array(\n\t\t\t\t\t\t'viewport' => array(\n\t\t\t\t\t\t\t'mobile'  => false,\n\t\t\t\t\t\t\t'tablet'  => false,\n\t\t\t\t\t\t\t'desktop' => false,\n\t\t\t\t\t\t),\n\t\t\t\t\t),\n\t\t\t\t),\n\t\t\t),\n\t\t);\n\n\t\t$block_content = '<div>Test content</div>';\n\t\t$result        = gutenberg_render_block_visibility_support( $block_content, $block );\n\n\t\t$this->assertSame( '<div class=\"wp-block-hidden-desktop wp-block-hidden-mobile wp-block-hidden-tablet\">Test content</div>', $result, 'Block content should have the visibility classes for all viewport sizes in the class attribute.' );\n\t}",
+    "source_file": "gutenberg.json",
+    "function_name": "WP_Block_Supports_Block_Visibility_Test::test_block_visibility_support_generated_css_with_all_viewport_sizes_hidden",
+    "critical_failures": [
+      "test code, excluded from training data"
+    ],
+    "low_score_dims": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "substantive_failure_detected": false,
+    "high_stakes_low_dims": [
+      "sql_safety",
+      "security",
+      "wp_api_usage",
+      "code_quality"
+    ]
+  },
+  {
+    "code": "/**\n     * @return array\n     */\nfunction getLockers(): array\n    {\n        global $wpdb;\n\n        $table = $wpdb->prefix . $this->tableName;\n        $is_testing = SamedayCourierHelperClass::isTesting();\n\n        $sql = SamedayCourierHelperClass::buildGridQuery(\n            $table,\n            $is_testing,\n            self::ACCEPTED_FILTERS,\n        );\n\n        return $wpdb->get_results($sql, 'ARRAY_A');\n    }",
+    "source_file": "samedaycourier-shipping.json",
+    "function_name": "SamedayCourierLockers::getLockers",
+    "critical_failures": [
+      "CRITICAL: Unprepared SQL query with dynamic values (SQL injection risk)"
+    ],
+    "low_score_dims": [
+      "sql_safety"
+    ],
+    "substantive_failure_detected": true,
+    "high_stakes_low_dims": [
       "sql_safety"
     ]
   },
   {
-    "code": "function trashed_post( $post_id ) {\n\t\tif ( $this->is_course_item( $post_id ) ) {\n\t\t\t$course_ids = $this->get( 'item-courses-' . $post_id );\n\n\t\t\tif ( $course_ids ) {\n\t\t\t\t$curd = new LP_Course_CURD();\n\n\t\t\t\tforeach ( $course_ids as $course_id ) {\n\t\t\t\t\t$curd->remove_item( $post_id, $course_id );\n\t\t\t\t\t//do_action( 'learn-press/removed-course-item', $course_id );\n\t\t\t\t}\n\n\t\t\t\t$this->delete( 'item-courses-' . $post_id );\n\t\t\t}\n\t\t} elseif ( $this->is_course( $post_id ) ) {\n\t\t\tdo_action( 'learn-press/trashed-course', $post_id );\n\t\t} elseif ( get_post_type( $post_id ) == LP_QUESTION_CPT ) {\n\t\t\tglobal $wpdb;\n\t\t\t$wpdb->delete( $wpdb->prefix . 'learnpress_quiz_questions', array( 'question_id' => $post_id ), array( '%d' ) );\n\t\t}\n\t}",
-    "source_file": "learnpress-course-review.json",
-    "function_name": "LP_Post_Type_Actions::trashed_post",
+    "code": "function test_border_object_with_invalid_style_prop() {\n\t\t$block_type  = self::register_bordered_block_with_support(\n\t\t\t'test/border-object-with-invalid-style-prop',\n\t\t\tarray(\n\t\t\t\t'__experimentalBorder' => array(\n\t\t\t\t\t'color'  => true,\n\t\t\t\t\t'radius' => true,\n\t\t\t\t\t'width'  => true,\n\t\t\t\t\t'style'  => true,\n\t\t\t\t),\n\t\t\t)\n\t\t);\n\t\t$block_attrs = array( 'style' => array( 'border' => array( 'invalid' => '10px' ) ) );\n\t\t$actual      = gutenberg_apply_border_support( $block_type, $block_attrs );\n\t\t$expected    = array();\n\n\t\t$this->assertSame( $expected, $actual );\n\t}",
+    "source_file": "gutenberg.json",
+    "function_name": "WP_Block_Supports_Border_Test::test_border_object_with_invalid_style_prop",
     "critical_failures": [
-      "Database query inside loop (N+1 pattern)"
+      "test code, excluded from training data"
     ],
     "low_score_dims": [
-      "performance"
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "substantive_failure_detected": false,
+    "high_stakes_low_dims": [
+      "sql_safety",
+      "security",
+      "wp_api_usage",
+      "code_quality"
     ]
   },
   {
-    "code": "/**\n\t* Epsilon Slider\n\t*/\nfunction epsilon_slider() {\n\t?>\n\t\t<# var fieldExtras = ''; #>\n\t\t<# if ( ! _.isUndefined( field.choices ) && ! _.isUndefined( field.choices.min ) ) { #>\n\t\t\t<# fieldExtras += ' data-attr-min=\"' + field.choices.min + '\"'; #>\n\t\t<# } #>\n\t\t<# if ( ! _.isUndefined( field.choices ) && ! _.isUndefined( field.choices.max ) ) { #>\n\t\t\t<# fieldExtras += ' data-attr-max=\"' + field.choices.max + '\"'; #>\n\t\t<# } #>\n\t\t<# if ( ! _.isUndefined( field.choices ) && ! _.isUndefined( field.choices.step ) ) { #>\n\t\t\t<# fieldExtras += ' data-attr-step=\"' + field.choices.step + '\"'; #>\n\t\t<# } #>\n\t\t<div class=\"epsilon-slider\">\n\t\t\t<span class=\"customize-control-title\">\n\t\t\t\t{{{ field.label }}}\n\t\t\t\t<# if( field.description ){ #>\n\t\t\t\t\t<i class=\"dashicons dashicons-editor-help\" style=\"vertical-align: text-bottom; position: relative;\">\n\t\t\t\t\t\t<span class=\"mte-tooltip\">\n\t\t\t\t\t\t\t{{{ field.description }}}\n\t\t\t\t\t\t</span>\n\t\t\t\t\t</i>\n\t\t\t\t<# } #>\n\t\t\t</span>\n\t\t\t<div class=\"slider-container\">\n\t\t\t\t<input disabled type=\"text\" class=\"rl-slider\" id=\"input_{{ field.id }}-{{ index }}\" data-field=\"{{{ field.id }}}\" value=\"{{ field.default }}\" />\n\t\t\t\t<div id=\"slider_{{ field.id }}-{{ index }}\" class=\"ss-slider\" {{{ fieldExtras }}}></div>\n\t\t\t</div>\n\t\t</div>\n\t<?php\n\t}",
-    "source_file": "shapely-companion.json",
-    "function_name": "Epsilon_Repeater_Templates::epsilon_slider",
+    "code": "/**\n\t * Tests that `get_style_variations` returns all the appropriate variations,\n\t * including parent variations if the theme is a child, and that the child\n\t * variation overwrites the parent variation of the same name.\n\t *\n\t * Note: This covers both theme and block style variations.\n\t *\n\t * @covers WP_Theme_JSON_Resolver::get_style_variations\n\t *\n\t * @dataProvider data_get_style_variations\n\t *\n\t * @since 6.6.0 Added tests for block style variations.\n\t *\n\t * @param string $theme               Name of the theme to use.\n\t * @param string $scope               Scope to filter variations by e.g. theme vs block.\n\t * @param array  $expected_variations Collection of expected variations.\n\t */\nfunction test_get_style_variations( $theme, $scope, $expected_variations ) {\n\t\tswitch_theme( $theme );\n\t\twp_set_current_user( self::$administrator_id );\n\n\t\t$actual_variations = WP_Theme_JSON_Resolver_Gutenberg::get_style_variations( $scope );\n\n\t\twp_recursive_ksort( $actual_variations );\n\t\twp_recursive_ksort( $expected_variations );\n\n\t\t$this->assertSame( $expected_variations, $actual_variations );\n\t}",
+    "source_file": "gutenberg.json",
+    "function_name": "test_get_style_variations",
     "critical_failures": [
-      "Form inputs without labels"
+      "test code, excluded from training data"
     ],
-    "low_score_dims": []
+    "low_score_dims": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "substantive_failure_detected": false,
+    "high_stakes_low_dims": [
+      "sql_safety",
+      "security",
+      "wp_api_usage",
+      "code_quality"
+    ]
   },
   {
-    "code": "/**\n\t * Search box.\n\t *\n\t * @param  string $text     Button text.\n\t * @param  string $input_id Input ID.\n\t */\nfunction search_box( $text, $input_id ) {\n\t\tif ( empty( $_REQUEST['s'] ) && ! $this->has_items() ) { // WPCS: input var okay, CSRF ok.\n\t\t\treturn;\n\t\t}\n\n\t\t$input_id     = $input_id . '-search-input';\n\t\t$search_query = isset( $_REQUEST['s'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['s'] ) ) : ''; // WPCS: input var okay, CSRF ok.\n\n\t\techo '<p class=\"search-box\">';\n\t\techo '<label class=\"screen-reader-text\" for=\"' . esc_attr( $input_id ) . '\">' . esc_html( $text ) . ':</label>';\n\t\techo '<input type=\"search\" id=\"' . esc_attr( $input_id ) . '\" name=\"s\" value=\"' . esc_attr( $search_query ) . '\" />';\n\t\tsubmit_button(\n\t\t\t$text,\n\t\t\t'',\n\t\t\t'',\n\t\t\tfalse,\n\t\t\tarray(\n\t\t\t\t'id' => 'search-submit',\n\t\t\t)\n\t\t);\n\t\techo '</p>';\n\t}",
-    "source_file": "woocommerce.json",
-    "function_name": "get_legacy_webhooks_count::search_box",
-    "critical_failures": [
-      "Handles POST/REQUEST data without nonce verification"
-    ],
+    "code": "function wp_super_cache_wptouch_admin() {\n\tglobal $cache_wptouch, $wp_cache_config_file, $valid_nonce;\n\n\t$cache_wptouch = '' === $cache_wptouch ? '0' : $cache_wptouch;\n\n\tif ( isset( $_POST['cache_wptouch'] ) && $valid_nonce ) {\n\t\tif ( $cache_wptouch === (int) $_POST['cache_wptouch'] ) {\n\t\t\t$changed = false;\n\t\t} else {\n\t\t\t$changed = true;\n\t\t}\n\t\t$cache_wptouch = (int) $_POST['cache_wptouch'];\n\t\twp_cache_replace_line( '^ *\\$cache_wptouch', \"\\$cache_wptouch = '$cache_wptouch';\", $wp_cache_config_file );\n\t}\n\t$id = 'wptouch-section';\n\t?>\n\t\t<fieldset id=\"<?php echo $id; ?>\" class=\"options\">\n\t\t<h4><?php _e( 'WPTouch', 'wp-super-cache' ); ?></h4>\n\t\t<form name=\"wp_manager\" action=\"\" method=\"post\">\n\t\t<label><input type=\"radio\" name=\"cache_wptouch\" value=\"1\" <?php if ( $cache_wptouch ) { echo 'checked=\"checked\" '; } ?>/> <?php _e( 'Enabled', 'wp-super-cache' ); ?></label>\n\t\t<label><input type=\"radio\" name=\"cache_wptouch\" value=\"0\" <?php if ( ! $cache_wptouch ) { echo 'checked=\"checked\" '; } ?>/> <?php _e( 'Disabled', 'wp-super-cache' ); ?></label>\n\t<?php\n\techo '<p>' . __( 'Provides support for <a href=\"https://wordpress.org/plugins/wptouch/\">WPTouch</a> mobile theme and plugin.', 'wp-super-cache' ) . '</p>';\n\tif ( isset( $changed ) && $changed ) {\n\t\tif ( $cache_wptouch ) {\n\t\t\t$status = __( 'enabled', 'wp-super-cache' );\n\t\t} else {\n\t\t\t$status = __( 'disabled', 'wp-super-cache' );\n\t\t}\n\t\techo '<p><strong>' . sprintf( __( 'WPTouch support is now %s', 'wp-super-cache' ), $status ) . '</strong></p>';\n\t}\n\techo '<div class=\"submit\"><input class=\"button-primary\" ' . SUBMITDISABLED . 'type=\"submit\" value=\"' . __( 'Update', 'wp-super-cache' ) . '\" /></div>';\n\twp_nonce_field( 'wp-cache' );\n\t?>\n\t</form>\n\t</fieldset>\n\t<?php\n}",
+    "source_file": "wp-super-cache.json",
+    "function_name": "wp_super_cache_wptouch_admin",
+    "critical_failures": [],
     "low_score_dims": [
       "security"
-    ]
-  },
-  {
-    "code": "/**\n\t * Check if the user is trying out the new email templates.\n\t *\n\t * @return bool\n\t */\nfunction is_trying_new_templates() {\n\t\tglobal $current_tab;\n\t\tif ( 'email' !== $current_tab ) {\n\t\t\treturn false;\n\t\t}\n\t\tif ( isset( $_GET['section'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended\n\t\t\treturn false;\n\t\t}\n\t\treturn isset( $_GET['try-new-templates'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended\n\t}",
-    "source_file": "woocommerce.json",
-    "function_name": "change_feature_enable::is_trying_new_templates",
-    "critical_failures": [
-      "Missing input sanitization"
     ],
-    "low_score_dims": []
-  },
-  {
-    "code": "/**\n\t * Checks data is correctly set when returning from PayPal Checkout\n\t */\nfunction maybe_return_from_paypal() {\n\t\t// phpcs:disable WordPress.Security.NonceVerification.Recommended\n\t\tif (\n\t\t\tisset( $_GET['woo-paypal-return'] )\n\t\t\t&& isset( $_GET['update_subscription_payment_method'] )\n\t\t\t&& 'true' === $_GET['update_subscription_payment_method']\n\t\t) {\n\t\t\t$this->handle_subscription_payment_change_success();\n\t\t\treturn;\n\t\t}\n\n\t\tif ( empty( $_GET['woo-paypal-return'] ) || empty( $_GET['token'] ) ) {\n\t\t\treturn;\n\t\t}\n\n\t\t$token                    = $_GET['token']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash\n\t\t$create_billing_agreement = ! empty( $_GET['create-billing-agreement'] );\n\t\t$session                  = WC()->session->get( 'paypal' );\n\n\t\tif ( empty( $session ) || $this->session_has_expired( $token ) ) {\n\t\t\twc_add_notice( esc_html__( 'Your PayPal checkout session has expired. Please check out again.', 'woocommerce-gateway-paypal-express-checkout' ), 'error' );\n\t\t\treturn;\n\t\t}\n\n\t\t// Store values in session.\n\t\t$session->checkout_completed = true;\n\t\t$session->token              = $token;\n\n\t\tif ( ! empty( $_GET['PayerID'] ) ) {\n\t\t\t$session->payer_id = $_GET['PayerID']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash\n\t\t} elseif ( $create_billing_agreement ) {\n\t\t\t$session->create_billing_agreement = true;\n\t\t} else {\n\t\t\treturn;\n\t\t}\n\t\t// phpcs:enable\n\n\t\t// Update customer addresses here from PayPal selection so they can be used to calculate local taxes.\n\t\t$this->update_customer_addresses_from_paypal( $token );\n\n\t\tWC()->session->set( 'paypal', $session );\n\n\t\ttry {\n\t\t\t// If commit was true, take payment right now\n\t\t\tif ( 'order' === $session->source && $session->order_id ) {\n\t\t\t\t$checkout_details = $this->get_checkout_details( $token );\n\n\t\t\t\t// Get order\n\t\t\t\t$order = wc_get_order( $session->order_id );\n\n\t\t\t\t// Maybe create billing agreement.\n\t\t\t\tif ( $create_billing_agreement ) {\n\t\t\t\t\t$this->create_billing_agreement( $order, $checkout_details );\n\t\t\t\t}\n\n\t\t\t\t// Complete the payment now.\n\t\t\t\tif ( ! empty( $session->payer_id ) ) {\n\t\t\t\t\t$this->do_payment( $order, $session->token, $session->payer_id );\n\t\t\t\t} elseif ( $order->get_total() <= 0 ) {\n\t\t\t\t\t$order->payment_complete();\n\t\t\t\t}\n\n\t\t\t\t// Clear Cart\n\t\t\t\tWC()->cart->empty_cart();\n\n\t\t\t\t// Redirect\n\t\t\t\twp_safe_redirect( $order->get_checkout_order_received_url() );\n\t\t\t\texit;\n\t\t\t}\n\t\t} catch ( PayPal_API_Exception $e ) {\n\t\t\twc_add_notice( esc_html__( 'Sorry, an error occurred while trying to retrieve your information from PayPal. Please try again.', 'woocommerce-gateway-paypal-express-checkout' ), 'error' );\n\t\t\t$this->maybe_clear_session_data();\n\t\t\twp_safe_redirect( wc_get_page_permalink( 'cart' ) );\n\t\t\texit;\n\t\t} catch ( PayPal_Missing_Session_Exception $e ) {\n\t\t\twc_add_notice( esc_html__( 'Your PayPal checkout session has expired. Please check out again.', 'woocommerce-gateway-paypal-express-checkout' ), 'error' );\n\t\t\t$this->maybe_clear_session_data();\n\t\t\twp_safe_redirect( wc_get_page_permalink( 'cart' ) );\n\t\t\texit;\n\t\t}\n\t}",
-    "source_file": "pp-express-wc4jp.json",
-    "function_name": "WC_Gateway_PPEC_Checkout_Handler::maybe_return_from_paypal",
-    "critical_failures": [
-      "Uses superglobal without sanitization",
-      "Missing nonce verification"
-    ],
-    "low_score_dims": [
-      "security"
-    ]
-  },
-  {
-    "code": "/**\n\t * Displays notice on the admin dashboard if Elementor version is lower than the\n\t * required minimum.\n\t *\n\t * @since 1.0.0\n\t * @access public\n\t */\nfunction admin_notice_minimum_elementor_version() {\n\t\tif ( isset( $_GET['activate'] ) ) { // phpcs:ignore WordPress.Security\n\t\t\tunset( $_GET['activate'] ); // phpcs:ignore WordPress.Security\n\t\t}\n\n\t\t$message = sprintf(\n\t\t\t'<span style=\"display: block; margin: 0.5em 0.5em 0 0; clear: both;\">'\n\t\t\t/* translators: 1: Plugin name 2: Elementor */\n\t\t\t. esc_html__( '%1$s requires version %3$s or greater of %2$s plugin.', 'jupiterx-core' )\n\t\t\t. '</span>',\n\t\t\t'<strong>' . esc_html__( 'JupiterX Core', 'jupiterx-core' ) . '</strong>',\n\t\t\t'<strong>' . esc_html__( 'Elementor', 'jupiterx-core' ) . '</strong>',\n\t\t\tself::$minimum_elementor_version\n\t\t);\n\n\t\t$file_path   = 'elementor/elementor.php';\n\t\t$update_link = wp_nonce_url( self_admin_url( 'update.php?action=upgrade-plugin&plugin=' ) . $file_path, 'upgrade-plugin_' . $file_path );\n\n\t\t$message .= sprintf(\n\t\t\t'<span style=\"display: block; margin: 0.5em 0.5em 0 0; clear: both;\">' .\n\t\t\t'<a class=\"button-primary\" href=\"%1$s\">%2$s</a></span>',\n\t\t\t$update_link, esc_html__( 'Update Elementor Now', 'jupiterx-core' )\n\t\t);\n\n\t\tprintf( '<div class=\"notice notice-error\"><p>%1$s</p></div>', wp_kses_post( $message ) );\n\t}",
-    "source_file": "jupiterx-core.json",
-    "function_name": "Plugin::admin_notice_minimum_elementor_version",
-    "critical_failures": [
-      "Missing nonce verification on state-changing AJAX handler"
-    ],
-    "low_score_dims": [
+    "substantive_failure_detected": false,
+    "high_stakes_low_dims": [
       "security"
     ]
   }

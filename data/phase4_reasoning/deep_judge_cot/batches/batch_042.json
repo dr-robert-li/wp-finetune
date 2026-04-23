@@ -1,0 +1,602 @@
+[
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Mobile_Pager::add_tab",
+    "code": "function add_tab( $tabs_array ) {\n\t\tif ( ! is_array( $tabs_array ) ) $tabs_array = array();\n\t\t$tabs_array[] = $this->tab_data();\n\t\treturn $tabs_array;\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "text": "Uses is_array() check before appending. Missing docblock. Whitespace has blank lines between statements which is non-standard."},
+        "sql_safety": {"score": 10, "text": "No SQL operations present."},
+        "security": {"score": 7, "text": "Accepts array parameter but does not sanitize or validate contents before appending. Low risk since tab_data() returns hardcoded data."},
+        "performance": {"score": 8, "text": "O(1) array push. No I/O or expensive operations."},
+        "wp_api_usage": {"score": 7, "text": "Standard settings-tab pattern. Correct use of array append for tab registration."},
+        "code_quality": {"score": 6, "text": "Redundant blank lines, missing docblock. Logic is straightforward but formatting is inconsistent."},
+        "dependency_integrity": {"score": 7, "text": "Calls $this->tab_data() which is defined in the same class. No external dependencies."},
+        "i18n": {"score": 8, "text": "Does not directly handle strings, but tab_data() in the same class uses __(). This function itself is neutral."},
+        "accessibility": {"score": 9, "text": "Purely backend array manipulation. No UI output, no accessibility concerns."}
+      },
+      "overall_score": 77,
+      "key_observation": "Simple tab-array accumulator with no safety gap on the input parameter but safe by contract since tab_data() returns hardcoded data."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Mobile_Pager::settings_include",
+    "code": "function settings_include() {\n\t\tglobal $a3_responsive_sider_template_mobile_pager_settings;\n\t\t$a3_responsive_sider_template_mobile_pager_settings = new FrameWork\\Settings\\Template_Mobile_Pager();\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "text": "Uses global variable pattern which is non-standard in modern WP coding. Typo in variable name 'sider' vs 'slider' carries over to other functions."},
+        "sql_safety": {"score": 10, "text": "No SQL operations."},
+        "security": {"score": 7, "text": "Instantiates a Framework class without arguments. Safe if the class constructor does not process user input without sanitization."},
+        "performance": {"score": 6, "text": "Global variable for object instantiation is functional but not optimal. Each call creates a new object instance."},
+        "wp_api_usage": {"score": 5, "text": "Global variable for DI is an anti-pattern in WP. Should use dependency injection or a singleton pattern."},
+        "code_quality": {"score": 5, "text": "Typo 'sider' in variable name. Global state usage reduces testability. No return value, side-effect only."},
+        "dependency_integrity": {"score": 6, "text": "Depends on FrameWork\\Settings\\Template_Mobile_Pager being autoloaded correctly. No composer autoloader visible."},
+        "i18n": {"score": 9, "text": "No user-facing strings in this function."},
+        "accessibility": {"score": 9, "text": "Backend-only, no UI."}
+      },
+      "overall_score": 72,
+      "key_observation": "Settings instantiation with a typo in the variable name (sider/slider) and anti-pattern global DI."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Mobile_Pager::tab_manager",
+    "code": "function tab_manager() {\n\t\tglobal $a3_responsive_sider_template_mobile_pager_settings;\n\t\t$this->plugin_extension_start();\n\t\t$a3_responsive_sider_template_mobile_pager_settings->settings_form();\n\t\t$this->plugin_extension_end();\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "text": "Uses global variable pattern (non-standard). Missing docblock. Plugin extension hooks are WP admin pattern but not canonical WP API."},
+        "sql_safety": {"score": 10, "text": "No SQL operations."},
+        "security": {"score": 7, "text": "Calls settings_form() on global object. Depends on that method doing nonce/capability checks internally."},
+        "performance": {"score": 7, "text": "Delegates to settings_form() and extension hooks. O(1) dispatch."},
+        "wp_api_usage": {"score": 6, "text": "Plugin extension hooks (plugin_extension_start/end) are a plugin-specific pattern, not core WP API. Standard WP would use add_settings_field."},
+        "code_quality": {"score": 6, "text": "Clean delegation pattern but relies on implicit global state. Extension hooks may not be properly documented."},
+        "dependency_integrity": {"score": 6, "text": "Depends on global variable being set by settings_include() before this is called. Race condition risk if order not guaranteed."},
+        "i18n": {"score": 9, "text": "No strings in this function."},
+        "accessibility": {"score": 9, "text": "Wraps admin settings form. Accessibility depends on settings_form() implementation."}
+      },
+      "overall_score": 72,
+      "key_observation": "Settings form renderer with implicit global dependency chain between settings_include and tab_manager."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Mobile_Caption::tab_init",
+    "code": "function tab_init() {\n\t\tadd_filter( $this->plugin_name . '-' . $this->parent_page . '_settings_tabs_array', array( $this, 'add_tab' ), $this->position );\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "text": "Uses add_filter correctly. Missing docblock. Relies on $this properties being initialized."},
+        "sql_safety": {"score": 10, "text": "No SQL operations."},
+        "security": {"score": 8, "text": "Standard WP filter registration. No user input processed."},
+        "performance": {"score": 9, "text": "O(1) filter registration. No runtime cost beyond the add_filter call."},
+        "wp_api_usage": {"score": 8, "text": "Correct use of add_filter for dynamic WP filter name via concatenation. Standard plugin settings tab pattern."},
+        "code_quality": {"score": 7, "text": "Concise and functional. Depends on $this->plugin_name, $this->parent_page, $this->position, and $this->add_tab being available."},
+        "dependency_integrity": {"score": 7, "text": "Depends on the target filter being registered by another component."},
+        "i18n": {"score": 9, "text": "No user-facing strings."},
+        "accessibility": {"score": 9, "text": "Backend filter registration. No direct UI impact."}
+      },
+      "overall_score": 82,
+      "key_observation": "Standard WP filter registration with dynamically built filter name, clean one-liner."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Mobile_Caption::tab_data",
+    "code": "function tab_data() {\n\t\t$tab_data = array( \n\t\t\t'name'\t\t\t\t=> 'caption-mobile',\n\t\t\t'label'\t\t\t\t=> __( 'Image Caption', 'a3-responsive-slider' ),\n\t\t\t'callback_function'\t=> 'a3_responsive_slider_template_mobile_caption_tab_manager',\n\t\t);\n\t\tif ( $this->tab_data ) return $this->tab_data;\n\t\treturn $this->tab_data = $tab_data;\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "text": "Uses __() for i18n which is correct. Tab-separated array keys are unconventional but valid. Missing docblock."},
+        "sql_safety": {"score": 10, "text": "No SQL operations."},
+        "security": {"score": 8, "text": "Returns hardcoded array. No user input. Safe."},
+        "performance": {"score": 7, "text": "Lazily cached via $this->tab_data. Creates array on first call, returns cached on subsequent calls."},
+        "wp_api_usage": {"score": 8, "text": "Correct use of __() for translation. Standard settings tab metadata structure."},
+        "code_quality": {"score": 7, "text": "Lazy initialization pattern is sound. Tab-aligned keys are readable but use of tabs is non-standard per WP coding standards (should use spaces)."},
+        "dependency_integrity": {"score": 8, "text": "callback_function references 'a3_responsive_slider_template_mobile_caption_tab_manager' - a function name that should exist globally. No verification."},
+        "i18n": {"score": 9, "text": "Correctly uses __( 'Image Caption', 'a3-responsive-slider' ) for translation."},
+        "accessibility": {"score": 9, "text": "No direct UI output."}
+      },
+      "overall_score": 82,
+      "key_observation": "Lazy-cached tab metadata with correct i18n pattern, but tab-aligned keys violate WP coding standards."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Mobile_Caption::add_tab",
+    "code": "function add_tab( $tabs_array ) {\n\t\tif ( ! is_array( $tabs_array ) ) $tabs_array = array();\n\t\t$tabs_array[] = $this->tab_data();\n\t\treturn $tabs_array;\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "text": "Type check on input is good practice. Missing docblock. Blank lines between statements violate WP whitespace conventions."},
+        "sql_safety": {"score": 10, "text": "No SQL operations."},
+        "security": {"score": 7, "text": "No input sanitization on $tabs_array contents. Safe by contract since tab_data() returns controlled data."},
+        "performance": {"score": 8, "text": "O(1) array append. Minimal overhead."},
+        "wp_api_usage": {"score": 7, "text": "Standard settings tab array accumulation pattern."},
+        "code_quality": {"score": 6, "text": "Duplicate of Template_Mobile_Pager::add_tab - copy/paste pattern. Inconsistent whitespace formatting."},
+        "dependency_integrity": {"score": 7, "text": "Calls $this->tab_data() from same class."},
+        "i18n": {"score": 9, "text": "No strings to translate in this function."},
+        "accessibility": {"score": 9, "text": "Backend array operation."}
+      },
+      "overall_score": 77,
+      "key_observation": "Identical pattern to Pager::add_tab - copy-paste duplication across settings classes."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Mobile_Caption::settings_include",
+    "code": "function settings_include() {\n\t\tglobal $a3_responsive_sider_template_mobile_caption_settings;\n\t\t$a3_responsive_sider_template_mobile_caption_settings = new FrameWork\\Settings\\Template_Mobile_Caption();\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "text": "Same anti-pattern as Pager::settings_include. Typo 'sider' in variable name. No docblock."},
+        "sql_safety": {"score": 10, "text": "No SQL operations."},
+        "security": {"score": 7, "text": "Instantiates Framework class. Safe if constructor does not accept user input directly."},
+        "performance": {"score": 6, "text": "Global assignment for object creation is functional but not optimal."},
+        "wp_api_usage": {"score": 5, "text": "Global variable for DI violates WP dependency injection best practices."},
+        "code_quality": {"score": 5, "text": "Copy/paste pattern with typo carry-over. Side-effect only function with no return value."},
+        "dependency_integrity": {"score": 6, "text": "Depends on FrameWork\\Settings\\Template_Mobile_Caption class being available via autoloader."},
+        "i18n": {"score": 9, "text": "No user-facing strings."},
+        "accessibility": {"score": 9, "text": "Backend only."}
+      },
+      "overall_score": 72,
+      "key_observation": "Repeated global instantiation pattern with persistent 'sider' typo in variable name."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Mobile_Caption::tab_manager",
+    "code": "function tab_manager() {\n\t\tglobal $a3_responsive_sider_template_mobile_caption_settings;\n\t\t$this->plugin_extension_start();\n\t\t$a3_responsive_sider_template_mobile_caption_settings->settings_form();\n\t\t$this->plugin_extension_end();\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "text": "Global usage is non-standard. Missing docblock. Plugin extension hooks are plugin-specific."},
+        "sql_safety": {"score": 10, "text": "No SQL operations."},
+        "security": {"score": 7, "text": "Delegates to settings_form() which should handle nonce/capability. No direct user input."},
+        "performance": {"score": 7, "text": "Delegation pattern. O(1) dispatch cost."},
+        "wp_api_usage": {"score": 6, "text": "Plugin extension hooks are a proprietary pattern, not standard WP settings API."},
+        "code_quality": {"score": 6, "text": "Consistent structure with Pager version. Implicit global dependency is the main quality issue."},
+        "dependency_integrity": {"score": 6, "text": "Depends on global being set by settings_include() first."},
+        "i18n": {"score": 9, "text": "No strings in this function."},
+        "accessibility": {"score": 9, "text": "Wraps admin form. Depends on settings_form() for actual accessibility."}
+      },
+      "overall_score": 72,
+      "key_observation": "Identical structure to Pager::tab_manager - consistent but repeated anti-pattern of global-dependent settings rendering."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Mobile_Slider_Styles::tab_init",
+    "code": "function tab_init() {\n\t\tadd_filter( $this->plugin_name . '-' . $this->parent_page . '_settings_tabs_array', array( $this, 'add_tab' ), $this->position );\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "text": "Correct add_filter usage. Missing docblock. Relies on $this properties being initialized in __construct or parent."},
+        "sql_safety": {"score": 10, "text": "No SQL operations."},
+        "security": {"score": 8, "text": "Standard filter registration. No user input processed."},
+        "performance": {"score": 9, "text": "O(1) registration. No runtime cost."},
+        "wp_api_usage": {"score": 8, "text": "Dynamic filter name construction via concatenation is standard WP pattern for extensible plugins."},
+        "code_quality": {"score": 7, "text": "Clean one-liner. Consistent with other tab_init implementations in this file."},
+        "dependency_integrity": {"score": 7, "text": "Depends on filter being registered by parent or plugin bootstrap."},
+        "i18n": {"score": 9, "text": "No strings to translate."},
+        "accessibility": {"score": 9, "text": "Backend-only filter registration."}
+      },
+      "overall_score": 82,
+      "key_observation": "Clean dynamic filter registration, identical pattern used across all settings tab classes."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Mobile_Slider_Styles::tab_data",
+    "code": "function tab_data() {\n\t\t$tab_data = array( \n\t\t\t'name'\t\t\t\t=> 'slider-styles',\n\t\t\t'label'\t\t\t\t=> __( 'Card Container', 'a3-responsive-slider' ),\n\t\t\t'callback_function'\t=> 'a3_responsive_slider_template_mobile_slider_styles_tab_manager',\n\t\t);\n\t\tif ( $this->tab_data ) return $this->tab_data;\n\t\treturn $this->tab_data = $tab_data;\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "text": "Uses __() correctly. Tab-aligned array keys are non-standard per WP coding standards (should be space-indented). Missing docblock."},
+        "sql_safety": {"score": 10, "text": "No SQL operations."},
+        "security": {"score": 8, "text": "Hardcoded metadata array. No user input. Safe."},
+        "performance": {"score": 7, "text": "Lazy caching via $this->tab_data. First call creates, subsequent calls return cached."},
+        "wp_api_usage": {"score": 8, "text": "Standard settings tab metadata. Correct __() usage for i18n."},
+        "code_quality": {"score": 7, "text": "Lazy initialization is sound. Tab-aligned keys are readable but violate WP whitespace standards. Consistent with other tab_data() implementations."},
+        "dependency_integrity": {"score": 7, "text": "callback_function references 'a3_responsive_slider_template_mobile_slider_styles_tab_manager' - function must exist globally."},
+        "i18n": {"score": 9, "text": "Correctly uses __( 'Card Container', 'a3-responsive-slider' )."},
+        "accessibility": {"score": 9, "text": "No direct UI output."}
+      },
+      "overall_score": 82,
+      "key_observation": "Lazy-cached tab metadata with correct i18n, consistent with other tab_data() implementations in the file."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Mobile_Slider_Styles::add_tab",
+    "code": "function add_tab( $tabs_array ) {\n\t\tif ( ! is_array( $tabs_array ) ) $tabs_array = array();\n\t\t$tabs_array[] = $this->tab_data();\n\t\treturn $tabs_array;\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "text": "Type check is good. Missing docblock. Blank lines between statements non-standard."},
+        "sql_safety": {"score": 10, "text": "No SQL operations."},
+        "security": {"score": 7, "text": "No sanitization of array contents, safe by contract since tab_data() returns controlled data."},
+        "performance": {"score": 8, "text": "O(1) array push. Minimal overhead."},
+        "wp_api_usage": {"score": 7, "text": "Standard tab array accumulation pattern."},
+        "code_quality": {"score": 6, "text": "Exact duplicate code pattern across all settings classes. No shared base class or trait to deduplicate."},
+        "dependency_integrity": {"score": 7, "text": "Calls $this->tab_data() from same class."},
+        "i18n": {"score": 9, "text": "No strings in this function."},
+        "accessibility": {"score": 9, "text": "Backend array operation."}
+      },
+      "overall_score": 77,
+      "key_observation": "Copy-paste duplicate add_tab pattern across all settings classes - lacks a shared base class."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Mobile_Slider_Styles::settings_include",
+    "code": "function settings_include() {\n\t\tglobal $a3_responsive_sider_template_mobile_slider_styles_settings;\n\t\t$a3_responsive_sider_template_mobile_slider_styles_settings = new FrameWork\\Settings\\Template_Mobile_Slider_Styles();\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "text": "Global variable anti-pattern. Typo 'sider' persists. No docblock."},
+        "sql_safety": {"score": 10, "text": "No SQL operations."},
+        "security": {"score": 7, "text": "Framework class instantiation. Safe if constructor does not process unsanitized input."},
+        "performance": {"score": 6, "text": "Global assignment for DI. Creates new object each call."},
+        "wp_api_usage": {"score": 5, "text": "Global variable for dependency injection is an anti-pattern."},
+        "code_quality": {"score": 5, "text": "Copy/paste with typo carry-over. Side-effect only. Repeated across all settings classes."},
+        "dependency_integrity": {"score": 6, "text": "Depends on FrameWork\\Settings\\Template_Mobile_Slider_Styles class availability."},
+        "i18n": {"score": 9, "text": "No user-facing strings."},
+        "accessibility": {"score": 9, "text": "Backend only."}
+      },
+      "overall_score": 72,
+      "key_observation": "Repeated global instantiation with persistent 'sider' typo across all settings classes."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Mobile_Slider_Styles::tab_manager",
+    "code": "function tab_manager() {\n\t\tglobal $a3_responsive_sider_template_mobile_slider_styles_settings;\n\t\t$this->plugin_extension_start();\n\t\t$a3_responsive_sider_template_mobile_slider_styles_settings->settings_form();\n\t\t$this->plugin_extension_end();\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "text": "Global usage is non-standard. Missing docblock. Plugin extension hooks are proprietary."},
+        "sql_safety": {"score": 10, "text": "No SQL operations."},
+        "security": {"score": 7, "text": "Delegates to settings_form(). No direct user input. Depends on settings_form() having its own security."},
+        "performance": {"score": 7, "text": "O(1) dispatch to settings_form()."},
+        "wp_api_usage": {"score": 6, "text": "Plugin extension hooks are not standard WP settings API."},
+        "code_quality": {"score": 6, "text": "Consistent structure across all classes but no abstraction. Implicit global dependency."},
+        "dependency_integrity": {"score": 6, "text": "Depends on global variable set by settings_include()."},
+        "i18n": {"score": 9, "text": "No strings."},
+        "accessibility": {"score": 9, "text": "Wraps admin form. Depends on settings_form()."}
+      },
+      "overall_score": 72,
+      "key_observation": "Settings form wrapper with global dependency - identical structure to other classes."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Mobile_Title::tab_init",
+    "code": "function tab_init() {\n\t\tadd_filter( $this->plugin_name . '-' . $this->parent_page . '_settings_tabs_array', array( $this, 'add_tab' ), $this->position );\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "text": "Correct add_filter usage. Missing docblock."},
+        "sql_safety": {"score": 10, "text": "No SQL operations."},
+        "security": {"score": 8, "text": "Standard filter registration. No user input."},
+        "performance": {"score": 9, "text": "O(1) registration."},
+        "wp_api_usage": {"score": 8, "text": "Dynamic filter name via concatenation. Standard WP extensibility pattern."},
+        "code_quality": {"score": 7, "text": "Clean and consistent. Copy/paste but intentionally so - each class needs its own registration."},
+        "dependency_integrity": {"score": 7, "text": "Depends on target filter being registered."},
+        "i18n": {"score": 9, "text": "No strings."},
+        "accessibility": {"score": 9, "text": "Backend filter registration."}
+      },
+      "overall_score": 82,
+      "key_observation": "Identical tab_init pattern - clean filter registration, consistently applied across all settings classes."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Mobile_Title::tab_data",
+    "code": "function tab_data() {\n\t\t$tab_data = array( \n\t\t\t'name'\t\t\t\t=> 'title-mobile',\n\t\t\t'label'\t\t\t\t=> __( 'Image Title', 'a3-responsive-slider' ),\n\t\t\t'callback_function'\t=> 'a3_responsive_slider_template_mobile_title_tab_manager',\n\t\t);\n\t\tif ( $this->tab_data ) return $this->tab_data;\n\t\treturn $this->tab_data = $tab_data;\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "text": "Uses __() correctly. Tab-aligned keys non-standard. Missing docblock."},
+        "sql_safety": {"score": 10, "text": "No SQL operations."},
+        "security": {"score": 8, "text": "Hardcoded metadata. No user input. Safe."},
+        "performance": {"score": 7, "text": "Lazy cached via $this->tab_data."},
+        "wp_api_usage": {"score": 8, "text": "Standard settings tab metadata structure. Correct i18n."},
+        "code_quality": {"score": 7, "text": "Sound lazy init pattern. Consistent with other tab_data() functions. Tab-aligned keys are readable but non-standard."},
+        "dependency_integrity": {"score": 7, "text": "callback_function references 'a3_responsive_slider_template_mobile_title_tab_manager' - must exist globally."},
+        "i18n": {"score": 9, "text": "Correctly uses __( 'Image Title', 'a3-responsive-slider' )."},
+        "accessibility": {"score": 9, "text": "No direct UI output."}
+      },
+      "overall_score": 82,
+      "key_observation": "Lazy-cached tab metadata with correct i18n, consistent with the established tab_data() pattern."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Mobile_Title::add_tab",
+    "code": "function add_tab( $tabs_array ) {\n\t\tif ( ! is_array( $tabs_array ) ) $tabs_array = array();\n\t\t$tabs_array[] = $this->tab_data();\n\t\treturn $tabs_array;\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "text": "Type check is good. Missing docblock. Blank lines non-standard."},
+        "sql_safety": {"score": 10, "text": "No SQL operations."},
+        "security": {"score": 7, "text": "No sanitization of input array contents. Safe by contract."},
+        "performance": {"score": 8, "text": "O(1) array push."},
+        "wp_api_usage": {"score": 7, "text": "Standard tab array accumulation."},
+        "code_quality": {"score": 6, "text": "Exact code duplication across all settings classes. Lacks a shared base class."},
+        "dependency_integrity": {"score": 7, "text": "Calls $this->tab_data() from same class."},
+        "i18n": {"score": 9, "text": "No strings."},
+        "accessibility": {"score": 9, "text": "Backend array operation."}
+      },
+      "overall_score": 77,
+      "key_observation": "Copy-paste duplicate add_tab - the same 4 lines repeated across all settings classes."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Mobile_Title::settings_include",
+    "code": "function settings_include() {\n\t\tglobal $a3_responsive_sider_template_mobile_title_settings;\n\t\t$a3_responsive_sider_template_mobile_title_settings = new FrameWork\\Settings\\Template_Mobile_Title();\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "text": "Global variable anti-pattern. Typo 'sider' persists. No docblock."},
+        "sql_safety": {"score": 10, "text": "No SQL operations."},
+        "security": {"score": 7, "text": "Framework class instantiation. Safe if constructor does not accept unsanitized input."},
+        "performance": {"score": 6, "text": "Global assignment for DI."},
+        "wp_api_usage": {"score": 5, "text": "Global variable for dependency injection is an anti-pattern."},
+        "code_quality": {"score": 5, "text": "Copy/paste with typo carry-over. Side-effect only function."},
+        "dependency_integrity": {"score": 6, "text": "Depends on FrameWork\\Settings\\Template_Mobile_Title availability."},
+        "i18n": {"score": 9, "text": "No user-facing strings."},
+        "accessibility": {"score": 9, "text": "Backend only."}
+      },
+      "overall_score": 72,
+      "key_observation": "Repeated global instantiation with the persistent 'sider' typo in variable names."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Mobile_Title::tab_manager",
+    "code": "function tab_manager() {\n\t\tglobal $a3_responsive_sider_template_mobile_title_settings;\n\t\t$this->plugin_extension_start();\n\t\t$a3_responsive_sider_template_mobile_title_settings->settings_form();\n\t\t$this->plugin_extension_end();\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "text": "Global usage non-standard. Missing docblock. Plugin extension hooks are proprietary."},
+        "sql_safety": {"score": 10, "text": "No SQL operations."},
+        "security": {"score": 7, "text": "Delegates to settings_form(). No direct user input."},
+        "performance": {"score": 7, "text": "O(1) dispatch."},
+        "wp_api_usage": {"score": 6, "text": "Plugin extension hooks are not standard WP settings API."},
+        "code_quality": {"score": 6, "text": "Consistent but copy/paste across all classes. Implicit global dependency."},
+        "dependency_integrity": {"score": 6, "text": "Depends on global variable set by settings_include()."},
+        "i18n": {"score": 9, "text": "No strings."},
+        "accessibility": {"score": 9, "text": "Wraps admin form. Depends on settings_form()."}
+      },
+      "overall_score": 72,
+      "key_observation": "Settings form wrapper with global dependency - consistent copy/paste pattern across all settings classes."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Control::__construct",
+    "code": "function __construct() {\n\t\t$this->settings_include();\n\t\t$this->tab_init();\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_com compliance": {"score": 7, "text": "Simple constructor. Missing docblock. Method name is PHP magic method not WP-specific."},
+        "sql_safety": {"score": 10, "text": "No SQL operations."},
+        "security": {"score": 8, "text": "Calls settings_include() and tab_init(). Safe if those methods are safe."},
+        "performance": {"score": 8, "text": "Two method calls during construction. O(1)."},
+        "wp_api_usage": {"score": 7, "text": "Constructor calling own methods is standard OOP. Tab init will register filters."},
+        "code_quality": {"score": 7, "text": "Clean, minimal constructor. Delegates to instance methods. Could benefit from parent::__construct() if extending."},
+        "dependency_integrity": {"score": 7, "text": "Depends on settings_include() and tab_init() being defined and accessible."},
+        "i18n": {"score": 9, "text": "No strings."},
+        "accessibility": {"score": 9, "text": "Backend construction."}
+      },
+      "overall_score": 82,
+      "key_observation": "Minimal constructor delegating to settings_include and tab_init - clean OOP initialization."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Control::tab_init",
+    "code": "function tab_init() {\n\t\tadd_filter( $this->plugin_name . '-' . $this->parent_page . '_settings_tabs_array', array( $this, 'add_tab' ), $this->position );\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "text": "Correct add_filter usage. Missing docblock."},
+        "sql_safety": {"score": 10, "text": "No SQL operations."},
+        "security": {"score": 8, "text": "Standard filter registration. No user input."},
+        "performance": {"score": 9, "text": "O(1) filter registration."},
+        "wp_api_usage": {"score": 8, "text": "Dynamic filter name construction. Standard WP extensibility pattern."},
+        "code_quality": {"score": 7, "text": "Clean one-liner. Consistent with other tab_init implementations."},
+        "dependency_integrity": {"score": 7, "text": "Depends on target filter being registered."},
+        "i18n": {"score": 9, "text": "No strings."},
+        "accessibility": {"score": 9, "text": "Backend filter registration."}
+      },
+      "overall_score": 82,
+      "key_observation": "Identical tab_init filter registration - the same pattern repeated uniformly across all settings classes."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  }
+]

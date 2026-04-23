@@ -1,0 +1,602 @@
+[
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Hook_Filter::settings_plugin_links",
+    "code": "function settings_plugin_links($actions) { $actions = array_merge( array( 'settings' => '<a href=\"edit.php?post_type=a3_slider\">' . __( 'Sliders', 'a3-responsive-slider' ) . '</a>' ), $actions ); return $actions; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Follows WP coding standards with proper function naming and hook parameter handling."},
+        "sql_safety": {"score": 9, "analysis": "No SQL queries present. Pure array manipulation."},
+        "security": {"score": 7, "analysis": "No user input directly used. Link href is hardcoded to a safe WP admin page. No escaping needed for admin URL."},
+        "performance": {"score": 8, "analysis": "O(1) array_merge, negligible overhead."},
+        "wp_api_usage": {"score": 7, "analysis": "Correct use of __() for i18n and proper filter pattern."},
+        "code_quality": {"score": 7, "analysis": "Simple, readable, well-structured plugin hook."},
+        "dependency_integrity": {"score": 8, "analysis": "No external dependencies. Self-contained function."},
+        "i18n": {"score": 9, "analysis": "Properly uses __() with text domain 'a3-responsive-slider'."},
+        "accessibility": {"score": 7, "analysis": "Generated link is a plain text anchor. No ARIA attributes or keyboard concerns since this is an admin hook."}
+      },
+      "overall_score": 78,
+      "key_observation": "Clean plugin settings link hook with proper i18n and no user input."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Functions::slider_templates",
+    "code": "function slider_templates() { $templates_list = array( 'template-1' => get_option( 'a3_rslider_template_1' , __( 'Default Skin', 'a3-responsive-slider' ) ), ... ); return $templates_list; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Array key spacing uses tabs inconsistently. Otherwise standard WP function pattern."},
+        "sql_safety": {"score": 9, "analysis": "Uses get_option() which is a safe WP API. No raw SQL."},
+        "security": {"score": 8, "analysis": "No user input. Options stored server-side are trusted. No SSRF or path traversal risk."},
+        "performance": {"score": 7, "analysis": "Multiple get_option() calls on each invocation. Could benefit from caching since templates rarely change."},
+        "wp_api_usage": {"score": 7, "analysis": "Correct use of get_option() with default fallback via __()."},
+        "code_quality": {"score": 6, "analysis": "Functionally correct but repetitive. Could use a helper to reduce duplication."},
+        "dependency_integrity": {"score": 8, "analysis": "Depends only on WP core get_option(). No external libs."},
+        "i18n": {"score": 9, "analysis": "All string labels properly wrapped in __() with correct text domain."},
+        "accessibility": {"score": 8, "analysis": "Returns data for UI generation. Accessibility depends on consumer code."}
+      },
+      "overall_score": 78,
+      "key_observation": "Safe template lookup using get_option() with i18n defaults, but lacks caching."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Functions::get_slider_template",
+    "code": "function get_slider_template( $slider_template ) { $templates_list = self::slider_templates(); if ( isset( $templates_list[ $slider_template ] ) ) return $templates_list[ $slider_template ]; else return __( 'Your template is not existed', 'a3-responsive-slider' ); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Standard WP function. Minor grammar issue in error string 'is not existed' should be 'does not exist'."},
+        "sql_safety": {"score": 9, "analysis": "No SQL. Array lookup via isset()."},
+        "security": {"score": 7, "analysis": "$slider_template is an array key lookup only. No injection risk since input is validated against known keys."},
+        "performance": {"score": 7, "analysis": "Calls slider_templates() which does 5 get_option() calls each time. No memoization."},
+        "wp_api_usage": {"score": 7, "analysis": "Correct static method pattern. i18n used for fallback message."},
+        "code_quality": {"score": 6, "analysis": "Grammar error in translated string. Could use null coalescing or isset check more cleanly."},
+        "dependency_integrity": {"score": 8, "analysis": "Only depends on slider_templates() which uses core WP functions."},
+        "i18n": {"score": 7, "analysis": "Uses __() but the string 'Your template is not existed' has grammatical error making it harder to translate accurately."},
+        "accessibility": {"score": 8, "analysis": "Returns data, not UI. No direct accessibility concerns."}
+      },
+      "overall_score": 75,
+      "key_observation": "Safe template getter but suffers from poor i18n string grammar and uncached slider_templates() calls."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Functions::slider_transitions_list",
+    "code": "function slider_transitions_list () { $arr_effect = array( 'none' => __( 'None', 'a3-responsive-slider' ), 'fade' => __( 'Fade', 'a3-responsive-slider' ), ... ); return $arr_effect; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Standard WP pattern. $str_effect variable declared but never used (dead code)."},
+        "sql_safety": {"score": 9, "analysis": "No SQL. Pure PHP array."},
+        "security": {"score": 9, "analysis": "No user input. Static lookup table. Completely safe."},
+        "performance": {"score": 7, "analysis": "Returns new array each call. No caching but array is small (~11 items)."},
+        "wp_api_usage": {"score": 7, "analysis": "Correct __() usage with text domain."},
+        "code_quality": {"score": 5, "analysis": "Dead code: $str_effect is assigned but never used. This is wasted memory and confusing."},
+        "dependency_integrity": {"score": 8, "analysis": "Self-contained. No external dependencies."},
+        "i18n": {"score": 9, "analysis": "All transition names properly internationalized."},
+        "accessibility": {"score": 8, "analysis": "Returns data for UI. No direct accessibility issues."}
+      },
+      "overall_score": 75,
+      "key_observation": "Safe transition list with dead code ($str_effect) and no caching, but functionally correct."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Functions::yt_slider_transitions_list",
+    "code": "function yt_slider_transitions_list () { $arr_effect = array( 'none' => __( 'None', 'a3-responsive-slider' ), 'fade' => __( 'Fade', 'a3-responsive-slider' ), 'fadeout' => __( 'Fade Out', 'a3-responsive-slider' ), 'scrollHorz' => __( 'Scroll Horizontal', 'a3-responsive-slider' ), 'scrollVert' => __( 'Scroll Vertical', 'a3-responsive-slider' ) ); return $arr_effect; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Clean WP function pattern. No dead code."},
+        "sql_safety": {"score": 9, "analysis": "No SQL. Pure PHP array."},
+        "security": {"score": 9, "analysis": "No user input. Static lookup. Completely safe."},
+        "performance": {"score": 8, "analysis": "Small array (5 items). No caching but negligible impact."},
+        "wp_api_usage": {"score": 7, "analysis": "Correct __() usage with text domain."},
+        "code_quality": {"score": 7, "analysis": "Clean, focused function. Less code than slider_transitions_list (no dead code)."},
+        "dependency_integrity": {"score": 8, "analysis": "Self-contained."},
+        "i18n": {"score": 9, "analysis": "All strings properly internationalized."},
+        "accessibility": {"score": 8, "analysis": "Returns data for UI. No direct accessibility concerns."}
+      },
+      "overall_score": 80,
+      "key_observation": "Clean YouTube transition list without dead code — the most well-formed of the transition functions."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Functions::get_slider_transition",
+    "code": "function get_slider_transition( $slider_transition_effect = '', $slider_settings = array() ) { $timeout = (int) $slider_settings['slider_timeout'] * 1000; $transition_attributes .= 'data-cycle-fx=\"...\"'; return $transition_effect; }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "analysis": "Uses loose comparison (==) for boolean check. No WP-specific issues otherwise."},
+        "sql_safety": {"score": 9, "analysis": "No SQL present."},
+        "security": {"score": 5, "analysis": "CRITICAL: slider_settings values are cast to (int) for timeout/delay/speed but NOT for shuffle/tile data attributes. These raw values are concatenated into data-cycle-* attributes without sanitization, allowing potential XSS via slider_settings input."},
+        "performance": {"score": 7, "analysis": "String concatenation in a loop. Reasonable but could use [] array and implode for cleaner output."},
+        "wp_api_usage": {"score": 7, "analysis": "No WP API calls needed for this pure computation function."},
+        "code_quality": {"score": 5, "analysis": "$transition_attributes is appended without initialization check (should use = on first assignment). Loose comparison for is_auto_start. Magic multiplication by 1000 for ms conversion is unclear without comments."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on slider_transition_effect and slider_settings arrays. No external deps."},
+        "i18n": {"score": 6, "analysis": "No strings to translate in this function, but no esc_attr() on HTML attributes."},
+        "accessibility": {"score": 7, "analysis": "Returns data attributes for Cycle2 plugin. No direct a11y concerns."}
+      },
+      "overall_score": 62,
+      "key_observation": "XSS risk: slider_settings values used in data-cycle-* attributes without proper sanitization/escaping."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Functions::get_transition_random",
+    "code": "function get_transition_random( $slider_settings = array() ) { $slider_transitions_list = self::slider_transitions_list(); unset( $slider_transitions_list['none'] ); unset( $slider_transitions_list['random'] ); $transition_random = array_rand( $slider_transitions_list ); $transition_effect = self::get_slider_transition( $transition_random, $slider_settings ); $transition_ouput = ' data-cycle-fx=\"...\" '.$transition_effect['transition_attributes'].' '; return $transition_ouput; }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "analysis": "Typo: $transition_ouput misspelled. No WP coding standard violations otherwise."},
+        "sql_safety": {"score": 9, "analysis": "No SQL."},
+        "security": {"score": 5, "analysis": "Calls get_slider_transition() which passes unescaped slider_settings values into data attributes. Compound security issue from parent function. No input validation on $slider_settings."},
+        "performance": {"score": 5, "analysis": "Calls slider_transitions_list() which does 5 get_option() calls + array operations every time. No result caching. Typo means no memoization possible."},
+        "wp_api_usage": {"score": 7, "analysis": "Correct use of array_rand() and static method calls."},
+        "code_quality": {"score": 4, "analysis": "Typo $transition_ouput vs $transition_output. Unnecessary unset() calls after array return. Dead code: kenburns is commented out but not removed."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on slider_transitions_list() and get_slider_transition(). Both in same file."},
+        "i18n": {"score": 6, "analysis": "No i18n in this function, but returns HTML attributes without esc_attr()."},
+        "accessibility": {"score": 7, "analysis": "Returns data attributes. No direct a11y issues."}
+      },
+      "overall_score": 58,
+      "key_observation": "Misspelled variable, uncached slider_transitions_list() calls, and compounds the XSS vulnerability from get_slider_transition()."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Functions::get_youtube_iframe_ios",
+    "code": "function get_youtube_iframe_ios( $youtube_code = '', $autoplay = false, $exclude_lazyload = '' ) { $youtube_url = 'https://www.youtube.com/embed/' . trim( $youtube_code ) . '?version=3&hl=en_US&rel=0&enablejsapi=1&controls=1&modestbranding=1&autohide=1&wmode=opaque'; $youtube_iframe = '<div><iframe src=\"'. esc_url($youtube_url.'&autoplay='.$autoplay ).'\" ... allowfullscreen></iframe></div>'; return $youtube_iframe; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Uses esc_url() for URL output. Good WP compliance for URL handling."},
+        "sql_safety": {"score": 9, "analysis": "No SQL."},
+        "security": {"score": 6, "analysis": "esc_url() is used but only on the base URL, not on the autoplay query parameter appended later. $youtube_code is trimmed but not validated as a valid YouTube ID. enablejsapi=1 allows cross-origin JS interaction (acceptable for YouTube embeds). allowfullscreen is present (correct security posture)."},
+        "performance": {"score": 8, "analysis": "Straightforward string operations. No database calls. O(n) on youtube_code length."},
+        "wp_api_usage": {"score": 7, "analysis": "Correct use of esc_url(). No WP API calls needed."},
+        "code_quality": {"score": 6, "analysis": "Autoplay boolean-to-int conversion is verbose. HTML string is long and hard to maintain. No wp_kses() on the full iframe for output safety."},
+        "dependency_integrity": {"score": 8, "analysis": "Self-contained. No external dependencies."},
+        "i18n": {"score": 5, "analysis": "No i18n in function. URL hardcoded to en_US. No localization of any strings."},
+        "accessibility": {"score": 7, "analysis": "iframe lacks alt/aria-label. allowfullscreen is correct. No role or focus management."}
+      },
+      "overall_score": 70,
+      "key_observation": "Uses esc_url() for the base YouTube URL but autoplay parameter and YouTube ID lack validation; iframe missing accessibility attributes."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Shortcode::init",
+    "code": "function init () { add_action( 'media_buttons', array( $this, 'add_rslider_button'), 100 ); add_action( 'admin_footer', array( $this, 'rslider_generator_popup') ); add_shortcode( 'a3_responsive_slider', array( $this, 'parse_shortcode_a3_responsive_slider') ); add_action( 'save_post', array( $this, 'track_shortcode_is_used' ), 11, 3 ); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Standard WP initialization pattern. add_action/add_shortcode usage is correct."},
+        "sql_safety": {"score": 9, "analysis": "No SQL."},
+        "security": {"score": 8, "analysis": "No user input. Just hook registration. Safe."},
+        "performance": {"score": 9, "analysis": "Hook registration is one-time operation. Negligible overhead."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct use of add_action and add_shortcode with proper callback arrays. Priority and accepted args specified on save_post."},
+        "code_quality": {"score": 7, "analysis": "Clean initialization method. No unnecessary complexity."},
+        "dependency_integrity": {"score": 9, "analysis": "Only depends on WP core hooks."},
+        "i18n": {"score": 8, "analysis": "No strings in this function. Delegates to other methods for i18n."},
+        "accessibility": {"score": 8, "analysis": "Registers media button and admin footer hooks. Accessibility depends on consumer implementations."}
+      },
+      "overall_score": 80,
+      "key_observation": "Clean WP hook registration with correct callback patterns and proper use of add_action/add_shortcode."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Shortcode::add_rslider_button",
+    "code": "function add_rslider_button() { $is_post_edit_page = in_array( basename( $_SERVER['PHP_SELF'] ), array( 'post.php', 'page.php', 'page-new.php', 'post-new.php' ) ); if ( ! $is_post_edit_page ) return; echo '<a href=\"#TB_inline?width=640&height=500&inlineId=a3-rslider-wrap\" class=\"thickbox button ...' . __( 'Sliders', 'a3-responsive-slider' ) . '</a>'; }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 5, "analysis": "Should use wp_guess_url() or admin_url() instead of $_SERVER['PHP_SELF']. Missing wp_nonce_field(). No capability check (current_user_can)."},
+        "sql_safety": {"score": 9, "analysis": "No SQL."},
+        "security": {"score": 4, "analysis": "CRITICAL: No capability check before outputting admin UI elements. Any logged-in user could see the thickbox button. Uses $_SERVER['PHP_SELF'] which is unreliable and not recommended by WP. Missing nonce for any form actions downstream."},
+        "performance": {"score": 8, "analysis": "in_array with small array is O(n). basename() on $_SERVER is fine."},
+        "wp_api_usage": {"score": 4, "analysis": "Should use is_admin() and get_current_screen()->base instead of $_SERVER['PHP_SELF']. Missing current_user_can('edit_posts') check."},
+        "code_quality": {"score": 6, "analysis": "Functionally correct but follows anti-pattern for WP page detection. Hardcoded Thickbox dimensions."},
+        "dependency_integrity": {"score": 8, "analysis": "Self-contained. Depends on WP core functions."},
+        "i18n": {"score": 9, "analysis": "Proper __() usage with text domain."},
+        "accessibility": {"score": 7, "analysis": "Thickbox button uses class=\"button\" which is WP admin styling. No keyboard shortcuts or ARIA."}
+      },
+      "overall_score": 60,
+      "key_observation": "Missing capability check and uses $_SERVER anti-pattern — should use WP screen detection and current_user_can()."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Shortcode::rslider_generator_popup",
+    "code": "function rslider_generator_popup() { ... get_posts( array('posts_per_page' => -1, 'meta_query' => ...)) ... echo HTML with _e() for i18n ... <script>jQuery...</script> }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 4, "analysis": "Echoes raw HTML and inline JS instead of using WP template includes. Uses _e() for echo but doesn't separate PHP logic from HTML. No capability check (current_user_can). No nonce verification."},
+        "sql_safety": {"score": 5, "analysis": "get_posts() with meta_query uses WP's internal SQL which is safe, BUT the meta_query type 'NUMERIC' with compare '>=' on value 1 is redundant (always true for valid post IDs). No WPDB direct usage."},
+        "security": {"score": 3, "analysis": "CRITICAL: get_posts with 'posts_per_page' => -1 loads ALL sliders into memory. No pagination. The output HTML is echoed directly with esc_attr() only on slider ID. Inline JS uses jQuery but values are not escaped for JS context. No nonce on any action."},
+        "performance": {"score": 3, "analysis": "get_posts with -1 loads all sliders regardless of how many exist. Generates 140 lines of inline HTML+JS per admin page load. No caching of slider list. This is a major performance concern."},
+        "wp_api_usage": {"score": 5, "analysis": "get_posts is correct WP API but misused with -1 limit. wp_reset_postdata() is correctly called. _e() for echo is correct WP API."},
+        "code_quality": {"score": 4, "analysis": "140-line function mixing PHP logic, HTML, and JavaScript. Should be split into template file + JS file. PHP_SELF check is duplicated from add_rslider_button(). Hardcoded inline CSS."},
+        "dependency_integrity": {"score": 6, "analysis": "Depends on jQuery (enqueued?) and WP core. No external libs listed."},
+        "i18n": {"score": 8, "analysis": "Extensive use of _e() and __(). Text domain consistent. However, some strings are very long making translation difficult."},
+        "accessibility": {"score": 4, "analysis": "Inline JS uses jQuery without proper event delegation. No ARIA labels on form elements. Labels exist but some are missing for programmatic access."}
+      },
+      "overall_score": 48,
+      "key_observation": "Massive security and performance issues: no capability check, loads all sliders with -1, mixes HTML/JS inline, no nonce, and duplicates PHP_SELF check."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Shortcode::get_post_count_use_shortcode_slide",
+    "code": "function get_post_count_use_shortcode_slide( $slider_id, $post_type = '' ) { global $wpdb; if ( trim( $post_type ) != '' ) $meta_key_search = '_a3_slider_is_used_'.$post_type; else $meta_key_search = '_a3_slider_is_used'; $post_count = $wpdb->get_var(\"SELECT COUNT(*) FROM \".$wpdb->postmeta.\" WHERE meta_key='\".$meta_key_search.\"' AND meta_value='\".$slider_id.\"' \"); return $post_count; }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 2, "analysis": "CRITICAL: Direct $wpdb usage with raw SQL concatenation. Should use get_posts() or WP_Query with meta_query for safety. WP coding standards recommend against direct SQL when WP APIs exist."},
+        "sql_safety": {"score": 1, "analysis": "CRITICAL SQL INJECTION: $meta_key_search is built by concatenating user-controlled $post_type directly into the query. $slider_id is also concatenated without preparation. $wpdb->prepare() is NOT used. An attacker controlling either parameter can inject SQL."},
+        "security": {"score": 1, "analysis": "CRITICAL: SQL injection via $post_type (meta_key) and $slider_id (meta_value). The function concatenates raw values into SQL string. No $wpdb->prepare() or any escaping. This is a textbook SQL injection vulnerability in a plugin context."},
+        "performance": {"score": 4, "analysis": "Full table scan on wp_postmeta with no indexing optimization. COUNT(*) on potentially millions of rows is expensive. No query caching."},
+        "wp_api_usage": {"score": 3, "analysis": "Should use get_posts(['meta_key' => ..., 'meta_value' => ...]) instead of raw SQL. Misuse of global $wpdb."},
+        "code_quality": {"score": 3, "analysis": "String concatenation in SQL is unreadable and unsafe. meta_key_search variable naming is awkward. No input validation."},
+        "dependency_integrity": {"score": 6, "analysis": "Depends on wp_postmeta table schema being present. Breaks if table structure changes."},
+        "i18n": {"score": 8, "analysis": "No strings to translate."},
+        "accessibility": {"score": 8, "analysis": "Returns a count number. No UI concerns."}
+      },
+      "overall_score": 25,
+      "key_observation": "CRITICAL SQL injection: raw $wpdb query with unprepared concatenation of $post_type and $slider_id into meta_key and meta_value clauses."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Mobile_Detect::__construct",
+    "code": "function __construct( array $headers = null, $userAgent = null ) { $this->setHttpHeaders($headers); $this->setUserAgent($userAgent); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Standard PHP constructor pattern. No WP-specific requirements for utility classes."},
+        "sql_safety": {"score": 9, "analysis": "No SQL."},
+        "security": {"score": 8, "analysis": "Takes input headers and user agent, passes to setters for filtering. No direct user input exposure."},
+        "performance": {"score": 8, "analysis": "Simple constructor delegating to two setter calls. O(1)."},
+        "wp_api_usage": {"score": 6, "analysis": "Utility class, no WP API calls. Designed to be instantiated and used standalone."},
+        "code_quality": {"score": 7, "analysis": "Clean constructor pattern. Type hint on $headers is good PHP practice."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on setHttpHeaders() and setUserAgent() methods in same class."},
+        "i18n": {"score": 8, "analysis": "No strings."},
+        "accessibility": {"score": 8, "analysis": "Backend utility. No UI."}
+      },
+      "overall_score": 78,
+      "key_observation": "Clean constructor for Mobile_Detect utility — passes input to setters for validation."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Mobile_Detect::setHttpHeaders",
+    "code": "function setHttpHeaders($httpHeaders = null) { if (!is_array($httpHeaders) || !count($httpHeaders)) { $httpHeaders = $_SERVER; } foreach ($httpHeaders as $key => $value) { if (substr($key,0,5) == 'HTTP_') { $this->httpHeaders[$key] = $value; } } }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Standard PHP utility pattern. Filters $_SERVER to only HTTP_ prefixed keys which is correct."},
+        "sql_safety": {"score": 9, "analysis": "No SQL."},
+        "security": {"score": 7, "analysis": "Falls back to $_SERVER which is server-controlled. Filtering to HTTP_ prefix reduces attack surface. No validation on header values."},
+        "performance": {"score": 7, "analysis": "Iterates all headers. O(n) on number of headers. Acceptable for typical 10-50 headers."},
+        "wp_api_usage": {"score": 6, "analysis": "No WP API. Uses $_SERVER directly instead of wp_get_http_headers() which would be more WP-standard."},
+        "code_quality": {"score": 7, "analysis": "Clear filtering logic. substr check for HTTP_ prefix is clean and efficient."},
+        "dependency_integrity": {"score": 7, "analysis": "Self-contained. No external deps."},
+        "i18n": {"score": 8, "analysis": "No strings."},
+        "accessibility": {"score": 8, "analysis": "Backend utility."}
+      },
+      "overall_score": 74,
+      "key_observation": "Clean HTTP header filtering using substr prefix check — should use wp_get_http_headers() for WP compatibility."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Mobile_Detect::getHttpHeader",
+    "code": "function getHttpHeader($header) { if (strpos($header, '_') === false) { $header = str_replace('-', '_', $header); $header = strtoupper($header); } $altHeader = 'HTTP_' . $header; if (isset($this->httpHeaders[$header])) { return $this->httpHeaders[$header]; } elseif (isset($this->httpHeaders[$altHeader])) { return $this->httpHeaders[$altHeader]; } }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Standard utility method. No WP-specific requirements."},
+        "sql_safety": {"score": 9, "analysis": "No SQL."},
+        "security": {"score": 8, "analysis": "Safe array key lookup with isset(). No injection risk. Returns value from previously filtered $_SERVER."},
+        "performance": {"score": 8, "analysis": "O(1) array lookup after O(n) string manipulation. strpos/str_replace on short header names is negligible."},
+        "wp_api_usage": {"score": 6, "analysis": "No WP API. Utility class method."},
+        "code_quality": {"score": 7, "analysis": "Double-lookup pattern (with and without HTTP_ prefix) handles both raw and transformed header names. No return value for miss case (implicit null)."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on httpHeaders property populated by setHttpHeaders."},
+        "i18n": {"score": 8, "analysis": "No strings."},
+        "accessibility": {"score": 8, "analysis": "Backend utility."}
+      },
+      "overall_score": 78,
+      "key_observation": "Safe dual-lookup pattern for HTTP headers with automatic HTTP_ prefix normalization."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Mobile_Detect::setDetectionType",
+    "code": "function setDetectionType($type = null) { if ($type === null) { $type = self::DETECTION_TYPE_MOBILE; } if ($type != self::DETECTION_TYPE_MOBILE && $type != self::DETECTION_TYPE_EXTENDED) { return; } $this->detectionType = $type; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Safe default/null handling with strict comparison (===). Validated against constants."},
+        "sql_safety": {"score": 9, "analysis": "No SQL."},
+        "security": {"score": 8, "analysis": "Guard clause rejects invalid values. Strict === null check prevents type juggling attacks."},
+        "performance": {"score": 9, "analysis": "O(1) with two constant comparisons. No allocations."},
+        "wp_api_usage": {"score": 6, "analysis": "No WP API. Utility class."},
+        "code_quality": {"score": 8, "analysis": "Defensive programming with guard clause. Early return for invalid values is clean."},
+        "dependency_integrity": {"score": 8, "analysis": "Self-contained. Uses class constants."},
+        "i18n": {"score": 8, "analysis": "No strings."},
+        "accessibility": {"score": 8, "analysis": "Backend utility."}
+      },
+      "overall_score": 80,
+      "key_observation": "Defensive setter with strict null check and guard clause rejecting invalid detection types."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Mobile_Detect::getMobileDetectionRules",
+    "code": "function getMobileDetectionRules() { static $rules; if (!$rules) { $rules = array_merge(self::$phoneDevices, self::$tabletDevices, self::$operatingSystems, self::$browsers); } return $rules; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Uses static variable for caching (PHP static = in-memory memoization). Standard utility pattern."},
+        "sql_safety": {"score": 9, "analysis": "No SQL."},
+        "security": {"score": 9, "analysis": "Static class properties accessed safely. No user input involved."},
+        "performance": {"score": 9, "analysis": "Static cache ensures array_merge runs only once per request. O(1) after first call."},
+        "wp_api_usage": {"score": 6, "analysis": "No WP API. Pure utility."},
+        "code_quality": {"score": 8, "analysis": "Lazy initialization pattern is elegant. Static variable correctly persists across calls."},
+        "dependency_integrity": {"score": 8, "analysis": "Depends on 4 static class properties. All self-contained."},
+        "i18n": {"score": 8, "analysis": "No strings."},
+        "accessibility": {"score": 8, "analysis": "Backend utility."}
+      },
+      "overall_score": 82,
+      "key_observation": "Elegant lazy initialization with PHP static — ensures rules array is merged only once per request."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Mobile_Detect::getMobileDetectionRulesExtended",
+    "code": "function getMobileDetectionRulesExtended() { static $rules; if (!$rules) { $rules = array_merge(self::$phoneDevices, self::$tabletDevices, self::$operatingSystems, self::$browsers, self::$utilities); } return $rules; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Same static caching pattern as getMobileDetectionRules. Consistent code style."},
+        "sql_safety": {"score": 9, "analysis": "No SQL."},
+        "security": {"score": 9, "analysis": "No user input. Safe static property access."},
+        "performance": {"score": 9, "analysis": "Static cache. O(1) after first call."},
+        "wp_api_usage": {"score": 6, "analysis": "No WP API."},
+        "code_quality": {"score": 8, "analysis": "Clean extension of base pattern with 5 array merges instead of 4."},
+        "dependency_integrity": {"score": 8, "analysis": "Depends on 5 static class properties including new $utilities."},
+        "i18n": {"score": 8, "analysis": "No strings."},
+        "accessibility": {"score": 8, "analysis": "Backend utility."}
+      },
+      "overall_score": 82,
+      "key_observation": "Consistent lazy caching pattern extending base rules with an additional $utilities array merge."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Mobile_Detect::getRules",
+    "code": "function getRules() { if ($this->detectionType == self::DETECTION_TYPE_EXTENDED) { return self::getMobileDetectionRulesExtended(); } else { return self::getMobileDetectionRules(); } }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Standard getter pattern. Uses loose comparison (==) which is acceptable for constant comparison in PHP."},
+        "sql_safety": {"score": 9, "analysis": "No SQL."},
+        "security": {"score": 8, "analysis": "Dispatches to cached static methods. No user input exposure."},
+        "performance": {"score": 9, "analysis": "O(1) dispatch to already-cached static methods."},
+        "wp_api_usage": {"score": 6, "analysis": "No WP API."},
+        "code_quality": {"score": 7, "analysis": "Simple dispatcher. Could use ternary for brevity but if/else is clearer."},
+        "dependency_integrity": {"score": 8, "analysis": "Depends on detectionType property and two static methods."},
+        "i18n": {"score": 8, "analysis": "No strings."},
+        "accessibility": {"score": 8, "analysis": "Backend utility."}
+      },
+      "overall_score": 80,
+      "key_observation": "Clean dispatcher routing to cached rule sets based on detection type."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Mobile_Detect::checkHttpHeadersForMobile",
+    "code": "function checkHttpHeadersForMobile() { foreach($this->getMobileHeaders() as $mobileHeader => $matchType){ if( isset($this->httpHeaders[$mobileHeader]) ){ if( is_array($matchType['matches']) ){ foreach($matchType['matches'] as $_match){ if( strpos($this->httpHeaders[$mobileHeader], $_match) !== false ){ return true; } } return false; } else { return true; } } } return false; }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "analysis": "Logic error: the 'return false' inside the is_array branch is at wrong indentation level — it fires after the first non-match instead of continuing the outer loop. This is a bug not a WP standard issue."},
+        "sql_safety": {"score": 9, "analysis": "No SQL."},
+        "security": {"score": 7, "analysis": "User-controlled HTTP headers are searched but only for substring matches. No code execution or injection path. The logic bug means some mobile devices may not be detected (false negative) rather than a security issue."},
+        "performance": {"score": 5, "analysis": "Nested loops over mobile headers and matches. O(m*n) where m = mobile header count and n = match patterns. Could be optimized with preg_match_all."},
+        "wp_api_usage": {"score": 6, "analysis": "No WP API. Uses self::$httpHeaders populated from $_SERVER."},
+        "code_quality": {"score": 4, "analysis": "BUG: The inner 'return false' is misplaced — it exits after first non-match instead of continuing to next mobile header. This causes false negatives for mobile detection. Deeply nested conditionals reduce readability."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on getMobileHeaders(), httpHeaders property."},
+        "i18n": {"score": 8, "analysis": "No strings."},
+        "accessibility": {"score": 8, "analysis": "Backend utility."}
+      },
+      "overall_score": 58,
+      "key_observation": "BUG: Inner 'return false' at wrong nesting level causes false negatives in mobile detection — exits loop on first non-match instead of continuing."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 1,
+      "grounded_citations": 1,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  }
+]

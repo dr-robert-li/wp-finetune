@@ -1,0 +1,503 @@
+[
+  {
+    "source_file": "360-video.json",
+    "source_dir": "passed",
+    "function_name": "algori_360_video_cgb_block_assets",
+    "code": "function algori_360_video_cgb_block_assets() { wp_enqueue_script('algori_360_image-cgb-a-frame-js', plugins_url('/dist/aframe-v1.0.4.min.js', dirname(__FILE__))); wp_register_style('algori_360_video-cgb-style-css', plugins_url('dist/blocks.style.build.css', dirname(__FILE__)), array('wp-editor'), null); wp_register_script('algori_360_video-cgb-block-js', plugins_url('/dist/blocks.build.js', dirname(__FILE__)), array('wp-blocks','wp-i18n','wp-element','wp-editor'), null, true); wp_register_style('algori_360_video-cgb-block-editor-css', plugins_url('dist/blocks.editor.build.css', dirname(__FILE__)), array('wp-edit-blocks'), null); wp_localize_script('algori_360_video-cgb-block-js', 'cgbGlobal', ['pluginDirPath' => plugin_dir_path(__DIR__), 'pluginDirUrl' => plugin_dir_url(__DIR__)]); if(!WP_Block_Type_Registry::get_instance()->is_registered('cgb/block-algori-360-video')) register_block_type('algori-360-video/block-algori-360-video', array('style' => 'algori_360_video-cgb-style-css', 'editor_script' => 'algori_360_video-cgb-block-js', 'editor_script' => 'algori_360_video-cgb-block-editor-css')); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Uses plugins_url() correctly; version params commented out (filemtime) per WP standards; phpcs:ignore present but acceptable for block scaffolding." },
+        "sql_safety": { "score": 10, "analysis": "No SQL queries. Pure asset registration and block type registration." },
+        "security": { "score": 8, "analysis": "No user input handled. plugins_url() safe. No XSS vectors. Minor: hard-coded A-Frame v1.0.4 is not a security issue but is outdated." },
+        "performance": { "score": 7, "analysis": "Loads A-Frame library (heavy) unconditionally. Version numbers hardcoded instead of filemtime. No minification toggle." },
+        "wp_api_usage": { "score": 8, "analysis": "Proper use of wp_enqueue_script, wp_register_style, wp_localize_script, register_block_type. Uses WP_Block_Type_Registry correctly." },
+        "code_quality": { "score": 7, "analysis": "Clean block boilerplate. Commented-out filemtime is a known issue in block scaffolds. Well-structured." },
+        "dependency_integrity": { "score": 7, "analysis": "Bundles A-Frame v1.0.4 inline — heavy dependency (hundreds of KB). Should use CDN or update to latest." },
+        "i18n": { "score": 9, "analysis": "No user-facing strings in this function. Block handles i18n elsewhere. wp-i18n in deps is correct." },
+        "accessibility": { "score": 8, "analysis": "Block registration does not set aria attributes directly — responsibility falls to the block's React code. No regressions here." }
+      },
+      "overall_score": 78,
+      "key_observation": "Standard block boilerplate with properly registered WP enqueue handles and block type; hard-coded A-Frame version and commented-out filemtime are minor issues."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Custom_Post::register_post_type",
+    "code": "function register_post_type() { register_taxonomy('slider_folder', array('a3_slider'), array('hierarchical'=>true, 'label'=>__('Folders', 'a3-responsive-slider'), ... )); $labels_array = array('name'=>__('All Sliders', 'a3-responsive-slider'), ...); register_post_type('a3_slider', array('description'=>__('Sliders Custom Post Type', 'a3-responsive-slider'), 'public'=>false, 'show_ui'=>true, 'capability_type'=>'post', ... )); if(get_option('a3rev_rslider_just_installed')=='yes') flush_rewrite_rules(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Uses __() for labels. flush_rewrite_rules() called but acceptable on install. Missing wp_unschedule_hook alternative for the install trigger." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Uses WP registration APIs exclusively." },
+        "security": { "score": 9, "analysis": "No user input. Option check is safe. No XSS/CSRF vectors." },
+        "performance": { "score": 6, "analysis": "flush_rewrite_rules() on every install is expensive (rebuilds rewrite matrix). Should be scheduled once and cleared." },
+        "wp_api_usage": { "score": 8, "analysis": "Proper register_taxonomy and register_post_type usage. Correct labels array structure. public=false with show_ui=true is valid for admin-only CPTs." },
+        "code_quality": { "score": 6, "analysis": "Long labels array inline is hard to maintain. 'public'=>false may confuse users expecting front-end URLs. Uses deprecated _update_count_callback." },
+        "dependency_integrity": { "score": 8, "analysis": "No external dependencies. Self-contained CPT registration." },
+        "i18n": { "score": 9, "analysis": "All labels use __() with text domain 'a3-responsive-slider'. Correct i18n practice." },
+        "accessibility": { "score": 7, "analysis": "CPT registration does not directly impact accessibility. Admin UI elements are standard WP." }
+      },
+      "overall_score": 76,
+      "key_observation": "Standard CPT/taxonomy registration with correct i18n; flush_rewrite_rules() on install is a known performance concern but acceptable."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Custom_Post::column_sql_orderby",
+    "code": "function column_sql_orderby($vars) { if(isset($vars['post_type']) && 'a3_slider'==$vars['post_type'] && isset($vars['orderby'])) { switch($vars['orderby']) { case 'slider_skin': $vars=array_merge($vars, array('meta_key'=>'_a3_slider_template', 'orderby'=>'meta_value')); break; default: $vars=array_merge($vars, array('orderby'=>'date menu_order title', 'order'=>'DESC')); } } return $vars; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 8, "analysis": "Modifies query vars via hook (implied). No SQL injection since uses WP's built-in orderby mechanism." },
+        "sql_safety": { "score": 10, "analysis": "No raw SQL. Modifies $vars array used by WP_Query internally. Safe meta_key assignment." },
+        "security": { "score": 8, "analysis": "$vars['orderby'] is validated via switch/case. No raw user input reaches SQL." },
+        "performance": { "score": 7, "analysis": "Adds meta_query overhead for slider_skin sorting. Acceptable for admin list table." },
+        "wp_api_usage": { "score": 8, "analysis": "Uses WP_Query variable convention. Proper switch/case pattern for orderby handling." },
+        "code_quality": { "score": 7, "analysis": "Clear switch/case. Default case resets to standard sort. Good defense-in-depth with isset checks." },
+        "dependency_integrity": { "score": 9, "analysis": "No external dependencies. Pure WP core API usage." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings in this function." },
+        "accessibility": { "score": 10, "analysis": "No UI impact. Admin sorting behavior." }
+      },
+      "overall_score": 83,
+      "key_observation": "Clean orderby modification using WP_Query vars with switch validation — no SQL injection risk, safe meta_key usage."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Custom_Post::edit_sortable_columns",
+    "code": "function edit_sortable_columns($columns) { $columns['slider_skin']='slider_skin'; return $columns; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 9, "analysis": "Minimal hook implementation. Correctly modifies $columns array and returns it." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 10, "analysis": "No user input." },
+        "performance": { "score": 10, "analysis": "O(1) array assignment. Trivial cost." },
+        "wp_api_usage": { "score": 9, "analysis": "Standard sortable columns pattern for admin list tables." },
+        "code_quality": { "score": 9, "analysis": "Clean, minimal, self-documenting." },
+        "dependency_integrity": { "score": 10, "analysis": "No dependencies." },
+        "i18n": { "score": 10, "analysis": "No strings." },
+        "accessibility": { "score": 10, "analysis": "No UI." }
+      },
+      "overall_score": 96,
+      "key_observation": "Minimal sortable column registration — correct, safe, and zero overhead."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Custom_Post::custom_columns",
+    "code": "function custom_columns($column) { global $post; $slider_id=get_post_meta($post->ID,'_a3_slider_id',true); switch($column) { case 'image': echo $thumb; break; case 'slider_skin': echo $name; break; case 'cats': echo join(', ', $folders); break; case 'count_images': echo $num_images; break; } }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Uses esc_attr/esc_url/esc_html where appropriate. Switch-case pattern is standard WP admin column handler." },
+        "sql_safety": { "score": 9, "analysis": "Uses get_post_meta and get_the_terms — all WP core APIs. No raw SQL." },
+        "security": { "score": 7, "analysis": "esc_attr on slider_id in href, esc_url on img src, esc_html on term name. Good sanitization overall. Minor: direct $post->ID access without null check." },
+        "performance": { "score": 6, "analysis": "Calls get_post_meta twice (once in function param, once in post_row_actions). Data::count_images_in_slider may add DB query. Could cache." },
+        "wp_api_usage": { "score": 8, "analysis": "Correct use of get_post_meta, get_the_terms, esc_url, esc_attr, esc_html. Standard admin column pattern." },
+        "code_quality": { "score": 6, "analysis": "Hard-coded YouTube URL scheme (http not https) is a minor issue. Global $post usage is standard but could be parameterized. Missing default case." },
+        "dependency_integrity": { "score": 8, "analysis": "Calls Data::count_images_in_slider and Data::get_first_image_slider — internal plugin classes." },
+        "i18n": { "score": 8, "analysis": "No direct strings but outputs term names without i18n filter (they come from WP taxonomy which is already translated)." },
+        "accessibility": { "score": 7, "analysis": "Images have class but no alt attribute. Video thumbnail from YouTube default.jpg is functional. Could add aria-label." }
+      },
+      "overall_score": 74,
+      "key_observation": "Admin column renderer with proper esc functions but missing alt on images and no default case."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "post_row_actions",
+    "code": "function post_row_actions($actions, $post) { $post_type=get_post_type($post->ID); if($post_type=='a3_slider') { wp_enqueue_script('jquery'); wp_enqueue_script('thickbox'); wp_enqueue_style('thickbox'); $a3_slider_preview=wp_create_nonce('a3-slider-preview'); $additional_action=array('a3_slider_preview'=>'<a class=\"preview-data thickbox\" href=\"'.admin_url('admin-ajax.php','relative').'?...&security='.$a3_slider_preview.'\">'.__('Preview', 'a3-responsive-slider').'</a>'); $actions=array_merge($additional_action, $actions); } return $actions; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Hook standard for row actions. Uses __() for i18n. Admin AJAX URL built correctly with wp_create_nonce." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Uses get_post_meta and wp_create_nonce." },
+        "security": { "score": 7, "analysis": "wp_create_nonce provides CSRF protection. Admin AJAX URL is correct. Minor: direct concat of $slider_id in URL — should use absint() for integer validation." },
+        "performance": { "score": 6, "analysis": "Unconditionally enqueues jquery and thickbox even when no slider exists. Should check $have_slider_id before enqueueing." },
+        "wp_api_usage": { "score": 8, "analysis": "Correct use of wp_create_nonce, admin_url, wp_enqueue_script/style, __(). Standard row actions hook." },
+        "code_quality": { "score": 6, "analysis": "Missing absint() on $slider_id. Thickbox enqueued even when slider_id is empty. Could gate enqueue on slider existence." },
+        "dependency_integrity": { "score": 9, "analysis": "Uses WP core jquery/thickbox. No external deps." },
+        "i18n": { "score": 9, "analysis": "Uses __() for 'Preview' label. Correct text domain." },
+        "accessibility": { "score": 7, "analysis": "Thickbox link uses class='preview-data thickbox' which triggers JS. No aria-label on the link. Title attribute set from post title." }
+      },
+      "overall_score": 74,
+      "key_observation": "Admin row action with nonce-protected preview link; missing absint on slider_id and unconditional thickbox enqueue."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Display::a3_responsive_slider",
+    "code": "function a3_responsive_slider($slider_id=0) { $slider_data=get_post($slider_id); if($slider_data==NULL) return ''; $have_slider_id=get_post_meta($slider_id,'_a3_slider_id',true); if($have_slider_id<1) return ''; $slide_items=Data::get_all_images_from_slider_client($slider_id); $slider_template='template-1'; global ${'a3_rslider_'.$templateid.'_dimensions_settings'}; $dimensions_settings=${'a3_rslider_'.$templateid.'_dimensions_settings'}; return self::dispay_slider($slide_items, $slider_template, $dimensions_settings, $slider_settings); }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 5, "analysis": "$slider_settings and $slider_template are overwritten after being read from meta. Typos in method name 'dispay_slider' vs 'display_slider'. Dynamic global variable with ${} syntax is non-standard." },
+        "sql_safety": { "score": 9, "analysis": "Uses get_post and get_post_meta (both WP APIs). No raw SQL." },
+        "security": { "score": 6, "analysis": "$slider_id defaults to 0 with no absint() cast. Could accept arbitrary input. Dynamic variable access ${} can be unexpected." },
+        "performance": { "score": 5, "analysis": "$slider_template is set to 'template-1' twice — the first get_post_meta is overwritten, suggesting dead code. $slider_settings read from meta but never passed to the function." },
+        "wp_api_usage": { "score": 6, "analysis": "Shortcode handler should use esc_html on output. Missing absint on $slider_id. Dynamic global with ${} is discouraged in WP coding standards." },
+        "code_quality": { "score": 4, "analysis": "CRITICAL: $slider_settings is read from meta but not used — the function signature references it but the value was read before the self:: call. $slider_template assigned literal 'template-1' overriding the meta read. Typos in method names. Dead assignments." },
+        "dependency_integrity": { "score": 6, "analysis": "Depends on Data:: class and Display:: class. Dynamic global variable may not exist at runtime." },
+        "i18n": { "score": 7, "analysis": "No strings in function. Output templating handled externally." },
+        "accessibility": { "score": 6, "analysis": "Slider output accessibility depends on template rendering, not this function. No aria attributes." }
+      },
+      "overall_score": 55,
+      "key_observation": "BUG: $slider_settings read from meta but never used in self:: call; $slider_template overwritten with literal; missing absint on $slider_id."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Display::get_caption_title",
+    "code": "function get_caption_title() { ?> <div class=\"cycle-caption-title\"> <div class=\"cycle-caption-container\"> <div class=\"cycle-caption-bg\"></div> <div class=\"cycle-caption\"></div> </div> <div class=\"cycle-overlay-container\"> <div class=\"cycle-overlay-bg\"></div> <div class=\"cycle-overlay\"></div> </div> </div> <?php }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 6, "analysis": "Direct PHP/HTML mixing is acceptable for display functions. No WP-specific coding standard violations beyond lack of semantic HTML." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 10, "analysis": "No user input. Static HTML output." },
+        "performance": { "score": 10, "analysis": "Pure HTML output. O(1)." },
+        "wp_api_usage": { "score": 6, "analysis": "No WP API calls. This is a standalone display function, not a hook." },
+        "code_quality": { "score": 5, "analysis": "Static HTML without semantic elements (no <article>, <figure>, or aria roles). Uses generic div class names. Hard to maintain." },
+        "dependency_integrity": { "score": 10, "analysis": "No dependencies." },
+        "i18n": { "score": 8, "analysis": "No text strings. Structure-only output." },
+        "accessibility": { "score": 3, "analysis": "Zero ARIA roles. No aria-label on caption containers. No alt text context. Divs used where figure/figcaption or article might be appropriate. This is a caption display function but has no accessibility markup." }
+      },
+      "overall_score": 65,
+      "key_observation": "Static caption HTML shell — secure and fast but completely lacks ARIA roles and semantic HTML for accessibility."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Duplicate::duplicate_link_row",
+    "code": "function duplicate_link_row($actions, $post) { if(function_exists('duplicate_post_plugin_activation')) return $actions; if($post->post_type!='a3_slider') return $actions; $actions['duplicate']='<a href=\"'.wp_nonce_url(admin_url('admin.php?action=duplicate_a3_slider&post='.$post->ID), 'a3-duplicate-slider_'.$post->ID).'\">'.__('Duplicate', 'a3-responsive-slider').'</a>'; return $actions; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Uses __() for i18n. wp_nonce_url is correct. Short-circuit pattern is standard." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 8, "analysis": "wp_nonce_url creates a valid nonce. $post->ID used without absint but post objects from WP core are already validated. Good: checks function_exists to avoid conflicts." },
+        "performance": { "score": 10, "analysis": "Early returns make it O(1) for non-slider posts. Minimal overhead." },
+        "wp_api_usage": { "score": 8, "analysis": "wp_nonce_url, admin_url, __() all used correctly. Row actions hook pattern is standard." },
+        "code_quality": { "score": 7, "analysis": "Clean short-circuit pattern. $post->ID should ideally use absint() for defense-in-depth even though core validates." },
+        "dependency_integrity": { "score": 9, "analysis": "Depends on wp_nonce_url and admin_url from WP core." },
+        "i18n": { "score": 9, "analysis": "Uses __() with correct text domain." },
+        "accessibility": { "score": 7, "analysis": "Link has title attribute from post title but no aria-label. Standard admin link format." }
+      },
+      "overall_score": 81,
+      "key_observation": "Clean duplicate action link with nonce — functional but $post->ID would benefit from absint() for defense-in-depth."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Duplicate::duplicate_item",
+    "code": "function duplicate_item() { if(!(isset($_GET['post'])||isset($_POST['post'])||(isset($_REQUEST['action'])&&'duplicate_post_save_as_new_page'==$_REQUEST['action']))) wp_die(__('No slider to duplicate has been supplied!', 'a3-responsive-slider')); $id=(isset($_GET['post'])?absint($_GET['post']):absint($_POST['post'])); check_admin_referer('a3-duplicate-slider_'.$id); $post=self::get_item_to_duplicate($id); if(isset($post)&&$post!=null) { $new_id=self::create_duplicate_from_item($post); do_action('duplicate_item', $new_id, $post); wp_redirect(admin_url('post.php?action=edit&post='.$new_id)); exit; } else { wp_die(__('Slider creation failed...', 'a3-responsive-slider')); } }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 8, "analysis": "Uses absint() for input sanitization. check_admin_referer for CSRF. __() for i18n. Proper wp_die on failure." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Uses get_post_meta and WP functions." },
+        "security": { "score": 8, "analysis": "absint on $id. check_admin_referer validates nonce. Good: rejects if no post data. Missing: could use verify_nonce + wp_verify_nonce for clarity but check_admin_referer is equivalent." },
+        "performance": { "score": 7, "analysis": "wp_redirect + exit is correct for admin actions. do_action hook is appropriate." },
+        "wp_api_usage": { "score": 8, "analysis": "absint, check_admin_referer, do_action, wp_redirect, admin_url all correct. Standard admin action pattern." },
+        "code_quality": { "score": 7, "analysis": "Clear flow. Good early-exit patterns. Could extract nonce key to constant. isset($_REQUEST['action']) check is a bit verbose." },
+        "dependency_integrity": { "score": 8, "analysis": "Calls self::get_item_to_duplicate and self::create_duplicate_from_item. Depends on Duplicate class." },
+        "i18n": { "score": 9, "analysis": "Uses __() for all user-facing strings with correct text domain." },
+        "accessibility": { "score": 9, "analysis": "No direct UI. wp_die messages are standard WP admin styling." }
+      },
+      "overall_score": 82,
+      "key_observation": "Properly sanitized duplicate handler with absint + check_admin_referer — follows WP security patterns well."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Duplicate::duplicate_post_taxonomies",
+    "code": "function duplicate_post_taxonomies($id, $new_id, $post_type) { global $wpdb; $taxonomies=get_object_taxonomies($post_type); foreach($taxonomies as $taxonomy) { $post_terms=wp_get_object_terms($id, $taxonomy); $post_terms_count=sizeof($post_terms); for($i=0;$i<$post_terms_count;$i++) { wp_set_object_terms($new_id, $post_terms[$i]->slug, $taxonomy, true); } } }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 5, "analysis": "global $wpdb is declared but never used. Should use foreach with list($i, $post_term) for cleaner iteration." },
+        "sql_safety": { "score": 9, "analysis": "Uses wp_get_object_terms and wp_set_object_terms (both WP APIs). No raw SQL despite $wpdb declaration." },
+        "security": { "score": 8, "analysis": "$id and $new_id come from trusted source (internal call). No user input. wp_set_object_terms handles sanitization." },
+        "performance": { "score": 6, "analysis": "Loops through all taxonomies and terms individually. Should batch wp_set_object_terms calls for efficiency. sizeof() is deprecated (should be count())." },
+        "wp_api_usage": { "score": 7, "analysis": "wp_get_object_terms and wp_set_object_terms correct. get_object_taxonomies correct. $wpdb unused is misleading. Should pass $taxonomy to wp_set_object_terms as array." },
+        "code_quality": { "score": 5, "analysis": "Uses sizeof() instead of count(). for-loop instead of foreach. Unused $wpdb global. Could batch terms by taxonomy. Term objects accessed via ->slug but not checked for null." },
+        "dependency_integrity": { "score": 8, "analysis": "Depends on WP taxonomy functions." },
+        "i18n": { "score": 10, "analysis": "No strings." },
+        "accessibility": { "score": 10, "analysis": "No UI." }
+      },
+      "overall_score": 67,
+      "key_observation": "Works correctly but inefficient — loops terms individually instead of batching, uses sizeof() over count(), and declares unused $wpdb global."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Duplicate::duplicate_post_meta",
+    "code": "function duplicate_post_meta($id, $new_id) { $all_custom_keys=get_post_custom_keys($id); foreach($all_custom_keys as $key) { $value=get_post_meta($id, $key, true); add_post_meta($new_id, $key, $value); } }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Standard meta duplication pattern. get_post_custom_keys is valid WP function." },
+        "sql_safety": { "score": 10, "analysis": "Uses get_post_meta and add_post_meta — both WP core APIs with proper escaping." },
+        "security": { "score": 8, "analysis": "$id and $new_id are internal IDs. No user input. Meta keys/values from WP are pre-sanitized." },
+        "performance": { "score": 6, "analysis": "Loops through all meta keys individually. add_post_meta per key could be batched. No check for duplicate meta keys — may create duplicates on re-run." },
+        "wp_api_usage": { "score": 8, "analysis": "get_post_custom_keys, get_post_meta, add_post_meta all correct. Missing check for existing meta could cause duplicates." },
+        "code_quality": { "score": 6, "analysis": "Simple and functional. Missing: should check if meta already exists on $new_id to avoid duplicates. No unserialization check for serialized values." },
+        "dependency_integrity": { "score": 9, "analysis": "Pure WP core meta APIs." },
+        "i18n": { "score": 10, "analysis": "No strings." },
+        "accessibility": { "score": 10, "analysis": "No UI." }
+      },
+      "overall_score": 76,
+      "key_observation": "Standard meta duplication loop — correct but should check for existing meta on target to avoid duplicates."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Duplicate::duplicate_post_images",
+    "code": "function duplicate_post_images($id, $new_id) { $all_images=Data::get_all_images_from_slider($id); if(is_array($all_images)&&count($all_images)>0) { foreach($all_images as $a_image) { if($a_image->is_video==0) Data::insert_row_image($new_id, $a_image->img_url, $a_image->img_link, $a_image->img_title, $a_image->img_description, $a_image->img_alt, $a_image->img_order, $a_image->show_readmore, $a_image->open_newtab); } } }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Uses Data:: class methods. count() over sizeof(). Standard loop pattern." },
+        "sql_safety": { "score": 9, "analysis": "Uses Data:: class methods (internal). No raw SQL visible. Depends on Data::insert_row_image implementation." },
+        "security": { "score": 7, "analysis": "$id and $new_id are internal. Image data comes from plugin's own DB. img_url not esc_url'd before pass-through but Data:: insert likely handles it." },
+        "performance": { "score": 6, "analysis": "Loops through all images individually. Each insert_row_image call may be a separate DB write. Should batch." },
+        "wp_api_usage": { "score": 7, "analysis": "Uses internal Data:: class. No direct WP API calls. Depends on Data implementation quality." },
+        "code_quality": { "score": 6, "analysis": "Functional loop. No type checking on $a_image properties. Long function signature with many params. Could use named parameters or object." },
+        "dependency_integrity": { "score": 6, "analysis": "Depends on Data::get_all_images_from_slider and Data::insert_row_image — internal class contract." },
+        "i18n": { "score": 10, "analysis": "No strings." },
+        "accessibility": { "score": 10, "analysis": "No UI. Internal data duplication." }
+      },
+      "overall_score": 72,
+      "key_observation": "Image duplication via Data class — functional but individual DB writes and no type checking on image objects."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Hook_Filter::include_frontend_script",
+    "code": "function include_frontend_script() { global $wp_scripts; $suffix=defined('SCRIPT_DEBUG')&&SCRIPT_DEBUG?'':'.min'; wp_register_style('a3_responsive_slider_styles', A3_RESPONSIVE_SLIDER_CSS_URL.'/cycle.css', array(), A3_RESPONSIVE_SLIDER_VERSION); if(file_exists($_upload_dir['basedir'].'/sass/a3_responsive_slider'.$suffix.'.css')) wp_register_style('a3_rslider_template1', ...); wp_register_script('a3-cycle2-script', A3_RESPONSIVE_SLIDER_JS_URL.'/jquery.cycle2'.$suffix.'.js', array('jquery'), '2.1.6'); ... wp_register_script for multiple cycle2 extensions; wp_register_script('a3-rslider-frontend', ...); if(is_admin()) return; if($post&&has_shortcode($post->post_content, $our_shortcode)) { preg_match_all('/'.get_shortcode_regex().'/', $post->post_content, $matches); foreach($matches as $shortcode) { ... } } }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 6, "analysis": "Uses SCRIPT_DEBUG check correctly. wp_register_style/script with proper deps. Hook name 'include_frontend_script' suggests filter but function is void — should be an action hook." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 7, "analysis": "str_replace to remove http:/https: from URL may break things. $_upload_dir from wp_upload_dir() is trusted. No user input directly handled." },
+        "performance": { "score": 5, "analysis": "preg_match_all on every shortcode for every post is expensive. Registers many scripts even when not needed (only enqueues conditionally). file_exists check on server is okay but could be cached." },
+        "wp_api_usage": { "score": 6, "analysis": "wp_register_script/style with deps is correct. Has shortcode check with get_shortcode_regex. Missing: should use wp_enqueue_scripts action hook. $_upload_dir not assigned before use." },
+        "code_quality": { "score": 5, "analysis": "Very long function (~76 lines). Registers 10+ scripts unconditionally. $_upload_dir used but assigned inside. shortcode_atts call uses hardcoded default 'id'=>0. extract() used later. Hard to follow." },
+        "dependency_integrity": { "score": 6, "analysis": "Bundles multiple jquery.cycle2 extension scripts. Defines A3_RESPONSIVE_SLIDER_ constants externally. Mobile_Detect dependency." },
+        "i18n": { "score": 8, "analysis": "No strings. JS/CSS assets. i18n handled by dependent front-end." },
+        "accessibility": { "score": 6, "analysis": "Registers JS but accessibility of slider depends on template CSS/JS. Device detection for mobile is good for accessibility." }
+      },
+      "overall_score": 64,
+      "key_observation": "Overly long script registration function — registers 10+ scripts unconditionally and uses expensive preg_match_all on post content for every shortcode."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Hook_Filter::enqueue_frontend_script",
+    "code": "function enqueue_frontend_script($script_settings=array()) { if(!is_array($script_settings)||count($script_settings)<=0||is_admin()) $script_settings=array('fx'=>'fade','caption2'=>true,'swipe'=>true,'video'=>false); wp_enqueue_style('a3_rslider_template1'); $device_detect=new Mobile_Detect(); if(!$device_detect->isMobile()) { if(in_array($script_settings['fx'], array('random','flipHorz','flipVert'))) wp_enqueue_script('a3-cycle2-flip-script'); ... wp_enqueue_script for each transition; } else { wp_enqueue_script('a3-rslider-frontend-mobile'); } wp_localize_script('a3-rslider-frontend', 'a3_rslider_frontend_params', $a3_rslider_frontend_params); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 6, "analysis": "Uses wp_enqueue_script/style correctly. Mobile_Detect instantiates new class. Good: uses in_array for conditional loading." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 8, "analysis": "No user input. Mobile_Detect is trusted library. wp_localize_script is the correct WP pattern for passing PHP to JS." },
+        "performance": { "score": 6, "analysis": "Instantiates Mobile_Detect on every call — could be singleton or cached. in_array for each transition effect is fine. Multiple wp_enqueue_script calls with dedup is handled by WP core." },
+        "wp_api_usage": { "score": 7, "analysis": "wp_enqueue_style/script, wp_localize_script all correct. Missing: should not enqueue in admin. Already guarded by is_admin() at top." },
+        "code_quality": { "score": 6, "analysis": "Multiple if/in_array blocks are repetitive. Mobile_Detect instantiation per call. Could use switch for fx type. Good default parameter pattern." },
+        "dependency_integrity": { "score": 6, "analysis": "Depends on Mobile_Detect class (external dependency not loaded via composer). jquery.cycle2 scripts bundled by plugin." },
+        "i18n": { "score": 8, "analysis": "No strings. JS config params passed via wp_localize_script." },
+        "accessibility": { "score": 7, "analysis": "Device detection enables mobile swipe support which is good for accessibility. No aria attributes in script config." }
+      },
+      "overall_score": 72,
+      "key_observation": "Conditional script enqueue with device detection — correct WP patterns but Mobile_Detect instantiated per call and repetitive if/in_array blocks."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Hook_Filter::add_google_fonts",
+    "code": "function add_google_fonts() { $google_fonts=array(); global ${'a3_rslider_'.$templateid.'_title_settings'}; global ${'a3_rslider_'.$templateid.'_caption_settings'}; extract($title_font_settings); extract($caption_font_settings); $google_fonts[]=$title_font['face']; $google_fonts[]=$caption_font['face']; if(count($google_fonts)>0) $GLOBALS[A3_RESPONSIVE_SLIDER_PREFIX.'fonts_face']->generate_google_webfonts($google_fonts); }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 4, "analysis": "Dynamic global variable access ${} is non-standard and error-prone. extract() is discouraged in WP coding standards as it can overwrite existing variables." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 5, "analysis": "extract() is dangerous — can overwrite arbitrary variables including $GLOBALS entries if global keyword used. Title/caption font data from options should be sanitized." },
+        "performance": { "score": 6, "analysis": "Multiple global accesses and extract() calls add overhead. Font face extraction is O(n) where n is number of settings." },
+        "wp_api_usage": { "score": 5, "analysis": "Uses $GLOBALS access directly rather than get_option. Relies on global state set elsewhere. generate_google_webfonts() is a custom plugin method." },
+        "code_quality": { "score": 4, "analysis": "CRITICAL: extract() is a known WP security anti-pattern. Dynamic globals ${} are fragile. Multiple extract() calls compound the risk. Should use direct array access instead." },
+        "dependency_integrity": { "score": 5, "analysis": "Depends on external fonts_face object from $GLOBALS. This is a coupled dependency not declared in function signature." },
+        "i18n": { "score": 8, "analysis": "No strings. Font face names may need i18n but handled by font generator." },
+        "accessibility": { "score": 6, "analysis": "Font loading affects readability. No font-weight/line-height controls for accessibility. Google Fonts loading may cause FOIT." }
+      },
+      "overall_score": 55,
+      "key_observation": "DANGEROUS: uses extract() which is a known WP anti-pattern for variable collision — should use direct array access instead."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Hook_Filter::include_admin_add_script",
+    "code": "function include_admin_add_script() { wp_enqueue_style('galleries-style', A3_RESPONSIVE_SLIDER_CSS_URL.'/admin_slider.css', array('thickbox'), A3_RESPONSIVE_SLIDER_VERSION); wp_enqueue_script('galleries-script', A3_RESPONSIVE_SLIDER_JS_URL.'/admin_slider.js', array('jquery','thickbox','jquery-ui-sortable','jquery-ui-draggable'), A3_RESPONSIVE_SLIDER_VERSION); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 8, "analysis": "Clean wp_enqueue_style/script with deps and version. Standard admin enqueue pattern." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 10, "analysis": "No user input. Static file enqueue." },
+        "performance": { "score": 8, "analysis": "Two file enqueues. Version param correct. Dependencies properly declared." },
+        "wp_api_usage": { "score": 8, "analysis": "Correct use of wp_enqueue_style/script with version and deps." },
+        "code_quality": { "score": 8, "analysis": "Clean, short, self-contained. Good dependency declaration." },
+        "dependency_integrity": { "score": 8, "analysis": "Depends on jquery, thickbox, jquery-ui-sortable, jquery-ui-draggable — all WP core." },
+        "i18n": { "score": 10, "analysis": "No strings." },
+        "accessibility": { "score": 7, "analysis": "Admin JS accessibility depends on admin_slider.js implementation. No issues in this function itself." }
+      },
+      "overall_score": 84,
+      "key_observation": "Clean admin script enqueue with proper deps and versioning — standard and correct WP pattern."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Hook_Filter::plugin_extension",
+    "code": "function plugin_extension() { $html=''; $html.='<a href=\"http://a3rev.com/shop/\" target=\"_blank\"><div class=\"a3-plugin-ui-icon a3-plugin-ui-a3-rev-logo\"></div></a>'; $html.='<h3>'.__('Thanks for choosing...', 'a3-responsive-slider').'</h3>'; $html.='<h3>'.__('What is the Yellow border...', 'a3').'</h3>'; ... $html.='<ul style=\"padding-left:10px;\">'; $html.='<li>1. '.__('DEACTIVATE the Lite...', 'a3-responsive-slider').'</li>'; ... return $html; }",
+    "admin_only": true,
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 5, "analysis": "Builds HTML via $html .= strings — acceptable for admin notices. Uses __() for i18n. Hard-coded http:// URLs (should be https:// or protocol-relative)." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 6, "analysis": "External links with target=\"_blank\" missing rel=\"noopener noreferrer\" — XSS/open-tab risk. All links go to a3rev.com and wordpress.org which are trusted. http:// not https:// on some links." },
+        "performance": { "score": 8, "analysis": "String concatenation is fine for admin notice. No heavy operations." },
+        "wp_api_usage": { "score": 7, "analysis": "Uses __() for i18n. Hook into plugin_action_links or admin notices. No WP API issues." },
+        "code_quality": { "score": 5, "analysis": "Long string concatenation. Mixed __() calls — one uses 'a3' instead of 'a3-responsive-slider' text domain. Hard-coded http:// for external links. Consider using esc_url for href values." },
+        "dependency_integrity": { "score": 8, "analysis": "No external deps. References A3_RESPONSIVE_SLIDER_PRO_VERSION_URI constant." },
+        "i18n": { "score": 8, "analysis": "Most strings use __() with 'a3-responsive-slider'. One string uses 'a3' — inconsistent text domain." },
+        "accessibility": { "score": 4, "analysis": "target=\"_blank\" without rel=\"noopener\" is a security and UX issue. Images lack alt attributes. Links have no aria-label. Color-dependent messaging ('Yellow border') fails for colorblind users." }
+      },
+      "overall_score": 62,
+      "key_observation": "Plugin info box with target=\"_blank\" links missing rel=\"noopener noreferrer\" — security risk; one string uses wrong text domain."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Hook_Filter::plugin_extra_links",
+    "code": "function plugin_extra_links($links, $plugin_name) { if($plugin_name!=A3_RESPONSIVE_SLIDER_NAME) return $links; $links[]='<a href=\"http://docs.a3rev.com/...\" target=\"_blank\">'.__('Documentation', 'a3-responsive-slider').'</a>'; $links[]='<a href=\"'.$GLOBALS[A3_RESPONSIVE_SLIDER_PREFIX.'admin_init']->support_url.'\" target=\"_blank\">'.__('Support', 'a3-responsive-slider').'</a>'; return $links; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 6, "analysis": "Standard plugin_action_links hook pattern. Uses __() for i18n. Uses $GLOBALS for support_url access which is non-standard." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 6, "analysis": "External links with target=\"_blank\" missing rel=\"noopener noreferrer\". support_url from $GLOBALS could be any value — should be esc_url()." },
+        "performance": { "score": 10, "analysis": "O(1). Quick check and return." },
+        "wp_api_usage": { "score": 7, "analysis": "plugin_action_links hook is correct. $GLOBALS access for support_url is non-standard. Should use a getter method." },
+        "code_quality": { "score": 6, "analysis": "Clean structure. $GLOBALS access for support_url is fragile. href should be esc_url'd. Hard-coded http:// for docs URL." },
+        "dependency_integrity": { "score": 7, "analysis": "Depends on A3_RESPONSIVE_SLIDER_NAME and $GLOBALS[A3_RESPONSIVE_SLIDER_PREFIX.'admin_init'] constants/objects." },
+        "i18n": { "score": 9, "analysis": "Uses __() with correct text domain." },
+        "accessibility": { "score": 5, "analysis": "target=\"_blank\" without rel=\"noopener\". Link text is functional but no aria-label. External links should have aria-label indicating external destination." }
+      },
+      "overall_score": 68,
+      "key_observation": "Plugin action links with external URLs — correct pattern but missing esc_url and rel=\"noopener noreferrer\" on external links."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Hook_Filter::plugin_extension_box",
+    "code": "function plugin_extension_box($boxes=array()) { $support_box='<a href=\"...\" target=\"_blank\"><img src=\".../go-to-support-forum.png\"/></a>'; $boxes[]=array('content'=>$support_box, 'css'=>'border:none; padding:0; background:none'); ... $review_box='<div style=\"margin-bottom:5px; font-size:12px;\"><strong>'.__('Is this plugin is just what you needed? If so', 'a3-responsive-slider').'</strong></div>'; ... $connect_box.='<a href=\"https://www.facebook.com/a3rev\" target=\"_blank\"><img src=\".../follow-facebook.png\"/></a>'; return $boxes; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 5, "analysis": "Builds admin notice boxes via string concat. Uses __() for i18n. Hard-coded http:// on some URLs. CSS inline styles are acceptable for admin notices." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 5, "analysis": "All external links use target=\"_blank\" without rel=\"noopener noreferrer\". img src URLs not esc_url'd. Some links use http:// instead of https://." },
+        "performance": { "score": 8, "analysis": "String building for admin UI is fine. No heavy operations." },
+        "wp_api_usage": { "score": 6, "analysis": "Hook pattern for admin boxes is correct. Should use esc_url for all URLs. Should use wp_kses for HTML sanitization." },
+        "code_quality": { "score": 5, "analysis": "Long function with repetitive pattern. All boxes follow same structure. Missing esc_url on img src and href. Mixed http/https. Grammar error: 'Is this plugin is just what you needed'." },
+        "dependency_integrity": { "score": 6, "analysis": "Depends on A3_RESPONSIVE_SLIDER_IMAGES_URL constant and $GLOBALS access." },
+        "i18n": { "score": 8, "analysis": "Uses __() with correct text domain for all strings." },
+        "accessibility": { "score": 3, "analysis": "CRITICAL: All <img> tags missing alt attributes. External links without rel=\"noopener\". No aria-labels on icon links. Color-dependent messaging. All social links open in new tabs without indication." }
+      },
+      "overall_score": 56,
+      "key_observation": "Admin info boxes with zero alt attributes on all images and target=\"_blank\" links missing rel=\"noopener\" — significant accessibility and security issues."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  }
+]
