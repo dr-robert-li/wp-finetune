@@ -1,0 +1,502 @@
+[
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Control::tab_data",
+    "code": "function tab_data() { $tab_data = array( 'name' => 'control-card', 'label' => __( 'Controls', 'a3-responsive-slider' ), 'callback_function' => 'a3_responsive_slider_card_skin_control_tab_manager', ); if ( $this->tab_data ) return $this->tab_data; return $this->tab_data = $tab_data; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Basic WP coding standards compliance. Uses tabs for indentation. Property assignment in return statement is non-standard but acceptable. Missing explicit return type hints." },
+        "sql_safety": { "score": 10, "analysis": "No SQL queries present. Pure configuration metadata array." },
+        "security": { "score": 8, "analysis": "No user input processing. No nonce checks needed for a getter. Safe configuration builder." },
+        "performance": { "score": 9, "analysis": "Lazy-loaded tab data with early return cache. O(1) array construction. Minimal overhead." },
+        "wp_api_usage": { "score": 8, "analysis": "Correct use of __() for i18n. Standard WP tab metadata structure. Proper callback_function reference." },
+        "code_quality": { "score": 6, "analysis": "Boilerplate getter pattern. The if-return then reassignment pattern is slightly redundant. Returns the same expression twice." },
+        "dependency_integrity": { "score": 8, "analysis": "Self-contained. No external dependencies. Only relies on class properties." },
+        "i18n": { "score": 9, "analysis": "Properly uses __( 'Controls', 'a3-responsive-slider' ) with text domain." },
+        "accessibility": { "score": 9, "analysis": "Returns label text for UI tab. Indirectly supports accessibility through label metadata." }
+      },
+      "overall_score": 81,
+      "key_observation": "Boilerplate tab metadata getter with lazy-loading cache and proper i18n.",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Control::add_tab",
+    "code": "function add_tab( $tabs_array ) { if ( ! is_array( $tabs_array ) ) $tabs_array = array(); $tabs_array[] = $this->tab_data(); return $tabs_array; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Acceptable WP coding. Type hint missing on $tabs_array parameter. Uses is_array guard which is good defensive practice." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Pure array manipulation." },
+        "security": { "score": 8, "analysis": "Input validation via is_array guard prevents type confusion. No user-facing output." },
+        "performance": { "score": 9, "analysis": "O(1) array push. Cheap type check guard." },
+        "wp_api_usage": { "score": 8, "analysis": "Standard WP filter callback signature matching add_filter expectations. Returns modified array." },
+        "code_quality": { "score": 7, "analysis": "Clear defensive pattern. Good is_array guard before append." },
+        "dependency_integrity": { "score": 8, "analysis": "Depends only on $this->tab_data() from same class. No external deps." },
+        "i18n": { "score": 9, "analysis": "Indirectly carries tab data which includes i18n label." },
+        "accessibility": { "score": 9, "analysis": "Contributes tab labels to WP admin UI." }
+      },
+      "overall_score": 82,
+      "key_observation": "Safe tab registration with type guard, standard WP filter callback pattern.",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Control::settings_include",
+    "code": "function settings_include() { global $a3_responsive_sider_template_card_control_settings; $a3_responsive_sider_template_card_control_settings = new FrameWork\\Settings\\Template_Card_Control(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 5, "analysis": "Global variable usage violates WP coding standards which discourage globals. Typo in variable name 'sider' instead of 'slider' but that is naming not standards." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Object instantiation only." },
+        "security": { "score": 7, "analysis": "Instantiates a class without any input. Safe but global mutation is risky." },
+        "performance": { "score": 7, "analysis": "O(1) object creation. Global variable assignment adds overhead." },
+        "wp_api_usage": { "score": 5, "analysis": "Global mutation is an anti-pattern in WP. Should use dependency injection or class property instead." },
+        "code_quality": { "score": 5, "analysis": "Using global variable is a code smell. Should inject settings instance via constructor or class property." },
+        "dependency_integrity": { "score": 6, "analysis": "Tightly coupled to FrameWork\\Settings\\Template_Card_Control class existence." },
+        "i18n": { "score": 9, "analysis": "Indirectly enables i18n settings page." },
+        "accessibility": { "score": 9, "analysis": "Provides settings form for admin UI." }
+      },
+      "overall_score": 70,
+      "key_observation": "Global variable anti-pattern reduces quality but functionally safe.",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Control::tab_manager",
+    "code": "function tab_manager() { global $a3_responsive_sider_template_card_control_settings; $this->plugin_extension_start(); $a3_responsive_sider_template_card_control_settings->settings_form(); $this->plugin_extension_end(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 5, "analysis": "Same global anti-pattern. Hook method naming is reasonable for WP filter callbacks." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Delegates to settings_form() method." },
+        "security": { "score": 7, "analysis": "Renders admin form. Should ideally have capability checks but those are likely in the parent plugin_extension methods." },
+        "performance": { "score": 6, "analysis": "Loads settings object then renders form. Multiple method calls add up in hot path." },
+        "wp_api_usage": { "score": 6, "analysis": "Hook-style method signature suitable for WP filter. Global dependency is the concern." },
+        "code_quality": { "score": 5, "analysis": "Global variable again. The render chain is clean but global state makes it fragile." },
+        "dependency_integrity": { "score": 5, "analysis": "Fragile dependency on global variable being set before this is called." },
+        "i18n": { "score": 9, "analysis": "Renders settings form which should contain i18n labels." },
+        "accessibility": { "score": 8, "analysis": "Admin settings form output." }
+      },
+      "overall_score": 68,
+      "key_observation": "Render method with global dependency; hook callback pattern is correct.",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Pager::__construct",
+    "code": "function __construct() { $this->settings_include(); $this->tab_init(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Standard WP constructor pattern. No type hints on constructor which is acceptable in PHP 7+ WP context." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Initialization only." },
+        "security": { "score": 8, "analysis": "No user input. Safe initialization chain." },
+        "performance": { "score": 7, "analysis": "Two method calls in constructor. Acceptable for bootstrap." },
+        "wp_api_usage": { "score": 8, "analysis": "Standard WP class initialization pattern. Delegates to class methods." },
+        "code_quality": { "score": 7, "analysis": "Clean constructor. Two-line bootstrap is idiomatic." },
+        "dependency_integrity": { "score": 7, "analysis": "Depends on settings_include and tab_init being present and callable." },
+        "i18n": { "score": 9, "analysis": "Initializes tab system that carries i18n labels." },
+        "accessibility": { "score": 9, "analysis": "Bootstraps admin UI tab integration." }
+      },
+      "overall_score": 80,
+      "key_observation": "Clean constructor bootstrap, standard WP class pattern.",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Pager::tab_init",
+    "code": "function tab_init() { add_filter( $this->plugin_name . '-' . $this->parent_page . '_settings_tabs_array', array( $this, 'add_tab' ), $this->position ); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Proper add_filter usage with dynamic filter name constructed from class properties." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. WordPress hook registration." },
+        "security": { "score": 8, "analysis": "Hook registration is safe. Dynamic filter name from trusted class properties." },
+        "performance": { "score": 9, "analysis": "Single add_filter call. No runtime overhead." },
+        "wp_api_usage": { "score": 9, "analysis": "Canonical WP add_filter with array callback syntax. Dynamic filter name follows WP convention." },
+        "code_quality": { "score": 7, "analysis": "Clean hook registration. Relies on $this->position being set correctly." },
+        "dependency_integrity": { "score": 7, "analysis": "Depends on $this->plugin_name, $this->parent_page, $this->position being initialized." },
+        "i18n": { "score": 9, "analysis": "Registers tab that will carry i18n label." },
+        "accessibility": { "score": 9, "analysis": "Integrates settings tab into WP admin." }
+      },
+      "overall_score": 83,
+      "key_observation": "Canonical WP add_filter registration with dynamic filter name.",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Pager::tab_data",
+    "code": "function tab_data() { $tab_data = array( 'name' => 'pager-card', 'label' => __( 'Pager', 'a3-responsive-slider' ), 'callback_function' => 'a3_responsive_slider_card_skin_pager_tab', ); if ( $this->tab_data ) return $this->tab_data; return $this->tab_data = $tab_data; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Same boilerplate pattern as Control tab_data. Proper array structure for WP tab metadata." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Configuration array." },
+        "security": { "score": 8, "analysis": "No user input. Safe getter." },
+        "performance": { "score": 9, "analysis": "Lazy load cache pattern. O(1) array return." },
+        "wp_api_usage": { "score": 8, "analysis": "Correct __() usage with text domain. Standard tab metadata keys." },
+        "code_quality": { "score": 6, "analysis": "Redundant if-return then reassignment. Could use null coalescing but that is minor." },
+        "dependency_integrity": { "score": 8, "analysis": "Self-contained getter." },
+        "i18n": { "score": 9, "analysis": "Proper __( 'Pager', 'a3-responsive-slider' ) usage." },
+        "accessibility": { "score": 9, "analysis": "Label text 'Pager' used in admin tab UI." }
+      },
+      "overall_score": 81,
+      "key_observation": "Pager tab metadata getter, identical pattern to Control with proper i18n.",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Pager::add_tab",
+    "code": "function add_tab( $tabs_array ) { if ( ! is_array( $tabs_array ) ) $tabs_array = array(); $tabs_array[] = $this->tab_data(); return $tabs_array; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Consistent with Control::add_tab. is_array guard present." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 8, "analysis": "Type guard prevents type confusion. No user input." },
+        "performance": { "score": 9, "analysis": "O(1) push." },
+        "wp_api_usage": { "score": 8, "analysis": "Standard WP filter callback pattern." },
+        "code_quality": { "score": 7, "analysis": "Defensive typing is good." },
+        "dependency_integrity": { "score": 8, "analysis": "Depends on tab_data()." },
+        "i18n": { "score": 9, "analysis": "Carries Pager tab i18n label." },
+        "accessibility": { "score": 9, "analysis": "Admin tab integration." }
+      },
+      "overall_score": 82,
+      "key_observation": "Pager tab registration with type guard, matching Control pattern.",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Pager::settings_include",
+    "code": "function settings_include() { global $a3_responsive_sider_template_card_pager_settings; $a3_responsive_sider_template_card_pager_settings = new FrameWork\\Settings\\Template_Card_Pager(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 5, "analysis": "Same global variable anti-pattern as Control. Typo 'sider' persists." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 7, "analysis": "Safe instantiation but global mutation is a concern." },
+        "performance": { "score": 7, "analysis": "Object creation + global assignment." },
+        "wp_api_usage": { "score": 5, "analysis": "Global should be avoided in WP plugin architecture." },
+        "code_quality": { "score": 5, "analysis": "Global anti-pattern is the same issue as Control version." },
+        "dependency_integrity": { "score": 6, "analysis": "Tightly coupled to FrameWork class." },
+        "i18n": { "score": 9, "analysis": "Pager settings enable i18n labels." },
+        "accessibility": { "score": 9, "analysis": "Pager settings form for admin." }
+      },
+      "overall_score": 70,
+      "key_observation": "Same global variable anti-pattern repeated across Pager skin class.",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Pager::tab_manager",
+    "code": "function tab_manager() { global $a3_responsive_sider_template_card_pager_settings; $this->plugin_extension_start(); $a3_responsive_sider_template_card_pager_settings->settings_form(); $this->plugin_extension_end(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 5, "analysis": "Same global anti-pattern. Hook callback pattern correct." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 7, "analysis": "Admin form render, relies on parent for capability checks." },
+        "performance": { "score": 6, "analysis": "Multi-step render chain." },
+        "wp_api_usage": { "score": 6, "analysis": "Hook signature correct but global dependency is anti-pattern." },
+        "code_quality": { "score": 5, "analysis": "Global variable usage is the primary quality concern." },
+        "dependency_integrity": { "score": 5, "analysis": "Fragile dependency on global." },
+        "i18n": { "score": 9, "analysis": "Pager settings form." },
+        "accessibility": { "score": 8, "analysis": "Admin UI output." }
+      },
+      "overall_score": 68,
+      "key_observation": "Pager settings form render with global dependency, consistent with Control.",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_ReadMore::__construct",
+    "code": "function __construct() { $this->settings_include(); $this->tab_init(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Standard WP constructor." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 8, "analysis": "Safe init chain." },
+        "performance": { "score": 7, "analysis": "Two delegation calls." },
+        "wp_api_usage": { "score": 8, "analysis": "Standard WP bootstrap pattern." },
+        "code_quality": { "score": 7, "analysis": "Clean two-line bootstrap." },
+        "dependency_integrity": { "score": 7, "analysis": "Depends on sibling methods." },
+        "i18n": { "score": 9, "analysis": "Bootstraps i18n tab system." },
+        "accessibility": { "score": 9, "analysis": "Admin UI tab integration." }
+      },
+      "overall_score": 80,
+      "key_observation": "ReadMore skin constructor, identical bootstrap pattern to Pager.",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_ReadMore::tab_init",
+    "code": "function tab_init() { add_filter( $this->plugin_name . '-' . $this->parent_page . '_settings_tabs_array', array( $this, 'add_tab' ), $this->position ); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Standard add_filter with dynamic name." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 8, "analysis": "Safe hook registration." },
+        "performance": { "score": 9, "analysis": "Single filter registration." },
+        "wp_api_usage": { "score": 9, "analysis": "Canonical WP add_filter pattern." },
+        "code_quality": { "score": 7, "analysis": "Clean hook registration." },
+        "dependency_integrity": { "score": 7, "analysis": "Relies on class properties being set." },
+        "i18n": { "score": 9, "analysis": "Registers i18n tab." },
+        "accessibility": { "score": 9, "analysis": "Admin tab integration." }
+      },
+      "overall_score": 83,
+      "key_observation": "ReadMore skin tab init, identical pattern to Pager.",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_ReadMore::tab_data",
+    "code": "function tab_data() { $tab_data = array( 'name' => 'readmore-card', 'label' => __( 'Read More', 'a3-responsive-slider' ), 'callback_function' => 'a3_responsive_slider_card_skin_readmore_tab_manager', ); if ( $this->tab_data ) return $this->tab_data; return $this->tab_data = $tab_data; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Consistent tab_data boilerplate." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 8, "analysis": "No user input." },
+        "performance": { "score": 9, "analysis": "Lazy load cache, O(1)." },
+        "wp_api_usage": { "score": 8, "analysis": "Correct __() with text domain." },
+        "code_quality": { "score": 6, "analysis": "Redundant if-return then reassignment." },
+        "dependency_integrity": { "score": 8, "analysis": "Self-contained." },
+        "i18n": { "score": 9, "analysis": " __( 'Read More', 'a3-responsive-slider' ) correct." },
+        "accessibility": { "score": 9, "analysis": "Admin tab label." }
+      },
+      "overall_score": 81,
+      "key_observation": "ReadMore tab metadata getter, identical boilerplate pattern.",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_ReadMore::add_tab",
+    "code": "function add_tab( $tabs_array ) { if ( ! is_array( $tabs_array ) ) $tabs_array = array(); $tabs_array[] = $this->tab_data(); return $tabs_array; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Consistent add_tab pattern." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 8, "analysis": "Type guard present." },
+        "performance": { "score": 9, "analysis": "O(1)." },
+        "wp_api_usage": { "score": 8, "analysis": "Standard WP filter callback." },
+        "code_quality": { "score": 7, "analysis": "Defensive typing." },
+        "dependency_integrity": { "score": 8, "analysis": "Depends on tab_data()." },
+        "i18n": { "score": 9, "analysis": "Carries i18n ReadMore label." },
+        "accessibility": { "score": 9, "analysis": "Admin tab." }
+      },
+      "overall_score": 82,
+      "key_observation": "ReadMore tab registration, identical boilerplate.",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_ReadMore::settings_include",
+    "code": "function settings_include() { global $a3_responsive_sider_template_card_readmore_settings; $a3_responsive_sider_template_card_readmore_settings = new FrameWork\\Settings\\Template_Card_ReadMore(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 5, "analysis": "Global variable anti-pattern persists." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 7, "analysis": "Safe instantiation." },
+        "performance": { "score": 7, "analysis": "Object creation." },
+        "wp_api_usage": { "score": 5, "analysis": "Global anti-pattern." },
+        "code_quality": { "score": 5, "analysis": "Global anti-pattern." },
+        "dependency_integrity": { "score": 6, "analysis": "Tightly coupled to FrameWork." },
+        "i18n": { "score": 9, "analysis": "ReadMore settings." },
+        "accessibility": { "score": 9, "analysis": "Admin form." }
+      },
+      "overall_score": 70,
+      "key_observation": "ReadMore settings_include, same global anti-pattern repeated.",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_ReadMore::tab_manager",
+    "code": "function tab_manager() { global $a3_responsive_sider_template_card_readmore_settings; $this->plugin_extension_start(); $a3_responsive_sider_template_card_readmore_settings->settings_form(); $this->plugin_extension_end(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 5, "analysis": "Global anti-pattern." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 7, "analysis": "Admin form render." },
+        "performance": { "score": 6, "analysis": "Multi-step chain." },
+        "wp_api_usage": { "score": 6, "analysis": "Hook signature correct." },
+        "code_quality": { "score": 5, "analysis": "Global dependency." },
+        "dependency_integrity": { "score": 5, "analysis": "Fragile global dependency." },
+        "i18n": { "score": 9, "analysis": "ReadMore settings form." },
+        "accessibility": { "score": 8, "analysis": "Admin UI." }
+      },
+      "overall_score": 68,
+      "key_observation": "ReadMore form render with global, consistent pattern.",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Caption::__construct",
+    "code": "function __construct() { $this->settings_include(); $this->tab_init(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Standard WP constructor." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 8, "analysis": "Safe init." },
+        "performance": { "score": 7, "analysis": "Two delegations." },
+        "wp_api_usage": { "score": 8, "analysis": "Standard WP bootstrap." },
+        "code_quality": { "score": 7, "analysis": "Clean bootstrap." },
+        "dependency_integrity": { "score": 7, "analysis": "Depends on sibling methods." },
+        "i18n": { "score": 9, "analysis": "Bootstraps i18n tab." },
+        "accessibility": { "score": 9, "analysis": "Admin tab." }
+      },
+      "overall_score": 80,
+      "key_observation": "Caption skin constructor, identical bootstrap pattern.",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Caption::tab_init",
+    "code": "function tab_init() { add_filter( $this->plugin_name . '-' . $this->parent_page . '_settings_tabs_array', array( $this, 'add_tab' ), $this->position ); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Standard add_filter." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 8, "analysis": "Safe hook." },
+        "performance": { "score": 9, "analysis": "Single registration." },
+        "wp_api_usage": { "score": 9, "analysis": "Canonical WP pattern." },
+        "code_quality": { "score": 7, "analysis": "Clean." },
+        "dependency_integrity": { "score": 7, "analysis": "Relies on class properties." },
+        "i18n": { "score": 9, "analysis": "Registers i18n tab." },
+        "accessibility": { "score": 9, "analysis": "Admin tab." }
+      },
+      "overall_score": 83,
+      "key_observation": "Caption skin tab init, identical to Pager/ReadMore.",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Caption::tab_data",
+    "code": "function tab_data() { $tab_data = array( 'name' => 'caption-card', 'label' => __( 'Image Caption', 'a3-responsive-slider' ), 'callback_function' => 'a3_responsive_slider_card_skin_caption_tab_manager', ); if ( $this->tab_data ) return $this->tab_data; return $this->tab_data = $tab_data; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Consistent boilerplate." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 8, "analysis": "No user input." },
+        "performance": { "score": 9, "analysis": "Lazy load O(1)." },
+        "wp_api_usage": { "score": 8, "analysis": "Correct __() with text domain." },
+        "code_quality": { "score": 6, "analysis": "Redundant if-return pattern." },
+        "dependency_integrity": { "score": 8, "analysis": "Self-contained." },
+        "i18n": { "score": 9, "analysis": " __( 'Image Caption', 'a3-responsive-slider' ) correct." },
+        "accessibility": { "score": 9, "analysis": "Admin tab label for image caption settings." }
+      },
+      "overall_score": 81,
+      "key_observation": "Caption tab metadata getter with descriptive label 'Image Caption'.",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Caption::add_tab",
+    "code": "function add_tab( $tabs_array ) { if ( ! is_array( $tabs_array ) ) $tabs_array = array(); $tabs_array[] = $this->tab_data(); return $tabs_array; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Consistent pattern." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 8, "analysis": "Type guard." },
+        "performance": { "score": 9, "analysis": "O(1)." },
+        "wp_api_usage": { "score": 8, "analysis": "Standard WP filter." },
+        "code_quality": { "score": 7, "analysis": "Defensive." },
+        "dependency_integrity": { "score": 8, "analysis": "Depends on tab_data()." },
+        "i18n": { "score": 9, "analysis": "Carries Image Caption i18n." },
+        "accessibility": { "score": 9, "analysis": "Admin tab." }
+      },
+      "overall_score": 82,
+      "key_observation": "Caption tab registration, identical boilerplate.",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  }
+]

@@ -1,0 +1,522 @@
+[
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Interface::a3_admin_ui_event",
+    "code": "function a3_admin_ui_event() { check_ajax_referer( $this->plugin_name. '_a3_admin_ui_event', 'security' ); ... }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 6, "analysis": "Uses $_REQUEST directly which is discouraged by WP coding standards; should use $_POST/$_GET with explicit direction. Sanitization applied before use which is good." },
+        "sql_safety": { "score": 9, "analysis": "Uses get_user_meta/update_user_meta and get_option/update_option which are safe WP db abstraction methods. No raw SQL." },
+        "security": { "score": 5, "analysis": "AJAX action is nonce-verified via check_ajax_referer. Input sanitized with sanitize_text_field/sanitize_key. However, modifying update_plugins transient directly in check_new_version case can inject a package URL from external API response without validation of URL scheme (http:// not https://). Hardcoded http URL for plugin update." },
+        "performance": { "score": 7, "analysis": "Multiple get_user_meta/update_user_meta calls in a single request. Set_transient with 86400 expiry is reasonable. Direct modification of global update_plugins transient may cause cache invalidation overhead." },
+        "wp_api_usage": { "score": 7, "analysis": "Uses WP APIs appropriately (check_ajax_referer, sanitize_text_field, get_user_meta, update_user_meta, get_option, set_transient). Direct manipulation of update_plugins transient is a known WP plugin update pattern but fragile." },
+        "code_quality": { "score": 6, "analysis": "Large switch with 3 cases doing different things. Mixing admin UI state and update checking in one function. Some unused variables ($new_version initialized but conditionally used only in nested branch). die() at end is standard WP AJAX pattern." },
+        "dependency_integrity": { "score": 7, "analysis": "Relies on $GLOBALS[$this->plugin_prefix.'fonts_face'] having validate_google_api_key method. No explicit dependency checks before calling. Uses $this->plugin_prefix global state." },
+        "i18n": { "score": 8, "analysis": "Uses __( 'Great! You have the latest version installed.', 'a3-responsive-slider' ) for translation. No other strings in this function." },
+        "accessibility": { "score": 9, "analysis": "AJAX-driven UI state is server-managed. No direct DOM manipulation visible. JSON response is consumed by JS frontend." }
+      },
+      "overall_score": 71,
+      "key_observation": "AJAX handler with proper nonce verification but hardcodes http:// for plugin update URL and modifies global WP update transient directly",
+      "citation_accuracy": { "total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0 },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Interface::admin_css_load",
+    "code": "function admin_css_load() { global $wp_version; wp_enqueue_style(...) ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 8, "analysis": "Follows WP coding standards for enqueuing styles. Uses SCRIPT_DEBUG constant correctly for .min suffix. Proper conditional check for WP version >= 3.8." },
+        "sql_safety": { "score": 10, "analysis": "No SQL operations. Pure CSS enqueue logic." },
+        "security": { "score": 8, "analysis": "No user input. File paths are derived from $this->admin_plugin_url() which is class property. No XSS surface." },
+        "performance": { "score": 8, "analysis": "Loads multiple CSS files including WP core styles (wp-color-picker). Conditional loading for RTL is efficient. Script_DEBUG check avoids loading non-minified in production." },
+        "wp_api_usage": { "score": 9, "analysis": "Correct use of wp_enqueue_style with dependency arrays and version params. Uses is_rtl() for RTL detection per WP standards." },
+        "code_quality": { "score": 8, "analysis": "Clean, focused function. Single responsibility (load admin CSS). Minimal branching logic." },
+        "dependency_integrity": { "score": 8, "analysis": "Depends on $this->admin_plugin_url() and $this->framework_version being set. No external library dependencies beyond WP core." },
+        "i18n": { "score": 9, "analysis": "RTL support via is_rtl() check is an accessibility/i18n concern. File paths for RTL variants handled correctly." },
+        "accessibility": { "score": 9, "analysis": "RTL CSS loading for right-to-left languages. wp-color-picker is a standard WP accessible component." }
+      },
+      "overall_score": 87,
+      "key_observation": "Clean CSS enqueue with proper WP API usage, RTL support, and script debug handling",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Interface::admin_includes",
+    "code": "function admin_includes() { $GLOBALS[$this->plugin_prefix.'fonts_face'] = new Fonts_Face(); $GLOBALS[$this->plugin_prefix.'uploader'] = new Uploader(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Instantiating classes is fine but storing in $GLOBALS with string concatenation is non-standard WP pattern. WP typically uses a singleton or class property." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Just object instantiation." },
+        "security": { "score": 9, "analysis": "No user input, no external calls. Safe instantiation." },
+        "performance": { "score": 9, "analysis": "Lightweight, just two object instantiations. No loops or heavy operations." },
+        "wp_api_usage": { "score": 5, "analysis": "$GLOBALS assignment is not a standard WP API pattern. Should use class properties or a plugin singleton instead. No WP function calls used." },
+        "code_quality": { "score": 7, "analysis": "Extremely simple but $GLOBALS usage is a code smell. Two distinct responsibilities (font loading, file uploading) in one function." },
+        "dependency_integrity": { "score": 6, "analysis": "Requires Fonts_Face and Uploader classes to exist. No class_exists() checks before instantiation which could cause fatal errors." },
+        "i18n": { "score": 9, "analysis": "No strings or text output." },
+        "accessibility": { "score": 9, "analysis": "No UI output. Does not affect accessibility." }
+      },
+      "overall_score": 82,
+      "key_observation": "Minimal includes function but uses $GLOBALS anti-pattern instead of class properties or WP singleton",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Interface::get_font_weights",
+    "code": "function get_font_weights() { $font_weights = array( 'Default' => __( 'Default' ), ... ); return apply_filters(...); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 8, "analysis": "Array definition and return follows WP standards. Uses apply_filters for extensibility. i18n strings use correct domain." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Pure data return." },
+        "security": { "score": 10, "analysis": "No user input, no output. Safe data structure." },
+        "performance": { "score": 9, "analysis": "Returns a small static array. Very fast O(n) where n=7." },
+        "wp_api_usage": { "score": 9, "analysis": "Correct use of apply_filters for extensibility. __( ) for i18n with text domain." },
+        "code_quality": { "score": 8, "analysis": "Clean, readable array definition. Well-structured options." },
+        "dependency_integrity": { "score": 10, "analysis": "No external dependencies. Pure function." },
+        "i18n": { "score": 9, "analysis": "All labels use __( ) with 'a3-responsive-slider' domain. Default label also translated." },
+        "accessibility": { "score": 8, "analysis": "Font weights data structure is used for UI controls. No direct accessibility concerns in data structure itself." }
+      },
+      "overall_score": 90,
+      "key_observation": "Clean data-return function with proper i18n and filter hook for extensibility",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Interface::get_border_styles",
+    "code": "function get_border_styles() { $border_styles = array( 'solid' => __( 'Solid', ... ), ... ); return apply_filters(...); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 8, "analysis": "Follows WP coding standards for array definitions. Uses apply_filters for extensibility. i18n with correct domain." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Pure static data." },
+        "security": { "score": 10, "analysis": "No user input, no output. Safe." },
+        "performance": { "score": 9, "analysis": "Small static array, O(8). Negligible overhead." },
+        "wp_api_usage": { "score": 9, "analysis": "Correct apply_filters and __( ) usage." },
+        "code_quality": { "score": 8, "analysis": "Clean, simple, well-structured. Single responsibility." },
+        "dependency_integrity": { "score": 10, "analysis": "No external dependencies." },
+        "i18n": { "score": 9, "analysis": "All 8 border style labels use __( ) with correct text domain." },
+        "accessibility": { "score": 8, "analysis": "Data structure for UI. No direct accessibility concerns." }
+      },
+      "overall_score": 90,
+      "key_observation": "Identical pattern to get_font_weights — clean data array with i18n and filter extensibility",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Interface::get_settings_default",
+    "code": "function get_settings_default( $options, $option_name = '' ) { ... foreach( $options ... ) { ... } }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 6, "analysis": "Uses isset() checks which is good. However, uses count() instead of empty() for array checks which is non-standard. parse_str with esc_attr is unusual but safe." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Just array manipulation." },
+        "security": { "score": 8, "analysis": "Uses esc_attr() before parse_str() which is defensive. No direct output. Sanitized throughout." },
+        "performance": { "score": 6, "analysis": "Nested loops for array_textfields type increases complexity. esc_attr parse_str pattern adds overhead. Could be optimized with early returns." },
+        "wp_api_usage": { "score": 8, "analysis": "Uses apply_filters for extensibility. parse_str usage is PHP core not WP API but handles bracket notation correctly." },
+        "code_quality": { "score": 5, "analysis": "70 lines with heavy nesting. Repeated parse_str logic duplicated between array_textfields and default branches. Could benefit from extraction to helper method." },
+        "dependency_integrity": { "score": 8, "analysis": "Depends on $this->plugin_name being set. No external library dependencies." },
+        "i18n": { "score": 9, "analysis": "No strings to translate. Pure logic function." },
+        "accessibility": { "score": 9, "analysis": "No UI output. Pure data processing." }
+      },
+      "overall_score": 78,
+      "key_observation": "Long function with duplicated parse_str logic but correct sanitization and filter extensibility",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Interface::get_settings",
+    "code": "function get_settings( $options, $option_name = '' ) { ... check pro-license obfuscation ... }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 4, "analysis": "131 lines with mixed responsibilities. The obfuscated class/function name checks at the bottom violate clean code principles. $GLOBALS mutation is not standard WP practice." },
+        "sql_safety": { "score": 8, "analysis": "Uses get_option/update_option which are WP-safe. No raw SQL." },
+        "security": { "score": 3, "analysis": "CRITICAL: Contains obfuscated pro-license check using array index construction (fs=[0]='c', [1]='p'... and cs=[0]='U', [1]='g'...). This obfuscation pattern is a security anti-pattern — it hides logic from security reviewers and is typical of commercial plugin license validation that bypasses transparent audit. Also blindly trusts $this->class_name and $this->plugin_name." },
+        "performance": { "score": 5, "analysis": "131 lines with multiple array operations, get_option calls in loops, and array_map. The pro-check at bottom adds unnecessary overhead on every call." },
+        "wp_api_usage": { "score": 7, "analysis": "Correct get_option/update_option usage. apply_filters for extensibility. But $GLOBALS mutation is non-standard." },
+        "code_quality": { "score": 3, "analysis": "Massive function with 3 distinct sections (array options, individual options, pro-license check). Severe violation of single responsibility. Obfuscated string construction makes code unreadable. 131 lines is too large for one function." },
+        "dependency_integrity": { "score": 4, "analysis": "Depends on $this->class_name, $this->plugin_name, $this->is_free_plugin all being set. The obfuscated check relies on class existence which is fragile." },
+        "i18n": { "score": 9, "analysis": "No strings to translate." },
+        "accessibility": { "score": 9, "analysis": "No UI output." }
+      },
+      "overall_score": 55,
+      "key_observation": "Contains obfuscated license-check logic using array index string construction — a security and code quality concern",
+      "citation_accuracy": { "total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0 },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Interface::reset_settings",
+    "code": "function reset_settings( $options, $option_name = '', $reset = false, $free_version = false ) { ... }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 4, "analysis": "206 lines — massive function. Heavy nesting throughout. Uses stristr() instead of stripos(). Repeated code blocks for free_version vs non-free_version paths. No early returns." },
+        "sql_safety": { "score": 8, "analysis": "Uses get_option/update_option/add_option correctly. No raw SQL." },
+        "security": { "score": 6, "analysis": "Has check_admin_referer and current_user_can('manage_options') for reset path — good. But free_version logic allows partial resets which could leave orphaned options. Heavy conditional complexity increases risk of logic bugs." },
+        "performance": { "score": 4, "analysis": "206 lines with deeply nested loops. Multiple get_option calls inside loops. Triple nested foreach (options > ids > text_fields) with repeated get_option calls. Very inefficient." },
+        "wp_api_usage": { "score": 6, "analysis": "WP db functions used correctly but performance concerns. do_action for custom types is good extensibility." },
+        "code_quality": { "score": 3, "analysis": "CRITICAL: 206 lines of nearly identical code repeated for free_version and non-free_version paths. Massive code duplication. Deeply nested conditionals. Should be extracted into helper methods. Triple-nested loops with repeated get_option/update_option." },
+        "dependency_integrity": { "score": 6, "analysis": "Depends on $this->plugin_name, $options array structure. No class existence checks for custom types." },
+        "i18n": { "score": 9, "analysis": "No strings to translate." },
+        "accessibility": { "score": 9, "analysis": "No UI output." }
+      },
+      "overall_score": 56,
+      "key_observation": "206-line function with massive code duplication between free/non-free paths and deeply nested loops",
+      "citation_accuracy": { "total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0 },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Interface::settings_get_option",
+    "code": "function settings_get_option( $option_name, $default = '' ) { ... parse_str( $option_name, $option_array ); ... }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 6, "analysis": "parse_str without first_urldecode or rawurldecode can misparse option names containing special characters. Uses isset/get_option correctly." },
+        "sql_safety": { "score": 8, "analysis": "Uses get_option with default values. No raw SQL." },
+        "security": { "score": 4, "analysis": "CRITICAL: parse_str( $option_name, $option_array ) without URL decoding is a known PHP vulnerability — option names with %20 etc will be misinterpreted. No sanitization of the option name before parse_str. Can lead to unexpected array keys being created." },
+        "performance": { "score": 7, "analysis": "parse_str has O(n) overhead. get_option is cached by WP. Minimal overhead otherwise." },
+        "wp_api_usage": { "score": 6, "analysis": "get_option used correctly with defaults. parse_str is PHP core, not WP API. Should use wp_parse_arg or sanitize_key instead." },
+        "code_quality": { "score": 6, "analysis": "32 lines is reasonable but parse_str approach is fragile. stripslashes on result is good for WP serialized data." },
+        "dependency_integrity": { "score": 8, "analysis": "No external dependencies. Pure function using WP core." },
+        "i18n": { "score": 9, "analysis": "No strings." },
+        "accessibility": { "score": 9, "analysis": "No UI." }
+      },
+      "overall_score": 64,
+      "key_observation": "parse_str without URL decoding is a known PHP parsing vulnerability for option names with special characters",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Interface::panel_box",
+    "code": "function panel_box( $settings_html = '', $options = array() ) { ... echo '<div ... >' ... }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 4, "analysis": "113 lines of mixed PHP/HTML output. Uses echo for HTML which is non-standard WP pattern — should use get_the_content() or render functions returning strings. Uses esc_attr correctly on dynamic values." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Only get_user_meta calls for UI state." },
+        "security": { "score": 6, "analysis": "Uses esc_attr() on class/id/style attributes. Uses wp_kses_post() on user-facing text. However, echo style='...' with esc_attr is partially unsafe — style attributes should use esc_url_raw or specific sanitization." },
+        "performance": { "score": 6, "analysis": "Multiple get_user_meta calls per invocation. String concatenation with \".\" in loops. 113 lines of HTML generation." },
+        "wp_api_usage": { "score": 6, "analysis": "Uses get_current_user_id, get_user_meta, add_user_meta, sanitize_title, wp_kses_post, wpautop, wptexturize. All WP-correct but mixed with raw HTML output." },
+        "code_quality": { "score": 4, "analysis": "113 lines mixing PHP logic with HTML output. Typos: 'alway_open' and 'alway_close' (missing 's'). Multiple echo statements making it hard to follow. Should return a string instead of echoing." },
+        "dependency_integrity": { "score": 6, "analysis": "Depends on $this->plugin_name, $this->toggle_box_open_option, $this->upgrade_top_message() method." },
+        "i18n": { "score": 7, "analysis": "No __( ) calls in this function. Text is hardcoded HTML. wptexturize is used on dynamic content." },
+        "accessibility": { "score": 6, "analysis": "Uses div elements with ids but no ARIA roles. Panel box handle is a custom UI component without keyboard navigation hints. box_open class is visual only." }
+      },
+      "overall_score": 63,
+      "key_observation": "113-line HTML output function with typos ('alway_open'), raw echo instead of return, and minimal i18n",
+      "citation_accuracy": { "total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0 },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Interface::admin_stripslashes",
+    "code": "function admin_stripslashes( $values ) { if ( is_array( $values ) ) { $values = array_map( ... ); } }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 8, "analysis": "Clean recursive array handling. Uses array_map correctly. esc_attr added to scalar values before stripslashes is defensive." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Pure string manipulation." },
+        "security": { "score": 9, "analysis": "esc_attr() before stripslashes is a safe pattern for admin data. No XSS surface." },
+        "performance": { "score": 8, "analysis": "Recursive array_map is standard. No heavy operations." },
+        "wp_api_usage": { "score": 7, "analysis": "esc_attr() and stripslashes() are WP-correct. Could use wp_unslash() instead of stripslashes() per WP 5.8+ standards." },
+        "code_quality": { "score": 8, "analysis": "Clean 9-line function. Single responsibility. Handles both array and scalar cases." },
+        "dependency_integrity": { "score": 10, "analysis": "No external dependencies." },
+        "i18n": { "score": 9, "analysis": "No strings." },
+        "accessibility": { "score": 9, "analysis": "No UI." }
+      },
+      "overall_score": 86,
+      "key_observation": "Clean recursive stripslashes with esc_attr protection, though wp_unslash() would be more modern",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Interface::esc_attribute_array_e",
+    "code": "function esc_attribute_array_e( $attributes = array() ) { foreach ( $attributes ... ) { echo esc_attr(...) ... } }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Uses esc_attr() correctly. Function echoes directly which is a style preference but common in WP helpers." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 9, "analysis": "All attributes and values run through esc_attr(). Safe HTML attribute output." },
+        "performance": { "score": 8, "analysis": "Simple foreach with esc_attr. No heavy operations." },
+        "wp_api_usage": { "score": 8, "analysis": "esc_attr() is the correct WP API for HTML attribute escaping." },
+        "code_quality": { "score": 7, "analysis": "14 lines, clear purpose. Echo pattern makes it harder to compose. Could return string for more flexibility." },
+        "dependency_integrity": { "score": 10, "analysis": "No dependencies." },
+        "i18n": { "score": 9, "analysis": "No strings." },
+        "accessibility": { "score": 8, "analysis": "Produces HTML attributes. No ARIA concerns in the helper itself." }
+      },
+      "overall_score": 85,
+      "key_observation": "Safe esc_attr() helper for HTML attributes but echo pattern limits composability",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Interface::esc_attribute_name__",
+    "code": "function esc_attribute_name__( $attribute_name = '', $forced_escape = false ) { ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Simple conditional logic. The __ suffix naming convention matches WP i18n function naming but this is not an i18n function." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 8, "analysis": "Conditional esc_attr() when forced_escape is true. When false, returns raw value which could be unsafe if caller doesn't sanitize." },
+        "performance": { "score": 9, "analysis": "Minimal overhead. Early return for empty strings." },
+        "wp_api_usage": { "score": 7, "analysis": "esc_attr() correctly used when escaping." },
+        "code_quality": { "score": 7, "analysis": "9 lines, simple. The forced_escape pattern is useful but the __ suffix is misleading (conventionally used for i18n functions)." },
+        "dependency_integrity": { "score": 10, "analysis": "No dependencies." },
+        "i18n": { "score": 9, "analysis": "No strings." },
+        "accessibility": { "score": 9, "analysis": "No UI." }
+      },
+      "overall_score": 84,
+      "key_observation": "Simple conditional esc_attr helper with misleading __ suffix naming convention",
+      "citation_accuracy": { "total_citations": 1, "grounded_citations": 1, "hallucinated_citations": 0, "hallucination_ratio": 0.0 },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Interface::esc_description_e",
+    "code": "function esc_description_e( $description = '' ) { $allowedposttags = wp_kses_allowed_html(); ... echo wp_kses( $description, $allowed_html ); }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 5, "analysis": "wp_kses_allowed_html() returns core allowed HTML tags but reassigning to $allowedposttags variable name is misleading (it is not the post tags filter). Adds 'input' with 'style  =' key (note double space in key name) which is a typo and won't match any valid HTML attribute." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 5, "analysis": "wp_kses() is correctly used. However, the 'style  =' key typo means style attribute won't be whitelisted on input tags. Also wp_kses_allowed_html() without arguments returns all core tags which is broader than strictly needed for description fields." },
+        "performance": { "score": 8, "analysis": "wp_kses_allowed_html() is called every invocation — should be cached. wp_kses is efficient." },
+        "wp_api_usage": { "score": 7, "analysis": "wp_kses_allowed_html() and wp_kses() are correct WP APIs. But should use wp_kses_allowed_html( 'post' ) for clarity." },
+        "code_quality": { "score": 4, "analysis": "The 'style  =' key with double space is a bug. Function could use wp_kses_allowed_html( 'post' ) + wp_kses_post() directly instead of custom allowed_html construction." },
+        "dependency_integrity": { "score": 8, "analysis": "Depends on function_exists( 'wp_kses_allowed_html' ) check which is defensive but wp_kses_allowed_html is core since WP 4.7." },
+        "i18n": { "score": 9, "analysis": "No strings." },
+        "accessibility": { "score": 7, "analysis": "Allows standard HTML in descriptions. No ARIA restrictions." }
+      },
+      "overall_score": 67,
+      "key_observation": "wp_kses helper with 'style  =' typo in attribute key that will break style attribute whitelisting on input elements",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Interface::hextorgb",
+    "code": "function hextorgb( $color = '', $text = true ) { $color = trim( $color ); if ( 6 == strlen( $color ) ) { list( $r, $g, $b ) = array( $color[0].$color[1], ... ); } }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 8, "analysis": "Clean PHP logic. No WP function dependencies. Follows standard PHP patterns." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 8, "analysis": "Trim and length validation prevent injection. Returns numeric arrays or comma-separated strings. No XSS surface. Color values are numeric after hexdec()." },
+        "performance": { "score": 7, "analysis": "substr and array operations are fast. hexdec() is standard PHP. 3 == strlen path uses string duplication (color[0].color[0]) which is fine." },
+        "wp_api_usage": { "score": 6, "analysis": "No WP function calls. Pure PHP utility. Could use WP color validation helpers if available." },
+        "code_quality": { "score": 7, "analysis": "28 lines, reasonable. The 3 == strlen case color[0].color[0] pattern works but could use str_repeat() for clarity. No input validation for hex format (allows 'gg' or 'xy' which hexdec handles as 0)." },
+        "dependency_integrity": { "score": 10, "analysis": "No dependencies. Pure function." },
+        "i18n": { "score": 9, "analysis": "No strings." },
+        "accessibility": { "score": 8, "analysis": "Converts hex colors to RGB for CSS. No direct accessibility concerns." }
+      },
+      "overall_score": 82,
+      "key_observation": "Functional hex-to-RGB converter without hex format validation — accepts 'gg' as valid hex input",
+      "citation_accuracy": { "total_citations": 1, "grounded_citations": 1, "hallucinated_citations": 0, "hallucination_ratio": 0.0 },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Interface::generate_border_css",
+    "code": "function generate_border_css( $option ) { $border_css = ''; ... return apply_filters(...); }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 6, "analysis": "Returns CSS string via apply_filters which is unconventional. Uses esc_attr() on CSS values which may strip valid content. No WP CSS enqueue functions used." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 5, "analysis": "esc_attr() on CSS border-width/style/color values could strip legitimate CSS containing angle brackets or quotes. Using esc_attr for CSS is the wrong escaping function — should use esc_textarea or raw string. Inline style output elsewhere may produce XSS if color/width values are user-controlled." },
+        "performance": { "score": 7, "analysis": "Simple string concatenation. apply_filters adds minor overhead." },
+        "wp_api_usage": { "score": 6, "analysis": "apply_filters for extensibility is good. esc_attr() misuse for CSS content is incorrect WP API usage." },
+        "code_quality": { "score": 6, "analysis": "28 lines with duplicated border-radius logic between rounded and non-rounded branches. Vendor prefixes (-moz-, -webkit-) are legacy but still needed for WP compatibility." },
+        "dependency_integrity": { "score": 8, "analysis": "Depends on $this->plugin_name for filter name. $option array structure expected." },
+        "i18n": { "score": 9, "analysis": "No strings." },
+        "accessibility": { "score": 8, "analysis": "CSS output. No direct accessibility concerns." }
+      },
+      "overall_score": 71,
+      "key_observation": "CSS generation with esc_attr() misuse (wrong escaping function for CSS) and duplicated border-radius logic",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Interface::generate_border_style_css",
+    "code": "function generate_border_style_css( $option ) { ... }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 6, "analysis": "Same esc_attr() misuse as generate_border_css. Returns CSS string." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 5, "analysis": "esc_attr() on CSS is wrong escaping context. If width/style/color values contain angle brackets or quotes, esc_attr() may corrupt CSS or miss XSS vectors in style output." },
+        "performance": { "score": 9, "analysis": "12 lines, minimal logic. Very lightweight." },
+        "wp_api_usage": { "score": 6, "analysis": "apply_filters used correctly but esc_attr is inappropriate for CSS content." },
+        "code_quality": { "score": 7, "analysis": "Short and focused but duplicated logic from generate_border_css (DRY violation). 12 lines is reasonable." },
+        "dependency_integrity": { "score": 8, "analysis": "Depends on $this->plugin_name." },
+        "i18n": { "score": 9, "analysis": "No strings." },
+        "accessibility": { "score": 8, "analysis": "CSS output only." }
+      },
+      "overall_score": 70,
+      "key_observation": "Duplicated border CSS logic from generate_border_css with same esc_attr misuse for CSS content",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Interface::generate_border_corner_css",
+    "code": "function generate_border_corner_css( $option ) { $border_corner_css = ''; ... }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 6, "analysis": "Same esc_attr() misuse for CSS. Vendor-prefixed border-radius is legacy but necessary for WP compatibility." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 5, "analysis": "esc_attr() on corner values (numeric px values) is mostly harmless but the wrong escaping context. If option values are user-controlled, numeric validation is needed before CSS injection prevention." },
+        "performance": { "score": 7, "analysis": "22 lines with string concatenation. No loops or heavy ops." },
+        "wp_api_usage": { "score": 6, "analysis": "apply_filters correct. esc_attr() misuse for CSS." },
+        "code_quality": { "score": 5, "analysis": "22 lines. Duplicated border-radius logic from generate_border_css and generate_border_style_css (3-way DRY violation). if-isset-default-value pattern repeated for each corner." },
+        "dependency_integrity": { "score": 8, "analysis": "Depends on $this->plugin_name." },
+        "i18n": { "score": 9, "analysis": "No strings." },
+        "accessibility": { "score": 8, "analysis": "CSS only." }
+      },
+      "overall_score": 69,
+      "key_observation": "Third DRY-violating CSS generator with duplicated corner-setting logic and esc_attr() misuse",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Interface::generate_shadow_css",
+    "code": "function generate_shadow_css( $option ) { ... $shadow_css .= 'box-shadow: ' . $option['h_shadow'] ... }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 5, "analysis": "No esc_attr() on box-shadow values at all — directly interpolates $option values into CSS string. This is more dangerous than the border functions which used esc_attr(). No WP function calls except apply_filters." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 4, "analysis": "CRITICAL: Box-shadow CSS values interpolated directly without ANY escaping. If h_shadow/v_shadow/blur/spread/color/inset are user-controlled, this is a CSS injection vector. No validation on numeric values." },
+        "performance": { "score": 8, "analysis": "17 lines, simple string concatenation. Efficient." },
+        "wp_api_usage": { "score": 6, "analysis": "apply_filters for extensibility. Missing esc_attr() or sanitization that other functions in this class use." },
+        "code_quality": { "score": 5, "analysis": "17 lines. Duplicated box-shadow string three times (standard, -moz, -webkit). Could use array implode. No input validation on $option keys." },
+        "dependency_integrity": { "score": 8, "analysis": "Depends on $this->plugin_name." },
+        "i18n": { "score": 9, "analysis": "No strings." },
+        "accessibility": { "score": 8, "analysis": "CSS only." }
+      },
+      "overall_score": 64,
+      "key_observation": "No escaping on box-shadow CSS values — direct interpolation creates CSS injection vector if option values are user-controlled",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Interface::generate_background_color_css",
+    "code": "function generate_background_color_css( $option, $transparency = 100 ) { ... $color = $this->hextorgb( $color ); ... }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 6, "analysis": "Uses apply_filters for extensibility. Direct string concatenation for CSS. No WP enqueue functions." },
+        "sql_safety": { "score": 10, "analysis": "No SQL." },
+        "security": { "score": 4, "analysis": "CRITICAL: Color value from $option['color'] is interpolated directly into CSS without any escaping. When transparency is not 100, calls hextorgb() which validates hex format but still outputs raw rgba() string. If color value is user-controlled, CSS injection is possible." },
+        "performance": { "score": 7, "analysis": "Calls hextorgb() which has multiple string operations. (int) cast on transparency is correct." },
+        "wp_api_usage": { "score": 6, "analysis": "apply_filters used. hextorgb() is a custom method (no WP standard equivalent)." },
+        "code_quality": { "score": 6, "analysis": "24 lines. Reasonable structure. The transparency math (int)/100 is correct but could be clearer. Hextorgb return value checked for !== false which is good." },
+        "dependency_integrity": { "score": 6, "analysis": "Depends on $this->hextorgb() method and $this->plugin_name." },
+        "i18n": { "score": 9, "analysis": "No strings." },
+        "accessibility": { "score": 8, "analysis": "CSS output. No contrast checking on colors." }
+      },
+      "overall_score": 65,
+      "key_observation": "Raw color interpolation into CSS without escaping — hextorgb validates hex format but does not prevent CSS injection",
+      "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 },
+      "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"]
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  }
+]

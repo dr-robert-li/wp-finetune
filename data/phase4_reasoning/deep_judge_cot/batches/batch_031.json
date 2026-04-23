@@ -1,0 +1,982 @@
+[
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_2_ReadMore::subtab_init",
+    "code": "function subtab_init() {\n\t\t\n\t\tadd_filter( $this->plugin_name . '-' . $this->parent_tab . '_settings_subtabs_array', array( $this, 'add_subtab' ), $this->position );\n\t\t\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 7,
+        "wpcs_analysis": "Uses tab indentation. Missing docblock and explicit return type. Property access without phpDoc context is acceptable.",
+        "sql_safety": 10,
+        "sql_analysis": "No SQL queries present.",
+        "security": 8,
+        "security_analysis": "No user input handling required. Filter registration is safe. No XSS/CSRF vectors.",
+        "performance": 9,
+        "performance_analysis": "O(1) filter registration. No loops or heavy operations.",
+        "wp_api_usage": 8,
+        "wp_api_analysis": "Correct use of add_filter with proper hook naming convention using plugin name prefix. Standard WP admin settings pattern.",
+        "code_quality": 7,
+        "code_analysis": "Minimal function, clear purpose. Some redundant blank lines reduce readability slightly.",
+        "dependency_integrity": 8,
+        "dependency_analysis": "Relies on $this->plugin_name, $this->parent_tab, $this->position being defined. No external deps.",
+        "i18n": 9,
+        "i18n_analysis": "No hardcoded strings in this function. N/A for i18n.",
+        "accessibility": 9,
+        "accessibility_analysis": "No DOM/manipulation. Settings registration. N/A for a11y."
+      },
+      "overall_score": 78,
+      "key_observation": "Standard WP settings subtab registration — lightweight filter hook with no security or data concerns.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_2_ReadMore::subtab_data",
+    "code": "function subtab_data() {\n\t\t\n\t\t$subtab_data = array( \n\t\t\t'name'\t\t\t\t=> 'readmore',\n\t\t\t'label'\t\t\t\t=> __( 'Read More', 'a3-responsive-slider' ),\n\t\t\t'callback_function'\t=> 'a3_responsive_sider_template_2_readmore_settings_form',\n\t\t);\n\t\t\n\t\tif ( $this->subtab_data ) return $this->subtab_data;\n\t\treturn $this->subtab_data = $subtab_data;\n\t\t\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 7,
+        "wpcs_analysis": "Tab indentation used. No docblock. The pattern of assigning and returning $this->subtab_data is a lazy-load idiom but not WordPress-standard.",
+        "sql_safety": 10,
+        "sql_analysis": "No SQL queries present.",
+        "security": 9,
+        "security_analysis": "No user input. Static data structure. Safe.",
+        "performance": 9,
+        "performance_analysis": "Lazy-load pattern provides caching benefit on subsequent calls. O(1) array construction.",
+        "wp_api_usage": 7,
+        "wp_api_analysis": "Uses __() for i18n correctly. Callback name contains a typo ('sider' vs 'slider') but is plugin-internal.",
+        "code_quality": 6,
+        "code_analysis": "The double-return idiom (check then assign+return) is a common PHP pattern but reduces clarity. Excessive tabs/spacing hurt readability.",
+        "dependency_integrity": 8,
+        "dependency_analysis": "Relies on $this->subtab_data existing. No external deps.",
+        "i18n": 9,
+        "i18n_analysis": "Uses __() for the label string correctly.",
+        "accessibility": 9,
+        "accessibility_analysis": "No DOM interaction. N/A for a11y."
+      },
+      "overall_score": 78,
+      "key_observation": "Lazy-loaded subtab config with correct i18n; contains an internal typo in the callback name.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_2_ReadMore::add_subtab",
+    "code": "function add_subtab( $subtabs_array ) {\n\t\n\t\tif ( ! is_array( $subtabs_array ) ) $subtabs_array = array();\n\t\t$subtabs_array[] = $this->subtab_data();\n\t\t\n\t\treturn $subtabs_array;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 8,
+        "wpcs_analysis": "Input validation with is_array() aligns with WP coding standards for callback sanitization. Indentation uses tabs.",
+        "sql_safety": 10,
+        "sql_analysis": "No SQL queries present.",
+        "security": 8,
+        "security_analysis": "Defensive array check prevents type confusion. No user input directly processed.",
+        "performance": 9,
+        "performance_analysis": "O(1) append operation. Minimal overhead.",
+        "wp_api_usage": 8,
+        "wp_api_analysis": "Standard WP filter callback pattern — receives array, modifies, returns.",
+        "code_quality": 7,
+        "code_analysis": "Clean and short. One blank line of redundancy. Good pattern.",
+        "dependency_integrity": 7,
+        "dependency_analysis": "Depends on $this->subtab_data() method existing and returning valid data.",
+        "i18n": 9,
+        "i18n_analysis": "No strings to localize.",
+        "accessibility": 9,
+        "accessibility_analysis": "No DOM interaction. N/A for a11y."
+      },
+      "overall_score": 80,
+      "key_observation": "Well-typed filter callback with defensive array check — a model WP filter pattern.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_2_ReadMore::settings_form",
+    "code": "function settings_form() {\n\t\t\t\t\n\t\t$output = '';\n\t\t$output .= $GLOBALS[$this->plugin_prefix.'admin_interface']->admin_forms( $this->form_fields, $this->form_key, $this->option_name, $this->form_messages );\n\t\t\n\t\treturn $output;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 5,
+        "wpcs_analysis": "Uses $GLOBALS which is generally discouraged in WP for encapsulation. Tab indentation present. No docblock.",
+        "sql_safety": 10,
+        "sql_analysis": "No SQL queries present.",
+        "security": 6,
+        "security_analysis": "Accessing $GLOBALS by dynamic key interpolation is a design smell — the global key is constructed from an instance property, which could be spoofed if the object is instantiated adversarially. Admin-only code reduces practical risk.",
+        "performance": 7,
+        "performance_analysis": "String concatenation with .= is unnecessary for a single append. Minor overhead.",
+        "wp_api_usage": 6,
+        "wp_api_analysis": "$GLOBALS access is non-standard. Should use dependency injection or a static registry instead. admin_forms() is a custom method, not a core WP API.",
+        "code_quality": 5,
+        "code_analysis": "String concatenation for single assignment is redundant. $GLOBALS access breaks encapsulation. Minimal readability issues from whitespace.",
+        "dependency_integrity": 6,
+        "dependency_analysis": "Depends on $GLOBALS[$this->plugin_prefix.'admin_interface'] being set and having admin_forms() method. Fragile dependency chain.",
+        "i18n": 9,
+        "i18n_analysis": "No strings to localize in this function.",
+        "accessibility": 9,
+        "accessibility_analysis": "No DOM interaction. N/A for a11y."
+      },
+      "overall_score": 68,
+      "key_observation": "Settings form delegator uses $GLOBALS pattern — functional but breaks encapsulation principles.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_2_ReadMore::init_form_fields",
+    "code": "function init_form_fields() { /* 155-line settings array — elided for output brevity */ }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 5,
+        "wpcs_analysis": "Mixed indentation (tabs and spaces visible in original). No docblock. 155 lines is excessive for a single function — should be split. Uses apply_filters() correctly.",
+        "sql_safety": 10,
+        "sql_analysis": "No SQL queries present.",
+        "security": 7,
+        "security_analysis": "No user input directly handled. Settings are admin-facing. Color values are validated by type (hex). Some CSS properties are inline string values but rendered server-side.",
+        "performance": 5,
+        "performance_analysis": "Large array definition (155 lines) increases memory at plugin load. The array is built on every call (though likely cached by WP). No loop overhead but significant allocation.",
+        "wp_api_usage": 6,
+        "wp_api_analysis": "Correct use of apply_filters for extensibility and __() for i18n. Custom field types (typography, color, box_shadow, array_textfields) are plugin-specific, not WP core.",
+        "code_quality": 4,
+        "code_analysis": "Extremely long function (155 lines). Mixed indentation styles. Deep nesting of array structure. Should be refactored into individual field-defining methods or externalized.",
+        "dependency_integrity": 7,
+        "dependency_analysis": "Relies on $this->option_name, $this->form_fields being set. Custom field type handlers must exist in the admin framework.",
+        "i18n": 9,
+        "i18n_analysis": "All user-facing strings use __() consistently. One instance uses __() without space before parenthesis — minor style issue but functionally correct.",
+        "accessibility": 7,
+        "accessibility_analysis": "Admin form fields lack aria labels. Color pickers and typography controls are custom UI — WCAG compliance depends on the admin framework rendering."
+      },
+      "overall_score": 65,
+      "key_observation": "Comprehensive settings array with correct i18n but violates single-responsibility with 155 lines of inline field definitions.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_2_ReadMore::include_script",
+    "code": "function include_script() { /* 31-line inline JS — elided */ }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 5,
+        "wpcs_analysis": "Inline script via PHP output is acceptable for admin JS. No WP script enqueue pattern (wp_enqueue_script) used — should use wp_add_inline_script(). Tab indentation in PHP parts.",
+        "sql_safety": 10,
+        "sql_analysis": "No SQL queries present.",
+        "security": 7,
+        "security_analysis": "jQuery IIFE pattern prevents global scope pollution. No user input in JS. Admin-only context. CSS manipulation uses object literals avoiding innerHTML XSS vectors.",
+        "performance": 6,
+        "performance_analysis": "Inline script added to every admin page where this class loads. Should use wp_enqueue_script with conditional dependencies. $(document).ready() is legacy.",
+        "wp_api_usage": 5,
+        "wp_api_analysis": "Should use wp_enqueue_script/wp_add_inline_script per WP standards. Direct PHP-to-JS output bypasses WP script registration. Custom event is plugin-specific.",
+        "code_quality": 6,
+        "code_analysis": "jQuery IIFE is good practice. The hide().css() sequence is redundant (hide() sets display:none, then css() sets visibility). Logic is clear but verbose.",
+        "dependency_integrity": 7,
+        "dependency_analysis": "Depends on jQuery being loaded. Depends on custom CSS classes existing in the DOM. Depends on a3rev UI event system.",
+        "i18n": 9,
+        "i18n_analysis": "No user-facing strings in JS. Pure DOM manipulation.",
+        "accessibility": 6,
+        "accessibility_analysis": "Custom toggle UI for admin settings. No ARIA attributes on dynamically shown/hidden panels. Keyboard navigation not addressed."
+      },
+      "overall_score": 68,
+      "key_observation": "Functional inline admin JS with jQuery IIFE pattern but bypasses WP script enqueue standards.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_2_Control::__construct",
+    "code": "function __construct() { /* 21-line action registration */ }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 7,
+        "wpcs_analysis": "Tab indentation. No docblock. Constructor does a lot — should split registration logic. Commented-out add_action is acceptable as documentation.",
+        "sql_safety": 10,
+        "sql_analysis": "No SQL queries present.",
+        "security": 8,
+        "security_analysis": "No user input. All actions are admin hooks. Safe.",
+        "performance": 8,
+        "performance_analysis": "Multiple add_action calls are O(1) each. Total of ~9 hooks registered. Acceptable overhead at class instantiation.",
+        "wp_api_usage": 7,
+        "wp_api_analysis": "Correct use of add_action with priority (1 for plugins_loaded). Hook naming uses plugin name prefix pattern. Custom hook conventions are plugin-specific.",
+        "code_quality": 7,
+        "code_analysis": "Constructor does significant work but is well-organized. form_messages array with __() calls is clear. Minor spacing inconsistency.",
+        "dependency_integrity": 7,
+        "dependency_analysis": "Requires $this->plugin_name, $this->form_key, $this->subtab_init(), and multiple method existence. Tight coupling to parent class properties.",
+        "i18n": 8,
+        "i18n_analysis": "Uses __() for user-facing messages. Note: 'reseted' in one message is grammatically incorrect — should be 'reset'.",
+        "accessibility": 9,
+        "accessibility_analysis": "No DOM interaction. N/A for a11y."
+      },
+      "overall_score": 75,
+      "key_observation": "Standard WP action-registration constructor with correct hook patterns; contains a grammar error ('reseted' vs 'reset') in a translated string.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_2_Control::subtab_init",
+    "code": "function subtab_init() {\n\t\t\n\t\tadd_filter( $this->plugin_name . '-' . $this->parent_tab . '_settings_subtabs_array', array( $this, 'add_subtab' ), $this->position );\n\t\t\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 7,
+        "wpcs_analysis": "Tab indentation. No docblock. Duplicate pattern from Template_2_ReadMore::subtab_init.",
+        "sql_safety": 10,
+        "sql_analysis": "No SQL queries present.",
+        "security": 8,
+        "security_analysis": "No user input. Filter registration is safe.",
+        "performance": 9,
+        "performance_analysis": "O(1) filter registration. Minimal overhead.",
+        "wp_api_usage": 8,
+        "wp_api_analysis": "Correct add_filter pattern. Uses plugin-specific dynamic hook name.",
+        "code_quality": 7,
+        "code_analysis": "Simple and focused. Redundant blank lines. Code is identical to ReadMore class variant.",
+        "dependency_integrity": 8,
+        "dependency_analysis": "Depends on $this->plugin_name, $this->parent_tab, $this->position, and add_subtab() method.",
+        "i18n": 9,
+        "i18n_analysis": "No strings to localize.",
+        "accessibility": 9,
+        "accessibility_analysis": "No DOM interaction. N/A for a11y."
+      },
+      "overall_score": 78,
+      "key_observation": "Identical subtab init pattern to ReadMore — DRY violation between classes but functionally correct.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_2_Control::subtab_data",
+    "code": "function subtab_data() {\n\t\t\n\t\t$subtab_data = array( \n\t\t\t'name'\t\t\t\t=> 'control',\n\t\t\t'label'\t\t\t\t=> __( 'Controls', 'a3-responsive-slider' ),\n\t\t\t'callback_function'\t=> 'a3_responsive_sider_template_2_control_settings_form',\n\t\t);\n\t\t\n\t\tif ( $this->subtab_data ) return $this->subtab_data;\n\t\treturn $this->subtab_data = $subtab_data;\n\t\t\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 7,
+        "wpcs_analysis": "Tab indentation. No docblock. Duplicate lazy-load pattern.",
+        "sql_safety": 10,
+        "sql_analysis": "No SQL queries present.",
+        "security": 9,
+        "security_analysis": "No user input. Static config array. Safe.",
+        "performance": 9,
+        "performance_analysis": "Lazy-load caching pattern. O(1) on subsequent calls.",
+        "wp_api_usage": 7,
+        "wp_api_analysis": "Correct __() usage. Callback name has same 'sider' typo as ReadMore variant.",
+        "code_quality": 6,
+        "code_analysis": "Duplicate of ReadMore subtab_data pattern. Excessive whitespace. Lazy-load idiom is unclear to readers unfamiliar with the pattern.",
+        "dependency_integrity": 8,
+        "dependency_analysis": "Depends on $this->subtab_data property existing.",
+        "i18n": 9,
+        "i18n_analysis": "Uses __( 'Controls', 'a3-responsive-slider' ) correctly.",
+        "accessibility": 9,
+        "accessibility_analysis": "No DOM interaction. N/A for a11y."
+      },
+      "overall_score": 76,
+      "key_observation": "Lazy-loaded config matching ReadMore pattern — correct but contains the same callback typo.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_2_Control::add_subtab",
+    "code": "function add_subtab( $subtabs_array ) {\n\t\n\t\tif ( ! is_array( $subtabs_array ) ) $subtabs_array = array();\n\t\t$subtabs_array[] = $this->subtab_data();\n\t\t\n\t\treturn $subtabs_array;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 8,
+        "wpcs_analysis": "Input validation with is_array() is correct WP standard. Tab indentation.",
+        "sql_safety": 10,
+        "sql_analysis": "No SQL queries present.",
+        "security": 8,
+        "security_analysis": "Defensive type check. No user input. Safe.",
+        "performance": 9,
+        "performance_analysis": "O(1) append. Minimal overhead.",
+        "wp_api_usage": 8,
+        "wp_api_analysis": "Standard WP filter callback pattern.",
+        "code_quality": 7,
+        "code_analysis": "Clean and minimal. Duplicate from ReadMore — DRY violation.",
+        "dependency_integrity": 7,
+        "dependency_analysis": "Depends on $this->subtab_data() returning valid data.",
+        "i18n": 9,
+        "i18n_analysis": "No strings to localize.",
+        "accessibility": 9,
+        "accessibility_analysis": "No DOM interaction. N/A for a11y."
+      },
+      "overall_score": 80,
+      "key_observation": "Identical to ReadMore::add_subtab — defensive, correct, but duplicated code.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_2_Control::settings_form",
+    "code": "function settings_form() {\n\t\t\t\t\n\t\t$output = '';\n\t\t$output .= $GLOBALS[$this->plugin_prefix.'admin_interface']->admin_forms( $this->form_fields, $this->form_key, $this->option_name, $this->form_messages );\n\t\t\n\t\treturn $output;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 5,
+        "wpcs_analysis": "$GLOBALS access violates WP encapsulation standards. Redundant string concatenation.",
+        "sql_safety": 10,
+        "sql_analysis": "No SQL queries present.",
+        "security": 6,
+        "security_analysis": "Dynamic $GLOBALS key from instance property — potential property injection if class is extensible. Admin-only context mitigates risk.",
+        "performance": 7,
+        "performance_analysis": "Unnecessary .= concatenation for single append.",
+        "wp_api_usage": 6,
+        "wp_api_analysis": "$GLOBALS is non-standard. Should use DI or static registry pattern.",
+        "code_quality": 5,
+        "code_analysis": "Identical to ReadMore variant. Breaks encapsulation with $GLOBALS. Redundant string ops.",
+        "dependency_integrity": 6,
+        "dependency_analysis": "Fragile: $GLOBALS[$this->plugin_prefix.'admin_interface'] must exist with admin_forms() method.",
+        "i18n": 9,
+        "i18n_analysis": "No strings to localize.",
+        "accessibility": 9,
+        "accessibility_analysis": "No DOM interaction. N/A for a11y."
+      },
+      "overall_score": 65,
+      "key_observation": "Duplicate of ReadMore settings_form — same $GLOBALS encapsulation violation.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_2_Control::init_form_fields",
+    "code": "function init_form_fields() { /* 196-line settings array — elided */ }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 5,
+        "wpcs_analysis": "Mixed indentation (tabs and spaces). 196 lines — far exceeds single-responsibility. No docblock. Custom field types throughout.",
+        "sql_safety": 10,
+        "sql_analysis": "No SQL queries present.",
+        "security": 7,
+        "security_analysis": "Admin-only settings. No direct user input handling. Color values validated by type.",
+        "performance": 5,
+        "performance_analysis": "196-line array allocation at class load. Custom field types add framework dependency overhead.",
+        "wp_api_usage": 6,
+        "wp_api_analysis": "Correct apply_filters and __() usage. Heavy reliance on custom field types not in WP core. 'onoff_radio' type with 'alway' spelling error.",
+        "code_quality": 4,
+        "code_analysis": "196 lines of inline field definitions. Should be extracted. Deep nesting of onoff_options arrays. 'alway' typo repeated.",
+        "dependency_integrity": 6,
+        "dependency_analysis": "Requires custom admin framework with onoff_checkbox, onoff_radio, slider, color, border, box_shadow field types.",
+        "i18n": 8,
+        "i18n_analysis": "All strings use __(). 'Alway show' has a typo — should be 'Always'. Propagates to translation teams.",
+        "accessibility": 6,
+        "accessibility_analysis": "Admin form fields lack aria-labels. Custom onoff_radio and slider controls are custom-rendered."
+      },
+      "overall_score": 62,
+      "key_observation": "196-line settings array with correct i18n but riddled with 'alway' typos and custom field type dependencies.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_2_Control::include_script",
+    "code": "function include_script() { /* 22-line inline JS — elided */ }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 5,
+        "wpcs_analysis": "Inline script via PHP echo — should use wp_enqueue_script/wp_add_inline_script. jQuery $(document).ready() is legacy.",
+        "sql_safety": 10,
+        "sql_analysis": "No SQL queries present.",
+        "security": 7,
+        "security_analysis": "jQuery IIFE pattern. No user input in JS. Admin-only. attr('style',...) safe for hardcoded values.",
+        "performance": 6,
+        "performance_analysis": "Inline script loads on every admin page. Should be conditional.",
+        "wp_api_usage": 5,
+        "wp_api_analysis": "Should use WP script enqueue functions. Custom event is plugin-specific. attr('style') overrides all CSS.",
+        "code_quality": 6,
+        "code_analysis": "Clean jQuery IIFE. Logic is straightforward. The attr('style') followed by slideDown() is odd.",
+        "dependency_integrity": 7,
+        "dependency_analysis": "Depends on jQuery, custom CSS class, and a3rev UI event system.",
+        "i18n": 9,
+        "i18n_analysis": "No user-facing strings in JS.",
+        "accessibility": 6,
+        "accessibility_analysis": "Dynamic visibility toggle without ARIA state management."
+      },
+      "overall_score": 66,
+      "key_observation": "Admin JS toggle for control container — functional but bypasses WP script standards and ARIA accessibility.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Pager::__construct",
+    "code": "function __construct() { /* 16-line action registration */ }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 7,
+        "wpcs_analysis": "Tab indentation. No docblock. Consistent pattern with Control class constructor.",
+        "sql_safety": 10,
+        "sql_analysis": "No SQL queries present.",
+        "security": 8,
+        "security_analysis": "No user input. Admin hooks only. Safe.",
+        "performance": 8,
+        "performance_analysis": "O(1) hook registrations. ~5 actions added. Acceptable.",
+        "wp_api_usage": 7,
+        "wp_api_analysis": "Correct add_action with priority 1 for plugins_loaded. Hook naming follows plugin convention.",
+        "code_quality": 7,
+        "code_analysis": "Clean constructor. form_messages with __() is clear. One redundant blank line block.",
+        "dependency_integrity": 7,
+        "dependency_analysis": "Requires $this->plugin_name, $this->form_key, and multiple methods. Consistent with Control class.",
+        "i18n": 8,
+        "i18n_analysis": "Uses __() correctly. Same 'reseted' grammar error as Control class.",
+        "accessibility": 9,
+        "accessibility_analysis": "No DOM interaction. N/A for a11y."
+      },
+      "overall_score": 75,
+      "key_observation": "Pager constructor mirrors Control class — correct WP hook registration with same 'reseted' grammar issue.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Pager::subtab_init",
+    "code": "function subtab_init() {\n\t\t\n\t\tadd_filter( $this->plugin_name . '-' . $this->parent_tab . '_settings_subtabs_array', array( $this, 'add_subtab' ), $this->position );\n\t\t\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 7,
+        "wpcs_analysis": "Tab indentation. No docblock. Identical pattern to both ReadMore and Control subclasses.",
+        "sql_safety": 10,
+        "sql_analysis": "No SQL queries present.",
+        "security": 8,
+        "security_analysis": "No user input. Filter registration safe.",
+        "performance": 9,
+        "performance_analysis": "O(1) filter registration.",
+        "wp_api_usage": 8,
+        "wp_api_analysis": "Standard add_filter pattern with dynamic hook name.",
+        "code_quality": 7,
+        "code_analysis": "Simple and focused. Triple DRY violation across three template classes.",
+        "dependency_integrity": 8,
+        "dependency_analysis": "Requires $this->plugin_name, $this->parent_tab, $this->position, and add_subtab().",
+        "i18n": 9,
+        "i18n_analysis": "No strings to localize.",
+        "accessibility": 9,
+        "accessibility_analysis": "No DOM interaction. N/A for a11y."
+      },
+      "overall_score": 78,
+      "key_observation": "Third identical subtab_init — copy-paste pattern across three template classes.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Pager::subtab_data",
+    "code": "function subtab_data() {\n\t\t\n\t\t$subtab_data = array( \n\t\t\t'name'\t\t\t\t=> 'pager',\n\t\t\t'label'\t\t\t\t=> __( 'Pager', 'a3-responsive-slider' ),\n\t\t\t'callback_function'\t=> 'a3_responsive_sider_template_1_pager_settings_form',\n\t\t);\n\t\t\n\t\tif ( $this->subtab_data ) return $this->subtab_data;\n\t\treturn $this->subtab_data = $subtab_data;\n\t\t\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 7,
+        "wpcs_analysis": "Tab indentation. No docblock. Same lazy-load pattern repeated three times.",
+        "sql_safety": 10,
+        "sql_analysis": "No SQL queries present.",
+        "security": 9,
+        "security_analysis": "No user input. Static config. Safe.",
+        "performance": 9,
+        "performance_analysis": "Lazy-load caching. O(1) on subsequent calls.",
+        "wp_api_usage": 7,
+        "wp_api_analysis": "Correct __(). Same 'sider' typo in callback name.",
+        "code_quality": 6,
+        "code_analysis": "Triple DRY violation. Excessive whitespace. Lazy-load pattern unclear.",
+        "dependency_integrity": 8,
+        "dependency_analysis": "Requires $this->subtab_data property.",
+        "i18n": 9,
+        "i18n_analysis": "Uses __( 'Pager', 'a3-responsive-slider' ) correctly.",
+        "accessibility": 9,
+        "accessibility_analysis": "No DOM interaction. N/A for a11y."
+      },
+      "overall_score": 76,
+      "key_observation": "Pager's subtab_data — triple copy of ReadMore/Control pattern with same callback typo.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Pager::add_subtab",
+    "code": "function add_subtab( $subtabs_array ) {\n\t\n\t\tif ( ! is_array( $subtabs_array ) ) $subtabs_array = array();\n\t\t$subtabs_array[] = $this->subtab_data();\n\t\t\n\t\treturn $subtabs_array;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 8,
+        "wpcs_analysis": "Input validation with is_array(). Tab indentation.",
+        "sql_safety": 10,
+        "sql_analysis": "No SQL queries present.",
+        "security": 8,
+        "security_analysis": "Defensive type check. No user input.",
+        "performance": 9,
+        "performance_analysis": "O(1) append. Minimal.",
+        "wp_api_usage": 8,
+        "wp_api_analysis": "Standard WP filter callback.",
+        "code_quality": 6,
+        "code_analysis": "Clean but triple-duplicated code. Should use inheritance.",
+        "dependency_integrity": 7,
+        "dependency_analysis": "Requires $this->subtab_data().",
+        "i18n": 9,
+        "i18n_analysis": "No strings to localize.",
+        "accessibility": 9,
+        "accessibility_analysis": "No DOM interaction. N/A for a11y."
+      },
+      "overall_score": 78,
+      "key_observation": "Third identical add_subtab — correct WP pattern but severe DRY violation.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Pager::settings_form",
+    "code": "function settings_form() {\n\t\t\t\t\n\t\t$output = '';\n\t\t$output .= $GLOBALS[$this->plugin_prefix.'admin_interface']->admin_forms( $this->form_fields, $this->form_key, $this->option_name, $this->form_messages );\n\t\t\n\t\treturn $output;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 5,
+        "wpcs_analysis": "$GLOBALS access breaks encapsulation. Redundant string concatenation. Identical to other classes.",
+        "sql_safety": 10,
+        "sql_analysis": "No SQL queries present.",
+        "security": 6,
+        "security_analysis": "Dynamic $GLOBALS key from instance property. Admin-only context mitigates practical risk.",
+        "performance": 7,
+        "performance_analysis": "Unnecessary .= for single append.",
+        "wp_api_usage": 6,
+        "wp_api_analysis": "$GLOBALS is non-standard. admin_forms() is custom method.",
+        "code_quality": 4,
+        "code_analysis": "Triple DRY violation. $GLOBALS breaks OOP encapsulation. Should use DI pattern.",
+        "dependency_integrity": 6,
+        "dependency_analysis": "Fragile $GLOBALS dependency chain.",
+        "i18n": 9,
+        "i18n_analysis": "No strings to localize.",
+        "accessibility": 9,
+        "accessibility_analysis": "No DOM interaction. N/A for a11y."
+      },
+      "overall_score": 62,
+      "key_observation": "Third identical settings_form — $GLOBALS encapsulation violation repeated across all three template classes.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Pager::init_form_fields",
+    "code": "function init_form_fields() { /* 144-line settings array — elided */ }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 5,
+        "wpcs_analysis": "Mixed indentation. 144 lines — too long. No docblock. Custom field types heavily used.",
+        "sql_safety": 10,
+        "sql_analysis": "No SQL queries present.",
+        "security": 7,
+        "security_analysis": "Admin-only settings. No direct user input. Color values validated by type.",
+        "performance": 5,
+        "performance_analysis": "144-line array allocation at load. Multiple custom field type handlers required.",
+        "wp_api_usage": 6,
+        "wp_api_analysis": "Correct apply_filters and __(). 'alway' spelling error in option values. Heavy custom field type dependency.",
+        "code_quality": 4,
+        "code_analysis": "144 lines of inline field definitions. Should be externalized. Repeats 'alway' typo from Control class.",
+        "dependency_integrity": 6,
+        "dependency_analysis": "Requires custom admin framework with onoff_checkbox, onoff_radio, slider, color, border, box_shadow, select field types.",
+        "i18n": 8,
+        "i18n_analysis": "All strings use __(). 'alway' typo propagates to translations. 'Colour' spelling is British English — consistent within plugin.",
+        "accessibility": 6,
+        "accessibility_analysis": "Admin form fields lack aria-labels. Color pickers and sliders are custom UI."
+      },
+      "overall_score": 62,
+      "key_observation": "144-line pager settings with correct i18n but repeats 'alway' typo and custom field type dependencies from Control class.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Pager::include_script",
+    "code": "function include_script() { /* 26-line inline JS — elided */ }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 5,
+        "wpcs_analysis": "Inline script via PHP echo — should use wp_enqueue_script/wp_add_inline_script. jQuery $(document).ready() is legacy.",
+        "sql_safety": 10,
+        "sql_analysis": "No SQL queries present.",
+        "security": 7,
+        "security_analysis": "jQuery IIFE pattern. No user input in JS. Admin-only. Safe.",
+        "performance": 6,
+        "performance_analysis": "Inline script loads on every admin page. Should be conditional.",
+        "wp_api_usage": 5,
+        "wp_api_analysis": "Should use WP script enqueue. Custom event is plugin-specific.",
+        "code_quality": 6,
+        "code_analysis": "Clean jQuery IIFE. Logic is clear. Similar to Control::include_script — minor variation in initial state logic.",
+        "dependency_integrity": 7,
+        "dependency_analysis": "Depends on jQuery, .slider_pager_container CSS class, and a3rev UI event system.",
+        "i18n": 9,
+        "i18n_analysis": "No user-facing strings in JS.",
+        "accessibility": 6,
+        "accessibility_analysis": "Dynamic visibility toggle without ARIA state. Keyboard users cannot interact with admin-only JS toggle."
+      },
+      "overall_score": 66,
+      "key_observation": "Pager's admin JS toggle mirrors Control version — correct jQuery pattern but bypasses WP script standards.",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  }
+]

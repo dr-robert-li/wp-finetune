@@ -1,0 +1,318 @@
+[
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "pts_allowed_pages",
+    "defective_code": "function pts_allowed_pages( $pages ) {\n\t\t\t$post_type = '';\n\t\t\tif ( ! empty( $_GET['post_type'] ) ) {\n\t\t\t\t$post_type = sanitize_text_field( $_GET['post_type'] );\n\t\t\t} elseif ( ! empty( $_GET['post'] ) ) {\n\t\t\t\t$post_type = get_post_type( $_GET['post'] );\n\t\t\t}\n\t\t\tif ( $post_type == 'acf-field-group' ) {\n\t\t\t\t$pages = array();\n\t\t\t}\n\t\t\treturn $pages;\n\t\t}",
+    "critique": {
+      "severity": "medium",
+      "defects": "Using == (loose comparison) instead of === for post type check allows type coercion attacks; $_GET['post'] is not cast to int before passing to get_post_type(), risking NULL pointer or unexpected behavior; no nonce verification on any $_GET access even though phpcs comments say verified elsewhere"
+    },
+    "fixed_code": "function pts_allowed_pages( $pages ) {\n\t\t\t$post_type = '';\n\t\t\tif ( ! empty( $_GET['post_type'] ) ) {\n\t\t\t\t$post_type = sanitize_text_field( $_GET['post_type'] );\n\t\t\t} elseif ( isset( $_GET['post'] ) && is_numeric( $_GET['post'] ) ) {\n\t\t\t\t$post_id = (int) $_GET['post'];\n\t\t\t\t$post_type = get_post_type( $post_id );\n\t\t\t}\n\t\t\tif ( $post_type === 'acf-field-group' ) {\n\t\t\t\t$pages = array();\n\t\t\t}\n\t\t\treturn $pages;\n\t\t}",
+    "quality_improvements": [
+      "Changed == to === for strict comparison on post_type",
+      "Added is_numeric check before calling get_post_type()",
+      "Cast $_GET['post'] to int before use"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "determine_locale",
+    "defective_code": "function determine_locale() {\n\t\t\n\t\t$determined_locale = apply_filters( 'pre_determine_locale', null );\n\t\tif ( ! empty( $determined_locale ) && is_string( $determined_locale ) ) {\n\t\t\treturn $determined_locale;\n\t\t}\n\t\t$determined_locale = get_locale();\n\t\tif ( function_exists( 'get_user_locale' ) && is_admin() ) {\n\t\t\t$determined_locale = get_user_locale();\n\t\t}\n\t\tif ( function_exists( 'get_user_locale' ) && isset( $_GET['_locale'] ) && 'user' === $_GET['_locale'] ) {\n\t\t\t$determined_locale = get_user_locale();\n\t\t}\n\t\tif ( ! empty( $_GET['wp_lang'] ) && ! empty( $GLOBALS['pagenow'] ) && 'wp-login.php' === $GLOBALS['pagenow'] ) {\n\t\t\t$determined_locale = sanitize_text_field( $_GET['wp_lang'] );\n\t\t}\n\t\treturn apply_filters( 'determine_locale', $determined_locale );\n\t}",
+    "critique": {
+      "severity": "high",
+      "defects": "$_GET['_locale'] and $_GET['wp_lang'] are read without any nonce verification or request origin validation, enabling potential locale-sniffing CSRF attacks; sanitize_text_field on 'wp_lang' does not validate against a whitelist of supported locales, allowing arbitrary strings through; empty() on $_GET values permits '0' and empty string to pass, creating logic bugs"
+    },
+    "fixed_code": "function determine_locale() {\n\t\t\n\t\t$determined_locale = apply_filters( 'pre_determine_locale', null );\n\t\tif ( ! empty( $determined_locale ) && is_string( $determined_locale ) ) {\n\t\t\treturn $determined_locale;\n\t\t}\n\t\t$determined_locale = get_locale();\n\t\tif ( function_exists( 'get_user_locale' ) && is_admin() ) {\n\t\t\t$determined_locale = get_user_locale();\n\t\t}\n\t\tif ( function_exists( 'get_user_locale' ) && isset( $_GET['_locale'] ) && 'user' === $_GET['_locale'] ) {\n\t\t\t$determined_locale = get_user_locale();\n\t\t}\n\t\tif ( isset( $_GET['wp_lang'] ) && ! empty( $GLOBALS['pagenow'] ) && 'wp-login.php' === $GLOBALS['pagenow'] ) {\n\t\t\t$sanitized = sanitize_text_field( wp_unslash( $_GET['wp_lang'] ) );\n\t\t\t$supported = wp_available_languages();\n\t\t\tif ( in_array( $sanitized, $supported, true ) ) {\n\t\t\t\t$determined_locale = $sanitized;\n\t\t\t}\n\t\t}\n\t\treturn apply_filters( 'determine_locale', $determined_locale );\n\t}",
+    "quality_improvements": [
+      "Added wp_unslash() for proper superglobal sanitization",
+      "Added whitelist validation against wp_available_languages()",
+      "Changed isset/empty check to prevent empty-string edge cases"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_loop::add_loop",
+    "defective_code": "function add_loop( $loop = array() ) {\n\t\t\t$loop = wp_parse_args(\n\t\t\t\t$loop,\n\t\t\t\tarray(\n\t\t\t\t\t'selector' => '',\n\t\t\t\t\t'name'     => '',\n\t\t\t\t\t'value'    => false,\n\t\t\t\t\t'field'    => false,\n\t\t\t\t\t'i'        => -1,\n\t\t\t\t\t'post_id'  => 0,\n\t\t\t\t\t'key'      => '',\n\t\t\t\t)\n\t\t\t);\n\t\t\t$loop['value'] = acf_get_array( $loop['value'] );\n\t\t\tif ( $loop['i'] == -1 ) {\n\t\t\t\t$loop['value'] = array_values( $loop['value'] );\n\t\t\t}\n\t\t\t$this->loops[] = $loop;\n\t\t\treturn $loop;\n\t\t}",
+    "critique": {
+      "severity": "medium",
+      "defects": "Using == for $loop['i'] == -1 comparison instead of === allows type coercion; no input validation on $loop parameter — caller can pass non-array types and cause wp_parse_args to behave unexpectedly; no sanitization of any $_POST/$_GET data that feeds into loop values, risking XSS when those values are rendered"
+    },
+    "fixed_code": "function add_loop( $loop = array() ) {\n\t\t\t$loop = wp_parse_args(\n\t\t\t\t$loop,\n\t\t\t\tarray(\n\t\t\t\t\t'selector' => '',\n\t\t\t\t\t'name'     => '',\n\t\t\t\t\t'value'    => false,\n\t\t\t\t\t'field'    => false,\n\t\t\t\t\t'i'        => -1,\n\t\t\t\t\t'post_id'  => 0,\n\t\t\t\t\t'key'      => '',\n\t\t\t\t)\n\t\t\t);\n\t\t\t$loop['value'] = acf_get_array( $loop['value'] );\n\t\t\tif ( $loop['i'] === -1 ) {\n\t\t\t\t$loop['value'] = array_values( $loop['value'] );\n\t\t\t}\n\t\t\t$this->loops[] = $loop;\n\t\t\treturn $loop;\n\t\t}",
+    "quality_improvements": [
+      "Changed == to === for strict integer comparison"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_get_file_input",
+    "defective_code": "function acf_get_file_input( $attrs = array() ) {\n\t$field_key   = isset( $attrs['key'] ) && is_string( $attrs['key'] ) ? $attrs['key'] : '';\n\t$nonce_field = '';\n\tif ( '' === $field_key ) {\n\t\t$parts = explode( '[', $attrs['name'] );\n\t\tif ( is_array( $parts ) && ! empty( $parts[1] ) ) {\n\t\t\t$field_key = substr( end( $parts ), 0, -1 );\n\t\t}\n\t}\n\tif ( '' !== $field_key ) {\n\t\t$nonce_attrs = array(\n\t\t\t'name'  => 'acf[' . $field_key . '_file_nonce]',\n\t\t\t'value' => wp_create_nonce( 'acf/file_uploader_nonce/' . $field_key ),\n\t\t);\n\t\t$nonce_field = sprintf(\n\t\t\t'<input type=\"hidden\" %s />',\n\t\t\tacf_esc_attrs( $nonce_attrs )\n\t\t);\n\t}\n\treturn sprintf(\n\t\t'<input type=\"file\" %1$s />%2$s',\n\t\tacf_esc_attrs( $attrs ),\n\t\t$nonce_field\n\t);\n}",
+    "critique": {
+      "severity": "high",
+      "defects": "No nonce verification on the generated nonce — the nonce is created but never validated on form submission, making file upload CSRF-protected only if the caller verifies it; $attrs['name'] is used in explode() without isset() guard, causing PHP notices when 'name' key is missing; $field_key extracted from string manipulation has no length/type validation, risking oversized nonce generation"
+    },
+    "fixed_code": "function acf_get_file_input( $attrs = array() ) {\n\t$field_key   = isset( $attrs['key'] ) && is_string( $attrs['key'] ) ? $attrs['key'] : '';\n\t$nonce_field = '';\n\tif ( '' === $field_key ) {\n\t\t$name_value = isset( $attrs['name'] ) && is_string( $attrs['name'] ) ? $attrs['name'] : '';\n\t\tif ( $name_value ) {\n\t\t\t$parts = explode( '[', $name_value );\n\t\t\tif ( is_array( $parts ) && isset( $parts[1] ) && ! empty( $parts[1] ) ) {\n\t\t\t\t$field_key = substr( end( $parts ), 0, -1 );\n\t\t\t}\n\t\t}\n\t}\n\tif ( '' !== $field_key && strlen( $field_key ) < 256 ) {\n\t\t$nonce_attrs = array(\n\t\t\t'name'  => 'acf[' . esc_attr( $field_key ) . '_file_nonce]',\n\t\t\t'value' => wp_create_nonce( 'acf/file_uploader_nonce/' . esc_attr( $field_key ) ),\n\t\t);\n\t\t$nonce_field = sprintf(\n\t\t\t'<input type=\"hidden\" %s />',\n\t\t\tacf_esc_attrs( $nonce_attrs )\n\t\t);\n\t}\n\treturn sprintf(\n\t\t'<input type=\"file\" %1$s />%2$s',\n\t\tacf_esc_attrs( $attrs ),\n\t\t$nonce_field\n\t);\n}",
+    "quality_improvements": [
+      "Added isset() and is_string() guard on $attrs['name']",
+      "Added strlen() guard on $field_key to prevent oversized nonce keys",
+      "Added esc_attr() on $field_key in output to prevent XSS in nonce field name"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_upgrade_500_fields",
+    "defective_code": "function acf_upgrade_500_fields( $ofg, $nfg ) {\n\tglobal $wpdb;\n\t$rows = $wpdb->get_results( $wpdb->prepare( \"SELECT * FROM $wpdb->postmeta WHERE post_id = %d AND meta_key LIKE %s\", $ofg->ID, 'field_%' ), ARRAY_A );\n\tif ( $rows ) {\n\t\t$checked = array();\n\t\tforeach ( $rows as $row ) {\n\t\t\t$field = $row['meta_value'];\n\t\t\t$field = acf_maybe_unserialize( $field );\n\t\t\t$field = acf_maybe_unserialize( $field );\n\t\t\tif ( isset( $checked[ $field['key'] ] ) ) {\n\t\t\t\tcontinue;\n\t\t\t}\n\t\t\t$checked[ $field['key'] ] = 1;\n\t\t\t$field['parent'] = $nfg['ID'];\n\t\t\t$field = acf_upgrade_500_field( $field );\n\t\t}\n\t}\n}",
+    "critique": {
+      "severity": "high",
+      "defects": "meta_key LIKE '%field_%' uses unescaped wildcard — the '_' in 'field_%' is interpreted as a single-character SQL wildcard, causing it to match unintended meta_keys; $ofg->ID is not verified as an object or property, risking null dereference; no check that $field has a 'key' offset after unserialization, causing undefined index warnings if unserialize returns unexpected types"
+    },
+    "fixed_code": "function acf_upgrade_500_fields( $ofg, $nfg ) {\n\tglobal $wpdb;\n\tif ( ! is_object( $ofg ) || ! isset( $ofg->ID ) ) {\n\t\treturn;\n\t}\n\t$like_pattern = 'field_%';\n\t$escaped_pattern = str_replace( array('%', '_'), array( '\\\\%', '\\\\_' ), $like_pattern );\n\t$rows = $wpdb->get_results( $wpdb->prepare( \"SELECT * FROM $wpdb->postmeta WHERE post_id = %d AND meta_key LIKE %s\", $ofg->ID, $escaped_pattern . '%' ), ARRAY_A );\n\tif ( $rows ) {\n\t\t$checked = array();\n\t\tforeach ( $rows as $row ) {\n\t\t\t$field = $row['meta_value'];\n\t\t\t$field = acf_maybe_unserialize( $field );\n\t\t\t$field = acf_maybe_unserialize( $field );\n\t\t\tif ( ! is_array( $field ) || ! isset( $field['key'] ) ) {\n\t\t\t\tcontinue;\n\t\t\t}\n\t\t\tif ( isset( $checked[ $field['key'] ] ) ) {\n\t\t\t\tcontinue;\n\t\t\t}\n\t\t\t$checked[ $field['key'] ] = 1;\n\t\t\tif ( is_array( $nfg ) && isset( $nfg['ID'] ) ) {\n\t\t\t\t$field['parent'] = $nfg['ID'];\n\t\t\t}\n\t\t\t$field = acf_upgrade_500_field( $field );\n\t\t}\n\t}\n}",
+    "quality_improvements": [
+      "Escaped LIKE wildcards '_' to literal underscore",
+      "Added $ofg object validation before accessing ->ID",
+      "Added isset/is_array checks on $field after unserialization",
+      "Added $nfg array guard before accessing ['ID']"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_upgrade_550_taxonomy",
+    "defective_code": "function acf_upgrade_550_taxonomy( $taxonomy ) {\n\tglobal $wpdb;\n\t$search  = $taxonomy . '_%';\n\t$_search = '_' . $search;\n\t$search  = str_replace( '_', '\\\\_', $search );\n\t$_search = str_replace( '_', '\\\\_', $_search );\n\t$rows = $wpdb->get_results(\n\t\t$wpdb->prepare(\n\t\t\t\"SELECT * \n\t\tFROM $wpdb->options \n\t\tWHERE option_name LIKE %s \n\t\tOR option_name LIKE %s\",\n\t\t\t$search,\n\t\t\t$_search\n\t\t),\n\t\tARRAY_A\n\t);\n\tif ( $rows ) {\n\t\tforeach ( $rows as $row ) {\n\t\t\tif ( ! preg_match( \"/^(_?){$taxonomy}_(\\d+)_(.+)/\", is_null( $row['option_name'] ) ? '' : $row['option_name'], $matches ) ) {\n\t\t\t\tcontinue;\n\t\t\t}\n\t\t\t$term_id    = $matches[2];\n\t\t\t$meta_key   = $matches[1] . $matches[3];\n\t\t\t$meta_value = $row['option_value'];\n\t\t\t$wpdb->insert(\n\t\t\t\t$wpdb->termmeta,\n\t\t\t\tarray(\n\t\t\t\t\t'term_id'    => $term_id,\n\t\t\t\t\t'meta_key'   => $meta_key,\n\t\t\t\t\t'meta_value' => $meta_value,\n\t\t\t\t)\n\t\t\t);\n\t\t\tdo_action( 'acf/upgrade_550_taxonomy_term', $term_id );\n\t\t}\n\t}\n}",
+    "critique": {
+      "severity": "critical",
+      "defects": "SQL injection risk: $taxonomy is interpolated directly into LIKE pattern before prepare() — if $taxonomy contains '%', it matches too broadly; the double str_replace for escaping '_' is incorrect for SQL (should use '\\_') and str_replace runs on already-escaped string causing double-escaping; $row['option_value'] used without null check in insert(); term_id from preg matches is used directly in $wpdb->insert() without intval casting, risking string injection"
+    },
+    "fixed_code": "function acf_upgrade_550_taxonomy( $taxonomy ) {\n\tglobal $wpdb;\n\t$taxonomy = sanitize_key( $taxonomy );\n\t$search  = $taxonomy . '_%';\n\t$_search = '_' . $search;\n\t$search  = addcslashes( $search, '%_' );\n\t$_search = addcslashes( $_search, '%_' );\n\t$rows = $wpdb->get_results(\n\t\t$wpdb->prepare(\n\t\t\t\"SELECT * \n\t\tFROM $wpdb->options \n\t\tWHERE option_name LIKE %s \n\t\tOR option_name LIKE %s\",\n\t\t\t$search,\n\t\t\t$_search\n\t\t),\n\t\tARRAY_A\n\t);\n\tif ( $rows ) {\n\t\tforeach ( $rows as $row ) {\n\t\t\t$option_name = is_null( $row['option_name'] ) ? '' : (string) $row['option_name'];\n\t\t\tif ( ! preg_match( \"/^(_?){$taxonomy}_(\\d+)_(.+)/\", $option_name, $matches ) ) {\n\t\t\t\tcontinue;\n\t\t\t}\n\t\t\t$term_id    = (int) $matches[2];\n\t\t\t$meta_key   = $matches[1] . $matches[3];\n\t\t\t$meta_value = isset( $row['option_value'] ) ? $row['option_value'] : '';\n\t\t\t$wpdb->insert(\n\t\t\t\t$wpdb->termmeta,\n\t\t\t\tarray(\n\t\t\t\t\t'term_id'    => $term_id,\n\t\t\t\t\t'meta_key'   => $meta_key,\n\t\t\t\t\t'meta_value' => $meta_value,\n\t\t\t\t)\n\t\t\t);\n\t\t\tdo_action( 'acf/upgrade_550_taxonomy_term', $term_id );\n\t\t}\n\t}\n}",
+    "quality_improvements": [
+      "Added sanitize_key() on $taxonomy input",
+      "Used addcslashes() instead of str_replace() for proper SQL escaping",
+      "Cast $term_id to int before DB insert",
+      "Added isset() guard on $row['option_value']"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "get_source_field",
+    "defective_code": "function get_source_field() {\n\t\t\t$field = false;\n\t\t\tif ( isset( $_POST['query']['_acfuploader'] ) ) {\n\t\t\t\t$field_key = sanitize_text_field( $_POST['query']['_acfuploader'] );\n\t\t\t\t// Case 2) Media modal upload.\n\t\t\t} elseif ( isset( $_POST['_acfuploader'] ) ) {\n\t\t\t\t$field_key = sanitize_text_field( $_POST['_acfuploader'] );\n\t\t\t}\n\t\t\tif ( isset( $field_key ) ) {\n\t\t\t\t$field = acf_get_field( $field_key );\n\t\t\t}\n\t\t\treturn $field;\n\t\t}",
+    "critique": {
+      "severity": "high",
+      "defects": "$_POST['query'] accessed without isset() on intermediate keys — $_POST['query']['_acfuploader'] triggers PHP undefined index notice if $_POST['query'] doesn't exist; $_POST values are not passed through wp_unslash(), violating WordPress sanitization standards; no nonce check on $_POST access, allowing any caller to trigger field lookups"
+    },
+    "fixed_code": "function get_source_field() {\n\t\t\t$field = false;\n\t\t\t$field_key = false;\n\t\t\tif ( isset( $_POST['query']['_acfuploader'] ) ) {\n\t\t\t\t$field_key = sanitize_text_field( wp_unslash( $_POST['query']['_acfuploader'] ) );\n\t\t\t\t// Case 2) Media modal upload.\n\t\t\t} elseif ( isset( $_POST['_acfuploader'] ) ) {\n\t\t\t\t$field_key = sanitize_text_field( wp_unslash( $_POST['_acfuploader'] ) );\n\t\t\t}\n\t\t\tif ( $field_key ) {\n\t\t\t\t$field = acf_get_field( $field_key );\n\t\t\t}\n\t\t\treturn $field;\n\t\t}",
+    "quality_improvements": [
+      "Added wp_unslash() on all $_POST values per WordPress standards",
+      "Initialized $field_key to false for cleaner isset() check"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "wp_ajax_query_attachments",
+    "defective_code": "function wp_ajax_query_attachments() {\n\t\t\tif ( $this->get_source_field() ) {\n\t\t\t\tadd_filter( 'wp_prepare_attachment_for_js', array( $this, 'wp_prepare_attachment_for_js' ), 10, 3 );\n\t\t\t\tadd_filter( 'image_size_names_choose', array( $this, 'image_size_names_choose' ), 10, 1 );\n\t\t\t} else {\n\t\t\t\tadd_filter( 'wp_prepare_attachment_for_js', array( $this, 'clear_acf_errors_for_core_requests' ), 5, 3 );\n\t\t\t}\n\t\t}",
+    "critique": {
+      "severity": "medium",
+      "defects": "No capability check (current_user_can) on AJAX function — any logged-in user can invoke this; no wp_verify_nonce() to prevent CSRF on AJAX requests; relies entirely on get_source_field() which itself lacks nonce verification; wp_ajax_ functions should also call wp_die() after wp_send_json to prevent output leakage"
+    },
+    "fixed_code": "function wp_ajax_query_attachments() {\n\t\t\tcheck_ajax_referer( 'acf_nonce', 'nonce', false );\n\t\t\tif ( ! current_user_can( 'edit_posts' ) ) {\n\t\t\t\twp_send_json_error( array( 'message' => __( 'Insufficient permissions.' ) ), 403 );\n\t\t\t}\n\t\t\tif ( $this->get_source_field() ) {\n\t\t\t\tadd_filter( 'wp_prepare_attachment_for_js', array( $this, 'wp_prepare_attachment_for_js' ), 10, 3 );\n\t\t\t\tadd_filter( 'image_size_names_choose', array( $this, 'image_size_names_choose' ), 10, 1 );\n\t\t\t} else {\n\t\t\t\tadd_filter( 'wp_prepare_attachment_for_js', array( $this, 'clear_acf_errors_for_core_requests' ), 5, 3 );\n\t\t\t}\n\t\t}",
+    "quality_improvements": [
+      "Added check_ajax_referer() for CSRF protection",
+      "Added capability check current_user_can('edit_posts')"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_save_post",
+    "defective_code": "function acf_save_post( $post_id = 0, $values = null ) {\n\t\tif ( $values !== null ) {\n\t\t\t$_POST['acf'] = $values;\n\t\t}\n\t\tif ( empty( $_POST['acf'] ) ) {\n\t\t\treturn false;\n\t\t}\n\t\tacf_set_form_data( 'post_id', $post_id );\n\t\tif ( ! acf_allow_unfiltered_html() ) {\n\t\t\t$_POST['acf'] = wp_kses_post_deep( $_POST['acf'] );\n\t\t}\n\t\tdo_action( 'acf/save_post', $post_id );\n\t\treturn true;\n\t}",
+    "critique": {
+      "severity": "medium",
+      "defects": "$_POST['acf'] is directly assigned from $values without any validation — caller can overwrite $_POST['acf'] with arbitrary data; no nonce verification on the save operation; wp_kses_post_deep on nested arrays may not properly sanitize deeply nested objects; $post_id is used without sanitization (should be intval)"
+    },
+    "fixed_code": "function acf_save_post( $post_id = 0, $values = null ) {\n\t\tif ( $values !== null ) {\n\t\t\tif ( ! is_array( $values ) ) {\n\t\t\t\treturn false;\n\t\t\t}\n\t\t\t$_POST['acf'] = $values;\n\t\t}\n\t\tif ( empty( $_POST['acf'] ) ) {\n\t\t\treturn false;\n\t\t}\n\t\tacf_set_form_data( 'post_id', (int) $post_id );\n\t\tif ( ! acf_allow_unfiltered_html() ) {\n\t\t\t$_POST['acf'] = wp_kses_post_deep( $_POST['acf'] );\n\t\t}\n\t\tdo_action( 'acf/save_post', (int) $post_id );\n\t\treturn true;\n\t}",
+    "quality_improvements": [
+      "Added is_array() check on $values before assignment to $_POST",
+      "Cast $post_id to int for safety"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "_acf_do_save_post",
+    "defective_code": "function _acf_do_save_post( $post_id = 0 ) {\n\t\tif ( ! empty( $_POST['acf'] ) ) {\n\t\t\tacf_update_values( $_POST['acf'], $post_id );\n\t\t}\n\t}",
+    "critique": {
+      "severity": "high",
+      "defects": "No nonce verification — this function processes POST data without any CSRF protection; $_POST['acf'] used without wp_unslash(); no capability check; empty() check allows false/0 values to pass, creating potential data corruption when post_id is 0"
+    },
+    "fixed_code": "function _acf_do_save_post( $post_id = 0 ) {\n\t\tif ( ! current_user_can( 'edit_posts' ) ) {\n\t\t\treturn;\n\t\t}\n\t\tif ( isset( $_POST['acf'] ) && is_array( $_POST['acf'] ) ) {\n\t\t\tacf_update_values( wp_unslash( $_POST['acf'] ), (int) $post_id );\n\t\t}\n\t}",
+    "quality_improvements": [
+      "Added current_user_can capability check",
+      "Changed empty() to isset()/is_array() for proper validation",
+      "Added wp_unslash() on $_POST['acf']",
+      "Cast $post_id to int"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_validate_post_id",
+    "defective_code": "function acf_validate_post_id( $post_id, $_post_id ) {\n\t\t\tif ( ! isset( $_GET['preview'] ) ) {\n\t\t\t\treturn $post_id;\n\t\t\t}\n\t\t\tif ( ! is_numeric( $post_id ) ) {\n\t\t\t\treturn $post_id;\n\t\t\t}\n\t\t\t$k          = $post_id;\n\t\t\t$preview_id = 0;\n\t\t\tif ( isset( $this->cache[ $k ] ) ) {\n\t\t\t\treturn $this->cache[ $k ];\n\t\t\t}\n\t\t\tif ( isset( $_GET['preview_id'] ) ) {\n\t\t\t\t$preview_id = (int) $_GET['preview_id'];\n\t\t\t} elseif ( isset( $_GET['p'] ) ) {\n\t\t\t\t$preview_id = (int) $_GET['p'];\n\t\t\t} elseif ( isset( $_GET['page_id'] ) ) {\n\t\t\t\t$preview_id = (int) $_GET['page_id'];\n\t\t\t}\n\t\t\tif ( $preview_id != $post_id ) {\n\t\t\t\treturn $post_id;\n\t\t\t}\n\t\t\t$revision = acf_get_post_latest_revision( $post_id );\n\t\t\tif ( $revision && $revision->post_parent == $post_id ) {\n\t\t\t\t$post_id = (int) $revision->ID;\n\t\t\t}\n\t\t\t$this->cache[ $k ] = $post_id;\n\t\t\treturn $post_id;\n\t\t}",
+    "critique": {
+      "severity": "medium",
+      "defects": "Using != instead of !== for $preview_id != $post_id comparison allows type coercion; $_GET['p'] and $_GET['page_id'] cast to int before isset() check — should check isset first; $revision->post_parent accessed without null check on $revision object; cache key $k uses raw $post_id which may not be string-int compatible"
+    },
+    "fixed_code": "function acf_validate_post_id( $post_id, $_post_id ) {\n\t\t\tif ( ! isset( $_GET['preview'] ) ) {\n\t\t\t\treturn $post_id;\n\t\t\t}\n\t\t\tif ( ! is_numeric( $post_id ) ) {\n\t\t\t\treturn $post_id;\n\t\t\t}\n\t\t\t$k          = (string) $post_id;\n\t\t\t$preview_id = 0;\n\t\t\tif ( isset( $this->cache[ $k ] ) ) {\n\t\t\t\treturn $this->cache[ $k ];\n\t\t\t}\n\t\t\tif ( isset( $_GET['preview_id'] ) ) {\n\t\t\t\t$preview_id = (int) wp_unslash( $_GET['preview_id'] );\n\t\t\t} elseif ( isset( $_GET['p'] ) ) {\n\t\t\t\t$preview_id = (int) wp_unslash( $_GET['p'] );\n\t\t\t} elseif ( isset( $_GET['page_id'] ) ) {\n\t\t\t\t$preview_id = (int) wp_unslash( $_GET['page_id'] );\n\t\t\t}\n\t\t\tif ( $preview_id !== (int) $post_id ) {\n\t\t\t\treturn $post_id;\n\t\t\t}\n\t\t\t$revision = acf_get_post_latest_revision( $post_id );\n\t\t\tif ( $revision && is_object( $revision ) && $revision->post_parent == (int) $post_id ) {\n\t\t\t\t$post_id = (int) $revision->ID;\n\t\t\t}\n\t\t\t$this->cache[ $k ] = $post_id;\n\t\t\treturn $post_id;\n\t\t}",
+    "quality_improvements": [
+      "Changed != to !== for strict comparison",
+      "Added wp_unslash() on $_GET values",
+      "Added is_object() check on $revision",
+      "Cast $k to string for cache key safety"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "ACF_WPML_Compatibility::__construct",
+    "defective_code": "function __construct() {\n\t\t\tglobal $sitepress;\n\t\t\tacf_update_setting( 'default_language', $sitepress->get_default_language() );\n\t\t\tacf_update_setting( 'current_language', $sitepress->get_current_language() );\n\t\t\tacf_localize_data(\n\t\t\t\tarray(\n\t\t\t\t\t'language' => $sitepress->get_current_language(),\n\t\t\t\t)\n\t\t\t);\n\t\t\tadd_action( 'acf/verify_ajax', array( $this, 'verify_ajax' ) );\n\t\t\tadd_filter( 'get_translatable_documents', array( $this, 'get_translatable_documents' ) );\n\t\t\tif ( $this->is_translatable() ) {\n\t\t\t\tadd_action( 'acf/upgrade_500_field_group', array( $this, 'upgrade_500_field_group' ), 10, 2 );\n\t\t\t\tadd_action( 'icl_make_duplicate', array( $this, 'icl_make_duplicate' ), 10, 4 );\n\t\t\t\tadd_filter( 'acf/settings/save_json', array( $this, 'settings_save_json' ) );\n\t\t\t\tadd_filter( 'acf/settings/load_json', array( $this, 'settings_load_json' ) );\n\t\t\t}\n\t\t}",
+    "critique": {
+      "severity": "high",
+      "defects": "$sitepress global assumed to exist — no null check before calling methods, causing fatal error if WPML is not installed; no check for function_exists('icl_get_languages') or class_exists('WPML') before accessing global; constructors should not have side effects like add_action/add_filter at top level without guards"
+    },
+    "fixed_code": "function __construct() {\n\t\t\tglobal $sitepress;\n\t\t\tif ( ! is_object( $sitepress ) || ! method_exists( $sitepress, 'get_default_language' ) ) {\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tacf_update_setting( 'default_language', $sitepress->get_default_language() );\n\t\t\tacf_update_setting( 'current_language', $sitepress->get_current_language() );\n\t\t\tacf_localize_data(\n\t\t\t\tarray(\n\t\t\t\t\t'language' => $sitepress->get_current_language(),\n\t\t\t\t)\n\t\t\t);\n\t\t\tadd_action( 'acf/verify_ajax', array( $this, 'verify_ajax' ) );\n\t\t\tadd_filter( 'get_translatable_documents', array( $this, 'get_translatable_documents' ) );\n\t\t\tif ( $this->is_translatable() ) {\n\t\t\t\tadd_action( 'acf/upgrade_500_field_group', array( $this, 'upgrade_500_field_group' ), 10, 2 );\n\t\t\t\tadd_action( 'icl_make_duplicate', array( $this, 'icl_make_duplicate' ), 10, 4 );\n\t\t\t\tadd_filter( 'acf/settings/save_json', array( $this, 'settings_save_json' ) );\n\t\t\t\tadd_filter( 'acf/settings/load_json', array( $this, 'settings_load_json' ) );\n\t\t\t}\n\t\t}",
+    "quality_improvements": [
+      "Added is_object() and method_exists() guards on $sitepress",
+      "Early return if WPML is not available"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "verify_ajax",
+    "defective_code": "function verify_ajax() {\n\t\t\tif ( isset( $_REQUEST['lang'] ) ) {\n\t\t\t\tglobal $sitepress;\n\t\t\t\t$sitepress->switch_lang( sanitize_text_field( $_REQUEST['lang'] ) );\n\t\t\t}\n\t\t}",
+    "critique": {
+      "severity": "critical",
+      "defects": "$_REQUEST['lang'] used without any validation against supported languages — allows language switching for any arbitrary string, potentially causing WPML to fail or switch to an unintended locale; no check that $sitepress object exists before calling switch_lang(); $_REQUEST (instead of $_GET/$_POST) broadens attack surface; no nonce verification on the language switch"
+    },
+    "fixed_code": "function verify_ajax() {\n\t\t\tglobal $sitepress;\n\t\t\tif ( ! is_object( $sitepress ) || ! method_exists( $sitepress, 'switch_lang' ) ) {\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tif ( isset( $_REQUEST['lang'] ) ) {\n\t\t\t\t$lang = sanitize_text_field( wp_unslash( $_REQUEST['lang'] ) );\n\t\t\t\t$supported = apply_filters( 'wpml_available_languages', wp_get_available_translations() );\n\t\t\t\tif ( in_array( $lang, $supported, true ) ) {\n\t\t\t\t\t$sitepress->switch_lang( $lang );\n\t\t\t\t}\n\t\t\t}\n\t\t}",
+    "quality_improvements": [
+      "Added $sitepress object/method existence checks",
+      "Added wp_unslash() on $_REQUEST value",
+      "Added whitelist validation against supported languages"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_add_internal_post_type_validation_error",
+    "defective_code": "function acf_add_internal_post_type_validation_error( $name, $message = '', $post_type = '' ) {\n\tif ( empty( $post_type ) ) {\n\t\t$screen    = isset( $_POST['_acf_screen'] ) ? (string) $_POST['_acf_screen'] : 'post_type';\n\t\t$post_type = acf_get_post_type_from_screen_value( $screen );\n\t\tif ( ! $post_type ) {\n\t\t\treturn;\n\t\t}\n\t}\n\t$input_prefix = str_replace( '-', '_', $post_type );\n\tif ( substr( $name, 0, strlen( $input_prefix ) ) !== $input_prefix ) {\n\t\t$name = \"{$input_prefix}[$name]\";\n\t}",
+    "critique": {
+      "severity": "medium",
+      "defects": "$_POST['_acf_screen'] cast to string without wp_unslash(); $name concatenated into output string without sanitization, potential XSS if $name comes from user input; strlen() on $input_prefix with no strlen check — if $input_prefix is empty, substr returns false causing warning"
+    },
+    "fixed_code": "function acf_add_internal_post_type_validation_error( $name, $message = '', $post_type = '' ) {\n\tif ( empty( $post_type ) ) {\n\t\t$screen    = isset( $_POST['_acf_screen'] ) ? sanitize_text_field( wp_unslash( $_POST['_acf_screen'] ) ) : 'post_type';\n\t\t$post_type = acf_get_post_type_from_screen_value( $screen );\n\t\tif ( ! $post_type ) {\n\t\t\treturn;\n\t\t}\n\t}\n\t$input_prefix = str_replace( '-', '_', sanitize_key( $post_type ) );\n\tif ( $input_prefix && substr( $name, 0, strlen( $input_prefix ) ) !== $input_prefix ) {\n\t\t$name = esc_html( \"{$input_prefix}[{$name}]\" );\n\t}",
+    "quality_improvements": [
+      "Added wp_unslash() and sanitize_text_field() on $_POST['_acf_screen']",
+      "Added sanitize_key() on $post_type",
+      "Added empty-string guard before strlen() call",
+      "Added esc_html() on output to prevent XSS"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_request_args",
+    "defective_code": "function acf_request_args( $args = array() ) {\n\tforeach ( $args as $k => $v ) {\n\t\t$args[ $k ] = isset( $_REQUEST[ $k ] ) ? acf_sanitize_request_args( $_REQUEST[ $k ] ) : $args[ $k ];\n\t}\n\treturn $args;\n}",
+    "critique": {
+      "severity": "medium",
+      "defects": "$_REQUEST[$k] used without wp_unslash() before acf_sanitize_request_args; no whitelist or validation on $k — caller can specify any request key name, enabling request smuggling attacks; array input $args not validated, allowing non-array types to cause foreach to fail"
+    },
+    "fixed_code": "function acf_request_args( $args = array() ) {\n\tif ( ! is_array( $args ) ) {\n\t\treturn array();\n\t}\n\tforeach ( $args as $k => $v ) {\n\t\tif ( isset( $_REQUEST[ $k ] ) ) {\n\t\t\t$args[ $k ] = acf_sanitize_request_args( wp_unslash( $_REQUEST[ $k ] ) );\n\t\t}\n\t}\n\treturn $args;\n}",
+    "quality_improvements": [
+      "Added is_array() validation on $args",
+      "Added wp_unslash() on $_REQUEST values"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_validation::__construct",
+    "defective_code": "function __construct() {\n\t\t\tadd_action( 'wp_ajax_acf/validate_save_post', array( $this, 'ajax_validate_save_post' ) );\n\t\t\tadd_action( 'wp_ajax_nopriv_acf/validate_save_post', array( $this, 'ajax_validate_save_post' ) );\n\t\t\tadd_action( 'acf/validate_save_post', array( $this, 'acf_validate_save_post' ), 5 );\n\t\t}",
+    "critique": {
+      "severity": "high",
+      "defects": "wp_ajax_nopriv hook allows unauthenticated users to trigger validation AJAX — this may bypass authentication checks; no validation that WordPress and ACF core are loaded before registering hooks; the nopriv action combined with nonce verification failure in ajax_validate_save_post still results in a JSON response being sent, which may leak information"
+    },
+    "fixed_code": "function __construct() {\n\t\t\tif ( ! function_exists( 'wp_ajax_' ) ) {\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tadd_action( 'wp_ajax_acf/validate_save_post', array( $this, 'ajax_validate_save_post' ) );\n\t\t\tadd_action( 'acf/validate_save_post', array( $this, 'acf_validate_save_post' ), 5 );\n\t\t}",
+    "quality_improvements": [
+      "Removed wp_ajax_nopriv hook to prevent unauthenticated AJAX access",
+      "Added function_exists() gate for WordPress bootstrap check"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_validation::ajax_validate_save_post",
+    "defective_code": "function ajax_validate_save_post() {\n\t\t\tif ( ! acf_verify_ajax() ) {\n\t\t\t\tif ( empty( $_REQUEST['nonce'] ) ) {\n\t\t\t\t\t$nonce_error = __( 'ACF was unable to perform validation because no nonce was received by the server.', 'acf' );\n\t\t\t\t} else {\n\t\t\t\t\t$nonce_error = __( 'ACF was unable to perform validation because the provided nonce failed verification.', 'acf' );\n\t\t\t\t}\n\t\t\t\twp_send_json_success(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'valid'  => 0,\n\t\t\t\t\t\t'errors' => array(\n\t\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t\t'input'   => false,\n\t\t\t\t\t\t\t\t'message' => $nonce_error,\n\t\t\t\t\t\t\t\t'action'  => array(\n\t\t\t\t\t\t\t\t\t'label' => __( 'Learn more', 'acf' ),\n\t\t\t\t\t\t\t\t\t'url'   => acf_add_url_utm_tags( 'https://www.advancedcustomfields.com/resources/validation-nonce-errors/', 'docs', 'validation-nonce' ),\n\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t),\n\t\t\t\t\t)\n\t\t\t\t);\n\t\t\t}\n\t\t\t$json = array(\n\t\t\t\t'valid'  => 1,\n\t\t\t\t'errors' => 0,\n\t\t\t);\n\t\t\tif ( acf_validate_save_post() ) {\n\t\t\t\twp_send_json_success( $json );\n\t\t\t}\n\t\t\t$json['valid']  = 0;\n\t\t\t$json['errors'] = acf_get_validation_errors();\n\t\t\twp_send_json_success( $json );\n\t\t}",
+    "critique": {
+      "severity": "medium",
+      "defects": "acf_verify_ajax() is called but its implementation may not include nonce verification (depends on implementation); $nonce_error strings constructed without esc_html__(), potentially allowing XSS if __() is filtered; wp_send_json_success() does not set proper HTTP status code for errors (returns 200); no check_ajax_referer() before processing — nonce_error path sends useful info to attackers about nonce mechanism"
+    },
+    "fixed_code": "function ajax_validate_save_post() {\n\t\t\tif ( ! wp_verify_nonce( wp_unslash( $_REQUEST['acf_nonce'] ?? '' ), 'acf_nonce' ) ) {\n\t\t\t\twp_send_json_error(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'valid'  => 0,\n\t\t\t\t\t\t'errors' => array(\n\t\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t\t'input'   => false,\n\t\t\t\t\t\t\t\t'message' => esc_html__( 'Validation failed. Please reload the page and try again.', 'acf' ),\n\t\t\t\t\t\t\t\t'action'  => array(\n\t\t\t\t\t\t\t\t\t'label' => esc_html__( 'Learn more', 'acf' ),\n\t\t\t\t\t\t\t\t\t'url'   => esc_url_raw( acf_add_url_utm_tags( 'https://www.advancedcustomfields.com/resources/validation-nonce-errors/', 'docs', 'validation-nonce' ) ),\n\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t),\n\t\t\t\t\t)\n\t\t\t);\n\t\t\t}\n\t\t\tcheck_ajax_referer( 'acf_nonce', 'acf_nonce' );\n\t\t\t$json = array(\n\t\t\t\t'valid'  => 1,\n\t\t\t\t'errors' => 0,\n\t\t\t);\n\t\t\tif ( acf_validate_save_post() ) {\n\t\t\t\twp_send_json_success( $json );\n\t\t\t}\n\t\t\t$json['valid']  = 0;\n\t\t\t$json['errors'] = acf_get_validation_errors();\n\t\t\twp_send_json_error( $json );\n\t\t}",
+    "quality_improvements": [
+      "Added direct wp_verify_nonce() check with generic error message",
+      "Added esc_html__() on all translatable strings",
+      "Added esc_url_raw() on external URL",
+      "Changed wp_send_json_success to wp_send_json_error for failure responses"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_validation::acf_validate_save_post",
+    "defective_code": "function acf_validate_save_post() {\n\t\t\t$post_type = acf_request_arg( 'post_type', false );\n\t\t\t$screen    = acf_request_arg( '_acf_screen', false );\n\t\t\tif ( in_array( $screen, array( 'post_type', 'taxonomy', 'ui_options_page' ), true ) && in_array( $post_type, array( 'acf-post-type', 'acf-taxonomy', 'acf-ui-options-page' ), true ) ) {\n\t\t\t\tacf_validate_internal_post_type_values( $post_type );\n\t\t\t} elseif ( acf_request_arg( 'acf_ui_options_page' ) ) {\n\t\t\t\tacf_validate_internal_post_type_values( 'acf-ui-options-page' );\n\t\t\t} else {\n\t\t\t\tif ( empty( $_POST['acf'] ) ) {\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t\tacf_validate_values( $_POST['acf'], 'acf' );\n\t\t\t}\n\t\t}",
+    "critique": {
+      "severity": "medium",
+      "defects": "$_POST['acf'] used without wp_unslash() before passing to acf_validate_values; no nonce verification in this validation path; $screen and $post_type from acf_request_arg pass through in_array whitelist but no explicit input sanitization on the values themselves; no capability check before validation"
+    },
+    "fixed_code": "function acf_validate_save_post() {\n\t\t\t$post_type = acf_request_arg( 'post_type', false );\n\t\t\t$screen    = acf_request_arg( '_acf_screen', false );\n\t\t\tif ( in_array( $screen, array( 'post_type', 'taxonomy', 'ui_options_page' ), true ) && in_array( $post_type, array( 'acf-post-type', 'acf-taxonomy', 'acf-ui-options-page' ), true ) ) {\n\t\t\t\tacf_validate_internal_post_type_values( $post_type );\n\t\t\t} elseif ( acf_request_arg( 'acf_ui_options_page' ) ) {\n\t\t\t\tacf_validate_internal_post_type_values( 'acf-ui-options-page' );\n\t\t\t} else {\n\t\t\t\tif ( empty( $_POST['acf'] ) ) {\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t\tacf_validate_values( wp_unslash( $_POST['acf'] ), 'acf' );\n\t\t\t}\n\t\t}",
+    "quality_improvements": [
+      "Added wp_unslash() on $_POST['acf'] before validation"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_decode_taxonomy_term",
+    "defective_code": "function acf_decode_taxonomy_term( $value ) {\n\t$data = array(\n\t\t'taxonomy' => '',\n\t\t'term'     => '',\n\t);\n\tif ( is_numeric( $value ) ) {\n\t\t$data['term'] = $value;\n\t} elseif ( is_string( $value ) ) {\n\t\t$value            = explode( ':', $value );\n\t\t$data['taxonomy'] = isset( $value[0] ) ? $value[0] : '';\n\t\t$data['term']     = isset( $value[1] ) ? $value[1] : '';\n\t} else {\n\t\treturn false;\n\t}\n\tif ( is_numeric( $data['term'] ) ) {\n\t\tglobal $wpdb;\n\t\tif ( ! $data['taxonomy'] ) {\n\t\t\t$data['taxonomy'] = $wpdb->get_var( $wpdb->prepare( \"SELECT taxonomy FROM $wpdb->term_taxonomy WHERE term_id = %d LIMIT 1\", $data['term'] ) );\n\t\t}\n\t\t$term = get_term_by( 'slug', $data['term'], $data['taxonomy'] );\n\t\tif ( ! $term ) {\n\t\t\t$term = get_term( $data['term'], $data['taxonomy'] );\n\t\t}\n\t\tif ( ! $term ) {\n\t\t\treturn false;\n\t\t}\n\t\t$data['taxonomy'] = $term->taxonomy;\n\t\t$data['term']     = $term->slug;\n\t}\n\treturn $data;\n}",
+    "critique": {
+      "severity": "high",
+      "defects": "$data['term'] is stored as-is from is_numeric() check — could be a float like '123.45' causing issues downstream; get_term_by('slug', ...) with a numeric string term is an anti-pattern (should use get_term by ID); $data['taxonomy'] from $wpdb->get_var() not checked for null before passing to get_term_by(); explode without limit on user input could create large arrays"
+    },
+    "fixed_code": "function acf_decode_taxonomy_term( $value ) {\n\t$data = array(\n\t\t'taxonomy' => '',\n\t\t'term'     => '',\n\t);\n\tif ( is_numeric( $value ) && floor( $value ) == $value ) {\n\t\t$data['term'] = (int) $value;\n\t} elseif ( is_string( $value ) ) {\n\t\t$value_parts    = explode( ':', $value, 2 );\n\t\t$data['taxonomy'] = isset( $value_parts[0] ) && is_string( $value_parts[0] ) ? sanitize_key( $value_parts[0] ) : '';\n\t\t$data['term']     = isset( $value_parts[1] ) ? sanitize_text_field( wp_unslash( $value_parts[1] ) ) : '';\n\t} else {\n\t\treturn false;\n\t}\n\tif ( is_numeric( $data['term'] ) ) {\n\t\t$term_id = (int) $data['term'];\n\t\tglobal $wpdb;\n\t\tif ( ! $data['taxonomy'] ) {\n\t\t\t$taxonomy = $wpdb->get_var( $wpdb->prepare( \"SELECT taxonomy FROM $wpdb->term_taxonomy WHERE term_id = %d LIMIT 1\", $term_id ) );\n\t\t\tif ( ! $taxonomy ) {\n\t\t\t\treturn false;\n\t\t\t}\n\t\t\t$data['taxonomy'] = $taxonomy;\n\t\t}\n\t\t$term = get_term( $term_id, $data['taxonomy'] );\n\t\tif ( ! $term || is_wp_error( $term ) ) {\n\t\t\treturn false;\n\t\t}\n\t\t$data['taxonomy'] = $term->taxonomy;\n\t\t$data['term']     = $term->slug;\n\t}\n\treturn $data;\n}",
+    "quality_improvements": [
+      "Added floor() check to ensure $value is integer, cast to (int)",
+      "Added explode limit of 2 to prevent array bloat",
+      "Added sanitize_key() on taxonomy and sanitize_text_field on term",
+      "Added null check on $wpdb->get_var result",
+      "Added is_wp_error() check on get_term result"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_is_ajax",
+    "defective_code": "function acf_is_ajax( $action = '' ) {\n\t$is_ajax = false;\n\tif ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {\n\t\t$is_ajax = true;\n\t}\n\tif ( $action && acf_maybe_get( $_POST, 'action' ) !== $action ) {\n\t\t$is_ajax = false;\n\t}\n\treturn $is_ajax;\n}",
+    "critique": {
+      "severity": "low",
+      "defects": "$_POST['action'] accessed via acf_maybe_get without wp_unslash(); no validation that $action parameter is a string, allowing unexpected types in comparison"
+    },
+    "fixed_code": "function acf_is_ajax( $action = '' ) {\n\t$is_ajax = false;\n\tif ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {\n\t\t$is_ajax = true;\n\t}\n\tif ( $action && is_string( $action ) && acf_maybe_get( $_POST, 'action' ) !== $action ) {\n\t\t$is_ajax = false;\n\t}\n\treturn $is_ajax;\n}",
+    "quality_improvements": [
+      "Added is_string() check on $action parameter for safe comparison"
+    ],
+    "generation_method": "wave0002_agent"
+  }
+]

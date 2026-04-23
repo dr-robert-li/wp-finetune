@@ -1,0 +1,1318 @@
+[
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Dimensions::__construct",
+    "code": "function __construct() { $this->settings_include(); $this->tab_init(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Basic constructor follows WP convention. Missing explicit PHPDoc block."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "No SQL queries present."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "No user input handling required. Pure initialization."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "O(1) constructor calls, lightweight."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Uses standard WP class pattern."
+        },
+        "code_quality": {
+          "score": 6,
+          "analysis": "Redundant empty lines and tabs. Minimal docblock."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "Depends on settings_include and tab_init methods within same class."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "No translation needed in constructor."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "No UI output, no a11y concerns."
+        }
+      },
+      "overall_score": 76,
+      "key_observation": "Stub constructor delegating to settings and tab init."
+    },
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Dimensions::tab_init",
+    "code": "function tab_init() { add_filter( $this->plugin_name . '-' . $this->parent_page . '_settings_tabs_array', array( $this, 'add_tab' ), $this->position ); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Uses add_filter correctly. Missing docblock."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "No direct user input. Relies on $this->parent_page from class state."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "Single filter registration, O(1)."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Correct use of add_filter for settings tab extension."
+        },
+        "code_quality": {
+          "score": 6,
+          "analysis": "Empty lines add no value. Conventionally this uses plugin slug not $this->plugin_name for filter names."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "Relies on $this->plugin_name, $this->parent_page, $this->position, $this->add_tab being set/defined."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "No translatable strings."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "No UI output."
+        }
+      },
+      "overall_score": 76,
+      "key_observation": "Dynamic filter registration for settings tab extension."
+    },
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Dimensions::tab_data",
+    "code": "function tab_data() { $tab_data = array( 'name' => 'dimensions-card', 'label' => __( 'Dimensions', 'a3-responsive-slider' ), 'callback_function' => 'a3_responsive_slider_card_skin_dimensions_tab_manager', ); if ( $this->tab_data ) return $this->tab_data; return $this->tab_data = $tab_data; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Uses __( ) for i18n correctly. Missing docblock."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "Returns hardcoded config array. No user input."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "Memoization pattern (returns cached $this->tab_data) is efficient."
+        },
+        "wp_api_usage": {
+          "score": 8,
+          "analysis": "Correct use of __( ) for translation domain. Config array structure matches WP settings pattern."
+        },
+        "code_quality": {
+          "score": 6,
+          "analysis": "Uses tabs inconsistently. The if-check-assign pattern is slightly redundant (could use null coalescing in PHP 7+)."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "Relies on class property $this->tab_data and FrameWork singleton."
+        },
+        "i18n": {
+          "score": 8,
+          "analysis": "Proper __( 'Dimensions', 'a3-responsive-slider' ) usage."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "Data structure, no UI."
+        }
+      },
+      "overall_score": 78,
+      "key_observation": "Tab config with proper i18n and memoization."
+    },
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Dimensions::add_tab",
+    "code": "function add_tab( $tabs_array ) { if ( ! is_array( $tabs_array ) ) $tabs_array = array(); $tabs_array[] = $this->tab_data(); return $tabs_array; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Input validation present. Missing docblock."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "Safely guards against non-array input."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "Single array append, O(1)."
+        },
+        "wp_api_usage": {
+          "score": 8,
+          "analysis": "Correct filter callback pattern for extending tab arrays."
+        },
+        "code_quality": {
+          "score": 7,
+          "analysis": "Guard clause for type safety is good. Clean logic."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "Depends on $this->tab_data() which is a separate method call."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "No translation needed."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "No UI."
+        }
+      },
+      "overall_score": 79,
+      "key_observation": "Type-safe tab array extension with guard clause."
+    },
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Dimensions::settings_include",
+    "code": "function settings_include() { global $a3_responsive_sider_template_card_dimensions_settings; $a3_responsive_sider_template_card_dimensions_settings = new FrameWork\\Settings\\Template_Card_Dimensions(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 5,
+          "analysis": "Using global variable in function body is WP anti-pattern. Should be a class property or use a registry."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 7,
+          "analysis": "Global variable assignment is fragile but not directly insecure."
+        },
+        "performance": {
+          "score": 7,
+          "analysis": "Instantiates a framework settings object on every call."
+        },
+        "wp_api_usage": {
+          "score": 5,
+          "analysis": "Globals are discouraged in WP plugin development. Framework instantiation bypasses WP settings API."
+        },
+        "code_quality": {
+          "score": 4,
+          "analysis": "Global variable shadowing is poor practice. Variable name has typo: 'sider' vs 'slider'. No docblock."
+        },
+        "dependency_integrity": {
+          "score": 6,
+          "analysis": "Creates FrameWork\\Settings\\Template_Card_Dimensions() which is a custom framework class, not WP core."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "No translation."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "No UI."
+        }
+      },
+      "overall_score": 68,
+      "key_observation": "Uses global variable anti-pattern with typo in variable name."
+    },
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Dimensions::tab_manager",
+    "code": "function tab_manager() { global $a3_responsive_sider_template_card_dimensions_settings; $this->plugin_extension_start(); $a3_responsive_sider_template_card_dimensions_settings->settings_form(); $this->plugin_extension_end(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 5,
+          "analysis": "Global variable again. Plugin extension hooks are non-standard WP patterns."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 7,
+          "analysis": "Calls settings_form() which may output HTML without nonce/capability checks."
+        },
+        "performance": {
+          "score": 7,
+          "analysis": "Delegates to settings_form() which may be heavy."
+        },
+        "wp_api_usage": {
+          "score": 5,
+          "analysis": "Non-standard hooks plugin_extension_start/end. Not a WP core API pattern."
+        },
+        "code_quality": {
+          "score": 5,
+          "analysis": "Global + custom hooks = tight coupling to framework. No error handling."
+        },
+        "dependency_integrity": {
+          "score": 5,
+          "analysis": "Tightly coupled to FrameWork singleton and plugin_extension hooks."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "No direct translation needed."
+        },
+        "accessibility": {
+          "score": 7,
+          "analysis": "Delegates to settings_form() which should handle a11y but this function doesn't verify it."
+        }
+      },
+      "overall_score": 66,
+      "key_observation": "Delegates to global settings object via non-standard plugin hooks."
+    },
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Title::__construct",
+    "code": "function __construct() { $this->settings_include(); $this->tab_init(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Standard WP class constructor pattern."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "Pure initialization."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "Lightweight."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Standard class pattern."
+        },
+        "code_quality": {
+          "score": 6,
+          "analysis": "Duplicate of Card_Skin_Dimensions::__construct. DRY violated across classes."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "Relies on inherited/defined methods."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "No translation."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "No UI."
+        }
+      },
+      "overall_score": 76,
+      "key_observation": "Identical constructor pattern repeated from Card_Skin_Dimensions."
+    },
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Title::tab_init",
+    "code": "function tab_init() { add_filter( $this->plugin_name . '-' . $this->parent_page . '_settings_tabs_array', array( $this, 'add_tab' ), $this->position ); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Standard add_filter usage."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "No user input."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "O(1) filter registration."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Correct WP API."
+        },
+        "code_quality": {
+          "score": 6,
+          "analysis": "Copy-paste pattern from Card_Skin_Dimensions::tab_init."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "Relies on class properties."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "No translation."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "No UI."
+        }
+      },
+      "overall_score": 76,
+      "key_observation": "Repeated tab_init pattern with dynamic filter name."
+    },
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Title::tab_data",
+    "code": "function tab_data() { $tab_data = array( 'name' => 'title-card', 'label' => __( 'Image Title', 'a3-responsive-slider' ), 'callback_function' => 'a3_responsive_slider_card_skin_title_tab_manager', ); if ( $this->tab_data ) return $this->tab_data; return $this->tab_data = $tab_data; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Correct __( ) usage."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "Hardcoded config."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "Memoized."
+        },
+        "wp_api_usage": {
+          "score": 8,
+          "analysis": "Proper WP i18n API."
+        },
+        "code_quality": {
+          "score": 6,
+          "analysis": "Same memoization anti-pattern as Card_Skin_Dimensions."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "Relies on class property and framework."
+        },
+        "i18n": {
+          "score": 8,
+          "analysis": "__( 'Image Title', 'a3-responsive-slider' ) correct."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "No UI."
+        }
+      },
+      "overall_score": 78,
+      "key_observation": "Memoized tab config with proper i18n domain."
+    },
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Title::add_tab",
+    "code": "function add_tab( $tabs_array ) { if ( ! is_array( $tabs_array ) ) $tabs_array = array(); $tabs_array[] = $this->tab_data(); return $tabs_array; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Input validation present."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "Guard clause for type safety."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "O(1) array push."
+        },
+        "wp_api_usage": {
+          "score": 8,
+          "analysis": "Correct filter callback pattern."
+        },
+        "code_quality": {
+          "score": 7,
+          "analysis": "Clean, safe."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "Depends on $this->tab_data()."
+        }
+      },
+      "overall_score": 79,
+      "key_observation": "Type-guarded tab extension, identical pattern across classes."
+    },
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Title::settings_include",
+    "code": "function settings_include() { global $a3_responsive_sider_template_card_title_settings; $a3_responsive_sider_template_card_title_settings = new FrameWork\\Settings\\Template_Card_Title(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 5,
+          "analysis": "Global variable anti-pattern. Typo 'sider' persists."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 7,
+          "analysis": "Fragile global state."
+        },
+        "performance": {
+          "score": 7,
+          "analysis": "Instantiates framework class."
+        },
+        "wp_api_usage": {
+          "score": 5,
+          "analysis": "Globals discouraged in WP."
+        },
+        "code_quality": {
+          "score": 4,
+          "analysis": "Copy-paste with global anti-pattern. Typo in variable name."
+        },
+        "dependency_integrity": {
+          "score": 6,
+          "analysis": "Depends on FrameWork\\Settings\\Template_Card_Title."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "No translation."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "No UI."
+        }
+      },
+      "overall_score": 66,
+      "key_observation": "Global variable with persistent typo 'sider' vs 'slider'."
+    },
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Card_Skin_Title::tab_manager",
+    "code": "function tab_manager() { global $a3_responsive_sider_template_card_title_settings; $this->plugin_extension_start(); $a3_responsive_sider_template_card_title_settings->settings_form(); $this->plugin_extension_end(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 5,
+          "analysis": "Global + non-standard hooks."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 7,
+          "analysis": "Delegates to settings_form()."
+        },
+        "performance": {
+          "score": 7,
+          "analysis": "Delegates to potentially heavy settings_form()."
+        },
+        "wp_api_usage": {
+          "score": 5,
+          "analysis": "plugin_extension hooks are non-standard."
+        },
+        "code_quality": {
+          "score": 5,
+          "analysis": "Copy-paste with global."
+        },
+        "dependency_integrity": {
+          "score": 5,
+          "analysis": "Tightly coupled to framework singleton."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "No translation."
+        },
+        "accessibility": {
+          "score": 7,
+          "analysis": "Delegates a11y to settings_form()."
+        }
+      },
+      "overall_score": 64,
+      "key_observation": "Identical non-standard tab_manager pattern with global."
+    },
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Control::tab_init",
+    "code": "function tab_init() { add_filter( $this->plugin_name . '-' . $this->parent_page . '_settings_tabs_array', array( $this, 'add_tab' ), $this->position ); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Standard add_filter."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "No user input."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "O(1)."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Correct."
+        },
+        "code_quality": {
+          "score": 6,
+          "analysis": "Repeated pattern."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "Relies on class properties."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "No translation."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "No UI."
+        }
+      },
+      "overall_score": 76,
+      "key_observation": "Repeated tab_init for Template_Widget_Control class."
+    },
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Control::tab_data",
+    "code": "function tab_data() { $tab_data = array( 'name' => 'control', 'label' => __( 'Controls', 'a3-responsive-slider' ), 'callback_function' => 'a3_responsive_slider_template_widget_control_tab_manager', ); if ( $this->tab_data ) return $this->tab_data; return $this->tab_data = $tab_data; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Correct __( ) usage."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "Hardcoded."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "Memoized."
+        },
+        "wp_api_usage": {
+          "score": 8,
+          "analysis": "Correct WP i18n."
+        },
+        "code_quality": {
+          "score": 6,
+          "analysis": "Same memoization pattern."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "Relies on class property."
+        },
+        "i18n": {
+          "score": 8,
+          "analysis": "__( 'Controls', 'a3-responsive-slider' ) correct."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "No UI."
+        }
+      },
+      "overall_score": 78,
+      "key_observation": "Tab data for widget control with correct i18n domain."
+    },
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Control::add_tab",
+    "code": "function add_tab( $tabs_array ) { if ( ! is_array( $tabs_array ) ) $tabs_array = array(); $tabs_array[] = $this->tab_data(); return $tabs_array; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Input validation."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "Type guard."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "O(1)."
+        },
+        "wp_api_usage": {
+          "score": 8,
+          "analysis": "Correct."
+        },
+        "code_quality": {
+          "score": 7,
+          "analysis": "Clean guard clause."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "Depends on tab_data()."
+        }
+      },
+      "overall_score": 79,
+      "key_observation": "Type-safe tab array extension, repeated pattern."
+    },
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Control::settings_include",
+    "code": "function settings_include() { global $a3_responsive_sider_template_widget_control_settings; $a3_responsive_sider_template_widget_control_settings = new FrameWork\\Settings\\Template_Widget_Control(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 5,
+          "analysis": "Global anti-pattern persists. Typo 'sider' still present."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 7,
+          "analysis": "Fragile global state."
+        },
+        "performance": {
+          "score": 7,
+          "analysis": "Framework instantiation."
+        },
+        "wp_api_usage": {
+          "score": 5,
+          "analysis": "Globals discouraged."
+        },
+        "code_quality": {
+          "score": 4,
+          "analysis": "Copy-paste global anti-pattern. Typo persists."
+        },
+        "dependency_integrity": {
+          "score": 6,
+          "analysis": "Depends on FrameWork\\Settings\\Template_Widget_Control."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "No translation."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "No UI."
+        }
+      },
+      "overall_score": 66,
+      "key_observation": "Third repetition of global settings_include with same typo."
+    },
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Control::tab_manager",
+    "code": "function tab_manager() { global $a3_responsive_sider_template_widget_control_settings; $this->plugin_extension_start(); $a3_responsive_sider_template_widget_control_settings->settings_form(); $this->plugin_extension_end(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 5,
+          "analysis": "Global + non-standard hooks."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 7,
+          "analysis": "Delegates to settings_form()."
+        },
+        "performance": {
+          "score": 7,
+          "analysis": "Delegates to heavy settings_form()."
+        },
+        "wp_api_usage": {
+          "score": 5,
+          "analysis": "Non-standard hooks."
+        },
+        "code_quality": {
+          "score": 5,
+          "analysis": "Copy-paste pattern."
+        },
+        "dependency_integrity": {
+          "score": 5,
+          "analysis": "Tightly coupled to framework."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "No translation."
+        },
+        "accessibility": {
+          "score": 7,
+          "analysis": "Delegates a11y."
+        }
+      },
+      "overall_score": 64,
+      "key_observation": "Third tab_manager with global and non-standard hooks."
+    },
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Pager::tab_init",
+    "code": "function tab_init() { add_filter( $this->plugin_name . '-' . $this->parent_page . '_settings_tabs_array', array( $this, 'add_tab' ), $this->position ); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Standard add_filter."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "No user input."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "O(1)."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Correct."
+        },
+        "code_quality": {
+          "score": 6,
+          "analysis": "Repeated pattern across 4+ classes."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "Relies on class properties."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "No translation."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "No UI."
+        }
+      },
+      "overall_score": 76,
+      "key_observation": "Fourth class using identical tab_init pattern."
+    },
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Pager::tab_data",
+    "code": "function tab_data() { $tab_data = array( 'name' => 'pager', 'label' => __( 'Pager', 'a3-responsive-slider' ), 'callback_function' => 'a3_responsive_slider_template_widget_pager_tab', ); if ( $this->tab_data ) return $this->tab_data; return $this->tab_data = $tab_data; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Correct __( ) usage."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "Hardcoded config."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "Memoized."
+        },
+        "wp_api_usage": {
+          "score": 8,
+          "analysis": "Correct WP i18n."
+        },
+        "code_quality": {
+          "score": 6,
+          "analysis": "Same memoization pattern."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "Relies on class property."
+        },
+        "i18n": {
+          "score": 8,
+          "analysis": "__( 'Pager', 'a3-responsive-slider' ) correct."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "No UI."
+        }
+      },
+      "overall_score": 78,
+      "key_observation": "Tab data for pager widget with correct i18n."
+    },
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Pager::add_tab",
+    "code": "function add_tab( $tabs_array ) { if ( ! is_array( $tabs_array ) ) $tabs_array = array(); $tabs_array[] = $this->tab_data(); return $tabs_array; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Input validation."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "Type guard."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "O(1)."
+        },
+        "wp_api_usage": {
+          "score": 8,
+          "analysis": "Correct."
+        },
+        "code_quality": {
+          "score": 7,
+          "analysis": "Clean."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "Depends on tab_data()."
+        }
+      },
+      "overall_score": 79,
+      "key_observation": "Fourth add_tab with identical type guard."
+    },
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent"
+  }
+]

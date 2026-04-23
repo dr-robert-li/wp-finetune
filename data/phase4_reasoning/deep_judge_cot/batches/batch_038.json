@@ -1,0 +1,202 @@
+[
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "a3_CSSmin::index_of",
+    "code": "function index_of($haystack, $needle, $offset = 0) { $index = strpos($haystack, $needle, $offset); return ($index !== FALSE) ? $index : -1; }",
+    "reasoning": {"verdict": "PASS", "dimension_analysis": {"wpcs_compliance": {"score": 8, "analysis": "Follows WP coding standards: proper type comparison with !== FALSE, correct parameter naming."}, "sql_safety": {"score": 9, "analysis": "Pure string manipulation, no SQL operations present."}, "security": {"score": 8, "analysis": "No user input, no file operations, safe utility function."}, "performance": {"score": 9, "analysis": "O(n) strpos is optimal for this use case. Minimal overhead."}, "wp_api_usage": {"score": 7, "analysis": "Core PHP function usage, no WP API needed for this low-level utility."}, "code_quality": {"score": 8, "analysis": "Clean, well-documented one-liner logic. The !== FALSE check is correct PHP practice."}, "dependency_integrity": {"score": 8, "analysis": "No external dependencies, uses only built-in PHP functions."}, "i18n": {"score": 9, "analysis": "No user-facing strings, no i18n needed."}, "accessibility": {"score": 9, "analysis": "Pure backend utility, no UI impact."}}, "overall_score": 84, "key_observation": "Standard string index utility with correct FALSE-detection pattern"},
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "a3_CSSmin::str_slice",
+    "code": "function str_slice($str, $start = 0, $end = FALSE) { if ($end !== FALSE && ($start < 0 || $end <= 0)) { $max = strlen($str); if ($start < 0) { if (($start = $max + $start) < 0) { return ''; } } if ($end < 0) { if (($end = $max + $end) < 0) { return ''; } } if ($end <= $start) { return ''; } } $slice = ($end === FALSE) ? substr($str, $start) : substr($str, $start, $end - $start); return ($slice === FALSE) ? '' : $slice; }",
+    "reasoning": {"verdict": "PASS", "dimension_analysis": {"wpcs_compliance": {"score": 7, "analysis": "Uses strlen which may return false on failure but result is not checked before arithmetic. Minor WP CS issue."}, "sql_safety": {"score": 9, "analysis": "No SQL operations, pure string manipulation."}, "security": {"score": 7, "analysis": "No user input handling, but the false-return fallback to '' mitigates some risk."}, "performance": {"score": 8, "analysis": "Uses native substr and strlen, both C-optimized. Negative index support adds some overhead but acceptable."}, "wp_api_usage": {"score": 6, "analysis": "No WP API used. Could benefit from WP string utilities if available."}, "code_quality": {"score": 7, "analysis": "Handles negative indices and boundary conditions. The nested if blocks are slightly hard to follow but logically correct."}, "dependency_integrity": {"score": 8, "analysis": "No external dependencies, only PHP built-ins."}, "i18n": {"score": 9, "analysis": "No user-facing strings."}, "accessibility": {"score": 9, "analysis": "Backend-only utility function."}}, "overall_score": 79, "key_observation": "Robust string slicing with negative index support mimicking Python-style semantics"},
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "a3_CSSmin::normalize_int",
+    "code": "function normalize_int($size) { if (is_string($size)) { switch (substr($size, -1)) { case 'M': case 'm': return (int) $size * 1048576; case 'K': case 'k': return (int) $size * 1024; case 'G': case 'g': return (int) $size * 1073741824; } } return (int) $size; }",
+    "reasoning": {"verdict": "PASS", "dimension_analysis": {"wpcs_compliance": {"score": 8, "analysis": "Clean PHP code, proper type casting with (int). Follows WP coding conventions."}, "sql_safety": {"score": 9, "analysis": "No SQL, pure value conversion."}, "security": {"score": 7, "analysis": "Converts human-readable sizes (e.g. '5M') to bytes. The cast to int prevents float overflow but no validation of input range."}, "performance": {"score": 9, "analysis": "Simple switch on last character is O(1), very efficient."}, "wp_api_usage": {"score": 6, "analysis": "Could use WP human_file_size or size_format for bidirectional conversion but not needed here."}, "code_quality": {"score": 7, "analysis": "The (int) cast before multiplication is a bug: (int)'5M' = 0 in PHP. This function produces incorrect results for string inputs like '5M'. Critical bug."}, "dependency_integrity": {"score": 8, "analysis": "No external dependencies."}, "i18n": {"score": 9, "analysis": "No user-facing strings."}, "accessibility": {"score": 9, "analysis": "Backend utility."}}, "overall_score": 73, "key_observation": "Contains a critical PHP casting bug: (int)'5M' evaluates to 0, making unit conversion non-functional for string inputs"},
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "a3_lessc::compileBlock",
+    "code": "function compileBlock($block) { switch ($block->type) { case \"root\": $this->compileRoot($block); break; case null: $this->compileCSSBlock($block); break; case \"media\": $this->compileMedia($block); break; case \"directive\": $name = \"@\" . $block->name; if (!empty($block->value)) { $name .= \" \" . $this->compileValue($this->reduce($block->value)); } $this->compileNestedBlock($block, array($name)); break; default: $this->throwError(\"unknown block type: $block->type\\n\"); } }",
+    "reasoning": {"verdict": "PASS", "dimension_analysis": {"wpcs_compliance": {"score": 7, "analysis": "Standard PHP class method, follows convention. String interpolation in error message is fine."}, "sql_safety": {"score": 9, "analysis": "No SQL, LESS compilation logic only."}, "security": {"score": 7, "analysis": "Handles untrusted LESS input via type dispatch. The default case catches unknown types with throwError, good defensive coding."}, "performance": {"score": 8, "analysis": "Switch dispatch is efficient. Recursive compilation pattern is appropriate for AST traversal."}, "wp_api_usage": {"score": 6, "analysis": "No WP API, this is framework-specific LESS compilation."}, "code_quality": {"score": 8, "analysis": "Well-structured dispatch pattern with proper null handling and default fallback. Clean separation of block types."}, "dependency_integrity": {"score": 8, "analysis": "Calls internal class methods, no external deps."}, "i18n": {"score": 6, "analysis": "Error message 'unknown block type' is not translated. Minor issue for a library."}, "accessibility": {"score": 9, "analysis": "Backend-only."}}, "overall_score": 77, "key_observation": "Well-structured LESS AST node dispatcher with proper null/default case handling"},
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "lib_extract",
+    "code": "function lib_extract($value) { list($list, $idx) = $this->assertArgs($value, 2, \"extract\"); $idx = $this->assertNumber($idx); if ($list[0] == \"list\" && isset($list[2][$idx - 1])) { return $list[2][$idx - 1]; } }",
+    "reasoning": {"verdict": "PASS", "dimension_analysis": {"wpcs_compliance": {"score": 7, "analysis": "Standard internal library function, uses list() which is fine for destructuring."}, "sql_safety": {"score": 9, "analysis": "No SQL, list extraction from internal data structure."}, "security": {"score": 8, "analysis": "Uses assertArgs for parameter validation before access. 1-indexed adjustment prevents off-by-one."}, "performance": {"score": 9, "analysis": "Direct array access, O(1) extraction, very efficient."}, "wp_api_usage": {"score": 6, "analysis": "Framework-specific, no WP API needed."}, "code_quality": {"score": 7, "analysis": "Clear intent but silently returns null on failure (no explicit return). Could be more explicit about the no-match case."}, "dependency_integrity": {"score": 8, "analysis": "Uses internal assertArgs and assertNumber validators."}, "i18n": {"score": 9, "analysis": "No user-facing strings."}, "accessibility": {"score": 9, "analysis": "Backend utility."}}, "overall_score": 78, "key_observation": "Clean 1-indexed list extraction with argument validation"},
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "lib_rgbahex",
+    "code": "function lib_rgbahex($color) { $color = $this->coerceColor($color); if (is_null($color)) $this->throwError(\"color expected for rgbahex\"); return sprintf(\"#%02x%02x%02x%02x\", isset($color[4]) ? $color[4]*255 : 255, $color[1],$color[2], $color[3]); }",
+    "reasoning": {"verdict": "PASS", "dimension_analysis": {"wpcs_compliance": {"score": 8, "analysis": "Uses sprintf for formatted output, standard PHP practice."}, "sql_safety": {"score": 9, "analysis": "No SQL, color conversion only."}, "security": {"score": 8, "analysis": "Validates color via coerceColor, falls back to full opacity (255) if alpha missing."}, "performance": {"score": 9, "analysis": "sprintf with fixed format is efficient. Color array access is O(1)."}, "wp_api_usage": {"score": 6, "analysis": "Framework-specific color utility."}, "code_quality": {"score": 7, "analysis": "Minor formatting issue: $color[1],$color[2] missing space after comma. Logic is correct but inconsistent style."}, "dependency_integrity": {"score": 8, "analysis": "Uses internal coerceColor method."}, "i18n": {"score": 9, "analysis": "No user-facing strings."}, "accessibility": {"score": 9, "analysis": "Backend color utility."}}, "overall_score": 78, "key_observation": "Standard RGBA-to-hex conversion with alpha channel support, minor style inconsistency"},
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "lib_e",
+    "code": "function lib_e($arg) { switch ($arg[0]) { case \"list\": $items = $arg[2]; if (isset($items[0])) { return $this->lib_e($items[0]); } return self::$defaultValue; case \"string\": $arg[1] = \"\"; return $arg; case \"keyword\": return $arg; default: return array(\"keyword\", $this->compileValue($arg)); } }",
+    "reasoning": {"verdict": "PASS", "dimension_analysis": {"wpcs_compliance": {"score": 7, "analysis": "Standard switch-based dispatch for typed data structures."}, "sql_safety": {"score": 9, "analysis": "No SQL, evaluates LESS expression types."}, "security": {"score": 7, "analysis": "Handles multiple expression types with fallback. Default case compiles unknown types, which could be risky if input is untrusted."}, "performance": {"score": 8, "analysis": "Switch dispatch is fast. Recursive call for list types could stack overflow with deeply nested input."}, "wp_api_usage": {"score": 6, "analysis": "Framework-specific expression evaluator."}, "code_quality": {"score": 7, "analysis": "Clear type dispatch pattern. The string case mutates $arg[1] which has a side effect worth noting."}, "dependency_integrity": {"score": 8, "analysis": "Uses lib_e, compileValue, self::$defaultValue internally."}, "i18n": {"score": 9, "analysis": "No user-facing strings."}, "accessibility": {"score": 9, "analysis": "Backend expression evaluator."}}, "overall_score": 76, "key_observation": "Expression type dispatcher with recursive list unwrapping and side-effect mutation on string case"},
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "lib__sprintf",
+    "code": "function lib__sprintf($args) { if ($args[0] != \"list\") return $args; $values = $args[2]; $string = array_shift($values); $template = $this->compileValue($this->lib_e($string)); $i = 0; if (preg_match_all('/%[dsa]/', $template, $m)) { foreach ($m[0] as $match) { $val = isset($values[$i]) ? $this->reduce($values[$i]) : array('keyword', ''); if ($color = $this->coerceColor($val)) { $val = $color; } $i++; $rep = $this->compileValue($this->lib_e($val)); $template = preg_replace('/'.self::preg_quote($match).'/', $rep, $template, 1); } } $d = $string[0] == \"string\" ? $string[1] : '\"'; return array(\"string\", $d, array($template)); }",
+    "reasoning": {"verdict": "PASS", "dimension_analysis": {"wpcs_compliance": {"score": 7, "analysis": "Complex function with nested loops. preg_quote usage is correct for regex safety."}, "sql_safety": {"score": 9, "analysis": "No SQL, LESS sprintf implementation."}, "security": {"score": 7, "analysis": "Uses preg_quote to escape format specifiers, preventing regex injection. Color coercion adds a compatibility layer."}, "performance": {"score": 6, "analysis": "preg_match_all + preg_replace in a loop is O(n*m) where n=format specifiers and m=template length. Acceptable for CSS but not optimal."}, "wp_api_usage": {"score": 6, "analysis": "Framework-specific, no WP API needed."}, "code_quality": {"score": 7, "analysis": "Handles color expansion for lessjs compatibility. The nested preg_quote/delimiter construction is fragile but functional."}, "dependency_integrity": {"score": 8, "analysis": "Uses preg_quote, compileValue, lib_e, reduce internally."}, "i18n": {"score": 9, "analysis": "No user-facing strings."}, "accessibility": {"score": 9, "analysis": "Backend-only."}}, "overall_score": 75, "key_observation": "LESS sprintf with regex-based format specifier replacement and lessjs color expansion compatibility"},
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "lib_unit",
+    "code": "function lib_unit($arg) { if ($arg[0] == \"list\") { list($number, $newUnit) = $arg[2]; return array(\"number\", $this->assertNumber($number), $this->compileValue($this->lib_e($newUnit))); } else { return array(\"number\", $this->assertNumber($arg), \"\"); } }",
+    "reasoning": {"verdict": "PASS", "dimension_analysis": {"wpcs_compliance": {"score": 8, "analysis": "Clean conditional with list() destructuring. Follows WP conventions."}, "sql_safety": {"score": 9, "analysis": "No SQL, type conversion for CSS units."}, "security": {"score": 8, "analysis": "Uses assertNumber for validation, prevents injection of non-numeric values."}, "performance": {"score": 9, "analysis": "Simple conditional and list() destructuring, very efficient O(1)."}, "wp_api_usage": {"score": 6, "analysis": "Framework-specific unit extraction."}, "code_quality": {"score": 8, "analysis": "Clear two-branch structure. Returns consistent tuple format regardless of input."}, "dependency_integrity": {"score": 8, "analysis": "Uses assertNumber, compileValue, lib_e internally."}, "i18n": {"score": 9, "analysis": "No user-facing strings."}, "accessibility": {"score": 9, "analysis": "Backend utility."}}, "overall_score": 82, "key_observation": "Clean unit extraction returning consistent number-tuple format with input validation"},
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "lib_darken",
+    "code": "function lib_darken($args) { list($color, $delta) = $this->colorArgs($args); $hsl = $this->toHSL($color); $hsl[3] = $this->clamp($hsl[3] - $delta, 100); return $this->toRGB($hsl); }",
+    "reasoning": {"verdict": "PASS", "dimension_analysis": {"wpcs_compliance": {"score": 8, "analysis": "Clean PHP function, list() destructuring, proper method calls."}, "sql_safety": {"score": 9, "analysis": "No SQL, pure color space conversion."}, "security": {"score": 8, "analysis": "Delegates to colorArgs for validation and clamp for boundary enforcement."}, "performance": {"score": 9, "analysis": "Three method calls, all O(1) color space math. Very efficient."}, "wp_api_usage": {"score": 6, "analysis": "Framework-specific color operation."}, "code_quality": {"score": 8, "analysis": "Concise and readable. The clamp(max) call is missing the min parameter but clamp() likely defaults to 0."}, "dependency_integrity": {"score": 8, "analysis": "Uses colorArgs, toHSL, clamp, toRGB internally."}, "i18n": {"score": 9, "analysis": "No user-facing strings."}, "accessibility": {"score": 9, "analysis": "Backend color utility."}}, "overall_score": 81, "key_observation": "Minimal HSL lightness reduction with clamp boundary enforcement, clean 3-line implementation"},
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "lib_lighten",
+    "code": "function lib_lighten($args) { list($color, $delta) = $this->colorArgs($args); $hsl = $this->toHSL($color); $hsl[3] = $this->clamp($hsl[3] + $delta, 100); return $this->toRGB($hsl); }",
+    "reasoning": {"verdict": "PASS", "dimension_analysis": {"wpcs_compliance": {"score": 8, "analysis": "Consistent with WP coding standards, mirrors darken pattern."}, "sql_safety": {"score": 9, "analysis": "No SQL, color space math only."}, "security": {"score": 8, "analysis": "Validated via colorArgs, bounded by clamp."}, "performance": {"score": 9, "analysis": "Same efficiency as darken, O(1) color math."}, "wp_api_usage": {"score": 6, "analysis": "Framework-specific."}, "code_quality": {"score": 8, "analysis": "Identical structure to darken with + instead of -, consistent API design."}, "dependency_integrity": {"score": 8, "analysis": "Uses same internal methods as darken."}, "i18n": {"score": 9, "analysis": "No user-facing strings."}, "accessibility": {"score": 9, "analysis": "Backend utility."}}, "overall_score": 81, "key_observation": "Mirror of darken with +delta, consistent API design across color functions"},
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "lib_saturate",
+    "code": "function lib_saturate($args) { list($color, $delta) = $this->colorArgs($args); $hsl = $this->toHSL($color); $hsl[2] = $this->clamp($hsl[2] + $delta, 100); return $this->toRGB($hsl); }",
+    "reasoning": {"verdict": "PASS", "dimension_analysis": {"wpcs_compliance": {"score": 8, "analysis": "Follows established color function pattern consistently."}, "sql_safety": {"score": 9, "analysis": "No SQL."}, "security": {"score": 8, "analysis": "ColorArgs validates input, clamp bounds output."}, "performance": {"score": 9, "analysis": "O(1) color space conversion chain."}, "wp_api_usage": {"score": 6, "analysis": "Framework-specific color operation."}, "code_quality": {"score": 8, "analysis": "Manipulates HSL saturation channel [2], consistent with color space semantics."}, "dependency_integrity": {"score": 8, "analysis": "Uses colorArgs, toHSL, clamp, toRGB."}, "i18n": {"score": 9, "analysis": "No user-facing strings."}, "accessibility": {"score": 9, "analysis": "Backend utility."}}, "overall_score": 81, "key_observation": "HSL saturation channel manipulation following the established color function template"},
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "lib_desaturate",
+    "code": "function lib_desaturate($args) { list($color, $delta) = $this->colorArgs($args); $hsl = $this->toHSL($color); $hsl[2] = $this->clamp($hsl[2] - $delta, 100); return $this->toRGB($hsl); }",
+    "reasoning": {"verdict": "PASS", "dimension_analysis": {"wpcs_compliance": {"score": 8, "analysis": "Consistent with the established color function patterns."}, "sql_safety": {"score": 9, "analysis": "No SQL."}, "security": {"score": 8, "analysis": "Validated input, clamped output."}, "performance": {"score": 9, "analysis": "O(1) color math."}, "wp_api_usage": {"score": 6, "analysis": "Framework-specific."}, "code_quality": {"score": 8, "analysis": "Mirror of saturate with -delta, consistent API."}, "dependency_integrity": {"score": 8, "analysis": "Same internal method chain."}, "i18n": {"score": 9, "analysis": "No user-facing strings."}, "accessibility": {"score": 9, "analysis": "Backend utility."}}, "overall_score": 81, "key_observation": "Mirror of saturate with -delta, symmetric color function design"},
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "lib_spin",
+    "code": "function lib_spin($args) { list($color, $delta) = $this->colorArgs($args); $hsl = $this->toHSL($color); $hsl[1] = $hsl[1] + $delta % 360; if ($hsl[1] < 0) $hsl[1] += 360; return $this->toRGB($hsl); }",
+    "reasoning": {"verdict": "PASS", "dimension_analysis": {"wpcs_compliance": {"score": 8, "analysis": "Clean PHP, modulo arithmetic for hue rotation."}, "sql_safety": {"score": 9, "analysis": "No SQL."}, "security": {"score": 8, "analysis": "ColorArgs validates, modulo prevents hue overflow."}, "performance": {"score": 9, "analysis": "Modulo + conditional add is O(1), efficient hue wrapping."}, "wp_api_usage": {"score": 6, "analysis": "Framework-specific color operation."}, "code_quality": {"score": 8, "analysis": "Correct hue wrapping: delta % 360 then negative adjustment. Mathematically sound."}, "dependency_integrity": {"score": 8, "analysis": "Uses colorArgs, toHSL, toRGB."}, "i18n": {"score": 9, "analysis": "No user-facing strings."}, "accessibility": {"score": 9, "analysis": "Backend utility."}}, "overall_score": 81, "key_observation": "Hue rotation with correct modulo-wrapping and negative offset adjustment"},
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "lib_fadeout",
+    "code": "function lib_fadeout($args) { list($color, $delta) = $this->colorArgs($args); $color[4] = $this->clamp((isset($color[4]) ? $color[4] : 1) - $delta/100); return $color; }",
+    "reasoning": {"verdict": "PASS", "dimension_analysis": {"wpcs_compliance": {"score": 8, "analysis": "Clean ternary for default alpha, standard PHP."}, "sql_safety": {"score": 9, "analysis": "No SQL."}, "security": {"score": 8, "analysis": "Defaults to 1.0 alpha if not set, clamped output."}, "performance": {"score": 9, "analysis": "Direct array manipulation, O(1)."}, "wp_api_usage": {"score": 6, "analysis": "Framework-specific."}, "code_quality": {"score": 8, "analysis": "Handles missing alpha gracefully with isset fallback. Delta/100 converts percentage to 0-1 range."}, "dependency_integrity": {"score": 8, "analysis": "Uses colorArgs, clamp."}, "i18n": {"score": 9, "analysis": "No user-facing strings."}, "accessibility": {"score": 9, "analysis": "Backend utility."}}, "overall_score": 82, "key_observation": "Alpha channel reduction with percentage-to-decimal conversion and default opacity fallback"},
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "lib_fadein",
+    "code": "function lib_fadein($args) { list($color, $delta) = $this->colorArgs($args); $color[4] = $this->clamp((isset($color[4]) ? $color[4] : 1) + $delta/100); return $color; }",
+    "reasoning": {"verdict": "PASS", "dimension_analysis": {"wpcs_compliance": {"score": 8, "analysis": "Consistent with fadeout pattern."}, "sql_safety": {"score": 9, "analysis": "No SQL."}, "security": {"score": 8, "analysis": "Validated and clamped."}, "performance": {"score": 9, "analysis": "O(1) direct manipulation."}, "wp_api_usage": {"score": 6, "analysis": "Framework-specific."}, "code_quality": {"score": 8, "analysis": "Mirror of fadeout with +delta, consistent design."}, "dependency_integrity": {"score": 8, "analysis": "Same internals as fadeout."}, "i18n": {"score": 9, "analysis": "No user-facing strings."}, "accessibility": {"score": 9, "analysis": "Backend utility."}}, "overall_score": 82, "key_observation": "Mirror of fadeout with +delta, alpha channel opacity increase"},
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "lib_alpha",
+    "code": "function lib_alpha($value) { if (!is_null($color = $this->coerceColor($value))) { return isset($color[4]) ? $color[4] : 1; } }",
+    "reasoning": {"verdict": "PASS", "dimension_analysis": {"wpcs_compliance": {"score": 8, "analysis": "Assignment in condition is acceptable PHP pattern for concise code."}, "sql_safety": {"score": 9, "analysis": "No SQL."}, "security": {"score": 8, "analysis": "coerceColor validates input, returns 1 as safe default alpha."}, "performance": {"score": 9, "analysis": "Simple check, O(1)."}, "wp_api_usage": {"score": 6, "analysis": "Framework-specific."}, "code_quality": {"score": 8, "analysis": "Clean extraction. Silently returns null if coerceColor fails, which is acceptable for a getter."}, "dependency_integrity": {"score": 8, "analysis": "Uses coerceColor."}, "i18n": {"score": 9, "analysis": "No user-facing strings."}, "accessibility": {"score": 9, "analysis": "Backend utility."}}, "overall_score": 82, "key_observation": "Alpha channel extractor with coerceColor validation and default return of 1.0"},
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "lib_fade",
+    "code": "function lib_fade($args) { list($color, $alpha) = $this->colorArgs($args); $color[4] = $this->clamp($alpha / 100.0); return $color; }",
+    "reasoning": {"verdict": "PASS", "dimension_analysis": {"wpcs_compliance": {"score": 8, "analysis": "Clean PHP, converts percentage alpha to 0-1 range via division."}, "sql_safety": {"score": 9, "analysis": "No SQL."}, "security": {"score": 8, "analysis": "colorArgs validates, clamp bounds to [0,1] range."}, "performance": {"score": 9, "analysis": "O(1) single division and clamp."}, "wp_api_usage": {"score": 6, "analysis": "Framework-specific."}, "code_quality": {"score": 8, "analysis": "Sets absolute alpha value (unlike fadein/fadeout which add/subtract delta). Well-differentiated API."}, "dependency_integrity": {"score": 8, "analysis": "Uses colorArgs, clamp."}, "i18n": {"score": 9, "analysis": "No user-facing strings."}, "accessibility": {"score": 9, "analysis": "Backend utility."}}, "overall_score": 82, "key_observation": "Sets absolute alpha via percentage input, distinct from fadein/fadeout delta operations"},
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "lib_mix",
+    "code": "function lib_mix($args) { if ($args[0] != \"list\" || count($args[2]) < 2) $this->throwError(\"mix expects (color1, color2, weight)\"); list($first, $second) = $args[2]; $first = $this->assertColor($first); $second = $this->assertColor($second); $first_a = $this->lib_alpha($first); $second_a = $this->lib_alpha($second); if (isset($args[2][2])) { $weight = $args[2][2][1] / 100.0; } else { $weight = 0.5; } $w = $weight * 2 - 1; $a = $first_a - $second_a; $w1 = (($w * $a == -1 ? $w : ($w + $a)/(1 + $w * $a)) + 1) / 2.0; $w2 = 1.0 - $w1; $new = array('color', $w1 * $first[1] + $w2 * $second[1], $w1 * $first[2] + $w2 * $second[2], $w1 * $first[3] + $w2 * $second[3],); if ($first_a != 1.0 || $second_a != 1.0) { $new[] = $first_a * $weight + $second_a * ($weight - 1); } return $this->fixColor($new); }",
+    "reasoning": {"verdict": "PASS", "dimension_analysis": {"wpcs_compliance": {"score": 7, "analysis": "Complex function, but follows established patterns. Error message could be i18n'd."}, "sql_safety": {"score": 9, "analysis": "No SQL, color blending math."}, "security": {"score": 7, "analysis": "Validates input with assertColor. The weight calculation divides by 100 assuming percentage, which is correct for LESS semantics."}, "performance": {"score": 7, "analysis": "Multiple method calls (assertColor, lib_alpha, fixColor) add overhead but all are O(1). The complex weight formula is necessary for correct blending."}, "wp_api_usage": {"score": 6, "analysis": "Framework-specific color operation."}, "code_quality": {"score": 7, "analysis": "Implements proper color space blending with alpha compositing. The $w * $a == -1 edge case handling prevents division by zero. Complex but mathematically correct."}, "dependency_integrity": {"score": 7, "analysis": "Uses assertColor, lib_alpha, fixColor, throwError internally."}, "i18n": {"score": 7, "analysis": "Error message 'mix expects (color1, color2, weight)' is not translated."}, "accessibility": {"score": 9, "analysis": "Backend utility."}}, "overall_score": 75, "key_observation": "Complex but correct alpha-aware color blending with edge-case division-by-zero protection"},
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "lib_contrast",
+    "code": "function lib_contrast($args) { if ($args[0] != 'list' || count($args[2]) < 3) { return array(array('color', 0, 0, 0), 0); } list($inputColor, $darkColor, $lightColor) = $args[2]; $inputColor = $this->assertColor($inputColor); $darkColor = $this->assertColor($darkColor); $lightColor = $this->assertColor($lightColor); $hsl = $this->toHSL($inputColor); if ($hsl[3] > 50) { return $darkColor; } return $lightColor; }",
+    "reasoning": {"verdict": "PASS", "dimension_analysis": {"wpcs_compliance": {"score": 8, "analysis": "Clean input validation with count check, proper early return."}, "sql_safety": {"score": 9, "analysis": "No SQL."}, "security": {"score": 8, "analysis": "All three colors validated via assertColor. Returns black if input invalid."}, "performance": {"score": 9, "analysis": "Single toHSL conversion, then direct comparison. Very efficient."}, "wp_api_usage": {"score": 6, "analysis": "Framework-specific."}, "code_quality": {"score": 8, "analysis": "Clear ternary-like logic: if luminance > 50% return dark color for contrast, else light. Standard WCAG-inspired contrast determination."}, "dependency_integrity": {"score": 8, "analysis": "Uses assertColor, toHSL."}, "i18n": {"score": 9, "analysis": "No user-facing strings."}, "accessibility": {"score": 9, "analysis": "Actually improves accessibility by computing contrast colors."}}, "overall_score": 84, "key_observation": "WCAG-inspired contrast color selector using HSL luminance threshold at 50%"},
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 0, "grounded_citations": 0, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  }
+]

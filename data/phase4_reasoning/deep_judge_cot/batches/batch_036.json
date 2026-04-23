@@ -1,0 +1,602 @@
+[
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Dimensions::include_script",
+    "code": "function include_script() { ?>\n<script>\n(function($) {\n$(document).ready(function() {\n\tif ( $(\"input.is_slider_tall_dynamic:checked\").val() == '0') {\n\t\t$(\".is_slider_tall_dynamic_off\").show();\n\t} else {\n\t\t$(\".is_slider_tall_dynamic_off\").hide();\n\t}\n\t\n\t$(document).on( \"a3rev-ui-onoff_checkbox-switch\", '.is_slider_tall_dynamic', function( event, value, status ) {\n\t\tif ( status == 'true' ) {\n\t\t\t$(\".is_slider_tall_dynamic_off\").slideDown();\n\t\t} else {\n\t\t\t$(\".is_slider_tall_dynamic_off\").slideUp();\n\t\t}\n\t});\n\t\n});\n})(jQuery);\n</script>\n    <?php\t\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "analysis": "Inline script output with PHP open/close tags is non-standard for WP coding; scripts should use wp_enqueue_script. The jQuery no-conflict wrapper is correct."},
+        "sql_safety": {"score": 10, "analysis": "No SQL queries present. Pure frontend JS."},
+        "security": {"score": 7, "analysis": "No direct user input handled. DOM manipulation is safe. Inline script is a minor CSP concern but acceptable in admin context."},
+        "performance": {"score": 5, "analysis": "Inline JS adds to page weight. $(document).ready with delegated event handler is reasonable. No major perf issues but not optimal."},
+        "wp_api_usage": {"score": 5, "analysis": "Does not use wp_enqueue_script/wp_add_inline_script which is the WP-recommended approach for adding JS. Direct output is used instead."},
+        "code_quality": {"score": 6, "analysis": "Functionally clear jQuery DOM manipulation. Repetitive show/hide logic could be simplified with toggle. Proper IIFE pattern used."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on jQuery being loaded globally. No version check or wp_enqueue_script dependency declaration visible."},
+        "i18n": {"score": 9, "analysis": "No user-facing strings in this function so no i18n needed."},
+        "accessibility": {"score": 7, "analysis": "DOM manipulation toggles visibility which is acceptable but no ARIA attribute updates. Users may not be notified of state changes."}
+      },
+      "overall_score": 72,
+      "key_observation": "Standard admin inline JS for slider dimension toggling; lacks wp_enqueue_script but functionally correct."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Title::__construct",
+    "code": "function __construct() {\n\t\tadd_action( 'plugins_loaded', array( $this, 'init_form_fields' ), 1 );\n\t\t$this->subtab_init();\n\t\t\n\t\t$this->form_messages = array(\n\t\t\t\t'success_message'\t=> __( 'Image Title Settings successfully saved.', 'a3-responsive-slider' ),\n\t\t\t\t'error_message'\t\t=> __( 'Error: Image Title Settings can not save.', 'a3-responsive-slider' ),\n\t\t\t\t'reset_message'\t\t=> __( 'Image Title Settings successfully reseted.', 'a3-responsive-slider' ),\n\t\t\t);\n\t\t\n\t\tadd_action( $this->plugin_name . '-' . $this->form_key . '_settings_end', array( $this, 'include_script' ) );\n\t\t\t\t\t\t\t\n\t\tadd_action( $this->plugin_name . '_set_default_settings' , array( $this, 'set_default_settings' ) );\n\t\t\t\t\n\t\tadd_action( $this->plugin_name . '-' . $this->form_key . '_settings_init' , array( $this, 'reset_default_settings' ) );\n\t\t\t\t\n\t\t//add_action( $this->plugin_name . '_get_all_settings' , array( $this, 'get_settings' ) );\n\t\t\n\t\tadd_action( $this->plugin_name . '-'. $this->form_key.'_settings_start', array( $this, 'pro_fields_before' ) );\n\t\tadd_action( $this->plugin_name . '-'. $this->form_key.'_settings_end', array( $this, 'pro_fields_after' ) );\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Uses add_action correctly with array() syntax (older WP style but valid). i18n strings use __() with text domain. 'reseted' should be 'reset' per WP standards but minor."},
+        "sql_safety": {"score": 10, "analysis": "No SQL queries. Constructor only registers hooks and sets message arrays."},
+        "security": {"score": 8, "analysis": "No user input processing. Hook names are dynamically constructed from class properties which is safe. Form messages are safe static strings."},
+        "performance": {"score": 8, "analysis": "Lightweight constructor. Only registers actions, no heavy operations. O(1) memory for message array."},
+        "wp_api_usage": {"score": 7, "analysis": "Properly uses add_action for WP hooks. Uses apply_filters-compatible pattern with __(). Dynamic hook names follow WP naming conventions."},
+        "code_quality": {"score": 6, "analysis": "Functional but verbose. 'reseted' is grammatically incorrect (should be 'reset'). Lots of action registrations which is standard for WP widget constructors but hard to follow."},
+        "dependency_integrity": {"score": 7, "analysis": "Relies on $this->plugin_name and $this->form_key being set by parent class. No explicit dependency checks."},
+        "i18n": {"score": 7, "analysis": "Strings use __() with 'a3-responsive-slider' text domain. However 'reseted' is wrong English (should be 'reset') which would be a translation issue."},
+        "accessibility": {"score": 9, "analysis": "No UI output directly. This is a constructor that sets up form infrastructure used elsewhere."}
+      },
+      "overall_score": 76,
+      "key_observation": "Standard WP widget constructor with i18n strings; minor grammar issue ('reseted') and verbose hook registration."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Title::subtab_init",
+    "code": "function subtab_init() {\n\t\t\n\t\tadd_filter( $this->plugin_name . '-' . $this->parent_tab . '_settings_subtabs_array', array( $this, 'add_subtab' ), $this->position );\n\t\t\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Clean use of add_filter with proper array callback syntax. Follows WP coding conventions."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 9, "analysis": "No user input. Dynamic filter name from class properties only. Safe."},
+        "performance": {"score": 9, "analysis": "Single add_filter call. O(1). Extremely lightweight."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct use of add_filter to hook into WP filter chain. Dynamic filter name follows plugin convention."},
+        "code_quality": {"score": 8, "analysis": "Minimal, single-responsibility function. Clear purpose. Only issue is extra blank lines."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on $this->plugin_name, $this->parent_tab, $this->position being initialized."},
+        "i18n": {"score": 10, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 10, "analysis": "No UI. Pure backend logic."}
+      },
+      "overall_score": 84,
+      "key_observation": "Minimal, correct filter registration; the cleanest function in this batch."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Title::subtab_data",
+    "code": "function subtab_data() {\n\t\t\n\t\t$subtab_data = array( \n\t\t\t'name'\t\t\t\t=> 'title',\n\t\t\t'label'\t\t\t\t=> __( 'Image Title', 'a3-responsive-slider' ),\n\t\t\t'callback_function'\t=> 'a3_responsive_sider_template_widget_title_settings_form',\n\t\t);\n\t\t\n\t\tif ( $this->subtab_data ) return $this->subtab_data;\n\t\treturn $this->subtab_data = $subtab_data;\n\t\t\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Uses __() for i18n. However the callback_function value 'a3_responsive_sider_template_widget_title_settings_form' has a typo: 'sider' instead of 'slider'. This is a bug."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 9, "analysis": "No user input. Static data structure with safe callback name reference."},
+        "performance": {"score": 8, "analysis": "Lazy initialization pattern with memoization ($this->subtab_data cache). Reasonable."},
+        "wp_api_usage": {"score": 6, "analysis": "The callback_function name has a typo ('sider' vs 'slider') which would cause the callback to fail at runtime. This is a significant bug."},
+        "code_quality": {"score": 5, "analysis": "The typo 'a3_responsive_sider_template_widget_title_settings_form' is a clear bug that would break the callback. Memoization pattern is good. Extra blank lines are cosmetic."},
+        "dependency_integrity": {"score": 5, "analysis": "The misspelled callback name 'a3_responsive_sider_template_widget_title_settings_form' would fail to resolve at runtime. This is a critical dependency integrity issue."},
+        "i18n": {"score": 8, "analysis": "Uses __() correctly. The string 'Image Title' is translatable."},
+        "accessibility": {"score": 10, "analysis": "No UI output directly. Returns data array."}
+      },
+      "overall_score": 70,
+      "key_observation": "Critical typo in callback_function name ('sider' instead of 'slider') would break the settings form callback."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Title::add_subtab",
+    "code": "function add_subtab( $subtabs_array ) {\n\t\n\t\tif ( ! is_array( $subtabs_array ) ) $subtabs_array = array();\n\t\t$subtabs_array[] = $this->subtab_data();\n\t\t\n\t\treturn $subtabs_array;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Proper type check before array manipulation. Standard WP filter callback pattern."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 9, "analysis": "No user input. Only appends class method output to array."},
+        "performance": {"score": 9, "analysis": "Simple array append. O(1). Very lightweight."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct filter callback pattern. Accepts filter input and returns modified array."},
+        "code_quality": {"score": 8, "analysis": "Clean, defensive coding with is_array check. Simple and readable. Extra blank lines only issue."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on $this->subtab_data() returning valid data."},
+        "i18n": {"score": 10, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 10, "analysis": "No UI. Backend data manipulation only."}
+      },
+      "overall_score": 84,
+      "key_observation": "Clean filter callback with defensive is_array check; no issues beyond minor blank lines."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Title::settings_form",
+    "code": "function settings_form() {\n\t\t\t\t\n\t\t$output = '';\n\t\t$output .= $GLOBALS[$this->plugin_prefix.'admin_interface']->admin_forms( $this->form_fields, $this->form_key, $this->option_name, $this->form_messages );\n\t\t\n\t\treturn $output;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 5, "analysis": "Accessing $GLOBALS directly is non-standard WP pattern. Should use a DI container or pass the admin interface as a constructor parameter. However common in legacy WP plugins."},
+        "sql_safety": {"score": 10, "analysis": "No SQL. Delegates to admin_forms method."},
+        "security": {"score": 6, "analysis": "$GLOBALS access bypasses encapsulation. If $this->plugin_prefix is not sanitized it could lead to unexpected object access, though in this context it is set from class properties."},
+        "performance": {"score": 7, "analysis": "Delegates rendering. No perf issues in itself but the delegation adds indirection."},
+        "wp_api_usage": {"score": 5, "analysis": "Using $GLOBALS is not recommended WP practice. Should use dependency injection or a singleton pattern for the admin interface."},
+        "code_quality": {"score": 5, "analysis": "$GLOBALS access is a code smell. Minimal function body otherwise. The delegation to admin_forms is reasonable structurally."},
+        "dependency_integrity": {"score": 5, "analysis": "Tightly couples to $GLOBALS[$this->plugin_prefix.'admin_interface'] existing. No existence check or graceful fallback."},
+        "i18n": {"score": 10, "analysis": "No strings. Delegates to admin_forms which handles its own i18n."},
+        "accessibility": {"score": 10, "analysis": "No direct UI. Delegates rendering."}
+      },
+      "overall_score": 66,
+      "key_observation": "Uses $GLOBALS for admin interface access which bypasses encapsulation; functional but non-standards-compliant."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Title::init_form_fields",
+    "code": "function init_form_fields() {\n\t\t\t\t\n  \t\t// Define settings\t\t\t\n     \t$this->form_fields = apply_filters( $this->option_name . '_settings_fields', array(\n\t\t\n\t\t\tarray(\n\t\t\t\t'name'\t\t=> __( 'Image Title Settings', 'a3-responsive-slider' ),\n                'type' \t\t=> 'heading',\n           \t),\n\t\t\tarray(  \n\t\t\t\t'name' \t\t=> __( 'Title', 'a3-responsive-slider' ),\n\t\t\t\t'id' \t\t=> 'enable_slider_title',\n\t\t\t\t'class'\t\t=> 'enable_slider_title',\n\t\t\t\t'type' \t\t=> 'onoff_checkbox',\n\t\t\t\t'default'\t=> 1,\n\t\t\t\t'checked_value'\t\t=> 1,\n\t\t\t\t'unchecked_value' \t=> 0,\n\t\t\t\t'checked_label'\t\t=> __( 'ON', 'a3-responsive-slider' ),\n\t\t\t\t'unchecked_label' \t=> __( 'OFF', 'a3-responsive-slider' ),\n\t\t\t),\n\t\t\t\n\t\t\tarray(\n                'type' \t\t=> 'heading',\n\t\t\t\t'class'\t\t=> 'slider_title_container'\n           \t),\n\t\t\tarray(  \n\t\t\t\t'name' \t\t=> __( 'Title Position', 'a3-responsive-slider' ),\n\t\t\t\t'id' \t\t=> 'title_position',\n\t\t\t\t'type' \t\t=> 'select',\n\t\t\t\t'default'\t=> 'bellow',\n\t\t\t\t'options'\t=> array(\n\t\t\t\t\t'above'\t\t\t=> __( 'Above Slider', 'a3-responsive-slider' ),\n\t\t\t\t\t'bellow'\t\t=> __( 'Below Slider', 'a3-responsive-slider' ),\n\t\t\t\t),\n\t\t\t\t'css' \t\t=> 'width:160px;',\n\t\t\t),\n\t\t\tarray(  \n\t\t\t\t'name' \t\t=> __( 'Title Margin', 'a3-responsive-slider' ),\n\t\t\t\t'id' \t\t=> 'title_margin',\n\t\t\t\t'type' \t\t=> 'array_textfields',\n\t\t\t\t'ids'\t\t=> array( \n\t \t\t\t\t\t\t\t\tarray( \n\t\t\t\t\t\t\t\t\t\t\t'id' \t\t=> 'title_margin_top',\n\t \t\t\t\t\t\t\t\t\t\t'name' \t\t=> __( 'Top', 'a3-responsive-slider' ),\n\t \t\t\t\t\t\t\t\t\t\t'css'\t\t=> 'width:40px;',\n\t \t\t\t\t\t\t\t\t\t\t'default'\t=> 5 ),\n\t \n\t \t\t\t\t\t\t\t\tarray(  'id' \t\t=> 'title_margin_bottom',\n\t \t\t\t\t\t\t\t\t\t\t'name' \t\t=> __( 'Bottom', 'a3-responsive-slider' ),\n\t \t\t\t\t\t\t\t\t\t\t'css'\t\t=> 'width:40px;',\n\t \t\t\t\t\t\t\t\t\t\t'default'\t=> 5 ),\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\tarray( \n\t\t\t\t\t\t\t\t\t\t\t'id' \t\t=> 'title_margin_left',\n\t \t\t\t\t\t\t\t\t\t\t'name' \t\t=> __( 'Left', 'a3-responsive-slider' ),\n\t \t\t\t\t\t\t\t\t\t\t'css'\t\t=> 'width:40px;',\n\t \t\t\t\t\t\t\t\t\t\t'default'\t=> 5 ),\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\tarray( \n\t\t\t\t\t\t\t\t\t\t\t'id' \t\t=> 'title_margin_right',\n\t \t\t\t\t\t\t\t\t\t\t'name' \t\t=> __( 'Right', 'a3-responsive-slider' ),\n\t \t\t\t\t\t\t\t\t\t\t'css'\t\t=> 'width:40px;',\n\t \t\t\t\t\t\t\t\t\t\t'default'\t=> 5 ),\n\t \t\t\t\t\t\t\t)\n\t\t\t),\n\t\t\tarray(  \n\t\t\t\t'name' \t\t=> __( 'Title Font', 'a3-responsive-slider' ),\n\t\t\t\t'id' \t\t=> 'title_font',\n\t\t\t\t'type' \t\t=> 'typography',\n\t\t\t\t'default'\t=> array( 'size' => '18px', 'line_height' => '1.4em', 'face' => 'Arial, sans-serif', 'style' => 'bold', 'color' => '#000000' )\n\t\t\t),\n\t\t\tarray(  \n\t\t\t\t'name' \t\t=> __( 'Title Hover Colour', 'a3-responsive-slider' ),\n\t\t\t\t'id' \t\t=> 'title_font_hover_color',\n\t\t\t\t'type' \t\t=> 'color',\n\t\t\t\t'default'\t=> '#999999'\n\t\t\t),\n\t\t\t\n        ));\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "analysis": "Uses apply_filters correctly. All user-facing strings use __(). However 'bellow' is a misspelling of 'below' which should be 'below' in both the default and the label."},
+        "sql_safety": {"score": 10, "analysis": "No SQL. Form field definition only."},
+        "security": {"score": 9, "analysis": "No user input. Static form field definitions with safe defaults. Filter allows extensibility but no validation of filter output."},
+        "performance": {"score": 8, "analysis": "Builds a large static array. O(n) where n is field count (~8 fields). Reasonable for admin init."},
+        "wp_api_usage": {"score": 7, "analysis": "apply_filters is correct WP pattern. Form field types are custom (onoff_checkbox, array_textfields, typography) not native WP. Uses standard id/name/type pattern."},
+        "code_quality": {"score": 5, "analysis": "Very verbose with nested array structures. 'bellow' is misspelled (should be 'below'). Heavy indentation makes it hard to read. The array_textfields nesting is particularly complex."},
+        "dependency_integrity": {"score": 7, "analysis": "Uses custom field types that require supporting renderer classes. $this->option_name must be set. Heavy reliance on custom framework."},
+        "i18n": {"score": 8, "analysis": "All strings use __() with text domain. However 'bellow' misspelling would cause translation issues - translators would see a misspelled word."},
+        "accessibility": {"score": 6, "analysis": "Form fields are defined but accessibility depends on the renderer. onoff_checkbox type needs proper ARIA labels which are not specified in the field definition."}
+      },
+      "overall_score": 70,
+      "key_observation": "Comprehensive form field definition with correct i18n patterns but has 'bellow' typo and uses custom field types without native WP equivalents."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Title::include_script",
+    "code": "function include_script() {\n\t?>\n<script>\n(function($) {\n$(document).ready(function() {\n\t\n\tif ( $(\"input.enable_slider_title:checked\").val() == '1') {\n\t\t$(\".slider_title_container\").css( {'visibility': 'visible', 'height' : 'auto', 'overflow' : 'inherit'} );\n\t} else {\n\t\t$(\".slider_title_container\").css( {'visibility': 'hidden', 'height' : '0px', 'overflow' : 'hidden'} );\n\t}\n\t\n\t$(document).on( \"a3rev-ui-onoff_checkbox-switch\", '.enable_slider_title', function( event, value, status ) {\n\t\t$(\".slider_title_container\").hide().css( {'visibility': 'visible', 'height' : 'auto', 'overflow' : 'inherit'} );\n\t\tif ( status == 'true' ) {\n\t\t\t$(\".slider_title_container\").slideDown();\n\t\t} else {\n\t\t\t$(\".slider_title_container\").slideUp();\n\t\t}\n\t});\n\t\n});\n})(jQuery);\n</script>\n    <?php\t\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 5, "analysis": "Inline script output violates WP best practices. Should use wp_enqueue_script with wp_add_inline_script. jQuery no-conflict wrapper is correct."},
+        "sql_safety": {"score": 10, "analysis": "No SQL. Pure JS."},
+        "security": {"score": 7, "analysis": "DOM-only operations, no user input. Inline script is a minor CSP concern. No XSS vectors in the code."},
+        "performance": {"score": 6, "analysis": "Inline JS adds to DOM processing time. The hide().css() sequence before slideDown is redundant - could just use slideDown directly."},
+        "wp_api_usage": {"score": 5, "analysis": "Does not use wp_add_inline_script. Uses jQuery $(document).ready which works but jQuery.noConflict is preferred in WP."},
+        "code_quality": {"score": 6, "analysis": "Functionally correct toggle logic. The .hide().css() chain on toggle is redundant. Inline PHP output pattern is non-ideal. jQuery event on custom event name is fine."},
+        "dependency_integrity": {"score": 7, "analysis": "Requires jQuery and the custom 'a3rev-ui-onoff_checkbox-switch' event which must be provided elsewhere."},
+        "i18n": {"score": 10, "analysis": "No user-facing strings in JS."},
+        "accessibility": {"score": 6, "analysis": "Hiding/showing via CSS visibility is acceptable but no ARIA live region for screen readers announcing state changes. Users won't know the container appeared/disappeared."}
+      },
+      "overall_score": 68,
+      "key_observation": "Inline JS for title toggle with redundant .hide().css() chain; lacks wp_add_inline_script and ARIA updates."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Slider_Styles::__construct",
+    "code": "function __construct() {\n\t\tadd_action( 'plugins_loaded', array( $this, 'init_form_fields' ), 1 );\n\t\t$this->subtab_init();\n\t\t\n\t\t$this->form_messages = array(\n\t\t\t\t'success_message'\t=> __( 'Card Container Settings successfully saved.', 'a3-responsive-slider' ),\n\t\t\t\t'error_message'\t\t=> __( 'Error: Card Container Settings can not save.', 'a3-responsive-slider' ),\n\t\t\t\t'reset_message'\t\t=> __( 'Card Container Settings successfully reseted.', 'a3-responsive-slider' ),\n\t\t\t);\n\t\t\t\t\t\t\t\n\t\tadd_action( $this->plugin_name . '_set_default_settings' , array( $this, 'set_default_settings' ) );\n\t\t\t\t\n\t\tadd_action( $this->plugin_name . '-' . $this->form_key . '_settings_init' , array( $this, 'reset_default_settings' ) );\n\t\t\t\t\n\t\t//add_action( $this->plugin_name . '_get_all_settings' , array( $this, 'get_settings' ) );\n\t\t\n\t\tadd_action( $this->plugin_name . '-'. $this->form_key.'_settings_start', array( $this, 'pro_fields_before' ) );\n\t\tadd_action( $this->plugin_name . '-'. $this->form_key.'_settings_end', array( $this, 'pro_fields_after' ) );\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Standard WP constructor with add_action calls. __() used for i18n. Same 'reseted' grammar issue as Title widget constructor."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 9, "analysis": "No user input. Static hook registration from class properties. Safe."},
+        "performance": {"score": 9, "analysis": "Lightweight constructor with action registrations only. O(1)."},
+        "wp_api_usage": {"score": 7, "analysis": "Proper add_action usage. Dynamic hook names follow WP conventions. Standard WP plugin patterns."},
+        "code_quality": {"score": 6, "analysis": "Repetitive pattern (same as Title constructor with different strings). 'reseted' grammar issue. Extra whitespace between lines. Functionally correct."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on parent class properties. Same hook infrastructure as Title widget."},
+        "i18n": {"score": 7, "analysis": "Strings use __() correctly. 'reseted' should be 'reset' which would cause translation inconsistencies."},
+        "accessibility": {"score": 10, "analysis": "No UI output. Constructor only."}
+      },
+      "overall_score": 76,
+      "key_observation": "Nearly identical to Title constructor with 'Card Container' strings; same 'reseted' grammar issue."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Slider_Styles::subtab_init",
+    "code": "function subtab_init() {\n\t\t\n\t\tadd_filter( $this->plugin_name . '-' . $this->parent_tab . '_settings_subtabs_array', array( $this, 'add_subtab' ), $this->position );\n\t\t\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Correct add_filter usage. Same pattern as Title widget."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 9, "analysis": "No user input. Safe filter registration."},
+        "performance": {"score": 9, "analysis": "Single add_filter. O(1)."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct WP filter hook pattern."},
+        "code_quality": {"score": 8, "analysis": "Minimal and clear. Same as Title widget subtab_init. Minor blank lines."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on class properties being set."},
+        "i18n": {"score": 10, "analysis": "No strings."},
+        "accessibility": {"score": 10, "analysis": "No UI."}
+      },
+      "overall_score": 84,
+      "key_observation": "Mirror of Title widget subtab_init; identical structure and quality."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Slider_Styles::subtab_data",
+    "code": "function subtab_data() {\n\t\t\n\t\t$subtab_data = array( \n\t\t\t'name'\t\t\t\t=> 'slider-styles',\n\t\t\t'label'\t\t\t\t=> __( 'Card Container', 'a3-responsive-slider' ),\n\t\t\t'callback_function'\t=> 'a3_responsive_sider_template_widget_slider_styles_settings_form',\n\t\t);\n\t\t\n\t\tif ( $this->subtab_data ) return $this->subtab_data;\n\t\treturn $this->subtab_data = $subtab_data;\n\t\t\n\t}",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 5, "analysis": "Memoization pattern is correct. However callback_function has typo 'sider' instead of 'slider' - same as Title widget."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 8, "analysis": "No user input. Static data structure."},
+        "performance": {"score": 8, "analysis": "Memoization avoids recreation. Reasonable."},
+        "wp_api_usage": {"score": 4, "analysis": "CRITICAL BUG: callback_function 'a3_responsive_sider_template_widget_slider_styles_settings_form' has typo - 'sider' should be 'slider'. This would cause fatal callback resolution failure."},
+        "code_quality": {"score": 4, "analysis": "Same typo pattern as Title widget. The misspelled callback name is a real bug that would break functionality. Memoization is good."},
+        "dependency_integrity": {"score": 4, "analysis": "Critical: the misspelled callback function name would never resolve. This is a broken dependency."},
+        "i18n": {"score": 8, "analysis": "Uses __() for 'Card Container'. Correct."},
+        "accessibility": {"score": 10, "analysis": "No UI. Returns data array."}
+      },
+      "overall_score": 60,
+      "key_observation": "FAIL - Same 'sider' typo as Title widget would cause callback resolution failure at runtime."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Slider_Styles::add_subtab",
+    "code": "function add_subtab( $subtabs_array ) {\n\t\n\t\tif ( ! is_array( $subtabs_array ) ) $subtabs_array = array();\n\t\t$subtabs_array[] = $this->subtab_data();\n\t\t\n\t\treturn $subtabs_array;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Correct filter callback pattern. Same as Title widget."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 9, "analysis": "No user input. Safe array manipulation."},
+        "performance": {"score": 9, "analysis": "O(1) array append. Lightweight."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct add_filter callback pattern."},
+        "code_quality": {"score": 8, "analysis": "Clean defensive coding. Same as Title widget."},
+        "dependency_integrity": {"score": 6, "analysis": "Calls $this->subtab_data() which has the callback_function typo bug. This propagates the bug."},
+        "i18n": {"score": 10, "analysis": "No strings."},
+        "accessibility": {"score": 10, "analysis": "No UI."}
+      },
+      "overall_score": 78,
+      "key_observation": "Same as Title widget add_subtab; clean but propagates the subtab_data typo bug."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Slider_Styles::settings_form",
+    "code": "function settings_form() {\n\t\t\t\t\n\t\t$output = '';\n\t\t$output .= $GLOBALS[$this->plugin_prefix.'admin_interface']->admin_forms( $this->form_fields, $this->form_key, $this->option_name, $this->form_messages );\n\t\t\n\t\treturn $output;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 5, "analysis": "Same $GLOBALS pattern as Title widget. Non-standard WP practice."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 6, "analysis": "$GLOBALS bypasses encapsulation. Same concern as Title widget."},
+        "performance": {"score": 7, "analysis": "Delegating call. No perf issues."},
+        "wp_api_usage": {"score": 5, "analysis": "Same $GLOBALS issue as Title widget."},
+        "code_quality": {"score": 5, "analysis": "Same $GLOBALS code smell. Mirror of Title widget settings_form."},
+        "dependency_integrity": {"score": 5, "analysis": "Same $GLOBALS dependency issue."},
+        "i18n": {"score": 10, "analysis": "No strings."},
+        "accessibility": {"score": 10, "analysis": "No UI."}
+      },
+      "overall_score": 64,
+      "key_observation": "Mirror of Title widget settings_form; same $GLOBALS encapsulation issue."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_Slider_Styles::init_form_fields",
+    "code": "function init_form_fields() {\n\t\t\t\t\n  \t\t// Define settings\t\t\t\n     \t$this->form_fields = apply_filters( $this->option_name . '_settings_fields', array(\n\t\t\t\n\t\t\tarray(\n\t\t\t\t'name'\t\t=> __( 'Card Container Settings', 'a3-responsive-slider' ),\n                'type' \t\t=> 'heading',\n           \t),\n\t\t\tarray(  \n\t\t\t\t'name' \t\t=> __( 'Card Container Margin', 'a3-responsive-slider' ),\n\t\t\t\t'id' \t\t=> 'card_container_margin',\n\t\t\t\t'type' \t\t=> 'array_textfields',\n\t\t\t\t'ids'\t\t=> array( \n\t \t\t\t\t\t\t\t\tarray( \n\t\t\t\t\t\t\t\t\t\t\t'id' \t\t=> 'card_container_margin_top',\n\t \t\t\t\t\t\t\t\t\t\t'name' \t\t=> __( 'Top', 'a3-responsive-slider' ),\n\t \t\t\t\t\t\t\t\t\t\t'css'\t\t=> 'width:40px;',\n\t \t\t\t\t\t\t\t\t\t\t'default'\t=> 0 ),\n\t \n\t \t\t\t\t\t\t\t\tarray(  'id' \t\t=> 'card_container_margin_bottom',\n\t \t\t\t\t\t\t\t\t\t\t'name' \t\t=> __( 'Bottom', 'a3-responsive-slider' ),\n\t \t\t\t\t\t\t\t\t\t\t'css'\t\t=> 'width:40px;',\n\t \t\t\t\t\t\t\t\t\t\t'default'\t=> 0 ),\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\tarray( \n\t\t\t\t\t\t\t\t\t\t\t'id' \t\t=> 'card_container_margin_left',\n\t \t\t\t\t\t\t\t\t\t\t'name' \t\t=> __( 'Left', 'a3-responsive-slider' ),\n\t \t\t\t\t\t\t\t\t\t\t'css'\t\t=> 'width:40px;',\n\t \t\t\t\t\t\t\t\t\t\t'default'\t=> 0 ),\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\tarray( \n\t\t\t\t\t\t\t\t\t\t\t'id' \t\t=> 'card_container_margin_right',\n\t \t\t\t\t\t\t\t\t\t\t'name' \t\t=> __( 'Right', 'a3-responsive-slider' ),\n\t \t\t\t\t\t\t\t\t\t\t'css'\t\t=> 'width:40px;',\n\t \t\t\t\t\t\t\t\t\t\t'default'\t=> 0 ),\n\t \t\t\t\t\t\t\t)\n\t\t\t),\n\t\t\tarray(  \n\t\t\t\t'name' \t\t=> __( 'Card Container Padding', 'a3-responsive-slider' ),\n\t\t\t\t'id' \t\t=> 'card_container_padding',\n\t\t\t\t'type' \t\t=> 'array_textfields',\n\t\t\t\t'ids'\t\t=> array( \n\t \t\t\t\t\t\t\t\tarray( \n\t\t\t\t\t\t\t\t\t\t\t'id' \t\t=> 'card_container_padding_top',\n\t \t\t\t\t\t\t\t\t\t\t'name' \t\t=> __( 'Top', 'a3-responsive-slider' ),\n\t \t\t\t\t\t\t\t\t\t\t'css'\t\t=> 'width:40px;',\n\t \t\t\t\t\t\t\t\t\t\t'default'\t=> 0 ),\n\t \n\t \t\t\t\t\t\t\t\tarray(  'id' \t\t=> 'card_container_padding_bottom',\n\t \t\t\t\t\t\t\t\t\t\t'name' \t\t=> __( 'Bottom', 'a3-responsive-slider' ),\n\t \t\t\t\t\t\t\t\t\t\t'css'\t\t=> 'width:40px;',\n\t \t\t\t\t\t\t\t\t\t\t'default'\t=> 0 ),\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\tarray( \n\t\t\t\t\t\t\t\t\t\t\t'id' \t\t=> 'card_container_padding_left',\n\t \t\t\t\t\t\t\t\t\t\t'name' \t\t=> __( 'Left', 'a3-responsive-slider' ),\n\t \t\t\t\t\t\t\t\t\t\t'css'\t\t=> 'width:40px;',\n\t \t\t\t\t\t\t\t\t\t\t'default'\t=> 0 ),\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\tarray( \n\t\t\t\t\t\t\t\t\t\t\t'id' \t\t=> 'card_container_padding_right',\n\t \t\t\t\t\t\t\t\t\t\t'name' \t\t=> __( 'Right', 'a3-responsive-slider' ),\n\t \t\t\t\t\t\t\t\t\t\t'css'\t\t=> 'width:40px;',\n\t \t\t\t\t\t\t\t\t\t\t'default'\t=> 0 ),\n\t \t\t\t\t\t\t\t)\n\t\t\t),\n\t\t\tarray(  \n\t\t\t\t'name' \t\t=> __( 'Card Container Background Colour', 'a3-responsive-slider' ),\n\t\t\t\t'desc' \t\t=> __( 'Default', 'a3-responsive-slider' ) . ' [default_value]',\n\t\t\t\t'id' \t\t=> 'slider_background_colour',\n\t\t\t\t'type' \t\t=> 'color',\n\t\t\t\t'default'\t=> '#FFFFFF'\n\t\t\t),\n\t\t\tarray(  \n\t\t\t\t'name' \t\t=> __( 'Card Container Border', 'a3-responsive-slider' ),\n\t\t\t\t'id' \t\t=> 'slider_border',\n\t\t\t\t'type' \t\t=> 'border',\n\t\t\t\t'default'\t=> array( 'width' => '1px', 'style' => 'solid', 'color' => '#000000', 'corner' => 'square' , 'rounded_value' => 0 )\n\t\t\t),\n\t\t\tarray(  \n\t\t\t\t'name' \t\t=> __( 'Card Container Shadow', 'a3-responsive-slider' ),\n\t\t\t\t'id' \t\t=> 'slider_shadow',\n\t\t\t\t'type' \t\t=> 'box_shadow',\n\t\t\t\t'default'\t=> array( 'enable' => 0, 'h_shadow' => '5px' , 'v_shadow' => '5px', 'blur' => '2px' , 'spread' => '2px', 'color' => '#DBDBDB', 'inset' => '' )\n\t\t\t),\n\t\t\t\n        ));\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "analysis": "apply_filters used correctly. All strings use __(). Custom field types (array_textfields, border, box_shadow) are plugin-specific. 'Colour' uses British spelling which is fine for WP but 'color' is the WP standard in some contexts."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 9, "analysis": "No user input. Static field definitions. Filter allows extensibility."},
+        "performance": {"score": 8, "analysis": "Builds static field array (~7 fields). Reasonable for admin init."},
+        "wp_api_usage": {"score": 7, "analysis": "Correct apply_filters pattern. Custom field types not native WP but standard for this plugin ecosystem."},
+        "code_quality": {"score": 6, "analysis": "Very verbose with nested array_textfields. Two array_textfields fields (margin and padding) create deep nesting. 'Colour' British spelling vs WP 'color' standard inconsistency. Otherwise well structured."},
+        "dependency_integrity": {"score": 7, "analysis": "Relies on custom field type renderers. $this->option_name must be set."},
+        "i18n": {"score": 8, "analysis": "All strings use __(). 'Colour' spelling may cause translation inconsistencies with WP standard 'color'."},
+        "accessibility": {"score": 6, "analysis": "Form fields defined but accessibility depends on custom renderers. No explicit ARIA attributes in field definitions."}
+      },
+      "overall_score": 70,
+      "key_observation": "Detailed form fields for card container styling; custom field types with deep nesting, British 'Colour' spelling."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_ReadMore::__construct",
+    "code": "function __construct() {\n\t\tadd_action( 'plugins_loaded', array( $this, 'init_form_fields' ), 1 );\n\t\t$this->subtab_init();\n\t\t\n\t\t$this->form_messages = array(\n\t\t\t\t'success_message'\t=> __( 'Read More Settings successfully saved.', 'a3-responsive-slider' ),\n\t\t\t\t'error_message'\t\t=> __( 'Error: Read More Settings can not save.', 'a3-responsive-slider' ),\n\t\t\t\t'reset_message'\t\t=> __( 'Read More Settings successfully reseted.', 'a3-responsive-slider' ),\n\t\t\t);\n\t\t\t\n\t\tadd_action( $this->plugin_name . '-' . $this->form_key . '_settings_end', array( $this, 'include_script' ) );\n\t\t\t\n\t\tadd_action( $this->plugin_name . '_set_default_settings' , array( $this, 'set_default_settings' ) );\n\t\t\n\t\tadd_action( $this->plugin_name . '-' . $this->form_key . '_settings_init' , array( $this, 'reset_default_settings' ) );\n\t\t\t\t\n\t\t//add_action( $this->plugin_name . '_get_all_settings' , array( $this, 'get_settings' ) );\n\t\t\n\t\tadd_action( $this->plugin_name . '-'. $this->form_key.'_settings_start', array( $this, 'pro_fields_before' ) );\n\t\tadd_action( $this->plugin_name . '-'. $this->form_key.'_settings_end', array( $this, 'pro_fields_after' ) );\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Standard WP constructor pattern. __() used for i18n. Same 'reseted' grammar issue."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 9, "analysis": "No user input. Safe hook registration."},
+        "performance": {"score": 9, "analysis": "Lightweight constructor. O(1)."},
+        "wp_api_usage": {"score": 7, "analysis": "Proper add_action usage. Dynamic hook names correct."},
+        "code_quality": {"score": 6, "analysis": "Repetitive constructor pattern (same as Title and Slider_Styles). 'reseted' grammar issue. Functionally correct."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on parent class properties. Same hook infrastructure."},
+        "i18n": {"score": 7, "analysis": "Strings use __() correctly. 'reseted' should be 'reset'."},
+        "accessibility": {"score": 10, "analysis": "No UI output. Constructor only."}
+      },
+      "overall_score": 76,
+      "key_observation": "Third widget constructor in identical pattern; same 'reseted' grammar issue persists."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_ReadMore::subtab_init",
+    "code": "function subtab_init() {\n\t\t\n\t\tadd_filter( $this->plugin_name . '-' . $this->parent_tab . '_settings_subtabs_array', array( $this, 'add_subtab' ), $this->position );\n\t\t\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Correct add_filter usage."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 9, "analysis": "No user input. Safe."},
+        "performance": {"score": 9, "analysis": "O(1). Lightweight."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct WP filter pattern."},
+        "code_quality": {"score": 8, "analysis": "Minimal and clear. Same pattern as other widgets."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on class properties."},
+        "i18n": {"score": 10, "analysis": "No strings."},
+        "accessibility": {"score": 10, "analysis": "No UI."}
+      },
+      "overall_score": 84,
+      "key_observation": "Third identical subtab_init; same quality as previous widgets."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_ReadMore::subtab_data",
+    "code": "function subtab_data() {\n\t\t\n\t\t$subtab_data = array( \n\t\t\t'name'\t\t\t\t=> 'readmore',\n\t\t\t'label'\t\t\t\t=> __( 'Read More', 'a3-responsive-slider' ),\n\t\t\t'callback_function'\t=> 'a3_responsive_sider_template_widget_readmore_settings_form',\n\t\t);\n\t\t\n\t\tif ( $this->subtab_data ) return $this->subtab_data;\n\t\treturn $this->subtab_data = $subtab_data;\n\t\t\n\t}",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 5, "analysis": "Same typo 'sider' instead of 'slider' in callback_function name."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 8, "analysis": "No user input."},
+        "performance": {"score": 8, "analysis": "Memoization pattern. Reasonable."},
+        "wp_api_usage": {"score": 4, "analysis": "CRITICAL: callback_function 'a3_responsive_sider_template_widget_readmore_settings_form' has 'sider' typo - would fail at runtime."},
+        "code_quality": {"score": 4, "analysis": "Same typo pattern across all three widgets. This is a systematic bug."},
+        "dependency_integrity": {"score": 4, "analysis": "Broken: misspelled callback name would never resolve."},
+        "i18n": {"score": 8, "analysis": "__() used correctly for 'Read More'."},
+        "accessibility": {"score": 10, "analysis": "No UI."}
+      },
+      "overall_score": 60,
+      "key_observation": "FAIL - Third widget with same 'sider' typo; systematic bug across all template widgets."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_ReadMore::add_subtab",
+    "code": "function add_subtab( $subtabs_array ) {\n\t\n\t\tif ( ! is_array( $subtabs_array ) ) $subtabs_array = array();\n\t\t$subtabs_array[] = $this->subtab_data();\n\t\t\n\t\treturn $subtabs_array;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Correct filter callback pattern."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 9, "analysis": "No user input."},
+        "performance": {"score": 9, "analysis": "O(1). Lightweight."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct WP filter pattern."},
+        "code_quality": {"score": 8, "analysis": "Clean. Propagates subtab_data typo but function is correct."},
+        "dependency_integrity": {"score": 6, "analysis": "Calls $this->subtab_data() which has typo. Bug propagation."},
+        "i18n": {"score": 10, "analysis": "No strings."},
+        "accessibility": {"score": 10, "analysis": "No UI."}
+      },
+      "overall_score": 78,
+      "key_observation": "Clean add_subtab but propagates subtab_data typo bug."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_ReadMore::settings_form",
+    "code": "function settings_form() {\n\t\t\t\t\n\t\t$output = '';\n\t\t$output .= $GLOBALS[$this->plugin_prefix.'admin_interface']->admin_forms( $this->form_fields, $this->form_key, $this->option_name, $this->form_messages );\n\t\t\n\t\treturn $output;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 5, "analysis": "Same $GLOBALS pattern as other widgets. Non-standard."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 6, "analysis": "$GLOBALS bypasses encapsulation."},
+        "performance": {"score": 7, "analysis": "Delegating call. No issues."},
+        "wp_api_usage": {"score": 5, "analysis": "Same $GLOBALS concern."},
+        "code_quality": {"score": 5, "analysis": "Same $GLOBALS code smell. Mirror pattern."},
+        "dependency_integrity": {"score": 5, "analysis": "Same $GLOBALS dependency."},
+        "i18n": {"score": 10, "analysis": "No strings."},
+        "accessibility": {"score": 10, "analysis": "No UI."}
+      },
+      "overall_score": 64,
+      "key_observation": "Third identical settings_form; same $GLOBALS encapsulation concern."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget_ReadMore::init_form_fields",
+    "code": "function init_form_fields() {\n\t\t\n  \t\t// Define settings\t\t\t\n     \t$this->form_fields = apply_filters( $this->option_name . '_settings_fields', array(\n\t\t\n\t\t\tarray(\n\t\t\t\t'name'\t\t=> __( 'Read More Settings', 'a3-responsive-slider' ),\n                'type' \t\t=> 'heading',\n                'desc'\t\t=> __( 'The Read More button / Text only shows on a slider image when you have entered an image link url, caption text and checked the show Read More button / text box. The read more button text shows at the end of the caption text.', 'a3-responsive-slider' )\n           \t),\n\t\t\t\n\t\t\tarray(\n            \t'name' \t\t=> __( 'Button/Hyperlink', 'a3-responsive-slider' ),\n                'type' \t\t=> 'heading',\n\t\t\t\t'class'\t\t=> 'readmore_settings_container',\n           \t),\n\t\t\tarray(  \n\t\t\t\t'name' \t\t=> __( 'Button or Hyperlink Type', 'a3-responsive-slider' ),\n\t\t\t\t'id' \t\t=> 'readmore_bt_type',\n\t\t\t\t'class' \t=> 'readmore_bt_type',\n\t\t\t\t'type' \t\t=> 'switcher_checkbox',\n\t\t\t\t'default'\t=> 'link',\n\t\t\t\t'checked_value'\t\t=> 'button',\n\t\t\t\t'unchecked_value'\t=> 'link',\n\t\t\t\t'checked_label'\t\t=> __( 'Button', 'a3-responsive-slider' ),\n\t\t\t\t'unchecked_label' \t=> __( 'Hyperlink', 'a3-responsive-slider' ),\n\t\t\t),\n\t\t\tarray(  \n\t\t\t\t'name' \t\t=> __( 'Button or Hyperlink Margin', 'a3-responsive-slider' ),\n\t\t\t\t'id' \t\t=> 'readmore_bt_margin',\n\t\t\t\t'type' \t\t=> 'array_textfields',\n\t\t\t\t'ids'\t\t=> array( \n\t \t\t\t\t\t\t\t\tarray( \n\t\t\t\t\t\t\t\t\t\t\t'id' \t\t=> 'readmore_bt_margin_top',\n\t \t\t\t\t\t\t\t\t\t\t'name' \t\t=> __( 'Top', 'a3-responsive-slider' ),\n\t \t\t\t\t\t\t\t\t\t\t'css'\t\t=> 'width:40px;',\n\t \t\t\t\t\t\t\t\t\t\t'default'\t=> 0 ),\n\t \n\t \t\t\t\t\t\t\t\tarray(  'id' \t\t=> 'readmore_bt_margin_bottom',\n\t \t\t\t\t\t\t\t\t\t\t'name' \t\t=> __( 'Bottom', 'a3-responsive-slider' ),\n\t \t\t\t\t\t\t\t\t\t\t'css'\t\t=> 'width:40px;',\n\t \t\t\t\t\t\t\t\t\t\t'default'\t=> 0 ),\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\tarray( \n\t\t\t\t\t\t\t\t\t\t\t'id' \t\t=> 'readmore_bt_margin_left',\n\t \t\t\t\t\t\t\t\t\t\t'name' \t\t=> __( 'Left', 'a3-responsive-slider' ),\n\t \t\t\t\t\t\t\t\t\t\t'css'\t\t=> 'width:40px;',\n\t \t\t\t\t\t\t\t\t\t\t'default'\t=> 5 ),\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\tarray( \n\t\t\t\t\t\t\t\t\t\t\t'id' \t\t=> 'readmore_bt_margin_right',\n\t \t\t\t\t\t\t\t\t\t\t'name' \t\t=> __( 'Right', 'a3-responsive-slider' ),\n\t \t\t\t\t\t\t\t\t\t\t'css'\t\t=> 'width:40px;',\n\t \t\t\t\t\t\t\t\t\t\t'default'\t=> 0 ),\n\t \t\t\t\t\t\t\t)\n\t\t\t),\n\t\t\t\n\t\t\tarray(\n            \t'name' \t\t=> __( 'Hyperlink Styling', 'a3-responsive-slider' ),\n                'type' \t\t=> 'heading',\n          \t\t'class'\t\t=> 'readmore_settings_container show_readmore_hyperlink_styling'\n           \t),\n\t\t\tarray(  \n\t\t\t\t'name' => __( 'Hyperlink Text', 'a3-responsive-slider' ),\n\t\t\t\t'id' \t\t=> 'readmore_link_text',\n\t\t\t\t'type' \t\t=> 'text',\n\t\t\t\t'default'\t=> __('Read More', 'a3-responsive-slider' )\n\t\t\t),\n\t\t\tarray(  \n\t\t\t\t'name' \t\t=> __( 'Hyperlink Font', 'a3-responsive-slider' ),\n\t\t\t\t'id' \t\t=> 'readmore_link_font',\n\t\t\t\t'type' \t\t=> 'typography',\n\t\t\t\t'default'\t=> array( 'size' => '12px', 'line_height' => '1.4em', 'face' => 'Arial', 'style' => 'bold', 'color' => '#000000' )\n\t\t\t),\n\t\t\t\n\t\t\tarray(  \n\t\t\t\t'name' \t\t=> __( 'Hyperlink hover Colour', 'a3-responsive-slider' ),\n\t\t\t\t'id' \t\t=> 'readmore_link_font_hover_color',\n\t\t\t\t'type' \t\t=> 'color',\n\t\t\t\t'default'\t=> '#999999'\n\t\t\t),\n\t\t\t\n\t\t\tarray(\n            \t'name' \t\t=> __( 'Button Styling', 'a3-responsive-slider' ),\n                'type' \t\t=> 'heading',\n          \t\t'class' \t=> 'readmore_settings_container show_readmore_button_styling'\n           \t),\n\t\t\tarray(  \n\t\t\t\t'name' \t\t=> __( 'Button Text', 'a3-responsive-slider' ),\n\t\t\t\t'id' \t\t=> 'readmore_bt_text',\n\t\t\t\t'type' \t\t=> 'text',\n\t\t\t\t'default'\t=> __('Read More', 'a3-responsive-slider' )\n\t\t\t),\n\t\t\tarray(  \n\t\t\t\t'name' \t\t=> __( 'Button Padding', 'a3-responsive-slider' ),\n\t\t\t\t'desc' \t\t=> __( 'Padding from Button text to Button border', 'a3-responsive-slider' ),\n\t\t\t\t'id' \t\t=> 'readmore_bt_padding',\n\t\t\t\t'type' \t\t=> 'array_textfields',\n\t\t\t\t'ids'\t\t=> array( \n\t \t\t\t\t\t\t\t\tarray(  'id' \t\t=> 'readmore_bt_padding_tb',\n\t \t\t\t\t\t\t\t\t\t\t'name' \t\t=> __( 'Top/Bottom', 'a3-responsive-slider' ),\n\t \t\t\t\t\t\t\t\t\t\t'class' \t=> '',\n\t \t\t\t\t\t\t\t\t\t\t'css'\t\t=> 'width:40px;',\n\t \t\t\t\t\t\t\t\t\t\t'default'\t=> '7' ),\n\t \n\t \t\t\t\t\t\t\t\tarray(  'id' \t\t=> 'readmore_bt_padding_lr',\n\t \t\t\t\t\t\t\t\t\t\t'name' \t\t=> __( 'Left/Right', 'a3-responsive-slider' ),\n\t \t\t\t\t\t\t\t\t\t\t'class' \t=> '',\n\t \t\t\t\t\t\t\t\t\t\t'css'\t\t=> 'width:40px;',\n\t \t\t\t\t\t\t\t\t\t\t'default'\t=> '8' ),\n\t \t\t\t\t\t\t\t)\n\t\t\t),\n\t\t\tarray(  \n\t\t\t\t'name' \t\t=> __( 'Background Colour', 'a3-responsive-slider' ),\n\t\t\t\t'desc' \t\t=> __( 'Default', 'a3-responsive-slider' ) . ' [default_value]',\n\t\t\t\t'id' \t\t=> 'readmore_bt_bg',\n\t\t\t\t'type' \t\t=> 'color',\n\t\t\t\t'default'\t=> '#EE2B2B'\n\t\t\t),\n\t\t\tarray(  \n\t\t\t\t'name' \t\t=> __( 'Background Colour Gradient From', 'a3-responsive-slider' ),\n\t\t\t\t'desc' \t\t=> __( 'Default', 'a3-responsive-slider' ) . ' [default_value]',\n\t\t\t\t'id' \t\t=> 'readmore_bt_bg_from',\n\t\t\t\t'type' \t\t=> 'color',\n\t\t\t\t'default'\t=> '#FBCACA'\n\t\t\t),\n\t\t\t\n\t\t\tarray(  \n\t\t\t\t'name' \t\t=> __( 'Background Colour Gradient To', 'a3-responsive-slider' ),\n\t\t\t\t'desc' \t\t=> __( 'Default', 'a3-responsive-slider' ) . ' [default_value]',\n\t\t\t\t'id' \t\t=> 'readmore_bt_bg_to',\n\t\t\t\t'type' \t\t=> 'color',\n\t\t\t\t'default'\t=> '#EE2B2B'\n\t\t\t),\n\t\t\tarray(  \n\t\t\t\t'name' \t\t=> __( 'Button Border', 'a3-responsive-slider' ),\n\t\t\t\t'id' \t\t=> 'readmore_bt_border',\n\t\t\t\t'type' \t\t=> 'border',\n\t\t\t\t'default'\t=> array( 'width' => '1px', 'style' => 'solid', 'color' => '#EE2B2B', 'corner' => 'rounded' , 'rounded_value' => 3 ),\n\t\t\t),\n\t\t\tarray(  \n\t\t\t\t'name' \t\t=> __( 'Button Font', 'a3-responsive-slider' ),\n\t\t\t\t'id' \t\t=> 'readmore_bt_font',\n\t\t\t\t'type' \t\t=> 'typography',\n\t\t\t\t'default'\t=> array( 'size' => '12px', 'line_height' => '1.4em', 'face' => 'Arial', 'style' => 'bold', 'color' => '#FFFFFF' )\n\t\t\t),\n\t\t\tarray(  \n\t\t\t\t'name' => __( 'Button Shadow', 'a3-responsive-slider' ),\n\t\t\t\t'id' \t\t=> 'readmore_bt_shadow',\n\t\t\t\t'type' \t\t=> 'box_shadow',\n\t\t\t\t'default'\t=> array( 'enable' => 0, 'h_shadow' => '5px' , 'v_shadow' => '5px', 'blur' => '2px' , 'spread' => '2px', 'color' => '#999999', 'inset' => '' )\n\t\t\t),\n\t\t\t\n        ));\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "analysis": "apply_filters used correctly. All strings use __(). Largest form field array in this batch (~18 fields). Custom field types used extensively. 'Colour' British spelling inconsistent with WP standard."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 9, "analysis": "No user input. Static field definitions with safe defaults. Filter allows extensibility."},
+        "performance": {"score": 7, "analysis": "Largest array in this batch (~18 fields with nested array_textfields). Still O(1) at runtime but heavy init memory."},
+        "wp_api_usage": {"score": 7, "analysis": "Correct apply_filters pattern. Custom field types throughout. Uses switcher_checkbox and array_textfields extensively."},
+        "code_quality": {"score": 5, "analysis": "Very large function (155 lines) with deeply nested array structures. Repetitive structure across margin/padding fields. 'Colour' spelling inconsistency. The long desc string could be split across lines more cleanly."},
+        "dependency_integrity": {"score": 7, "analysis": "Relies on custom field type renderers. $this->option_name must be set. Heavy use of custom types (switcher_checkbox, array_textfields, typography, border, box_shadow)."},
+        "i18n": {"score": 8, "analysis": "All strings use __(). Long description text is translatable which is good. 'Colour' spelling may cause translation inconsistency."},
+        "accessibility": {"score": 6, "analysis": "Form fields need proper ARIA labels from renderers. switcher_checkbox type needs care for keyboard accessibility. Button/hyperlink toggle is a common accessibility concern."}
+      },
+      "overall_score": 70,
+      "key_observation": "Largest form definition (155 lines) with 18 fields; comprehensive but verbose with deep nesting and 'Colour' spelling."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  }
+]

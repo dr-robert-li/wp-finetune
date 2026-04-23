@@ -1,0 +1,1342 @@
+[
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Fonts_Face::update_google_font_api_key",
+    "code": "function update_google_font_api_key() { if ( ! current_user_can( 'manage_options' ) ) { return false; } check_admin_referer( 'save_settings_' . $this->plugin_name ); ... update_option( $this->google_api_key_option, $option_value ); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Uses check_admin_referer and current_user_can correctly. Mixed indentation style and 1!= comparison (should be ===) reduce WC compliance."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "Uses WP update_option/get_option \u2014 no raw SQL. Transient handling is safe."
+        },
+        "security": {
+          "score": 7,
+          "analysis": "Admin capability check and CSRF nonce present. However, sanitize_text_field is applied to API key but no output encoding on the option value later. Comparison uses != instead of !==."
+        },
+        "performance": {
+          "score": 7,
+          "analysis": "Calls get_option twice and update_option \u2014 acceptable. Clears transient on change which is good practice. Minor duplication in enable/disable branches."
+        },
+        "wp_api_usage": {
+          "score": 8,
+          "analysis": "Proper use of current_user_can, check_admin_referer, sanitize_text_field, wp_unslash, get_option, update_option, delete_transient."
+        },
+        "code_quality": {
+          "score": 6,
+          "analysis": "Code duplication between enable/disable branches. Non-idiomatic 1!= comparison. Inconsistent brace placement. But logic is clear."
+        },
+        "dependency_integrity": {
+          "score": 8,
+          "analysis": "No external dependencies. Uses core WP functions only."
+        },
+        "i18n": {
+          "score": 5,
+          "analysis": "No text strings for user-facing messages. The comment 'Enable Google Font API Key' is a code comment, not a translatable string."
+        },
+        "accessibility": {
+          "score": 7,
+          "analysis": "Admin settings function \u2014 accessibility not directly applicable. No form output in this function."
+        }
+      },
+      "overall_score": 72,
+      "key_observation": "Admin settings handler with proper CSRF and capability checks but suffers from code duplication and non-idiomatic comparisons."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 6,
+      "grounded_citations": 6,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Fonts_Face::validate_google_api_key",
+    "code": "function validate_google_api_key( $g_key = '' ) { $g_key = trim( $g_key ); $respone_api = wp_remote_get( \"https://www.googleapis.com/webfonts/v1/webfonts?sort=alpha&key=\" . $g_key, array('sslverify' => false, 'timeout' => 45) ); ... }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 5,
+          "analysis": "Typo in variable name 'respone_api'. sslverify=false is a security concern flagged by WC guidelines. Uses deprecated get_magic_quotes_gpc()."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "No SQL queries present. API key is used in HTTP request only."
+        },
+        "security": {
+          "score": 3,
+          "analysis": "CRITICAL: sslverify is set to false, enabling man-in-the-middle attacks on the Google API key. Uses deprecated get_magic_quotes_gpc() which was removed in PHP 8.0. API key appended directly to URL without sanitization."
+        },
+        "performance": {
+          "score": 6,
+          "analysis": "HTTP request with 45s timeout \u2014 acceptable but no caching of validation result. No error handling for timeout response body."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Correct use of wp_remote_get and is_wp_error check. esc_attr not used on the API key before URL construction. json_decode with true is appropriate."
+        },
+        "code_quality": {
+          "score": 5,
+          "analysis": "Typo 'respone_api' reduces readability. get_magic_quotes_gpc() is dead code since PHP 8.0. The version_compare || get_magic_quotes_gpc() pattern is a hack for PHP 5.3 stripslashes behavior."
+        },
+        "dependency_integrity": {
+          "score": 8,
+          "analysis": "Relies on Google API \u2014 if API is down, function returns empty array which is handled."
+        },
+        "i18n": {
+          "score": 7,
+          "analysis": "No user-facing strings in this function."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "Not applicable \u2014 backend validation only."
+        }
+      },
+      "overall_score": 45,
+      "key_observation": "FAIL: sslverify=false creates MITM vulnerability for API key transmission; deprecated get_magic_quotes_gpc() breaks on PHP 8+."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 7,
+      "grounded_citations": 6,
+      "hallucinated_citations": 1,
+      "hallucination_ratio": 0.143
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Fonts_Face::is_valid_google_api_key",
+    "code": "function is_valid_google_api_key( $cache=true ) { $is_valid = false; ... $response_fonts = $this->validate_google_api_key( $this->google_api_key ); ... set_transient( $this->google_api_key_option . '_status', $google_api_key_status, 86400 ); ... }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 5,
+          "analysis": "Extensive code duplication between valid/invalid API key branches. Uses != instead of !==. get_magic_quotes_gpc() is deprecated. Very long function (130 lines) violates single-responsibility."
+        },
+        "sql_safety": {
+          "score": 9,
+          "analysis": "Uses WP options/transients API \u2014 no raw SQL."
+        },
+        "security": {
+          "score": 4,
+          "analysis": "Calls validate_google_api_key which has sslverify=false. Trusts get_option return without validation. No sanitization on font list data stored to DB."
+        },
+        "performance": {
+          "score": 6,
+          "analysis": "24-hour transient caching is good. But the massive duplication means the same font-parsing logic runs twice. wp_remote_get with 120s timeout on webfonts.json is generous."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Proper use of get_transient/set_transient, get_option, apply_filters. But the function is too large and does too much \u2014 should delegate font parsing."
+        },
+        "code_quality": {
+          "score": 4,
+          "analysis": "130-line function with massive DRY violation. The font-parsing logic is duplicated verbatim in both branches. Should extract to a private helper method. Nested conditionals reduce readability."
+        },
+        "dependency_integrity": {
+          "score": 6,
+          "analysis": "Depends on Google API and local webfonts.json fallback. If both fail, returns false which is handled."
+        },
+        "i18n": {
+          "score": 7,
+          "analysis": "No user-facing strings. Font family names from API are not translated but that is expected."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "Not applicable \u2014 pure backend validation and caching."
+        }
+      },
+      "overall_score": 42,
+      "key_observation": "FAIL: 130-line function with massive code duplication, calls sslverify=false validator, and violates single-responsibility principle."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 8,
+      "grounded_citations": 7,
+      "hallucinated_citations": 1,
+      "hallucination_ratio": 0.125
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Fonts_Face::get_default_fonts",
+    "code": "function get_default_fonts() { $default_fonts = apply_filters( $this->plugin_name . '_default_fonts', $this->default_fonts ); asort( $default_fonts ); $default_fonts = array_merge( array( '' => __( 'Default' ) ), $default_fonts ); return $default_fonts; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 8,
+          "analysis": "Clean, short function. Uses apply_filters for extensibility. asort is appropriate for string-keyed arrays."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No SQL whatsoever."
+        },
+        "security": {
+          "score": 9,
+          "analysis": "No user input, no file I/O, no network calls. Pure data transformation."
+        },
+        "performance": {
+          "score": 9,
+          "analysis": "O(n) for asort + array_merge on a small array. Negligible overhead."
+        },
+        "wp_api_usage": {
+          "score": 9,
+          "analysis": "Correct use of apply_filters for extension point and __() for i18n. Clean WP patterns."
+        },
+        "code_quality": {
+          "score": 8,
+          "analysis": "Concise 9 lines. Clear intent. Prepend with __( 'Default' ) using array_merge is standard WP pattern."
+        },
+        "dependency_integrity": {
+          "score": 9,
+          "analysis": "No external dependencies. Self-contained."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "Uses __() for the 'Default' string. Good practice."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "Returns data for UI consumption \u2014 accessibility depends on caller."
+        }
+      },
+      "overall_score": 88,
+      "key_observation": "PASS: Clean, well-structured helper with proper filter hook and i18n; a model of WP code quality."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 5,
+      "grounded_citations": 5,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Fonts_Face::generate_font_css",
+    "code": "function generate_font_css( $option, $em = '1.2' ) { $google_fonts = $this->get_google_fonts(); ... $font_css .= 'font:'.$font_style.' '.$font_size.'/' . $font_line_height . ' '.stripslashes( str_replace( array( '\"', \"'\" ), '', $font_face ) ).' !important;'; ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 6,
+          "analysis": "Builds CSS strings with concatenation \u2014 not directly WP-related but follows standard patterns. Uses isset ?? short-hand appropriately."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 5,
+          "analysis": "CSS output constructed from option data without strict sanitization. str_replace removing quotes could allow CSS injection if font_face contains malicious content. stripslashes usage is questionable on already-sanitized data."
+        },
+        "performance": {
+          "score": 7,
+          "analysis": "O(n) CSS string construction. strstr() for 'italic' check is fine. explode and count adds overhead but negligible."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Uses get_google_fonts() and apply_filters at end. The CSS generation itself is plugin-internal logic."
+        },
+        "code_quality": {
+          "score": 6,
+          "analysis": "Logic is complex with nested conditions. strstr() for font style detection is fragile (matches 'italic' in any substring). The font-weight extraction logic for italic cases is convoluted. !important overload is a CSS anti-pattern."
+        },
+        "dependency_integrity": {
+          "score": 8,
+          "analysis": "Depends on get_google_fonts() \u2014 if it returns null, array_key_exists check handles it."
+        },
+        "i18n": {
+          "score": 7,
+          "analysis": "No user-facing strings. CSS class names and properties are non-translatable by nature."
+        },
+        "accessibility": {
+          "score": 6,
+          "analysis": "Generates CSS \u2014 accessibility impact depends on which fonts/styles are applied. No aria considerations in the function itself."
+        }
+      },
+      "overall_score": 65,
+      "key_observation": "PASS: CSS generation function with fragile strstr() matching for font styles and !important abuse, but structurally sound."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 6,
+      "grounded_citations": 5,
+      "hallucinated_citations": 1,
+      "hallucination_ratio": 0.167
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Fonts_Face::generate_google_webfonts",
+    "code": "function generate_google_webfonts( $my_google_fonts = array(), $echo = true ) { ... echo '<link href=\"http'. ( is_ssl() ? 's' : '' ) .'://fonts.googleapis.com/css?family=' . esc_attr( $fonts ) .'\" rel=\"stylesheet\" type=\"text/css\" />'.\"\\n\"; ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Uses esc_attr on output. Conditional echo vs return pattern is acceptable. Hardcoded HTML string in PHP is standard for WP plugin headers."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 6,
+          "analysis": "esc_attr protects the href. is_ssl() check handles protocol. However, http:// fallback for non-SSL could cause mixed-content warnings on HTTPS sites. Should force https:// for the fonts.googleapis.com URL."
+        },
+        "performance": {
+          "score": 7,
+          "analysis": "String building in loop with . is fine for small arrays. str_replace('|\"','\"') at end is a minor hack to fix separator formatting."
+        },
+        "wp_api_usage": {
+          "score": 8,
+          "analysis": "Uses esc_attr, is_ssl, and standard WP output patterns. Correct approach for enqueuing Google Fonts."
+        },
+        "code_quality": {
+          "score": 7,
+          "analysis": "Clear structure. The !strstr check prevents duplicates. The | separator approach is clever but the final str_replace hack is ugly. echo '' at end is a no-op dead code."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "Depends on Google Fonts CDN and get_google_fonts() \u2014 both external dependencies that could fail."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "No user-facing strings."
+        },
+        "accessibility": {
+          "score": 8,
+          "analysis": "Font loading affects text rendering. No direct accessibility impact. preload/preconnect would improve performance for accessibility."
+        }
+      },
+      "overall_score": 75,
+      "key_observation": "PASS: Proper Google Fonts injection with esc_attr protection but http:// fallback may cause mixed-content issues on HTTPS sites."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 6,
+      "grounded_citations": 6,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Less_Sass::register_dynamic_style_file",
+    "code": "function register_dynamic_style_file() { $_upload_dir = wp_upload_dir(); if ( file_exists( $_upload_dir['basedir'] . '/sass/' . $this->css_file_name . '.min.css' ) ) { wp_register_style( 'a3' . $this->css_file_name, str_replace( array('http:','https:'), '', $_upload_dir['baseurl'] ) . '/sass/' . $this->css_file_name . '.min.css', array(), $this->get_css_file_version() ); ... } }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Uses wp_upload_dir correctly. str_replace to strip protocol is a common WP pattern for protocol-relative URLs."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 6,
+          "analysis": "Uses file_exists on uploaded directory \u2014 path traversal unlikely since css_file_name is a class property. str_replace for protocol stripping is safe but protocol-relative URLs are deprecated in modern browsers."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "file_exists + wp_register_style is efficient. No unnecessary computation."
+        },
+        "wp_api_usage": {
+          "score": 8,
+          "analysis": "Correct use of wp_upload_dir, wp_register_style. get_css_file_version() provides cache-busting via timestamp."
+        },
+        "code_quality": {
+          "score": 7,
+          "analysis": "Short and focused. Returns boolean for success/failure pattern is clean. The file_exists check before register is defensive."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "Depends on the CSS file being generated and present in wp-content/uploads/sass/. If SASS compilation fails, function returns false."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "No user-facing strings."
+        },
+        "accessibility": {
+          "score": 8,
+          "analysis": "CSS registration is transparent to accessibility."
+        }
+      },
+      "overall_score": 78,
+      "key_observation": "PASS: Clean style registration with file_exists guard and timestamp-based cache busting."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 5,
+      "grounded_citations": 5,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Less_Sass::apply_style_css_fontend",
+    "code": "function apply_style_css_fontend() { if ( $this->register_dynamic_style_file() ) { wp_enqueue_style( 'a3' . $this->css_file_name ); } }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 8,
+          "analysis": "Clean one-line delegation to wp_enqueue_style. Standard WP enqueue pattern."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 9,
+          "analysis": "Delegates to register_dynamic_style_file which has file_exists check. No user input handled."
+        },
+        "performance": {
+          "score": 9,
+          "analysis": "O(1) \u2014 just a conditional wp_enqueue_style call. Extremely lightweight."
+        },
+        "wp_api_usage": {
+          "score": 9,
+          "analysis": "Correct use of wp_enqueue_style. Conditional check ensures style exists before enqueue."
+        },
+        "code_quality": {
+          "score": 8,
+          "analysis": "6 lines, single responsibility. Clear intent. Typo 'fontend' instead of 'frontend' is minor."
+        },
+        "dependency_integrity": {
+          "score": 8,
+          "analysis": "Depends on register_dynamic_style_file returning true. Graceful no-op if style not available."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "No user-facing strings."
+        },
+        "accessibility": {
+          "score": 8,
+          "analysis": "CSS delivery \u2014 accessibility depends on CSS content, not this function."
+        }
+      },
+      "overall_score": 86,
+      "key_observation": "PASS: Minimal enqueue wrapper with safe delegation; typo 'fontend' is the only blemish."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 5,
+      "grounded_citations": 5,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Less_Sass::plugin_build_sass",
+    "code": "function plugin_build_sass() { $sass = $this->sass_content_data(); $this->plugin_compile_less_mincss( $sass ); $this->set_css_file_version(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 8,
+          "analysis": "Clean method chaining. No WC issues."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "Delegates to internal methods. No direct user input handling visible here."
+        },
+        "performance": {
+          "score": 7,
+          "analysis": "Chains three operations \u2014 sass parsing, SASS compilation, and version update. Performance depends on plugin_compile_less_mincss implementation."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Internal plugin logic \u2014 no direct WP API calls. set_css_file_version uses update_option internally."
+        },
+        "code_quality": {
+          "score": 8,
+          "analysis": "6 lines, clear pipeline: get content -> compile -> update version. Clean and focused."
+        },
+        "dependency_integrity": {
+          "score": 7,
+          "analysis": "Depends on sass_content_data() and plugin_compile_less_mincss() \u2014 if either fails, no fallback visible."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "No user-facing strings."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "Backend compilation \u2014 no accessibility impact."
+        }
+      },
+      "overall_score": 82,
+      "key_observation": "PASS: Clean 3-step SASS compilation pipeline; concise and well-structured."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 4,
+      "grounded_citations": 4,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Less_Sass::sass_content_data",
+    "code": "function sass_content_data() { do_action($this->plugin_name . '_get_all_settings'); ob_start(); include( $this->plugin_dir. '/includes/customized_style.php' ); $sass = ob_get_clean(); $sass = str_replace( '<style>', '', str_replace( '</style>', '', $sass ) ); ... }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 5,
+          "analysis": "Output buffering with include is an anti-pattern. str_replace on HTML tags is fragile. do_action with empty callback is a no-op fire."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 4,
+          "analysis": "CRITICAL: include() of an external PHP file (customized_style.php) with output buffering is dangerous \u2014 that file could contain arbitrary PHP. No include guard or validation. The str_replace approach to strip <style> tags is extremely fragile."
+        },
+        "performance": {
+          "score": 5,
+          "analysis": "ob_start/ob_get_clean has overhead. Multiple str_replace calls on the buffer. The double str_replace for opening/closing tags is inefficient."
+        },
+        "wp_api_usage": {
+          "score": 6,
+          "analysis": "do_action fires with empty default handler \u2014 wasteful. apply_filters at end is correct. include of plugin-internal file is acceptable but risky without guards."
+        },
+        "code_quality": {
+          "score": 4,
+          "analysis": "Output buffering to capture PHP file output as string is a code smell. Nested str_replace calls are hard to read. The pattern suggests the included file outputs raw <style> tags instead of returning them."
+        },
+        "dependency_integrity": {
+          "score": 5,
+          "analysis": "Depends on customized_style.php existing and being valid PHP. If it throws errors, they go to output buffer and corrupt the SASS."
+        },
+        "i18n": {
+          "score": 7,
+          "analysis": "No user-facing strings. The included file may contain translatable strings but that is external."
+        },
+        "accessibility": {
+          "score": 8,
+          "analysis": "Backend processing \u2014 no direct accessibility impact."
+        }
+      },
+      "overall_score": 42,
+      "key_observation": "FAIL: include() with output buffering is dangerous code smell; unvalidated PHP file execution with fragile tag stripping."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 6,
+      "grounded_citations": 6,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Less_Sass::set_css_file_version",
+    "code": "function set_css_file_version( $css_file_name = '' ) { if ( trim( $css_file_name ) == '' ) { $css_file_name = $this->css_file_name; } ... update_option( $css_file_name . '_style_version', time() ); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Uses trim() == '' comparison (should be ===). Fallback to $this->css_file_name is correct."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "Uses update_option \u2014 no raw SQL."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "No user input. $css_file_name is typed parameter. update_option key is constructed from internal data."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "Single update_option call. time() as version provides automatic cache busting."
+        },
+        "wp_api_usage": {
+          "score": 8,
+          "analysis": "Proper use of update_option with time() for cache-busting version numbers \u2014 standard WP pattern."
+        },
+        "code_quality": {
+          "score": 7,
+          "analysis": "Short and clear. Uses == for string comparison (minor WC violation). Returns nothing on success which is acceptable for a setter."
+        },
+        "dependency_integrity": {
+          "score": 9,
+          "analysis": "No external dependencies."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "No user-facing strings."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "Backend utility \u2014 no accessibility impact."
+        }
+      },
+      "overall_score": 82,
+      "key_observation": "PASS: Simple version setter with time()-based cache busting; minor WC === vs == nitpick."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 4,
+      "grounded_citations": 4,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Less_Sass::get_css_file_version",
+    "code": "function get_css_file_version( $css_file_name = '' ) { if ( trim( $css_file_name ) == '' ) { $css_file_name = $this->css_file_name; } ... $version_number = get_option( $css_file_name . '_style_version', time() ); return $version_number; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Uses == for string comparison (should be ===). Consistent with set_css_file_version pattern."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "Uses get_option \u2014 no raw SQL."
+        },
+        "security": {
+          "score": 9,
+          "analysis": "No user input. Default value time() is safe."
+        },
+        "performance": {
+          "score": 8,
+          "analysis": "Single get_option call with default fallback. Efficient."
+        },
+        "wp_api_usage": {
+          "score": 8,
+          "analysis": "Proper use of get_option with default. Paired correctly with set_css_file_version."
+        },
+        "code_quality": {
+          "score": 7,
+          "analysis": "Mirror of set_css_file_version. Returns false when css_file_name is empty \u2014 should return 0 or '' for consistency."
+        },
+        "dependency_integrity": {
+          "score": 9,
+          "analysis": "No external dependencies. Default time() ensures version is never null."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "No user-facing strings."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "Backend utility \u2014 no accessibility impact."
+        }
+      },
+      "overall_score": 82,
+      "key_observation": "PASS: Version getter paired with setter; returns false for empty name but should return numeric default for consistency."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 4,
+      "grounded_citations": 4,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Mobile::page_data",
+    "code": "function page_data() { $page_data = array( 'type' => 'submenu', 'parent_slug' => 'edit.php?post_type=a3_slider', ... 'capability' => 'manage_options', 'menu_slug' => $this->menu_slug, 'function' => 'a3_responsive_slider_template_mobile_page_show', ... ); if ( $this->page_data ) return $this->page_data; return $this->page_data = $page_data; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Array key naming is camelCase which deviates from WP convention (should be snake_case like page_title, menu_slug). Uses manage_options capability correctly."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "Uses manage_options capability \u2014 appropriate for admin pages. Hardcoded post_type a3_slider is safe."
+        },
+        "performance": {
+          "score": 7,
+          "analysis": "Creates array each call but caches to $this->page_data. Lazy initialization pattern is correct."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Follows WP add_menu_page/add_submenu_page argument structure but wraps in custom array format. The 'function' key should map to 'function' in add_action hook."
+        },
+        "code_quality": {
+          "score": 6,
+          "analysis": "Page Data Pattern \u2014 common but the dual return (if cached, then assignment + return) is a WP anti-pattern. Should use $this->page_data ??= $page_data in PHP 7.4+."
+        },
+        "dependency_integrity": {
+          "score": 8,
+          "analysis": "Self-contained config data. Depends on $this->menu_slug and Functions::get_slider_template."
+        },
+        "i18n": {
+          "score": 7,
+          "analysis": "page_title and menu_title come from get_slider_template \u2014 should ensure those use __()."
+        },
+        "accessibility": {
+          "score": 7,
+          "analysis": "Admin menu config \u2014 accessibility depends on the rendered admin page, not this config data."
+        }
+      },
+      "overall_score": 72,
+      "key_observation": "PASS: Admin page config with proper capability check; Page Data Pattern is functional but dual-return anti-pattern noted."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 5,
+      "grounded_citations": 5,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Mobile::add_admin_menu",
+    "code": "function add_admin_menu( $admin_menu ) { if ( ! is_array( $admin_menu ) ) $admin_menu = array(); $admin_menu[] = $this->page_data(); return $admin_menu; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Type check on $admin_menu is correct. Missing braces on if statement is a WC violation."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "Delegates to page_data which has manage_options check."
+        },
+        "performance": {
+          "score": 9,
+          "analysis": "O(1) array push. Minimal overhead."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Plugin pages pattern \u2014 collects page configs for batch registration. Standard approach."
+        },
+        "code_quality": {
+          "score": 6,
+          "analysis": "Missing braces on if statement is a WC violation. But logic is clear and correct."
+        },
+        "dependency_integrity": {
+          "score": 8,
+          "analysis": "Delegates to page_data(). Safe if page_data is valid."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "No user-facing strings."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "Backend config aggregation \u2014 no accessibility impact."
+        }
+      },
+      "overall_score": 77,
+      "key_observation": "PASS: Clean menu config aggregation; missing if braces is a minor WC violation."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 4,
+      "grounded_citations": 4,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Mobile::tabs_include",
+    "code": "function tabs_include() { global $a3_responsive_slider_template_mobile_slider_styles_tab; $a3_responsive_slider_template_mobile_slider_styles_tab = new FrameWork\\Tabs\\Template_Mobile_Slider_Styles(); ... }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 4,
+          "analysis": "global keyword usage is a WP anti-pattern. Creates 4 global variables. No return value \u2014 side-effect only."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 6,
+          "analysis": "Instantiates framework classes with global state. No validation on class existence \u2014 could fatal if autoloader fails."
+        },
+        "performance": {
+          "score": 6,
+          "analysis": "Instantiates 4 objects per call. No caching \u2014 creates new instances each time tabs_include is called."
+        },
+        "wp_api_usage": {
+          "score": 5,
+          "analysis": "global variable pollution is not a WP pattern. Should return instances or use a registry."
+        },
+        "code_quality": {
+          "score": 4,
+          "analysis": "global keyword is an anti-pattern. Creates 4 globals with deeply nested names. No return, no caching, just side effects. Difficult to test."
+        },
+        "dependency_integrity": {
+          "score": 5,
+          "analysis": "Instantiates 4 FrameWork\\Tabs classes \u2014 if any are missing, no graceful degradation."
+        },
+        "i18n": {
+          "score": 7,
+          "analysis": "Class names are not translatable but that is expected for class names."
+        },
+        "accessibility": {
+          "score": 8,
+          "analysis": "Backend tab instantiation \u2014 no direct accessibility impact."
+        }
+      },
+      "overall_score": 45,
+      "key_observation": "FAIL: global keyword anti-pattern creating 4 global variables; no caching causes repeated object instantiation."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 5,
+      "grounded_citations": 5,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Slider_Skins::add_admin_menu",
+    "code": "function add_admin_menu( $admin_menu ) { if ( ! is_array( $admin_menu ) ) $admin_menu = array(); $admin_menu[] = $this->page_data(); return $admin_menu; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Same pattern as Template_Mobile::add_admin_menu. Missing braces on if is a WC violation but logic is correct."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "Delegates to page_data() which should have capability checks."
+        },
+        "performance": {
+          "score": 9,
+          "analysis": "O(1) array push. Identical to parent pattern \u2014 efficient."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Standard plugin page config aggregation pattern."
+        },
+        "code_quality": {
+          "score": 6,
+          "analysis": "Code duplication of Template_Mobile::add_admin_menu. Could be refactored to a trait or parent class method. Missing braces on if."
+        },
+        "dependency_integrity": {
+          "score": 8,
+          "analysis": "Delegates to page_data(). Safe if parent is valid."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "No user-facing strings."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "Backend config \u2014 no accessibility impact."
+        }
+      },
+      "overall_score": 74,
+      "key_observation": "PASS: Identical pattern to Template_Mobile::add_admin_menu; code duplication is the only concern."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 4,
+      "grounded_citations": 4,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Slider_Skins::tabs_include",
+    "code": "function tabs_include() { global $a3_responsive_slider_template_1_tab; $a3_responsive_slider_template_1_tab = new FrameWork\\Tabs\\Template_1(); global $a3_responsive_slider_template_2_tab; $a3_responsive_slider_template_2_tab = new FrameWork\\Tabs\\Template_2(); }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 4,
+          "analysis": "global keyword anti-pattern. Creates 2 globals. No return value. Code smell similar to Template_Mobile::tabs_include."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 6,
+          "analysis": "Instantiates framework classes via global state. No error handling for missing classes."
+        },
+        "performance": {
+          "score": 6,
+          "analysis": "Instantiates 2 objects per call with no caching."
+        },
+        "wp_api_usage": {
+          "score": 5,
+          "analysis": "global pollution is not a WP pattern. Same anti-pattern repeated from Template_Mobile::tabs_include."
+        },
+        "code_quality": {
+          "score": 4,
+          "analysis": "Repeats global variable anti-pattern. 8 lines creating 2 globals with no return or caching. Duplicated pattern from sibling class."
+        },
+        "dependency_integrity": {
+          "score": 5,
+          "analysis": "Depends on FrameWork\\Tabs\\Template_1 and Template_2 classes existing."
+        },
+        "i18n": {
+          "score": 7,
+          "analysis": "No user-facing strings."
+        },
+        "accessibility": {
+          "score": 8,
+          "analysis": "Backend tab instantiation \u2014 no direct accessibility impact."
+        }
+      },
+      "overall_score": 42,
+      "key_observation": "FAIL: Repeats global variable anti-pattern from sibling class; 2 globals created with no caching or return value."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 5,
+      "grounded_citations": 5,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget::page_data",
+    "code": "function page_data() { $page_data = array( 'type' => 'submenu', 'parent_slug' => 'edit.php?post_type=a3_slider', ... 'capability' => 'manage_options', ... 'function' => 'a3_responsive_slider_template_widget_page_show', ... ); if ( $this->page_data ) return $this->page_data; return $this->page_data = $page_data; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Same Page Data Pattern as Template_Mobile::page_data. manage_options capability is correct. camelCase array keys deviate from WP convention."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "Proper capability check. No user input handling in config."
+        },
+        "performance": {
+          "score": 7,
+          "analysis": "Lazy initialization with instance caching. Dual return is a pattern but not ideal."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Standard WP menu page config structure wrapped in custom array format."
+        },
+        "code_quality": {
+          "score": 5,
+          "analysis": "Duplicate of Template_Mobile::page_data with minor key changes. Dual return anti-pattern. 22 lines for what could be a config array."
+        },
+        "dependency_integrity": {
+          "score": 8,
+          "analysis": "Self-contained config. Depends on $this->menu_slug and Functions::get_slider_template."
+        },
+        "i18n": {
+          "score": 7,
+          "analysis": "page_title/menu_title come from get_slider_template \u2014 should use __()."
+        },
+        "accessibility": {
+          "score": 7,
+          "analysis": "Admin menu config \u2014 accessibility depends on rendered page."
+        }
+      },
+      "overall_score": 68,
+      "key_observation": "PASS: Widget page config duplicating Template_Mobile::page_data pattern; manage_options capability is correct."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 5,
+      "grounded_citations": 5,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget::add_admin_menu",
+    "code": "function add_admin_menu( $admin_menu ) { if ( ! is_array( $admin_menu ) ) $admin_menu = array(); $admin_menu[] = $this->page_data(); return $admin_menu; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 7,
+          "analysis": "Same as Slider_Skins::add_admin_menu. Missing braces on if is a WC violation."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 8,
+          "analysis": "Delegates to page_data() which has capability checks."
+        },
+        "performance": {
+          "score": 9,
+          "analysis": "O(1) array push. Efficient."
+        },
+        "wp_api_usage": {
+          "score": 7,
+          "analysis": "Standard plugin page config aggregation."
+        },
+        "code_quality": {
+          "score": 5,
+          "analysis": "Triple duplication: identical to Template_Mobile::add_admin_menu and Slider_Skins::add_admin_menu. Should be a trait or parent method. Missing braces."
+        },
+        "dependency_integrity": {
+          "score": 8,
+          "analysis": "Delegates to page_data(). Safe."
+        },
+        "i18n": {
+          "score": 9,
+          "analysis": "No user-facing strings."
+        },
+        "accessibility": {
+          "score": 9,
+          "analysis": "Backend config \u2014 no accessibility impact."
+        }
+      },
+      "overall_score": 70,
+      "key_observation": "PASS: Third instance of identical add_admin_menu code; should be extracted to a shared trait or base class."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 4,
+      "grounded_citations": 4,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Widget::tabs_include",
+    "code": "function tabs_include() { global $a3_responsive_slider_template_widget_global_settings_tab; $a3_responsive_slider_template_widget_global_settings_tab = new FrameWork\\Tabs\\Template_Widget_Global_Settings(); ... global $a3_responsive_slider_template_widget_readmore_tab; $a3_responsive_slider_template_widget_readmore_tab = new FrameWork\\Tabs\\Template_Widget_ReadMore(); }",
+    "reasoning": {
+      "verdict": "FAIL",
+      "dimension_analysis": {
+        "wpcs_compliance": {
+          "score": 4,
+          "analysis": "global keyword anti-pattern. Creates 8 global variables. No return value. Massive side-effect function."
+        },
+        "sql_safety": {
+          "score": 10,
+          "analysis": "No SQL."
+        },
+        "security": {
+          "score": 5,
+          "analysis": "Instantiates 8 framework classes via global state. No error handling. No validation of class existence."
+        },
+        "performance": {
+          "score": 5,
+          "analysis": "Instantiates 8 objects per call with zero caching. Most expensive function in this batch."
+        },
+        "wp_api_usage": {
+          "score": 4,
+          "analysis": "global pollution repeated across 8 variables. Worst offender of the global anti-pattern in this batch."
+        },
+        "code_quality": {
+          "score": 3,
+          "analysis": "27 lines creating 8 globals with no return, no caching, no error handling. Most egregious code smell in the batch. Duplicated pattern from sibling classes."
+        },
+        "dependency_integrity": {
+          "score": 4,
+          "analysis": "Depends on 8 FrameWork\\Tabs classes. If any fail to autoload, partial failure with no fallback."
+        },
+        "i18n": {
+          "score": 7,
+          "analysis": "No user-facing strings."
+        },
+        "accessibility": {
+          "score": 8,
+          "analysis": "Backend tab instantiation \u2014 no direct accessibility impact."
+        }
+      },
+      "overall_score": 38,
+      "key_observation": "FAIL: Worst in batch \u2014 creates 8 globals with no caching, no return, and no error handling; instantiates 8 objects per call."
+    },
+    "dimensions_addressed": [
+      "wpcs_compliance",
+      "sql_safety",
+      "security",
+      "performance",
+      "wp_api_usage",
+      "code_quality",
+      "dependency_integrity",
+      "i18n",
+      "accessibility"
+    ],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 6,
+      "grounded_citations": 6,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  }
+]

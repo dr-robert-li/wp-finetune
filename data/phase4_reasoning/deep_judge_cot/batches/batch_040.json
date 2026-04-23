@@ -1,0 +1,502 @@
+[
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "parseChunk",
+    "code": "function parseChunk() { ... 147 lines of CSS/LESS parser logic ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 6, "analysis": "Uses tabs for indentation per WP standards. Function name uses camelCase instead of snake_case_with_underscores. Uses $this-> which is typical for class methods. Some variable naming conventions deviate from strict WP PHP coding standards." },
+        "sql_safety": { "score": 10, "analysis": "No SQL queries whatsoever. This is a pure CSS/LESS string parser with zero database interaction." },
+        "security": { "score": 7, "analysis": "Parses LESS/CSS content which is generally safe. Uses preg_match for matching. No file I/O or eval of user input. The LESS compilation could theoretically be heavy on memory for large inputs, but no direct injection vectors." },
+        "performance": { "score": 7, "analysis": "Token-based parser with backtracking via seek()/restore pattern. Uses regex matching which can be expensive on large buffers. The push/pop block stack and recursive calls could cause memory issues with deeply nested CSS. No obvious O(n^2) loops but the parser nature means worst-case exponential without memoization." },
+        "wp_api_usage": { "score": 7, "analysis": "This is a self-contained LESS compiler/parser, not using WP APIs directly. That is appropriate for its role. It likely gets called from a WP context to process LESS stylesheets." },
+        "code_quality": { "score": 6, "analysis": "147-line function is quite large. Heavy use of side-effect mutation ($this->buffer, $this->count). The parseChunk function does too many things: assignments, media queries, directives, variables, imports, mixins, blocks, semicolons. Could benefit from extraction." },
+        "dependency_integrity": { "score": 7, "analysis": "References a3_lessc::preg_quote() and $this->lessc->mPrefix. Depends on internal class infrastructure. No external dependencies visible in this function." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings in this parser. All strings are language keywords (media, @import, etc.) which are part of LESS syntax, not UI text requiring translation." },
+        "accessibility": { "score": 10, "analysis": "CSS/LESS compiler output will affect visual rendering but this function has no direct accessibility concerns. It processes stylesheets which are agnostic to a11y at the parsing level." }
+      },
+      "overall_score": 78,
+      "key_observation": "A large but functional LESS/CSS token parser with no external attack surface, though its 147-line size and heavy state mutation warrant extraction into smaller methods."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "expression",
+    "code": "function expression(&$out) { if ($this->value($lhs)) { $out = $this->expHelper($lhs, 0); if (!empty($this->env->supressedDivision)) { unset($this->env->supressedDivision); $s = $this->seek(); if ($this->literal(\"/\") && $this->value($rhs)) { $out = array(\"list\", \"\", array($out, array(\"keyword\", \"/\"), $rhs)); } else { $this->seek($s); } } return true; } return false; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 8, "analysis": "Clean WP-compliant naming. Uses pass-by-reference for output parameter $out which is standard WP convention. No special WP API needed for this parser helper." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Pure expression parsing for CSS values." },
+        "security": { "score": 8, "analysis": "Safe parser helper. The suppressedDivision flag prevents accidental CSS division output. No input sanitization needed - works on already-buffered content." },
+        "performance": { "score": 8, "analysis": "Compact 20-line function with O(1) logic. Single value() call plus optional helper. No loops or allocations." },
+        "wp_api_usage": { "score": 9, "analysis": "Not applicable for a parser helper - this is a pure algorithmic function." },
+        "code_quality": { "score": 8, "analysis": "Well-scoped 20 lines. Clear single responsibility: parse a CSS expression with special division handling." },
+        "dependency_integrity": { "score": 8, "analysis": "Depends on value(), expHelper(), literal(), seek(), and $this->env. All internal to the compiler class." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings." },
+        "accessibility": { "score": 10, "analysis": "N/A - parser component." }
+      },
+      "overall_score": 85,
+      "key_observation": "A well-scoped 20-line expression parser helper with proper division suppression handling and clean WP-compliant structure."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "value",
+    "code": "function value(&$value) { ... 53 lines parsing CSS values (negation, parenthesized values, units, colors, functions, strings, variables, escapes, CSS hacks) ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 6, "analysis": "Uses tab indentation. Side-effect mutation of $this->buffer and $this->count is typical for this parser pattern. The early return shortcut using isset($this->buffer[$this->count]) is a performance optimization that works within the class." },
+        "sql_safety": { "score": 10, "analysis": "No SQL queries. Parses CSS/LESS value tokens." },
+        "security": { "score": 7, "analysis": "Handles CSS hacks like \\0 which could be used for browser-specific targeting but this is standard LESS feature parsing. No eval or file operations. The regex match is bounded." },
+        "performance": { "score": 7, "analysis": "53 lines with multiple sequential if-else checks via early returns. Each branch attempts a different value type. The speed shortcut for negation is good. No unnecessary allocations thanks to early returns." },
+        "wp_api_usage": { "score": 9, "analysis": "No WP API dependencies - appropriate for a core parser function." },
+        "code_quality": { "score": 6, "analysis": "At 53 lines, this is getting large for a single function. The sequential if-else chain for value types could be refactored into a registry/dispatcher pattern. However, each branch is clearly separated with seek() rollback." },
+        "dependency_integrity": { "score": 7, "analysis": "Depends on literal(), variable(), unit(), color(), func(), string(), keyword(), seek(), parenValue(), and $this->buffer/$this->count." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings. Only internal parsing constants." },
+        "accessibility": { "score": 10, "analysis": "N/A - parser component." }
+      },
+      "overall_score": 78,
+      "key_observation": "Core CSS value parser with clean early-return pattern but at the edge of what is manageable in a single function at 53 lines."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "import",
+    "code": "function import(&$out) { $s = $this->seek(); if (!$this->literal('@import')) return false; if ($this->propertyValue($value)) { $out = array(\"import\", $value); return true; } }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 8, "analysis": "Clean function, uses proper pass-by-reference for output. No WP API used but none needed." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Parses @import directives from LESS." },
+        "security": { "score": 6, "analysis": "Parses @import but does not execute file reads here. The actual file loading would happen elsewhere in the compiler. No path traversal or inclusion issues in this function itself." },
+        "performance": { "score": 9, "analysis": "Minimal 13-line function with early returns. O(1) complexity." },
+        "wp_api_usage": { "score": 9, "analysis": "No WP API needed for parser internals." },
+        "code_quality": { "score": 8, "analysis": "Small, focused, and clean. Returns false on @import mismatch via seek() rollback." },
+        "dependency_integrity": { "score": 7, "analysis": "Depends on literal(), propertyValue(), seek()." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings." },
+        "accessibility": { "score": 10, "analysis": "N/A." }
+      },
+      "overall_score": 83,
+      "key_observation": "A concise 13-line @import directive parser with clean early-return pattern and no security concerns."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "string",
+    "code": "function string(&$out) { ... 50 lines parsing quoted strings with interpolation (@{}) and escape sequences ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Tab indentation used. The preg_quote call on delimiter is appropriate. Function naming follows camelCase which is consistent with the rest of the class." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Parses quoted strings from CSS/LESS source." },
+        "security": { "score": 8, "analysis": "Uses preg_match with bounded pattern. Handles @{} interpolation safely by delegating to $this->interpolation(). No eval or variable injection. The pattern is fixed per delimiter choice." },
+        "performance": { "score": 7, "analysis": "50-line function with a while loop using preg_match. The eatWhiteDefault toggle is a useful optimization. Pattern recompilation could be cached. The string concatenation in $content[] is O(n) per iteration." },
+        "wp_api_usage": { "score": 9, "analysis": "Parser internal, no WP API needed." },
+        "code_quality": { "score": 6, "analysis": "50 lines is borderline for a single function. The string parsing logic is complex with three cases (interpolation, escape, delimiter). Could use extraction but is readable as-is." },
+        "dependency_integrity": { "score": 7, "analysis": "Depends on literal(), match(), interpolation(), eatWhiteDefault, a3_lessc::preg_quote()." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings. Delimiters are punctuation." },
+        "accessibility": { "score": 10, "analysis": "N/A." }
+      },
+      "overall_score": 76,
+      "key_observation": "A complex string parser with interpolation and escape handling that is functional and secure but at 50 lines benefits from modular extraction."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "interpolation",
+    "code": "function interpolation(&$out) { $oldWhite = $this->eatWhiteDefault; $this->eatWhiteDefault = true; $s = $this->seek(); if ($this->literal(\"@{\") && $this->openString(\"}\", $interp, null, array(\"'\", '\"', \";\")) && $this->literal(\"}\", false)) { $out = array(\"interpolate\", $interp); $this->eatWhiteDefault = $oldWhite; if ($this->eatWhiteDefault) $this->whitespace(); return true; } $this->eatWhiteDefault = $oldWhite; $this->seek($s); return false; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 8, "analysis": "Clean function. Proper variable scoping with $oldWhite save/restore pattern. No WP API needed." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. LESS variable interpolation parser." },
+        "security": { "score": 8, "analysis": "Parses @{} blocks safely using openString() with restricted delimiters. No eval. The openString boundary characters prevent injection." },
+        "performance": { "score": 9, "analysis": "Compact 19 lines. Uses openString() which is likely O(n) over the interpolation content. No unnecessary allocations." },
+        "wp_api_usage": { "score": 9, "analysis": "Parser internals, no WP API needed." },
+        "code_quality": { "score": 8, "analysis": "19 lines, single responsibility. Clean save/restore of whitespace state. Proper seek() rollback on failure." },
+        "dependency_integrity": { "score": 7, "analysis": "Depends on literal(), openString(), whitespace(), eatWhiteDefault, seek()." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings." },
+        "accessibility": { "score": 10, "analysis": "N/A." }
+      },
+      "overall_score": 84,
+      "key_observation": "A well-structured 19-line LESS variable interpolation parser with clean state management and proper error recovery."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "unit",
+    "code": "function unit(&$unit) { if (isset($this->buffer[$this->count])) { $char = $this->buffer[$this->count]; if (!ctype_digit($char) && $char != \".\") return false; } if ($this->match('([0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)([%a-zA-Z]+)?', $m)) { $unit = array(\"number\", $m[1], empty($m[2]) ? \"\" : $m[2]); return true; } return false; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 8, "analysis": "Clean WP PHP conventions. Early return with ctype_digit check is efficient. Proper pass-by-reference for $unit." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Parses numeric units (px, em, %, rem, etc.) from CSS/LESS." },
+        "security": { "score": 9, "analysis": "Safe regex match for numeric values. No injection vectors. The regex is bounded and deterministic." },
+        "performance": { "score": 9, "analysis": "13 lines with a fast early-exit check using ctype_digit. The regex is straightforward. O(1) for negative numbers." },
+        "wp_api_usage": { "score": 9, "analysis": "Parser helper, no WP API needed." },
+        "code_quality": { "score": 8, "analysis": "13 lines, clear single responsibility. The speed shortcut on buffer[0] is a good optimization for non-numeric first chars." },
+        "dependency_integrity": { "score": 8, "analysis": "Depends on match(), isset(), ctype_digit()." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings. Unit names are parsed as data." },
+        "accessibility": { "score": 10, "analysis": "N/A." }
+      },
+      "overall_score": 87,
+      "key_observation": "A clean, efficient 13-line numeric unit parser with a smart early-exit optimization and zero dependencies beyond core parser methods."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "color",
+    "code": "function color(&$out) { if ($this->match('(#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3}))', $m)) { if (strlen($m[1]) > 7) { $out = array(\"string\", \"\", array($m[1])); } else { $out = array(\"raw_color\", $m[1]); } return true; } return false; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 8, "analysis": "Clean function. Proper pass-by-reference. Handles both hex and 8-digit hex (with alpha) colors correctly." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Parses CSS color values." },
+        "security": { "score": 9, "analysis": "Bounded regex for hex colors. No eval. The 8-digit hex (with alpha channel) is handled differently than 6-digit, which is correct." },
+        "performance": { "score": 9, "analysis": "12 lines, single regex match. O(1) operation." },
+        "wp_api_usage": { "score": 9, "analysis": "Parser internal helper." },
+        "code_quality": { "score": 8, "analysis": "12 lines, very focused. The strlen check for alpha channel is a nice touch for LESS compatibility." },
+        "dependency_integrity": { "score": 8, "analysis": "Depends only on match()." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings." },
+        "accessibility": { "score": 10, "analysis": "N/A - color parsing does not involve accessibility decisions." }
+      },
+      "overall_score": 87,
+      "key_observation": "A minimal, efficient 12-line hex color parser that correctly distinguishes 6-digit (sRGB) and 8-digit (RGBA) hex values."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "tags",
+    "code": "function tags(&$tags, $simple = false, $delim = ',') { $tags = array(); while ($this->tag($tt, $simple)) { $tags[] = $tt; if (!$this->literal($delim)) break; } if (count($tags) == 0) return false; return true; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 8, "analysis": "Clean WP PHP. Optional parameters with defaults. Pass-by-reference for output." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Collects CSS selector tags." },
+        "security": { "score": 9, "analysis": "Delegates to tag() which uses bounded regex. No injection vectors." },
+        "performance": { "score": 8, "analysis": "10 lines, simple while loop with early break. Each iteration calls tag() which is O(1) per tag." },
+        "wp_api_usage": { "score": 9, "analysis": "Parser internal." },
+        "code_quality": { "score": 8, "analysis": "10 lines, well-structured. The optional $simple and $delim parameters make it flexible for different CSS selector formats." },
+        "dependency_integrity": { "score": 7, "analysis": "Depends on tag(), literal()." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings." },
+        "accessibility": { "score": 10, "analysis": "N/A." }
+      },
+      "overall_score": 85,
+      "key_observation": "A concise 10-line CSS selector tag collector with flexible delimiter support and clean loop structure."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "tag",
+    "code": "function tag(&$tag, $simple = false) { ... 62 lines parsing CSS selectors with brackets, expressions, interpolations, units, and keyword parts ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 6, "analysis": "62 lines is large for a single function. The $chars regex string construction is clear. Tab indentation consistent." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Parses CSS selector names/tags." },
+        "security": { "score": 7, "analysis": "Uses regex matching with bounded character classes. The bracket parsing via tagBracket() could be a concern if that function has unbounded loops, but within this function the match patterns are safe." },
+        "performance": { "score": 6, "analysis": "62 lines with nested while loops and multiple regex matches per tag. The eatWhiteDefault toggling adds overhead. Could be optimized with caching of $chars pattern." },
+        "wp_api_usage": { "score": 9, "analysis": "Parser internal, no WP API needed." },
+        "code_quality": { "score": 6, "analysis": "62 lines is pushing the limit. The function handles multiple concerns: bracket parsing, expression handling, interpolation, unit recognition. Consider extracting tagBracket handling into a helper." },
+        "dependency_integrity": { "score": 7, "analysis": "Depends on tagBracket(), interpolation(), unit(), match(), whitespace(), seek(), eatWhiteDefault, $this->buffer." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings." },
+        "accessibility": { "score": 10, "analysis": "N/A." }
+      },
+      "overall_score": 75,
+      "key_observation": "A comprehensive 62-line CSS selector tag parser that handles many edge cases but approaches the single-function size limit and could benefit from extraction."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "func",
+    "code": "function func(&$func) { ... 41 lines parsing CSS/LESS function calls with arguments, name=value pairs, and url() fallback ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Tab indentation consistent. The IE filter property handling (name=value pairs) is specific to the parser domain. Function naming is camelCase matching the class." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Parses CSS function calls like url(), rgba(), calc(), etc." },
+        "security": { "score": 7, "analysis": "The url() fallback to openString() when parsing fails is a safety measure that treats unparsable content as a string. No eval of user content. The match regex is bounded." },
+        "performance": { "score": 7, "analysis": "41 lines with a while loop for argument parsing. Each argument tries keyword=expression pattern first, then falls back to expressionList(). The seek() on each fallback adds overhead but keeps correctness." },
+        "wp_api_usage": { "score": 9, "analysis": "Parser internal, no WP API needed." },
+        "code_quality": { "score": 7, "analysis": "41 lines is moderate. The IE filter comment 'ugly nonsense' indicates the author acknowledges complexity there. The url() fallback path is defensive programming worth noting." },
+        "dependency_integrity": { "score": 7, "analysis": "Depends on match(), literal(), keyword(), expressionList(), openString(), seek()." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings." },
+        "accessibility": { "score": 10, "analysis": "N/A." }
+      },
+      "overall_score": 77,
+      "key_observation": "A 41-line CSS function parser with a clever url() fallback path for unparsable content, though the IE filter handling adds acknowledged complexity."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "variable",
+    "code": "function variable(&$name) { $s = $this->seek(); if ($this->literal($this->lessc->vPrefix, false) && ($this->variable($sub) || $this->keyword($name))) { if (!empty($sub)) { $name = array('variable', $sub); } else { $name = $this->lessc->vPrefix.$name; } return true; } $name = null; $this->seek($s); return false; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 8, "analysis": "Clean function. Uses class property $this->lessc->vPrefix for variable prefix (@ by default). Proper pass-by-reference." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. LESS variable reference parser." },
+        "security": { "score": 8, "analysis": "Uses literal() which is regex-based. No eval. The recursive $this->variable($sub) call handles nested variables like @@var safely with bounded depth." },
+        "performance": { "score": 8, "analysis": "17 lines. Single recursive call on the variable branch. O(k) where k is nesting depth (typically 1-2)." },
+        "wp_api_usage": { "score": 9, "analysis": "Parser internal." },
+        "code_quality": { "score": 8, "analysis": "17 lines, clean logic. The null assignment for $name on failure is a good practice for pass-by-reference. Proper seek() rollback." },
+        "dependency_integrity": { "score": 7, "analysis": "Depends on literal(), variable(), keyword(), lessc->vPrefix, seek()." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings. The variable prefix is a class configuration value." },
+        "accessibility": { "score": 10, "analysis": "N/A." }
+      },
+      "overall_score": 83,
+      "key_observation": "A 17-line LESS variable parser that correctly handles nested variable references (@@var) with proper null handling and seek() rollback."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "keyword",
+    "code": "function keyword(&$word) { if ($this->match('[\\w_\\-\\*!\"][\\w\\-\"]*', $m)) { $word = $m[1]; return true; } return false; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 8, "analysis": "Clean, minimal function. Follows WP conventions for pass-by-reference output." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Parses CSS/LESS keyword tokens." },
+        "security": { "score": 9, "analysis": "Bounded regex match. Only allows alphanumeric, underscore, hyphen, asterisk, and quote characters. No injection possible." },
+        "performance": { "score": 9, "analysis": "7 lines. Single regex match. O(1)." },
+        "wp_api_usage": { "score": 9, "analysis": "Parser internal." },
+        "code_quality": { "score": 9, "analysis": "7 lines, excellent. Minimal, focused, correct." },
+        "dependency_integrity": { "score": 8, "analysis": "Depends only on match()." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings." },
+        "accessibility": { "score": 10, "analysis": "N/A." }
+      },
+      "overall_score": 87,
+      "key_observation": "A minimal 7-line keyword tokenizer that is clean, efficient, and fully bounded - one of the best examples of simple parser combinator design in this batch."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "end",
+    "code": "function end() { if ($this->literal(';')) { return true; } elseif ($this->count == strlen($this->buffer) || $this->buffer[$this->count] == '}') { return true; } return false; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 8, "analysis": "Clean, minimal function. No WP API needed." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Checks for statement termination in CSS/LESS." },
+        "security": { "score": 9, "analysis": "Safe buffer boundary checks. No injection vectors." },
+        "performance": { "score": 9, "analysis": "9 lines. Three early returns. O(1) - simple position checks." },
+        "wp_api_usage": { "score": 9, "analysis": "Parser internal." },
+        "code_quality": { "score": 9, "analysis": "9 lines, excellent. Handles semicolon termination AND EOF/closing brace which is correct CSS/LESS behavior." },
+        "dependency_integrity": { "score": 8, "analysis": "Depends on literal(), isset()/direct buffer access." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings." },
+        "accessibility": { "score": 10, "analysis": "N/A." }
+      },
+      "overall_score": 87,
+      "key_observation": "A minimal 9-line statement terminator detector that correctly handles both semicolons and implicit termination at EOF or closing braces."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "guards",
+    "code": "function guards(&$guards) { $s = $this->seek(); if (!$this->literal(\"when\")) { $this->seek($s); return false; } $guards = array(); while ($this->guardGroup($g)) { $guards[] = $g; if (!$this->literal(\",\")) break; } if (count($guards) == 0) { $guards = null; $this->seek($s); return false; } return true; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 8, "analysis": "Clean function. Handles LESS @mixin guards (when-clause) correctly. Proper $guards = array() initialization." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Parses LESS mixin guard conditions." },
+        "security": { "score": 8, "analysis": "Delegates guard expression parsing to guardGroup() which uses the same bounded regex pattern as the rest of the parser." },
+        "performance": { "score": 8, "analysis": "23 lines. While loop over guard groups with early break on comma failure. Each guardGroup call is O(1) per group." },
+        "wp_api_usage": { "score": 9, "analysis": "Parser internal." },
+        "code_quality": { "score": 8, "analysis": "23 lines, clear logic for LESS mixin guards. The null + seek() rollback on empty guards is correct behavior." },
+        "dependency_integrity": { "score": 7, "analysis": "Depends on literal(), guardGroup(), seek()." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings." },
+        "accessibility": { "score": 10, "analysis": "N/A." }
+      },
+      "overall_score": 83,
+      "key_observation": "A 23-line LESS mixin guard parser that correctly handles when-clause conditions with proper comma-separated group parsing and error rollback."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "guard",
+    "code": "function guard(&$guard) { $s = $this->seek(); $negate = $this->literal(\"not\"); if ($this->literal(\"(\") && $this->expression($exp) && $this->literal(\")\")) { $guard = $exp; if ($negate) $guard = array(\"negate\", $guard); return true; } $this->seek($s); return false; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 8, "analysis": "Clean function. $negate boolean capture is a nice pattern. Proper pass-by-reference." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Parses individual LESS guard conditions." },
+        "security": { "score": 8, "analysis": "Delegates to expression() for the condition body which uses bounded parsing. The not keyword is handled as a simple prefix marker." },
+        "performance": { "score": 9, "analysis": "13 lines. Three literal() calls plus one expression() call. Early returns on failure. O(1)." },
+        "wp_api_usage": { "score": 9, "analysis": "Parser internal." },
+        "code_quality": { "score": 8, "analysis": "13 lines, clean logic. The negate wrapping with array(\"negate\", $guard) is a good AST design." },
+        "dependency_integrity": { "score": 7, "analysis": "Depends on literal(), expression(), seek()." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings. 'not' is a LESS keyword." },
+        "accessibility": { "score": 10, "analysis": "N/A." }
+      },
+      "overall_score": 84,
+      "key_observation": "A clean 13-line guard condition parser with proper negate handling and well-structured AST node output."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "literal",
+    "code": "function literal($what, $eatWhitespace = null) { if ($eatWhitespace === null) $eatWhitespace = $this->eatWhiteDefault; if (!isset($what[1]) && isset($this->buffer[$this->count])) { if ($this->buffer[$this->count] == $what) { if (!$eatWhitespace) { $this->count++; return true; } else { /* goes below... */ } } else { return false; } } if (!isset(self::$literalCache[$what])) { self::$literalCache[$what] = a3_lessc::preg_quote($what); } return $this->match(self::$literalCache[$what], $m, $eatWhitespace); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Uses static cache self::$literalCache which is static class property - this is appropriate for the caching pattern. Tab indentation consistent." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Core literal-matching primitive for the parser." },
+        "security": { "score": 8, "analysis": "Uses preg_quote() before regex construction which is the correct security practice. The static cache prevents repeated preg_quote calls. No injection vectors." },
+        "performance": { "score": 8, "analysis": "22 lines with a good single-character optimization branch. Static caching of quoted literals is an important performance optimization for a frequently-called function. The isset($what[1]) check avoids function call overhead for single chars." },
+        "wp_api_usage": { "score": 9, "analysis": "Parser internal primitive." },
+        "code_quality": { "score": 7, "analysis": "22 lines is reasonable for a core primitive. The static cache pattern is clean but could cause memory growth with many unique literals. The early-return for single chars is a good optimization." },
+        "dependency_integrity": { "score": 7, "analysis": "Depends on match(), preg_quote(), static self::$literalCache." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings. The $what parameter is parsed content, not display text." },
+        "accessibility": { "score": 10, "analysis": "N/A." }
+      },
+      "overall_score": 79,
+      "key_observation": "A well-optimized 22-line literal matcher with static caching and single-character shortcuts - a critical parser primitive that balances performance with correctness."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "to",
+    "code": "function to($what, &$out, $until = false, $allowNewline = false) { if (is_string($allowNewline)) { $validChars = $allowNewline; } else { $validChars = $allowNewline ? \".\" : \"[^\\n]\"; } if (!$this->match('('.$validChars.'*?)'.a3_lessc::preg_quote($what), $m, !$until)) return false; if ($until) $this->count -= strlen($what); $out = $m[1]; return true; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Clean function with well-documented parameters. The $allowNewline polymorphism (boolean vs string) is a clever but slightly unconventional pattern." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Generic string-matching primitive." },
+        "security": { "score": 7, "analysis": "Uses preg_quote() on $what before regex construction. However, the $validChars string is directly interpolated into the regex without escaping - if called with user-controlled $validChars this could be dangerous, but within this parser the caller controls it." },
+        "performance": { "score": 8, "analysis": "11 lines. Single regex match. O(n) over matched content. The until flag avoids backtracking." },
+        "wp_api_usage": { "score": 9, "analysis": "Parser internal." },
+        "code_quality": { "score": 7, "analysis": "11 lines, functional. The boolean/string polymorphism on $allowNewline is clever but could confuse readers. The count adjustment for $until is correct." },
+        "dependency_integrity": { "score": 7, "analysis": "Depends on match(), preg_quote()." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings." },
+        "accessibility": { "score": 10, "analysis": "N/A." }
+      },
+      "overall_score": 77,
+      "key_observation": "An 11-line generic string-matching primitive with a clever boolean/string polymorphism on $allowNewline that balances flexibility with compactness."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "whitespace",
+    "code": "function whitespace() { if ($this->writeComments) { $gotWhite = false; while (preg_match(self::$whitePattern, $this->buffer, $m, 0, $this->count)) { if (isset($m[1]) && empty($this->commentsSeen[$this->count])) { $this->append(array(\"comment\", $m[1])); $this->commentsSeen[$this->count] = true; } $this->count += strlen($m[0]); $gotWhite = true; } return $gotWhite; } else { $this->match(\"\", $m); return strlen($m[0]) > 0; } }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Tab indentation. The comment-deduplication via $this->commentsSeen is a good pattern. Self::$whitePattern static property is appropriate." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Handles whitespace and comments in CSS/LESS source." },
+        "security": { "score": 8, "analysis": "Uses preg_match with a class-level $whitePattern (bounded). The commentsSeen deduplication prevents double-processing. No eval of matched content." },
+        "performance": { "score": 6, "analysis": "17 lines. The while loop with preg_match at each position is potentially O(n*m) where n is buffer length and m is average whitespace run. The commentsSeen map lookup is O(1) but could grow unbounded." },
+        "wp_api_usage": { "score": 9, "analysis": "Parser internal." },
+        "code_quality": { "score": 7, "analysis": "17 lines with two distinct branches (comment mode vs skip mode). The commentsSeen deduplication is important for correctness but the while(preg_match) pattern is less elegant than preg_match_all." },
+        "dependency_integrity": { "score": 7, "analysis": "Depends on preg_match(), match(), append(), self::$whitePattern, commentsSeen." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings. Comment content is stored as data, not displayed." },
+        "accessibility": { "score": 8, "analysis": "Comment handling could affect CSS output quality which indirectly impacts accessibility if comments contain accessibility hints." }
+      },
+      "overall_score": 77,
+      "key_observation": "A 17-line whitespace/comment handler that correctly deduplicates comments via $this->commentsSeen but uses a less-than-ideal preg_match-in-while pattern."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "peek",
+    "code": "function peek($regex, &$out = null, $from=null) { if (is_null($from)) $from = $this->count; $r = '/'.$regex.'/Ais'; $result = preg_match($r, $this->buffer, $out, 0, $from); return $result; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": { "score": 7, "analysis": "Clean function. Optional parameters with defaults. Pass-by-reference for output." },
+        "sql_safety": { "score": 10, "analysis": "No SQL. Non-consuming regex peek at current buffer position." },
+        "security": { "score": 6, "analysis": "Directly interpolates $regex into regex string without preg_quote or validation. While internal callers control this, it is the least defensive function in the batch. Could match anything." },
+        "performance": { "score": 8, "analysis": "7 lines. Single preg_match with /A (anchored) flag ensures O(1) start position. The /is flags are standard." },
+        "wp_api_usage": { "score": 9, "analysis": "Parser internal." },
+        "code_quality": { "score": 7, "analysis": "7 lines, minimal. The regex string concatenation is functional but lacks validation. The anchored /A flag is a smart performance touch." },
+        "dependency_integrity": { "score": 8, "analysis": "Depends only on preg_match()." },
+        "i18n": { "score": 10, "analysis": "No user-facing strings." },
+        "accessibility": { "score": 10, "analysis": "N/A." }
+      },
+      "overall_score": 74,
+      "key_observation": "A minimal 7-line regex peek function that is efficient with anchored matching but lacks input validation on the regex parameter."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  }
+]

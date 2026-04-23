@@ -1,0 +1,662 @@
+[
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "toRGB_helper",
+    "code": "function toRGB_helper($comp, $temp1, $temp2) {\n\t\tif ($comp < 0) $comp += 1.0;\n\t\telseif ($comp > 1) $comp -= 1.0;\n\n\t\tif (6 * $comp < 1) return $temp1 + ($temp2 - $temp1) * 6 * $comp;\n\t\tif (2 * $comp < 1) return $temp2;\n\t\tif (3 * $comp < 2) return $temp1 + ($temp2 - $temp1)*((2/3) - $comp) * 6;\n\n\t\treturn $temp1;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 8,
+        "performance": 8,
+        "wp_api_usage": 5,
+        "code_quality": 7,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 76,
+      "key_observation": "Pure color-math utility — no user input, no SQL, no WP API dependency; standalone numeric helper with correct HSL-to-RGB bounds normalization."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "reduce",
+    "code": "function reduce($value, $forExpression = false) { ... 111 lines of AST reduction logic ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 7,
+        "performance": 6,
+        "wp_api_usage": 5,
+        "code_quality": 7,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 72,
+      "key_observation": "Core LESS AST reducer — handles interpolation, variables, lists, expressions, functions, and unary ops; has infinite-loop guard via seenNames but uses pass-by-reference assignment (&) which is a subtle PHP pitfall."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "evaluate",
+    "code": "function evaluate($exp) { ... coerces colors, dispatches operators (and, =, +), delegates to op_* methods ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 7,
+        "performance": 6,
+        "wp_api_usage": 5,
+        "code_quality": 7,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 72,
+      "key_observation": "Operator dispatcher for LESS expressions — color coercion + type-based method dispatch via naming convention; no user data flows through, safe but relies on implicit type coercion via ==."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "op_number_color",
+    "code": "function op_number_color($op, $lft, $rgt) {\n\t\tif ($op == '+' || $op == '*') {\n\t\t\treturn $this->op_color_number($op, $rgt, $lft);\n\t\t}\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 8,
+        "performance": 8,
+        "wp_api_usage": 5,
+        "code_quality": 6,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 74,
+      "key_observation": "Commutativity shim — silently returns null for unsupported operators (-, %, /) instead of throwing; this is by design (LESS spec) but could mask bugs."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "op_color_number",
+    "code": "function op_color_number($op, $lft, $rgt) {\n\t\tif ($rgt[0] == '%') $rgt[1] /= 100;\n\n\t\treturn $this->op_color_color($op, $lft,\n\t\t\tarray_fill(1, count($lft) - 1, $rgt[1]));\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 8,
+        "performance": 8,
+        "wp_api_usage": 5,
+        "code_quality": 7,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 76,
+      "key_observation": "Clean percentage-to-decimal normalization for color operations — uses array_fill to expand scalar to color channel vector; no WP-specific concerns."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "op_color_color",
+    "code": "function op_color_color($op, $left, $right) { ... element-wise +, -, *, %, / with divide-by-zero guard ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 7,
+        "performance": 7,
+        "wp_api_usage": 5,
+        "code_quality": 7,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 73,
+      "key_observation": "Element-wise color channel arithmetic with explicit divide-by-zero check — uses isset fallbacks for mismatched channel counts; switch is exhaustive and safe."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "lib_red",
+    "code": "function lib_red($color){\n\t\t$color = $this->coerceColor($color);\n\t\tif (is_null($color)) {\n\t\t\t$this->throwError('color expected for red()');\n\t\t}\n\t\treturn $color[1];\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 8,
+        "performance": 9,
+        "wp_api_usage": 5,
+        "code_quality": 7,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 76,
+      "key_observation": "Straightforward color accessor with type guard — coercer + null check + index return; identical pattern to lib_green/lib_blue."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "lib_green",
+    "code": "function lib_green($color){ ... identical pattern to lib_red ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 8,
+        "performance": 9,
+        "wp_api_usage": 5,
+        "code_quality": 7,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 76,
+      "key_observation": "Mirror of lib_red for green channel — type-safe with coerceColor guard; no side effects."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "lib_blue",
+    "code": "function lib_blue($color){ ... identical pattern to lib_red ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 8,
+        "performance": 9,
+        "wp_api_usage": 5,
+        "code_quality": 7,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 76,
+      "key_observation": "Mirror of lib_red for blue channel — consistent API pattern; safe primitive return."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "op_number_number",
+    "code": "function op_number_number($op, $left, $right) { ... arithmetic +,*, -,%,/ and relational <,>,>=,<= with unit propagation ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 7,
+        "performance": 7,
+        "wp_api_usage": 5,
+        "code_quality": 7,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 73,
+      "key_observation": "Complete numeric operator set with unit propagation — divide-by-zero guard present; uses toBool for relational ops; the '=<' operator (non-standard, should be '<=') is a potential LESS parser quirk."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "get",
+    "code": "function get($name, $default=null) { ... lexical scope walk-up with arguments special case ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 8,
+        "performance": 7,
+        "wp_api_usage": 5,
+        "code_quality": 7,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 74,
+      "key_observation": "LESS variable lookup with lexical scoping — walks parent chain, handles 'arguments' special var; O(n) walk-up is correct for LESS and safe; no WP API conflicts despite generic name."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "__construct",
+    "code": "function __construct($fname = null) {\n\t\tif ($fname !== null) {\n\t\t\t$this->_parseFile = $fname;\n\t\t}\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 9,
+        "performance": 9,
+        "wp_api_usage": 5,
+        "code_quality": 7,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 77,
+      "key_observation": "Minimal constructor — only sets _parseFile for deprecated parse() path; uses strict !== comparison (good); no side effects."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "compile",
+    "code": "function compile($string, $name = null) { ... sets LC_NUMERIC to C, parses, formats, restores locale ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 7,
+        "performance": 7,
+        "wp_api_usage": 5,
+        "code_quality": 7,
+        "dependency_integrity": 7,
+        "i18n": 8,
+        "accessibility": 9
+      },
+      "overall_score": 73,
+      "key_observation": "Sets LC_NUMERIC to 'C' for consistent decimal output then restores it — correct locale round-trip pattern; uses output buffering correctly; no WP API coupling."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "cachedCompile",
+    "code": "function cachedCompile($in, $force = false) { ... checks file mtimes for cache invalidation, recompiles if needed ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 7,
+        "performance": 8,
+        "wp_api_usage": 5,
+        "code_quality": 7,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 74,
+      "key_observation": "Cache invalidation via filemtime comparison — correct pattern for LESS compilation caching; handles both string and array inputs; safe file_exists check before stat."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "parse",
+    "code": "function parse($str = null, $initialVariables = null) { ... accepts array-or-string, sets variables, delegates to compileFile or compile ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 7,
+        "performance": 7,
+        "wp_api_usage": 5,
+        "code_quality": 7,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 73,
+      "key_observation": "Dual-mode parser (array vars or string) with save/restore of registeredVars — correct idempotent pattern; throws exception on empty input."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "throwError",
+    "code": "function throwError($msg = null) {\n\t\tif ($this->sourceLoc >= 0) {\n\t\t\t$this->sourceParser->throwError($msg, $this->sourceLoc);\n\t\t}\n\t\tthrow new exception($msg);\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 7,
+        "performance": 8,
+        "wp_api_usage": 5,
+        "code_quality": 6,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 72,
+      "key_observation": "Dual-path error reporting — delegates to sourceParser if available, always throws exception; uses lowercase 'exception' (should be 'Exception' for PHP compatibility, though PHP 8 auto-corrects)."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "ccompile",
+    "code": "function ccompile($in, $out, $less = null) {\n\t\tif ($less === null) {\n\t\t\t$less = new self;\n\t\t}\n\t\treturn $less->checkedCompile($in, $out);\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 8,
+        "performance": 8,
+        "wp_api_usage": 5,
+        "code_quality": 7,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 75,
+      "key_observation": "Thin static facade — delegates to instance method; uses new self correctly; no user input touches this path."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "cexecute",
+    "code": "function cexecute($in, $force = false, $less = null) {\n\t\tif ($less === null) {\n\t\t\t$less = new self;\n\t\t}\n\t\treturn $less->cachedCompile($in, $force);\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 8,
+        "performance": 8,
+        "wp_api_usage": 5,
+        "code_quality": 7,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 75,
+      "key_observation": "Mirror of ccompile for cached path — identical pattern, consistent API; thin wrapper, no risks."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "a3_lessc_parser::__construct",
+    "code": "function __construct($lessc, $sourceName = null) { ... initializes operator string regex, comment patterns, whitespace pattern via preg_quote ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 7,
+        "performance": 6,
+        "wp_api_usage": 5,
+        "code_quality": 6,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 71,
+      "key_observation": "Regex construction with preg_quote for safety — correctly escapes operator names and comment delimiters to prevent regex injection; static cache pattern avoids recomputation; but self::$operatorString is set on first call without thread safety."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "a3_lessc_parser::parse",
+    "code": "function parse($buffer) { ... whitespace stripping, parseChunk loop, block-closed assertion ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 7,
+        "performance": 6,
+        "wp_api_usage": 5,
+        "code_quality": 6,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 71,
+      "key_observation": "Main lexer loop — uses parseChunk in a while loop, validates full consumption and block closure; comments are conditionally stripped via writeComments flag; correct but the loop condition (false !== result) is a subtle pattern worth noting."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "op_color_color",
+    "code": "function op_color_color($op, $left, $right) { ... element-wise color arithmetic with +, -, *, %, / and fixColor ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 7,
+        "performance": 7,
+        "wp_api_usage": 5,
+        "code_quality": 7,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 73,
+      "key_observation": "Duplicate/variant of op_color_color — element-wise ops with isset fallbacks and divide-by-zero guard; fixColor post-processing normalizes output."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "op_number_number",
+    "code": "function op_number_number($op, $left, $right) { ... full numeric operator set with unit propagation and relational ops ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": 6,
+        "sql_safety": 9,
+        "security": 7,
+        "performance": 7,
+        "wp_api_usage": 5,
+        "code_quality": 7,
+        "dependency_integrity": 7,
+        "i18n": 9,
+        "accessibility": 9
+      },
+      "overall_score": 73,
+      "key_observation": "Numeric operator core — arithmetic + relational with unit preference logic (left wins if set); toBool for comparisons; '=<' is non-standard but consistent with LESS parser output."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  }
+]

@@ -1,0 +1,502 @@
+[
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Dimensions::__construct",
+    "code": "function __construct() {\n\t\tadd_action( 'plugins_loaded', array( $this, 'init_form_fields' ), 1 );\n\t\t$this->subtab_init();\n\t\t$this->form_messages = array('success_message'=> __( 'Dimensions Settings successfully saved.', 'a3-responsive-slider' ), 'error_message'=> __( 'Error: Dimensions Settings can not save.', 'a3-responsive-slider' ), 'reset_message'=> __( 'Dimensions Settings successfully reseted.', 'a3-responsive-slider' ));\n\t\tadd_action( $this->plugin_name . '-' . $this->form_key . '_settings_end', array( $this, 'include_script' ) );\n\t\tadd_action( $this->plugin_name . '_set_default_settings' , array( $this, 'set_default_settings' ) );\n\t\tadd_action( $this->plugin_name . '_get_all_settings' , array( $this, 'get_settings' ) );\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Follows WP hook conventions (plugins_loaded, add_action/add_filter). Tab indentation used. No formal PSR-12 class structure but standard WP plugin coding style."},
+        "sql_safety": {"score": 10, "analysis": "No SQL queries present. All operations are hook registrations and property assignments."},
+        "security": {"score": 7, "analysis": "Relies on admin_interface for form handling which should handle nonce/capability checks. No direct user input in this method. The 'reseted' grammar error in translated string is a minor i18n quality issue."},
+        "performance": {"score": 9, "analysis": "Lightweight constructor, O(1) hook registrations. No loops or expensive operations."},
+        "wp_api_usage": {"score": 8, "analysis": "Proper use of add_action for WP lifecycle hooks. Correct plugin_name and form_key dynamic construction."},
+        "code_quality": {"score": 7, "analysis": "Clean structure. Uses apply_filters hook for extensibility. Property initialization is straightforward."},
+        "dependency_integrity": {"score": 6, "analysis": "Depends on $this->plugin_name, $this->form_key, $this->parent_tab, $this->position, $this->subtab_data being set in parent class. No null checks."},
+        "i18n": {"score": 7, "analysis": "Uses __() for translations. String 'reseted' is grammatically incorrect (should be 'reset'). All user-facing strings are marked."},
+        "accessibility": {"score": 6, "analysis": "Admin settings constructor, no direct UI output. Accessibility depends on admin_forms() caller."}
+      },
+      "overall_score": 78,
+      "key_observation": "Standard WP admin settings constructor with proper hook registration and translation support."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Dimensions::subtab_init",
+    "code": "function subtab_init() {\n\t\tadd_filter( $this->plugin_name . '-' . $this->parent_tab . '_settings_subtabs_array', array( $this, 'add_subtab' ), $this->position );\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Clean function, proper add_filter usage, tab indentation."},
+        "sql_safety": {"score": 10, "analysis": "No SQL present."},
+        "security": {"score": 8, "analysis": "Pure hook registration, no user input or side effects."},
+        "performance": {"score": 10, "analysis": "Single filter registration, trivial overhead."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct add_filter for WP settings subtabs extension point."},
+        "code_quality": {"score": 8, "analysis": "Minimal, focused, does one thing well."},
+        "dependency_integrity": {"score": 6, "analysis": "Relies on $this->plugin_name, $this->parent_tab, $this->position being set."},
+        "i18n": {"score": 9, "analysis": "No user-facing strings, N/A."},
+        "accessibility": {"score": 8, "analysis": "Admin settings hook, no direct UI."}
+      },
+      "overall_score": 85,
+      "key_observation": "Minimal subtab registration hook, no user input, trivially safe."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Dimensions::subtab_data",
+    "code": "function subtab_data() {\n\t\t$subtab_data = array( 'name'=> 'dimensions', 'label'=> __( 'Dimensions', 'a3-responsive-slider' ), 'callback_function'=> 'a3_responsive_sider_template_1_dimensions_settings_form' );\n\t\tif ( $this->subtab_data ) return $this->subtab_data;\n\t\treturn $this->subtab_data = $subtab_data;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Standard WP plugin coding style. Lazy initialization pattern."},
+        "sql_safety": {"score": 10, "analysis": "No SQL present."},
+        "security": {"score": 9, "analysis": "Returns static config array. No user input. The typo 'a3_responsive_sider' vs 'a3_responsive_slider' in callback is a bug but not a security issue."},
+        "performance": {"score": 9, "analysis": "Lazy load pattern with null check. O(1) array construction."},
+        "wp_api_usage": {"score": 7, "analysis": "Returns data for WP admin settings framework. Callback function name contains typo (sider vs slider)."},
+        "code_quality": {"score": 7, "analysis": "Lazy initialization pattern is good. The callback name typo ('sider' vs 'slider') is a bug."},
+        "dependency_integrity": {"score": 7, "analysis": "Writes to $this->subtab_data, reads back for memoization."},
+        "i18n": {"score": 8, "analysis": "Label string properly translated."},
+        "accessibility": {"score": 8, "analysis": "Admin settings config, no direct UI output."}
+      },
+      "overall_score": 80,
+      "key_observation": "Lazy-loaded subtab config; contains a callback name typo ('sider' vs 'slider') that may break form rendering."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Dimensions::add_subtab",
+    "code": "function add_subtab( $subtabs_array ) {\n\tif ( ! is_array( $subtabs_array ) ) $subtabs_array = array();\n\t$subtabs_array[] = $this->subtab_data();\n\treturn $subtabs_array;\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Type check on input parameter is good WP practice. Clean structure."},
+        "sql_safety": {"score": 10, "analysis": "No SQL present."},
+        "security": {"score": 9, "analysis": "Input validation with is_array(). No user input manipulation."},
+        "performance": {"score": 9, "analysis": "Single array push, O(1). No loops."},
+        "wp_api_usage": {"score": 8, "analysis": "Properly implements filter callback signature (receives and returns array)."},
+        "code_quality": {"score": 8, "analysis": "Defensive is_array() check on filter input is good practice."},
+        "dependency_integrity": {"score": 7, "analysis": "Calls $this->subtab_data() which returns a config array."},
+        "i18n": {"score": 9, "analysis": "No user-facing strings in this function."},
+        "accessibility": {"score": 8, "analysis": "Admin settings hook callback, no direct UI."}
+      },
+      "overall_score": 85,
+      "key_observation": "Defensive filter callback with type checking, safe and correct."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Dimensions::settings_form",
+    "code": "function settings_form() {\n\t\t$output = '';\n\t\t$output .= $GLOBALS[$this->plugin_prefix.'admin_interface']->admin_forms( $this->form_fields, $this->form_key, $this->option_name, $this->form_messages );\n\t\treturn $output;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "analysis": "Uses $GLOBALS which is generally discouraged in WP. Should use dependency injection instead."},
+        "sql_safety": {"score": 10, "analysis": "No SQL present."},
+        "security": {"score": 6, "analysis": "$GLOBALS access bypasses class encapsulation. admin_forms() should handle security but global dependency is fragile."},
+        "performance": {"score": 7, "analysis": "String concatenation with .= for single assignment is unnecessary overhead."},
+        "wp_api_usage": {"score": 5, "analysis": "$GLOBALS access is non-standard WP pattern. Should use WP's service locator or constructor injection."},
+        "code_quality": {"score": 6, "analysis": "String concat of empty string + result is redundant. Global state dependency reduces testability."},
+        "dependency_integrity": {"score": 5, "analysis": "$GLOBALS[$this->plugin_prefix.'admin_interface'] is fragile — if key doesn't exist, fatal error."},
+        "i18n": {"score": 8, "analysis": "No direct strings; passes $this->form_messages which contains translated strings."},
+        "accessibility": {"score": 7, "analysis": "Delegates to admin_forms() which should produce accessible admin UI."}
+      },
+      "overall_score": 70,
+      "key_observation": "Uses $GLOBALS for admin interface — functional but fragile and violates WP dependency best practices."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Dimensions::init_form_fields",
+    "code": "function init_form_fields() {\n\t\t$this->form_fields = apply_filters( $this->option_name . '_settings_fields', array(\n\t\t\tarray('type'=> 'heading'),\n\t\t\tarray('name'=> __( 'Slider Type', 'a3-responsive-slider' ), 'id'=> 'is_slider_responsive', 'type'=> 'switcher_checkbox', 'default'=> 1, ...),\n\t\t\t// ... 83 lines of form field definitions for slider dimensions settings\n        ));\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Standard WP admin field definition pattern. Multi-line array is readable. No formal coding violations."},
+        "sql_safety": {"score": 10, "analysis": "No SQL. Pure PHP array configuration."},
+        "security": {"score": 7, "analysis": "Form fields define UI only; actual saving handled by admin_interface. Defaults are safe (numeric). No XSS vectors here."},
+        "performance": {"score": 6, "analysis": "83-line array construction per call. Could be cached but acceptable for admin config."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct use of apply_filters to allow extensions. Standard WP admin field structure."},
+        "code_quality": {"score": 6, "analysis": "Long function (83 lines). Hard-coded defaults. Good use of descriptive 'id' values."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on $this->option_name and form field types being recognized by admin_interface."},
+        "i18n": {"score": 7, "analysis": "Labels are translated with __(). CSS string 'width:40px;' is inline not translatable but acceptable. 'reseted' grammar error present."},
+        "accessibility": {"score": 6, "analysis": "Field definitions don't include aria attributes. Admin UI accessibility depends on admin_forms() implementation."}
+      },
+      "overall_score": 73,
+      "key_observation": "Standard WP admin field array with proper i18n; long function but no security issues."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Dimensions::include_script",
+    "code": "function include_script() {\n\t?>\n<script>\n(function($){$(document).ready(function(){\n\t// Show/hide dimensions settings based on responsive toggle\n\t// jQuery event handlers for checkbox switches\n});})(jQuery);\n</script>\n    <?php\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 5, "analysis": "Inline PHP/JS mixing is non-standard. Should use wp_enqueue_script with wp_add_inline_script. No nonce or capability checks."},
+        "sql_safety": {"score": 10, "analysis": "No SQL present."},
+        "security": {"score": 4, "analysis": "CRITICAL: Inline script output without wp_add_inline_script means no proper asset dependency management. No nonce checks. If admin forms render this to non-admin users, XSS risk from unescaped settings values."},
+        "performance": {"score": 6, "analysis": "Inline JS means no browser caching. jQuery loaded twice potentially if not dequeued. DOM ready handler is standard."},
+        "wp_api_usage": {"score": 4, "analysis": "Should use wp_add_inline_script() or wp_enqueue_script(). Direct PHP/JS output mixing is deprecated pattern."},
+        "code_quality": {"score": 5, "analysis": "jQuery IIFE pattern is good. Uses event delegation with document.on(). Mixed PHP/JS reduces readability."},
+        "dependency_integrity": {"score": 6, "analysis": "Depends on jQuery being available. Uses jQuery alias directly."},
+        "i18n": {"score": 7, "analysis": "No user-facing strings in JS, purely operational."},
+        "accessibility": {"score": 5, "analysis": "CSS show/hide without focus management. slideDown/slideUp may cause motion sensitivity issues."}
+      },
+      "overall_score": 60,
+      "key_observation": "Inline JS output bypasses WP script enqueue standards — security and caching concerns."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Title::__construct",
+    "code": "function __construct() {\n\t\tadd_action( 'plugins_loaded', array( $this, 'init_form_fields' ), 1 );\n\t\t$this->subtab_init();\n\t\t$this->form_messages = array('success_message'=> __( 'Image Title Settings successfully saved.', 'a3-responsive-slider' ), 'error_message'=> __( 'Error: Image Title Settings can not save.', 'a3-responsive-slider' ), 'reset_message'=> __( 'Image Title Settings successfully reseted.', 'a3-responsive-slider' ));\n\t\tadd_action( $this->plugin_name . '-' . $this->form_key . '_settings_end', array( $this, 'include_script' ) );\n\t\tadd_action( $this->plugin_name . '_set_default_settings' , array( $this, 'set_default_settings' ) );\n\t\tadd_action( $this->plugin_name . '_get_all_settings' , array( $this, 'get_settings' ) );\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Same pattern as Dimensions constructor. Standard WP hooks."},
+        "sql_safety": {"score": 10, "analysis": "No SQL present."},
+        "security": {"score": 7, "analysis": "Relies on admin_interface. Same 'reseted' grammar issue."},
+        "performance": {"score": 9, "analysis": "Lightweight O(1) hook registrations."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct WP lifecycle hooks."},
+        "code_quality": {"score": 7, "analysis": "Same structure as Dimensions. Duplicate code across template classes."},
+        "dependency_integrity": {"score": 7, "analysis": "Same parent class dependency pattern."},
+        "i18n": {"score": 7, "analysis": "Labels translated. 'reseted' grammar error persists."},
+        "accessibility": {"score": 6, "analysis": "Admin settings constructor, no direct UI."}
+      },
+      "overall_score": 78,
+      "key_observation": "Template class constructor following same pattern as Dimensions — consistent but with inherited issues."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Title::subtab_init",
+    "code": "function subtab_init() {\n\t\tadd_filter( $this->plugin_name . '-' . $this->parent_tab . '_settings_subtabs_array', array( $this, 'add_subtab' ), $this->position );\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Clean, follows WP standards."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 8, "analysis": "Hook only, no user input."},
+        "performance": {"score": 10, "analysis": "Single filter, O(1)."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct add_filter usage."},
+        "code_quality": {"score": 8, "analysis": "Minimal and focused."},
+        "dependency_integrity": {"score": 6, "analysis": "Same parent class dependency."},
+        "i18n": {"score": 9, "analysis": "No strings, N/A."},
+        "accessibility": {"score": 8, "analysis": "Admin settings hook."}
+      },
+      "overall_score": 85,
+      "key_observation": "Identical subtab_init pattern — no issues beyond parent dependency coupling."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Title::subtab_data",
+    "code": "function subtab_data() {\n\t\t$subtab_data = array( 'name'=> 'title', 'label'=> __( 'Image Title', 'a3-responsive-slider' ), 'callback_function'=> 'a3_responsive_sider_template_1_title_settings_form' );\n\t\tif ( $this->subtab_data ) return $this->subtab_data;\n\t\treturn $this->subtab_data = $subtab_data;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Lazy init pattern, standard style."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 9, "analysis": "Static config, no user input. Same callback typo 'sider' vs 'slider' in function name."},
+        "performance": {"score": 9, "analysis": "Lazy load, O(1)."},
+        "wp_api_usage": {"score": 7, "analysis": "Callback function name has typo: 'a3_responsive_sider_' should be 'a3_responsive_slider_'."},
+        "code_quality": {"score": 7, "analysis": "Same lazy pattern as Dimensions. Callback name typo is a real bug."},
+        "dependency_integrity": {"score": 7, "analysis": "Memoization via $this->subtab_data."},
+        "i18n": {"score": 8, "analysis": "Label properly translated."},
+        "accessibility": {"score": 8, "analysis": "Admin config, no direct UI."}
+      },
+      "overall_score": 80,
+      "key_observation": "Callback function name contains typo ('sider' vs 'slider') matching Dimensions class."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Title::add_subtab",
+    "code": "function add_subtab( $subtabs_array ) {\n\tif ( ! is_array( $subtabs_array ) ) $subtabs_array = array();\n\t$subtabs_array[] = $this->subtab_data();\n\treturn $subtabs_array;\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Type checking on filter input, clean code."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 9, "analysis": "Input validation, safe."},
+        "performance": {"score": 9, "analysis": "Single array push."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct filter callback."},
+        "code_quality": {"score": 8, "analysis": "Defensive programming with is_array()."},
+        "dependency_integrity": {"score": 7, "analysis": "Calls subtab_data()."},
+        "i18n": {"score": 9, "analysis": "No strings."},
+        "accessibility": {"score": 8, "analysis": "Admin settings hook."}
+      },
+      "overall_score": 85,
+      "key_observation": "Type-safe filter callback — identical to Dimensions, consistent patterns."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Title::settings_form",
+    "code": "function settings_form() {\n\t\t$output = '';\n\t\t$output .= $GLOBALS[$this->plugin_prefix.'admin_interface']->admin_forms( $this->form_fields, $this->form_key, $this->option_name, $this->form_messages );\n\t\treturn $output;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "analysis": "Same $GLOBALS pattern as Dimensions — discouraged."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 6, "analysis": "Same global dependency concern. admin_forms handles actual security."},
+        "performance": {"score": 7, "analysis": "Redundant string concat."},
+        "wp_api_usage": {"score": 5, "analysis": "Global state access not WP standard."},
+        "code_quality": {"score": 6, "analysis": "Same code smell as Dimensions — $GLOBALS dependency."},
+        "dependency_integrity": {"score": 5, "analysis": "Fragile $GLOBALS access."},
+        "i18n": {"score": 8, "analysis": "Passes translated form_messages."},
+        "accessibility": {"score": 7, "analysis": "Delegates to admin_forms()."}
+      },
+      "overall_score": 70,
+      "key_observation": "Identical $GLOBALS dependency pattern as Dimensions — functional but fragile."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Title::init_form_fields",
+    "code": "function init_form_fields() {\n\t\t$this->form_fields = apply_filters( $this->option_name . '_settings_fields', array(\n\t\t\tarray('name'=> __( 'Image Title Settings', 'a3-responsive-slider' ), 'type'=> 'heading'),\n\t\t\tarray('name'=> __( 'Title', 'a3-responsive-slider' ), 'id'=> 'enable_slider_title', 'type'=> 'onoff_checkbox', ...),\n\t\t\tarray('name'=> __( 'Title Position', 'a3-responsive-slider' ), 'id'=> 'title_position', 'type'=> 'select', 'options'=> {...}),\n\t\t\t// ... typography, color, border, shadow field definitions\n        ));\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Standard WP field array. Large function but acceptable for config."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 7, "analysis": "Config only. Color defaults are safe hex values. Select options are whitelisted."},
+        "performance": {"score": 6, "analysis": "Large array build (92 lines). Acceptable for admin config."},
+        "wp_api_usage": {"score": 8, "analysis": "apply_filters for extensibility. Standard field types used."},
+        "code_quality": {"score": 6, "analysis": "92 lines, repetitive structure. Good use of descriptive IDs and typed fields."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on form field type handlers in admin_interface."},
+        "i18n": {"score": 7, "analysis": "All labels translated. 'Wide' descriptor uses '%.' instead of '% — minor formatting issue."},
+        "accessibility": {"score": 6, "analysis": "Field definitions lack aria labels. Depends on admin_forms() for a11y."}
+      },
+      "overall_score": 72,
+      "key_observation": "Extensive title settings config with proper field types and i18n but 92-line repetitive structure."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Title::include_script",
+    "code": "function include_script() {\n\t?>\n<script>\n(function($){$(document).ready(function(){\n\t// Toggle title container visibility based on enable_slider_title checkbox\n\t// jQuery event delegation for checkbox switch\n});})(jQuery);\n</script>\n    <?php\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 5, "analysis": "Inline PHP/JS mixing. Should use wp_add_inline_script."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 4, "analysis": "Same inline script concern as Dimensions. No nonce checks. If output reaches non-admin, potential XSS."},
+        "performance": {"score": 6, "analysis": "No browser caching for inline JS. DOM ready handler standard."},
+        "wp_api_usage": {"score": 4, "analysis": "Should use wp_add_inline_script() for proper asset management."},
+        "code_quality": {"score": 5, "analysis": "jQuery IIFE pattern good. Mixed PHP/JS reduces readability."},
+        "dependency_integrity": {"score": 6, "analysis": "jQuery dependency assumed."},
+        "i18n": {"score": 7, "analysis": "No user-facing JS strings."},
+        "accessibility": {"score": 5, "analysis": "CSS show/hide without focus management."}
+      },
+      "overall_score": 60,
+      "key_observation": "Inline JS for title toggle — same WP script enqueue violation as Dimensions."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Slider_Styles::__construct",
+    "code": "function __construct() {\n\t\tadd_action( 'plugins_loaded', array( $this, 'init_form_fields' ), 1 );\n\t\t$this->subtab_init();\n\t\t$this->form_messages = array('success_message'=> __( 'Container Settings successfully saved.', 'a3-responsive-slider' ), 'error_message'=> __( 'Error: Container Settings can not save.', 'a3-responsive-slider' ), 'reset_message'=> __( 'Container Settings successfully reseted.', 'a3-responsive-slider' ));\n\t\tadd_action( $this->plugin_name . '_set_default_settings' , array( $this, 'set_default_settings' ) );\n\t\tadd_action( $this->plugin_name . '_get_all_settings' , array( $this, 'get_settings' ) );\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Standard WP hooks. Note: no include_script action hook — this class does not register inline JS."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 7, "analysis": "Relies on admin_interface. 'reseted' grammar issue persists."},
+        "performance": {"score": 9, "analysis": "Lightweight O(1) hooks."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct WP lifecycle hooks."},
+        "code_quality": {"score": 7, "analysis": "Clean. Note: no include_script registration — consistent with this class not needing JS."},
+        "dependency_integrity": {"score": 7, "analysis": "Same parent class dependencies."},
+        "i18n": {"score": 7, "analysis": "Labels translated. 'reseted' grammar error."},
+        "accessibility": {"score": 6, "analysis": "Admin settings constructor."}
+      },
+      "overall_score": 78,
+      "key_observation": "Slider Styles constructor — same pattern but notably absent include_script hook (no inline JS needed for container settings)."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Slider_Styles::subtab_init",
+    "code": "function subtab_init() {\n\t\tadd_filter( $this->plugin_name . '-' . $this->parent_tab . '_settings_subtabs_array', array( $this, 'add_subtab' ), $this->position );\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Clean, standard."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 8, "analysis": "Hook only."},
+        "performance": {"score": 10, "analysis": "Single filter."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct."},
+        "code_quality": {"score": 8, "analysis": "Minimal."},
+        "dependency_integrity": {"score": 6, "analysis": "Parent class dependency."},
+        "i18n": {"score": 9, "analysis": "No strings."},
+        "accessibility": {"score": 8, "analysis": "Admin settings hook."}
+      },
+      "overall_score": 85,
+      "key_observation": "Identical subtab_init — consistent across all three template classes."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Slider_Styles::subtab_data",
+    "code": "function subtab_data() {\n\t\t$subtab_data = array( 'name'=> 'slider-styles', 'label'=> __( 'Container', 'a3-responsive-slider' ), 'callback_function'=> 'a3_responsive_sider_template_1_slider_styles_settings_form' );\n\t\tif ( $this->subtab_data ) return $this->subtab_data;\n\t\treturn $this->subtab_data = $subtab_data;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Lazy init pattern, standard."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 9, "analysis": "Static config, no user input. Same 'sider' typo in callback name."},
+        "performance": {"score": 9, "analysis": "Lazy load, O(1)."},
+        "wp_api_usage": {"score": 7, "analysis": "Callback name typo: 'a3_responsive_sider_' should be 'a3_responsive_slider_'."},
+        "code_quality": {"score": 7, "analysis": "Same lazy pattern. Callback typo is a bug."},
+        "dependency_integrity": {"score": 7, "analysis": "Memoization works."},
+        "i18n": {"score": 8, "analysis": "Label translated."},
+        "accessibility": {"score": 8, "analysis": "Admin config."}
+      },
+      "overall_score": 80,
+      "key_observation": "Consistent 'sider' typo in callback name across all three template classes."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Slider_Styles::add_subtab",
+    "code": "function add_subtab( $subtabs_array ) {\n\tif ( ! is_array( $subtabs_array ) ) $subtabs_array = array();\n\t$subtabs_array[] = $this->subtab_data();\n\treturn $subtabs_array;\n}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Type checking, clean."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 9, "analysis": "Input validation, safe."},
+        "performance": {"score": 9, "analysis": "Single push."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct."},
+        "code_quality": {"score": 8, "analysis": "Defensive."},
+        "dependency_integrity": {"score": 7, "analysis": "Calls subtab_data()."},
+        "i18n": {"score": 9, "analysis": "No strings."},
+        "accessibility": {"score": 8, "analysis": "Admin hook."}
+      },
+      "overall_score": 85,
+      "key_observation": "Type-safe filter callback — consistent safe pattern across all template classes."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Slider_Styles::settings_form",
+    "code": "function settings_form() {\n\t\t$output = '';\n\t\t$output .= $GLOBALS[$this->plugin_prefix.'admin_interface']->admin_forms( $this->form_fields, $this->form_key, $this->option_name, $this->form_messages );\n\t\treturn $output;\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "analysis": "$GLOBALS pattern — discouraged but consistent."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 6, "analysis": "Global dependency fragile. admin_forms handles actual security."},
+        "performance": {"score": 7, "analysis": "Redundant concat."},
+        "wp_api_usage": {"score": 5, "analysis": "Global state not WP standard."},
+        "code_quality": {"score": 6, "analysis": "Same $GLOBALS concern as other classes."},
+        "dependency_integrity": {"score": 5, "analysis": "Fragile $GLOBALS access."},
+        "i18n": {"score": 8, "analysis": "Passes translated messages."},
+        "accessibility": {"score": 7, "analysis": "Delegates to admin_forms()."}
+      },
+      "overall_score": 70,
+      "key_observation": "Identical $GLOBALS pattern — consistent but all three classes share this dependency issue."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1_Slider_Styles::init_form_fields",
+    "code": "function init_form_fields() {\n\t\t$this->form_fields = apply_filters( $this->option_name . '_settings_fields', array(\n\t\t\tarray('name'=> __( 'Container', 'a3-responsive-slider' ), 'type'=> 'heading'),\n\t\t\tarray('name'=> __( 'Slider Container Background Colour', 'a3-responsive-slider' ), 'id'=> 'slider_background_colour', 'type'=> 'color', 'default'=> '#FFFFFF'),\n\t\t\tarray('name'=> __( 'Slider Container Border', 'a3-responsive-slider' ), 'id'=> 'slider_border', 'type'=> 'border', ...),\n\t\t\tarray('name'=> __( 'Slider Container Shadow', 'a3-responsive-slider' ), 'id'=> 'slider_shadow', 'type'=> 'box_shadow', ...),\n        ));\n\t}",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Standard WP field array. Clean 31-line function."},
+        "sql_safety": {"score": 10, "analysis": "No SQL."},
+        "security": {"score": 7, "analysis": "Config only. Safe defaults (#FFFFFF, #000000). Whitelisted field types."},
+        "performance": {"score": 7, "analysis": "Smaller array (31 lines) vs other templates. Efficient."},
+        "wp_api_usage": {"score": 8, "analysis": "apply_filters. Standard color/border/box_shadow field types."},
+        "code_quality": {"score": 7, "analysis": "Cleaner than Dimensions/Title templates. Well-structured, no excessive repetition."},
+        "dependency_integrity": {"score": 7, "analysis": "Field types must be handled by admin_interface."},
+        "i18n": {"score": 7, "analysis": "All labels translated. 'Colour' uses British spelling consistent with plugin."},
+        "accessibility": {"score": 6, "analysis": "Field definitions lack aria. Depends on admin_forms()."}
+      },
+      "overall_score": 75,
+      "key_observation": "Cleanest of the three init_form_fields — fewer fields, safe defaults, consistent i18n."
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {"total_citations": 3, "grounded_citations": 3, "hallucinated_citations": 0, "hallucination_ratio": 0.0}
+  }
+]

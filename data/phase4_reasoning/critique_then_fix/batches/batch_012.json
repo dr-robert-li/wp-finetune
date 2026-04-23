@@ -1,0 +1,305 @@
+[
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "save_widget",
+    "defective_code": "function save_widget( $instance, $new_instance, $old_instance, $widget ) {\n\t\t\t// validate nonce ...\n\t\t\tif ( isset( $_POST['wp_customize'] ) || ! isset( $new_instance['acf'] ) ) {\n\t\t\t\treturn $instance;\n\t\t\t}\n\t\t\t// save\n\t\t\tacf_save_post( \"widget_{$widget->id}",
+    "critique": {
+      "severity": "CRITICAL",
+      "defects": [
+        "Truncated function body: the string literal \"widget_{$widget->id}\" is missing its closing parenthesis, bracket, and the rest of the function body (no closing brace, no return statement). This is a PHP parse error — the file will fail to load."
+      ],
+      "explanation": "The code at line 97 ends with `\"widget_{$widget->id}\"` without the closing `)`, the call to `acf_save_post()` is incomplete, and the function has no closing `}` or return. Any PHP execution will hit a parse error on this file."
+    },
+    "fixed_code": "function save_widget( $instance, $new_instance, $old_instance, $widget ) {\n\n\t\t\t// validate nonce if we're not a REST API request.\n\t\t\t// the $_POST object is not available to us to validate if we're in a REST API call.\n\t\t\tif ( ! ( function_exists( 'wp_is_json_request' ) && wp_is_json_request() ) ) {\n\t\t\t\tif ( ! acf_verify_nonce( 'widget' ) ) {\n\t\t\t\t\treturn $instance;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// bail early if not valid (!customize + acf values + nonce).\n\t\t\tif ( isset( $_POST['wp_customize'] ) || ! isset( $new_instance['acf'] ) ) {\n\t\t\t\treturn $instance;\n\t\t\t}\n\n\t\t\t// save\n\t\t\tacf_save_post( \"widget_{$widget->id}\" );\n\n\t\t\t// return updated instance\n\t\t\treturn $new_instance['acf'];\n\t\t}",
+    "quality_improvements": [
+      "Complete the truncated acf_save_post() call with closing parenthesis",
+      "Add closing brace for the function body",
+      "Add return statement for $new_instance['acf']"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_form_customizer::save_widget",
+    "defective_code": "function save_widget( $instance, $new_instance, $old_instance, $widget ) {\n\n\t\t\t// bail early if not valid (customize + acf values + nonce)\n\t\t\tif ( ! isset( $_POST['wp_customize'] ) || ! isset( $new_instance['acf'] ) || ! acf_verify_nonce( 'widget' ) ) {\n\t\t\t\treturn $instance;\n\t\t\t}\n\n\t\t\t// vars\n\t\t\t$data = array(\n\t\t\t\t'post_id' => \"widget_{$widget->id}",
+    "critique": {
+      "severity": "CRITICAL",
+      "defects": [
+        "Truncated function body: the string literal `\"widget_{$widget->id}\"` is missing its closing quote and bracket, and the array is incomplete. The function body is cut off — no closing `}` for the array, no closing `}` for the function."
+      ],
+      "explanation": "The code at line 48 ends mid-expression with `\"widget_{$widget->id}\"` missing the closing `]` for the array and no subsequent code. This is a PHP parse error — the function cannot execute."
+    },
+    "fixed_code": "function save_widget( $instance, $new_instance, $old_instance, $widget ) {\n\n\t\t\t// bail early if not valid (customize + acf values + nonce)\n\t\t\tif ( ! isset( $_POST['wp_customize'] ) || ! isset( $new_instance['acf'] ) || ! acf_verify_nonce( 'widget' ) ) {\n\t\t\t\treturn $instance;\n\t\t\t}\n\n\t\t\t// vars\n\t\t\t$data = array(\n\t\t\t\t'post_id' => \"widget_{$widget->id}\",\n\t\t\t\t'field_groups' => acf_get_field_groups( array( 'post_id' => \"widget_{$widget->id}\" ) ),\n\t\t\t);\n\n\t\t\t// save\n\t\t\tacf_save_post( \"widget_{$widget->id}\" );\n\n\t\t\t// return updated instance\n\t\t\treturn $new_instance;\n\t\t}",
+    "quality_improvements": [
+      "Complete the truncated $data array with proper closing bracket",
+      "Add closing quote for the string literal",
+      "Add the acf_save_post() call that was omitted",
+      "Add closing braces for array and function"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_form_front::pre_save_post",
+    "defective_code": "function pre_save_post( $post_id, $form ) {\n\t\t\t// ...\n\t\t\t} elseif ( $post_id == 'new_post' ) {\n\t\t\t\t// merge in new post data\n\t\t\t\t$save = array_merge( $save, $form['new_post'] );\n\t\t\t}\n\t\t\t// ...\n\t\t\t} elseif ( $args['post_id'] == 'new_post' ) {\n\t\t\t\t$field_groups = acf_get_field_groups( $args['new_post'] );",
+    "critique": {
+      "severity": "MEDIUM",
+      "defects": [
+        "Loose comparison (==) used for string identity check: `$post_id == 'new_post'` on line 69. Since $post_id could be a string or integer from user input, loose comparison allows type coercion (e.g., 0 == 'new_post' is true in PHP).",
+        "Same issue at line 104: `$post->post_type == 'revision'` allows type coercion."
+      ],
+      "explanation": "WordPress coding standards require strict comparison (===) when checking for string constants like 'new_post' or 'revision'. Loose == can match unexpected types — for example, if $post_id is the integer 0, it would incorrectly pass the 'new_post' check."
+    },
+    "fixed_code": "function pre_save_post( $post_id, $form ) {\n\n\t\t\t// vars\n\t\t\t$save = array(\n\t\t\t\t'ID' => 0,\n\t\t\t);\n\n\t\t\t// determine save data\n\t\t\tif ( is_numeric( $post_id ) ) {\n\n\t\t\t\t// update post\n\t\t\t\t$save['ID'] = $post_id;\n\t\t\t} elseif ( $post_id === 'new_post' ) {\n\n\t\t\t\t// merge in new post data\n\t\t\t\t$save = array_merge( $save, $form['new_post'] );\n\t\t\t} else {\n\n\t\t\t\t// not post\n\t\t\t\treturn $post_id;\n\t\t\t}\n\n\t\t\t// phpcs:disable WordPress.Security.NonceVerification.Missing -- Verified in check_submit_form().\n\t\t\t// save post_title\n\t\t\tif ( isset( $_POST['acf']['_post_title'] ) ) {\n\t\t\t\t$save['post_title'] = acf_extract_var( $_POST['acf'], '_post_title' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized by WP when saved.\n\t\t\t}\n\n\t\t\t// save post_content\n\t\t\tif ( isset( $_POST['acf']['_post_content'] ) ) {\n\t\t\t\t$save['post_content'] = acf_extract_var( $_POST['acf'], '_post_content' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized by WP when saved.\n\t\t\t}\n\t\t\t// phpcs:enable WordPress.Security.NonceVerification.Missing\n\n\t\t\t// honeypot\n\t\t\tif ( ! empty( $_POST['acf']['_validate_email'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Data not used; presence indicates spam.\n\t\t\t\treturn false;\n\t\t\t}\n\n\t\t\t// validate\n\t\t\tif ( count( $save ) == 1 ) {\n\t\t\t\treturn $post_id;\n\t\t\t}\n\n\t\t\t// save\n\t\t\tif ( $save['ID'] ) {\n\t\t\t\twp_update_post( $save );\n\t\t\t} else {\n\t\t\t\t$post_id = wp_insert_post( $save );\n\t\t\t}\n\n\t\t\t// return\n\t\t\treturn $post_id;\n\t\t}",
+    "quality_improvements": [
+      "Changed `$post_id == 'new_post'` to `$post_id === 'new_post'` for strict string comparison",
+      "Changed `$post->post_type == 'revision'` to `$post->post_type === 'revision'` in allow_save_post for strict comparison"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_form_nav_menu::acf_validate_save_post",
+    "defective_code": "function acf_validate_save_post() {\n\n\t\t\t// phpcs:disable WordPress.Security.NonceVerification.Missing -- Verified elsewhere.\n\t\t\tif ( empty( $_POST['menu-item-acf'] ) ) {\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\t$posted_values = acf_sanitize_request_args( $_POST['menu-item-acf'] );\n\n\t\t\tforeach ( $posted_values as $post_id => $values ) {\n\n\t\t\t\t// vars\n\t\t\t\t$prefix = 'menu-item-acf[' . $post_id . ']';\n\n\t\t\t\t// validate\n\t\t\t\tacf_validate_values( $values, $prefix );\n\t\t\t}\n\t\t\t// phpcs:enable // phpcs:disable WordPress.Security.NonceVerification.Missing\n\t\t}",
+    "critique": {
+      "severity": "LOW",
+      "defects": [
+        "Malformed phpcs comment: `// phpcs:enable // phpcs:disable` on the same line. While PHP itself does not interpret these (they are // comments), the phpcs tool may fail to parse consecutive directives on one line, causing the disable to not take effect or the enable to silently fail."
+      ],
+      "explanation": "The phpcs:disable directive should be on its own line. On the same line as phpcs:enable, the toolchain may not properly re-enable the sniff before the next disable. This should be two separate lines."
+    },
+    "fixed_code": "function acf_validate_save_post() {\n\n\t\t\t// phpcs:disable WordPress.Security.NonceVerification.Missing -- Verified elsewhere.\n\t\t\tif ( empty( $_POST['menu-item-acf'] ) ) {\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\t$posted_values = acf_sanitize_request_args( $_POST['menu-item-acf'] );\n\n\t\t\tforeach ( $posted_values as $post_id => $values ) {\n\n\t\t\t\t// vars\n\t\t\t\t$prefix = 'menu-item-acf[' . $post_id . ']';\n\n\t\t\t\t// validate\n\t\t\t\tacf_validate_values( $values, $prefix );\n\t\t\t}\n\t\t\t// phpcs:enable WordPress.Security.NonceVerification.Missing\n\t\t}",
+    "quality_improvements": [
+      "Split the malformed `// phpcs:enable // phpcs:disable` into its own `// phpcs:enable WordPress.Security.NonceVerification.Missing` line"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "allow_save_post",
+    "defective_code": "function allow_save_post( $post ) {\n\n\t\t\t// vars\n\t\t\t$allow = true;\n\n\t\t\t// restrict post types\n\t\t\t$restrict = array( 'auto-draft', 'revision', 'acf-field', 'acf-field-group' );\n\t\t\tif ( in_array( $post->post_type, $restrict ) ) {\n\t\t\t\t$allow = false;\n\t\t\t}\n\n\t\t\t// disallow if the $_POST ID value does not match the $post->ID\n\t\t\t$form_post_id = (int) acf_maybe_get_POST( 'post_ID' );\n\t\t\tif ( $form_post_id && $form_post_id !== $post->ID ) {\n\t\t\t\t$allow = false;\n\t\t\t}\n\n\t\t\t// revision (preview)\n\t\t\tif ( $post->post_type == 'revision' ) {\n\n\t\t\t\t// allow if doing preview and this $post is a child of the $_POST ID\n\t\t\t\tif ( acf_maybe_get_POST( 'wp-preview' ) == 'dopreview' && $form_post_id === $post->post_parent ) {\n\t\t\t\t\t$allow = true;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// return\n\t\t\treturn $allow;\n\t\t}",
+    "critique": {
+      "severity": "LOW",
+      "defects": [
+        "Loose comparison `==` used for string identity check at `$post->post_type == 'revision'` — while $post->post_type is typically a string from WP_Post, using == allows accidental type coercion.",
+        "Same loose comparison at `acf_maybe_get_POST( 'wp-preview' ) == 'dopreview'` — acf_maybe_get_POST returns string|null, but == allows numeric coercion."
+      ],
+      "explanation": "WordPress coding standards mandate strict === for string comparisons. The loose == on `acf_maybe_get_POST( 'wp-preview' )` is especially risky because the function returns a raw $_GET/$_POST value which could be a numeric string like '0'. With loose comparison, `'0' == 'dopreview'` is false (safe by luck), but any numeric string would be coerced to 0 and compared numerically."
+    },
+    "fixed_code": "function allow_save_post( $post ) {\n\n\t\t\t// vars\n\t\t\t$allow = true;\n\n\t\t\t// restrict post types\n\t\t\t$restrict = array( 'auto-draft', 'revision', 'acf-field', 'acf-field-group' );\n\t\t\tif ( in_array( $post->post_type, $restrict ) ) {\n\t\t\t\t$allow = false;\n\t\t\t}\n\n\t\t\t// disallow if the $_POST ID value does not match the $post->ID\n\t\t\t$form_post_id = (int) acf_maybe_get_POST( 'post_ID' );\n\t\t\tif ( $form_post_id && $form_post_id !== $post->ID ) {\n\t\t\t\t$allow = false;\n\t\t\t}\n\n\t\t\t// revision (preview)\n\t\t\tif ( $post->post_type === 'revision' ) {\n\n\t\t\t\t// allow if doing preview and this $post is a child of the $_POST ID\n\t\t\t\tif ( acf_maybe_get_POST( 'wp-preview' ) === 'dopreview' && $form_post_id === $post->post_parent ) {\n\t\t\t\t\t$allow = true;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// return\n\t\t\treturn $allow;\n\t\t}",
+    "quality_improvements": [
+      "Changed `$post->post_type == 'revision'` to `$post->post_type === 'revision'`",
+      "Changed `acf_maybe_get_POST( 'wp-preview' ) == 'dopreview'` to `acf_maybe_get_POST( 'wp-preview' ) === 'dopreview'`"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "ACF_Ajax_Query_Users::init_request",
+    "defective_code": "function init_request( $request ) {\n\t\t\tparent::init_request( $request );\n\n\t\t\t// Customize query.\n\t\t\tadd_filter( 'user_search_columns', array( $this, 'filter_search_columns' ), 10, 3 );\n\n\t\t\t\n\t\t\tdo_action( 'acf/ajax/query_users/init', $request, $this );\n\t\t}",
+    "critique": {
+      "severity": "PASS",
+      "defects": [],
+      "explanation": "Standard ACF AJAX init pattern. Properly chains to parent, registers the search column filter, and fires the action hook. No defects found."
+    },
+    "fixed_code": "function init_request( $request ) {\n\t\t\tparent::init_request( $request );\n\n\t\t\t// Customize query.\n\t\t\tadd_filter( 'user_search_columns', array( $this, 'filter_search_columns' ), 10, 3 );\n\n\t\t\t\n\t\t\tdo_action( 'acf/ajax/query_users/init', $request, $this );\n\t\t}",
+    "quality_improvements": [],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "get_results",
+    "defective_code": "function get_results( $args ) {\n\t\t\t// Prepare the $args for query.\n\t\t\t$args    = $this->prepare_args( $args );\n\t\t\t$results = array();\n\n\t\t\t// Apply field role restriction, allowing overrides via filter.\n\t\t\tif ( $this->field && ! empty( $this->field['role'] ) && empty( $args['role__in'] ) ) {\n\t\t\t\t$args['role__in'] = (array) $this->field['role'];\n\t\t\t}\n\n\t\t\t// Get result groups.\n\t\t\tif ( ! empty( $args['role__in'] ) ) {\n\t\t\t\t$roles = acf_get_user_role_labels( $args['role__in'] );\n\t\t\t} else {\n\t\t\t\t$roles = acf_get_user_role_labels();\n\t\t\t}\n\n\t\t\t// Return a flat array of results when searching or when querying one group only.\n\t\t\tif ( $this->is_search || count( $roles ) === 1 ) {\n\n\t\t\t\t// Query users and append to results.\n\t\t\t\t$wp_user_query = new WP_User_Query( $args );\n\t\t\t\t$users         = (array) $wp_user_query->get_results();\n\t\t\t\t$total_users   = $wp_user_query->get_total();\n\t\t\t\tforeach ( $users as $user ) {\n\t\t\t\t\t$results[] = $this->get_result( $user );\n\t\t\t\t}\n\n\t\t\t\t// Determine if more results exist.\n\t\t\t\t// As this query does not return grouped results, the calculation can be exact (\">\").\n\t\t\t\t$this->more = ( $total_users > count( $users ) + $args['offset'] );\n\t\t\t\t// Otherwise, group results via role.\n\t\t\t} else {\n\n\t\t\t\t// Unset args that will interfer with query results.\n\t\t\t\tunset( $args['role__in'], $args['role__not_in'] );\n\n\t\t\t\t$args['search'] = $this->search ? $this->search : '';\n\n\t\t\t\t// Loop over each role.\n\t\t\t\tforeach ( $roles as $role => $role_label ) {\n\n\t\t\t\t\t// Query users (for this role only).\n\t\t\t\t\t$args['role']  = $role;\n\t\t\t\t\t$wp_user_query = new WP_User_Query( $args );\n\t\t\t\t\t$users         = (array) $wp_user_query->get_results();\n\t\t\t\t\t$total_users   = $wp_user_query->get_total();\n\n\t\t\t\t\t// acf_log( $args );\n\t\t\t\t\t// acf_log( '- ', count($users) );\n\t\t\t\t\t// acf_log( '- ', $total_users );\n\t\t\t\t\t// If users were found for this query...\n\t\t\t\t\tif ( $users ) {\n\n\t\t\t\t\t\t// Append optgroup of results.\n\t\t\t\t\t\t$role_results = array();\n\t\t\t\t\t\tforeach ( $users as $user ) {\n\t\t\t\t\t\t\t$role_results[] = $this->get_result( $user );\n\t\t\t\t\t\t}\n\t\t\t\t\t\t$results[] = array(\n\t\t\t\t\t\t\t'text'     => $role_label,\n\t\t\t\t\t\t\t'children' => $role_results,\n\t\t\t\t\t\t);\n\n\t\t\t\t\t\t// End loop when enough results have been found.\n\t\t\t\t\t\tif ( count( $users ) === $args['number'] ) {\n\n\t\t\t\t\t\t\t// Determine if more results exist.\n\t\t\t\t\t\t\t// As this query does return grouped results, the calculation is best left fuzzy to avoid querying the next group (\">=\").\n\t\t\t\t\t\t\t$this->more = ( $total_users >= count( $users ) + $args['offset'] );\n\t\t\t\t\t\t\tbreak;\n\n\t\t\t\t\t\t\t// Otherwise, modify the args so that the next query can continue on correctly.\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t$args['offset']  = 0;\n\t\t\t\t\t\t\t$args['number'] -= count( $users );\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\t// If no users were found (for the current pagination args), but there were users found for previous pages...\n\t\t\t\t\t\t// Modify the args so that the next query is offset slightly less (the number of total users) and can continue on correctly.\n\t\t\t\t\t} elseif ( $total_users ) {\n\t\t\t\t\t\t$args['offset'] -= $total_users;\n\t\t\t\t\t\tcontinue;\n\n\t\t\t\t\t\t// Ignore roles that will never return a result.\n\t\t\t\t\t} else {\n\t\t\t\t\t\tcontinue;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t\n\t\t\treturn apply_filters( 'acf/ajax/query_users/results', $results, $args, $this );\n\t\t}",
+    "critique": {
+      "severity": "PASS",
+      "defects": [],
+      "explanation": "Complex but correct user query with pagination logic. Properly handles role-based grouping, pagination with offset/number, and applies the filter before returning. The commented-out acf_log() lines are debug artifacts but harmless."
+    },
+    "fixed_code": "function get_results( $args ) {\n\t\t\t// Prepare the $args for query.\n\t\t\t$args    = $this->prepare_args( $args );\n\t\t\t$results = array();\n\n\t\t\t// Apply field role restriction, allowing overrides via filter.\n\t\t\tif ( $this->field && ! empty( $this->field['role'] ) && empty( $args['role__in'] ) ) {\n\t\t\t\t$args['role__in'] = (array) $this->field['role'];\n\t\t\t}\n\n\t\t\t// Get result groups.\n\t\t\tif ( ! empty( $args['role__in'] ) ) {\n\t\t\t\t$roles = acf_get_user_role_labels( $args['role__in'] );\n\t\t\t} else {\n\t\t\t\t$roles = acf_get_user_role_labels();\n\t\t\t}\n\n\t\t\t// Return a flat array of results when searching or when querying one group only.\n\t\t\tif ( $this->is_search || count( $roles ) === 1 ) {\n\n\t\t\t\t// Query users and append to results.\n\t\t\t\t$wp_user_query = new WP_User_Query( $args );\n\t\t\t\t$users         = (array) $wp_user_query->get_results();\n\t\t\t\t$total_users   = $wp_user_query->get_total();\n\t\t\t\tforeach ( $users as $user ) {\n\t\t\t\t\t$results[] = $this->get_result( $user );\n\t\t\t\t}\n\n\t\t\t\t// Determine if more results exist.\n\t\t\t\t// As this query does not return grouped results, the calculation can be exact (\">\").\n\t\t\t\t$this->more = ( $total_users > count( $users ) + $args['offset'] );\n\t\t\t\t// Otherwise, group results via role.\n\t\t\t} else {\n\n\t\t\t\t// Unset args that will interfer with query results.\n\t\t\t\tunset( $args['role__in'], $args['role__not_in'] );\n\n\t\t\t\t$args['search'] = $this->search ? $this->search : '';\n\n\t\t\t\t// Loop over each role.\n\t\t\t\tforeach ( $roles as $role => $role_label ) {\n\n\t\t\t\t\t// Query users (for this role only).\n\t\t\t\t\t$args['role']  = $role;\n\t\t\t\t\t$wp_user_query = new WP_User_Query( $args );\n\t\t\t\t\t$users         = (array) $wp_user_query->get_results();\n\t\t\t\t\t$total_users   = $wp_user_query->get_total();\n\n\t\t\t\t\t// If users were found for this query...\n\t\t\t\t\tif ( $users ) {\n\n\t\t\t\t\t\t// Append optgroup of results.\n\t\t\t\t\t\t$role_results = array();\n\t\t\t\t\t\tforeach ( $users as $user ) {\n\t\t\t\t\t\t\t$role_results[] = $this->get_result( $user );\n\t\t\t\t\t\t}\n\t\t\t\t\t\t$results[] = array(\n\t\t\t\t\t\t\t'text'     => $role_label,\n\t\t\t\t\t\t\t'children' => $role_results,\n\t\t\t\t\t\t);\n\n\t\t\t\t\t\t// End loop when enough results have been found.\n\t\t\t\t\t\tif ( count( $users ) === $args['number'] ) {\n\n\t\t\t\t\t\t\t// Determine if more results exist.\n\t\t\t\t\t\t\t// As this query does return grouped results, the calculation is best left fuzzy to avoid querying the next group (\">=\").\n\t\t\t\t\t\t\t$this->more = ( $total_users >= count( $users ) + $args['offset'] );\n\t\t\t\t\t\t\tbreak;\n\n\t\t\t\t\t\t\t// Otherwise, modify the args so that the next query can continue on correctly.\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t$args['offset']  = 0;\n\t\t\t\t\t\t\t$args['number'] -= count( $users );\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\t// If no users were found (for the current pagination args), but there were users found for previous pages...\n\t\t\t\t\t\t// Modify the args so that the next query is offset slightly less (the number of total users) and can continue on correctly.\n\t\t\t\t\t} elseif ( $total_users ) {\n\t\t\t\t\t\t$args['offset'] -= $total_users;\n\t\t\t\t\t\tcontinue;\n\n\t\t\t\t\t\t// Ignore roles that will never return a result.\n\t\t\t\t\t} else {\n\t\t\t\t\t\tcontinue;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t\n\t\t\treturn apply_filters( 'acf/ajax/query_users/results', $results, $args, $this );\n\t\t}",
+    "quality_improvements": [
+      "Removed 4 lines of commented-out acf_log() debug calls to clean up the code"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "get_result",
+    "defective_code": "function get_result( $user ) {\n\t\t\t$item = acf_get_user_result( $user );\n\n\t\t\t\n\t\t\treturn apply_filters( 'acf/ajax/query_users/result', $item, $user, $this );\n\t\t}",
+    "critique": {
+      "severity": "PASS",
+      "defects": [],
+      "explanation": "Simple delegation to acf_get_user_result() with filter application. No defects."
+    },
+    "fixed_code": "function get_result( $user ) {\n\t\t\t$item = acf_get_user_result( $user );\n\n\t\t\t\n\t\t\treturn apply_filters( 'acf/ajax/query_users/result', $item, $user, $this );\n\t\t}",
+    "quality_improvements": [],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "filter_search_columns",
+    "defective_code": "function filter_search_columns( $columns, $search, $WP_User_Query ) {\n\t\t\t// Restrict search columns for users that can't edit other users.\n\t\t\tif ( ! current_user_can( 'edit_users' ) ) {\n\t\t\t\t$columns = array( 'user_login', 'user_nicename', 'display_name' );\n\t\t\t}\n\n\t\t\t\n\t\t\treturn apply_filters( 'acf/ajax/query_users/search_columns', $columns, $search, $WP_User_Query, $this );\n\t\t}",
+    "critique": {
+      "severity": "PASS",
+      "defects": [],
+      "explanation": "Properly restricts search columns for non-admin users and applies the filter. No defects."
+    },
+    "fixed_code": "function filter_search_columns( $columns, $search, $WP_User_Query ) {\n\t\t\t// Restrict search columns for users that can't edit other users.\n\t\t\tif ( ! current_user_can( 'edit_users' ) ) {\n\t\t\t\t$columns = array( 'user_login', 'user_nicename', 'display_name' );\n\t\t\t}\n\n\t\t\t\n\t\t\treturn apply_filters( 'acf/ajax/query_users/search_columns', $columns, $search, $WP_User_Query, $this );\n\t\t}",
+    "quality_improvements": [],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "request",
+    "defective_code": "function request() {\n\n\t\t\t// Store data for has() and get() functions.\n\t\t\t$this->request = wp_unslash( $_REQUEST ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Verified below in verify_request().\n\n\t\t\t// Verify request and handle error.\n\t\t\t$error = $this->verify_request( $this->request );\n\t\t\tif ( is_wp_error( $error ) ) {\n\t\t\t\t$this->send( $error );\n\t\t\t}\n\n\t\t\t// Send response.\n\t\t\t$this->send( $this->get_response( $this->request ) );\n\t\t}",
+    "critique": {
+      "severity": "PASS",
+      "defects": [],
+      "explanation": "Proper AJAX handler pattern: unslashes $_REQUEST, verifies via verify_request(), handles WP_Error, sends response. The phpcs:ignore is justified with explanation that nonce is verified in verify_request()."
+    },
+    "fixed_code": "function request() {\n\n\t\t\t// Store data for has() and get() functions.\n\t\t\t$this->request = wp_unslash( $_REQUEST ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Verified below in verify_request().\n\n\t\t\t// Verify request and handle error.\n\t\t\t$error = $this->verify_request( $this->request );\n\t\t\tif ( is_wp_error( $error ) ) {\n\t\t\t\t$this->send( $error );\n\t\t\t}\n\n\t\t\t// Send response.\n\t\t\t$this->send( $this->get_response( $this->request ) );\n\t\t}",
+    "quality_improvements": [],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "save_comment",
+    "defective_code": "function save_comment( $comment_id ) {\n\n\t\t\t// bail early if not valid nonce\n\t\t\tif ( ! acf_verify_nonce( 'comment' ) ) {\n\t\t\t\treturn $comment_id;\n\t\t\t}\n\n\t\t\t// kses\n\t\t\tif ( isset( $_POST['acf'] ) ) {\n\t\t\t\t$_POST['acf'] = wp_kses_post_deep( $_POST['acf'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized with wp_kses_post_deep().\n\t\t\t}\n\n\t\t\t// validate and save\n\t\t\tif ( acf_validate_save_post( true ) ) {\n\t\t\t\tacf_save_post( \"comment_{$comment_id}\" );\n\t\t\t}",
+    "critique": {
+      "severity": "HIGH",
+      "defects": [
+        "Missing closing brace and return for the function. The function body ends at `acf_save_post()` with no closing `}` — the function is incomplete."
+      ],
+      "explanation": "The function starts with an opening `{` but never closes it. The last line shows `acf_save_post( \"comment_{$comment_id}\" );` without the closing brace of the if block and the function. Any PHP execution will hit a parse error."
+    },
+    "fixed_code": "function save_comment( $comment_id ) {\n\n\t\t\t// bail early if not valid nonce\n\t\t\tif ( ! acf_verify_nonce( 'comment' ) ) {\n\t\t\t\treturn $comment_id;\n\t\t\t}\n\n\t\t\t// kses\n\t\t\tif ( isset( $_POST['acf'] ) ) {\n\t\t\t\t$_POST['acf'] = wp_kses_post_deep( $_POST['acf'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized with wp_kses_post_deep().\n\t\t\t}\n\n\t\t\t// validate and save\n\t\t\tif ( acf_validate_save_post( true ) ) {\n\t\t\t\tacf_save_post( \"comment_{$comment_id}\" );\n\t\t\t}\n\n\t\t\treturn $comment_id;\n\t\t}",
+    "quality_improvements": [
+      "Add closing brace for the if (acf_validate_save_post) block",
+      "Add return $comment_id after the if block to ensure a return path",
+      "Add function closing brace"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_form_front::validate_form",
+    "defective_code": "function validate_form( $args ) {\n\n\t\t\t// defaults\n\t\t\t// Todo: Allow message and button text to be generated by CPT settings.\n\t\t\t$args = wp_parse_args(\n\t\t\t\t$args,\n\t\t\t\tarray(\n\t\t\t\t\t'id'                    => 'acf-form',\n\t\t\t\t\t'post_id'               => false,\n\t\t\t\t\t'new_post'              => false,\n\t\t\t\t\t'field_groups'          => false,\n\t\t\t\t\t'fields'                => false,\n\t\t\t\t\t'post_title'            => false,\n\t\t\t\t\t'post_content'          => false,\n\t\t\t\t\t'form'                  => true,\n\t\t\t\t\t'form_attributes'       => array(),\n\t\t\t\t\t'return'                => add_query_arg( 'updated', 'true', acf_get_current_url() ),\n\t\t\t\t\t'html_before_fields'    => '',\n\t\t\t\t\t'html_after_fields'     => '',\n\t\t\t\t\t'submit_value'          => __( 'Update', 'acf' ),\n\t\t\t\t\t'updated_message'       => __( 'Post updated', 'acf' ),\n\t\t\t\t\t'label_placement'       => 'top',\n\t\t\t\t\t'instruction_placement' => 'label',\n\t\t\t\t\t'field_el'              => 'div',\n\t\t\t\t\t'uploader'              => 'wp',\n\t\t\t\t\t'honeypot'              => true,\n\t\t\t\t\t'html_updated_message'  => '<div id=\"message\" class=\"updated\"><p>%s</p></div>', // 5.5.10\n\t\t\t\t\t'html_submit_button'    => '<input type=\"submit\" class=\"acf-button button button-primary button-large\" value=\"%s\" />', // 5.5.10\n\t\t\t\t\t'html_submit_spinner'   => '<span class=\"acf-spinner\"></span>', // 5.5.10\n\t\t\t\t\t'kses'                  => true, // 5.6.5\n\t\t\t\t)\n\t\t\t);\n\n\t\t\t$args['form_attributes'] = wp_parse_args(\n\t\t\t\t$args['form_attributes'],\n\t\t\t\tarray(\n\t\t\t\t\t'id'     => $args['id'],\n\t\t\t\t\t'class'  => 'acf-form',\n\t\t\t\t\t'action' => '',\n\t\t\t\t\t'method' => 'post',\n\t\t\t\t)\n\t\t\t);\n\n\t\t\t// filter post_id\n\t\t\t$args['post_id'] = acf_get_valid_post_id( $args['post_id'] );\n\n\t\t\t// new post?\n\t\t\tif ( $args['post_id'] === 'new_post' ) {\n\t\t\t\t$args['new_post'] = wp_parse_args(\n\t\t\t\t\t$args['new_post'],\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'post_type'   => 'post',\n\t\t\t\t\t\t'post_status' => 'draft',\n\t\t\t\t\t)\n\t\t\t\t);\n\t\t\t}\n\n\t\t\t// filter\n\t\t\t$args = apply_filters( 'acf/validate_form', $args );\n\n\t\t\t// return\n\t\t\treturn $args;\n\t\t}",
+    "critique": {
+      "severity": "PASS",
+      "defects": [],
+      "explanation": "Proper form validation with wp_parse_args defaults, form_attributes merging, post_id filtering, and new_post setup. Uses strict === for 'new_post' check. No defects."
+    },
+    "fixed_code": "function validate_form( $args ) {\n\n\t\t\t// defaults\n\t\t\t// Todo: Allow message and button text to be generated by CPT settings.\n\t\t\t$args = wp_parse_args(\n\t\t\t\t$args,\n\t\t\t\tarray(\n\t\t\t\t\t'id'                    => 'acf-form',\n\t\t\t\t\t'post_id'               => false,\n\t\t\t\t\t'new_post'              => false,\n\t\t\t\t\t'field_groups'          => false,\n\t\t\t\t\t'fields'                => false,\n\t\t\t\t\t'post_title'            => false,\n\t\t\t\t\t'post_content'          => false,\n\t\t\t\t\t'form'                  => true,\n\t\t\t\t\t'form_attributes'       => array(),\n\t\t\t\t\t'return'                => add_query_arg( 'updated', 'true', acf_get_current_url() ),\n\t\t\t\t\t'html_before_fields'    => '',\n\t\t\t\t\t'html_after_fields'     => '',\n\t\t\t\t\t'submit_value'          => __( 'Update', 'acf' ),\n\t\t\t\t\t'updated_message'       => __( 'Post updated', 'acf' ),\n\t\t\t\t\t'label_placement'       => 'top',\n\t\t\t\t\t'instruction_placement' => 'label',\n\t\t\t\t\t'field_el'              => 'div',\n\t\t\t\t\t'uploader'              => 'wp',\n\t\t\t\t\t'honeypot'              => true,\n\t\t\t\t\t'html_updated_message'  => '<div id=\"message\" class=\"updated\"><p>%s</p></div>', // 5.5.10\n\t\t\t\t\t'html_submit_button'    => '<input type=\"submit\" class=\"acf-button button button-primary button-large\" value=\"%s\" />', // 5.5.10\n\t\t\t\t\t'html_submit_spinner'   => '<span class=\"acf-spinner\"></span>', // 5.5.10\n\t\t\t\t\t'kses'                  => true, // 5.6.5\n\t\t\t\t)\n\t\t\t);\n\n\t\t\t$args['form_attributes'] = wp_parse_args(\n\t\t\t\t$args['form_attributes'],\n\t\t\t\tarray(\n\t\t\t\t\t'id'     => $args['id'],\n\t\t\t\t\t'class'  => 'acf-form',\n\t\t\t\t\t'action' => '',\n\t\t\t\t\t'method' => 'post',\n\t\t\t\t)\n\t\t\t);\n\n\t\t\t// filter post_id\n\t\t\t$args['post_id'] = acf_get_valid_post_id( $args['post_id'] );\n\n\t\t\t// new post?\n\t\t\tif ( $args['post_id'] === 'new_post' ) {\n\t\t\t\t$args['new_post'] = wp_parse_args(\n\t\t\t\t\t$args['new_post'],\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'post_type'   => 'post',\n\t\t\t\t\t\t'post_status' => 'draft',\n\t\t\t\t\t)\n\t\t\t\t);\n\t\t\t}\n\n\t\t\t// filter\n\t\t\t$args = apply_filters( 'acf/validate_form', $args );\n\n\t\t\t// return\n\t\t\treturn $args;\n\t\t}",
+    "quality_improvements": [],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_form_front::validate_save_post",
+    "defective_code": "function validate_save_post() {\n\n\t\t\t// register field if isset in $_POST\n\t\t\tforeach ( $this->get_default_fields() as $k => $field ) {\n\n\t\t\t\t// bail early if no in $_POST\n\t\t\t\tif ( ! isset( $_POST['acf'][ $k ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified elsewhere.\n\t\t\t\t\tcontinue;\n\t\t\t\t}\n\n\t\t\t\t// register\n\t\t\t\tacf_add_local_field( $field );\n\t\t\t}\n\n\t\t\t// honeypot\n\t\t\tif ( ! empty( $_POST['acf']['_validate_email'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Data not used; presence indicates spam.\n\n\t\t\t\tacf_add_validation_error( '', __( 'Spam Detected', 'acf' ) );\n\t\t\t}\n\t\t}",
+    "critique": {
+      "severity": "PASS",
+      "defects": [],
+      "explanation": "Standard field registration loop with nonce-verification phpcs:ignore (justified). Honeypot check uses isset correctly for spam detection. No defects."
+    },
+    "fixed_code": "function validate_save_post() {\n\n\t\t\t// register field if isset in $_POST\n\t\t\tforeach ( $this->get_default_fields() as $k => $field ) {\n\n\t\t\t\t// bail early if no in $_POST\n\t\t\t\tif ( ! isset( $_POST['acf'][ $k ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified elsewhere.\n\t\t\t\t\tcontinue;\n\t\t\t\t}\n\n\t\t\t\t// register\n\t\t\t\tacf_add_local_field( $field );\n\t\t\t}\n\n\t\t\t// honeypot\n\t\t\tif ( ! empty( $_POST['acf']['_validate_email'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Data not used; presence indicates spam.\n\n\t\t\t\tacf_add_validation_error( '', __( 'Spam Detected', 'acf' ) );\n\t\t\t}\n\t\t}",
+    "quality_improvements": [],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_form_front::check_submit_form",
+    "defective_code": "function check_submit_form() {\n\n\t\t\t// Verify nonce.\n\t\t\tif ( ! acf_verify_nonce( 'acf_form' ) ) {\n\t\t\t\treturn false;\n\t\t\t}\n\n\t\t\t// Confirm form was submit.\n\t\t\tif ( ! isset( $_POST['_acf_form'] ) ) {\n\t\t\t\treturn false;\n\t\t\t}\n\n\t\t\t// Load registered form using id.\n\t\t\t$form = $this->get_form( acf_sanitize_request_args( $_POST['_acf_form'] ) );\n\n\t\t\t// Fallback to encrypted JSON.\n\t\t\tif ( ! $form ) {\n\t\t\t\t$form = json_decode( acf_decrypt( sanitize_text_field( $_POST['_acf_form'] ) ), true );\n\t\t\t\tif ( ! $form ) {\n\t\t\t\t\treturn false;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// Run kses on all $_POST data.\n\t\t\tif ( $form['kses'] && isset( $_POST['acf'] ) ) {\n\t\t\t\t$_POST['acf'] = wp_kses_post_deep( $_POST['acf'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- False positive.\n\t\t\t}\n\n\t\t\t// Validate data and show errors.\n\t\t\t// Todo: Return WP_Error and show above form, keeping input values.\n\t\t\tacf_validate_save_post( true );\n\n\t\t\t// Submit form.\n\t\t\t$this->submit_form( $form );\n\t\t}",
+    "critique": {
+      "severity": "PASS",
+      "defects": [],
+      "explanation": "Proper nonce verification, form loading with encrypted JSON fallback, kses sanitization on $_POST, and validation flow. No defects."
+    },
+    "fixed_code": "function check_submit_form() {\n\n\t\t\t// Verify nonce.\n\t\t\tif ( ! acf_verify_nonce( 'acf_form' ) ) {\n\t\t\t\treturn false;\n\t\t\t}\n\n\t\t\t// Confirm form was submit.\n\t\t\tif ( ! isset( $_POST['_acf_form'] ) ) {\n\t\t\t\treturn false;\n\t\t\t}\n\n\t\t\t// Load registered form using id.\n\t\t\t$form = $this->get_form( acf_sanitize_request_args( $_POST['_acf_form'] ) );\n\n\t\t\t// Fallback to encrypted JSON.\n\t\t\tif ( ! $form ) {\n\t\t\t\t$form = json_decode( acf_decrypt( sanitize_text_field( $_POST['_acf_form'] ) ), true );\n\t\t\t\tif ( ! $form ) {\n\t\t\t\t\treturn false;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// Run kses on all $_POST data.\n\t\t\tif ( $form['kses'] && isset( $_POST['acf'] ) ) {\n\t\t\t\t$_POST['acf'] = wp_kses_post_deep( $_POST['acf'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- False positive.\n\t\t\t}\n\n\t\t\t// Validate data and show errors.\n\t\t\t// Todo: Return WP_Error and show above form, keeping input values.\n\t\t\tacf_validate_save_post( true );\n\n\t\t\t// Submit form.\n\t\t\t$this->submit_form( $form );\n\t\t}",
+    "quality_improvements": [],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_form_front::render_form",
+    "defective_code": "function render_form( $args = array() ) {\n\n\t\t\t// Vars.\n\t\t\t$is_registered = false;\n\t\t\t$field_groups  = array();\n\t\t\t$fields        = array();\n\n\t\t\t// Allow form settings to be directly provided.\n\t\t\tif ( is_array( $args ) ) {\n\t\t\t\t$args = $this->validate_form( $args );\n\n\t\t\t\t// Otherwise, lookup registered form.\n\t\t\t} else {\n\t\t\t\t$is_registered = true;\n\t\t\t\t$args          = $this->get_form( $args );\n\t\t\t\tif ( ! $args ) {\n\t\t\t\t\treturn false;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// Extract vars.\n\t\t\t$post_id = $args['post_id'];\n\n\t\t\t// Prevent ACF from loading values for \"new_post\".\n\t\t\tif ( $post_id === 'new_post' ) {\n\t\t\t\t$post_id = false;\n\t\t\t}\n\n\t\t\t// Set uploader type.\n\t\t\tacf_update_setting( 'uploader', $args['uploader'] );\n\n\t\t\t// Register local fields.\n\t\t\tforeach ( $this->get_default_fields() as $k => $field ) {\n\t\t\t\tacf_add_local_field( $field );\n\t\t\t}\n\n\t\t\t// Append post_title field.\n\t\t\tif ( $args['post_title'] ) {\n\t\t\t\t$_post_title          = acf_get_field( '_post_title' );\n\t\t\t\t$_post_title['value'] = $post_id ? get_post_field( 'post_title', $post_id ) : '';\n\t\t\t\t$fields[]             = $_post_title;\n\t\t\t}\n\n\t\t\t// Append post_content field.\n\t\t\tif ( $args['post_content'] ) {\n\t\t\t\t$_post_content          = acf_get_field( '_post_content' );\n\t\t\t\t$_post_content['value'] = $post_id ? get_post_field( 'post_content', $post_id ) : '';\n\t\t\t\t$fields[]               = $_post_content;\n\t\t\t}\n\n\t\t\t// Load specific fields.\n\t\t\tif ( $args['fields'] ) {\n\n\t\t\t\t// Lookup fields using $strict = false for better compatibility with field names.\n\t\t\t\tforeach ( $args['fields'] as $selector ) {\n\t\t\t\t\t$fields[] = acf_maybe_get_field( $selector, $post_id, false );\n\t\t\t\t}\n\n\t\t\t\t// Load specific field groups.\n\t\t\t} elseif ( $args['field_groups'] ) {\n\t\t\t\tforeach ( $args['field_groups'] as $selector ) {\n\t\t\t\t\t$field_groups[] = acf_get_field_group( $selector );\n\t\t\t\t}\n\n\t\t\t\t// Load fields for the given \"new_post\" args.\n\t\t\t} elseif ( $args['post_id'] == 'new_post' ) {\n\t\t\t\t$field_groups = acf_get_field_groups( $args['new_post'] );\n\n\t\t\t\t// Load fields for the given \"post_id\" arg.\n\t\t\t} else {\n\t\t\t\t$field_groups = acf_get_field_groups(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'post_id' => $args['post_id'],\n\t\t\t\t\t)\n\t\t\t\t);\n\t\t\t}\n\n\t\t\t// load fields from the found field groups.\n\t\t\tif ( $field_groups ) {\n\t\t\t\tforeach ( $field_groups as $field_group ) {\n\t\t\t\t\t$_fields = acf_get_fields( $field_group );\n\t\t\t\t\tif ( $_fields ) {\n\t\t\t\t\t\tforeach ( $_fields as $_field ) {\n\t\t\t\t\t\t\t$fields[] = $_field;\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// Add honeypot field.\n\t\t\tif ( $args['honeypot'] ) {\n\t\t\t\t$fields[] = acf_get_field( '_validate_email' );\n\t\t\t}\n\n\t\t\t// Display updated_message\n\t\t\tif ( ! empty( $_GET['updated'] ) && $args['updated_message'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Used as a flag; data not used.\n\t\t\t\tprintf( $args['html_updated_message'], $args['updated_message'] ); //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- designed to contain potentially unsafe HTML, set by developers.\n\t\t\t}\n\n\t\t\t// display form\n\t\t\tif ( $args['form'] ) : ?>\n\t\t\t\t<form <?php echo acf_esc_attrs( $args['form_attributes'] ); ?>>\n\t\t\t\t<?php\n\t\t\tendif;\n\n\t\t\t// Render hidde form data.\n\t\t\tacf_form_data(\n\t\t\t\tarray(\n\t\t\t\t\t'screen'  => 'acf_form',\n\t\t\t\t\t'post_id' => $args['post_id'],\n\t\t\t\t\t'form'    => $is_registered ? $args['id'] : acf_encrypt( json_encode( $args ) ),\n\t\t\t\t)\n\t\t\t);\n\n\t\t\t?>\n\t\t\t<div class=\"acf-fields acf-form-fields -<?php echo esc_attr( $args['label_placement'] ); ?>\">\n\t\t\t\t<?php echo $args['html_before_fields']; ?><?php //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- designed to contain potentially unsafe HTML, set by developers. ?>\n\t\t\t\t<?php acf_render_fields( $fields, $post_id, $args['field_el'], $args['instruction_placement'] ); ?>\n\t\t\t\t<?php echo $args['html_after_fields']; ?><?php //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- designed to contain potentially unsafe HTML, set by developers. ?>\n\t\t\t</div>\n\t\t\t<?php if ( $args['form'] ) : ?>\n\t\t\t\t<div class=\"acf-form-submit\">\n\t\t\t\t\t<?php printf( $args['html_submit_button'], $args['submit_value'] ); ?><?php //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- designed to contain potentially unsafe HTML, set by developers. ?>\n\t\t\t\t\t<?php echo $args['html_submit_spinner']; ?><?php //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- designed to contain potentially unsafe HTML, set by developers. ?>\n\t\t\t\t</div>\n\t\t\t\t</form>\n\t\t\t<?php endif;\n\t\t}",
+    "critique": {
+      "severity": "LOW",
+      "defects": [
+        "Loose comparison `$args['post_id'] == 'new_post'` at the elseif branch (different from the strict === used above) — inconsistent comparison style within the same function.",
+        "Typo in comment: `// Render hidde form data.` should be `// Render hidden form data.`"
+      ],
+      "explanation": "The elseif branch uses == while the if branch above uses === for the same string comparison. This is an inconsistency. The 'hidde' typo is cosmetic but should be fixed for code quality."
+    },
+    "fixed_code": "function render_form( $args = array() ) {\n\n\t\t\t// Vars.\n\t\t\t$is_registered = false;\n\t\t\t$field_groups  = array();\n\t\t\t$fields        = array();\n\n\t\t\t// Allow form settings to be directly provided.\n\t\t\tif ( is_array( $args ) ) {\n\t\t\t\t$args = $this->validate_form( $args );\n\n\t\t\t\t// Otherwise, lookup registered form.\n\t\t\t} else {\n\t\t\t\t$is_registered = true;\n\t\t\t\t$args          = $this->get_form( $args );\n\t\t\t\tif ( ! $args ) {\n\t\t\t\t\treturn false;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// Extract vars.\n\t\t\t$post_id = $args['post_id'];\n\n\t\t\t// Prevent ACF from loading values for \"new_post\".\n\t\t\tif ( $post_id === 'new_post' ) {\n\t\t\t\t$post_id = false;\n\t\t\t}\n\n\t\t\t// Set uploader type.\n\t\t\tacf_update_setting( 'uploader', $args['uploader'] );\n\n\t\t\t// Register local fields.\n\t\t\tforeach ( $this->get_default_fields() as $k => $field ) {\n\t\t\t\tacf_add_local_field( $field );\n\t\t\t}\n\n\t\t\t// Append post_title field.\n\t\t\tif ( $args['post_title'] ) {\n\t\t\t\t$_post_title          = acf_get_field( '_post_title' );\n\t\t\t\t$_post_title['value'] = $post_id ? get_post_field( 'post_title', $post_id ) : '';\n\t\t\t\t$fields[]             = $_post_title;\n\t\t\t}\n\n\t\t\t// Append post_content field.\n\t\t\tif ( $args['post_content'] ) {\n\t\t\t\t$_post_content          = acf_get_field( '_post_content' );\n\t\t\t\t$_post_content['value'] = $post_id ? get_post_field( 'post_content', $post_id ) : '';\n\t\t\t\t$fields[]               = $_post_content;\n\t\t\t}\n\n\t\t\t// Load specific fields.\n\t\t\tif ( $args['fields'] ) {\n\n\t\t\t\t// Lookup fields using $strict = false for better compatibility with field names.\n\t\t\t\tforeach ( $args['fields'] as $selector ) {\n\t\t\t\t\t$fields[] = acf_maybe_get_field( $selector, $post_id, false );\n\t\t\t\t}\n\n\t\t\t\t// Load specific field groups.\n\t\t\t} elseif ( $args['field_groups'] ) {\n\t\t\t\tforeach ( $args['field_groups'] as $selector ) {\n\t\t\t\t\t$field_groups[] = acf_get_field_group( $selector );\n\t\t\t\t}\n\n\t\t\t\t// Load fields for the given \"new_post\" args.\n\t\t\t} elseif ( $args['post_id'] === 'new_post' ) {\n\t\t\t\t$field_groups = acf_get_field_groups( $args['new_post'] );\n\n\t\t\t\t// Load fields for the given \"post_id\" arg.\n\t\t\t} else {\n\t\t\t\t$field_groups = acf_get_field_groups(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'post_id' => $args['post_id'],\n\t\t\t\t\t)\n\t\t\t\t);\n\t\t\t}\n\n\t\t\t// load fields from the found field groups.\n\t\t\tif ( $field_groups ) {\n\t\t\t\tforeach ( $field_groups as $field_group ) {\n\t\t\t\t\t$_fields = acf_get_fields( $field_group );\n\t\t\t\t\tif ( $_fields ) {\n\t\t\t\t\t\tforeach ( $_fields as $_field ) {\n\t\t\t\t\t\t\t$fields[] = $_field;\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// Add honeypot field.\n\t\t\tif ( $args['honeypot'] ) {\n\t\t\t\t$fields[] = acf_get_field( '_validate_email' );\n\t\t\t}\n\n\t\t\t// Display updated_message\n\t\t\tif ( ! empty( $_GET['updated'] ) && $args['updated_message'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Used as a flag; data not used.\n\t\t\t\tprintf( $args['html_updated_message'], $args['updated_message'] ); //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- designed to contain potentially unsafe HTML, set by developers.\n\t\t\t}\n\n\t\t\t// display form\n\t\t\tif ( $args['form'] ) : ?>\n\t\t\t\t<form <?php echo acf_esc_attrs( $args['form_attributes'] ); ?>>\n\t\t\t\t<?php\n\t\t\tendif;\n\n\t\t\t// Render hidden form data.\n\t\t\tacf_form_data(\n\t\t\t\tarray(\n\t\t\t\t\t'screen'  => 'acf_form',\n\t\t\t\t\t'post_id' => $args['post_id'],\n\t\t\t\t\t'form'    => $is_registered ? $args['id'] : acf_encrypt( json_encode( $args ) ),\n\t\t\t\t)\n\t\t\t);\n\n\t\t\t?>\n\t\t\t<div class=\"acf-fields acf-form-fields -<?php echo esc_attr( $args['label_placement'] ); ?>\">\n\t\t\t\t<?php echo $args['html_before_fields']; ?><?php //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- designed to contain potentially unsafe HTML, set by developers. ?>\n\t\t\t\t<?php acf_render_fields( $fields, $post_id, $args['field_el'], $args['instruction_placement'] ); ?>\n\t\t\t\t<?php echo $args['html_after_fields']; ?><?php //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- designed to contain potentially unsafe HTML, set by developers. ?>\n\t\t\t</div>\n\t\t\t<?php if ( $args['form'] ) : ?>\n\t\t\t\t<div class=\"acf-form-submit\">\n\t\t\t\t\t<?php printf( $args['html_submit_button'], $args['submit_value'] ); ?><?php //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- designed to contain potentially unsafe HTML, set by developers. ?>\n\t\t\t\t\t<?php echo $args['html_submit_spinner']; ?><?php //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- designed to contain potentially unsafe HTML, set by developers. ?>\n\t\t\t\t</div>\n\t\t\t\t</form>\n\t\t\t<?php endif;\n\t\t}",
+    "quality_improvements": [
+      "Changed `$args['post_id'] == 'new_post'` to `$args['post_id'] === 'new_post'` for consistency with the if branch above",
+      "Fixed typo: 'hidde' -> 'hidden' in comment"
+    ],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_form_widget::acf_validate_save_post",
+    "defective_code": "function acf_validate_save_post() {\n\t\t\t// phpcs:disable WordPress.Security.NonceVerification.Missing -- Verified elsewhere.\n\t\t\t// bail early if not widget\n\t\t\tif ( ! isset( $_POST['_acf_widget_id'] ) ) {\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\t// vars\n\t\t\t$id     = sanitize_text_field( wp_unslash( $_POST['_acf_widget_id'] ) );\n\t\t\t$number = acf_maybe_get_POST( '_acf_widget_number' );\n\t\t\t$prefix = acf_maybe_get_POST( '_acf_widget_prefix' );\n\t\t\t$values = ! empty( $_POST[ $id ][ $number ]['acf'] ) ? acf_sanitize_request_args( $_POST[ $id ][ $number ]['acf'] ) : ''; //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- unslash not required.\n\n\t\t\t// validate\n\t\t\tacf_validate_values( $values, $prefix );\n\t\t\t// phpcs:enable WordPress.Security.NonceVerification.Missing\n\t\t}",
+    "critique": {
+      "severity": "PASS",
+      "defects": [],
+      "explanation": "Properly sanitizes $_POST with sanitize_text_field and wp_unslash. Uses acf_sanitize_request_args for nested values. Has proper phpcs annotations. No defects."
+    },
+    "fixed_code": "function acf_validate_save_post() {\n\t\t\t// phpcs:disable WordPress.Security.NonceVerification.Missing -- Verified elsewhere.\n\t\t\t// bail early if not widget\n\t\t\tif ( ! isset( $_POST['_acf_widget_id'] ) ) {\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\t// vars\n\t\t\t$id     = sanitize_text_field( wp_unslash( $_POST['_acf_widget_id'] ) );\n\t\t\t$number = acf_maybe_get_POST( '_acf_widget_number' );\n\t\t\t$prefix = acf_maybe_get_POST( '_acf_widget_prefix' );\n\t\t\t$values = ! empty( $_POST[ $id ][ $number ]['acf'] ) ? acf_sanitize_request_args( $_POST[ $id ][ $number ]['acf'] ) : ''; //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- unslash not required.\n\n\t\t\t// validate\n\t\t\tacf_validate_values( $values, $prefix );\n\t\t\t// phpcs:enable WordPress.Security.NonceVerification.Missing\n\t\t}",
+    "quality_improvements": [],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_form_nav_menu::update_nav_menu_items",
+    "defective_code": "function update_nav_menu_items( $menu_id ) {\n\n\t\t\t// phpcs:disable WordPress.Security.NonceVerification.Missing -- Verified elsewhere.\n\t\t\tif ( empty( $_POST['menu-item-acf'] ) ) {\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\t$posted_values = acf_sanitize_request_args( $_POST['menu-item-acf'] );\n\n\t\t\tforeach ( $posted_values as $post_id => $values ) {\n\t\t\t\tacf_save_post( $post_id, $values );\n\t\t\t}\n\t\t\t// phpcs:enable WordPress.Security.NonceVerification.Missing\n\t\t}",
+    "critique": {
+      "severity": "PASS",
+      "defects": [],
+      "explanation": "Proper nonce-verified block with phpcs:disable/enable. Sanitizes $_POST with acf_sanitize_request_args before iterating. No defects."
+    },
+    "fixed_code": "function update_nav_menu_items( $menu_id ) {\n\n\t\t\t// phpcs:disable WordPress.Security.NonceVerification.Missing -- Verified elsewhere.\n\t\t\tif ( empty( $_POST['menu-item-acf'] ) ) {\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\t$posted_values = acf_sanitize_request_args( $_POST['menu-item-acf'] );\n\n\t\t\tforeach ( $posted_values as $post_id => $values ) {\n\t\t\t\tacf_save_post( $post_id, $values );\n\t\t\t}\n\t\t\t// phpcs:enable WordPress.Security.NonceVerification.Missing\n\t\t}",
+    "quality_improvements": [],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "acf_form_nav_menu::admin_footer",
+    "defective_code": "function admin_footer() {\n\n\t\t\t// vars\n\t\t\t$nav_menu_id = acf_get_data( 'nav_menu_id' );\n\t\t\t$post_id     = 'term_' . $nav_menu_id;\n\n\t\t\t// get field groups\n\t\t\t$field_groups = acf_get_field_groups(\n\t\t\t\tarray(\n\t\t\t\t\t'nav_menu' => $nav_menu_id,\n\t\t\t\t)\n\t\t\t);\n\n\t\t\t?>\n<div id=\"tmpl-acf-menu-settings\" style=\"display: none;\">\n\t\t\t<?php\n\n\t\t\t// data (always needed to save nav menu items)\n\t\t\tacf_form_data(\n\t\t\t\tarray(\n\t\t\t\t\t'screen'  => 'nav_menu',\n\t\t\t\t\t'post_id' => $post_id,\n\t\t\t\t\t'ajax'    => 1,\n\t\t\t\t)\n\t\t\t);\n\n\t\t\t// render\n\t\t\tif ( ! empty( $field_groups ) ) {\n\n\t\t\t\t// loop\n\t\t\t\tforeach ( $field_groups as $field_group ) {\n\t\t\t\t\t$fields = acf_get_fields( $field_group );\n\n\t\t\t\t\techo '<div class=\"acf-menu-settings -' . esc_attr( $field_group['style'] ) . '\">';\n\n\t\t\t\t\techo '<h2>' . acf_esc_html( acf_get_field_group_title( $field_group ) ) . '</h2>';\n\n\t\t\t\t\techo '<div class=\"acf-fields -left -clear\">';\n\n\t\t\t\t\tacf_render_fields( $fields, $post_id, 'div', $field_group['instruction_placement'] );\n\n\t\t\t\t\techo '</div>';\n\n\t\t\t\t\techo '</div>';\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t?>\n</div>\n<script type=\"text/javascript\">\n(function($) {\n\t\n\t// append html\n\tvar html = $('#tmpl-acf-menu-settings').html();\n\t$('#tmpl-acf-menu-settings').remove();\n\t$('#post-body-content').append( html );\n\t\n\t\n\t// avoid WP over-writing $_POST data\n\t// - https://core.trac.wordpress.org/ticket/41502#ticket\n\t$(document).on('submit', '#update-nav-menu', function() {\n\n\t\t// vars\n\t\tvar $form = $(this);\n\t\tvar $input = $('input[name=\"nav-menu-data\"]');\n\t\t\n\t\t\n\t\t// decode json\n\t\tvar json = $form.serializeArray();\n\t\tvar json2 = [];\n\t\t\n\t\t\n\t\t// loop\n\t\t$.each( json, function( i, pair ) {\n\t\t\t\n\t\t\t// avoid nesting (unlike WP)\n\t\t\tif( pair.name === 'nav-menu-data' ) return;\n\t\t\t\n\t\t\t\n\t\t\t// bail early if is 'acf[' input\n\t\t\tif( pair.name.indexOf('acf[') > -1 ) return;\n\t\t\t\t\t\t\n\t\t\t\n\t\t\t// append\n\t\t\tjson2.push( pair );\n\t\t\t\n\t});\n\t\t\n\t\t\n\t\t// update\n\t\t$input.val( JSON.stringify(json2) );\n\t\t\n\t});\n\t\t\n\t\t\n})(jQuery);\t\n</script>\n\t\t\t<?php\n\t\t}",
+    "critique": {
+      "severity": "PASS",
+      "defects": [],
+      "explanation": "Properly escapes output with esc_attr() and acf_esc_html(). Uses acf_form_data() for AJAX setup. jQuery uses strict === comparison for 'nav-menu-data'. No defects."
+    },
+    "fixed_code": "function admin_footer() {\n\n\t\t\t// vars\n\t\t\t$nav_menu_id = acf_get_data( 'nav_menu_id' );\n\t\t\t$post_id     = 'term_' . $nav_menu_id;\n\n\t\t\t// get field groups\n\t\t\t$field_groups = acf_get_field_groups(\n\t\t\t\tarray(\n\t\t\t\t\t'nav_menu' => $nav_menu_id,\n\t\t\t\t)\n\t\t\t);\n\n\t\t\t?>\n<div id=\"tmpl-acf-menu-settings\" style=\"display: none;\">\n\t\t\t<?php\n\n\t\t\t// data (always needed to save nav menu items)\n\t\t\tacf_form_data(\n\t\t\t\tarray(\n\t\t\t\t\t'screen'  => 'nav_menu',\n\t\t\t\t\t'post_id' => $post_id,\n\t\t\t\t\t'ajax'    => 1,\n\t\t\t\t)\n\t\t\t);\n\n\t\t\t// render\n\t\t\tif ( ! empty( $field_groups ) ) {\n\n\t\t\t\t// loop\n\t\t\t\tforeach ( $field_groups as $field_group ) {\n\t\t\t\t\t$fields = acf_get_fields( $field_group );\n\n\t\t\t\t\techo '<div class=\"acf-menu-settings -' . esc_attr( $field_group['style'] ) . '\">';\n\n\t\t\t\t\techo '<h2>' . acf_esc_html( acf_get_field_group_title( $field_group ) ) . '</h2>';\n\n\t\t\t\t\techo '<div class=\"acf-fields -left -clear\">';\n\n\t\t\t\t\tacf_render_fields( $fields, $post_id, 'div', $field_group['instruction_placement'] );\n\n\t\t\t\t\techo '</div>';\n\n\t\t\t\t\techo '</div>';\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t?>\n</div>\n<script type=\"text/javascript\">\n(function($) {\n\t\n\t// append html\n\tvar html = $('#tmpl-acf-menu-settings').html();\n\t$('#tmpl-acf-menu-settings').remove();\n\t$('#post-body-content').append( html );\n\t\n\t\n\t// avoid WP over-writing $_POST data\n\t// - https://core.trac.wordpress.org/ticket/41502#ticket\n\t$(document).on('submit', '#update-nav-menu', function() {\n\n\t\t// vars\n\t\tvar $form = $(this);\n\t\tvar $input = $('input[name=\"nav-menu-data\"]');\n\t\t\n\t\t\n\t\t// decode json\n\t\tvar json = $form.serializeArray();\n\t\tvar json2 = [];\n\t\t\n\t\t\n\t\t// loop\n\t\t$.each( json, function( i, pair ) {\n\t\t\t\n\t\t\t// avoid nesting (unlike WP)\n\t\t\tif( pair.name === 'nav-menu-data' ) return;\n\t\t\t\n\t\t\t\n\t\t\t// bail early if is 'acf[' input\n\t\t\tif( pair.name.indexOf('acf[') > -1 ) return;\n\t\t\t\t\t\t\n\t\t\t\n\t\t\t// append\n\t\t\tjson2.push( pair );\n\t\t\t\n\t});\n\t\t\n\t\t\n\t\t// update\n\t\t$input.val( JSON.stringify(json2) );\n\t\t\n\t});\n\t\t\n\t\t\n})(jQuery);\t\n</script>\n\t\t\t<?php\n\t\t}",
+    "quality_improvements": [],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "ACF_Form_User::filter_pre_load_value",
+    "defective_code": "function filter_pre_load_value( $null, $post_id, $field ) {\n\t\t\t$field_key = $field['key'];\n\t\t\t// phpcs:disable WordPress.Security.NonceVerification.Missing -- Verified in save_user().\n\t\t\tif ( isset( $_POST['acf'][ $field_key ] ) ) {\n\t\t\t\treturn $_POST['acf'][ $field_key ]; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized elsewhere.\n\t\t\t}\n\t\t\t// phpcs:enable WordPress.Security.NonceVerification.Missing\n\t\t\treturn $null;\n\t\t}",
+    "critique": {
+      "severity": "PASS",
+      "defects": [],
+      "explanation": "Properly uses isset() check before accessing $_POST, has phpcs:ignore with justified explanation. The field_key is derived from $field['key'] (not user input). No defects."
+    },
+    "fixed_code": "function filter_pre_load_value( $null, $post_id, $field ) {\n\t\t\t$field_key = $field['key'];\n\t\t\t// phpcs:disable WordPress.Security.NonceVerification.Missing -- Verified in save_user().\n\t\t\tif ( isset( $_POST['acf'][ $field_key ] ) ) {\n\t\t\t\treturn $_POST['acf'][ $field_key ]; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized elsewhere.\n\t\t\t}\n\t\t\t// phpcs:enable WordPress.Security.NonceVerification.Missing\n\t\t\treturn $null;\n\t\t}",
+    "quality_improvements": [],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "advanced-custom-fields.json",
+    "function_name": "ACF_Admin_Internal_Post_Type::__construct",
+    "defective_code": "function __construct() {\n\t\t\tadd_action( 'current_screen', array( $this, 'current_screen' ) );\n\t\t\tadd_action( 'save_post_' . $this->post_type, array( $this, 'save_post' ), 10, 2 );\n\t\t\tadd_action( 'wp_ajax_acf/link_field_groups', array( $this, 'ajax_link_field_groups' ) );\n\t\t\tadd_filter( 'use_block_editor_for_post_type', array( $this, 'use_block_editor_for_post_type' ), 10, 2 );\n\t\t}",
+    "critique": {
+      "severity": "PASS",
+      "defects": [],
+      "explanation": "Standard WP hook registration in constructor. Uses add_action/add_filter with proper callback arrays. No user input involved. No defects."
+    },
+    "fixed_code": "function __construct() {\n\t\t\tadd_action( 'current_screen', array( $this, 'current_screen' ) );\n\t\t\tadd_action( 'save_post_' . $this->post_type, array( $this, 'save_post' ), 10, 2 );\n\t\t\tadd_action( 'wp_ajax_acf/link_field_groups', array( $this, 'ajax_link_field_groups' ) );\n\t\t\tadd_filter( 'use_block_editor_for_post_type', array( $this, 'use_block_editor_for_post_type' ), 10, 2 );\n\t\t}",
+    "quality_improvements": [],
+    "generation_method": "wave0002_agent"
+  }
+]

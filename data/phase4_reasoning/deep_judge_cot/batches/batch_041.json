@@ -1,0 +1,602 @@
+[
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "seek",
+    "code": "function seek($where = null) { if ($where === null) return $this->count; else $this->count = $where; return true; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Basic WP coding conventions followed. Function parameter naming is acceptable."},
+        "sql_safety": {"score": 10, "analysis": "No SQL queries present. Simple in-memory property accessor."},
+        "security": {"score": 6, "analysis": "Accepts external input $where without sanitization. However it sets an internal counter which has low attack surface. No escaping needed as output is not echoed here."},
+        "performance": {"score": 9, "analysis": "O(1) property read/write. Negligible memory and CPU cost."},
+        "wp_api_usage": {"score": 7, "analysis": "Does not use WP API but does not need to. Pure state management helper."},
+        "code_quality": {"score": 6, "analysis": "Functional but the dual return (int|null on read, boolean on write) is a code smell. Missing explicit return type hints."},
+        "dependency_integrity": {"score": 9, "analysis": "No dependencies. Self-contained."},
+        "i18n": {"score": 10, "analysis": "No user-facing strings to localize."},
+        "accessibility": {"score": 10, "analysis": "No UI output. N/A but no violations."}
+      },
+      "overall_score": 78,
+      "key_observation": "Simple getter/setter with weak typing and unsanitized input on write path"
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "pop",
+    "code": "function pop() { $old = $this->env; $this->env = $this->env->parent; return $old; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Function naming 'pop' conflicts with PHP's built-in pop() function. Minor WP CS issue."},
+        "sql_safety": {"score": 10, "analysis": "No SQL. Pure object property manipulation."},
+        "security": {"score": 8, "analysis": "No user input. Stack-based scope management is safe. However missing null check on $this->env could cause unhandled E_WARNING."},
+        "performance": {"score": 9, "analysis": "O(1) object property access and assignment. Minimal overhead."},
+        "wp_api_usage": {"score": 7, "analysis": "Internal scoping utility, no WP API involvement needed."},
+        "code_quality": {"score": 6, "analysis": "Shadowing PHP internal function name 'pop' is poor practice. Missing null guard on $this->env before accessing ->parent."},
+        "dependency_integrity": {"score": 9, "analysis": "No dependencies. Self-contained stack operation."},
+        "i18n": {"score": 10, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 10, "analysis": "No UI. N/A."}
+      },
+      "overall_score": 77,
+      "key_observation": "Stack pop implementation shadows PHP built-in function and lacks null safety on $this->env"
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "a3_lessc_formatter_classic::block",
+    "code": "function block($block) { if ($this->isEmpty($block)) return; $inner = $pre = $this->indentStr(); $isSingle = !$this->disableSingle && is_null($block->type) && count($block->lines) == 1; if (!empty($block->selectors)) { $this->indentLevel++; if ($this->breakSelectors) { $selectorSeparator = $this->selectorSeparator . $this->break . $pre; } else { $selectorSeparator = $this->selectorSeparator; } echo $pre . implode($selectorSeparator, $block->selectors); if ($isSingle) { echo $this->openSingle; $inner = ''; } else { echo $this->open . $this->break; $inner = $this->indentStr(); } } if (!empty($block->lines)) { $glue = $this->break.$inner; echo $inner . implode($glue, $block->lines); if (!$isSingle && !empty($block->children)) { echo $this->break; } } foreach ($block->children as $child) { $this->block($child); } if (!empty($block->selectors)) { if (!$isSingle && empty($block->children)) echo $this->break; if ($isSingle) { echo $this->closeSingle . $this->break; } else { echo $pre . $this->close . $this->break; } $this->indentLevel--; } }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 5, "analysis": "Mix of echo statements and complex indentation logic. Not WP-specific but does not follow WP style for output (should use return + echo caller side)."},
+        "sql_safety": {"score": 10, "analysis": "No SQL queries. Pure CSS/LESS output formatting."},
+        "security": {"score": 5, "analysis": "Echoes content derived from $block properties without any sanitization. If $block->selectors or $block->lines contain user-controlled CSS, this could enable CSS injection. However context suggests these come from LESS parsing, not user input."},
+        "performance": {"score": 6, "analysis": "Recursive traversal O(n) over AST nodes. Uses string concatenation which is fine for typical CSS output sizes. indentLevel tracking is correct."},
+        "wp_api_usage": {"score": 7, "analysis": "No WP API usage. This is a generic LESS compiler formatter, not WordPress-specific."},
+        "code_quality": {"score": 5, "analysis": "Complex function (53 lines) with deep nesting and multiple echo paths. The control flow is hard to follow. Missing return type. Hard to test in isolation due to direct echo."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on $this->isEmpty(), $this->indentStr(), and various $this properties. Tight coupling to parent LESSC class."},
+        "i18n": {"score": 10, "analysis": "No user-facing strings. Outputs CSS which should never be translated."},
+        "accessibility": {"score": 10, "analysis": "No UI output. Outputs raw CSS to buffer. N/A."}
+      },
+      "overall_score": 72,
+      "key_observation": "Complex recursive CSS formatter with deep nesting and direct echo, but no SQL or WP API needed"
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Uploader::__construct",
+    "code": "function __construct() { if ( is_admin() ) { add_action( $this->plugin_name . '_init_scripts', array( $this, 'uploader_script' ) ); add_action( $this->plugin_name . '_init_styles', array( $this, 'uploader_style' ) ); } }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Follows WP conventions: uses is_admin() gate, add_action hook registration with proper array() callback syntax. Standard WP plugin constructor pattern."},
+        "sql_safety": {"score": 10, "analysis": "No SQL queries. Hook registration only."},
+        "security": {"score": 8, "analysis": "Properly gated with is_admin() so hooks only register in admin context. No user input processed. Safe."},
+        "performance": {"score": 8, "analysis": "Lightweight constructor. Hooks are registered but deferred until their actions fire. No immediate cost."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct use of is_admin() and add_action(). Standard WP plugin initialization pattern."},
+        "code_quality": {"score": 7, "analysis": "Clean and minimal. Follows constructor pattern. Could benefit from declaring properties as private."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on $this->plugin_name being set. No external libraries."},
+        "i18n": {"score": 10, "analysis": "No user-facing strings in constructor. Hook names are internal."},
+        "accessibility": {"score": 10, "analysis": "No UI output. N/A."}
+      },
+      "overall_score": 84,
+      "key_observation": "Clean WP hook registration constructor with proper admin gate"
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Uploader::uploader_js",
+    "code": "function uploader_js () { wp_enqueue_script( 'a3-uploader-script', $this->admin_uploader_url() . '/uploader-script.js', array( 'jquery', 'thickbox' ), $this->framework_version ); if ( function_exists( 'wp_enqueue_media' ) ) { wp_enqueue_media(); } else { wp_enqueue_script('media-upload'); } }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Correct use of wp_enqueue_script with dependency array and version. Function_exists() check for wp_enqueue_media is good practice for backward compatibility."},
+        "sql_safety": {"score": 10, "analysis": "No SQL. Script enqueuing only."},
+        "security": {"score": 7, "analysis": "URL constructed from $this->admin_uploader_url() without explicit escaping, but as a script src this is internal path, not user input. Safe."},
+        "performance": {"score": 8, "analysis": "Standard enqueue pattern. jquery and thickbox as declared dependencies is appropriate. No blocking scripts."},
+        "wp_api_usage": {"score": 8, "analysis": "Proper use of wp_enqueue_script, wp_enqueue_media, and function_exists guard. Good WP API usage."},
+        "code_quality": {"score": 7, "analysis": "Clean fallback pattern for wp_enqueue_media availability. Standard WP enqueue practice."},
+        "dependency_integrity": {"score": 8, "analysis": "Relies on WordPress core functions. jquery and thickbox as deps is standard WP."},
+        "i18n": {"score": 10, "analysis": "No user-facing strings. Script handles JS localization externally."},
+        "accessibility": {"score": 10, "analysis": "No direct UI. Enqueues media uploader which is accessible by default."}
+      },
+      "overall_score": 84,
+      "key_observation": "Standard WP script enqueuing with good backward-compat guard for wp_enqueue_media"
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Uploader::uploader_style",
+    "code": "function uploader_style () { wp_enqueue_style( 'thickbox' ); wp_enqueue_style( 'a3-uploader-style', $this->admin_uploader_url() . '/uploader.css', array(), $this->framework_version ); if ( is_rtl() ) { wp_enqueue_style( 'a3-uploader-style-rtl', $this->admin_uploader_url() . '/uploader.rtl.css', array(), $this->framework_version ); } }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Correct WP enqueue pattern. Proper RTL detection with is_rtl(). Standard WP styling practice."},
+        "sql_safety": {"score": 10, "analysis": "No SQL. Style enqueuing only."},
+        "security": {"score": 8, "analysis": "Internal file paths, no user input. thickbox dependency is standard WP core. Safe."},
+        "performance": {"score": 8, "analysis": "Efficient enqueue. RTL CSS loaded conditionally saves bandwidth for LTR sites."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct use of wp_enqueue_style and is_rtl(). Proper dependency array (empty = no deps). Version for cache busting."},
+        "code_quality": {"score": 7, "analysis": "Clean conditional RTL handling. Standard pattern."},
+        "dependency_integrity": {"score": 8, "analysis": "Relies on thickbox (WP core) and framework_version property."},
+        "i18n": {"score": 10, "analysis": "No user-facing strings. RTL is a layout concern, not translation."},
+        "accessibility": {"score": 9, "analysis": "RTL support improves accessibility for Arabic/Hebrew users. Thickbox is WP core accessible."}
+      },
+      "overall_score": 85,
+      "key_observation": "Clean style enqueuing with conditional RTL CSS support"
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1::__construct",
+    "code": "function __construct() { $this->settings_include(); $this->tab_init(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Standard WP plugin class constructor. No WP-specific conventions violated."},
+        "sql_safety": {"score": 10, "analysis": "No SQL. Just method calls."},
+        "security": {"score": 9, "analysis": "No user input or output. Delegates to other methods which handle their own safety."},
+        "performance": {"score": 7, "analysis": "Two method calls during construction. settings_include() creates multiple objects and sets globals which adds latency at construction time."},
+        "wp_api_usage": {"score": 7, "analysis": "Delegates to methods that use WP hooks. Constructor itself is generic OOP."},
+        "code_quality": {"score": 6, "analysis": "Minimal constructor but does heavy lifting by calling two potentially expensive methods. Missing visibility modifiers on called methods."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on $this->settings_include() and $this->tab_init() both existing and working correctly."},
+        "i18n": {"score": 10, "analysis": "No user-facing strings in constructor."},
+        "accessibility": {"score": 10, "analysis": "No UI. N/A."}
+      },
+      "overall_score": 79,
+      "key_observation": "Minimal constructor with delegated initialization, standard WP class pattern"
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1::tab_init",
+    "code": "function tab_init() { add_filter( $this->plugin_name . '-' . $this->parent_page . '_settings_tabs_array', array( $this, 'add_tab' ), $this->position ); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Standard WP add_filter usage with proper callback array syntax. Hook name constructed from properties."},
+        "sql_safety": {"score": 10, "analysis": "No SQL. Hook registration only."},
+        "security": {"score": 8, "analysis": "No user input. Hook name is internal property-based. Safe."},
+        "performance": {"score": 9, "analysis": "Single filter registration. Deferred execution. Negligible cost."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct add_filter usage with priority $this->position. Standard WP plugin settings integration."},
+        "code_quality": {"score": 7, "analysis": "Single line of logic. Clean and focused."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on $this->plugin_name, $this->parent_page, $this->position, and add_tab() existing."},
+        "i18n": {"score": 10, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 10, "analysis": "No UI. N/A."}
+      },
+      "overall_score": 83,
+      "key_observation": "Standard WP settings tab filter registration with no issues"
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1::tab_data",
+    "code": "function tab_data() { $tab_data = array( 'name' => 'a3-rslider-template-1', 'label' => \\A3Rev\\RSlider\\Functions::get_slider_template( 'template-1' ), 'callback_function' => 'a3_responsive_slider_template_1_tab_manager', ); if ( $this->tab_data ) return $this->tab_data; return $this->tab_data = $tab_data; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Tab name is hardcoded string (acceptable as internal identifier). Uses static class call for label. Standard array structure."},
+        "sql_safety": {"score": 10, "analysis": "No SQL. Returns metadata array."},
+        "security": {"score": 8, "analysis": "No user input. Label comes from get_slider_template() which may return user content but that is display-level concern."},
+        "performance": {"score": 8, "analysis": "Lazy-load pattern with $this->tab_data cache check. Creates array once, returns cached on subsequent calls. O(1) after first call."},
+        "wp_api_usage": {"score": 7, "analysis": "Tab data structure follows WP settings tab convention. No direct WP API call but standard WP pattern."},
+        "code_quality": {"score": 7, "analysis": "Lazy initialization pattern is good. Tab data uses static identifier which is correct. Hardcoded name string is acceptable for internal config."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on \\A3Rev\\RSlider\\Functions::get_slider_template() which is an external class in the plugin namespace."},
+        "i18n": {"score": 9, "analysis": "Tab label uses get_slider_template() which likely handles localization. Tab name 'a3-rslider-template-1' is internal, correctly untranslated."},
+        "accessibility": {"score": 10, "analysis": "No UI output. Metadata array. N/A."}
+      },
+      "overall_score": 82,
+      "key_observation": "Lazy-loaded tab config with proper caching and no SQL/security concerns"
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1::add_tab",
+    "code": "function add_tab( $tabs_array ) { if ( ! is_array( $tabs_array ) ) $tabs_array = array(); $tabs_array[] = $this->tab_data(); return $tabs_array; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Input validation with is_array() before use. Standard WP filter callback pattern."},
+        "sql_safety": {"score": 10, "analysis": "No SQL. Array manipulation only."},
+        "security": {"score": 9, "analysis": "Validates input type, appends safe tab data. No user input passed through."},
+        "performance": {"score": 9, "analysis": "O(1) array push. Cheap filter callback."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct filter callback signature (accepts and returns the filtered array). Standard WP pattern."},
+        "code_quality": {"score": 8, "analysis": "Defensive is_array check, clean append, clear return. Well-structured filter callback."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on $this->tab_data() method."},
+        "i18n": {"score": 10, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 10, "analysis": "No UI. N/A."}
+      },
+      "overall_score": 86,
+      "key_observation": "Defensive filter callback with is_array guard and clean array append"
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1::settings_include",
+    "code": "function settings_include() { global $a3_responsive_sider_template_1_global_settings; $a3_responsive_sider_template_1_global_settings = new FrameWork\\Settings\\Template_1_Global(); global $a3_responsive_sider_template_1_dimensions_settings; $a3_responsive_sider_template_1_dimensions_settings = new FrameWork\\Settings\\Template_1_Dimensions(); global $a3_responsive_sider_template_1_slider_styles_settings; $a3_responsive_sider_template_1_slider_styles_settings = new FrameWork\\Settings\\Template_1_Slider_Styles(); global $a3_responsive_sider_template_1_control_settings; $a3_responsive_sider_template_1_control_settings = new FrameWork\\Settings\\Template_1_Control(); global $a3_responsive_sider_template_1_pager_settings; $a3_responsive_sider_template_1_pager_settings = new FrameWork\\Settings\\Template_1_Pager(); global $a3_responsive_sider_template_1_title_settings; $a3_responsive_sider_template_1_title_settings = new FrameWork\\Settings\\Template_1_Title(); global $a3_responsive_sider_template_1_caption_settings; $a3_responsive_sider_template_1_caption_settings = new FrameWork\\Settings\\Template_1_Caption(); global $a3_responsive_sider_template_1_readmore_settings; $a3_responsive_sider_template_1_readmore_settings = new FrameWork\\Settings\\Template_1_ReadMore(); global $a3_responsive_sider_template_1_shortcode_settings; $a3_responsive_sider_template_1_shortcode_settings = new FrameWork\\Settings\\Template_1_Shortcode(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 4, "analysis": "Heavy use of global variables is discouraged in WP plugin development. Typo in variable name: 'sider' instead of 'slider'. Repeated pattern suggests poor DRY compliance."},
+        "sql_safety": {"score": 10, "analysis": "No SQL. Object instantiation only."},
+        "security": {"score": 6, "analysis": "Globals leak object references into the global namespace which can cause naming collisions in large WP installs. No user input involved though."},
+        "performance": {"score": 5, "analysis": "Instantiates 10 objects unconditionally during constructor, most of which may never be used. Wasteful memory allocation. Could be lazy-loaded."},
+        "wp_api_usage": {"score": 5, "analysis": "Abuses global scope for what should be class properties or DI-injected dependencies. Not following WP plugin architecture best practices."},
+        "code_quality": {"score": 4, "analysis": "Serious code smell: 10 global variable assignments with a typo (sider vs slider). Repetitive boilerplate. Should use an array or DI container. Violates SRP."},
+        "dependency_integrity": {"score": 6, "analysis": "Depends on 10 distinct FrameWork\\Settings\\ classes all being available. Fragile coupling."},
+        "i18n": {"score": 10, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 10, "analysis": "No UI. N/A."}
+      },
+      "overall_score": 62,
+      "key_observation": "Code smell: globals abuse with 10 redundant instantiations and a typo (sider vs slider)"
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_1::tab_manager",
+    "code": "function tab_manager() { $this->plugin_extension_start(); $GLOBALS[$this->plugin_prefix.'admin_init']->admin_settings_tab( $this->parent_page, $this->tab_data() ); $this->plugin_extension_end(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "analysis": "Uses $GLOBALS direct access which is non-standard WP practice. Plugin extension hooks are custom. Acceptable but not ideal."},
+        "sql_safety": {"score": 10, "analysis": "No SQL. Admin UI rendering call."},
+        "security": {"score": 6, "analysis": "$GLOBALS direct access is risky if $this->plugin_prefix contains user-influenced data. However context suggests these are internal constants. Tab data is passed but not validated."},
+        "performance": {"score": 7, "analysis": "Two hook calls + one method call. Standard admin tab rendering cost."},
+        "wp_api_usage": {"score": 6, "analysis": "$GLOBALS direct access is not WP API compliant. Should use a registered singleton or DI container. admin_settings_tab is a custom method."},
+        "code_quality": {"score": 6, "analysis": "Clean structure with extension hooks, but $GLOBALS[$this->plugin_prefix.'admin_init'] is fragile. Dynamic global key construction is a code smell."},
+        "dependency_integrity": {"score": 5, "analysis": "Depends on $GLOBALS[$key] existing, $this->plugin_extension_start/end hooks, $this->parent_page, and $this->tab_data(). Fragile global state dependency."},
+        "i18n": {"score": 10, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 10, "analysis": "No UI output directly. Delegates to admin_settings_tab which presumably renders admin HTML."}
+      },
+      "overall_score": 69,
+      "key_observation": "Fragile $GLOBALS dynamic key access pattern for admin init delegation"
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_2::__construct",
+    "code": "function __construct() { $this->settings_include(); $this->tab_init(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Standard WP plugin class constructor. Identical pattern to Template_1."},
+        "sql_safety": {"score": 10, "analysis": "No SQL. Just method calls."},
+        "security": {"score": 9, "analysis": "No user input or output. Delegates to other methods."},
+        "performance": {"score": 7, "analysis": "Two method calls during construction. Same settings_include performance concern as Template_1."},
+        "wp_api_usage": {"score": 7, "analysis": "Delegates to methods that use WP hooks. Generic OOP constructor."},
+        "code_quality": {"score": 6, "analysis": "Minimal but delegates heavy work. Duplicate of Template_1 pattern without additional value."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on $this->settings_include() and $this->tab_init()."},
+        "i18n": {"score": 10, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 10, "analysis": "No UI. N/A."}
+      },
+      "overall_score": 79,
+      "key_observation": "Identical constructor pattern to Template_1, delegates initialization"
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_2::tab_init",
+    "code": "function tab_init() { add_filter( $this->plugin_name . '-' . $this->parent_page . '_settings_tabs_array', array( $this, 'add_tab' ), $this->position ); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Standard WP add_filter pattern. Identical to Template_1::tab_init."},
+        "sql_safety": {"score": 10, "analysis": "No SQL. Hook registration only."},
+        "security": {"score": 8, "analysis": "No user input. Internal property-based hook name."},
+        "performance": {"score": 9, "analysis": "Single filter registration. Negligible cost."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct add_filter with priority. Standard WP pattern."},
+        "code_quality": {"score": 7, "analysis": "Clean, single-line filter registration."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on $this->plugin_name, $this->parent_page, $this->position, and add_tab()."},
+        "i18n": {"score": 10, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 10, "analysis": "No UI. N/A."}
+      },
+      "overall_score": 83,
+      "key_observation": "Identical filter registration to Template_1, no issues"
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_2::tab_data",
+    "code": "function tab_data() { $tab_data = array( 'name' => 'a3-rslider-template-2', 'label' => \\A3Rev\\RSlider\\Functions::get_slider_template( 'template-2' ), 'callback_function' => 'a3_responsive_slider_template_2_tab_manager', ); if ( $this->tab_data ) return $this->tab_data; return $this->tab_data = $tab_data; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Same pattern as Template_1. Tab name is hardcoded internal identifier."},
+        "sql_safety": {"score": 10, "analysis": "No SQL. Metadata array."},
+        "security": {"score": 8, "analysis": "No user input. Label from get_slider_template()."},
+        "performance": {"score": 8, "analysis": "Lazy-load caching pattern. O(1) after first call."},
+        "wp_api_usage": {"score": 7, "analysis": "Standard WP settings tab structure. No direct WP API."},
+        "code_quality": {"score": 7, "analysis": "Lazy initialization with caching. Hardcoded name acceptable for internal config."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on \\A3Rev\\RSlider\\Functions::get_slider_template()."},
+        "i18n": {"score": 9, "analysis": "Label uses get_slider_template(). Internal name correctly untranslated."},
+        "accessibility": {"score": 10, "analysis": "No UI. N/A."}
+      },
+      "overall_score": 82,
+      "key_observation": "Identical lazy-loaded tab config to Template_1, no differences"
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_2::add_tab",
+    "code": "function add_tab( $tabs_array ) { if ( ! is_array( $tabs_array ) ) $tabs_array = array(); $tabs_array[] = $this->tab_data(); return $tabs_array; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Standard WP filter callback with input validation."},
+        "sql_safety": {"score": 10, "analysis": "No SQL. Array manipulation."},
+        "security": {"score": 9, "analysis": "Validates input, appends safe tab data."},
+        "performance": {"score": 9, "analysis": "O(1) array push. Cheap."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct filter callback signature and pattern."},
+        "code_quality": {"score": 8, "analysis": "Defensive is_array check, clean append."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on $this->tab_data()."},
+        "i18n": {"score": 10, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 10, "analysis": "No UI. N/A."}
+      },
+      "overall_score": 86,
+      "key_observation": "Identical safe filter callback to Template_1"
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_2::settings_include",
+    "code": "function settings_include() { global $a3_responsive_sider_template_2_global_settings; $a3_responsive_sider_template_2_global_settings = new FrameWork\\Settings\\Template_2_Global(); global $a3_responsive_sider_template_2_dimensions_settings; $a3_responsive_sider_template_2_dimensions_settings = new FrameWork\\Settings\\Template_2_Dimensions(); global $a3_responsive_sider_template_2_slider_styles_settings; $a3_responsive_sider_template_2_slider_styles_settings = new FrameWork\\Settings\\Template_2_Slider_Styles(); global $a3_responsive_sider_template_2_control_settings; $a3_responsive_sider_template_2_control_settings = new FrameWork\\Settings\\Template_2_Control(); global $a3_responsive_sider_template_2_pager_settings; $a3_responsive_sider_template_2_pager_settings = new FrameWork\\Settings\\Template_2_Pager(); global $a3_responsive_sider_template_2_title_settings; $a3_responsive_sider_template_2_title_settings = new FrameWork\\Settings\\Template_2_Title(); global $a3_responsive_sider_template_2_caption_settings; $a3_responsive_sider_template_2_caption_settings = new FrameWork\\Settings\\Template_2_Caption(); global $a3_responsive_sider_template_2_readmore_settings; $a3_responsive_sider_template_2_readmore_settings = new FrameWork\\Settings\\Template_2_ReadMore(); global $a3_responsive_sider_template_2_shortcode_settings; $a3_responsive_sider_template_2_shortcode_settings = new FrameWork\\Settings\\Template_2_Shortcode(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 4, "analysis": "Same globals abuse as Template_1. Same typo 'sider' instead of 'slider'. 10 redundant global assignments. Poor DRY."},
+        "sql_safety": {"score": 10, "analysis": "No SQL. Object instantiation."},
+        "security": {"score": 6, "analysis": "Globals leak into global namespace. No user input."},
+        "performance": {"score": 5, "analysis": "10 unconditional object instantiations. Memory waste for unused settings."},
+        "wp_api_usage": {"score": 5, "analysis": "Abuses global scope. Should use class properties or DI."},
+        "code_quality": {"score": 4, "analysis": "Same code smell as Template_1. Duplicate boilerplate. Should use array/DI container."},
+        "dependency_integrity": {"score": 6, "analysis": "10 FrameWork\\Settings\\ dependencies. Fragile."},
+        "i18n": {"score": 10, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 10, "analysis": "No UI. N/A."}
+      },
+      "overall_score": 62,
+      "key_observation": "Identical globals abuse and typo to Template_1, duplicate code"
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_2::tab_manager",
+    "code": "function tab_manager() { $this->plugin_extension_start(); $GLOBALS[$this->plugin_prefix.'admin_init']->admin_settings_tab( $this->parent_page, $this->tab_data() ); $this->plugin_extension_end(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "analysis": "Same $GLOBALS access as Template_1. Custom plugin hooks."},
+        "sql_safety": {"score": 10, "analysis": "No SQL. Admin UI call."},
+        "security": {"score": 6, "analysis": "$GLOBALS dynamic key is fragile. No user input."},
+        "performance": {"score": 7, "analysis": "Standard admin tab rendering."},
+        "wp_api_usage": {"score": 6, "analysis": "$GLOBALS access not WP API compliant."},
+        "code_quality": {"score": 6, "analysis": "Same fragility as Template_1. Dynamic global key construction."},
+        "dependency_integrity": {"score": 5, "analysis": "Depends on $GLOBALS[$key] existing. Fragile."},
+        "i18n": {"score": 10, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 10, "analysis": "No UI output directly. N/A."}
+      },
+      "overall_score": 69,
+      "key_observation": "Identical $GLOBALS delegation to Template_1, no improvements"
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Mobile_Pager::tab_init",
+    "code": "function tab_init() { add_filter( $this->plugin_name . '-' . $this->parent_page . '_settings_tabs_array', array( $this, 'add_tab' ), $this->position ); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Standard WP add_filter. Consistent with Template_1 and Template_2."},
+        "sql_safety": {"score": 10, "analysis": "No SQL. Hook registration."},
+        "security": {"score": 8, "analysis": "No user input. Internal property-based hook."},
+        "performance": {"score": 9, "analysis": "Single filter. Negligible."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct add_filter with priority."},
+        "code_quality": {"score": 7, "analysis": "Clean single-line registration."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on class properties and add_tab()."},
+        "i18n": {"score": 10, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 10, "analysis": "No UI. N/A."}
+      },
+      "overall_score": 83,
+      "key_observation": "Consistent filter registration pattern, identical to parent templates"
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Mobile_Pager::tab_data",
+    "code": "function tab_data() { $tab_data = array( 'name' => 'pager', 'label' => __( 'Pager', 'a3-responsive-slider' ), 'callback_function' => 'a3_responsive_slider_template_mobile_pager_tab', ); if ( $this->tab_data ) return $this->tab_data; return $this->tab_data = $tab_data; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 9, "analysis": "Correct use of __() for translation with text domain 'a3-responsive-slider'. Tab name 'pager' is internal (correctly untranslated). Follows WP i18n best practices."},
+        "sql_safety": {"score": 10, "analysis": "No SQL. Metadata array."},
+        "security": {"score": 8, "analysis": "No user input. __() wraps safe string literal."},
+        "performance": {"score": 8, "analysis": "Lazy-load caching. __() is a simple gettext lookup, negligible cost."},
+        "wp_api_usage": {"score": 9, "analysis": "Correct use of __() translation function with proper text domain. This is the best i18n practice among all tab_data examples in this batch."},
+        "code_quality": {"score": 8, "analysis": "Clean lazy-initialization with proper translation. Only tab in this batch that correctly uses __(). Text domain matches plugin slug."},
+        "dependency_integrity": {"score": 8, "analysis": "Depends on WordPress gettext functions and $this->tab_data property."},
+        "i18n": {"score": 10, "analysis": "Uses __() with correct text domain 'a3-responsive-slider'. Best i18n in this batch. Internal 'pager' name correctly untranslated."},
+        "accessibility": {"score": 10, "analysis": "No UI. N/A."}
+      },
+      "overall_score": 88,
+      "key_observation": "Only tab_data with correct __() translation and proper text domain"
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": {
+      "total_citations": 0,
+      "grounded_citations": 0,
+      "hallucinated_citations": 0,
+      "hallucination_ratio": 0.0
+    }
+  }
+]

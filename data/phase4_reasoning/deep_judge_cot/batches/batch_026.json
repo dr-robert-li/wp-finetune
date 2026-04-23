@@ -1,0 +1,202 @@
+[
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Card_Footer::subtab_data",
+    "code": "function subtab_data() { $subtab_data = array( 'name' => 'card-footer', 'label' => __( 'Card Footer', 'a3-responsive-slider' ), 'callback_function' => 'a3_responsive_sider_template_card_footer_settings_form', ); if ( $this->subtab_data ) return $this->subtab_data; return $this->subtab_data = $subtab_data; }",
+    "reasoning": { "verdict": "PASS", "dimension_analysis": { "wpcs_compliance": { "score": 8, "analysis": "Follows WP coding standards with proper array formatting and translation function usage." }, "sql_safety": { "score": 9, "analysis": "No SQL queries present. Pure configuration data structure." }, "security": { "score": 7, "analysis": "Returns static config data. No user input handling needed but uses loose truthy check on line return." }, "performance": { "score": 8, "analysis": "O(1) return with memoization pattern. Minimal overhead." }, "wp_api_usage": { "score": 7, "analysis": "Proper use of __() for i18n. Callback reference is a string which is correct WP convention." }, "code_quality": { "score": 7, "analysis": "Clean memoization pattern. Double return in one statement is acceptable WP style." }, "dependency_integrity": { "score": 7, "analysis": "References external callback function that must exist externally. No direct dependencies." }, "i18n": { "score": 9, "analysis": "All user-facing strings properly wrapped in __() with text domain." }, "accessibility": { "score": 9, "analysis": "Config data for UI. No accessibility concerns at this level." }}, "overall_score": 78, "key_observation": "Standard WP settings subtab config with i18n and memoization pattern." },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Card_Footer::add_subtab",
+    "code": "function add_subtab( $subtabs_array ) { if ( ! is_array( $subtabs_array ) ) $subtabs_array = array(); $subtabs_array[] = $this->subtab_data(); return $subtabs_array; }",
+    "reasoning": { "verdict": "PASS", "dimension_analysis": { "wpcs_compliance": { "score": 8, "analysis": "Proper type checking with is_array() and WP-style array append." }, "sql_safety": { "score": 9, "analysis": "No SQL. Pure array manipulation." }, "security": { "score": 7, "analysis": "Defensive type check prevents non-array injection. Safe." }, "performance": { "score": 8, "analysis": "Minimal array push operation. O(1)." }, "wp_api_usage": { "score": 7, "analysis": "Standard WP filter callback pattern. Returns modified array as expected." }, "code_quality": { "score": 7, "analysis": "Guard clause for type safety. Clean and readable." }, "dependency_integrity": { "score": 7, "analysis": "Depends on subtab_data() returning valid data. No external library deps." }, "i18n": { "score": 9, "analysis": "N/A - no user-facing strings in this method." }, "accessibility": { "score": 9, "analysis": "N/A - backend data structure operation." }}, "overall_score": 78, "key_observation": "Defensive array append for WP filter hook integration." },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Card_Footer::settings_form",
+    "code": "function settings_form() { $output = ''; $output .= $GLOBALS[$this->plugin_prefix.'admin_interface']->admin_forms( $this->form_fields, $this->form_key, $this->option_name, $this->form_messages ); return $output; }",
+    "reasoning": { "verdict": "PASS", "dimension_analysis": { "wpcs_compliance": { "score": 6, "analysis": "Uses $GLOBALS which is generally discouraged in OOP WP code. Prefer dependency injection." }, "sql_safety": { "score": 9, "analysis": "No SQL. Delegates to admin interface." }, "security": { "score": 6, "analysis": "GLOBALS access is fragile and breaks encapsulation. No nonce or capability checks visible." }, "performance": { "score": 7, "analysis": "String concatenation is fine for single append. Minimal overhead." }, "wp_api_usage": { "score": 5, "analysis": "$GLOBALS usage is an anti-pattern in WP plugin development. Should use class property injection." }, "code_quality": { "score": 6, "analysis": "GLOBALS dependency reduces testability and violates encapsulation principles." }, "dependency_integrity": { "score": 5, "analysis": "Tightly coupled to $GLOBALS[$plugin_prefix.'admin_interface'] naming convention. Fragile dependency." }, "i18n": { "score": 9, "analysis": "N/A - delegates to admin_forms which handles i18n internally." }, "accessibility": { "score": 9, "analysis": "N/A - admin UI rendering delegation." }}, "overall_score": 68, "key_observation": "GLOBALS dependency is an anti-pattern but functionally correct for admin rendering." },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Card_Footer::init_form_fields",
+    "code": "function init_form_fields() { $this->form_fields = apply_filters( $this->option_name . '_settings_fields', array( array( 'name' => __( 'Card Footer Settings', 'a3-responsive-slider' ), 'type' => 'heading', ), array( 'name' => __( 'Card Footer Padding', 'a3-responsive-slider' ), 'id' => 'card_footer_padding', 'type' => 'array_textfields', 'ids' => array( ... ) ), ... )); }",
+    "reasoning": { "verdict": "PASS", "dimension_analysis": { "wpcs_compliance": { "score": 7, "analysis": "Uses apply_filters for extensibility. Large array structure but valid WP settings pattern." }, "sql_safety": { "score": 9, "analysis": "No SQL. Pure settings definition." }, "security": { "score": 7, "analysis": "Settings are for admin only. No user input. Default values provided for all fields." }, "performance": { "score": 6, "analysis": "Large array definition evaluated on each call. Could benefit from caching." }, "wp_api_usage": { "score": 8, "analysis": "Proper apply_filters usage. Standard WP admin settings field registration." }, "code_quality": { "score": 6, "analysis": "Deeply nested array structure. Hard to read but follows WP settings convention." }, "dependency_integrity": { "score": 6, "analysis": "Depends on custom field types (array_textfields, color, switcher_checkbox) not in core WP." }, "i18n": { "score": 9, "analysis": "All labels wrapped in __() with correct text domain." }, "accessibility": { "score": 8, "analysis": "Admin settings. Accessibility depends on admin_forms renderer implementation." }}, "overall_score": 72, "key_observation": "Comprehensive admin settings with proper filter hook and i18n but deeply nested structure." },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Card_Footer::include_script",
+    "code": "function include_script() { ?><script>(function($){$(document).ready(function(){if ($('input.card_footer_top_border_type:checked').val() == 'cog_border'){...} $(document).on('a3rev-ui-onoff_checkbox-switch', '.card_footer_top_border_type', function(...){...}); });})(jQuery);</script><?php }",
+    "reasoning": { "verdict": "PASS", "dimension_analysis": { "wpcs_compliance": { "score": 5, "analysis": "Inline script output via PHP echo is discouraged. Should use wp_enqueue_script with wp_add_inline_script." }, "sql_safety": { "score": 9, "analysis": "No SQL. Pure client-side JS." }, "security": { "score": 5, "analysis": "Inline script without nonce. No wp_scripts API usage means no automatic dependency/version management." }, "performance": { "score": 5, "analysis": "Inline JS in PHP output increases page weight. No minification. jQuery loaded but no defer/async." }, "wp_api_usage": { "score": 4, "analysis": "Should use wp_add_inline_script() and wp_enqueue_script() instead of raw PHP echo." }, "code_quality": { "score": 6, "analysis": "IIFE pattern is good. jQuery document ready is correct. But inline PHP output is poor practice." }, "dependency_integrity": { "score": 6, "analysis": "jQuery dependency assumed available. No wp_enqueue dependency chain." }, "i18n": { "score": 9, "analysis": "N/A - no user-facing strings in JS." }, "accessibility": { "score": 8, "analysis": "JS handles UI state visibility toggle. No ARIA implications at this level." }}, "overall_score": 60, "key_observation": "Inline JS output bypasses WP script enqueue API - functional but non-standard WP practice." },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Card_Slider_Styles::__construct",
+    "code": "function __construct() { add_action( 'plugins_loaded', array( $this, 'init_form_fields' ), 1 ); $this->subtab_init(); $this->form_messages = array('success_message' => __( 'Card Container Settings successfully saved.', 'a3-responsive-slider' ), 'error_message' => __( 'Error: Card Container Settings can not save.', 'a3-responsive-slider' ), 'reset_message' => __( 'Card Container Settings successfully reseted.', 'a3-responsive-slider' )); add_action( $this->plugin_name . '_set_default_settings' , array( $this, 'set_default_settings' ) ); add_action( $this->plugin_name . '-' . $this->form_key . '_settings_init' , array( $this, 'reset_default_settings' ) ); add_action( $this->plugin_name . '-'. $this->form_key.'_settings_start', array( $this, 'pro_fields_before' ) ); add_action( $this->plugin_name . '-'. $this->form_key.'_settings_end', array( $this, 'pro_fields_after' ) ); }",
+    "reasoning": { "verdict": "PASS", "dimension_analysis": { "wpcs_compliance": { "score": 7, "analysis": "Constructor with add_action calls follows WP plugin class pattern. Dynamic hook names are consistent." }, "sql_safety": { "score": 9, "analysis": "No SQL. Pure hook registration." }, "security": { "score": 7, "analysis": "Hook registration is safe. No user input involved. Message strings use __() correctly." }, "performance": { "score": 8, "analysis": "Minimal overhead in constructor. Standard WP hook registration pattern." }, "wp_api_usage": { "score": 7, "analysis": "Proper add_action usage. Dynamic hook names follow plugin convention. plugins_loaded priority 1 is appropriate." }, "code_quality": { "score": 7, "analysis": "Clear constructor pattern. Some string repetition in message array could be extracted." }, "dependency_integrity": { "score": 7, "analysis": "Depends on external hooks being registered elsewhere (pro_fields_before/after). Standard WP extension point pattern." }, "i18n": { "score": 9, "analysis": "All admin messages wrapped in __() with correct text domain." }, "accessibility": { "score": 9, "analysis": "N/A - constructor only registers hooks." }}, "overall_score": 78, "key_observation": "Standard WP plugin class constructor with proper hook registration and i18n." },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Card_Slider_Styles::subtab_init",
+    "code": "function subtab_init() { add_filter( $this->plugin_name . '-' . $this->parent_tab . '_settings_subtabs_array', array( $this, 'add_subtab' ), $this->position ); }",
+    "reasoning": { "verdict": "PASS", "dimension_analysis": { "wpcs_compliance": { "score": 8, "analysis": "Clean single-line add_filter. Standard WP hook registration pattern." }, "sql_safety": { "score": 9, "analysis": "No SQL. Pure filter registration." }, "security": { "score": 8, "analysis": "Hook registration only. No user input. Safe." }, "performance": { "score": 9, "analysis": "Minimal overhead. Single add_filter call." }, "wp_api_usage": { "score": 8, "analysis": "Correct add_filter usage for WP settings subtabs extension." }, "code_quality": { "score": 8, "analysis": "Elegant single-line method. Clear purpose." }, "dependency_integrity": { "score": 7, "analysis": "Requires $this->plugin_name and $this->parent_tab to be set. Standard class property dependency." }, "i18n": { "score": 9, "analysis": "N/A - no user-facing strings." }, "accessibility": { "score": 9, "analysis": "N/A - backend hook registration." }}, "overall_score": 83, "key_observation": "Concise filter registration for WP settings subtab extension point." },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Card_Slider_Styles::subtab_data",
+    "code": "function subtab_data() { $subtab_data = array( 'name' => 'slider-styles', 'label' => __( 'Card Container', 'a3-responsive-slider' ), 'callback_function' => 'a3_responsive_sider_template_card_slider_styles_settings_form', ); if ( $this->subtab_data ) return $this->subtab_data; return $this->subtab_data = $subtab_data; }",
+    "reasoning": { "verdict": "PASS", "dimension_analysis": { "wpcs_compliance": { "score": 8, "analysis": "Consistent with other subtab_data methods. Proper WP array formatting." }, "sql_safety": { "score": 9, "analysis": "No SQL. Pure config array." }, "security": { "score": 7, "analysis": "Returns static config. No input handling needed." }, "performance": { "score": 8, "analysis": "Memoization pattern avoids re-computation." }, "wp_api_usage": { "score": 7, "analysis": "Proper __() usage. Callback reference is string as expected." }, "code_quality": { "score": 7, "analysis": "Identical pattern to other subtab_data methods. DRY violation across classes but fine within method." }, "dependency_integrity": { "score": 7, "analysis": "References external callback. No direct deps." }, "i18n": { "score": 9, "analysis": "Label properly translated with text domain." }, "accessibility": { "score": 9, "analysis": "N/A - config data only." }}, "overall_score": 78, "key_observation": "Duplicate subtab_data pattern for slider styles template - consistent with codebase." },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Card_Slider_Styles::add_subtab",
+    "code": "function add_subtab( $subtabs_array ) { if ( ! is_array( $subtabs_array ) ) $subtabs_array = array(); $subtabs_array[] = $this->subtab_data(); return $subtabs_array; }",
+    "reasoning": { "verdict": "PASS", "dimension_analysis": { "wpcs_compliance": { "score": 8, "analysis": "Identical pattern to Footer::add_subtab. Type-safe with is_array guard." }, "sql_safety": { "score": 9, "analysis": "No SQL." }, "security": { "score": 7, "analysis": "Guard clause prevents type confusion." }, "performance": { "score": 8, "analysis": "O(1) array push." }, "wp_api_usage": { "score": 7, "analysis": "Standard WP filter callback pattern." }, "code_quality": { "score": 7, "analysis": "Identical to other add_subtab methods. DRY concern across class but correct." }, "dependency_integrity": { "score": 7, "analysis": "Depends on subtab_data() method." }, "i18n": { "score": 9, "analysis": "N/A - no strings." }, "accessibility": { "score": 9, "analysis": "N/A - backend data op." }}, "overall_score": 78, "key_observation": "Identical add_subtab implementation across template classes - consistent pattern." },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Card_Slider_Styles::settings_form",
+    "code": "function settings_form() { $output = ''; $output .= $GLOBALS[$this->plugin_prefix.'admin_interface']->admin_forms( $this->form_fields, $this->form_key, $this->option_name, $this->form_messages ); return $output; }",
+    "reasoning": { "verdict": "PASS", "dimension_analysis": { "wpcs_compliance": { "score": 6, "analysis": "Same GLOBALS anti-pattern as Footer::settings_form." }, "sql_safety": { "score": 9, "analysis": "No SQL." }, "security": { "score": 6, "analysis": "GLOBALS dependency breaks encapsulation." }, "performance": { "score": 7, "analysis": "Minimal overhead." }, "wp_api_usage": { "score": 5, "analysis": "GLOBALS is not standard WP API usage." }, "code_quality": { "score": 6, "analysis": "Identical to Footer::settings_form. Duplication across classes." }, "dependency_integrity": { "score": 5, "analysis": "Tight coupling to GLOBALS naming convention." }, "i18n": { "score": 9, "analysis": "N/A - delegates rendering." }, "accessibility": { "score": 9, "analysis": "N/A." }}, "overall_score": 68, "key_observation": "Same GLOBALS anti-pattern repeated across template classes." },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Card_Slider_Styles::init_form_fields",
+    "code": "function init_form_fields() { $this->form_fields = apply_filters( $this->option_name . '_settings_fields', array( array( 'name' => __( 'Card Container Settings', 'a3-responsive-slider' ), 'type' => 'heading', ), array( 'name' => __( 'Card Container Margin', 'a3-responsive-slider' ), 'id' => 'card_container_margin', 'type' => 'array_textfields', 'ids' => array( ... ) ), ... )); }",
+    "reasoning": { "verdict": "PASS", "dimension_analysis": { "wpcs_compliance": { "score": 7, "analysis": "Standard apply_filters pattern. Deeply nested but valid WP settings structure." }, "sql_safety": { "score": 9, "analysis": "No SQL." }, "security": { "score": 7, "analysis": "Admin-only settings with defaults. No user input exposure." }, "performance": { "score": 6, "analysis": "Large array eval on each call. Could cache." }, "wp_api_usage": { "score": 8, "analysis": "Proper apply_filters for settings extensibility." }, "code_quality": { "score": 6, "analysis": "Very deep nesting (5+ levels) reduces readability." }, "dependency_integrity": { "score": 6, "analysis": "Custom field types (array_textfields, color, border, box_shadow) are plugin-specific." }, "i18n": { "score": 9, "analysis": "All labels translated with correct text domain." }, "accessibility": { "score": 8, "analysis": "Depends on admin_forms renderer for ARIA compliance." }}, "overall_score": 72, "key_observation": "Comprehensive card container settings mirroring footer structure with custom field types." },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Card_ReadMore::__construct",
+    "code": "function __construct() { add_action( 'plugins_loaded', array( $this, 'init_form_fields' ), 1 ); $this->subtab_init(); $this->form_messages = array('success_message' => __( 'Read More Settings successfully saved.', 'a3-responsive-slider' ), 'error_message' => __( 'Error: Read More Settings can not save.', 'a3-responsive-slider' ), 'reset_message' => __( 'Read More Settings successfully reseted.', 'a3-responsive-slider' )); add_action( $this->plugin_name . '-' . $this->form_key . '_settings_end', array( $this, 'include_script' ) ); add_action( $this->plugin_name . '_set_default_settings' , array( $this, 'set_default_settings' ) ); add_action( $this->plugin_name . '-' . $this->form_key . '_settings_init' , array( $this, 'reset_default_settings' ) ); add_action( $this->plugin_name . '-'. $this->form_key.'_settings_start', array( $this, 'pro_fields_before' ) ); add_action( $this->plugin_name . '-'. $this->form_key.'_settings_end', array( $this, 'pro_fields_after' ) ); }",
+    "reasoning": { "verdict": "PASS", "dimension_analysis": { "wpcs_compliance": { "score": 7, "analysis": "Standard WP constructor pattern. Same structure as Slider_Styles constructor." }, "sql_safety": { "score": 9, "analysis": "No SQL." }, "security": { "score": 7, "analysis": "Hook registration only. No user input." }, "performance": { "score": 8, "analysis": "Minimal constructor overhead." }, "wp_api_usage": { "score": 7, "analysis": "Proper add_action usage. Dynamic hook names." }, "code_quality": { "score": 7, "analysis": "Repetitive pattern across classes. Could use parent trait but works correctly." }, "dependency_integrity": { "score": 7, "analysis": "Depends on external hooks (pro_fields_before/after, set_default_settings, reset_default_settings)." }, "i18n": { "score": 9, "analysis": "All messages wrapped in __() with text domain." }, "accessibility": { "score": 9, "analysis": "N/A - hook registration only." }}, "overall_score": 78, "key_observation": "Constructor template repeated for ReadMore class - consistent WP pattern with i18n." },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Card_ReadMore::subtab_init",
+    "code": "function subtab_init() { add_filter( $this->plugin_name . '-' . $this->parent_tab . '_settings_subtabs_array', array( $this, 'add_subtab' ), $this->position ); }",
+    "reasoning": { "verdict": "PASS", "dimension_analysis": { "wpcs_compliance": { "score": 8, "analysis": "Clean single-line add_filter. Standard pattern." }, "sql_safety": { "score": 9, "analysis": "No SQL." }, "security": { "score": 8, "analysis": "Safe hook registration." }, "performance": { "score": 9, "analysis": "Minimal overhead." }, "wp_api_usage": { "score": 8, "analysis": "Correct WP filter registration." }, "code_quality": { "score": 8, "analysis": "Elegant. Single responsibility." }, "dependency_integrity": { "score": 7, "analysis": "Requires class properties set." }, "i18n": { "score": 9, "analysis": "N/A." }, "accessibility": { "score": 9, "analysis": "N/A." }}, "overall_score": 83, "key_observation": "Identical subtab_init across all template classes - consistent extension point." },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Card_ReadMore::subtab_data",
+    "code": "function subtab_data() { $subtab_data = array( 'name' => 'readmore', 'label' => __( 'Read More', 'a3-responsive-slider' ), 'callback_function' => 'a3_responsive_sider_template_card_readmore_settings_form', ); if ( $this->subtab_data ) return $this->subtab_data; return $this->subtab_data = $subtab_data; }",
+    "reasoning": { "verdict": "PASS", "dimension_analysis": { "wpcs_compliance": { "score": 8, "analysis": "Consistent subtab_data pattern across classes." }, "sql_safety": { "score": 9, "analysis": "No SQL." }, "security": { "score": 7, "analysis": "Static config data. Safe." }, "performance": { "score": 8, "analysis": "Memoization prevents recomputation." }, "wp_api_usage": { "score": 7, "analysis": "Proper __() usage. String callback ref." }, "code_quality": { "score": 7, "analysis": "Template method. Identical structure to other subtab_data." }, "dependency_integrity": { "score": 7, "analysis": "References external callback." }, "i18n": { "score": 9, "analysis": "Label translated with text domain." }, "accessibility": { "score": 9, "analysis": "N/A - config only." }}, "overall_score": 78, "key_observation": "Subtab config for ReadMore settings panel with memoization." },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Card_ReadMore::add_subtab",
+    "code": "function add_subtab( $subtabs_array ) { if ( ! is_array( $subtabs_array ) ) $subtabs_array = array(); $subtabs_array[] = $this->subtab_data(); return $subtabs_array; }",
+    "reasoning": { "verdict": "PASS", "dimension_analysis": { "wpcs_compliance": { "score": 8, "analysis": "Type-safe array guard. Standard pattern." }, "sql_safety": { "score": 9, "analysis": "No SQL." }, "security": { "score": 7, "analysis": "Guard clause prevents type confusion." }, "performance": { "score": 8, "analysis": "O(1) push." }, "wp_api_usage": { "score": 7, "analysis": "Standard filter callback." }, "code_quality": { "score": 7, "analysis": "Identical across classes. Consistent but DRY-violating." }, "dependency_integrity": { "score": 7, "analysis": "Depends on subtab_data()." }, "i18n": { "score": 9, "analysis": "N/A." }, "accessibility": { "score": 9, "analysis": "N/A." }}, "overall_score": 78, "key_observation": "Identical add_subtab pattern - safe array guard with memoized subtab data." },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Card_ReadMore::settings_form",
+    "code": "function settings_form() { $output = ''; $output .= $GLOBALS[$this->plugin_prefix.'admin_interface']->admin_forms( $this->form_fields, $this->form_key, $this->option_name, $this->form_messages ); return $output; }",
+    "reasoning": { "verdict": "PASS", "dimension_analysis": { "wpcs_compliance": { "score": 6, "analysis": "GLOBALS anti-pattern repeated." }, "sql_safety": { "score": 9, "analysis": "No SQL." }, "security": { "score": 6, "analysis": "GLOBALS breaks encapsulation." }, "performance": { "score": 7, "analysis": "Minimal overhead." }, "wp_api_usage": { "score": 5, "analysis": "GLOBALS not standard WP API." }, "code_quality": { "score": 6, "analysis": "Identical duplication across classes." }, "dependency_integrity": { "score": 5, "analysis": "Tight GLOBALS coupling." }, "i18n": { "score": 9, "analysis": "N/A - delegates." }, "accessibility": { "score": 9, "analysis": "N/A." }}, "overall_score": 68, "key_observation": "Repeated GLOBALS anti-pattern in ReadMore settings_form." },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Card_ReadMore::init_form_fields",
+    "code": "function init_form_fields() { $this->form_fields = apply_filters( $this->option_name . '_settings_fields', array( array( 'name' => __( 'Read More Settings', 'a3-responsive-slider' ), 'type' => 'heading', 'desc' => __( 'The Read More button / Text only shows...', 'a3-responsive-slider' ) ), array( 'name' => __( 'Button/Hyperlink', 'a3-responsive-slider' ), 'type' => 'heading', 'class' => 'readmore_settings_container' ), array( 'name' => __( 'Button or Hyperlink Type', 'a3-responsive-slider' ), 'id' => 'readmore_bt_type', 'type' => 'switcher_checkbox', 'default' => 'link', 'checked_value' => 'button', 'unchecked_value' => 'link', ... ), ... )); }",
+    "reasoning": { "verdict": "PASS", "dimension_analysis": { "wpcs_compliance": { "score": 7, "analysis": "apply_filters usage correct. Very long method (155 lines) with deep nesting." }, "sql_safety": { "score": 9, "analysis": "No SQL." }, "security": { "score": 7, "analysis": "Admin settings with defaults. No user input." }, "performance": { "score": 6, "analysis": "Large array with 20+ fields. Evaluated on each call." }, "wp_api_usage": { "score": 8, "analysis": "Proper apply_filters. Custom field types include switcher_checkbox which needs custom renderer." }, "code_quality": { "score": 5, "analysis": "155-line method with extreme nesting. Poor maintainability. Could extract field groups." }, "dependency_integrity": { "score": 6, "analysis": "Custom types: switcher_checkbox, array_textfields, color, typography, border, box_shadow - all plugin-specific." }, "i18n": { "score": 9, "analysis": "All labels, descriptions, and values translated with text domain." }, "accessibility": { "score": 8, "analysis": "Switcher checkbox and color pickers depend on admin_forms ARIA implementation." }}, "overall_score": 70, "key_observation": "Largest function in batch (155 lines) with comprehensive ReadMore styling settings but poor maintainability." },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Card_ReadMore::include_script",
+    "code": "function include_script() { ?><script>(function($){$(document).ready(function(){if ($('input.readmore_bt_type:checked').val() == 'button'){ $('.show_readmore_button_styling').css({visibility:'visible',height:'auto'}); $('.show_readmore_hyperlink_styling').css({visibility:'hidden'}); } else { ... } $(document).on('a3rev-ui-onoff_checkbox-switch', '.readmore_bt_type', function(...){ ... }); });})(jQuery);</script><?php }",
+    "reasoning": { "verdict": "PASS", "dimension_analysis": { "wpcs_compliance": { "score": 5, "analysis": "Inline PHP echo for JS. Should use wp_add_inline_script." }, "sql_safety": { "score": 9, "analysis": "No SQL." }, "security": { "score": 5, "analysis": "Inline script without wp_scripts API management." }, "performance": { "score": 5, "analysis": "Inline JS increases page weight. No versioning or caching." }, "wp_api_usage": { "score": 4, "analysis": "Bypasses wp_enqueue_script/wp_add_inline_script. jQuery dependency not managed." }, "code_quality": { "score": 6, "analysis": "IIFE and event delegation are good patterns. PHP-JS interleaving is messy." }, "dependency_integrity": { "score": 6, "analysis": "jQuery assumed. No explicit dependency chain." }, "i18n": { "score": 9, "analysis": "N/A - JS config only." }, "accessibility": { "score": 8, "analysis": "Toggles styling visibility. No direct ARIA impact." }}, "overall_score": 60, "key_observation": "Inline JS toggle for button/hyperlink styling sections - bypasses WP script API." },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Card_Control::__construct",
+    "code": "function __construct() { add_action( 'plugins_loaded', array( $this, 'init_form_fields' ), 1 ); $this->subtab_init(); $this->form_messages = array('success_message' => __( 'Controls Settings successfully saved.', 'a3-responsive-slider' ), 'error_message' => __( 'Error: Controls Settings can not save.', 'a3-responsive-slider' ), 'reset_message' => __( 'Controls Settings successfully reseted.', 'a3-responsive-slider' )); add_action( $this->plugin_name . '-' . $this->form_key . '_settings_end', array( $this, 'include_script' ) ); add_action( $this->plugin_name . '_set_default_settings' , array( $this, 'set_default_settings' ) ); add_action( $this->plugin_name . '-' . $this->form_key . '_settings_init' , array( $this, 'reset_default_settings' ) ); add_action( $this->plugin_name . '-'. $this->form_key.'_settings_start', array( $this, 'pro_fields_before' ) ); add_action( $this->plugin_name . '-'. $this->form_key.'_settings_end', array( $this, 'pro_fields_after' ) ); }",
+    "reasoning": { "verdict": "PASS", "dimension_analysis": { "wpcs_compliance": { "score": 7, "analysis": "Standard WP constructor. Identical structure to other template constructors." }, "sql_safety": { "score": 9, "analysis": "No SQL." }, "security": { "score": 7, "analysis": "Hook registration only. No input." }, "performance": { "score": 8, "analysis": "Minimal overhead." }, "wp_api_usage": { "score": 7, "analysis": "Proper add_action with dynamic hooks. plugins_loaded priority 1 correct." }, "code_quality": { "score": 7, "analysis": "Template method. Repetitive but consistent across classes." }, "dependency_integrity": { "score": 7, "analysis": "Depends on external hooks for pro fields and defaults." }, "i18n": { "score": 9, "analysis": "All messages translated with text domain." }, "accessibility": { "score": 9, "analysis": "N/A." }}, "overall_score": 78, "key_observation": "Third template class constructor using identical hook registration pattern." },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Template_Card_Control::subtab_init",
+    "code": "function subtab_init() { add_filter( $this->plugin_name . '-' . $this->parent_tab . '_settings_subtabs_array', array( $this, 'add_subtab' ), $this->position ); }",
+    "reasoning": { "verdict": "PASS", "dimension_analysis": { "wpcs_compliance": { "score": 8, "analysis": "Clean add_filter. Standard pattern." }, "sql_safety": { "score": 9, "analysis": "No SQL." }, "security": { "score": 8, "analysis": "Safe hook registration." }, "performance": { "score": 9, "analysis": "Minimal overhead." }, "wp_api_usage": { "score": 8, "analysis": "Correct WP filter usage." }, "code_quality": { "score": 8, "analysis": "Elegant single line." }, "dependency_integrity": { "score": 7, "analysis": "Requires class properties." }, "i18n": { "score": 9, "analysis": "N/A." }, "accessibility": { "score": 9, "analysis": "N/A." }}, "overall_score": 83, "key_observation": "Identical subtab_init template - clean filter registration." },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent",
+    "citation_accuracy": { "total_citations": 2, "grounded_citations": 2, "hallucinated_citations": 0, "hallucination_ratio": 0.0 }
+  }
+]

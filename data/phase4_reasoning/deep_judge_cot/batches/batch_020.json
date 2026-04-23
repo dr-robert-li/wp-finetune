@@ -1,0 +1,602 @@
+[
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Mobile_Detect::__call",
+    "code": "function __call($name, $arguments) { if (substr($name, 0, 2) != 'is') { throw new \\BadMethodCallException(\"No such method exists: $name\"); } $this->setDetectionType(self::DETECTION_TYPE_MOBILE); $key = substr($name, 2); return $this->matchUAAgainstKey($key); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Basic WP coding standards adherence; magic method is PSR-12 compliant but lacks type hints expected in modern WP."},
+        "sql_safety": {"score": 9, "analysis": "No SQL queries; string manipulation only via substr."},
+        "security": {"score": 8, "analysis": "Validates method prefix before execution, preventing arbitrary method calls. Throws exception for invalid methods."},
+        "performance": {"score": 7, "analysis": "O(1) prefix check + O(n) regex matching in matchUAAgainstKey. Acceptable for UA detection."},
+        "wp_api_usage": {"score": 6, "analysis": "This is a third-party library class (Mobile_Detect), not WP API. Uses standard PHP magic methods."},
+        "code_quality": {"score": 7, "analysis": "Clear guard clause for invalid methods. Good error messaging. Lacks docblock."},
+        "dependency_integrity": {"score": 8, "analysis": "Depends on getRules() and matchUAAgainstKey which are internal to the class. No external deps exposed."},
+        "i18n": {"score": 6, "analysis": "Exception message is not translatable, but it is an internal error not shown to end users."},
+        "accessibility": {"score": 9, "analysis": "No direct accessibility implications; UA detection is server-side."}
+      },
+      "overall_score": 78,
+      "key_observation": "Standard magic-method dispatch for Mobile_Detect with safe guard clause preventing arbitrary calls.",
+      "citation_accuracy": {
+        "total_citations": 2,
+        "grounded_citations": 2,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Mobile_Detect::matchDetectionRulesAgainstUA",
+    "code": "function matchDetectionRulesAgainstUA($userAgent = null) { foreach ($this->getRules() as $_regex) { if (empty($_regex)) { continue; } if ($this->match($_regex, $userAgent)) { return true; } } return false; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Function naming follows convention. Parameter default null is acceptable. No WP-specific standards violations."},
+        "sql_safety": {"score": 9, "analysis": "No SQL involved. Pure regex matching logic."},
+        "security": {"score": 8, "analysis": "Rules come from class-internal getRules(), not user input. Safe pattern matching."},
+        "performance": {"score": 5, "analysis": "Worst case O(n) where n is number of UA detection rules. Each match() runs a full regex. This is a known bottleneck in Mobile_Detect."},
+        "wp_api_usage": {"score": 6, "analysis": "Third-party library code. Does not use WP APIs but is loaded by a WP plugin."},
+        "code_quality": {"score": 7, "analysis": "Clean early-return pattern. Good use of empty() check. Could benefit from short-circuit optimization."},
+        "dependency_integrity": {"score": 8, "analysis": "Depends on getRules() and match() both internal. No external dependencies."},
+        "i18n": {"score": 9, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 9, "analysis": "No accessibility impact. Pure UA detection helper."}
+      },
+      "overall_score": 76,
+      "key_observation": "Linear regex scan over UA rules — functionally correct but O(n) on every device detection call.",
+      "citation_accuracy": {
+        "total_citations": 2,
+        "grounded_citations": 2,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Mobile_Detect::matchUAAgainstKey",
+    "code": "function matchUAAgainstKey($key, $userAgent = null) { $key = strtolower($key); $_rules = array_change_key_case($this->getRules()); if (array_key_exists($key, $_rules)) { if (empty($_rules[$key])) { return null; } return $this->match($_rules[$key], $userAgent); } return false; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Standard PHP function. No WP coding standard violations. Case-insensitive key handling is correct."},
+        "sql_safety": {"score": 9, "analysis": "No SQL. Array lookup and regex matching only."},
+        "security": {"score": 8, "analysis": "Safe array_key_exists guard prevents undefined access. Rules from internal getRules(), not user input."},
+        "performance": {"score": 6, "analysis": "array_change_key_case is O(n) on every call — redundant if getRules() already returns consistent casing. Could cache the keyed rules."},
+        "wp_api_usage": {"score": 6, "analysis": "Third-party library code. No WP API usage, which is correct for this utility class."},
+        "code_quality": {"score": 7, "analysis": "Null coalescing for empty rules is good. strtolower for case normalization is appropriate."},
+        "dependency_integrity": {"score": 8, "analysis": "Internal deps only. No external threats."},
+        "i18n": {"score": 9, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 9, "analysis": "No accessibility implications."}
+      },
+      "overall_score": 75,
+      "key_observation": "Case-insensitive key lookup with array_change_key_case adds O(n) overhead on every call.",
+      "citation_accuracy": {
+        "total_citations": 2,
+        "grounded_citations": 2,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Mobile_Detect::isMobile",
+    "code": "function isMobile($userAgent = null, $httpHeaders = null) { if ($httpHeaders) { $this->setHttpHeaders($httpHeaders); } if ($userAgent) { $this->setUserAgent($userAgent); } $this->setDetectionType(self::DETECTION_TYPE_MOBILE); if ($this->checkHttpHeadersForMobile()) { return true; } else { return $this->matchDetectionRulesAgainstUA(); } }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Standard PHP function. Conditional checks for optional parameters are correct."},
+        "sql_safety": {"score": 9, "analysis": "No SQL. Sets UA/headers and delegates to detection logic."},
+        "security": {"score": 7, "analysis": "User-provided UA string is accepted as-is — could be spoofed if caller passes external input without sanitization, but Mobile_Detect itself is not vulnerable."},
+        "performance": {"score": 6, "analysis": "Two detection paths: HTTP header check first (fast), then UA regex scan (slow). Good short-circuit for header-based detection."},
+        "wp_api_usage": {"score": 6, "analysis": "Not a WP function. If called from WP context, should use wp_unslash() on $_SERVER values."},
+        "code_quality": {"score": 7, "analysis": "Clear dual-path detection logic. Good fallback from headers to UA regex. Missing early return style consistency."},
+        "dependency_integrity": {"score": 8, "analysis": "Internal deps: setHttpHeaders, setUserAgent, checkHttpHeadersForMobile, matchDetectionRulesAgainstUA — all class methods."},
+        "i18n": {"score": 9, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 9, "analysis": "No accessibility implications."}
+      },
+      "overall_score": 76,
+      "key_observation": "Primary UA detection entry point with dual-path (headers + regex) and good short-circuit optimization.",
+      "citation_accuracy": {
+        "total_citations": 2,
+        "grounded_citations": 2,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Mobile_Detect::isTablet",
+    "code": "function isTablet($userAgent = null, $httpHeaders = null) { $this->setDetectionType(self::DETECTION_TYPE_MOBILE); foreach (self::$tabletDevices as $_regex) { if ($this->match($_regex, $userAgent)) { return true; } } return false; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Standard PHP. Static property access self::$tabletDevices is correct."},
+        "sql_safety": {"score": 9, "analysis": "No SQL. Static array iteration with regex matching."},
+        "security": {"score": 8, "analysis": "Rules from static class property, not user input. Safe."},
+        "performance": {"score": 5, "analysis": "O(m) where m is tablet device count. Each match() runs full regex. No caching of results."},
+        "wp_api_usage": {"score": 6, "analysis": "Third-party library. Not WP API."},
+        "code_quality": {"score": 7, "analysis": "Clean early-return pattern. Similar structure to matchDetectionRulesAgainstUA — consistent but could share logic."},
+        "dependency_integrity": {"score": 8, "analysis": "Depends on self::$tabletDevices and match(). Both internal."},
+        "i18n": {"score": 9, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 9, "analysis": "No accessibility implications."}
+      },
+      "overall_score": 74,
+      "key_observation": "Tablet detection via static regex list — same O(n) regex scan pattern as isMobile.",
+      "citation_accuracy": {
+        "total_citations": 2,
+        "grounded_citations": 2,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Mobile_Detect::is",
+    "code": "function is($key, $userAgent = null, $httpHeaders = null) { if ($httpHeaders) { $this->setHttpHeaders($httpHeaders); } if ($userAgent) { $this->setUserAgent($userAgent); } $this->setDetectionType(self::DETECTION_TYPE_EXTENDED); return $this->matchUAAgainstKey($key); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 7, "analysis": "Standard PHP. Method name 'is' is a reserved word in some languages but valid PHP function name."},
+        "sql_safety": {"score": 9, "analysis": "No SQL. Delegates to matchUAAgainstKey."},
+        "security": {"score": 7, "analysis": "External $key parameter accepted — matches against internal rules array. Safe as long as getRules() is trusted."},
+        "performance": {"score": 7, "analysis": "O(1) array lookup in matchUAAgainstKey if rules are pre-indexed, else O(n) for array_change_key_case."},
+        "wp_api_usage": {"score": 6, "analysis": "Third-party utility. No WP API."},
+        "code_quality": {"score": 8, "analysis": "Clean, single-purpose function. Early return pattern. Good optional parameter handling."},
+        "dependency_integrity": {"score": 8, "analysis": "Internal deps only."},
+        "i18n": {"score": 9, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 9, "analysis": "No accessibility implications."}
+      },
+      "overall_score": 77,
+      "key_observation": "Generic UA key matcher with extended detection type — clean wrapper over matchUAAgainstKey.",
+      "citation_accuracy": {
+        "total_citations": 2,
+        "grounded_citations": 2,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Mobile_Detect::prepareVersionNo",
+    "code": "function prepareVersionNo($ver) { $ver = str_replace(array('_', ' ', '/'), '.', $ver); $arrVer = explode('.', $ver, 2); if (isset($arrVer[1])) { $arrVer[1] = @str_replace('.', '', $arrVer[1]); } return (float) implode('.', $arrVer); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "analysis": "Silence operator @ is generally discouraged in WP. The version string manipulation is functional but fragile."},
+        "sql_safety": {"score": 9, "analysis": "No SQL. Pure string manipulation."},
+        "security": {"score": 8, "analysis": "User input $ver processed safely through string ops. No injection vectors. @ suppressor hides potential warnings."},
+        "performance": {"score": 7, "analysis": "O(n) string operations on version string. Lightweight for short version strings."},
+        "wp_api_usage": {"score": 6, "analysis": "Not WP API. Utility function for version comparison."},
+        "code_quality": {"score": 5, "analysis": "@ silence operator is bad practice — masks errors. Version parsing logic is fragile (e.g., strings like '1.0-beta' would break). The // @todo comment confirms known issues."},
+        "dependency_integrity": {"score": 9, "analysis": "No dependencies. Self-contained."},
+        "i18n": {"score": 9, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 9, "analysis": "No accessibility implications."}
+      },
+      "overall_score": 71,
+      "key_observation": "Version string normalizer with fragile parsing and discouraged @ silence operator.",
+      "citation_accuracy": {
+        "total_citations": 2,
+        "grounded_citations": 2,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Mobile_Detect::version",
+    "code": "function version($propertyName, $type = self::VERSION_TYPE_STRING) { if (empty($propertyName)) { return false; } if ($type != self::VERSION_TYPE_STRING && $type != self::VERSION_TYPE_FLOAT) { $type = self::VERSION_TYPE_STRING; } $properties = self::getProperties(); if (array_key_exists($propertyName, $properties)) { $properties[$propertyName] = (array) $properties[$propertyName]; foreach ($properties[$propertyName] as $propertyMatchString) { $propertyPattern = str_replace('[VER]', self::VER, $propertyMatchString); $propertyPattern = str_replace('/', '\\/', $propertyPattern); preg_match('/'.$propertyPattern.'/is', $this->userAgent, $match); if (!empty($match[1])) { $version = ( $type == self::VERSION_TYPE_FLOAT ? $this->prepareVersionNo($match[1]) : $match[1] ); return $version; } } } return false; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "analysis": "Dynamic preg_match with interpolated pattern from getProperties() data. While properties are class-defined, the pattern construction is fragile and could be problematic with malicious regex patterns."},
+        "sql_safety": {"score": 9, "analysis": "No SQL. Uses preg_match on UA string."},
+        "security": {"score": 6, "analysis": "preg_match with dynamically constructed pattern string is potentially risky. Although properties come from a controlled source, the regex injection surface exists if properties are ever externalized."},
+        "performance": {"score": 4, "analysis": "O(n*m) where n is property count and m is pattern attempts per property. preg_match per iteration is expensive. No caching."},
+        "wp_api_usage": {"score": 6, "analysis": "Not WP API. Third-party library version extraction."},
+        "code_quality": {"score": 5, "analysis": "42 lines for version extraction is excessive. Nested loops, multiple str_replace calls, dynamic regex construction — all reduce readability and maintainability. Known issue acknowledged via @todo."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on self::getProperties(), self::VER, prepareVersionNo. All internal but tightly coupled."},
+        "i18n": {"score": 9, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 9, "analysis": "No accessibility implications."}
+      },
+      "overall_score": 66,
+      "key_observation": "Complex version extraction with dynamic regex — fragile, expensive, and the regex injection surface is a concern.",
+      "citation_accuracy": {
+        "total_citations": 2,
+        "grounded_citations": 2,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Mobile_Detect::mobileGrade",
+    "code": "function mobileGrade() { $isMobile = $this->isMobile(); if ($isMobile) { // Apple iOS checks, Android checks, Windows Phone checks, BlackBerry checks, WebOS checks, Firefox checks, Chrome checks, Skyfire checks, Opera checks, MeeGo checks, Tizen checks, Bada checks, UC Browser checks, Kindle checks, Nook checks, Chrome Desktop checks, Safari Desktop checks, Firefox Desktop checks, IE checks, Opera Desktop checks -> return A } if (older iOS/BlackBerry/Opera Mini/Symbian checks) { return B; } if (older BlackBerry/Windows Mobile checks) { return C; } return self::MOBILE_GRADE_C; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 5, "analysis": "117-line function with deeply nested conditions violates WP function length guidelines. Multiple magic number version comparisons throughout."},
+        "sql_safety": {"score": 9, "analysis": "No SQL. All version() and is() calls to internal Mobile_Detect methods."},
+        "security": {"score": 8, "analysis": "No user input. All detection via internal Mobile_Detect methods with controlled regex patterns."},
+        "performance": {"score": 3, "analysis": "Calls $this->isMobile() first (expensive regex scan), then up to 20+ version() calls each running additional regex scans. Extremely expensive — O(20n) regex operations worst case. No caching whatsoever."},
+        "wp_api_usage": {"score": 6, "analysis": "Not WP API. Internal grade classification logic."},
+        "code_quality": {"score": 3, "analysis": "Massive function with hardcoded version numbers, outdated device references (Symbian, Palm WebOS, Skyfire), no docblock, no separation of concerns. Maintains legacy device detection that is no longer relevant. Should be refactored into rule-based strategy."},
+        "dependency_integrity": {"score": 6, "analysis": "Depends on isMobile(), version(), is(), match() — all internal but creates circular evaluation chains."},
+        "i18n": {"score": 8, "analysis": "No translatable strings, but device/OS names are hardcoded which is correct for detection logic."},
+        "accessibility": {"score": 9, "analysis": "No accessibility implications. Pure device capability detection."}
+      },
+      "overall_score": 58,
+      "key_observation": "Massive 117-line function with outdated device detection, excessive regex calls, and severe performance problems.",
+      "citation_accuracy": {
+        "total_citations": 2,
+        "grounded_citations": 2,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Widget::__construct",
+    "code": "function __construct() { $widget_ops = array('classname' => 'a3_rslider_widget', 'description' => __( \"Use this widget to add A3 responsive slider as a widget.\", 'a3-responsive-slider' ), 'customize_selective_refresh' => true, ); parent::__construct('a3_rslider_widget', __( 'a3 Responsive Slider', 'a3-responsive-slider' ), $widget_ops); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Follows WP widget construct pattern. Uses __() for i18n. Array formatting is clean."},
+        "sql_safety": {"score": 9, "analysis": "No SQL. Widget construction only."},
+        "security": {"score": 9, "analysis": "No user input or data handling. Constructor only."},
+        "performance": {"score": 9, "analysis": "O(1) construction. Minimal overhead."},
+        "wp_api_usage": {"score": 9, "analysis": "Correct WP_Widget constructor usage with standardized widget_ops array. Uses customize_selective_refresh which is modern WP."},
+        "code_quality": {"score": 8, "analysis": "Clean, well-structured constructor. Proper i18n strings. Good use of array ops."},
+        "dependency_integrity": {"score": 9, "analysis": "Only parent::__construct dependency."},
+        "i18n": {"score": 9, "analysis": "Both strings properly wrapped in __() with text domain 'a3-responsive-slider'."},
+        "accessibility": {"score": 9, "analysis": "No accessibility implications. Widget metadata."}
+      },
+      "overall_score": 85,
+      "key_observation": "Clean WP widget constructor with proper i18n and modern customize_selective_refresh flag.",
+      "citation_accuracy": {
+        "total_citations": 2,
+        "grounded_citations": 2,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Widget::widget",
+    "code": "function widget( $args, $instance ) { extract( $args ); $title = apply_filters('widget_title', empty( $instance['title'] ) ? '' : $instance['title'], $instance, $this->id_base); $slider_id = empty( $instance['slider_id'] ) ? 0 : $instance['slider_id']; echo $before_widget; if ( trim($title) != '' ) echo $before_title . $title . $after_title; $slider_data = get_post( $slider_id ); $have_slider_id = get_post_meta( $slider_id, '_a3_slider_id' , true ); if ( $slider_data && $have_slider_id > 0 ) { $slider_settings = get_post_meta( $slider_id, '_a3_slider_settings', true ); $slider_template = get_post_meta( $slider_id, '_a3_slider_template' , true ); $slide_items = Data::get_all_images_from_slider_client( $slider_id ); global $a3_rslider_template1_global_settings; $templateid = 'template1'; $slider_template = 'template-1'; global ${'a3_rslider_'.$templateid.'_dimensions_settings'}; $dimensions_settings = ${'a3_rslider_'.$templateid.'_dimensions_settings'}; $rslider_custom_style = 'width:100% !important;'; $dimensions_settings['is_slider_responsive'] = 1; $dimensions_settings['slider_wide_responsive'] = 100; echo Display::dispay_slider( $slide_items, $slider_template, $dimensions_settings, $slider_settings, $rslider_custom_style ); } echo $after_widget; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 5, "analysis": "Uses extract() on $args (WP convention, but discouraged for security). Variable variables ${'a3_rslider_'.$templateid.'_dimensions_settings'} violate WP coding standards. No escaping on $title output (should use esc_html__). Method name 'dispay_slider' has a typo."},
+        "sql_safety": {"score": 7, "analysis": "Uses WP functions get_post() and get_post_meta() which are DB-accessing. No custom SQL, but relies on WP's internal queries."},
+        "security": {"score": 5, "analysis": "extract($args) is dangerous — overwrites local variables. No esc_html__ or esc_attr__ on $title output. Variable variables create unpredictable state. $slider_id not cast to int despite being used as ID."},
+        "performance": {"score": 5, "analysis": "Multiple get_post_meta calls without caching. get_post() then three get_post_meta() calls = 4 DB queries minimum. Could use get_post_custom() for batching."},
+        "wp_api_usage": {"score": 6, "analysis": "Uses get_post(), get_post_meta(), apply_filters() correctly but misses esc_html__() for output. extract() is outdated pattern."},
+        "code_quality": {"score": 4, "analysis": "Variable variables, extract(), hardcoded template overrides ($slider_template = 'template-1' after getting from meta), unused $templateid global, method name typo 'dispay'. Messy control flow."},
+        "dependency_integrity": {"score": 5, "analysis": "Depends on Data::get_all_images_from_slider_client() and Display::dispay_slider() — both external classes with no interface guarantees."},
+        "i18n": {"score": 7, "analysis": "Uses apply_filters for widget_title. Title itself is not i18n'd but that is acceptable for user-provided content."},
+        "accessibility": {"score": 6, "analysis": "Slider output likely lacks ARIA attributes. Width set to 100% inline style with !important is rigid."}
+      },
+      "overall_score": 56,
+      "key_observation": "Widget render function with extract(), variable variables, missing output escaping, and hardcoded template overrides.",
+      "citation_accuracy": {
+        "total_citations": 2,
+        "grounded_citations": 2,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Widget::update",
+    "code": "function update( $new_instance, $old_instance ) { $instance = $old_instance; $instance['title'] = strip_tags($new_instance['title']); $instance['slider_id'] = strip_tags($new_instance['slider_id']); return $instance; }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "analysis": "strip_tags() is insufficient for WP widget update — should use sanitize_text_field() per WP coding standards for text fields."},
+        "sql_safety": {"score": 8, "analysis": "No direct SQL. Data returned will be used by WP widget storage."},
+        "security": {"score": 6, "analysis": "strip_tags() strips HTML but does not sanitize. slider_id should be cast to (int). title should use sanitize_text_field(). No nonce check here (handled at form submission level)."},
+        "performance": {"score": 9, "analysis": "O(1). Minimal operations."},
+        "wp_api_usage": {"score": 6, "analysis": "Uses strip_tags() instead of WP sanitization functions like sanitize_text_field() and absint()."},
+        "code_quality": {"score": 6, "analysis": "Simple and functional but undersanitized. Missing type casting for slider_id. $instance = $old_instance then overwriting is slightly redundant — could start from $new_instance."},
+        "dependency_integrity": {"score": 9, "analysis": "No external dependencies."},
+        "i18n": {"score": 9, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 9, "analysis": "No accessibility implications."}
+      },
+      "overall_score": 71,
+      "key_observation": "Widget update with undersanitized inputs — strip_tags instead of sanitize_text_field/absint.",
+      "citation_accuracy": {
+        "total_citations": 2,
+        "grounded_citations": 2,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Widget::form",
+    "code": "function form( $instance ) { $instance = wp_parse_args( (array) $instance, array( 'title' => '', 'slider_id' => 0 ) ); $title = strip_tags($instance['title']); $slider_id = strip_tags($instance['slider_id']); ?> <p> <label for=\"<?php echo $this->get_field_id('title'); ?>\"><?php _e( 'Title', 'a3-responsive-slider' ); ?>:</label> <input class=\"widefat\" id=\"<?php echo esc_attr( $this->get_field_id('title') ); ?>\" name=\"<?php echo esc_attr( $this->get_field_name('title') ); ?>\" type=\"text\" value=\"<?php echo esc_attr( $title ); ?>\" /> </p> <p> <? $list_sliders = get_posts( array('posts_per_page' => -1, 'orderby' => 'title', 'order' => 'ASC', 'post_type' => 'a3_slider', 'post_status' => 'publish', 'meta_query' => array( array('key' => '_a3_slider_id', 'value' => 1, 'compare' => '>=', 'type' => 'NUMERIC', ) ), )); ?> <label for=\"<?php echo $this->get_field_id('slider_id'); ?>\"><?php _e( 'Select Slider', 'a3-responsive-slider' ); ?>:</label> <select class=\"widefat\" id=\"<?php echo esc_attr( $this->get_field_id('slider_id') ); ?>\" name=\"<?php echo esc_attr( $this->get_field_name('slider_id') ); ?>\" > <? if ( $list_sliders && count( $list_sliders ) > 0 ) { foreach ( $list_sliders as $slider ) { ?> <option value=\"<?php echo esc_attr( $slider->ID ); ?>\" <?php selected( $slider->ID, $slider_id ); ?> ><?php echo $slider->post_title; ?></option> <? } } ?> </select> </p> <? }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "analysis": "Mixes PHP and HTML inline which is standard for WP widgets. Uses wp_parse_args() correctly. get_field_id/get_field_name are correct WP API calls. However, <? without short_tag open_tag setting can be problematic."},
+        "sql_safety": {"score": 7, "analysis": "Uses get_posts() with WP_Query — safe WP API. No meta_query escaping concerns with hardcoded key/value."},
+        "security": {"score": 7, "analysis": "Uses esc_attr() for output which is good. $slider->post_title is not escaped in option text (should use esc_html__). get_posts without unslash on input is acceptable for admin form. No nonce on form action (handled elsewhere)."},
+        "performance": {"score": 5, "analysis": "get_posts with posts_per_page => -1 loads ALL sliders into memory every time the widget config is opened. Should paginate or limit. No caching."},
+        "wp_api_usage": {"score": 7, "analysis": "Correct use of wp_parse_args, get_field_id, get_field_name, esc_attr, selected(). Missing esc_html__ for option text. get_posts is correct but unbounded."},
+        "code_quality": {"score": 6, "analysis": "Mix of PHP/HTML inline form is standard but hard to review. Mixes logic and presentation. strip_tags before wp_parse_args is redundant since wp_parse_args sets defaults."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on get_posts, selected() — both WP core functions. Safe."},
+        "i18n": {"score": 8, "analysis": "Labels use _e() with text domain. Slider post titles are user content so not i18n'd (correct). Missing esc_html__() around titles in options."},
+        "accessibility": {"score": 7, "analysis": "Labels use for= attribute matching input IDs — correct. Uses widefat class (WP admin style). Could add aria-describedby for better accessibility."}
+      },
+      "overall_score": 67,
+      "key_observation": "Widget form with unbounded get_posts query and missing esc_html__ on slider option text output.",
+      "citation_accuracy": {
+        "total_citations": 2,
+        "grounded_citations": 2,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "a3_rslider_activated",
+    "code": "function a3_rslider_activated(){ update_option('a3rev_rslider_version', A3_RESPONSIVE_SLIDER_VERSION ); RSlider\\Data::install_database(); delete_metadata( 'user', 0, $GLOBALS[A3_RESPONSIVE_SLIDER_PREFIX.'admin_init']->plugin_name . '-' . 'plugin_framework_global_box' . '-' . 'opened', '', true ); delete_option( $GLOBALS[A3_RESPONSIVE_SLIDER_PREFIX.'admin_init']->plugin_name . '_clean_on_deletion' ); update_option('a3rev_rslider_just_installed', true); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 5, "analysis": "Accesses $GLOBALS directly without sanitization. Uses delete_metadata with user_id=0 which deletes all metadata — potentially destructive. Constants like A3_RESPONSIVE_SLIDER_VERSION should be defined earlier."},
+        "sql_safety": {"score": 7, "analysis": "Uses update_option/delete_option/delete_metadata — all WP options API. No custom SQL."},
+        "security": {"score": 5, "analysis": "$GLOBALS[A3_RESPONSIVE_SLIDER_PREFIX.'admin_init']->plugin_name is accessed without checking if the key exists. If the prefix is not defined, this could cause warnings/notice. delete_metadata with user_id=0 is dangerous — deletes all user metadata with that meta key."},
+        "performance": {"score": 6, "analysis": "Runs on plugin activation. Multiple DB writes (update_option x2, delete_metadata, delete_option). Acceptable for activation hook."},
+        "wp_api_usage": {"score": 6, "analysis": "Uses update_option, delete_option correctly. delete_metadata with user_id=0 is questionable usage."},
+        "code_quality": {"score": 5, "analysis": "Relies heavily on $GLOBALS access pattern. No error handling for RSlider\\Data::install_database(). No check if function already ran (idempotency issue)."},
+        "dependency_integrity": {"score": 5, "analysis": "Depends on A3_RESPONSIVE_SLIDER_VERSION, A3_RESPONSIVE_SLIDER_PREFIX, $GLOBALS prefix setup — all external constants/globals that must exist."},
+        "i18n": {"score": 9, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 9, "analysis": "No accessibility implications. Plugin activation routine."}
+      },
+      "overall_score": 61,
+      "key_observation": "Plugin activation hook with dangerous delete_metadata(user_id=0) and heavy $GLOBALS dependency.",
+      "citation_accuracy": {
+        "total_citations": 2,
+        "grounded_citations": 2,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "a3_responsive_slider_init",
+    "code": "function a3_responsive_slider_init() { RSlider\\Custom_Post::register_post_type(); if ( get_option( 'a3rev_rslider_just_installed' ) ) { delete_option( 'a3rev_rslider_just_installed' ); $GLOBALS[A3_RESPONSIVE_SLIDER_PREFIX.'admin_init']->set_default_settings(); $GLOBALS[A3_RESPONSITIVE_SLIDER_PREFIX.'less']->plugin_build_sass(); } a3_responsive_slider_plugin_textdomain(); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "analysis": "Function name follows WP convention. Uses get_option/delete_option correctly. Accesses $GLOBALS for admin_init and less builders."},
+        "sql_safety": {"score": 8, "analysis": "Uses get_option/delete_option — WP options API. register_post_type() uses WP's register_post_type API."},
+        "security": {"score": 7, "analysis": "get_option check is safe. $GLOBALS access could fail silently if prefix not set. set_default_settings() may create options without capability checks."},
+        "performance": {"score": 7, "analysis": "One get_option check, optional delete_option, then CPT registration and textdomain load. Reasonable for init hook."},
+        "wp_api_usage": {"score": 7, "analysis": "Correct use of get_option, delete_option, register_post_type, load_plugin_textdomain pattern. Standard WP init hook usage."},
+        "code_quality": {"score": 6, "analysis": "Clean structure but $GLOBALS access is fragile. No existence checks before $GLOBALS[...]->method() calls. Could throw if globals not initialized."},
+        "dependency_integrity": {"score": 6, "analysis": "Depends on RSlider\\Custom_Post, $GLOBALS[a3rev_admin_init], $GLOBALS[a3rev_less], A3_RESPONSIVE_SLIDER_PREFIX constant."},
+        "i18n": {"score": 8, "analysis": "Calls a3_responsive_slider_plugin_textdomain() for i18n setup — correct."},
+        "accessibility": {"score": 9, "analysis": "No accessibility implications. Plugin initialization."}
+      },
+      "overall_score": 72,
+      "key_observation": "Plugin init with CPT registration and conditional defaults — clean but fragile $GLOBALS access.",
+      "citation_accuracy": {
+        "total_citations": 2,
+        "grounded_citations": 2,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "a3_rslider_upgrade_plugin",
+    "code": "function a3_rslider_upgrade_plugin () { if( version_compare(get_option('a3rev_rslider_version'), '1.1.3') === -1){ update_option('a3rev_rslider_version', '1.1.3'); // Build sass $GLOBALS[A3_RESPONSIVE_SLIDER_PREFIX.'less']->plugin_build_sass(); } // Upgrade to 1.1.4 ... // Upgrade to 1.3.0 ... // Upgrade to 1.5.0 ... // Upgrade to 1.6.0 ... // Upgrade to 1.8.7 ... update_option('a3rev_rslider_version', A3_RESPONSIVE_SLIDER_VERSION ); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 5, "analysis": "52-line function violates WP function length guidelines. Repeated get_option('a3rev_rslider_version') calls should be cached. Each version block duplicates get_option/update_option pattern."},
+        "sql_safety": {"score": 7, "analysis": "Uses get_option/update_option — WP options API. include() of upgrade scripts may contain arbitrary DB operations."},
+        "security": {"score": 5, "analysis": "Dynamic include() of upgrade files is risky — if A3_RESPONSIVE_SLIDER_DIR is manipulated, arbitrary file inclusion occurs. No capability checks (this should only run as admin). Repeated get_option calls without caching is inefficient."},
+        "performance": {"score": 4, "analysis": "7+ get_option calls for the same option. Each includes an external upgrade file that may run migrations. No caching of version option. Should cache version once at start."},
+        "wp_api_usage": {"score": 5, "analysis": "Correct use of get_option/update_option/version_compare but pattern is anti-optimized — should cache get_option result and use single final update_option."},
+        "code_quality": {"score": 4, "analysis": "Massive function with 8 version check blocks, each duplicating get_option/update_option/set_sass_pattern. No extracted helper. No docblock. Each upgrade block is copy-pasted. Should use a migration registry pattern."},
+        "dependency_integrity": {"score": 5, "analysis": "Dynamic include() of upgrade files creates tight coupling. Depends on $GLOBALS[...less...] and A3_RESPONSIVE_SLIDER_DIR constant."},
+        "i18n": {"score": 9, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 9, "analysis": "No accessibility implications. Admin upgrade routine."}
+      },
+      "overall_score": 54,
+      "key_observation": "Massive 52-line upgrade function with repeated DB reads, dynamic includes, and no migration registry pattern.",
+      "citation_accuracy": {
+        "total_citations": 2,
+        "grounded_citations": 2,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Interface::register_modal_scripts",
+    "code": "function register_modal_scripts() { $suffix = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG ? '' : '.min'; wp_register_style( 'bootstrap-modal', $this->admin_plugin_url() . '/assets/css/modal' . $suffix . '.css', array(), '4.1.1', 'all' ); if ( ! wp_script_is( 'bootstrap-util', 'registered' ) ) { wp_register_script( 'bootstrap-util', $this->admin_plugin_url() . '/assets/js/bootstrap/util' . $suffix . '.js', array( 'jquery' ), '4.1.1', false ); } wp_register_script( 'bootstrap-modal', $this->admin_plugin_url() . '/assets/js/bootstrap/modal' . $suffix . '.js', array( 'jquery', 'bootstrap-util' ), '4.1.1', false ); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Follows WP script/style registration patterns. Uses SCRIPT_DEBUG constant correctly. Proper dependency arrays."},
+        "sql_safety": {"score": 9, "analysis": "No SQL. Script/style registration only."},
+        "security": {"score": 8, "analysis": "admin_plugin_url() should return a safe URL. Script versioning with '4.1.1' enables cache busting. No user input involved."},
+        "performance": {"score": 7, "analysis": "wp_script_is check is O(1). Script registration is lightweight. No enqueue conflicts."},
+        "wp_api_usage": {"score": 9, "analysis": "Correct use of wp_register_style and wp_register_script with proper parameters. Proper use of wp_script_is guard. Dependency arrays are correct."},
+        "code_quality": {"score": 8, "analysis": "Clean early-return for .min suffix. wp_script_is guard prevents double-registration. Good structure."},
+        "dependency_integrity": {"score": 8, "analysis": "Depends on admin_plugin_url() method. Bootstrap CSS/JS files are bundled assets."},
+        "i18n": {"score": 9, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 9, "analysis": "Bootstrap modal scripts support accessible modal dialogs."}
+      },
+      "overall_score": 82,
+      "key_observation": "Clean WP script registration with SCRIPT_DEBUG support and wp_script_is guard against double-loading.",
+      "citation_accuracy": {
+        "total_citations": 2,
+        "grounded_citations": 2,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Interface::register_popover_scripts",
+    "code": "function register_popover_scripts() { $suffix = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG ? '' : '.min'; wp_enqueue_style( 'bootstrap-popover', $this->admin_plugin_url() . '/assets/css/popover' . $suffix . '.css', array(), '4.1.1', 'all' ); wp_register_script( 'bootstrap-popper', $this->admin_plugin_url() . '/assets/js/bootstrap/popper.min.js', array( 'jquery' ), '4.1.1', false ); if ( ! wp_script_is( 'bootstrap-tooltip', 'registered' ) ) { wp_register_script( 'bootstrap-tooltip', $this->admin_plugin_url() . '/assets/js/bootstrap/tooltip' . $suffix . '.js', array( 'jquery' ), '4.1.1', false ); } if ( ! wp_script_is( 'bootstrap-util', 'registered' ) ) { wp_register_script( 'bootstrap-util', $this->admin_plugin_url() . '/assets/js/bootstrap/util' . $suffix . '.js', array( 'jquery' ), '4.1.1', false ); } wp_register_script( 'bootstrap-popover', $this->admin_plugin_url() . '/assets/js/bootstrap/popover' . $suffix . '.js', array( 'jquery', 'bootstrap-popper', 'bootstrap-util', 'bootstrap-tooltip' ), '4.1.1', false ); }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Correct WP script/style registration. Uses wp_enqueue_style for CSS (immediate load) and wp_register_script for JS (deferred). SCRIPT_DEBUG support present."},
+        "sql_safety": {"score": 9, "analysis": "No SQL. Asset registration only."},
+        "security": {"score": 8, "analysis": "Uses admin_plugin_url() for asset paths. Bootstrap CDN dependency — popper.min.js is loaded from plugin's own assets directory."},
+        "performance": {"score": 7, "analysis": "wp_script_is checks prevent duplicate registration. Five registrations total — moderate overhead."},
+        "wp_api_usage": {"score": 8, "analysis": "Correct wp_enqueue_style + wp_register_script pattern. Bootstrap dependency chain (popper + tooltip + util -> popover) is properly declared."},
+        "code_quality": {"score": 7, "analysis": "Consistent with register_modal_scripts. wp_script_is guards on tooltip and util are good. Could be merged with register_modal_scripts for DRY."},
+        "dependency_integrity": {"score": 7, "analysis": "Depends on Bootstrap 4.1.1 CSS/JS (popper, tooltip, util, modal, popover). All bundled locally."},
+        "i18n": {"score": 9, "analysis": "No user-facing strings."},
+        "accessibility": {"score": 9, "analysis": "Bootstrap popover supports accessible tooltips/popovers with ARIA attributes when used correctly."}
+      },
+      "overall_score": 80,
+      "key_observation": "Bootstrap popover script registration with proper dependency chain and wp_script_is guards.",
+      "citation_accuracy": {
+        "total_citations": 2,
+        "grounded_citations": 2,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Interface::admin_script_load",
+    "code": "function admin_script_load() { $suffix = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG ? '' : '.min'; $rtl = is_rtl() ? '.rtl' : ''; $this->register_popover_scripts(); wp_register_script( 'chosen', ... ); wp_register_script( 'a3rev-chosen-new', ... ); wp_register_script( 'a3rev-chosen-ajaxify', ... ); wp_register_script( 'a3rev-style-checkboxes', ... ); wp_register_script( 'jquery-ui-slider-rtl', ... ); wp_register_script( 'a3rev-admin-ui-script', ... ); wp_register_script( 'a3rev-typography-preview', ... ); wp_register_script( 'a3rev-settings-preview', ... ); wp_register_script( 'a3rev-metabox-ui', ... ); wp_register_script( 'jquery-rwd-image-maps', ... ); wp_register_script( 'jquery-datetime-picker', ... ); wp_enqueue_script( 'jquery' ); wp_enqueue_script( 'wp-color-picker' ); wp_enqueue_script( 'jquery-datetime-picker' ); ... wp_enqueue_script( 'chosen' ); wp_enqueue_script( 'a3rev-chosen-ajaxify' ); ... }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 6, "analysis": "37-line function is long. Uses is_rtl() correctly for RTL support. Multiple wp_register_script/wp_enqueue_script calls follow WP patterns."},
+        "sql_safety": {"score": 9, "analysis": "No SQL. Script enqueue only."},
+        "security": {"score": 7, "analysis": "Loads many third-party scripts (chosen, bootstrap, datetimepicker). Each is a potential attack surface if compromised. No SRI (Subresource Integrity) hashes."},
+        "performance": {"score": 4, "analysis": "Loads 12+ scripts on every admin page (wp-color-picker, jquery, chosen, bootstrap, datetimepicker, etc.). Most are unused on most admin pages. Should be hooked to specific admin_enqueue_scripts hooks with capability checks."},
+        "wp_api_usage": {"score": 7, "analysis": "Correct use of wp_register_script/wp_enqueue_script. is_rtl() check is correct. Should use admin_enqueue_scripts hook with conditional loading."},
+        "code_quality": {"score": 5, "analysis": "Function loads everything unconditionally — bloated. 37 lines of repetitive wp_register_script calls. No conditional loading based on admin page. Should split into per-feature script loaders."},
+        "dependency_integrity": {"score": 5, "analysis": "Depends on chosen, bootstrap-popover, bootstrap-tooltip, bootstrap-util, bootstrap-popper (from register_popover_scripts), jquery, jquery-ui-slider, datetimepicker, rwdImageMaps — many external scripts with potential update conflicts."},
+        "i18n": {"score": 9, "analysis": "No user-facing strings. RTL file selection handles RTL i18n for scripts."},
+        "accessibility": {"score": 8, "analysis": "Chosen and datetimepicker may have accessibility issues. wp-color-picker is accessible. Bootstrap popovers support ARIA."}
+      },
+      "overall_score": 60,
+      "key_observation": "Bloated admin script loader loading 12+ scripts unconditionally on every admin page.",
+      "citation_accuracy": {
+        "total_citations": 2,
+        "grounded_citations": 2,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  },
+  {
+    "source_file": "a3-responsive-slider.json",
+    "source_dir": "passed",
+    "function_name": "Admin_Interface::admin_localize_printed_scripts",
+    "code": "function admin_localize_printed_scripts() { $rtl = is_rtl() ? 1 : 0; if ( wp_script_is( 'a3rev-admin-ui-script' ) ) { wp_localize_script( 'a3rev-admin-ui-script', 'a3_admin_ui_script_params', apply_filters( 'a3_admin_ui_script_params', array( 'ajax_url' => admin_url( 'admin-ajax.php' ), 'plugin' => $this->plugin_name, 'security' => wp_create_nonce( $this->plugin_name . '_a3_admin_ui_event' ), 'rtl' => $rtl, ) ) ); } }",
+    "reasoning": {
+      "verdict": "PASS",
+      "dimension_analysis": {
+        "wpcs_compliance": {"score": 8, "analysis": "Uses wp_localize_script correctly. wp_script_is guard prevents unnecessary localization. apply_filters for extensibility."},
+        "sql_safety": {"score": 9, "analysis": "No SQL. Script localization only."},
+        "security": {"score": 8, "analysis": "Uses wp_create_nonce for AJAX security. Nonce is exposed to client-side JS which is standard WP pattern but means any logged-in user can make admin-ajax.php requests. Should validate nonce on server side."},
+        "performance": {"score": 8, "analysis": "wp_script_is guard ensures localization only runs if script is loaded. Minimal overhead."},
+        "wp_api_usage": {"score": 9, "analysis": "Correct wp_localize_script usage. admin_url() for AJAX endpoint. wp_create_nonce for security. apply_filters for extensibility. All standard WP patterns."},
+        "code_quality": {"score": 8, "analysis": "Clean and focused. wp_script_is guard is defensive. Filter for extensibility is good practice. Single responsibility."},
+        "dependency_integrity": {"score": 8, "analysis": "Depends on wp_script_is, wp_localize_script, admin_url, wp_create_nonce — all WP core."},
+        "i18n": {"score": 9, "analysis": "RTL detection handled correctly. No translatable strings needed for JS params."},
+        "accessibility": {"score": 9, "analysis": "No accessibility implications. Admin JS params."}
+      },
+      "overall_score": 83,
+      "key_observation": "Well-structured script localization with nonce security, wp_script_is guard, and filter extensibility.",
+      "citation_accuracy": {
+        "total_citations": 2,
+        "grounded_citations": 2,
+        "hallucinated_citations": 0,
+        "hallucination_ratio": 0.0
+      }
+    },
+    "dimensions_addressed": ["wpcs_compliance", "sql_safety", "security", "performance", "wp_api_usage", "code_quality", "dependency_integrity", "i18n", "accessibility"],
+    "generation_method": "wave0002_agent"
+  }
+]
