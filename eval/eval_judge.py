@@ -71,19 +71,22 @@ _MODEL_FIELD_TO_DIM: dict[str, str] = {
 # ---------------------------------------------------------------------------
 
 # The test dataset's assistant response uses a different (simpler) set of
-# field names than the model output fields in DIM_NAME_MAP.  Only the
-# dimensions that are present in the GT response are listed here; the
-# remaining dimensions (D3_sql, D5_wp_api, D8_errors, D9_structure) are not
-# scored in the GT and will use rubric_scorer as a fallback when needed.
+# field names than the model output fields in DIM_NAME_MAP. All 9 rubric
+# dimensions are supported — older test sets may omit some fields, in which
+# case those dims are not scored from the GT and fall back to rubric_scorer.
 #
-# NOTE: documentation_score exists in the GT but has no corresponding rubric
-# dimension — it is intentionally omitted.
+# NOTE: documentation_score exists in some GT records but has no corresponding
+# rubric dimension — it is intentionally omitted.
 _GT_FIELD_TO_DIM: dict[str, str] = {
     "wpcs_compliance": "D1_wpcs",
     "security_score": "D2_security",
+    "sql_safety": "D3_sql",
     "performance_score": "D4_perf",
+    "wp_api_usage": "D5_wp_api",
     "i18n_score": "D6_i18n",
     "accessibility_score": "D7_a11y",
+    "error_handling": "D8_errors",
+    "code_structure": "D9_structure",
 }
 
 
@@ -108,6 +111,11 @@ def parse_judge_response(response: str) -> Optional[dict]:
         if the response cannot be parsed as JSON.
     """
     text = response.strip()
+
+    # Strip <think>...</think> blocks (Qwen3 reasoning mode).
+    # Must happen before JSON extraction — thinking content may contain
+    # curly braces that confuse the greedy {.*} regex in Strategy 4.
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
 
     # Strategy 1: raw JSON
     try:
