@@ -53,6 +53,8 @@ merged_model/
 
 # Eval output (generated results, large JSONLs)
 output/
+!output/diagnostic/
+!output/triage_decision.md
 
 # Telemetry output (ephemeral run data)
 telemetry/

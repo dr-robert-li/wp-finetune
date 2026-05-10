@@ -592,6 +592,11 @@ def main():
         default=1,
         help="Forward pass batch size (default 1)",
     )
+    parser.add_argument(
+        "--adapter",
+        default=None,
+        help="Optional LoRA adapter path. Loaded via PeftModel.from_pretrained() on top of base.",
+    )
     args = parser.parse_args()
 
     import torch
@@ -619,6 +624,13 @@ def main():
         dtype=torch.bfloat16,
         device_map="auto",
     )
+
+    if args.adapter:
+        from peft import PeftModel
+        adapter_path = (project_root / args.adapter) if not Path(args.adapter).is_absolute() else Path(args.adapter)
+        print(f"Loading LoRA adapter from {adapter_path} ...")
+        model = PeftModel.from_pretrained(model, str(adapter_path))
+        model.eval()
 
     output_dir = project_root / args.output_dir
     all_eeffs = profile_base_model(

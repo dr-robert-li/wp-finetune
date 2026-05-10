@@ -584,6 +584,18 @@ def _group_checks_by_dimension(
 _LLM_CHECK_COUNT = 18  # SEC-P05, SEC-P13, SEC-N04, SEC-N13, STR-N01, etc.
 
 
+def _ensure_php_tag(code: str) -> str:
+    """Snippet pre-processor: prepend <?php tag if absent so PHPCS/PHPStan analyse.
+
+    Seeds and training examples are typically extracted function bodies without
+    a leading <?php tag. Without it, PHPCS reports no violations (it considers
+    the file non-PHP) which silently degrades scoring quality.
+    """
+    if re.search(r"<\?(php|=)", code[:200]):
+        return code
+    return "<?php\n" + code
+
+
 def score_code(code: str, file_path: str = "<generated>") -> RubricScore:
     """Score a PHP code string against the WordPress code quality rubric.
 
@@ -597,6 +609,7 @@ def score_code(code: str, file_path: str = "<generated>") -> RubricScore:
     Returns:
         RubricScore dataclass with all scoring details.
     """
+    code = _ensure_php_tag(code)
     all_check_hits: dict[str, bool] = {}
     all_evidence: dict[str, list[str]] = {}
 
