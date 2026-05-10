@@ -964,15 +964,15 @@ Source: rubric Section D Score Interpretation Bands.
 # ---------------------------------------------------------------------------
 
 NA_DETECTION_HINTS: Dict[str, str] = {
-    "D1_wpcs": r"<\?php",  # always applicable if it is PHP
-    "D2_security": r"\$_(GET|POST|REQUEST|COOKIE|FILES|SERVER)|echo|print",
+    "D1_wpcs": r"<\?php|function\s+\w+|class\s+\w+|\$\w+",  # any PHP-like content
+    "D2_security": r"\$_(GET|POST|REQUEST|COOKIE|FILES|SERVER)|echo|print|wp_send_json|return\s+new\s+WP_|\$this->|wp_remote|\$wpdb",
     "D3_sql": r"\$wpdb|WP_Query|get_posts\s*\(|query_posts\s*\(",
     "D4_perf": r"\$wpdb|wp_remote_get|wp_remote_post|wp_enqueue_script|wp_enqueue_style|WP_Query|get_posts",
-    "D5_wp_api": r"add_action|add_filter|wp_enqueue|register_post_type|wp_remote|WP_Filesystem",
-    "D6_i18n": r"echo\s+['\"]|_e\s*\(|__\s*\(|print\s+['\"]",
-    "D7_a11y": r"<(input|select|textarea|button|img|form|a\s|div\s|span\s)|echo\s+['\"]<",
-    "D8_errors": r"function\s+\w+|wp_remote|wpdb|\$_",
-    "D9_structure": r"add_action|add_filter|register_rest_route|register_activation_hook|class\s+\w+",
+    "D5_wp_api": r"add_action|add_filter|wp_enqueue|register_post_type|wp_remote|WP_Filesystem|WP_Query|\$wpdb|get_posts|do_action|apply_filters|register_rest_route|wp_\w+\s*\(|add_meta_box|wp_send_json|register_meta",
+    "D6_i18n": r"echo\s+['\"]|_e\s*\(|__\s*\(|_n\s*\(|_x\s*\(|esc_html__\s*\(|esc_attr__\s*\(|print\s+['\"]",
+    "D7_a11y": r"<(input|select|textarea|button|img|form|a\s|div\s|span\s)|echo\s+['\"]<|->render\s*\(",
+    "D8_errors": r"function\s+\w+|wp_remote|wpdb|\$_|try\s*\{|throw\s+new|is_wp_error",
+    "D9_structure": r"add_action|add_filter|register_rest_route|register_activation_hook|class\s+\w+|interface\s+\w+|trait\s+\w+|function\s+\w+|public\s+function|private\s+function|protected\s+function",
 }
 """Regex patterns to detect whether a dimension IS applicable to a code sample.
 
