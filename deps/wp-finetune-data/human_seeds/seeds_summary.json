@@ -1,0 +1,40 @@
+{
+  "total_seeds": 27,
+  "by_type": {
+    "critique_then_fix": 7,
+    "deep_judge_cot": 20
+  },
+  "by_subtlety": {
+    "boundary": 20,
+    "clear-cut": 7
+  },
+  "dimensions_covered": [
+    "accessibility",
+    "code_quality",
+    "dependency_integrity",
+    "performance",
+    "security",
+    "sql_safety",
+    "wp_api_usage",
+    "wpcs_compliance"
+  ],
+  "source_engagements": [
+    "activateuts",
+    "clicksteelprd1",
+    "cuportal",
+    "divinoom",
+    "housingnews",
+    "hoz",
+    "insiderperks",
+    "lopicomau",
+    "mieleaustralia",
+    "protoolsreview",
+    "pslife",
+    "rbmain",
+    "sparkpop",
+    "stjohns",
+    "venue2",
+    "yellowpages",
+    "yotclubprod"
+  ]
+}

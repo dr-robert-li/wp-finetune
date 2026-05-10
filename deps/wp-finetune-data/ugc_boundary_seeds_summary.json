@@ -1,0 +1,167 @@
+{
+  "total_seeds": 25,
+  "by_type": {
+    "deep_judge_cot": 13,
+    "critique_then_fix": 12
+  },
+  "by_subtlety": {
+    "boundary": 25,
+    "clear-cut": 0
+  },
+  "by_platform": {
+    "wordpress_stackexchange": 0,
+    "stackoverflow": 0,
+    "github": 6,
+    "reddit": 0,
+    "wp_org": 13,
+    "wp_vip": 1,
+    "security_advisory": 5
+  },
+  "dimensions_covered": [
+    "accessibility",
+    "dependency_integrity",
+    "i18n",
+    "wpcs_compliance"
+  ],
+  "dimension_counts": {
+    "accessibility": 5,
+    "dependency_integrity": 5,
+    "i18n": 7,
+    "wpcs_compliance": 8
+  },
+  "boundary_type_coverage": {
+    "accessibility": {
+      "A1": {
+        "count": 1,
+        "source_urls": [
+          "https://github.com/WordPress/gutenberg/issues/67078"
+        ]
+      },
+      "A2": {
+        "count": 1,
+        "source_urls": [
+          "https://bbpress.org/forums/topic/tabindex-attributes-cause-accessibility-problems/"
+        ]
+      },
+      "A3": {
+        "count": 1,
+        "source_urls": [
+          "https://github.com/WordPress/gutenberg/issues/15292"
+        ]
+      },
+      "A4": {
+        "count": 1,
+        "source_urls": [
+          "https://core.trac.wordpress.org/ticket/47682"
+        ]
+      },
+      "A5": {
+        "count": 1,
+        "source_urls": [
+          "https://github.com/WordPress/gutenberg/issues/55414"
+        ]
+      }
+    },
+    "i18n": {
+      "I1": {
+        "count": 2,
+        "source_urls": [
+          "https://core.trac.wordpress.org/ticket/49250",
+          "https://github.com/WordPress/WordPress-Coding-Standards/issues/698"
+        ]
+      },
+      "I2": {
+        "count": 1,
+        "source_urls": [
+          "https://core.trac.wordpress.org/ticket/13651"
+        ]
+      },
+      "I3": {
+        "count": 2,
+        "source_urls": [
+          "https://core.trac.wordpress.org/ticket/33073",
+          "https://core.trac.wordpress.org/ticket/35751"
+        ]
+      },
+      "I4": {
+        "count": 2,
+        "source_urls": [
+          "https://core.trac.wordpress.org/ticket/10373",
+          "https://developer.wordpress.org/reference/functions/date_i18n/"
+        ]
+      }
+    },
+    "dependency_integrity": {
+      "D1": {
+        "count": 2,
+        "source_urls": [
+          "https://core.trac.wordpress.org/ticket/64229",
+          "https://make.wordpress.org/core/2023/07/14/registering-scripts-with-async-and-defer-attributes-in-wordpress-6-3/"
+        ]
+      },
+      "D2": {
+        "count": 1,
+        "source_urls": [
+          "https://core.trac.wordpress.org/ticket/54221"
+        ]
+      },
+      "D3": {
+        "count": 2,
+        "source_urls": [
+          "https://core.trac.wordpress.org/ticket/58853",
+          "https://github.com/wp-media/wp-rocket/issues/6384"
+        ]
+      }
+    },
+    "wpcs_compliance": {
+      "W1": {
+        "count": 2,
+        "source_urls": [
+          "https://patchstack.com/articles/common-plugin-vulnerabilities-how-to-fix-them/",
+          "https://www.pluginvulnerabilities.com/2024/01/24/wordpress-plugin-developers-need-to-make-sure-there-nonce-checks-both-work-if-a-nonce-isnt-sent-or-if-the-nonce-is-wrong/"
+        ]
+      },
+      "W2": {
+        "count": 3,
+        "source_urls": [
+          "https://developer.wordpress.org/plugins/wordpress-org/common-issues/",
+          "https://patchstack.com/articles/common-plugin-vulnerabilities-how-to-fix-them/",
+          "https://www.pluginvulnerabilities.com/2023/10/05/the-wordpress-function-sanitize_text_field-isnt-always-enough-security-to-protect-against-xss/"
+        ]
+      },
+      "W3": {
+        "count": 3,
+        "source_urls": [
+          "https://docs.wpvip.com/security/validating-sanitizing-and-escaping/",
+          "https://github.com/WordPress/WordPress-Coding-Standards/issues/869",
+          "https://wptavern.com/xss-vulnerability-affects-more-than-a-dozen-popular-wordpress-plugins"
+        ]
+      }
+    }
+  },
+  "coverage_targets": {
+    "accessibility": "Covered all 5 of 5 types (A1-A5).",
+    "i18n": "Covered all 4 of 4 types (I1-I4).",
+    "dependency_integrity": "Covered all 3 of 3 types (D1-D3).",
+    "wpcs_compliance": "Covered all 3 of 3 types (W1-W3)."
+  },
+  "unfillable_gaps": [],
+  "source_exhaustion_notes": {
+    "web": "Used throughout the collected public candidates included in the final seed set.",
+    "social": "Public discussion sources were surveyed during collection; only examples with durable public URLs and real code were retained.",
+    "github_mcp_direct": "GitHub-derived boundary cases were retained where they met the quality bar.",
+    "wiley_mcp_cashmere": {
+      "checked": true,
+      "usable_candidates": 0,
+      "total_reviewed": 5,
+      "note": "Exhausted the requested Wiley source but found no usable WordPress-specific code-review material for the boundary seed set.",
+      "reviewed_urls": [
+        "https://cashmere.io/v/f4YBaa",
+        "https://cashmere.io/v/dyO69P",
+        "https://cashmere.io/v/6uTcBa",
+        "https://cashmere.io/v/eaDGys",
+        "https://cashmere.io/v/4eKM74"
+      ]
+    }
+  }
+}
