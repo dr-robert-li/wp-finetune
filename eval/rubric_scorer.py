@@ -580,8 +580,9 @@ def _group_checks_by_dimension(
 # Main entry point
 # ---------------------------------------------------------------------------
 
-# Count of LLM-assisted checks from rubric Section F Step 5 (skipped for now)
-_LLM_CHECK_COUNT = 18  # SEC-P05, SEC-P13, SEC-N04, SEC-N13, STR-N01, etc.
+# Count of LLM-assisted checks from rubric Section F Step 5.
+# Derived dynamically from CHECK_REGISTRY so it tracks future additions.
+_LLM_CHECK_COUNT = sum(1 for c in CHECK_REGISTRY.values() if c.method == "llm")
 
 
 def _ensure_php_tag(code: str) -> str:
@@ -640,14 +641,26 @@ def score_code(code: str, file_path: str = "<generated>") -> RubricScore:
     for k, v in regex_ev.items():
         all_evidence.setdefault(k, []).extend(v)
 
-    # --- Tool 4: LLM checks ---
-    # TODO: Implement LLM-assisted checks (SEC-P05, SEC-P13, SEC-N04, SEC-N10,
-    # SEC-N13, SEC-N15, SEC-N16, SEC-N17, STR-N01, STR-N04, STR-N05, STR-N06,
-    # STR-N08, STR-P12, PERF-N01, PERF-N05, PERF-N10, PERF-N11, PERF-P04,
-    # PERF-P10, ERR-N01, ERR-N06, ERR-N07, ERR-N11, ERR-P09, I18N-N12,
-    # I18N-N13, I18N-P01, A11Y-N01, A11Y-N05, A11Y-N08, A11Y-N11, A11Y-N12,
-    # WAPI-N12, WAPI-N13, WAPI-P08). These require an LLM judge pass with
-    # binary YES/NO prompts as defined in rubric Section F Step 5.
+    # --- Tool 4: LLM-assisted checks ---
+    # Single batched call evaluates all 41 LLM-method checks per rubric §F.5.
+    # Set RUBRIC_USE_LLM_CHECKS=1 to enable (opt-in to avoid wall-time cost
+    # in unit tests / fast batch runs). Failures are non-fatal -- the scorer
+    # falls back to deterministic-only output.
+    import os as _os
+    llm_unavailable = True
+    n_llm_used = _LLM_CHECK_COUNT
+    if _os.environ.get("RUBRIC_USE_LLM_CHECKS") == "1":
+        from eval.llm_checks import run_llm_checks
+        llm_out = run_llm_checks(code)
+        if not llm_out.get("_unavailable", True):
+            llm_unavailable = False
+            n_llm_used = 0
+            for cid, hit in llm_out["hits"].items():
+                # LLM results supplement deterministic results (regex / phpcs wins on conflict)
+                if cid not in all_check_hits:
+                    all_check_hits[cid] = bool(hit)
+            for cid, ev in llm_out["evidence"].items():
+                all_evidence.setdefault(cid, []).append(ev)
 
     # --- Compute scores ---
     na_dims = determine_na_dimensions(code)
@@ -666,5 +679,5 @@ def score_code(code: str, file_path: str = "<generated>") -> RubricScore:
         check_evidence=all_evidence,
         grade=grade,
         floor_rules_applied=floor_applied,
-        llm_checks_skipped=_LLM_CHECK_COUNT,
+        llm_checks_skipped=n_llm_used,
     )

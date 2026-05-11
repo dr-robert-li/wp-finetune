@@ -1,0 +1,41 @@
+recipe_version: "2"
+model: Qwen/Qwen3.6-35B-A3B-FP8
+runtime: vllm
+container: ghcr.io/spark-arena/dgx-vllm-eugr-nightly:latest
+
+metadata:
+  description: >
+    Qwen3.6-35B-A3B FP8 served via vLLM for in-pipeline batch generation
+    (Phase 1 re-judging, boundary pack synthesis, full-scale rubric LLM
+    checks per docs/eval/wp_code_quality_rubric.md §F.5). Reserves enough
+    headroom on the DGX Spark UMA pool for the wp-finetune training tools
+    and dev stack to run alongside.
+  maintainers:
+    - wp-finetune (Robert Li)
+  source: https://huggingface.co/Qwen/Qwen3.6-35B-A3B-FP8
+
+defaults:
+  port: 8000
+  host: 0.0.0.0
+  tensor_parallel: 1
+  pipeline_parallel: 1
+  gpu_memory_utilization: 0.55
+  max_model_len: 16384
+  max_num_batched_tokens: 16384
+  trust_remote_code: true
+
+env:
+  HF_HUB_ENABLE_HF_TRANSFER: "1"
+
+command: |
+  vllm serve {model} \
+    --host {host} \
+    --port {port} \
+    --max-model-len {max_model_len} \
+    --max-num-batched-tokens {max_num_batched_tokens} \
+    --gpu-memory-utilization {gpu_memory_utilization} \
+    --trust-remote-code \
+    --enable-prefix-caching \
+    --quantization fp8 \
+    -tp {tensor_parallel} \
+    -pp {pipeline_parallel}
