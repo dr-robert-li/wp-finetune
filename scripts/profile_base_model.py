@@ -450,9 +450,11 @@ def profile_base_model(
         n_layers=48, n_experts=128, top_k=8, pad_token_id=pad_id
     )
 
+    # Unwrap PeftModel if present so model.model.layers works in both cases.
+    base = model.get_base_model() if hasattr(model, "get_base_model") else model
     # Register hooks on all MoE layers
     hooks = []
-    for i, layer in enumerate(model.model.layers):
+    for i, layer in enumerate(base.model.layers):
         if hasattr(layer, "mlp") and hasattr(layer.mlp, "gate"):
             h = layer.mlp.gate.register_forward_hook(collector.make_hook(i))
             hooks.append(h)
