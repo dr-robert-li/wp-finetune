@@ -1,0 +1,220 @@
+# DGX-Toolbox Generic Issues
+
+Tracked by: wp-finetune project (Robert Li)
+Started: 2026-05-11
+Last updated: 2026-05-11
+
+This file collects systemic issues affecting any dgx-toolbox user, NOT
+wp-finetune-specific problems. Each entry has: severity, reproduction,
+generic impact, and suggested fix. Issues were discovered while integrating
+the toolbox into a HuggingFace + PEFT + Unsloth fine-tuning workflow on
+DGX Spark hosts, but the underlying bugs are reproducible by any user who
+follows the toolbox's documented quickstart paths.
+
+Code references point at the in-tree copy under `deps/dgx-toolbox/` but
+apply equally to the standalone `~/dgx-toolbox` checkout (same source).
+
+## Severity levels
+
+- **P0** — blocks normal workflow with no workaround
+- **P1** — blocks normal workflow with a documented workaround
+- **P2** — friction; correct behaviour reachable with effort
+- **P3** — cosmetic / docs gap
+
+---
+
+## #1 (P1) — ngc-pytorch.sh / ngc-jupyter.sh silent exit on missing host bind-mount files
+
+**Files**: `containers/ngc-pytorch.sh:5-10`, `containers/ngc-jupyter.sh:9-14`, `lib.sh:85-89`
+
+**Reproduction**:
+1. Fresh user, freshly cloned dgx-toolbox; do NOT pre-create
+   `$HOME/ngc-quickstart.sh` or `$HOME/requirements-gpu.txt`.
+2. Run `containers/ngc-pytorch.sh` (or `ngc-jupyter.sh`).
+3. Docker silently creates empty *directories* at the host paths, then
+   bind-mounts them. Inside the container `/usr/local/bin/quickstart` is
+   a directory, not a script.
+4. The container's inner cmd is
+   `pip install --no-deps -r /tmp/requirements-gpu.txt && quickstart && exec bash`
+   (ngc-pytorch.sh:10). `pip install` on an empty requirements file
+   succeeds, `quickstart` fails with "is a directory", the `&&` chain
+   short-circuits, `exec bash` never runs, and the container exits.
+5. The user is dropped back to the host shell with no clear error.
+
+**Generic impact**: Any first-time toolbox user who has not run the
+documented setup step hits this. The failure mode looks identical to a
+clean container exit, so it is easy to misdiagnose as a Docker/NGC issue.
+
+**Suggested fix**: Add a `require_files` helper to `lib.sh` (mirroring
+the existing `ensure_dirs` at line 87) and call it at the top of both
+launchers. Example:
+
+```bash
+require_files() {
+  for f in "$@"; do
+    if [ ! -f "$f" ]; then
+      echo "ERROR: required file '$f' not found on host." >&2
+      echo "Run 'setup/install.sh' (or copy the template into \$HOME) first." >&2
+      exit 1
+    fi
+  done
+}
+```
+
+Then prepend `require_files "$HOME/requirements-gpu.txt" "$HOME/ngc-quickstart.sh"`
+to ngc-pytorch.sh and ngc-jupyter.sh.
+
+---
+
+## #2 (P0) — ngc-pytorch container HF stack incompatible with released PEFT
+
+**Files**: `containers/ngc-pytorch.sh:9` (base image `nvcr.io/nvidia/pytorch:26.02-py3`)
+
+**Reproduction**:
+1. Launch `ngc-pytorch.sh`.
+2. `python -c "import transformers, huggingface_hub, tokenizers; print(transformers.__version__, huggingface_hub.__version__, tokenizers.__version__)"`
+   reports transformers 5.8.0, huggingface-hub 1.14.0, tokenizers 0.20.3.
+3. `pip install peft==0.19.1` (current stable). Loading any LoRA adapter
+   raises `WeightConverter.__init__() got an unexpected keyword argument
+   'distributed_operation'` because PEFT 0.19 was built against the
+   transformers 4.x WeightConverter signature.
+4. Attempting to downgrade transformers to <5 cascades: tokenizers must
+   move to 0.22–0.23, and huggingface-hub must be <1.0. The 26.02 image's
+   torch / nvidia-* metapackages pin against the 5.x line, so resolving
+   the downgrade requires `--force-reinstall --no-deps` across four
+   packages and breaks other toolbox-installed extras.
+
+**Generic impact**: Anyone trying to use a HF LoRA adapter, Sentence
+Transformers, TRL <0.30, or most current open-source fine-tuning recipes
+inside the 26.02 image fails out of the box. The `quickstart` guide
+(containers/ngc-quickstart.sh:34-48) explicitly advertises PEFT and TRL
+as "pre-installed", so this contradicts documentation.
+
+**Suggested fix**: Pin a known-good HF stack in
+`setup/requirements-gpu.txt` (or in a Dockerfile layer that
+`pip install --force-reinstall`s on container build), e.g.
+`transformers==4.46.*`, `tokenizers==0.20.*`, `huggingface-hub==0.26.*`,
+`peft==0.13.*`. Document the supported stack range in README.md under a
+"Container compatibility matrix" section.
+
+---
+
+## #3 (P0) — unsloth-studio.sh / unsloth-headless.sh auto-pull `latest` unsloth, cascading to transformers 5.x
+
+**Files**: `containers/unsloth-studio.sh:43-71`, `containers/unsloth-headless.sh:49-75`
+
+**Reproduction**:
+1. Run `containers/unsloth-studio.sh` (or `unsloth-headless.sh`).
+2. The inner cmd executes `pip install --no-deps unsloth unsloth_zoo`
+   (unsloth-studio.sh:44, unsloth-headless.sh:50) with no version pin.
+3. The metadata-driven dep resolver block (lines 45-66 / 51-72) then
+   installs every transitive requirement from the freshly pulled
+   `unsloth` package.
+4. Latest unsloth (2026.5.x at time of writing) requires
+   `transformers>=5.0`, which itself requires `tokenizers>=0.22`,
+   `huggingface-hub>=1.0`. There is no opt-out — the install runs every
+   container start.
+
+**Generic impact**: Any user with a LoRA checkpoint trained against
+transformers 4.x or peft <0.19 (i.e. most existing public checkpoints)
+will get adapter-loading errors after this auto-resolve. The bug is also
+silent: the container starts successfully, the breakage appears only when
+the user's first `model.load_adapter(...)` call runs.
+
+**Suggested fix**: Read an `UNSLOTH_VERSION` env var in both launchers,
+defaulting to `latest` to preserve current behaviour:
+
+```bash
+UNSLOTH_VERSION="${UNSLOTH_VERSION:-latest}"
+# inner cmd:
+PIN=""
+[ "$UNSLOTH_VERSION" != "latest" ] && PIN="==$UNSLOTH_VERSION"
+pip install --no-deps "unsloth${PIN}" "unsloth_zoo${PIN}"
+```
+
+Document in README that for older-checkpoint workflows users should
+export e.g. `UNSLOTH_VERSION=2026.3.5`. Also publish a "known-good"
+unsloth + transformers compatibility table.
+
+---
+
+## #4 (P1) — unsloth-studio.sh container exits when `unsloth studio setup` fails (studio venv missing)
+
+**File**: `containers/unsloth-studio.sh:43-71`
+
+**Reproduction**:
+1. Pull a fresh `nvcr.io/nvidia/pytorch:25.11-py3` image, no prior
+   unsloth-studio state on the host volume.
+2. Run `containers/unsloth-studio.sh`.
+3. The inner cmd (line 43-71) ends with
+   `... unsloth studio setup && ... unsloth studio -H 0.0.0.0 -p ${PORT}`.
+   If `unsloth studio setup` fails (e.g. studio venv at
+   `/root/.unsloth/studio/unsloth_studio` cannot be provisioned because
+   of network, disk, or a half-installed previous run), the `&&` chain
+   aborts.
+4. The container exits. The poll-for-readiness loop on line 75 detects
+   "Container exited unexpectedly", removes the container, and the user
+   is dropped back to host shell — without a clear, surfaced error
+   message above the docker logs scrollback.
+
+**Generic impact**: Any user pulling the unsloth-studio container fresh
+or after a failed install hits this. UX is confusing: the launcher
+prints the URL banner (lines 21-31), claims studio is starting, and
+then disappears.
+
+**Suggested fix**: Decouple the studio UI bringup from the container
+shell lifecycle. Either:
+
+1. Replace `unsloth studio setup && ... unsloth studio ...` with
+   `unsloth studio setup || { echo 'Studio setup failed — keeping
+   container alive for debugging'; sleep infinity; }`, OR
+2. Split studio bringup into a separate launcher
+   (`unsloth-studio-ui.sh`) that runs against an already-up headless
+   container, mirroring the headless/studio split that already exists
+   for the docker-run layer.
+
+Either approach avoids the silent host-shell drop.
+
+---
+
+## #5 (P0) — `bitsandbytes` wheel missing CUDA 13.x binary
+
+**Files**: `containers/unsloth-studio.sh:44-67`, `containers/unsloth-headless.sh:50-72`
+(installed transitively via the unsloth dep resolver block)
+
+**Reproduction**:
+1. Launch any unsloth container against the 26.02-py3 base (or the
+   25.11-py3 base with CUDA 13.1 forward-compat, which is the current
+   default for unsloth-studio.sh:42 / unsloth-headless.sh:48 once a
+   user upgrades).
+2. The unsloth dep resolver pulls `bitsandbytes==0.49.2`. Its wheel
+   ships `libbitsandbytes_cuda121.so` and lower but no
+   `libbitsandbytes_cuda131.so`.
+3. On first import: `Configured CUDA binary not found at
+   /usr/local/lib/python3.12/dist-packages/bitsandbytes/libbitsandbytes_cuda131.so`.
+   Quantized model loads fall back to a CPU path or error out.
+
+**Generic impact**: 4-bit / 8-bit quantization (advertised in
+ngc-quickstart.sh:50-56 as a supported pre-installed feature) is broken
+inside the toolbox's modern containers until upstream bitsandbytes ships
+a CUDA 13 wheel.
+
+**Suggested fix**: Pin `bitsandbytes==0.48.0` (last version that
+gracefully falls back on CUDA 12.x and is known to work in mixed
+CUDA-version environments) in the toolbox-managed pip layer until
+upstream releases a CUDA 13 wheel. Document the pin and the rationale
+in README.md, and add a tracking link to the upstream bitsandbytes
+release notes so the pin can be lifted in a future toolbox release.
+
+---
+
+## How to add issues
+
+Append new entries ABOVE this footer, numbered sequentially, and bump
+the `Last updated` date at the top. Keep each entry under ~250 words,
+include a file path + line number citation for the offending code, and
+state both the reproduction steps and the suggested fix. Anything
+project-specific (e.g. a single consumer's training hyperparameters or
+dataset paths) belongs in that project's own tracker, not here — the
+purpose of this file is to surface issues that affect *any* dgx-toolbox
+user running HF / PyTorch / Unsloth workflows.
