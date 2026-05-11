@@ -130,3 +130,20 @@ Greenlit when:
 - `recipes/qwen3.6-35b-a3b-fp8-vllm.yaml` validated (vLLM serves, `/v1/chat/completions` responds with JSON schema)
 
 Anchor pool: 500 PASS + 145 FAIL = 645 labeled anchors covering 53–100 range. Phase 1a calibration uses these as fixed gold; Phase 1b re-judging via vLLM uses them as few-shot prompt anchors.
+
+## Phase 8 — Qwen3.6-base variant (stub, expand later)
+
+Added to plan 2026-05-11. Parallel variant trained on **Qwen3.6-35B-A3B-FP8** base instead of Qwen3-30B-A3B. Motivation: Qwen3.6-35B is newer (likely stronger reasoning baseline), already cached locally, and serves as the vLLM backbone for in-pipeline batch inference. Training the customer-facing variant on the same family removes a base-model gap.
+
+Dependencies (resolve before Phase 8 starts):
+- Dataset: reuse Phase 1 v2 dataset as-is (task-token agnostic between bases).
+- Task tokens: `<wp_gen>` / `<wp_judge>` must be added to Qwen3.6 tokenizer (separate vocab IDs vs. Qwen3-30B's 151669/151670).
+- Tooling: verify Unsloth + PEFT support Qwen3.6 MoE router-freeze pattern (architecture identical family — likely fine, smoke test on 100-step LoRA first).
+- Compute: FP8 base saves VRAM but LoRA training in BF16 needs upcast path — Unsloth Studio recipe TBD.
+
+Phase 8 produces a parallel artifact track (8a SFT → 8b RL → 8c sieve → 8d prune → 8e package) that does NOT replace Phase 3–7 outputs — it's a second checkpoint shipped alongside, letting downstream consumers pick base by their compute budget.
+
+Open questions for expand-later session:
+- Single-shot trainer (8a–e linear) or full pipeline reuse (call Phase 3–7 with `--base Qwen/Qwen3.6-35B-A3B-FP8`)?
+- Quantization target (FP8 already; need GGUF + AWQ paths)?
+- Eval gates: same Phase 4 cutoffs, or recalibrated for 35B base?
