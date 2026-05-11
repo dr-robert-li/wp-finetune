@@ -67,16 +67,26 @@ Two LLM backends, used by workload:
 
 ## Step 0.1 — runbook (GPU container required)
 
+**Container choice matters.** `ngc-pytorch.sh` (NGC PyTorch 26.02-py3) ships transformers 5.8.0 / huggingface-hub 1.14 — no released PEFT version can load adapters trained with peft 0.18.1 against that stack. Use `unsloth-studio.sh` (NGC PyTorch 25.11-py3), the same base the adapter was trained against.
+
 ```bash
 cd ~/Desktop/projects/wp-finetune
-bash deps/dgx-toolbox/containers/ngc-pytorch.sh
+bash deps/dgx-toolbox/containers/unsloth-studio.sh
 # Inside container:
 cd /workspace
+
+# Pin training-time deps (one-off per container start)
+pip install --no-deps -r config/requirements-profiling.txt
+
+# Sanity check: cuda + matching dep versions
+python3 -c "import torch, peft, transformers; print('cuda:', torch.cuda.is_available()); print('peft:', peft.__version__, 'transformers:', transformers.__version__)"
+# Expected: cuda: True   peft: 0.18.1   transformers: 4.56.2
 
 # Base model — baseline routing without task-token bias
 python -m scripts.profile_base_model \
   --model-path models/Qwen3-30B-A3B \
   --tokenizer-path adapters/tokenizer \
+  --ratio ratio_30_70 \
   --output-dir output/diagnostic/profiling_base \
   --subsample 0.05
 
@@ -85,11 +95,14 @@ python -m scripts.profile_base_model \
   --model-path models/Qwen3-30B-A3B \
   --tokenizer-path adapters/tokenizer \
   --adapter adapters/qwen3-30b-wp-30_70 \
+  --ratio ratio_30_70 \
   --output-dir output/diagnostic/profiling_30_70 \
   --subsample 0.05
 ```
 
-Wall time estimate: ~20–30 min each on GB10 at subsample 0.05.
+Wall time estimate (warm cache): ~6 min load + ~6 min forward passes per run on GB10 at subsample 0.05. First run cold cache: model load ~6 min instead of ~36 s.
+
+**Why not ngc-pytorch.sh:** transformers 5.8.0 / PEFT 0.19.1 / WeightConverter API drift / tokenizers 0.20 vs 0.22 mismatch / huggingface-hub 1.14 vs <1.0 cascade. The unsloth-studio container resolves all of these by mirroring the training-time stack.
 
 **Expected signal:** if task tokens are doing their job, the 30/70 run should show `eeff_wp_gen` and `eeff_wp_judge` diverge per layer. Mean E_eff total being 69 across all 5 ratios in `output/triage_decision.md` suggested they did not — that's the load-bearing assumption behind the v2 retrain plan.
 

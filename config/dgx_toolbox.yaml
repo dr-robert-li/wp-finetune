@@ -65,13 +65,18 @@ container_env:
 # Container working directory for exec commands
 container_workdir: /workspace/wp-finetune
 
-# Pinned dependency versions (must match inside container)
+# Pinned dependency versions (must match inside container).
+# Mirrored in config/requirements-profiling.txt for pip installation inside the
+# unsloth-studio container.
 pinned_versions:
   transformers: "4.56.2"
-  trl: "0.24.0"
+  peft: "0.18.1"
+  trl: "0.26.1"
   datasets: "4.3.0"
   bitsandbytes: "0.48.0"
   huggingface_hub: "0.34.1"
+  tokenizers: ">=0.22,<0.23"
+  accelerate: ">=1.0.0,<2"
 
 # Ports
 ports:
