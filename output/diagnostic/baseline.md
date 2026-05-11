@@ -181,28 +181,40 @@ unsloth-headless.sh + the force-reinstall step mirror the training-time stack ex
 
 The 0.1 caveat (raw PEFT does not bind the MoE expert LoRA) means we cannot get a true 30/70 judge eval via `PeftModel.from_pretrained`. Two viable paths:
 
-### Path A (primary): vLLM-served LoRA via `--enable-lora --lora-modules`
+### Path A (primary): vLLM-served LoRA via direct `docker run`
 
-`recipes/qwen3-30b-wp-30_70-vllm.yaml` is already authored. vLLM has its own LoRA loader independent of HF PEFT — it parses `adapter_config.json` directly and applies LoRA at the vLLM kernel level. Empirically often binds `target_parameters`-declared expert LoRA where raw PEFT does not. Cheap to test.
+**Bypass sparkrun** — sparkrun cannot serve local model directories (DGX_TOOLBOX_ISSUES.md #8 + #9). We run the same prebuilt vLLM image (`ghcr.io/spark-arena/dgx-vllm-eugr-nightly:latest`) directly. vLLM has its own LoRA loader independent of HF PEFT — it parses `adapter_config.json` directly and applies LoRA at the vLLM kernel level. Empirically often binds `target_parameters`-declared expert LoRA where raw PEFT does not.
 
-Steps (inside unsloth-headless container):
+`scripts/serve_30_70_vllm.sh` wraps the docker invocation; `recipes/qwen3-30b-wp-30_70-vllm.yaml` is now documentation-only.
+
+Steps (host shell, NOT inside any container):
 ```bash
-# leave container; start vLLM on port 8001 via sparkrun
-exit
-sparkrun start recipes/qwen3-30b-wp-30_70-vllm.yaml
+# Stop the unsloth-headless container if it's holding GPU memory (won't fit both)
+docker stop unsloth-headless 2>/dev/null || true
 
-# verify endpoint + LoRA name
-curl -s http://localhost:8001/v1/models | head
+# Launch vLLM serving base + 30/70 LoRA on :8001
+bash scripts/serve_30_70_vllm.sh
 
-# quality smoke — manual eyeball of a generation
+# Follow weight-load + readiness
+docker logs -f wp-30_70-vllm
+# Ctrl-C once you see: "Application startup complete" + "Uvicorn running on http://0.0.0.0:8001"
+
+# Verify endpoint + LoRA name
+curl -s http://localhost:8001/v1/models | jq
+
+# Quality smoke — manual eyeball of a generation
 curl -sX POST http://localhost:8001/v1/chat/completions \
   -H 'Content-Type: application/json' \
-  -d '{"model":"wp-30_70","messages":[{"role":"user","content":"<wp_judge> Evaluate: <?php echo $_GET[\"q\"];"}]}' | head -c 800
+  -d '{"model":"wp-30_70","messages":[{"role":"user","content":"<wp_judge> Evaluate: <?php echo $_GET[\"q\"];"}]}' \
+  | head -c 800
 
-# eval
+# Full eval
 python -m eval.eval_judge \
   --test-jsonl output/diagnostic/seeds_as_judge_test.jsonl \
   --output output/diagnostic/judge_30_70_seed_spearman.json
+
+# When done
+docker stop wp-30_70-vllm
 ```
 
 **Acceptance signal:** vLLM startup logs must NOT show a "target_parameters not matched" warning (vLLM emits its own LoRA loader messages — they look different from PEFT's). If startup is silent on expert-LoRA AND smoke generation produces coherent JSON, Path A is good. If vLLM also fails to bind experts (look for "experts skipped" / "no LoRA applied" patterns in startup logs), drop to Path B.
