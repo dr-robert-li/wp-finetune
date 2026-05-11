@@ -1,0 +1,50 @@
+recipe_version: "2"
+# Sparkrun resolves `model:` against the HOST filesystem at the "Distributing
+# resources" step (before container launch). Use an absolute host path here,
+# NOT the in-container path — sparkrun handles the bind-mount itself.
+# Override via: MODEL=<other-path> sparkrun run recipes/...
+model: ${MODEL:-/home/robert_li/Desktop/projects/wp-finetune/models/Qwen3-30B-A3B}
+runtime: vllm
+container: ghcr.io/spark-arena/dgx-vllm-eugr-nightly:latest
+
+metadata:
+  description: >
+    Qwen3-30B-A3B base + 30/70 LoRA adapter, served for Phase 0.3 judge
+    evaluation. LoRA loaded via --enable-lora; eval_judge.py talks
+    OpenAI-compatible /v1/chat/completions on port 8001 to avoid clashing
+    with the qwen3.6-35b vLLM (port 8000) used for rubric LLM checks.
+  maintainers:
+    - wp-finetune (Robert Li)
+
+defaults:
+  port: 8001
+  host: 0.0.0.0
+  tensor_parallel: 1
+  pipeline_parallel: 1
+  gpu_memory_utilization: 0.55
+  max_model_len: 8192
+  max_num_batched_tokens: 8192
+  trust_remote_code: true
+
+env:
+  HF_HUB_ENABLE_HF_TRANSFER: "1"
+
+# Mount the project root so the LoRA adapter directory is reachable inside
+# the container at /workspace/project/adapters/...
+extra_mounts:
+  - /home/robert_li/Desktop/projects/wp-finetune:/workspace/project
+
+command: |
+  vllm serve {model} \
+    --host {host} \
+    --port {port} \
+    --max-model-len {max_model_len} \
+    --max-num-batched-tokens {max_num_batched_tokens} \
+    --gpu-memory-utilization {gpu_memory_utilization} \
+    --trust-remote-code \
+    --enable-prefix-caching \
+    --enable-lora \
+    --lora-modules wp-30_70=/workspace/project/adapters/qwen3-30b-wp-30_70 \
+    --max-lora-rank 32 \
+    -tp {tensor_parallel} \
+    -pp {pipeline_parallel}
