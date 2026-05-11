@@ -1,9 +1,15 @@
 recipe_version: "2"
-# Sparkrun resolves `model:` against the HOST filesystem at the "Distributing
-# resources" step (before container launch). Must be an absolute host path —
-# NOT the in-container path — and NOT a ${VAR:-default} shell-style template
-# (sparkrun doesn't expand those at recipe-load time). Override at run time
-# via `-o model=<other-path>`.
+# DOCUMENTATION ONLY — DO NOT USE WITH sparkrun.
+#
+# Sparkrun (deps/dgx-toolbox/vendor/sparkrun) cannot serve local model
+# directories: its `download_model()` hardcodes huggingface_hub.snapshot_download
+# with no os.path.exists() branch. See DGX_TOOLBOX_ISSUES.md #8 and #9.
+#
+# The actual launcher for this workload is:
+#   bash scripts/serve_30_70_vllm.sh
+#
+# This file documents the equivalent vLLM parameters in recipe form so a
+# future fixed sparkrun (or a different orchestrator) can ingest it.
 model: /home/robert_li/Desktop/projects/wp-finetune/models/Qwen3-30B-A3B
 runtime: vllm
 container: ghcr.io/spark-arena/dgx-vllm-eugr-nightly:latest

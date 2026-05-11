@@ -274,6 +274,47 @@ The wp-finetune workaround for now: hardcode the absolute host path in the recip
 
 ---
 
+## #9 (P0) — sparkrun cannot serve local model directories at all
+
+**Severity:** P0 (blocks the entire "load your fine-tuned checkpoint" workflow with NO recipe-level workaround).
+
+**Reproduction:**
+
+Any recipe with a `model:` field that points at a local directory (instead of an HF repo id) fails at the [3/6] "Distributing resources" step:
+
+```
+Failed to download model /absolute/host/path/to/checkpoint: Repo id must be
+in the form 'repo_name' or 'namespace/repo_name': '/absolute/host/path/...'.
+```
+
+This holds whether the path is:
+- absolute host path
+- in-container path
+- a `${VAR:-default}` env-substitution template (also blocked, see #8)
+
+**Root cause** in source:
+- `deps/dgx-toolbox/vendor/sparkrun/src/sparkrun/orchestration/distribution.py:541` → `distribute_model_from_local()` → `download_model()`.
+- `deps/dgx-toolbox/vendor/sparkrun/src/sparkrun/models/download.py:350-400` (`download_model()`) unconditionally calls `huggingface_hub.snapshot_download(repo_id=...)`. There is no `os.path.exists()` branch, no `local://` prefix support, no `--model-source-type=local` CLI flag.
+
+**Generic impact:** Any dgx-toolbox user who wants to serve a locally-trained checkpoint (the entire `eval-checkpoint.sh` workflow, every fine-tune-and-evaluate pipeline) hits this wall. There is currently no documented sparkrun-level workaround. Toolbox consumers must either:
+- Symlink the checkpoint into the HF cache directory tree (fragile — needs fabricated commit SHA + `refs/main` file; can be invalidated by `huggingface_hub` cache validation).
+- Bypass sparkrun entirely and `docker run` the underlying vLLM image directly (what wp-finetune ended up doing via `scripts/serve_30_70_vllm.sh`).
+- Wait for sparkrun upstream fix.
+
+**Suggested fix:** add a path-existence check at the top of `models/download.py` `download_model()`:
+
+```python
+# Pseudo-code addition near download_model() entry
+from pathlib import Path
+candidate = Path(model_ref)
+if candidate.is_absolute() and candidate.is_dir() and (candidate / "config.json").is_file():
+    return str(candidate)  # treat as already-distributed local checkpoint
+```
+
+Combined with the recipe `${VAR}` expansion fix from #8, this enables the documented `MODEL=<path> sparkrun run eval-checkpoint` flow.
+
+---
+
 ## How to add issues
 
 Append new entries ABOVE this footer, numbered sequentially, and bump
