@@ -19,6 +19,7 @@ import argparse
 import json
 import logging
 import math
+import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Optional
@@ -597,10 +598,24 @@ def main():
         default=None,
         help="Restrict profiling to a single discovered dataset key (e.g. 'current' or 'ratio_30_70'). Default: profile all discovered.",
     )
+    parser.add_argument(
+        "--allow-cpu",
+        action="store_true",
+        help="Allow CPU execution. Default: abort if torch.cuda.is_available() is False, "
+             "since a 30B forward pass on CPU is hours-to-days slow and is usually unintended "
+             "(e.g. running on host shell instead of CUDA container).",
+    )
     args = parser.parse_args()
 
     import torch
     from transformers import AutoTokenizer
+
+    if not torch.cuda.is_available() and not args.allow_cpu:
+        print("ERROR: torch.cuda.is_available() is False — refusing to run a 30B forward "
+              "pass on CPU. Likely cause: this shell is the host conda env, not the CUDA "
+              "container. Open container via 'bash deps/dgx-toolbox/containers/ngc-pytorch.sh' "
+              "and re-run. Pass --allow-cpu to override (NOT recommended).")
+        sys.exit(2)
 
     project_root = Path(__file__).resolve().parent.parent
     model_path = project_root / args.model_path
