@@ -4,9 +4,59 @@ Status (2026-05-11).
 
 | Step | Description | Status | Output |
 |------|-------------|--------|--------|
-| 0.1  | `profile_base_model.py` on base + 30/70 adapter — E_eff(gen) vs E_eff(judge) | **PENDING** — GPU container required | `output/diagnostic/profiling_{base,30_70}/` |
+| 0.1  | `profile_base_model.py` on base + 30/70 adapter — E_eff(gen) vs E_eff(judge) | **DONE** | `output/diagnostic/profiling_{base,30_70}/base_model_eeff.jsonl` |
 | 0.2  | `rubric_scorer.py` on 27 human + 93 UGC + 25 boundary seeds | **DONE** (5-tool, LLM ON) | `output/diagnostic/seed_scorer_agreement{,_llm}.{json,md}` |
-| 0.3  | `eval_judge.py` on 30/70 adapter vs seed-derived GT — Spearman | **READY** — synthesizer + recipe template, GPU container required | `output/diagnostic/judge_30_70_seed_spearman.json` |
+| 0.3  | `eval_judge.py` on 30/70 adapter vs seed-derived GT — Spearman | **READY** — vLLM primary path + FastLanguageModel fallback | `output/diagnostic/judge_30_70_seed_spearman.json` |
+
+## Step 0.1 — final results
+
+Base model and 30/70 adapter profiled at subsample 0.05 of `data/final_dataset/ratio_30_70/openai_train.jsonl`. 48 MoE layers hooked, ~1742 examples per run.
+
+| Metric | Base | 30/70 adapter | Shift |
+|--------|------|---------------|-------|
+| E_eff mean (total) | 69.96 | 74.42 | +4.46 |
+| E_eff mean (wp_gen) | 59.48 | 60.20 | +0.72 |
+| E_eff mean (wp_judge) | 69.96 | 75.18 | +5.22 |
+| **Delta (judge − gen) mean** | **+10.48** | **+14.98** | **+4.50** |
+| Delta max | +15.58 (L9) | +20.19 (L9) | +4.61 |
+
+**Every layer shows positive shift.** Late layers (43–47) gain +5 to +9 delta points; early layers (0–3) gain +1 to +3.
+
+### Interpretation (rewrites the v2 hypothesis)
+
+The base model already routes `<wp_gen>` differently from `<wp_judge>` by ~10 E_eff points. Training amplified this differentiation to ~15 — routing is doing exactly what task-token-driven specialisation is supposed to do.
+
+The v2 plan's load-bearing premise ("experiment_001 failed because task tokens didn't drive routing concentration") is **rejected**. Routing was never the problem. The actual causes of the Spearman 0.096 + parse-rate 13.2% regression must be:
+
+1. **Label quality** — Claude bulk-judge labels noisy (the seed-anchored re-judge plan still applies).
+2. **Embed_tokens overfitting** — training pushed `<wp_gen>` / `<wp_judge>` embeddings into a degenerate region for output gen (routing fine, semantics off).
+3. **Output format collapse** — model lost JSON output discipline (`overall_score` / dimension-score keys); training data may not have enforced strict-JSON examples consistently.
+
+### Important caveat — expert LoRA did NOT bind during profiling
+
+PEFT 0.18.1 + transformers 4.56.2 raised:
+
+```
+RuntimeWarning: target_parameters=['mlp.experts.gate_up_proj', 'mlp.experts.down_proj']
+were set but no parameter was matched.
+```
+
+The 30/70 adapter declares LoRA on the MoE expert MLP weight tensors via the newer `target_parameters` API (Unsloth's MoE pattern). Raw PEFT cannot resolve those parameter names; only `modules_to_save=[embed_tokens, lm_head]` + standard `target_modules=[q_proj, k_proj, v_proj, o_proj, gate_up_proj, down_proj]` actually loaded.
+
+**Impact split:**
+- **Routing E_eff (this measurement) — SAFE.** Router gate is frozen during training and never in any adapter. Routing decisions depend on (a) trained embed_tokens, which DID load, and (b) trained attention LoRA, which DID load. The +4.50 delta shift above is real.
+- **Output quality — UNREPRESENTATIVE.** The base expert MLPs ran for every forward pass. Anything that reads model outputs (Phase 0.3 judge eval, vLLM generation) using `PeftModel.from_pretrained` would see partial-trained behaviour, not true 30/70 quality.
+
+Filed as `DGX_TOOLBOX_ISSUES.md#7`.
+
+### v2 plan revisions
+
+| Axis | Old emphasis | New emphasis |
+|------|--------------|--------------|
+| Routing collapse | PRIMARY suspect | REJECTED — routing differentiates fine |
+| Label quality (Claude bulk-judge) | Co-primary | PRIMARY |
+| Output format integrity (JSON parse rate) | Implicit | **PROMOTED — explicit Phase 1d gate at ≥95%** |
+| Embed_tokens overfitting | Not in plan | New diagnostic — verify in Phase 2 pilot |
 
 ## Step 0.2 — final results
 
@@ -125,23 +175,49 @@ unsloth-headless.sh + the force-reinstall step mirror the training-time stack ex
 
 **Expected signal:** if task tokens are doing their job, the 30/70 run should show `eeff_wp_gen` and `eeff_wp_judge` diverge per layer. Mean E_eff total being 69 across all 5 ratios in `output/triage_decision.md` suggested they did not — that's the load-bearing assumption behind the v2 retrain plan.
 
-## Step 0.3 — runbook (GPU container required)
+## Step 0.3 — design (two adapter-binding backends)
 
 `output/diagnostic/seeds_as_judge_test.jsonl` (145 records) built with human-derived GT.
 
+The 0.1 caveat (raw PEFT does not bind the MoE expert LoRA) means we cannot get a true 30/70 judge eval via `PeftModel.from_pretrained`. Two viable paths:
+
+### Path A (primary): vLLM-served LoRA via `--enable-lora --lora-modules`
+
+`recipes/qwen3-30b-wp-30_70-vllm.yaml` is already authored. vLLM has its own LoRA loader independent of HF PEFT — it parses `adapter_config.json` directly and applies LoRA at the vLLM kernel level. Empirically often binds `target_parameters`-declared expert LoRA where raw PEFT does not. Cheap to test.
+
+Steps (inside unsloth-headless container):
 ```bash
-# Inside container — serve 30/70 adapter via vLLM
-# Clone recipes/nemotron-3-nano-4b-bf16-vllm.yaml to wp-30_70-vllm.yaml,
-# point base_model: models/Qwen3-30B-A3B, lora: adapters/qwen3-30b-wp-30_70
+# leave container; start vLLM on port 8001 via sparkrun
+exit
 sparkrun start recipes/qwen3-30b-wp-30_70-vllm.yaml
 
-# Eval against seed-derived GT
+# verify endpoint + LoRA name
+curl -s http://localhost:8001/v1/models | head
+
+# quality smoke — manual eyeball of a generation
+curl -sX POST http://localhost:8001/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"wp-30_70","messages":[{"role":"user","content":"<wp_judge> Evaluate: <?php echo $_GET[\"q\"];"}]}' | head -c 800
+
+# eval
 python -m eval.eval_judge \
   --test-jsonl output/diagnostic/seeds_as_judge_test.jsonl \
   --output output/diagnostic/judge_30_70_seed_spearman.json
 ```
 
-**Phase 1 hinges on this number.** If 30/70 against human-derived GT comes back ≈ 0.65–0.75, the "judge is broken vs humans" premise weakens. Run *before* committing to Phase 1 rebuild.
+**Acceptance signal:** vLLM startup logs must NOT show a "target_parameters not matched" warning (vLLM emits its own LoRA loader messages — they look different from PEFT's). If startup is silent on expert-LoRA AND smoke generation produces coherent JSON, Path A is good. If vLLM also fails to bind experts (look for "experts skipped" / "no LoRA applied" patterns in startup logs), drop to Path B.
+
+### Path B (fallback): FastLanguageModel-based Python eval
+
+Unsloth's `FastLanguageModel.from_pretrained()` knows how to bind `target_parameters` MoE expert LoRA. Slower than vLLM (no batching kernels), but guaranteed correct.
+
+Author `scripts/eval_judge_unsloth.py` if Path A fails — reuses `eval/eval_judge.py`'s parser + Spearman computation but replaces the OpenAI client with direct in-process inference via FastLanguageModel. Estimated ~5-10 min for 145 examples on GB10. Stub the script under that filename, leave it empty until Path A is tested.
+
+### Why Phase 1 hinges on this
+
+If 30/70 (true, with expert LoRA bound) ranks defects against human GT at Spearman ≥ 0.6, the model isn't "broken vs humans" — only mis-aligned in absolute scoring and JSON discipline. Phase 1 rebuild scope contracts to: better calibration data, stricter JSON format enforcement, no need to re-think MoE specialisation. If Spearman < 0.4, the full rebuild stands.
+
+Note: the original Spearman 0.5698 in `output/triage_decision.md` was vs Claude bulk-judge labels (also noisy). Phase 0.3 against human-derived seed GT is the apples-to-apples comparison.
 
 ## Phase 0 follow-up state
 
@@ -154,6 +230,8 @@ python -m eval.eval_judge \
 - 0.10 implement 41 LLM-assisted checks (rubric §F.5) ✅ (Claude backend; vLLM also wired)
 - 0.11 PASS-anchor extraction (500 anchors, mean 99.77) ✅
 - 0.12 hybrid LLM backend (Claude agents + vLLM) ✅
+- 0.13 pinned profiling env (unsloth-headless + force-reinstall) ✅
+- 0.14 base + 30/70 routing E_eff results — rejected routing-collapse hypothesis ✅
 
 ## Phase 1 readiness
 
