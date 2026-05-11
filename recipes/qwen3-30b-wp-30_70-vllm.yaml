@@ -1,9 +1,10 @@
 recipe_version: "2"
 # Sparkrun resolves `model:` against the HOST filesystem at the "Distributing
-# resources" step (before container launch). Use an absolute host path here,
-# NOT the in-container path — sparkrun handles the bind-mount itself.
-# Override via: MODEL=<other-path> sparkrun run recipes/...
-model: ${MODEL:-/home/robert_li/Desktop/projects/wp-finetune/models/Qwen3-30B-A3B}
+# resources" step (before container launch). Must be an absolute host path —
+# NOT the in-container path — and NOT a ${VAR:-default} shell-style template
+# (sparkrun doesn't expand those at recipe-load time). Override at run time
+# via `-o model=<other-path>`.
+model: /home/robert_li/Desktop/projects/wp-finetune/models/Qwen3-30B-A3B
 runtime: vllm
 container: ghcr.io/spark-arena/dgx-vllm-eugr-nightly:latest
 
