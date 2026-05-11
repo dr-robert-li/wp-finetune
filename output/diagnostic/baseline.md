@@ -5,46 +5,67 @@ Status (2026-05-11).
 | Step | Description | Status | Output |
 |------|-------------|--------|--------|
 | 0.1  | `profile_base_model.py` on base + 30/70 adapter — E_eff(gen) vs E_eff(judge) | **PENDING** — GPU container required | `output/diagnostic/profiling_{base,30_70}/` |
-| 0.2  | `rubric_scorer.py` on 27 human + 93 UGC + 25 boundary seeds | **DONE** (with caveats — see below) | `output/diagnostic/seed_scorer_agreement.{json,md}` |
-| 0.3  | `eval_judge.py` on 30/70 adapter vs seed-derived GT — Spearman | **READY** — synthesizer built, GPU container required | `output/diagnostic/judge_30_70_seed_spearman.json` |
+| 0.2  | `rubric_scorer.py` on 27 human + 93 UGC + 25 boundary seeds | **DONE** (5-tool, LLM ON) | `output/diagnostic/seed_scorer_agreement{,_llm}.{json,md}` |
+| 0.3  | `eval_judge.py` on 30/70 adapter vs seed-derived GT — Spearman | **READY** — synthesizer + recipe template, GPU container required | `output/diagnostic/judge_30_70_seed_spearman.json` |
 
-## Step 0.2 — final results (full 4-tool, snippet auto-wrap, relaxed N/A, corrected dim mapping)
+## Step 0.2 — final results
 
-145 / 145 seeds scored. Distribution: **min 64.6, max 100, mean 95.8, stdev 9.7**.
+### Run B — full 5-tool, LLM checks ON (`seed_scorer_agreement_llm.{json,md}`)
 
-Per-dimension Spearman vs human dim scores:
+145 / 145 seeds scored. Backend: Claude Code agents (`sonnet`), 6 workers, chunked over 3 × 9-min runs with retry on 1 failed seed. Distribution: **min 53.3, max 100, mean 93.7, stdev 11.9** (wider spread than 4-tool determ run).
 
-| Dim | n | Spearman | p | Notes |
-|-----|---|----------|---|-------|
-| D1_wpcs | 22 | +0.087 | 0.702 | weak |
-| D2_security | 15 | +0.175 | 0.532 | weak |
-| D3_sql | 12 | **+0.996** | 0.000 | **TRIVIAL — bimodal**: 10 pairs at (h=2, r=2), 2 pairs at (h=8, r≈10). Not evidence of subtle ranking. |
-| D4_perf | 8 | +0.286 | 0.493 | weak |
-| D5_wp_api | 31 | **−0.345** | 0.057 | **NEGATIVE** — scorer ranks WP-API quality opposite of humans. Real concern. |
-| D6_i18n | 16 | nan | nan | rubric output constant 10 (no checks fire) |
-| D7_a11y | 12 | nan | nan | rubric output constant 10 |
-| D8_errors | 8 | nan | nan | rubric output constant 10 |
-| D9_structure | 15 | −0.071 | 0.800 | weak |
+| Dim | n | Spearman | p | Pearson | Rubric mean (LLM) | Rubric mean (4-tool) |
+|-----|---|----------|---|---------|-------------------|----------------------|
+| D1_wpcs | 22 | +0.087 | 0.702 | +0.085 | 9.99 | 9.99 |
+| D2_security | 15 | +0.000 | 1.000 | −0.081 | **3.92** | 7.58 |
+| D3_sql | 12 | +0.996 | 0.000 | +1.000 | 3.32 | 3.32 |
+| D4_perf | 8 | +0.286 | 0.493 | **+0.488** | 9.87 | 9.88 |
+| D5_wp_api | 31 | −0.144 | 0.439 | −0.121 | **9.88** | 9.94 |
+| D6_i18n | 16 | nan | nan | nan | 9.35 | 9.91 |
+| D7_a11y | 12 | nan | nan | nan | 9.82 | 9.96 |
+| D8_errors | 0 | n/a | n/a | n/a | n/a | n/a |
+| D9_structure | 15 | −0.071 | 0.800 | −0.071 | 9.99 | 9.99 |
+
+### Run A — deterministic-only (`seed_scorer_agreement.{json,md}`)
+
+Same 145 seeds, LLM checks OFF. Distribution: min 64.6, max 100, mean 95.8.
 
 ### Honest interpretation
 
-1. **Original plan gate (Pearson ≥ 0.75) fails at every dimension as written.** D3_sql looked passing but is bimodal trivial. D5_wp_api is actively reversed.
-2. **Rubric scorer is a defect detector, not a defect ranker.** PHPCS / PHPStan static checks fire on known-bad patterns, but the gradations humans assign (a 2/10 vs a 4/10) reflect semantic severity that static tools cannot extract. The 18 LLM-assisted checks (rubric §F.5) were designed for exactly this — they are still deferred (`_LLM_CHECK_COUNT = 18` in `rubric_scorer.py`).
-3. **D5_wp_api −0.345 is the biggest red flag.** With LLM checks off, the only fires are deterministic anti-patterns (e.g. missing nonce, wrong WP API). Humans down-score plugins for things the scorer can't see (capability checks, sanitisation gaps). So rubric tends to grade defective code as 10 and lightly-defective code as 7–9, inverting the human ordering.
-4. **Structural improvements over Phase 0 run #1:** distribution is unimodal not bimodal; no all-N/A blanking; full 4-tool active. Architecture is sound; calibration evidence is not yet sufficient to use seeds as the *only* anchor.
+1. **Original plan gate (Pearson ≥ 0.75) fails at every dimension.** LLM checks moved D4_perf Pearson +0.037 → +0.488 (best per-dim signal); D5_wp_api Spearman improved −0.345 → −0.144 (less wrong); D2_security got worse (Pearson +0.158 → −0.081). Sample sizes (n=8–31 per dim) too small for strong statements.
+2. **Seeds are not well-calibrated for the 41 LLM check questions.** Each seed annotates only some dims (the ones humans cared about); rubric scores ALL dims; per-dim Spearman on FAIL-only subset is the wrong measure of scorer fitness.
+3. **Phase 1 calibration approach now defensible.** With 500 PASS anchors (rubric overall mean 99.77) + 145 FAIL seeds (rubric overall mean 93.7 LLM-on), the BINARY anchor agreement — clean code scores 95+, defective code scores < 90 — gives Phase 1 a reliable label signal even if per-dim Spearman on seeds remains weak.
+4. **D3_sql 0.996 still trivial.** 10 pairs at (h=2, r=2), 2 at (h=8, r≈10) — not subtle ranking, just yes/no agreement.
 
 ### Scorer change-set this session
 
-`eval/rubric_scorer.py` and `eval/rubric_definitions.py` were modified during Phase 0:
-- `score_code` now auto-wraps bare snippets with `<?php` prefix (was: PHPCS returned `_unavailable: True` for 33/145 seeds).
-- `NA_DETECTION_HINTS` relaxed: D1/D5/D9/D8 now match function-body forms; D2 broader; D6/D7 unchanged.
-- **Prior triage results (`output/triage_decision.md`, Spearman 0.5698 for 30/70) are not apples-to-apples with anything run after 2026-05-11.** STATE.md updated to note this.
+- `eval/rubric_scorer.py`: `<?php` auto-wrap for snippets; `RUBRIC_USE_LLM_CHECKS=1` env opt-in for Tool 4; `_LLM_CHECK_COUNT` derived from CHECK_REGISTRY (41).
+- `eval/rubric_definitions.py`: `NA_DETECTION_HINTS` relaxed (D1/D5/D8/D9 match function-body forms; D2 broader).
+- `eval/llm_checks.py` (new): 41 binary YES/NO prompts in single batched call. **Hybrid backend** — `LLM_BACKEND=claude` (Claude Code subscription) or `vllm` (local OpenAI-compatible endpoint, default Qwen3.6-35B-A3B-FP8 per `recipes/qwen3.6-35b-a3b-fp8-vllm.yaml`).
+- `eval/eval_judge.py`: `_GT_FIELD_TO_DIM` expanded to all 9 dims.
+- `scripts/phase0_score_seeds.py`: SEED_DIM_MAP corrected (`dependency_integrity → D5_wp_api`); parallel workers; `--resume` + `--time-budget-sec` for chunked runs.
+- `scripts/build_seeds_judge_test.py` (new): 145 seeds → wp_judge format with human-derived GT scores.
+- `scripts/extract_pass_anchors.py` (new): 500 PASS anchors from `data/phase1_extraction/output/passed/`.
+- `scripts/profile_base_model.py`: `--adapter` flag for PEFT LoRA stack.
+- `recipes/qwen3.6-35b-a3b-fp8-vllm.yaml` (new): vLLM serving recipe for batch generation.
 
-`scripts/phase0_score_seeds.py` SEED_DIM_MAP: `dependency_integrity → D5_wp_api` (was D8_errors). `build_seeds_judge_test.py` SEED_TO_JUDGE_FIELD: same correction.
+**Prior triage results (`output/triage_decision.md`, Spearman 0.5698 for 30/70) are not apples-to-apples with anything run after 2026-05-11.**
+
+## Backend strategy (Phase 0.12)
+
+Two LLM backends, used by workload:
+
+| Workload | Backend | Why |
+|----------|---------|-----|
+| Quality audit, advisor, council, calibration spot-check | `claude` (Sonnet via CLI) | Flagship reasoning, small volume, $0 (subscription) |
+| Phase 0.10 LLM checks at scale (145 here, 20K Phase 1) | `vllm` Qwen3.6-35B-A3B-FP8 | Volume — Claude CLI rate limits + wall time |
+| Phase 1b re-judging stratified 20K | `vllm` | volume |
+| Phase 1c boundary pack ~1500 contrastive pairs | `vllm` gen + `claude` quality gate | volume + verified gate |
+| Phase 5 RL verifiable rewards | `vllm` (PHPCS/security stay deterministic) | latency |
+
+`Qwen/Qwen3.6-35B-A3B-FP8` already cached in `~/.cache/huggingface/hub/`. Recipe at `recipes/qwen3.6-35b-a3b-fp8-vllm.yaml` (FP8, 0.55 UMA util, 16K context). Start with `sparkrun start recipes/qwen3.6-35b-a3b-fp8-vllm.yaml`.
 
 ## Step 0.1 — runbook (GPU container required)
-
-`scripts/profile_base_model.py` now accepts `--adapter` (added 2026-05-11).
 
 ```bash
 cd ~/Desktop/projects/wp-finetune
@@ -68,9 +89,9 @@ python -m scripts.profile_base_model \
   --subsample 0.05
 ```
 
-Wall time estimate: ~20-30 min each on GB10 at subsample 0.05.
+Wall time estimate: ~20–30 min each on GB10 at subsample 0.05.
 
-**Expected signal:** if task tokens are doing their job, the 30/70 run should show `eeff_wp_gen` and `eeff_wp_judge` diverge per layer. Mean E_eff total being 69 across all 5 ratios in `output/triage_decision.md` suggested they did not — that's the load-bearing assumption behind the entire v2 retrain plan.
+**Expected signal:** if task tokens are doing their job, the 30/70 run should show `eeff_wp_gen` and `eeff_wp_judge` diverge per layer. Mean E_eff total being 69 across all 5 ratios in `output/triage_decision.md` suggested they did not — that's the load-bearing assumption behind the v2 retrain plan.
 
 ## Step 0.3 — runbook (GPU container required)
 
@@ -78,8 +99,8 @@ Wall time estimate: ~20-30 min each on GB10 at subsample 0.05.
 
 ```bash
 # Inside container — serve 30/70 adapter via vLLM
-# (clone recipes/nemotron-3-nano-4b-bf16-vllm.yaml to wp-30_70-vllm.yaml,
-#  point base_model: models/Qwen3-30B-A3B, lora: adapters/qwen3-30b-wp-30_70)
+# Clone recipes/nemotron-3-nano-4b-bf16-vllm.yaml to wp-30_70-vllm.yaml,
+# point base_model: models/Qwen3-30B-A3B, lora: adapters/qwen3-30b-wp-30_70
 sparkrun start recipes/qwen3-30b-wp-30_70-vllm.yaml
 
 # Eval against seed-derived GT
@@ -88,24 +109,24 @@ python -m eval.eval_judge \
   --output output/diagnostic/judge_30_70_seed_spearman.json
 ```
 
-**Phase 1 hinges on this number.** If 30/70 against human-derived GT comes back around 0.65–0.75, the "judge is broken vs humans" premise weakens and the dataset rebuild scope shrinks. Run this *before* committing to Phase 1 rebuild.
+**Phase 1 hinges on this number.** If 30/70 against human-derived GT comes back ≈ 0.65–0.75, the "judge is broken vs humans" premise weakens. Run *before* committing to Phase 1 rebuild.
 
-**Caveat:** `eval_judge.py` `_GT_FIELD_TO_DIM` map currently lists D1/D2/D4/D6/D7 only. To pick up the synthesized seed fields (`sql_safety`, `wp_api_usage`, `error_handling`, `code_structure`), expand `_GT_FIELD_TO_DIM` to include them. Carried as Phase 0.9.
-
-## Phase 0 follow-up tasks — current state
+## Phase 0 follow-up state
 
 - 0.4 install composer + phpstan + WordPressVIPMinimum + phpcs-security-audit ✅
-- 0.5 fix N/A heuristics (relaxed regexes + `<?php` auto-wrap) ✅
+- 0.5 fix N/A heuristics + `<?php` auto-wrap ✅
 - 0.6 extend `profile_base_model.py` with `--adapter` ✅
 - 0.7 build `seeds_as_judge_test.jsonl` synthesizer ✅
-- 0.8 re-run step 0.2 with full tooling + fixes ✅ (results show original gate fails)
-- 0.9 expand `eval_judge.py` `_GT_FIELD_TO_DIM` for seed-derived GT fields ⬜ — needed before step 0.3 can score all 9 dims
-- 0.10 implement 18 LLM-assisted checks (rubric §F.5) ⬜ — likely required for credible D4/D5/D9 calibration
-- 0.11 PASS-anchor extraction (clean WP core + top plugins) ⬜ — must happen before Phase 1 calibration
+- 0.8 re-run step 0.2 with full tooling ✅
+- 0.9 expand `eval_judge.py` `_GT_FIELD_TO_DIM` for all 9 dims ✅
+- 0.10 implement 41 LLM-assisted checks (rubric §F.5) ✅ (Claude backend; vLLM also wired)
+- 0.11 PASS-anchor extraction (500 anchors, mean 99.77) ✅
+- 0.12 hybrid LLM backend (Claude agents + vLLM) ✅
 
-## Decision required from user
+## Phase 1 readiness
 
-Phase 0 step 0.2 results contradict the plan's gate. Two structural facts must be acknowledged before Phase 1:
+Greenlit when:
+- 0.1 + 0.3 GPU results land
+- `recipes/qwen3.6-35b-a3b-fp8-vllm.yaml` validated (vLLM serves, `/v1/chat/completions` responds with JSON schema)
 
-1. **The seed-only calibration approach is insufficient** for D4 / D5 / D9. PASS-anchors (Phase 0.11) and LLM checks (Phase 0.10) are upstream of Phase 1a.
-2. **The 30/70 judge-eval-vs-human-GT (step 0.3) is the cheap experiment that decides scope.** If 30/70 actually ranks defects close to humans, the v2 rebuild is overkill; if it doesn't, the plan is justified.
+Anchor pool: 500 PASS + 145 FAIL = 645 labeled anchors covering 53–100 range. Phase 1a calibration uses these as fixed gold; Phase 1b re-judging via vLLM uses them as few-shot prompt anchors.

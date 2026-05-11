@@ -1,0 +1,3915 @@
+{
+  "n_seeds_scored": 145,
+  "per_dim": {
+    "D1_wpcs": {
+      "n": 22,
+      "spearman": 0.0865042958313569,
+      "spearman_pvalue": 0.7018858399121028,
+      "pearson": 0.08518354199999192,
+      "human_mean": 2.3636363636363638,
+      "rubric_mean": 9.993348115299334
+    },
+    "D2_security": {
+      "n": 15,
+      "spearman": 0.0,
+      "spearman_pvalue": 1.0,
+      "pearson": -0.08111243514037758,
+      "human_mean": 2.2666666666666666,
+      "rubric_mean": 3.9169398907103825
+    },
+    "D3_sql": {
+      "n": 12,
+      "spearman": 0.9958591954639385,
+      "spearman_pvalue": 9.520826129056472e-12,
+      "pearson": 0.9999119759602106,
+      "human_mean": 3.0,
+      "rubric_mean": 3.317375886524823
+    },
+    "D4_perf": {
+      "n": 8,
+      "spearman": 0.2857142857142857,
+      "spearman_pvalue": 0.4927262450169571,
+      "pearson": 0.48795003647426394,
+      "human_mean": 1.875,
+      "rubric_mean": 9.870192307692307
+    },
+    "D5_wp_api": {
+      "n": 31,
+      "spearman": -0.1441754315365611,
+      "spearman_pvalue": 0.4390472958907335,
+      "pearson": -0.12092411467293841,
+      "human_mean": 2.6451612903225805,
+      "rubric_mean": 9.875
+    },
+    "D6_i18n": {
+      "n": 16,
+      "spearman": NaN,
+      "spearman_pvalue": NaN,
+      "pearson": NaN,
+      "human_mean": 2.0,
+      "rubric_mean": 9.348214285714285
+    },
+    "D7_a11y": {
+      "n": 12,
+      "spearman": NaN,
+      "spearman_pvalue": NaN,
+      "pearson": NaN,
+      "human_mean": 2.0,
+      "rubric_mean": 9.816176470588234
+    },
+    "D8_errors": {
+      "n": 0,
+      "spearman": null,
+      "pearson": null
+    },
+    "D9_structure": {
+      "n": 15,
+      "spearman": -0.07142857142857142,
+      "spearman_pvalue": 0.8002959873970545,
+      "pearson": -0.07142857142857145,
+      "human_mean": 2.933333333333333,
+      "rubric_mean": 9.994285714285715
+    }
+  },
+  "rows": [
+    {
+      "seed_id": "human_d6d4b402",
+      "source": "human",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D9_structure": 2.0,
+        "D4_perf": 2.0,
+        "D1_wpcs": 4.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 9,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_8cbbb903",
+      "source": "human",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D4_perf": 2.0,
+        "D5_wp_api": 5.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D5_wp_api": 10.0,
+        "D8_errors": 9.833333333333334,
+        "D9_structure": 9.742857142857144
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 99.1,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 12,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_dee691e2",
+      "source": "human",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D4_perf": 1.0,
+        "D3_sql": 6.0,
+        "D5_wp_api": 3.0,
+        "D9_structure": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_2382b134",
+      "source": "human",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D4_perf": 2.0,
+        "D2_security": 6.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D5_wp_api": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 10,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_062241e0",
+      "source": "human",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D4_perf": 2.0,
+        "D9_structure": 3.0,
+        "D5_wp_api": 4.0,
+        "D2_security": 7.0,
+        "D3_sql": 8.0,
+        "D1_wpcs": 5.0,
+        "D6_i18n": 7.0,
+        "D7_a11y": 7.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 3.0,
+        "D3_sql": 9.808510638297872,
+        "D4_perf": 9.653846153846153,
+        "D5_wp_api": 9.625,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 81.7,
+      "rubric_grade": "Good",
+      "rubric_triggered_check_count": 15,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_4add535b",
+      "source": "human",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D4_perf": 1.0,
+        "D5_wp_api": 2.0,
+        "D9_structure": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 10,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_a88846e3",
+      "source": "human",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D4_perf": 2.0,
+        "D5_wp_api": 4.0,
+        "D9_structure": 3.0,
+        "D3_sql": 8.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 9.853658536585366,
+        "D2_security": 10.0,
+        "D3_sql": 10.0,
+        "D4_perf": 9.653846153846153,
+        "D5_wp_api": 10.0,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 99.4,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 13,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_374b01e4",
+      "source": "human",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D4_perf": 2.0,
+        "D9_structure": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D5_wp_api": 10.0,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_6ef6ad38",
+      "source": "human",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D4_perf": 1.0,
+        "D5_wp_api": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 10,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_e4245623",
+      "source": "human",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D2_security": 3.0,
+        "D4_perf": 1.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D5_wp_api": 10.0,
+        "D9_structure": 9.914285714285715
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors"
+      ],
+      "rubric_overall_0_100": 99.8,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 13,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_0bf97b94",
+      "source": "human",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D4_perf": 2.0,
+        "D3_sql": 7.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 9,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_c6d3a022",
+      "source": "human",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D4_perf": 3.0,
+        "D9_structure": 5.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 12,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_2d87084d",
+      "source": "human",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D3_sql": 5.0,
+        "D4_perf": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_9e7eeefa",
+      "source": "human",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D4_perf": 1.0,
+        "D9_structure": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 10.0,
+        "D5_wp_api": 9.25,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 98.7,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 16,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_3bcb806f",
+      "source": "human",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D4_perf": 3.0,
+        "D3_sql": 6.0,
+        "D9_structure": 4.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_441af6a6",
+      "source": "human",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D4_perf": 1.0,
+        "D5_wp_api": 3.0,
+        "D9_structure": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D5_wp_api": 10.0,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 12,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_ae3dbe2a",
+      "source": "human",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D4_perf": 1.0,
+        "D5_wp_api": 2.0,
+        "D9_structure": 1.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 10.0,
+        "D4_perf": 9.653846153846155,
+        "D5_wp_api": 10.0,
+        "D8_errors": 10.0
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D6_i18n",
+        "D7_a11y",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 99.4,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 14,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_03b9d002",
+      "source": "human",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D4_perf": 1.0,
+        "D3_sql": 6.0,
+        "D5_wp_api": 4.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 10,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_53f910a2",
+      "source": "human",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D4_perf": 1.0,
+        "D2_security": 3.0,
+        "D3_sql": 5.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 10,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_fe9515fe",
+      "source": "human",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D4_perf": 1.0,
+        "D3_sql": 5.0,
+        "D5_wp_api": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 9,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_b4c54cab",
+      "source": "human",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D4_perf": 1.0,
+        "D5_wp_api": 2.0,
+        "D2_security": 4.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 10,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_c3ef687b",
+      "source": "human",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D4_perf": 1.0,
+        "D5_wp_api": 1.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 10,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_06d4b277",
+      "source": "human",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D4_perf": 2.0,
+        "D3_sql": 7.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 10,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_dfbddb50",
+      "source": "human",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D4_perf": 2.0,
+        "D9_structure": 3.0,
+        "D2_security": 6.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 10,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_e898e823",
+      "source": "human",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D4_perf": 2.0,
+        "D5_wp_api": 2.0,
+        "D9_structure": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D5_wp_api": 10.0,
+        "D9_structure": 9.914285714285715
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors"
+      ],
+      "rubric_overall_0_100": 99.8,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 14,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_5c84982f",
+      "source": "human",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D7_a11y": 2.0,
+        "D1_wpcs": 5.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D7_a11y": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 9,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_002",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D2_security": 1.0,
+        "D5_wp_api": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 3.0,
+        "D5_wp_api": 10.0,
+        "D8_errors": 9.5,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 74.6,
+      "rubric_grade": "Acceptable",
+      "rubric_triggered_check_count": 17,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_001",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D2_security": 2.0,
+        "D5_wp_api": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 3.0,
+        "D5_wp_api": 10.0,
+        "D8_errors": 10.0,
+        "D9_structure": 9.657142857142858
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 75.0,
+      "rubric_grade": "Good",
+      "rubric_triggered_check_count": 15,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_004",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D6_i18n": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 9.926829268292684,
+        "D2_security": 3.0,
+        "D6_i18n": 10.0,
+        "D7_a11y": 10.0,
+        "D8_errors": 10.0
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 75.7,
+      "rubric_grade": "Good",
+      "rubric_triggered_check_count": 15,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_006",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D9_structure": 3.0,
+        "D5_wp_api": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_003",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D3_sql": 1.0,
+        "D2_security": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D8_errors": 9.666666666666666,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 98.8,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 13,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_005",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D5_wp_api": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 13,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_007",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D3_sql": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 3.0,
+        "D3_sql": 2.0,
+        "D4_perf": 9.653846153846153,
+        "D5_wp_api": 10.0,
+        "D8_errors": 9.666666666666666
+      },
+      "rubric_dim_na": [
+        "D6_i18n",
+        "D7_a11y",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 64.4,
+      "rubric_grade": "Acceptable",
+      "rubric_triggered_check_count": 17,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_010",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D3_sql": 2.0,
+        "D2_security": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 3.0,
+        "D3_sql": 2.0,
+        "D4_perf": 9.653846153846153,
+        "D5_wp_api": 9.75,
+        "D6_i18n": 9.714285714285714,
+        "D8_errors": 9.666666666666666
+      },
+      "rubric_dim_na": [
+        "D7_a11y",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 68.0,
+      "rubric_grade": "Acceptable",
+      "rubric_triggered_check_count": 18,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_008",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D3_sql": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 10.0,
+        "D3_sql": 2.0,
+        "D4_perf": 9.653846153846153,
+        "D5_wp_api": 10.0,
+        "D8_errors": 10.0
+      },
+      "rubric_dim_na": [
+        "D6_i18n",
+        "D7_a11y",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 83.5,
+      "rubric_grade": "Good",
+      "rubric_triggered_check_count": 15,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_012",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D3_sql": 2.0,
+        "D2_security": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 9.853658536585366,
+        "D2_security": 3.0,
+        "D3_sql": 2.0,
+        "D4_perf": 9.653846153846153,
+        "D5_wp_api": 10.0,
+        "D6_i18n": 10.0,
+        "D8_errors": 9.5,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 70.7,
+      "rubric_grade": "Acceptable",
+      "rubric_triggered_check_count": 22,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_009",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D3_sql": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 3.0,
+        "D3_sql": 2.0,
+        "D4_perf": 9.653846153846153,
+        "D5_wp_api": 10.0,
+        "D8_errors": 9.666666666666666
+      },
+      "rubric_dim_na": [
+        "D6_i18n",
+        "D7_a11y",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 64.4,
+      "rubric_grade": "Acceptable",
+      "rubric_triggered_check_count": 22,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_011",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D3_sql": 2.0,
+        "D2_security": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 3.0,
+        "D3_sql": 2.0,
+        "D4_perf": 9.653846153846153,
+        "D5_wp_api": 9.75,
+        "D8_errors": 9.666666666666666,
+        "D9_structure": 9.742857142857144
+      },
+      "rubric_dim_na": [
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 66.9,
+      "rubric_grade": "Acceptable",
+      "rubric_triggered_check_count": 24,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_013",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D2_security": 2.0,
+        "D5_wp_api": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 9.853658536585366,
+        "D2_security": 3.0,
+        "D5_wp_api": 10.0,
+        "D8_errors": 9.5,
+        "D9_structure": 9.742857142857144
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 74.0,
+      "rubric_grade": "Acceptable",
+      "rubric_triggered_check_count": 16,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_017",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D2_security": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 3.0,
+        "D5_wp_api": 10.0,
+        "D8_errors": 10.0
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 72.0,
+      "rubric_grade": "Acceptable",
+      "rubric_triggered_check_count": 13,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_016",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D2_security": 2.0,
+        "D5_wp_api": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D5_wp_api": 10.0,
+        "D8_errors": 9.666666666666666,
+        "D9_structure": 9.914285714285715
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 98.9,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 16,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_018",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D3_sql": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 9.853658536585366,
+        "D2_security": 3.0,
+        "D3_sql": 2.0,
+        "D4_perf": 9.653846153846153,
+        "D5_wp_api": 9.75,
+        "D8_errors": 9.666666666666666
+      },
+      "rubric_dim_na": [
+        "D6_i18n",
+        "D7_a11y",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 63.9,
+      "rubric_grade": "Acceptable",
+      "rubric_triggered_check_count": 21,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_015",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D2_security": 2.0,
+        "D5_wp_api": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D5_wp_api": 9.75,
+        "D8_errors": 10.0,
+        "D9_structure": 9.485714285714286
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 98.4,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 17,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_stackoverflow_019",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D3_sql": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 3.0,
+        "D3_sql": 2.0,
+        "D4_perf": 9.653846153846153,
+        "D5_wp_api": 9.75,
+        "D6_i18n": 9.714285714285714,
+        "D8_errors": 9.666666666666666
+      },
+      "rubric_dim_na": [
+        "D7_a11y",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 68.0,
+      "rubric_grade": "Acceptable",
+      "rubric_triggered_check_count": 20,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_014",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D3_sql": 2.0,
+        "D2_security": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 3.0,
+        "D3_sql": 2.0,
+        "D4_perf": 9.653846153846153,
+        "D5_wp_api": 10.0,
+        "D8_errors": 10.0
+      },
+      "rubric_dim_na": [
+        "D6_i18n",
+        "D7_a11y",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 64.9,
+      "rubric_grade": "Acceptable",
+      "rubric_triggered_check_count": 17,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_vip_022",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D4_perf": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D3_sql": 10.0,
+        "D4_perf": 10.0,
+        "D5_wp_api": 9.75
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 99.4,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_stackoverflow_023",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D4_perf": 2.0,
+        "D5_wp_api": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D3_sql": 9.808510638297872,
+        "D5_wp_api": 9.375
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 97.4,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 13,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_stackoverflow_021",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D4_perf": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D3_sql": 10.0,
+        "D4_perf": 10.0,
+        "D5_wp_api": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 9,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_025",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D4_perf": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D3_sql": 10.0,
+        "D4_perf": 10.0,
+        "D5_wp_api": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 9,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_024",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D4_perf": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 10.0,
+        "D3_sql": 10.0,
+        "D4_perf": 10.0,
+        "D5_wp_api": 9.75,
+        "D6_i18n": 10.0,
+        "D7_a11y": 10.0
+      },
+      "rubric_dim_na": [
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 99.7,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 13,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_stackoverflow_020",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D4_perf": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 9,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_026",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D3_sql": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D8_errors": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 10,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_029",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D2_security": 2.0,
+        "D5_wp_api": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D5_wp_api": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 12,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_github_027",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D5_wp_api": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D5_wp_api": 9.75,
+        "D9_structure": 9.82857142857143
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors"
+      ],
+      "rubric_overall_0_100": 98.6,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 15,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_030",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D6_i18n": 2.0,
+        "D1_wpcs": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D6_i18n": 8.999999999999998
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 95.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 15,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_032",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D6_i18n": 2.0,
+        "D1_wpcs": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 9.803278688524589,
+        "D6_i18n": 10.0
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 99.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 14,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_035",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D6_i18n": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 10,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_github_033",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D6_i18n": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D6_i18n": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 9,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_034",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D6_i18n": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D6_i18n": 10.0,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 12,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_031",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D6_i18n": 2.0,
+        "D1_wpcs": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D6_i18n": 8.999999999999998
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 95.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 16,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_028",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D3_sql": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 9.853658536585366,
+        "D2_security": 3.0,
+        "D3_sql": 2.0,
+        "D4_perf": 9.653846153846153,
+        "D5_wp_api": 9.75,
+        "D8_errors": 9.666666666666666
+      },
+      "rubric_dim_na": [
+        "D6_i18n",
+        "D7_a11y",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 63.9,
+      "rubric_grade": "Acceptable",
+      "rubric_triggered_check_count": 21,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_github_036",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D6_i18n": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D6_i18n": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 12,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_039",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D7_a11y": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D7_a11y": 9.735294117647058
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 98.8,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_040",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D7_a11y": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D7_a11y": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_037",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D6_i18n": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 10.0,
+        "D6_i18n": 8.857142857142856
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 97.1,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 15,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_github_038",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D7_a11y": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D7_a11y": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 10,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_041",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D7_a11y": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 12,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_042",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D7_a11y": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 9,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_043",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D7_a11y": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D7_a11y": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 9,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_045",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D5_wp_api": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D4_perf": 10.0,
+        "D5_wp_api": 10.0,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 15,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_046",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D5_wp_api": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D5_wp_api": 9.75
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 98.8,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_047",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D5_wp_api": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D4_perf": 10.0,
+        "D5_wp_api": 10.0,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 13,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_044",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D5_wp_api": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D4_perf": 10.0,
+        "D5_wp_api": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 12,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_reddit_049",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D5_wp_api": 2.0,
+        "D1_wpcs": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D4_perf": 10.0,
+        "D5_wp_api": 9.75
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 99.2,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 10,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_048",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D5_wp_api": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 9.853658536585366
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 98.5,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 13,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_050",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D1_wpcs": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 3.0,
+        "D5_wp_api": 10.0,
+        "D8_errors": 10.0
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 72.0,
+      "rubric_grade": "Acceptable",
+      "rubric_triggered_check_count": 13,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_055",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D6_i18n": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 9.803278688524589,
+        "D6_i18n": 8.999999999999998
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 96.5,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 16,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_053",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D1_wpcs": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 3.0,
+        "D3_sql": 2.0,
+        "D4_perf": 9.653846153846153,
+        "D5_wp_api": 9.0,
+        "D8_errors": 9.666666666666666,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 66.2,
+      "rubric_grade": "Acceptable",
+      "rubric_triggered_check_count": 28,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_051",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D1_wpcs": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D5_wp_api": 10.0,
+        "D8_errors": 10.0,
+        "D9_structure": 9.914285714285715
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 99.8,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 14,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_054",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D1_wpcs": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 13,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_github_052",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D1_wpcs": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 3.0,
+        "D8_errors": 9.666666666666666
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 64.2,
+      "rubric_grade": "Acceptable",
+      "rubric_triggered_check_count": 17,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_github_056",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D6_i18n": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 10,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_059",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D6_i18n": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D6_i18n": 9.714285714285714
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 98.6,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_github_058",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D6_i18n": 2.0,
+        "D1_wpcs": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 10.0,
+        "D6_i18n": 8.857142857142856
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 97.1,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 18,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_reddit_057",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D1_wpcs": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 3.0,
+        "D5_wp_api": 10.0,
+        "D8_errors": 9.666666666666666
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 71.3,
+      "rubric_grade": "Acceptable",
+      "rubric_triggered_check_count": 14,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_060",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D2_security": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 3.0,
+        "D5_wp_api": 9.75,
+        "D7_a11y": 10.0,
+        "D8_errors": 10.0
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 75.4,
+      "rubric_grade": "Good",
+      "rubric_triggered_check_count": 19,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_062",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D2_security": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 9.754098360655737
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 98.4,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 12,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_061",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D2_security": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 3.0,
+        "D6_i18n": 10.0,
+        "D7_a11y": 10.0,
+        "D8_errors": 9.666666666666666,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api"
+      ],
+      "rubric_overall_0_100": 77.9,
+      "rubric_grade": "Good",
+      "rubric_triggered_check_count": 17,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_064",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D2_security": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 3.0,
+        "D6_i18n": 10.0,
+        "D7_a11y": 9.647058823529411,
+        "D8_errors": 10.0
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 75.4,
+      "rubric_grade": "Good",
+      "rubric_triggered_check_count": 16,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_065",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D2_security": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 3.0,
+        "D8_errors": 10.0
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 65.0,
+      "rubric_grade": "Acceptable",
+      "rubric_triggered_check_count": 14,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_063",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D2_security": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 9.926829268292684,
+        "D2_security": 10.0,
+        "D5_wp_api": 10.0,
+        "D7_a11y": 10.0,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n"
+      ],
+      "rubric_overall_0_100": 99.9,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 16,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_067",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D2_security": 2.0,
+        "D5_wp_api": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D5_wp_api": 9.75,
+        "D9_structure": 9.82857142857143
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors"
+      ],
+      "rubric_overall_0_100": 98.6,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 15,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_security_advisory_066",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D2_security": 2.0,
+        "D5_wp_api": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D5_wp_api": 9.75,
+        "D8_errors": 9.5,
+        "D9_structure": 9.485714285714286
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 97.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 16,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_070",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D4_perf": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 3.0
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 53.3,
+      "rubric_grade": "Poor",
+      "rubric_triggered_check_count": 15,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_068",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D4_perf": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 14,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_stackoverflow_069",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D4_perf": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D8_errors": 9.666666666666666,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 98.8,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 14,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_github_071",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D7_a11y": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D7_a11y": 9.38235294117647
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 97.3,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 14,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_073",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D7_a11y": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D7_a11y": 9.647058823529411
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 98.4,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_072",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D7_a11y": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D7_a11y": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 10,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_stackoverflow_074",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D5_wp_api": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D4_perf": 10.0,
+        "D5_wp_api": 10.0,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 12,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_stackoverflow_075",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D5_wp_api": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D4_perf": 10.0,
+        "D5_wp_api": 9.75,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 99.5,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 12,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_076",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D5_wp_api": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D4_perf": 10.0,
+        "D5_wp_api": 10.0,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 15,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_007",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D9_structure": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_077",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D5_wp_api": 3.0,
+        "D4_perf": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D4_perf": 10.0,
+        "D5_wp_api": 10.0,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 14,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_078",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D5_wp_api": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D5_wp_api": 9.375,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 98.3,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 15,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_079",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D7_a11y": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D7_a11y": 9.38235294117647
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 97.3,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 10,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_080",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D5_wp_api": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 10.0,
+        "D4_perf": 10.0,
+        "D5_wp_api": 10.0,
+        "D8_errors": 10.0,
+        "D9_structure": 9.82857142857143
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 99.8,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 13,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_008",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D9_structure": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 10.0,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 10,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_012",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D9_structure": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 10,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_011",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D9_structure": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_015",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D9_structure": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_016",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D9_structure": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 10,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_010",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D9_structure": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 9.853658536585368,
+        "D2_security": 9.803278688524589,
+        "D7_a11y": 10.0
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 98.6,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 15,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_009",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D9_structure": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 9.853658536585366,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 99.5,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 12,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_014",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D9_structure": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_013",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D9_structure": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 9.853658536585366,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 99.5,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 12,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_017",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D9_structure": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_019",
+      "source": "ugc",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D9_structure": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_001",
+      "source": "ugc_boundary",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D7_a11y": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D7_a11y": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_003",
+      "source": "ugc_boundary",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D7_a11y": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D7_a11y": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 10,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_wp_org_018",
+      "source": "ugc",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "clear-cut",
+      "human_dim_scores_0_10": {
+        "D9_structure": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 9.853658536585366,
+        "D5_wp_api": 9.75,
+        "D8_errors": 9.833333333333334,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 98.5,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 14,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_002",
+      "source": "ugc_boundary",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D7_a11y": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 9.926829268292684,
+        "D2_security": 10.0,
+        "D7_a11y": 9.647058823529411,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n"
+      ],
+      "rubric_overall_0_100": 99.4,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_004",
+      "source": "ugc_boundary",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D7_a11y": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_005",
+      "source": "ugc_boundary",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D7_a11y": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 9.853658536585366,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 99.5,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 12,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_008",
+      "source": "ugc_boundary",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D6_i18n": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D6_i18n": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_007",
+      "source": "ugc_boundary",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D6_i18n": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D6_i18n": 8.714285714285714
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 93.6,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 16,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_006",
+      "source": "ugc_boundary",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D6_i18n": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 10.0,
+        "D6_i18n": 8.857142857142856
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 97.1,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 15,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_009",
+      "source": "ugc_boundary",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D6_i18n": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 10.0,
+        "D6_i18n": 8.857142857142856
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 97.1,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 15,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_010",
+      "source": "ugc_boundary",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D6_i18n": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 9.803278688524589,
+        "D6_i18n": 8.714285714285714,
+        "D7_a11y": 10.0
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 96.5,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 19,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_012",
+      "source": "ugc_boundary",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D6_i18n": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 9.803278688524589
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 98.7,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 14,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_014",
+      "source": "ugc_boundary",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D5_wp_api": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 10.0,
+        "D5_wp_api": 9.75
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 99.4,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_013",
+      "source": "ugc_boundary",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D5_wp_api": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 10.0,
+        "D4_perf": 10.0,
+        "D5_wp_api": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_011",
+      "source": "ugc_boundary",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D6_i18n": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 10.0,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 15,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_015",
+      "source": "ugc_boundary",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D5_wp_api": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 15,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_019",
+      "source": "ugc_boundary",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D1_wpcs": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 3.0,
+        "D5_wp_api": 10.0,
+        "D8_errors": 10.0
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 72.0,
+      "rubric_grade": "Acceptable",
+      "rubric_triggered_check_count": 12,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_020",
+      "source": "ugc_boundary",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D1_wpcs": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 9.853658536585366,
+        "D2_security": 3.0,
+        "D6_i18n": 9.714285714285714,
+        "D7_a11y": 10.0,
+        "D8_errors": 10.0,
+        "D9_structure": 9.657142857142857
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api"
+      ],
+      "rubric_overall_0_100": 77.4,
+      "rubric_grade": "Good",
+      "rubric_triggered_check_count": 18,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_018",
+      "source": "ugc_boundary",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D1_wpcs": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 9.852459016393443,
+        "D5_wp_api": 10.0,
+        "D8_errors": 9.666666666666666,
+        "D9_structure": 9.742857142857144
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 98.6,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 15,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_016",
+      "source": "ugc_boundary",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D5_wp_api": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D5_wp_api": 10.0,
+        "D7_a11y": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D8_errors"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 12,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_017",
+      "source": "ugc_boundary",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D5_wp_api": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D4_perf": 10.0,
+        "D5_wp_api": 9.75,
+        "D8_errors": 10.0,
+        "D9_structure": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D6_i18n",
+        "D7_a11y"
+      ],
+      "rubric_overall_0_100": 99.5,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 14,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_021",
+      "source": "ugc_boundary",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D1_wpcs": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 3.0,
+        "D3_sql": 2.0,
+        "D4_perf": 9.653846153846153,
+        "D5_wp_api": 9.75,
+        "D8_errors": 9.666666666666666
+      },
+      "rubric_dim_na": [
+        "D6_i18n",
+        "D7_a11y",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 64.1,
+      "rubric_grade": "Acceptable",
+      "rubric_triggered_check_count": 22,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_023",
+      "source": "ugc_boundary",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D1_wpcs": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 9.803278688524589,
+        "D6_i18n": 10.0,
+        "D7_a11y": 10.0,
+        "D8_errors": 10.0
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 99.3,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 15,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_025",
+      "source": "ugc_boundary",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D1_wpcs": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D2_security": 9.803278688524589
+      },
+      "rubric_dim_na": [
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 98.7,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 12,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_022",
+      "source": "ugc_boundary",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D1_wpcs": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D6_i18n": 9.714285714285714,
+        "D7_a11y": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 99.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "ugc_boundary_024",
+      "source": "ugc_boundary",
+      "seed_type": "critique_then_fix",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D1_wpcs": 2.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0,
+        "D5_wp_api": 9.75
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 98.8,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 11,
+      "llm_checks_skipped": 0
+    },
+    {
+      "seed_id": "human_62803ec5",
+      "source": "human",
+      "seed_type": "deep_judge_cot",
+      "defect_subtlety": "boundary",
+      "human_dim_scores_0_10": {
+        "D4_perf": 2.0,
+        "D9_structure": 3.0
+      },
+      "rubric_dim_scores_0_10": {
+        "D1_wpcs": 10.0
+      },
+      "rubric_dim_na": [
+        "D2_security",
+        "D3_sql",
+        "D4_perf",
+        "D5_wp_api",
+        "D6_i18n",
+        "D7_a11y",
+        "D8_errors",
+        "D9_structure"
+      ],
+      "rubric_overall_0_100": 100.0,
+      "rubric_grade": "Excellent",
+      "rubric_triggered_check_count": 9,
+      "llm_checks_skipped": 0
+    }
+  ]
+}
