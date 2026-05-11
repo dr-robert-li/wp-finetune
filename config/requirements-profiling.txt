@@ -29,5 +29,7 @@ scipy>=1.11
 numpy>=1.26,<3
 
 # Unsloth pin (training-time stack).
-unsloth>=2026.3.5
-unsloth_zoo>=2026.3.5
+# Upper bound prevents the resolver from pulling 2026.5.x, which requires
+# transformers 5.x and breaks adapter loading.
+unsloth>=2026.3.5,<2026.5
+unsloth_zoo>=2026.3.5,<2026.5
