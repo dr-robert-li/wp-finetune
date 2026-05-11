@@ -460,12 +460,7 @@ def profile_base_model(
     all_ratio_eeffs = {}
 
     try:
-        for ratio in RATIO_ORDER:
-            if ratio not in ratio_data_paths:
-                logger.warning(f"Ratio {ratio} not found in ratio_data_paths, skipping")
-                continue
-
-            data_path = ratio_data_paths[ratio]
+        for ratio, data_path in ratio_data_paths.items():
             logger.info(f"Profiling ratio {ratio} from {data_path}")
 
             # Load subsample
@@ -597,6 +592,11 @@ def main():
         default=None,
         help="Optional LoRA adapter path. Loaded via PeftModel.from_pretrained() on top of base.",
     )
+    parser.add_argument(
+        "--ratio",
+        default=None,
+        help="Restrict profiling to a single discovered dataset key (e.g. 'current' or 'ratio_30_70'). Default: profile all discovered.",
+    )
     args = parser.parse_args()
 
     import torch
@@ -615,6 +615,12 @@ def main():
         print("ERROR: No dataset directories with openai_train.jsonl found")
         sys.exit(1)
     print(f"Discovered {len(ratio_data_paths)} dataset(s): {list(ratio_data_paths.keys())}")
+    if args.ratio:
+        if args.ratio not in ratio_data_paths:
+            print(f"ERROR: --ratio {args.ratio!r} not in discovered datasets: {list(ratio_data_paths.keys())}")
+            sys.exit(1)
+        ratio_data_paths = {args.ratio: ratio_data_paths[args.ratio]}
+        print(f"Filtered to: {args.ratio}")
 
     # Load model in bfloat16
     from transformers import AutoModelForCausalLM
@@ -644,12 +650,9 @@ def main():
 
     # E_eff trend analysis
     means_total = []
-    for ratio in RATIO_ORDER:
-        if ratio in all_eeffs:
-            vals = [v for v in all_eeffs[ratio]["eeff_total"] if not math.isnan(v)]
-            means_total.append(float(np.nanmean(vals)) if vals else float("nan"))
-        else:
-            means_total.append(float("nan"))
+    for ratio in all_eeffs:
+        vals = [v for v in all_eeffs[ratio]["eeff_total"] if not math.isnan(v)]
+        means_total.append(float(np.nanmean(vals)) if vals else float("nan"))
 
     if has_downward_eeff_trend(means_total):
         print("E_eff DOWNWARD TREND DETECTED -- 60/40 training warranted")
