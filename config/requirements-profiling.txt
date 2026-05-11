@@ -1,0 +1,33 @@
+# Pinned to match training env (see config/dgx_toolbox.yaml + adapters/*/adapter_config.json).
+# Install inside the unsloth-studio container before running scripts/profile_base_model.py
+# or any other adapter-loading code:
+#
+#   bash deps/dgx-toolbox/containers/unsloth-studio.sh
+#   # inside container:
+#   pip install --no-deps -r config/requirements-profiling.txt
+#
+# Container base: nvcr.io/nvidia/pytorch:25.11-py3 (matches training; aarch64 GB10 CUDA torch).
+# Do NOT use ngc-pytorch.sh (pytorch:26.02-py3) — its transformers 5.8.0 stack is incompatible
+# with any released PEFT version that can load this adapter.
+
+# Core HF stack — exact versions used when the 30/70 adapter was trained.
+transformers==4.56.2
+peft==0.18.1
+accelerate>=1.0.0,<2
+trl==0.26.1
+datasets==4.3.0
+huggingface_hub==0.34.1
+tokenizers>=0.22,<0.23
+safetensors>=0.4,<0.5
+
+# Quantization (only needed if any LoRA module was saved in 4/8-bit; 30/70 adapter is BF16,
+# but keep pinned to avoid the 0.49.2 missing-libbitsandbytes_cuda131.so error.)
+bitsandbytes==0.48.0
+
+# Scientific stack used by eval scripts.
+scipy>=1.11
+numpy>=1.26,<3
+
+# Unsloth pin (training-time stack).
+unsloth>=2026.3.5
+unsloth_zoo>=2026.3.5
