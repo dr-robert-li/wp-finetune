@@ -67,16 +67,27 @@ Two LLM backends, used by workload:
 
 ## Step 0.1 — runbook (GPU container required)
 
-**Container choice matters.** `ngc-pytorch.sh` (NGC PyTorch 26.02-py3) ships transformers 5.8.0 / huggingface-hub 1.14 — no released PEFT version can load adapters trained with peft 0.18.1 against that stack. Use `unsloth-studio.sh` (NGC PyTorch 25.11-py3), the same base the adapter was trained against.
+**Container choice matters.** Two pitfalls:
+
+1. `ngc-pytorch.sh` (NGC PyTorch 26.02-py3) ships transformers 5.8.0 / huggingface-hub 1.14 — no released PEFT version can load adapters trained with peft 0.18.1 against that stack.
+2. `unsloth-studio.sh` (NGC PyTorch 25.11-py3) auto-installs **latest** unsloth (2026.5.x) which itself requires transformers 5.x. It also tries to run a `quickstart` script that exits if the Studio web-UI venv is absent, kicking you back to the host shell.
+
+Use `unsloth-headless.sh` (NGC PyTorch 25.11-py3) — same base as training, idles on `sleep infinity` after install, exec-into via `docker exec`. Then force-downgrade the HF stack to the training-time pin set.
 
 ```bash
 cd ~/Desktop/projects/wp-finetune
-bash deps/dgx-toolbox/containers/unsloth-studio.sh
-# Inside container:
+bash deps/dgx-toolbox/containers/unsloth-headless.sh
+# Container starts in background; wait for "Unsloth headless ready..." log line (~60-120s):
+docker logs -f unsloth-headless    # Ctrl-C once you see "ready"
+
+# Exec into the running container
+docker exec -it unsloth-headless bash
+# Now inside container at /workspace
 cd /workspace
 
-# Pin training-time deps (one-off per container start)
-pip install --no-deps -r config/requirements-profiling.txt
+# Force-downgrade auto-installed unsloth/transformers/peft/etc to training-time pins.
+# --force-reinstall overrides the latest versions that unsloth-headless brought in.
+pip install --no-deps --force-reinstall -r config/requirements-profiling.txt
 
 # Sanity check: cuda + matching dep versions
 python3 -c "import torch, peft, transformers; print('cuda:', torch.cuda.is_available()); print('peft:', peft.__version__, 'transformers:', transformers.__version__)"
@@ -102,7 +113,11 @@ python -m scripts.profile_base_model \
 
 Wall time estimate (warm cache): ~6 min load + ~6 min forward passes per run on GB10 at subsample 0.05. First run cold cache: model load ~6 min instead of ~36 s.
 
-**Why not ngc-pytorch.sh:** transformers 5.8.0 / PEFT 0.19.1 / WeightConverter API drift / tokenizers 0.20 vs 0.22 mismatch / huggingface-hub 1.14 vs <1.0 cascade. The unsloth-studio container resolves all of these by mirroring the training-time stack.
+**Why neither ngc-pytorch.sh nor unsloth-studio.sh works without intervention:**
+- ngc-pytorch.sh: transformers 5.8.0 / PEFT 0.19.1 / WeightConverter API drift / tokenizers 0.20 vs 0.22 mismatch / huggingface-hub 1.14 vs <1.0 cascade.
+- unsloth-studio.sh: auto-pulls unsloth 2026.5.x at startup which requires transformers 5.x; the studio launcher then fails on missing studio venv (`/root/.unsloth/studio/unsloth_studio`) and drops the user back to host.
+
+unsloth-headless.sh + the force-reinstall step mirror the training-time stack exactly. Re-run the pip install on every fresh `docker run`; it persists across `docker exec` invocations as long as the container stays up.
 
 **Expected signal:** if task tokens are doing their job, the 30/70 run should show `eeff_wp_gen` and `eeff_wp_judge` diverge per layer. Mean E_eff total being 69 across all 5 ratios in `output/triage_decision.md` suggested they did not — that's the load-bearing assumption behind the v2 retrain plan.
 
