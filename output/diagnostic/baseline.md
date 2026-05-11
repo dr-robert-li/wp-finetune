@@ -181,11 +181,19 @@ unsloth-headless.sh + the force-reinstall step mirror the training-time stack ex
 
 The 0.1 caveat (raw PEFT does not bind the MoE expert LoRA) means we cannot get a true 30/70 judge eval via `PeftModel.from_pretrained`. Two viable paths:
 
-### Path A (primary): vLLM-served LoRA via direct `docker run`
+### Path A (primary): vLLM-served PRE-MERGED checkpoint via direct `docker run`
 
-**Bypass sparkrun** — sparkrun cannot serve local model directories (DGX_TOOLBOX_ISSUES.md #8 + #9). We run the same prebuilt vLLM image (`ghcr.io/spark-arena/dgx-vllm-eugr-nightly:latest`) directly. vLLM has its own LoRA loader independent of HF PEFT — it parses `adapter_config.json` directly and applies LoRA at the vLLM kernel level. Empirically often binds `target_parameters`-declared expert LoRA where raw PEFT does not.
+**Bypass sparkrun** — sparkrun cannot serve local model directories (DGX_TOOLBOX_ISSUES.md #8 + #9).
 
-`scripts/serve_30_70_vllm.sh` wraps the docker invocation; `recipes/qwen3-30b-wp-30_70-vllm.yaml` is now documentation-only.
+**Serve the merged checkpoint, NOT base+LoRA.** vLLM refuses runtime LoRAs that have `modules_to_save != None`:
+```
+ValueError: vLLM only supports modules_to_save being None.
+```
+The 30/70 adapter declares `modules_to_save=[embed_tokens, lm_head]` for the trained `<wp_gen>` / `<wp_judge>` task token embeddings — vLLM won't load it as a runtime LoRA. We use `models/qwen3-30b-wp-30_70-merged/` instead (produced earlier by `scripts/merge_adapter.py`), which has embeddings + attention LoRA + lm_head baked into the weights.
+
+**Caveat:** the merge ran with raw PEFT (not Unsloth's `FastLanguageModel`), so the MoE expert-LoRA `target_parameters` were NOT merged. Same silent-fail mode as raw-PEFT load (DGX_TOOLBOX_ISSUES.md#7). The served checkpoint has trained embed_tokens + attention LoRA + lm_head, with BASE expert MLPs. Partial 30/70 — good enough for **directional** Phase 0.3 signal (does 30/70 rank defects closer to humans than base does?), but not for measuring final 30/70 quality. True-30/70 quality requires Path B (`scripts/eval_judge_unsloth.py`).
+
+`scripts/serve_30_70_vllm.sh` wraps the docker invocation; `recipes/qwen3-30b-wp-30_70-vllm.yaml` is documentation-only.
 
 Steps (host shell, NOT inside any container):
 ```bash
