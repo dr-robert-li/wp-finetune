@@ -244,6 +244,36 @@ RuntimeWarning: target_parameters=['mlp.experts.gate_up_proj', 'mlp.experts.down
 
 ---
 
+## #8 (P1) — `${VAR:-default}` template in recipe `model:` field not expanded by sparkrun
+
+**Severity:** P1 (silent breakage of documented pattern with workaround).
+
+**Reproduction:**
+
+`deps/dgx-toolbox/recipes/eval-checkpoint.yaml:6` uses
+```yaml
+model: ${MODEL:-/models/checkpoint}
+```
+and `deps/dgx-toolbox/scripts/eval-checkpoint.sh:193` invokes
+```bash
+MODEL="$CHECKPOINT_DIR" sparkrun run "$EVAL_RECIPE_REF" --port "$EVAL_VLLM_PORT" --solo
+```
+
+sparkrun (vendor binary at `~/.local/bin/sparkrun`) does NOT expand the shell-style `${MODEL:-...}` template before resolving the model. The literal string `${MODEL:-/models/checkpoint}` is treated as an HF repo id and errors:
+
+```
+Repo id must use alphanumeric chars, '-', '_' or '.'. ... '${MODEL'.
+Error: Failed to download model: ${MODEL:-/...
+```
+
+**Generic impact:** anyone copying the eval-checkpoint.yaml pattern to a new recipe and invoking `MODEL=<path> sparkrun run ...` gets a confusing repo-id-format error. The eval-checkpoint.sh workflow itself appears broken unless sparkrun has special-cased that recipe name (no evidence it has).
+
+**Suggested fix:** either (a) have sparkrun expand `${VAR}` / `${VAR:-default}` template strings in recipe fields against the calling shell's environment (then document this clearly), or (b) replace eval-checkpoint.yaml's template with a plain default (`model: /models/checkpoint`) and document that callers MUST pass `-o model=<path>` to override (not via env var), or (c) keep current behaviour but explicitly document the env-var-doesn't-expand gotcha at the top of eval-checkpoint.yaml and in README.md.
+
+The wp-finetune workaround for now: hardcode the absolute host path in the recipe and override with `-o model=...` per `sparkrun run --help`.
+
+---
+
 ## How to add issues
 
 Append new entries ABOVE this footer, numbered sequentially, and bump
