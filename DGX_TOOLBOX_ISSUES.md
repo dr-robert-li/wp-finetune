@@ -225,6 +225,25 @@ Users switching between containers run identical commands (e.g. `pip install -r 
 
 ---
 
+## #7 (P1) — Unsloth-trained MoE LoRA adapter `target_parameters` does not match PEFT 0.18.1 expectation
+
+**Severity:** P1 (silent failure with workaround; affects any consumer of unsloth-trained MoE LoRA).
+
+**Reproduction:**
+Train a LoRA adapter against a MoE base (e.g. Qwen3-30B-A3B) inside `unsloth-headless.sh` with `target_parameters=["mlp.experts.gate_up_proj", "mlp.experts.down_proj"]` (Unsloth's recommended pattern for MoE expert LoRA). Adapter saves correctly. Load with `PeftModel.from_pretrained` inside the same container env with peft==0.18.1, transformers==4.56.2. PEFT prints:
+
+```
+RuntimeWarning: target_parameters=['mlp.experts.gate_up_proj', 'mlp.experts.down_proj'] were set but no parameter was matched.
+```
+
+`modules_to_save` (e.g. `embed_tokens`, `lm_head`) loads correctly. Standard `target_modules` (q_proj, k_proj, v_proj, o_proj, etc.) also loads. Only the expert-MLP `target_parameters` silently fails to bind. Generated output then comes from BASE expert weights, not trained expert weights — appears working, scores at base-model quality.
+
+**Generic impact:** Any user loading an Unsloth-trained MoE adapter outside of an Unsloth-`FastLanguageModel.from_pretrained()` call (i.e. via raw PEFT) gets a silent quality regression. There is no error, just a warning that's easy to miss.
+
+**Suggested fix:** Either (a) document in the dgx-toolbox README that MoE LoRA adapters trained with `target_parameters` MUST be loaded via Unsloth's `FastLanguageModel.from_pretrained()` not raw `PeftModel.from_pretrained()`, OR (b) upstream a PEFT change so `target_parameters` raises an error (not a warning) when zero params match, OR (c) add a `verify_adapter_load.py` helper to dgx-toolbox that diffs expected-vs-loaded LoRA module names and exits non-zero if any are missing.
+
+---
+
 ## How to add issues
 
 Append new entries ABOVE this footer, numbered sequentially, and bump
