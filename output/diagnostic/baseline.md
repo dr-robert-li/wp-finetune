@@ -76,14 +76,18 @@ Use `unsloth-headless.sh` (NGC PyTorch 25.11-py3) — same base as training, idl
 
 ```bash
 cd ~/Desktop/projects/wp-finetune
-bash deps/dgx-toolbox/containers/unsloth-headless.sh
+
+# unsloth-headless does NOT auto-mount the current dir (unlike ngc-pytorch.sh).
+# Pass it via EXTRA_MOUNTS so the project is reachable inside the container.
+EXTRA_MOUNTS="$(pwd):/workspace/project" bash deps/dgx-toolbox/containers/unsloth-headless.sh
+
 # Container starts in background; wait for "Unsloth headless ready..." log line (~60-120s):
 docker logs -f unsloth-headless    # Ctrl-C once you see "ready"
 
 # Exec into the running container
 docker exec -it unsloth-headless bash
-# Now inside container at /workspace
-cd /workspace
+# Inside container — project is at /workspace/project (NOT /workspace)
+cd /workspace/project
 
 # Force-downgrade auto-installed unsloth/transformers/peft/etc to training-time pins.
 # --force-reinstall overrides the latest versions that unsloth-headless brought in.

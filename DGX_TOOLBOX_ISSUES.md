@@ -208,6 +208,23 @@ release notes so the pin can be lifted in a future toolbox release.
 
 ---
 
+## #6 (P2) — Inconsistent project-mount UX between `ngc-pytorch.sh` and `unsloth-headless.sh` / `unsloth-studio.sh`
+
+**Severity:** P2 (friction; workaround documented).
+
+**Reproduction:**
+- `ngc-pytorch.sh:8` auto-mounts the host's `$PWD` to `/workspace` (`-v "${PWD}:/workspace" -w /workspace`).
+- `unsloth-headless.sh:43-44` mounts only `$HOME/.cache/huggingface` and `$HOME/unsloth-data` (the latter to `/workspace/work`). The host `$PWD` is not mounted unless the user sets `EXTRA_MOUNTS=...`.
+- `unsloth-studio.sh:36-37` has the same mount profile as `unsloth-headless.sh`.
+
+Users switching between containers run identical commands (e.g. `pip install -r config/requirements.txt`) and get `FileNotFoundError` in two of the three because there is no consistent project path inside.
+
+**Generic impact:** Anyone migrating a workflow from `ngc-pytorch.sh` (which works) to `unsloth-headless.sh` or `unsloth-studio.sh` will hit this. Documentation (`README.md`, `example.bash_aliases`) mentions `EXTRA_MOUNTS` but does not flag the cross-container inconsistency.
+
+**Suggested fix:** Either (a) standardise all three launchers to auto-mount `$PWD` to `/workspace/project` by default and use `$EXTRA_MOUNTS` only for additional mounts, or (b) document the asymmetry prominently in README.md and add a one-line note inside each container's startup banner ("Tip: pass `EXTRA_MOUNTS=\"$(pwd):/workspace/project\"` to mount your repo"). Option (a) is the lower-friction choice; option (b) is the lower-risk choice.
+
+---
+
 ## How to add issues
 
 Append new entries ABOVE this footer, numbered sequentially, and bump
