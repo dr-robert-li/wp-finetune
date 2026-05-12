@@ -4,6 +4,92 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-05-12 — Back from hiatus, base profile vindicates the routing thesis
+
+A few weeks away. Coming back I expected to find the model still in the same hole experiment_001 left it in: Spearman 0.096 against the bulk Claude labels, parse rate at 13%, mean E_eff stuck at 69. I'd been carrying around an assumption that the task-token MoE specialisation never took, and that the v2 rebuild needed to address routing collapse first. Today I sat down to actually measure it.
+
+### Updated plan
+
+Restructured the work around a Phase 0 diagnostic stage before any retrain. Eight phases now:
+
+0. Diagnostic baseline. Profile base + 30/70 routing. Score seeds with the 4-tool rubric. Run judge eval vs human-derived GT.
+1. Seed-anchored dataset rebuild. PASS anchors (clean WP core + top plugin extraction) + FAIL anchors (human + UGC + boundary seeds). Stratified 20K re-judge via vLLM. Boundary pack for the 65 to 79 dead zone.
+2. Diagnostic pilot. 500-step LoRA on 5K slice. Profile post-pilot routing.
+3. Full SFT on v2 dataset.
+4. Independent eval (no Claude in loop).
+5. RL alignment via GSPO with verifiable rewards.
+6. Compression. MoE-Sieve then LoRA merge then AIMER / REAP.
+7. Packaging. BF16 + AWQ-4 + GGUF, HF Hub + Ollama recipes.
+8. Parallel Qwen3.6-base variant. Same dataset, same task tokens, newer base. Ships alongside the 30B for compute-budget choice.
+
+Backend strategy is hybrid now. Claude Code agents for advisor and audit work where flagship reasoning matters and the volume is small. Local vLLM with Qwen3.6-35B-A3B-FP8 for bulk synthetic generation, re-judging, and the rubric LLM checks. Recipe at `recipes/qwen3.6-35b-a3b-fp8-vllm.yaml`. 41 LLM rubric checks now wired through `eval/llm_checks.py` with a backend switch.
+
+### Where I am
+
+Phase 0 CPU work is done. Phase 0 GPU work has one step left.
+
+| Step | State |
+|------|-------|
+| 0.1 base + 30/70 routing E_eff | done |
+| 0.2 rubric scorer on 145 seeds (5-tool, LLM on) | done |
+| 0.3 judge eval vs seed GT (vLLM serving merged 30/70) | running |
+| 0.4 to 0.13 follow-ups (composer, phpstan, N/A heuristics, PEFT pinning, hybrid backend, PASS anchors, GPU guard, mount fixes) | done |
+
+500 PASS anchors extracted with rubric overall mean 99.77. 145 FAIL seeds processed with full 5-tool scoring at min 53.3, max 100, mean 93.7. Combined anchor pool spans the 53 to 100 range. That fills the calibration gap the original plan had left open.
+
+### The finding that changes the plan
+
+Base model E_eff under `<wp_gen>` token contexts comes in at 59.48 mean. Under `<wp_judge>` it sits at 69.96. That is a +10.48 delta on the untrained base. Every one of the 48 MoE layers shows judge entropy higher than gen entropy.
+
+```
+                  base   30/70   shift
+eeff_total       69.96   74.42   +4.46
+eeff_wp_gen      59.48   60.20   +0.72
+eeff_wp_judge    69.96   75.18   +5.22
+delta (j-g)     +10.48  +14.98   +4.50
+delta max       +15.58  +20.19   +4.61   (layer 9)
+delta min        +0.80   +4.62   +3.82   (layer 6)
+```
+
+Per-layer view, picking out a few:
+
+```
+layer  base_g  30/70_g  base_j  30/70_j  base_d  30/70_d   shift
+    0   88.24    86.59   99.02    98.10  +10.77   +11.51   +0.74
+    9   54.91    54.78   68.39    71.72  +13.48   +16.94   +3.46
+   10   69.40    69.70   82.85    87.60  +13.46   +17.89   +4.44
+   46   57.23    62.17   64.93    78.89   +7.71   +16.72   +9.01
+   47   64.50    65.91   74.25    84.54   +9.75   +18.63   +8.88
+```
+
+The base model already routes generative versus judgmental tokens through different expert populations. Training has not collapsed that signal. Training amplified it. Largest gains land in the late layers, where the model is presumably resolving output format and content-type semantics. Earlier layers preserved the differentiation they already had. The thesis holds.
+
+What that means: the v2 hypothesis that "experiment_001 failed because task tokens did not drive routing concentration" is rejected. Routing was never the problem. The Spearman 0.096 and parse rate 13.2% have other origins. Three candidates:
+
+1. Label noise. The Claude bulk-judge scores I trained against had non-trivial disagreement with the human seed annotations. Phase 1b re-judge addresses this.
+2. Embed_tokens overfit. `modules_to_save` carried `<wp_gen>` and `<wp_judge>` embeddings into a degenerate region for output gen while preserving routing. The model "knows where to send the token" while losing semantic anchoring at the embedding level. Phase 2 pilot diagnostic should check this.
+3. Output format collapse. JSON discipline got eroded during training. Phase 1d picks up an explicit gate at parse rate 95% or higher.
+
+### Caveat I have to flag
+
+The 30/70 profile loaded the adapter via raw PEFT 0.18.1. PEFT raised a `RuntimeWarning` that `target_parameters=[mlp.experts.gate_up_proj, mlp.experts.down_proj]` did not match any parameter. The MoE expert LoRA failed to bind. Routing numbers are still valid because the router gate is frozen and routing depends on the trained embed_tokens (which did load via `modules_to_save`) plus standard attention LoRA (which also loaded). Anything reading the model's output through raw PEFT is partial 30/70, not true 30/70. Filed as `DGX_TOOLBOX_ISSUES.md#7` for the upstream maintainer. For Phase 0.3 I am serving the pre-merged checkpoint via vLLM and treating the result as a directional signal.
+
+### What also fell out of the diagnostic phase
+
+The hiatus surfaced a pile of upstream issues with dgx-toolbox itself. Tracked in `DGX_TOOLBOX_ISSUES.md` at the repo root. Nine entries so far, three of them P0:
+
+- `ngc-pytorch.sh` ships an HF stack no released PEFT can load against (transformers 5.8, hf-hub 1.14, tokenizers 0.20).
+- `unsloth-studio.sh` and `unsloth-headless.sh` auto-pull the latest unsloth which cascades to transformers 5.x with no opt-out.
+- sparkrun cannot serve local model directories. `download_model()` hardcodes `huggingface_hub.snapshot_download(repo_id=...)` with no `os.path.exists()` branch. The whole `eval-checkpoint.sh` workflow is broken too. Worked around it by docker-running the same prebuilt vLLM image directly (`scripts/serve_30_70_vllm.sh`).
+
+Background watcher polls every 30 minutes for new systemic issues to append.
+
+### Next action
+
+Phase 0.3 eval is running now. Once the Spearman number lands I have the apples-to-apples comparison against human seed GT, the original `output/triage_decision.md` 0.5698 was vs noisy Claude labels. Then Phase 1a starts.
+
+---
+
 ## 2026-04-13 — Full pipeline cascade: from data rot to retrained model to humbling eval
 
 ### What happened in 5 days
