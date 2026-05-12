@@ -251,14 +251,16 @@ def run_eval(
     limit: Optional[int] = None,
     output_path: str = "output/eval_judge_results.json",
     model: Optional[str] = None,
+    base_url: Optional[str] = None,
 ) -> dict:
     """Compute per-dimension Spearman correlation between model judge scores
     and ground truth scores from the test dataset.
 
     Loads wp_judge examples from the test dataset, queries the served model via
-    vLLM endpoint (resolved from DGX Toolbox), parses dimension scores from
-    judge responses, extracts GT scores from the test example's assistant
-    response JSON, and computes per-dimension + overall Spearman correlations.
+    vLLM endpoint (base_url arg, or EVAL_JUDGE_BASE_URL env, or DGX Toolbox
+    default), parses dimension scores from judge responses, extracts GT scores
+    from the test example's assistant response JSON, and computes per-dimension
+    + overall Spearman correlations.
 
     GT source priority:
     1. Test dataset's assistant response JSON (real variance, preferred).
@@ -270,12 +272,19 @@ def run_eval(
         dataset_path: Path to OpenAI-format JSONL test dataset.
         limit: Maximum number of examples to evaluate (None = all).
         output_path: Path to save JSON results.
+        model: Override served model name (else auto-detect from /v1/models).
+        base_url: Override OpenAI-compatible endpoint base URL. Falls back to
+            EVAL_JUDGE_BASE_URL env then to DGX Toolbox's vllm_endpoint().
 
     Returns:
         dict with overall_spearman, per_dimension, and backward-compat fields.
     """
-    dgx = _get_dgx()
-    client = openai.OpenAI(base_url=dgx.vllm_endpoint(), api_key="none")
+    import os
+    resolved_base_url = base_url or os.environ.get("EVAL_JUDGE_BASE_URL")
+    if not resolved_base_url:
+        dgx = _get_dgx()
+        resolved_base_url = dgx.vllm_endpoint()
+    client = openai.OpenAI(base_url=resolved_base_url, api_key="none")
     resolved_model = model or _detect_model(client)
 
     # Load and filter wp_judge examples
@@ -298,7 +307,7 @@ def run_eval(
         examples = examples[:limit]
 
     print(
-        f"Evaluating {len(examples)} wp_judge examples via {dgx.vllm_endpoint()}",
+        f"Evaluating {len(examples)} wp_judge examples via {resolved_base_url} (model={resolved_model})",
         file=sys.stderr,
     )
 
@@ -572,6 +581,14 @@ def main():
         default=None,
         help="Model name for vLLM (auto-detected from /v1/models if omitted)",
     )
+    parser.add_argument(
+        "--base-url",
+        type=str,
+        default=None,
+        help="OpenAI-compatible endpoint base URL "
+             "(e.g. http://localhost:8001/v1). Falls back to EVAL_JUDGE_BASE_URL "
+             "env, then to config/dgx_toolbox.yaml ports.vllm.",
+    )
     args = parser.parse_args()
 
     summary = run_eval(
@@ -579,6 +596,7 @@ def main():
         limit=args.limit,
         output_path=args.output,
         model=args.model,
+        base_url=args.base_url,
     )
 
     print(json.dumps(summary, indent=2))
