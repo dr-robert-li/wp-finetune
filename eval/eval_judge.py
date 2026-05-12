@@ -59,11 +59,25 @@ def _detect_model(client: openai.OpenAI) -> str:
 # ---------------------------------------------------------------------------
 
 # Model outputs these fields; map each to the rubric dimension key.
-# Fields not in DIM_NAME_MAP (like overall_score) are handled separately.
+# Fields not in this map (like overall_score, documentation_score) are
+# handled separately.
+#
+# The trained 30/70 judge emits the same schema as the test set's assistant
+# response — `_score`-suffixed for perf/i18n/accessibility/security, plain for
+# the rest. Earlier the map was derived from DIM_NAME_MAP which used a different
+# (older) field naming, causing model-side dim scores to never be recorded for
+# D4/D6/D7 (n=0 paired data in Phase 0.3). Keep this in sync with
+# _GT_FIELD_TO_DIM below.
 _MODEL_FIELD_TO_DIM: dict[str, str] = {
-    field: dim_key
-    for field, dim_key in DIM_NAME_MAP.items()
-    if not field.startswith("D")  # only field->dim direction
+    "wpcs_compliance": "D1_wpcs",
+    "security_score": "D2_security",
+    "sql_safety": "D3_sql",
+    "performance_score": "D4_perf",
+    "wp_api_usage": "D5_wp_api",
+    "i18n_score": "D6_i18n",
+    "accessibility_score": "D7_a11y",
+    "error_handling": "D8_errors",
+    "code_structure": "D9_structure",
 }
 
 # ---------------------------------------------------------------------------
