@@ -24,6 +24,7 @@ Outputs:
 from __future__ import annotations
 
 import json
+import random
 import re
 import sys
 from pathlib import Path
@@ -44,6 +45,17 @@ OUT_DIR = ROOT / "data" / "calibration"
 
 ANCHOR_CLAMP = 95.0
 PASS_THRESHOLD = 70.0  # used only as derivation fallback (not gating)
+
+# Reserve a deterministic slice of PASS anchors into holdout so the verdict
+# classifier gate is discriminating (FAIL seeds alone would let "predict FAIL
+# always" trivially hit ≥0.85 accuracy).
+HOLDOUT_PASS_ANCHORS = 20
+HOLDOUT_PASS_ANCHOR_SEED = 1729  # different from training seed to avoid coupling
+
+# wp-bench leakage scope: only flag anchors from the WordPress core repo (the only
+# repo wp-bench-core knowledge bank corresponds to). Plugin anchors share no
+# provenance with the bench and shouldn't be policed by it.
+LEAKAGE_AT_RISK_REPOS = {"wordpress-develop"}
 
 
 def load_jsonl(path: Path) -> list[dict]:
@@ -103,25 +115,30 @@ def derive_gt(seed_id: str, seed_lookup: dict[str, dict]) -> tuple[Optional[floa
     return float(overall), str(verdict).upper(), subtlety
 
 
-def extract_wpbench_tokens() -> set[str]:
-    """Collect identifier-like tokens (>= 4 chars) referenced anywhere in wp-bench knowledge JSONs."""
+def extract_wpbench_call_sites() -> set[str]:
+    """Collect bare function names referenced as CALL SITES (name followed by '(').
+
+    Tightened from a permissive identifier-token scan to avoid over-flagging:
+    bare 4+-char tokens caught JSON keys + prose + every common WP word.
+    Call-site form (`name(`) limits matches to actual function references.
+    """
     if not WPBENCH_KNOWLEDGE_DIR.exists():
         print(f"  WARN: {WPBENCH_KNOWLEDGE_DIR} not found; skipping leakage audit")
         return set()
-    token_re = re.compile(r"\b([A-Za-z_][A-Za-z0-9_]{3,})\b")
-    tokens: set[str] = set()
+    call_re = re.compile(r"\b([A-Za-z_][A-Za-z0-9_]{2,})\s*\(")
+    names: set[str] = set()
     for jf in sorted(WPBENCH_KNOWLEDGE_DIR.glob("*.json")):
         text = jf.read_text()
-        for m in token_re.finditer(text):
-            tokens.add(m.group(1))
-    return tokens
+        for m in call_re.finditer(text):
+            names.add(m.group(1))
+    return names
 
 
-def anchor_row(anchor: dict, leaked: bool) -> dict:
+def anchor_row(anchor: dict, leaked: bool, split: str = "train") -> dict:
     return {
         "row_id": f"anchor::{anchor.get('source_repo')}::{anchor.get('function_name')}",
         "source": "pass_anchor",
-        "split": "train",
+        "split": split,
         "subtlety": "clear-cut",
         "triggered_checks_flat": anchor.get("triggered_checks_flat", []),
         "dim_scores": anchor.get("rubric_dim_scores", {}),
@@ -169,29 +186,50 @@ def main():
     seed_lookup = load_seed_lookup()
     print(f"  {len(seed_lookup)} seed records across {len(SEED_SOURCES)} sources")
 
-    print("Computing wp-bench leakage tokens")
-    wpbench_tokens = extract_wpbench_tokens()
-    print(f"  {len(wpbench_tokens)} candidate identifier tokens in wp-bench knowledge")
+    print("Computing wp-bench leakage call-sites (tightened: name followed by '(' "
+          f"AND source_repo in {sorted(LEAKAGE_AT_RISK_REPOS)})")
+    wpbench_calls = extract_wpbench_call_sites()
+    print(f"  {len(wpbench_calls)} call-site names in wp-bench knowledge")
 
     # ---- Anchor rows + leakage audit ----
-    anchor_rows: list[dict] = []
+    kept_anchors: list[dict] = []
     leaked_anchors: list[dict] = []
     for a in anchors:
         fn = a.get("function_name") or ""
+        repo = a.get("source_repo") or ""
         # Strip leading "ClassName::" if present
         bare = fn.split("::")[-1] if "::" in fn else fn
-        leaked = bool(bare) and bare in wpbench_tokens
-        row = anchor_row(a, leaked=leaked)
+        # Only police WP-core anchors (only repo wp-bench-core knowledge corresponds to).
+        leaked = repo in LEAKAGE_AT_RISK_REPOS and bool(bare) and bare in wpbench_calls
         if leaked:
-            leaked_anchors.append({"function_name": fn, "source_repo": a.get("source_repo")})
+            leaked_anchors.append({"function_name": fn, "source_repo": repo})
         else:
-            anchor_rows.append(row)
-    audit["wpbench_tokens"] = len(wpbench_tokens)
+            kept_anchors.append(a)
+    audit["wpbench_call_sites"] = len(wpbench_calls)
+    audit["leakage_at_risk_repos"] = sorted(LEAKAGE_AT_RISK_REPOS)
     audit["anchors_total"] = len(anchors)
     audit["anchors_dropped_leakage"] = len(leaked_anchors)
-    audit["anchors_kept"] = len(anchor_rows)
+    audit["anchors_kept"] = len(kept_anchors)
     audit["leaked_sample"] = leaked_anchors[:20]
     print(f"  Leakage: dropped {len(leaked_anchors)}/{len(anchors)} anchors")
+
+    # Reserve a deterministic random slice of PASS anchors into holdout so the
+    # verdict-classifier gate is discriminating (otherwise holdout = all-FAIL
+    # boundary seeds and "predict FAIL always" trivially exceeds 0.85 acc).
+    rng = random.Random(HOLDOUT_PASS_ANCHOR_SEED)
+    indices = list(range(len(kept_anchors)))
+    rng.shuffle(indices)
+    n_holdout_anchors = min(HOLDOUT_PASS_ANCHORS, len(kept_anchors))
+    holdout_anchor_ix = set(indices[:n_holdout_anchors])
+    anchor_rows: list[dict] = []
+    holdout_anchor_rows: list[dict] = []
+    for i, a in enumerate(kept_anchors):
+        if i in holdout_anchor_ix:
+            holdout_anchor_rows.append(anchor_row(a, leaked=False, split="holdout"))
+        else:
+            anchor_rows.append(anchor_row(a, leaked=False, split="train"))
+    audit["holdout_pass_anchors"] = n_holdout_anchors
+    audit["holdout_pass_anchor_seed"] = HOLDOUT_PASS_ANCHOR_SEED
 
     # ---- Seed rows ----
     holdout_rows: list[dict] = []
@@ -228,29 +266,31 @@ def main():
     train_path = OUT_DIR / "train.jsonl"
     holdout_path = OUT_DIR / "holdout.jsonl"
 
+    all_train = anchor_rows + train_seed_rows
+    all_holdout = holdout_anchor_rows + holdout_rows
     with train_path.open("w") as f:
-        for r in anchor_rows + train_seed_rows:
+        for r in all_train:
             f.write(json.dumps(r) + "\n")
     with holdout_path.open("w") as f:
-        for r in holdout_rows:
+        for r in all_holdout:
             f.write(json.dumps(r) + "\n")
 
-    audit["train_rows"] = len(anchor_rows) + len(train_seed_rows)
-    audit["holdout_rows"] = len(holdout_rows)
+    audit["train_rows"] = len(all_train)
+    audit["holdout_rows"] = len(all_holdout)
     audit["train_label_dist"] = {
-        "PASS": sum(1 for r in anchor_rows + train_seed_rows if r["gt_verdict"] == "PASS"),
-        "FAIL": sum(1 for r in anchor_rows + train_seed_rows if r["gt_verdict"] == "FAIL"),
+        "PASS": sum(1 for r in all_train if r["gt_verdict"] == "PASS"),
+        "FAIL": sum(1 for r in all_train if r["gt_verdict"] == "FAIL"),
     }
     audit["holdout_label_dist"] = {
-        "PASS": sum(1 for r in holdout_rows if r["gt_verdict"] == "PASS"),
-        "FAIL": sum(1 for r in holdout_rows if r["gt_verdict"] == "FAIL"),
+        "PASS": sum(1 for r in all_holdout if r["gt_verdict"] == "PASS"),
+        "FAIL": sum(1 for r in all_holdout if r["gt_verdict"] == "FAIL"),
     }
     audit["train_subtlety_dist"] = {}
-    for r in anchor_rows + train_seed_rows:
+    for r in all_train:
         k = r["subtlety"]
         audit["train_subtlety_dist"][k] = audit["train_subtlety_dist"].get(k, 0) + 1
     audit["holdout_subtlety_dist"] = {}
-    for r in holdout_rows:
+    for r in all_holdout:
         k = r["subtlety"]
         audit["holdout_subtlety_dist"][k] = audit["holdout_subtlety_dist"].get(k, 0) + 1
 
