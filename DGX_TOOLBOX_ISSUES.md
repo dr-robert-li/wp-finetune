@@ -331,6 +331,75 @@ Combined with the recipe `${VAR}` expansion fix from #8, this enables the docume
 
 ---
 
+## #10 (P0) — `unsloth install.sh` pins `torchcodec==0.10.0` which has no aarch64 wheel
+
+**Files**: upstream `unsloth install.sh` (fetched via `curl -fsSL https://unsloth.ai/install.sh | sh`), invoked by `containers/unsloth-studio.sh:51` after the #4 auto-bootstrap fix lands.
+
+**Reproduction**:
+1. Run `containers/unsloth-studio.sh` on an aarch64 host (DGX Spark / Grace).
+2. On fresh container, the #4 bootstrap fix detects missing venv and calls `curl -fsSL https://unsloth.ai/install.sh | sh`.
+3. install.sh creates `/root/.unsloth/studio/unsloth_studio` (Python 3.13.9 venv) and begins installing `extras-no-deps.txt`.
+4. uv resolver aborts:
+    ```
+    × No solution found when resolving dependencies:
+    ╰─▶ Because torchcodec==0.10.0 has no wheels with a matching platform tag
+        (e.g., `manylinux_2_39_aarch64`) and you require torchcodec==0.10.0, we
+        can conclude that your requirements are unsatisfiable.
+        hint: Wheels are available for `torchcodec` (v0.10.0) on the following
+        platforms: `manylinux_2_28_x86_64`, `macosx_12_0_arm64`, `win_amd64`
+    ```
+5. pip fallback also fails: `Could not find a version that satisfies the requirement torchcodec==0.10.0`. install.sh exits 1.
+6. `unsloth studio setup` exits 1 immediately afterward. Studio UI never starts.
+
+**Generic impact**: Any aarch64 dgx-toolbox user (DGX Spark, Grace, ARM workstations) running `unsloth-studio.sh` after the #4 bootstrap fix lands. Surfaced 2026-05-13 on `nvcr.io/nvidia/pytorch:25.11-py3` (manylinux_2_39_aarch64). `torchcodec==0.11.x` does have aarch64 wheels.
+
+**Suggested fix** (in dgx-toolbox, since upstream `install.sh` is outside this repo): patch `containers/unsloth-studio.sh` post-bootstrap to relax the torchcodec pin before `unsloth studio setup` runs. The launcher already does `pip uninstall -y torchcodec 2>/dev/null` at lines 53 + 57 — make it idempotent + cover the venv too:
+
+```bash
+# After install.sh bootstrap, before `unsloth studio setup`:
+VENV_PY=/root/.unsloth/studio/unsloth_studio/bin/python
+[ -x "$VENV_PY" ] && "$VENV_PY" -m pip uninstall -y torchcodec 2>/dev/null
+[ -x "$VENV_PY" ] && "$VENV_PY" -m pip install --no-deps "torchcodec>=0.11,<0.12" 2>/dev/null
+```
+
+Long-term: file upstream issue against `unsloth-studio` extras-no-deps.txt to bump torchcodec pin to a multi-arch version.
+
+---
+
+## #11 (P0) — `unsloth studio` resolves to system Python, not the bootstrapped venv
+
+**File**: `containers/unsloth-studio.sh:55` (`unsloth studio -H 0.0.0.0 -p ${PORT}`)
+
+**Reproduction**:
+1. Run `containers/unsloth-studio.sh` after the #4 bootstrap fix lands.
+2. install.sh provisions `/root/.unsloth/studio/unsloth_studio` (Python 3.13.9 venv).
+3. Launcher invokes `unsloth studio -H 0.0.0.0 -p 8000`. The `unsloth` binary on `$PATH` resolves to the system Python 3.12 install (the launcher's earlier `python /tmp/install-deps.py unsloth unsloth_zoo` step at line 47 installs unsloth into the system site-packages).
+4. The system `unsloth studio` entry-point imports from `/usr/local/lib/python3.12/dist-packages/studio/backend/run.py`:
+    ```
+    File "/usr/local/lib/python3.12/dist-packages/studio/backend/loggers/handlers.py", line 22
+    import structlog
+    ModuleNotFoundError: No module named 'structlog'
+    ```
+5. Studio crashes immediately. The venv at `/root/.unsloth/studio/unsloth_studio` is never used at runtime.
+
+**Generic impact**: Two parallel unsloth installs in the container — system Python 3.12 (line 47 pip) and venv Python 3.13 (install.sh). The launcher's last line uses the wrong one. install.sh provisions a clean studio environment; the launcher then bypasses it. Affects every user who hits the #4 bootstrap fix path.
+
+**Suggested fix**: dispatch `unsloth studio` through the venv after `setup` succeeds. Two options:
+
+```bash
+# Option A: source the venv before invoking studio
+source /root/.unsloth/studio/unsloth_studio/bin/activate
+unsloth studio setup && unsloth studio -H 0.0.0.0 -p ${PORT}
+
+# Option B: call the venv binary directly
+VENV=/root/.unsloth/studio/unsloth_studio
+"$VENV/bin/unsloth" studio setup && "$VENV/bin/unsloth" studio -H 0.0.0.0 -p ${PORT}
+```
+
+Option B is more robust (no `$PATH` leakage across bash subshells inside the `bash -c '...'` block). Combined with the #10 torchcodec patch, this completes the bootstrap-to-running-studio chain on aarch64.
+
+---
+
 
 ### Watch Log — 2026-05-12T07:48:04Z
 
@@ -342,6 +411,16 @@ Combined with the recipe `${VAR}` expansion fix from #8, this enables the docume
 ### Watch Log — 2026-05-12T20:36:38Z
 
 - **DRIFT**: submodule HEAD `21bb3e533f0c` differs from `https://github.com/dr-robert-li/dgx-toolbox.git` `main` (`00a457a0daa9`). Inspect: `git -C deps/dgx-toolbox log --oneline 21bb3e53..00a457a0`.
+
+
+### Watch Log — 2026-05-12T20:40:23Z
+
+- **EXIT**: container `unsloth-headless` (ba45884f5c0f) exited with code **137** (Exited (137) 21 hours ago). Inspect: `docker logs --tail 200 ba45884f5c0f`. Code 137 = SIGKILL (OOM or manual kill); check host memory pressure.
+
+
+### Watch Log — 2026-05-12T20:48:55Z
+
+- **DRIFT**: submodule HEAD `e014af7ff8e9` differs from `https://github.com/dr-robert-li/dgx-toolbox.git` `main` (`e42656493645`). Inspect: `git -C deps/dgx-toolbox log --oneline e014af7f..e4265649`.
 
 ## How to add issues
 
