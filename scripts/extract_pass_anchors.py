@@ -77,6 +77,9 @@ def is_deterministic_anchor(code: str, min_overall: float = 90.0) -> tuple[bool,
     diagnostics["triggered_check_count"] = sum(len(v) for v in sc.triggered_checks.values())
     diagnostics["triggered_checks"] = sc.triggered_checks
     diagnostics["dimension_scores"] = sc.dimension_scores
+    diagnostics["dimension_na"] = sc.dimension_na
+    diagnostics["floor_rules_applied"] = sc.floor_rules_applied
+    diagnostics["llm_checks_skipped"] = sc.llm_checks_skipped
     if sc.overall < min_overall:
         diagnostics["reject_reason"] = f"overall {sc.overall:.1f} < {min_overall}"
         return False, diagnostics
@@ -113,6 +116,9 @@ def main():
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--output",
                         default="output/diagnostic/pass_anchors.jsonl")
+    parser.add_argument("--emit-features", action="store_true",
+                        help="Persist triggered_checks_flat + dimension_na + floor_rules_applied "
+                             "+ rubric_triggered_check_count + llm_checks_skipped for calibration.")
     args = parser.parse_args()
 
     random.seed(args.seed)
@@ -147,6 +153,15 @@ def main():
                     "rubric_dim_scores": diag["dimension_scores"],
                     "claude_assessment": item.get("assessment", {}),
                 }
+                if args.emit_features:
+                    triggered_flat = sorted({
+                        cid for ids in diag["triggered_checks"].values() for cid in ids
+                    })
+                    anchor["triggered_checks_flat"] = triggered_flat
+                    anchor["dimension_na"] = list(diag["dimension_na"])
+                    anchor["floor_rules_applied"] = list(diag["floor_rules_applied"])
+                    anchor["rubric_triggered_check_count"] = diag["triggered_check_count"]
+                    anchor["llm_checks_skipped"] = diag["llm_checks_skipped"]
                 f.write(json.dumps(anchor) + "\n")
                 f.flush()
                 n_anchors += 1
