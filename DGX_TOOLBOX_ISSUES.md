@@ -138,7 +138,7 @@ unsloth + transformers compatibility table.
 
 ---
 
-## #4 (P1, RESOLVED in fork @ 21bb3e5; pending push to canonical upstream) — unsloth-studio.sh container exits when `unsloth studio setup` fails (studio venv missing)
+## #4 (P1, RESOLVED upstream @ e014af7) — unsloth-studio.sh container exits when `unsloth studio setup` fails (studio venv missing)
 
 **File**: `containers/unsloth-studio.sh:43-71`
 
@@ -175,7 +175,7 @@ shell lifecycle. Either:
 
 Either approach avoids the silent host-shell drop.
 
-**Resolution (2026-05-13, fork commit 21bb3e5 in dr-robert-li/dgx-toolbox):**
+**Resolution (2026-05-13, upstream commit e014af7 on dr-robert-li/dgx-toolbox#main):**
 applied a hybrid of the original suggestions. The launcher now auto-bootstraps
 the studio venv via the upstream-documented install.sh before
 `unsloth studio setup` runs, when the venv directory is missing:
@@ -189,9 +189,7 @@ fi && unsloth studio setup && ...
 
 install.sh is idempotent; subsequent container starts skip the curl when
 the venv exists. Removes the silent host-shell drop without sacrificing
-the `&&` chain semantics that catch real setup failures. Pending push to
-the canonical upstream (`dr-robert-li/dgx-toolbox#main`) so other consumers
-of the submodule benefit.
+the `&&` chain semantics that catch real setup failures.
 
 ---
 
