@@ -2,7 +2,7 @@
 
 Tracked by: wp-finetune project (Robert Li)
 Started: 2026-05-11
-Last updated: 2026-05-11
+Last updated: 2026-05-12
 
 This file collects systemic issues affecting any dgx-toolbox user, NOT
 wp-finetune-specific problems. Each entry has: severity, reproduction,
@@ -314,6 +314,13 @@ if candidate.is_absolute() and candidate.is_dir() and (candidate / "config.json"
 Combined with the recipe `${VAR}` expansion fix from #8, this enables the documented `MODEL=<path> sparkrun run eval-checkpoint` flow.
 
 ---
+
+
+### Watch Log — 2026-05-12T07:48:04Z
+
+- **DRIFT**: submodule HEAD `95d7b30e109a` differs from `https://github.com/dr-robert-li/dgx-toolbox.git` `main` (`00a457a0daa9`). Inspect: `git -C deps/dgx-toolbox log --oneline 95d7b30e..00a457a0`.
+- **ANTI-PATTERN**: `containers/unsloth-studio.sh` still chains `unsloth studio setup && ... unsloth studio ...`. Root cause of issue #4 (P1: container silent exit when studio venv at `/root/.unsloth/studio/unsloth_studio` is missing). #4 suggested fix not upstreamed.
+- **EXIT**: container `unsloth-headless` (ba45884f5c0f) exited with code **137** (Exited (137) 8 hours ago). Inspect: `docker logs --tail 200 ba45884f5c0f`. Code 137 = SIGKILL (OOM or manual kill); check host memory pressure.
 
 ## How to add issues
 
