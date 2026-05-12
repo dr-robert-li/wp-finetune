@@ -1,0 +1,59 @@
+{
+  "overall_spearman": {
+    "corr": -0.04628891247430287,
+    "p_value": 0.6010035437361584,
+    "n_pairs": 130
+  },
+  "per_dimension": {
+    "D1_wpcs": {
+      "corr": 0.11143651797605447,
+      "p_value": 0.20686395546653438,
+      "n_pairs": 130
+    },
+    "D2_security": {
+      "corr": -0.001652011763828693,
+      "p_value": 0.9906330145105555,
+      "n_pairs": 53
+    },
+    "D3_sql": {
+      "corr": 0.0,
+      "p_value": 1.0,
+      "n_pairs": 0
+    },
+    "D4_perf": {
+      "corr": 0.011374149040298384,
+      "p_value": 0.9355746723208193,
+      "n_pairs": 53
+    },
+    "D5_wp_api": {
+      "corr": 0.0,
+      "p_value": 1.0,
+      "n_pairs": 0
+    },
+    "D6_i18n": {
+      "corr": -0.017597560091913246,
+      "p_value": 0.9291782638254892,
+      "n_pairs": 28
+    },
+    "D7_a11y": {
+      "corr": -0.33591908616888516,
+      "p_value": 0.10852810231525697,
+      "n_pairs": 24
+    },
+    "D8_errors": {
+      "corr": 0.0,
+      "p_value": 1.0,
+      "n_pairs": 0
+    },
+    "D9_structure": {
+      "corr": 0.0,
+      "p_value": 1.0,
+      "n_pairs": 0
+    }
+  },
+  "skipped": 15,
+  "total": 145,
+  "spearman_corr": -0.04628891247430287,
+  "p_value": 0.6010035437361584,
+  "total_pairs": 130
+}
