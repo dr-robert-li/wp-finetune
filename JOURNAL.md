@@ -84,9 +84,33 @@ The hiatus surfaced a pile of upstream issues with dgx-toolbox itself. Tracked i
 
 The takeaway is that this ecosystem is immature. Widely used packages carry fundamental incompatibilities with each other. Spent half a day chasing breaking dependency chains before any real Phase 0 work could land.
 
+### Phase 0.3 result
+
+Eval landed. 145 prompts against the seed-derived GT, 15 parse-fails, 130 pairs.
+
+```
+                    n   Spearman   p
+D1_wpcs           130     +0.111   0.21
+D2_security        53     -0.002   0.99
+D3_sql              0       n/a     -
+D4_perf            53     +0.011   0.94
+D5_wp_api           0       n/a     -
+D6_i18n            28     -0.018   0.93
+D7_a11y            24     -0.336   0.11
+D8_errors           0       n/a     -
+D9_structure        0       n/a     -
+OVERALL           130     -0.046   0.60
+```
+
+Two takeaways. The first: overall Spearman is essentially zero against human GT. The original triage's 0.5698 number was Claude bulk-judge labels measuring Claude bulk-judge labels, noise on noise. The human-anchored comparison says the model has no real ranking signal. Full Phase 1 rebuild stands.
+
+The second one is harder to ignore. The model only emits six rubric dimensions: `wpcs_compliance`, `security_score`, `performance_score`, `i18n_score`, `accessibility_score`, `documentation_score`. It never emits `sql_safety`, `wp_api_usage`, `error_handling`, or `code_structure`. The training data didn't teach the full nine-dim schema. The schema-collapse finding is independent of any expert-LoRA binding question because the output schema is set by `lm_head` plus autoregressive decoding, both of which loaded cleanly. Phase 1d needs an explicit gate: training examples must cover all nine dims, and the eval gate must enforce a 95% parse rate on the full schema.
+
+D7_a11y at -0.336 (n=24, p=0.11) is the only dimension where the model has measurable signal, and it points the wrong way. Small sample. Worth tracking, not actionable on its own.
+
 ### Next action
 
-Phase 0.3 eval is running now. Once the Spearman number lands I have the apples-to-apples comparison against human seed GT, the original `output/triage_decision.md` 0.5698 was vs noisy Claude labels. Then Phase 1a starts.
+Phase 1a begins. PASS-anchor + FAIL-seed calibration of the rubric scorer, then stratified 20K re-judge via the local vLLM (Qwen3.6-35B-A3B-FP8). Hard parse-rate gate on the 9-dim schema becomes a Phase 1d acceptance criterion.
 
 ---
 

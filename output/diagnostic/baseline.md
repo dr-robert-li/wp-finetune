@@ -6,7 +6,7 @@ Status (2026-05-11).
 |------|-------------|--------|--------|
 | 0.1  | `profile_base_model.py` on base + 30/70 adapter — E_eff(gen) vs E_eff(judge) | **DONE** | `output/diagnostic/profiling_{base,30_70}/base_model_eeff.jsonl` |
 | 0.2  | `rubric_scorer.py` on 27 human + 93 UGC + 25 boundary seeds | **DONE** (5-tool, LLM ON) | `output/diagnostic/seed_scorer_agreement{,_llm}.{json,md}` |
-| 0.3  | `eval_judge.py` on 30/70 adapter vs seed-derived GT — Spearman | **READY** — vLLM primary path + FastLanguageModel fallback | `output/diagnostic/judge_30_70_seed_spearman.json` |
+| 0.3  | `eval_judge.py` on 30/70 adapter vs seed-derived GT — Spearman | **DONE** | `output/diagnostic/judge_30_70_seed_spearman.json` |
 
 ## Step 0.1 — final results
 
@@ -238,6 +238,32 @@ Author `scripts/eval_judge_unsloth.py` if Path A fails — reuses `eval/eval_jud
 If 30/70 (true, with expert LoRA bound) ranks defects against human GT at Spearman ≥ 0.6, the model isn't "broken vs humans" — only mis-aligned in absolute scoring and JSON discipline. Phase 1 rebuild scope contracts to: better calibration data, stricter JSON format enforcement, no need to re-think MoE specialisation. If Spearman < 0.4, the full rebuild stands.
 
 Note: the original Spearman 0.5698 in `output/triage_decision.md` was vs Claude bulk-judge labels (also noisy). Phase 0.3 against human-derived seed GT is the apples-to-apples comparison.
+
+### Step 0.3 — final results (partial 30/70 — merged checkpoint, expert LoRA unbound)
+
+145 examples, 130 pairs after 15 parse-fail skips.
+
+| Dim | n | Spearman | p-value |
+|-----|---|----------|---------|
+| D1_wpcs | 130 | +0.111 | 0.207 |
+| D2_security | 53 | −0.002 | 0.991 |
+| D3_sql | 0 | n/a | n/a |
+| D4_perf | 53 | +0.011 | 0.936 |
+| D5_wp_api | 0 | n/a | n/a |
+| D6_i18n | 28 | −0.018 | 0.929 |
+| D7_a11y | 24 | **−0.336** | 0.109 |
+| D8_errors | 0 | n/a | n/a |
+| D9_structure | 0 | n/a | n/a |
+| **Overall** | 130 | **−0.046** | 0.601 |
+
+### Interpretation — full rebuild stands
+
+1. **Overall Spearman ≈ 0** — 30/70 judge does NOT rank defects close to humans. Below the Spearman 0.4 cutoff for "scope contracts" → full rebuild required. The original triage's 0.5698 (vs Claude bulk-judge labels) was noise on noise; the human-GT number says the model has no signal here.
+2. **Schema collapse** — model only emits 6/9 rubric dims (`wpcs_compliance`, `security_score`, `performance_score`, `i18n_score`, `accessibility_score`, `documentation_score`). It never emits `sql_safety`, `wp_api_usage`, `error_handling`, `code_structure`. The training data didn't teach the full schema. Phase 1d gate must enforce all 9 dims OR the rubric must accept a 6-dim schema.
+3. **D7_a11y inverted (−0.336)** — small sample (n=24), but worth watching. Accessibility ranking is the only dim where the model has measurable signal, and it's pointing the wrong way.
+4. **Caveat (still partial 30/70)** — merged checkpoint lacks the expert LoRA. True 30/70 numbers are not yet measured. But the SCHEMA-COLLAPSE finding is independent of expert binding (model output schema is set by `lm_head` + autoregressive decoding, both of which loaded). That finding alone justifies Phase 1.
+
+Phase 1 starts now.
 
 ## Phase 0 follow-up state
 
