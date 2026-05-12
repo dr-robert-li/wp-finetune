@@ -82,7 +82,7 @@ The hiatus surfaced a pile of upstream issues with dgx-toolbox itself. Tracked i
 - `unsloth-studio.sh` and `unsloth-headless.sh` auto-pull the latest unsloth which cascades to transformers 5.x with no opt-out.
 - sparkrun cannot serve local model directories. `download_model()` hardcodes `huggingface_hub.snapshot_download(repo_id=...)` with no `os.path.exists()` branch. The whole `eval-checkpoint.sh` workflow is broken too. Worked around it by docker-running the same prebuilt vLLM image directly (`scripts/serve_30_70_vllm.sh`).
 
-Background watcher polls every 30 minutes for new systemic issues to append.
+The takeaway is that this ecosystem is immature. Widely used packages carry fundamental incompatibilities with each other. Spent half a day chasing breaking dependency chains before any real Phase 0 work could land.
 
 ### Next action
 
