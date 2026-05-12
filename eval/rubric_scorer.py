@@ -78,6 +78,8 @@ class RubricScore:
     grade: str
     floor_rules_applied: list[str]
     llm_checks_skipped: int = 0  # count of LLM checks not yet implemented
+    calibrated_overall: Optional[float] = None  # Phase 1a XGBoost regressor; None if not loaded
+    calibrated_verdict: Optional[str] = None  # Phase 1a XGBoost classifier: "PASS"|"FAIL"|None
 
     def to_dict(self) -> dict:
         return {
@@ -90,7 +92,94 @@ class RubricScore:
             "grade": self.grade,
             "floor_rules_applied": self.floor_rules_applied,
             "llm_checks_skipped": self.llm_checks_skipped,
+            "calibrated_overall": self.calibrated_overall,
+            "calibrated_verdict": self.calibrated_verdict,
         }
+
+
+# ---------------------------------------------------------------------------
+# Phase 1a calibration: lazy-load XGBoost dual heads (verdict + overall)
+# ---------------------------------------------------------------------------
+
+_DIM_ORDER = [
+    "D1_wpcs", "D2_security", "D3_sql", "D4_perf", "D5_wp_api",
+    "D6_i18n", "D7_a11y", "D8_errors", "D9_structure",
+]
+_CALIBRATION_DIR = Path(__file__).resolve().parent.parent / "models" / "calibration"
+_VERDICT_MODEL_PATH = _CALIBRATION_DIR / "verdict_classifier.json"
+_OVERALL_MODEL_PATH = _CALIBRATION_DIR / "overall_regressor.json"
+
+_calibration_state: dict = {"loaded": False, "clf": None, "reg": None, "feat_names": None}
+
+
+def _load_calibration() -> None:
+    """Lazy-load XGBoost models. Sets state to None if unavailable (silent fallback)."""
+    if _calibration_state["loaded"]:
+        return
+    _calibration_state["loaded"] = True
+    if not (_VERDICT_MODEL_PATH.exists() and _OVERALL_MODEL_PATH.exists()):
+        return
+    try:
+        import xgboost as xgb  # type: ignore
+    except ImportError:
+        return
+    try:
+        clf = xgb.XGBClassifier()
+        clf.load_model(str(_VERDICT_MODEL_PATH))
+        reg = xgb.XGBRegressor()
+        reg.load_model(str(_OVERALL_MODEL_PATH))
+    except Exception:
+        return
+    check_ids_sorted = sorted(CHECK_REGISTRY.keys())
+    _calibration_state["clf"] = clf
+    _calibration_state["reg"] = reg
+    _calibration_state["feat_names"] = check_ids_sorted + [f"score::{d}" for d in _DIM_ORDER]
+    _calibration_state["cid_idx"] = {cid: i for i, cid in enumerate(check_ids_sorted)}
+    _calibration_state["dim_off"] = len(check_ids_sorted)
+
+
+def _build_features(triggered_checks: dict[str, list[str]],
+                    dim_scores: dict[str, Optional[float]]) -> "Optional[list[float]]":
+    """Build single-row feature vector matching scripts/calibrate_rubric.py schema."""
+    if _calibration_state["clf"] is None:
+        return None
+    n_feat = len(_calibration_state["feat_names"])
+    import math
+    x = [0.0] * n_feat
+    # Default per-dim score slots to NaN
+    dim_off = _calibration_state["dim_off"]
+    for di in range(len(_DIM_ORDER)):
+        x[dim_off + di] = math.nan
+    # Binary check indicators
+    cid_idx = _calibration_state["cid_idx"]
+    for ids in triggered_checks.values():
+        for cid in ids:
+            j = cid_idx.get(cid)
+            if j is not None:
+                x[j] = 1.0
+    # Per-dim scores
+    for di, d in enumerate(_DIM_ORDER):
+        v = dim_scores.get(d)
+        if isinstance(v, (int, float)):
+            x[dim_off + di] = float(v)
+    return x
+
+
+def _predict_calibrated(triggered_checks: dict[str, list[str]],
+                        dim_scores: dict[str, Optional[float]]) -> tuple[Optional[float], Optional[str]]:
+    _load_calibration()
+    x = _build_features(triggered_checks, dim_scores)
+    if x is None:
+        return None, None
+    import numpy as _np
+    X = _np.array([x], dtype=_np.float64)
+    try:
+        overall = float(_calibration_state["reg"].predict(X)[0])
+        verdict_int = int(_calibration_state["clf"].predict(X)[0])
+    except Exception:
+        return None, None
+    verdict = "FAIL" if verdict_int == 1 else "PASS"
+    return overall, verdict
 
 
 # ---------------------------------------------------------------------------
@@ -670,6 +759,8 @@ def score_code(code: str, file_path: str = "<generated>") -> RubricScore:
     grade = _score_to_grade(overall)
     triggered = _group_checks_by_dimension(all_check_hits)
 
+    calibrated_overall, calibrated_verdict = _predict_calibrated(triggered, dim_scores)
+
     return RubricScore(
         file_path=file_path,
         dimension_scores=dim_scores,
@@ -680,4 +771,6 @@ def score_code(code: str, file_path: str = "<generated>") -> RubricScore:
         grade=grade,
         floor_rules_applied=floor_applied,
         llm_checks_skipped=n_llm_used,
+        calibrated_overall=calibrated_overall,
+        calibrated_verdict=calibrated_verdict,
     )

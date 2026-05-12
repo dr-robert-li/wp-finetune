@@ -406,13 +406,23 @@ def run_eval(
                 file=sys.stderr,
             )
             gt_rubric = score_code(code)
-            gt_overall_val = gt_rubric.overall
+            # Prefer XGBoost-calibrated overall when available (Phase 1a);
+            # fall back to raw deterministic rubric overall otherwise.
+            gt_overall_val = (
+                gt_rubric.calibrated_overall
+                if gt_rubric.calibrated_overall is not None
+                else gt_rubric.overall
+            )
             gt_dim_scores = {
                 k: v
                 for k, v in gt_rubric.dimension_scores.items()
                 if v is not None
             }
-            gt_source = "rubric_scorer"
+            gt_source = (
+                "rubric_scorer_calibrated"
+                if gt_rubric.calibrated_overall is not None
+                else "rubric_scorer"
+            )
         else:
             gt_overall_val = gt_from_dataset["overall"]
             gt_dim_scores = gt_from_dataset["dimension_scores"]
