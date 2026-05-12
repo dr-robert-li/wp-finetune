@@ -85,6 +85,7 @@ def _score_one(seed: dict, source: str) -> Optional[dict]:
     if not code or not human_dims:
         return None
     sc = score_code(code, file_path=seed["seed_id"])
+    triggered_flat = sorted({cid for ids in sc.triggered_checks.values() for cid in ids})
     return {
         "seed_id": seed["seed_id"],
         "source": source,
@@ -95,8 +96,12 @@ def _score_one(seed: dict, source: str) -> Optional[dict]:
         "rubric_dim_na": sc.dimension_na,
         "rubric_overall_0_100": sc.overall,
         "rubric_grade": sc.grade,
-        "rubric_triggered_check_count": sum(len(v) for v in sc.triggered_checks.values()),
+        "rubric_triggered_check_count": len(triggered_flat),
         "llm_checks_skipped": sc.llm_checks_skipped,
+        # Calibration feature payload (Phase 1a). Additive; existing consumers ignore.
+        "triggered_checks_flat": triggered_flat,
+        "floor_rules_applied": list(sc.floor_rules_applied),
+        "rubric_dim_scores_full": dict(sc.dimension_scores),
     }
 
 
@@ -269,6 +274,12 @@ def main():
                         help="Exit cleanly after this many seconds; resume on next run via partial.jsonl")
     parser.add_argument("--resume", action="store_true",
                         help="Resume from .partial.jsonl, skipping already-scored seeds")
+    parser.add_argument("--emit-features", action="store_true",
+                        help="Also write output/diagnostic/seed_scorer_features.jsonl "
+                             "(one row per seed) for Phase 1a calibration.")
+    parser.add_argument("--features-output",
+                        default="output/diagnostic/seed_scorer_features.jsonl",
+                        help="Path for --emit-features JSONL output.")
     args = parser.parse_args()
 
     out_dir = ROOT / "output" / "diagnostic"
@@ -286,6 +297,14 @@ def main():
     suffix = args.output_suffix
     write_report(rows, dim_corrs, out_dir, suffix=suffix)
     print(f"Wrote {out_dir}/seed_scorer_agreement{suffix}.json and .md")
+
+    if args.emit_features:
+        features_path = ROOT / args.features_output
+        features_path.parent.mkdir(parents=True, exist_ok=True)
+        with features_path.open("w") as f:
+            for row in rows:
+                f.write(json.dumps(row) + "\n")
+        print(f"Wrote {features_path} ({len(rows)} feature rows)")
 
 
 if __name__ == "__main__":
