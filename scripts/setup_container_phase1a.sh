@@ -51,6 +51,9 @@ fi
 export PATH="$HOME/.composer/vendor/bin:$PATH"
 
 echo "[3/5] PHPCS + WordPress / VIP / Security standards"
+# Allow the composer plugin used by phpcs standards to auto-register installed_paths.
+composer global config --no-plugins --no-interaction \
+    allow-plugins.dealerdirect/phpcodesniffer-composer-installer true >/dev/null 2>&1 || true
 if command -v phpcs >/dev/null 2>&1; then
     echo "  phpcs already installed: $(phpcs --version)"
 else

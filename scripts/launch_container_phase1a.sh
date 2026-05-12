@@ -33,7 +33,10 @@ ensure_dir "$HOME/.cache/huggingface"
 ensure_dir "$HOME/.cache/pip"
 ensure_dir "$HOME/unsloth-data"
 
-state=$(docker inspect "$CONTAINER_NAME" --format '{{.State.Status}}' 2>/dev/null || echo "missing")
+# docker inspect prints a stray newline to stdout on miss, so the `|| echo missing`
+# fallback ends up with a leading-newline value. Probe explicitly via docker ps -a.
+state=$(docker ps -a --filter "name=^/${CONTAINER_NAME}$" --format '{{.State}}' | head -1)
+[ -z "$state" ] && state="missing"
 
 case "$state" in
     running)
