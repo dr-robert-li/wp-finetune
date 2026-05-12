@@ -84,15 +84,23 @@ def check_antipatterns() -> list[dict]:
     studio = SUBMODULE / "containers" / "unsloth-studio.sh"
     if studio.exists():
         text = studio.read_text()
-        if re.search(r"unsloth\s+studio\s+setup\s*&&", text):
+        # Issue #4: launcher must auto-bootstrap missing studio venv before calling
+        # `unsloth studio setup`. Bootstrap path = `curl install.sh | sh` per upstream
+        # docs. If install.sh ref is missing AND launcher invokes studio setup, the
+        # `&&` chain aborts on fresh containers and drops user back to host shell.
+        has_setup = bool(re.search(r"unsloth\s+studio\s+setup", text))
+        has_bootstrap = "install.sh" in text
+        if has_setup and not has_bootstrap:
             out.append({
-                "sig": f"ap:unsloth-studio-setup-and:{hash_first(text, 12)}",
+                "sig": f"ap:unsloth-studio-no-bootstrap:{hash_first(text, 12)}",
                 "kind": "ANTI-PATTERN",
                 "body": (
-                    "`containers/unsloth-studio.sh` still chains `unsloth studio setup && "
-                    "... unsloth studio ...`. Root cause of issue #4 (P1: container silent "
-                    "exit when studio venv at `/root/.unsloth/studio/unsloth_studio` is "
-                    "missing). #4 suggested fix not upstreamed."
+                    "`containers/unsloth-studio.sh` calls `unsloth studio setup` without "
+                    "first bootstrapping the studio venv via `install.sh`. Fresh "
+                    "nvcr.io/nvidia/pytorch:25.11-py3 containers ship without the venv "
+                    "at `/root/.unsloth/studio/unsloth_studio`; `unsloth studio setup` "
+                    "fails and the `&&` chain drops the user back to host shell. "
+                    "Root cause of issue #4 (P1)."
                 ),
             })
     headless = SUBMODULE / "containers" / "unsloth-headless.sh"

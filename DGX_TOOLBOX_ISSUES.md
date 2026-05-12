@@ -138,7 +138,7 @@ unsloth + transformers compatibility table.
 
 ---
 
-## #4 (P1) — unsloth-studio.sh container exits when `unsloth studio setup` fails (studio venv missing)
+## #4 (P1, RESOLVED in fork @ 21bb3e5; pending push to canonical upstream) — unsloth-studio.sh container exits when `unsloth studio setup` fails (studio venv missing)
 
 **File**: `containers/unsloth-studio.sh:43-71`
 
@@ -174,6 +174,24 @@ shell lifecycle. Either:
    for the docker-run layer.
 
 Either approach avoids the silent host-shell drop.
+
+**Resolution (2026-05-13, fork commit 21bb3e5 in dr-robert-li/dgx-toolbox):**
+applied a hybrid of the original suggestions. The launcher now auto-bootstraps
+the studio venv via the upstream-documented install.sh before
+`unsloth studio setup` runs, when the venv directory is missing:
+
+```bash
+if [ ! -x /root/.unsloth/studio/unsloth_studio/bin/python ]; then
+    echo "[unsloth-studio] venv missing ...; bootstrapping via install.sh"
+    curl -fsSL https://unsloth.ai/install.sh | sh
+fi && unsloth studio setup && ...
+```
+
+install.sh is idempotent; subsequent container starts skip the curl when
+the venv exists. Removes the silent host-shell drop without sacrificing
+the `&&` chain semantics that catch real setup failures. Pending push to
+the canonical upstream (`dr-robert-li/dgx-toolbox#main`) so other consumers
+of the submodule benefit.
 
 ---
 
@@ -321,6 +339,11 @@ Combined with the recipe `${VAR}` expansion fix from #8, this enables the docume
 - **DRIFT**: submodule HEAD `95d7b30e109a` differs from `https://github.com/dr-robert-li/dgx-toolbox.git` `main` (`00a457a0daa9`). Inspect: `git -C deps/dgx-toolbox log --oneline 95d7b30e..00a457a0`.
 - **ANTI-PATTERN**: `containers/unsloth-studio.sh` still chains `unsloth studio setup && ... unsloth studio ...`. Root cause of issue #4 (P1: container silent exit when studio venv at `/root/.unsloth/studio/unsloth_studio` is missing). #4 suggested fix not upstreamed.
 - **EXIT**: container `unsloth-headless` (ba45884f5c0f) exited with code **137** (Exited (137) 8 hours ago). Inspect: `docker logs --tail 200 ba45884f5c0f`. Code 137 = SIGKILL (OOM or manual kill); check host memory pressure.
+
+
+### Watch Log — 2026-05-12T20:36:38Z
+
+- **DRIFT**: submodule HEAD `21bb3e533f0c` differs from `https://github.com/dr-robert-li/dgx-toolbox.git` `main` (`00a457a0daa9`). Inspect: `git -C deps/dgx-toolbox log --oneline 21bb3e53..00a457a0`.
 
 ## How to add issues
 
