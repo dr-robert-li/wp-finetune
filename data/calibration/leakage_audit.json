@@ -1,0 +1,136 @@
+{
+  "wpbench_call_sites": 393,
+  "leakage_at_risk_repos": [
+    "wordpress-develop"
+  ],
+  "anchors_total": 500,
+  "anchors_dropped_leakage": 0,
+  "anchors_kept": 500,
+  "leaked_sample": [],
+  "holdout_pass_anchors": 20,
+  "holdout_pass_anchor_seed": 1729,
+  "seeds_total": 145,
+  "seeds_dropped_no_gt": 79,
+  "seeds_to_holdout": 19,
+  "seeds_to_train": 47,
+  "dropped_seeds_sample": [
+    {
+      "seed_id": "human_8cbbb903",
+      "source": "human",
+      "reason": "no_gt"
+    },
+    {
+      "seed_id": "human_062241e0",
+      "source": "human",
+      "reason": "no_gt"
+    },
+    {
+      "seed_id": "human_dee691e2",
+      "source": "human",
+      "reason": "no_gt"
+    },
+    {
+      "seed_id": "human_2382b134",
+      "source": "human",
+      "reason": "no_gt"
+    },
+    {
+      "seed_id": "human_62803ec5",
+      "source": "human",
+      "reason": "no_gt"
+    },
+    {
+      "seed_id": "human_e4245623",
+      "source": "human",
+      "reason": "no_gt"
+    },
+    {
+      "seed_id": "human_6ef6ad38",
+      "source": "human",
+      "reason": "no_gt"
+    },
+    {
+      "seed_id": "human_2d87084d",
+      "source": "human",
+      "reason": "no_gt"
+    },
+    {
+      "seed_id": "human_3bcb806f",
+      "source": "human",
+      "reason": "no_gt"
+    },
+    {
+      "seed_id": "human_ae3dbe2a",
+      "source": "human",
+      "reason": "no_gt"
+    },
+    {
+      "seed_id": "human_03b9d002",
+      "source": "human",
+      "reason": "no_gt"
+    },
+    {
+      "seed_id": "human_441af6a6",
+      "source": "human",
+      "reason": "no_gt"
+    },
+    {
+      "seed_id": "human_fe9515fe",
+      "source": "human",
+      "reason": "no_gt"
+    },
+    {
+      "seed_id": "human_06d4b277",
+      "source": "human",
+      "reason": "no_gt"
+    },
+    {
+      "seed_id": "human_b4c54cab",
+      "source": "human",
+      "reason": "no_gt"
+    },
+    {
+      "seed_id": "human_e898e823",
+      "source": "human",
+      "reason": "no_gt"
+    },
+    {
+      "seed_id": "human_53f910a2",
+      "source": "human",
+      "reason": "no_gt"
+    },
+    {
+      "seed_id": "human_c3ef687b",
+      "source": "human",
+      "reason": "no_gt"
+    },
+    {
+      "seed_id": "human_5c84982f",
+      "source": "human",
+      "reason": "no_gt"
+    },
+    {
+      "seed_id": "human_dfbddb50",
+      "source": "human",
+      "reason": "no_gt"
+    }
+  ],
+  "train_rows": 527,
+  "holdout_rows": 39,
+  "train_label_dist": {
+    "PASS": 480,
+    "FAIL": 47
+  },
+  "holdout_label_dist": {
+    "PASS": 20,
+    "FAIL": 19
+  },
+  "train_subtlety_dist": {
+    "clear-cut": 509,
+    "boundary": 18
+  },
+  "holdout_subtlety_dist": {
+    "clear-cut": 20,
+    "boundary": 19
+  }
+}
