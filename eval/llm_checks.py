@@ -121,6 +121,9 @@ def _call_claude(prompt: str, model: str, timeout: int) -> str:
 
 
 def _call_vllm(prompt: str, model: str, timeout: int, base_url: str) -> str:
+    # Qwen3 thinking-mode models emit chain-of-thought into a separate `reasoning`
+    # field and leave `content` empty unless thinking is disabled. Force direct
+    # JSON output for rubric checks via chat_template_kwargs.
     body = json.dumps({
         "model": model,
         "messages": [
@@ -130,6 +133,7 @@ def _call_vllm(prompt: str, model: str, timeout: int, base_url: str) -> str:
         "temperature": 0.0,
         "max_tokens": 4096,
         "response_format": {"type": "json_object"},
+        "chat_template_kwargs": {"enable_thinking": False},
     }).encode("utf-8")
     req = urllib.request.Request(
         f"{base_url.rstrip('/')}/chat/completions",
@@ -139,7 +143,15 @@ def _call_vllm(prompt: str, model: str, timeout: int, base_url: str) -> str:
     )
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         payload = json.loads(resp.read().decode("utf-8"))
-    return payload["choices"][0]["message"]["content"]
+    msg = payload["choices"][0]["message"]
+    content = msg.get("content")
+    if content:
+        return content
+    # Fallback: some serving stacks still surface output via `reasoning`.
+    reasoning = msg.get("reasoning")
+    if reasoning:
+        return reasoning
+    raise RuntimeError(f"vLLM returned empty content + reasoning: {payload!r}")
 
 
 def _parse_response(raw: str) -> Optional[dict]:
