@@ -422,6 +422,248 @@ Option B is more robust (no `$PATH` leakage across bash subshells inside the `ba
 
 - **DRIFT**: submodule HEAD `e014af7ff8e9` differs from `https://github.com/dr-robert-li/dgx-toolbox.git` `main` (`e42656493645`). Inspect: `git -C deps/dgx-toolbox log --oneline e014af7f..e4265649`.
 
+## Cascading Fix Plan
+
+Drafted 2026-05-13. The 11 numbered issues above plus three Watch Log
+entries (DRIFT × 2, EXIT 137 × 1, ANTI-PATTERN × 1) form **eight causal
+chains**. Several "fixed" issues are only partially mitigated
+(template-only, opt-in, or worked around downstream rather than fixed at
+root); several open issues are children of a parent fix that has already
+landed. This section consolidates them into one dependency-ordered view.
+
+Status tags: **OPEN** = no mitigation. **MITIGATED** = workaround
+shipped, root cause still open. **RESOLVED** = root cause fixed.
+
+**Live reproduction (2026-05-13 ~07:00 GMT+10)** confirming Chain B
+fires on the user's aarch64 host the moment `unsloth-studio.sh` is run:
+
+```
+ERROR: Could not find a version that satisfies the requirement torchcodec==0.10.0
+       (from versions: 0.0.0.dev0, 0.11.0, 0.11.1)
+ERROR: No matching distribution found for torchcodec==0.10.0
+  error          studio setup failed (exit code 1)
+...
+File "/usr/local/lib/python3.12/dist-packages/studio/backend/loggers/handlers.py", line 22
+    import structlog
+ModuleNotFoundError: No module named 'structlog'
+```
+
+Lines 1-3 = #10 (aarch64 torchcodec). Lines 5-9 = #11 (system Python 3.12
+shadow). Both in one launch — must be patched together.
+
+### Chain A — HF stack drift (#2, #3, partially #5) — OPEN
+
+```
+NGC base image transformers 5.x line
+        │
+        ├── #2 PEFT 0.19 WeightConverter signature mismatch  (P0)
+        │
+        ├── unsloth latest auto-pull (#3, P0)
+        │     └── transformers >=5.0 + tokenizers >=0.22 + hf-hub >=1.0
+        │           → adapter load failure on every public 4.x checkpoint
+        │
+        └── bitsandbytes 0.49.2 transitively pulled (#5, P0)
+              └── no libbitsandbytes_cuda131.so → 4-/8-bit quant broken
+```
+
+**Partial mitigations already shipped**:
+
+- `setup/requirements-gpu.example.txt` (commit 7b70d00) pins
+  transformers 4.46.*, tokenizers 0.20.*, hub 0.26.*, peft 0.13.*,
+  accelerate, trl, datasets, bitsandbytes==0.48.0. **Opt-in only** —
+  user must copy template → `$HOME/requirements-gpu.txt`. NGC
+  launchers consume it; unsloth launchers do NOT.
+- `UNSLOTH_VERSION` env var (commits 6a673db / 73ca2da) lets user pin
+  unsloth. Does NOT pin transitives — latest unsloth's *runtime*
+  imports transformers 5.x APIs even if `--no-deps` blocks the
+  install-time upgrade.
+- `install-deps.py` (commit 00a457a) supports `# no-walk` marker and
+  `-r <file>` invocation.
+- README "Known Issues and Compatibility" (commit 4f5a34d) documents
+  the trade-offs.
+
+**Remaining work** (apply in order):
+
+1. `containers/unsloth-headless.sh` and `containers/unsloth-studio.sh`:
+   detect `$HOME/requirements-gpu.txt`. If present, prepend
+   `-r "$HOME/requirements-gpu.txt"` to the `install-deps.py`
+   invocation so the pinned HF stack flows into unsloth containers,
+   not just NGC ones.
+2. README: add explicit "for reproducible HF pins across **all three**
+   container families, copy `setup/requirements-gpu.example.txt` →
+   `$HOME/requirements-gpu.txt`" line.
+3. Long-term: bake the pin file into the `setup/install.sh` step so
+   it's automatic on fresh checkout.
+
+### Chain B — Studio bootstrap regression (#4 fix → #10 + #11) — OPEN (firing live as of 2026-05-13)
+
+```
+#4 silent host-shell drop on missing studio venv  (P1)
+        │
+        └── Fix: curl install.sh | sh   (commits e014af7, e426564)
+                  │
+                  ├── #10 install.sh pins torchcodec==0.10.0; no aarch64 wheel  (P0)
+                  │       → uv resolver fails → pip fallback fails → exit 1
+                  │       → studio setup exit 1
+                  │
+                  └── #11 unsloth on $PATH = system Python 3.12 (install-deps.py output)
+                          NOT venv Python 3.13 (install.sh venv)             (P0)
+                          → /usr/local/lib/python3.12/dist-packages/studio/...
+                            ModuleNotFoundError: structlog
+                          → studio crashes immediately
+```
+
+**Why #10 + #11 must ship in one patch**: even if #10 is fixed in
+isolation (venv exists), #11 still routes execution to the wrong
+Python. Even if #11 is fixed in isolation (`$VENV/bin/unsloth`
+invoked), #10 prevents the venv from existing on aarch64 in the first
+place. Half-fixes do nothing.
+
+**Unified fix** to `containers/unsloth-studio.sh` (current lines 57-66):
+
+```bash
+bash -c '\
+  python /tmp/install-deps.py '"${UNSLOTH_SPEC}"' && \
+  pip uninstall -y torchcodec 2>/dev/null; \
+  VENV=/root/.unsloth/studio/unsloth_studio; \
+  if [ ! -x "$VENV/bin/python" ]; then \
+    echo "[unsloth-studio] venv missing; bootstrapping via install.sh"; \
+    curl -fsSL https://unsloth.ai/install.sh | sh || true; \
+  fi; \
+  if [ "$(uname -m)" = "aarch64" ] && [ -x "$VENV/bin/python" ]; then \
+    echo "[unsloth-studio] aarch64 host — overriding torchcodec pin in venv"; \
+    "$VENV/bin/python" -m pip uninstall -y torchcodec 2>/dev/null; \
+    "$VENV/bin/python" -m pip install --no-deps "torchcodec>=0.11,<0.12"; \
+  fi && \
+  "$VENV/bin/unsloth" studio setup && \
+  "$VENV/bin/unsloth" studio -H 0.0.0.0 -p '"${PORT}"''
+```
+
+Three deltas vs. current code:
+
+1. Hoist `VENV=...` once.
+2. After bootstrap, if `uname -m == aarch64`, force-replace torchcodec
+   **inside the venv** (fixes #10 at the affected interpreter, not the
+   system interpreter).
+3. Invoke `"$VENV/bin/unsloth"` (absolute path) for both `setup` and
+   the studio server (fixes #11 — bypasses `$PATH` shadow from the
+   system-Python install-deps.py install).
+
+**Cross-chain interaction with Chain A's #5**: install.sh provisions
+Python 3.13. Bitsandbytes 0.48.0 (the #5 pin) must have a Python 3.13
+wheel; if not, the venv loses quantisation capability even though the
+system Python 3.12 still has it. Verify with
+`"$VENV/bin/python" -c "import bitsandbytes"` after the unified fix
+lands; if missing, pin bitsandbytes in the venv post-bootstrap or fall
+back to Python 3.12 for studio.
+
+### Chain C — sparkrun local-checkpoint (#8, #9) — MITIGATED, root still open
+
+```
+#8 ${VAR:-default} template not expanded by sparkrun  (P1)
+        │
+        └── #9 sparkrun.download_model() unconditionally calls         (P0)
+            huggingface_hub.snapshot_download() — no path-exists branch
+                  │
+                  └── Workaround: scripts/eval-checkpoint.sh dual-path
+                      routing (_launch_vllm_direct, commit d155307)
+                      — bypasses sparkrun entirely for local checkpoints
+```
+
+Long-term root fix to
+`vendor/sparkrun/src/sparkrun/models/download.py:350-400` (the
+`os.path.exists()` branch from #9's suggested fix) still required. No
+new dgx-toolbox-side action; tracked under #9.
+
+### Chain D — Project mount asymmetry (#6) — RESOLVED
+
+Commit 73ca2da auto-mounts `${PWD}:/workspace/project` in both unsloth
+launchers (current `unsloth-studio.sh:52`, `unsloth-headless.sh:58`).
+Parity with `ngc-pytorch.sh` achieved. README cross-references the
+behaviour.
+
+### Chain E — MoE LoRA silent fail (#7) — MITIGATED, upstream still open
+
+`scripts/verify_adapter_load.py` (commit bfc60d4) diffs expected vs.
+loaded LoRA module names and exits non-zero on mismatch. README
+documents the recommended post-training invocation. Upstream PEFT
+change (warning → error on zero-match `target_parameters`) remains the
+right long-term fix and is not blocked by dgx-toolbox.
+
+### Chain F — Container pre-flight (#1) — RESOLVED
+
+`require_files` helper in `lib.sh` plus call sites in
+`ngc-pytorch.sh` / `ngc-jupyter.sh` / `unsloth-*.sh` (commits 67ca82a,
+3f27d17). Silent host-shell drop on missing host files is gone. No
+remaining action.
+
+### Chain G — Operational signals (Watch Log) — OPEN, observation-driven
+
+```
+Watch Log 2026-05-12T07:48:04Z / 20:40:23Z
+  ├── DRIFT: submodule HEAD differs from upstream main         (informational)
+  │   → wp-finetune's vendored dgx-toolbox is stale; cascades any
+  │     upstream fix to be re-pulled before consumption.
+  │
+  ├── ANTI-PATTERN: unsloth studio setup && unsloth studio chain
+  │   → root of #4. Resolved upstream by commits e014af7 / e426564.
+  │
+  └── EXIT 137 on unsloth-headless container                    (OPEN)
+      → SIGKILL; OOM or manual kill. Repeated 21 hours apart.
+      → No host-memory pre-flight; no swap monitor; no graceful
+        OOM message. Likely cascade with Chain A — transformers 5.x
+        memory footprint regression on small-VRAM hosts.
+```
+
+**Remaining work**:
+
+1. Launcher-side pre-flight memory check: warn if `MemAvailable` (or
+   `nvidia-smi --query-gpu=memory.free`) below a threshold matching the
+   requested unsloth model class.
+2. On container exit, surface a recognizable banner — `docker inspect`
+   → `OOMKilled: true` → print "OOM — try smaller batch size or
+   model".
+3. Capture exit-code interpretation in README "Known Issues and
+   Compatibility".
+
+### Chain H — Submodule freshness (Watch Log DRIFT × 2) — OPEN, process-level
+
+Two DRIFT entries flag wp-finetune's `deps/dgx-toolbox/` lagging
+upstream `dr-robert-li/dgx-toolbox`. Not a code bug; a workflow bug.
+Any patch from Chains A, B, or G must be (a) committed upstream,
+(b) the submodule pointer in wp-finetune bumped, (c) re-verified before
+declaring fixed. Captured here so the executor does not fix dgx-toolbox
+in isolation and leave wp-finetune still hitting the old code.
+
+### Cross-cascade dependency matrix
+
+| Fix                                | Depends on                                | Unblocks                            |
+|------------------------------------|-------------------------------------------|-------------------------------------|
+| Chain B (#10 + #11 unified patch)  | Chain F (`require_files`) — already done  | Live studio launch on aarch64       |
+| Chain A (HF pin propagation)       | `install-deps.py -r` support — done       | Reproducible adapter loads          |
+| Chain G (OOM banner + pre-flight)  | Chain A (pins trim memory footprint)      | Headless exit clarity               |
+| Chain H (submodule bump)           | A and B landed upstream                   | wp-finetune reproducibility         |
+
+### Sequencing rationale
+
+1. **Chain B first** — actively firing on the user's host (see live
+   trace above). Unblocks studio entirely.
+2. **Chain A second** — quietly corrupts adapter loads; affects
+   reproducibility for every downstream consumer.
+3. **Chain G third** — operational hygiene; depends on A's memory
+   profile.
+4. **Chain H last** — process step; coordinates wp-finetune submodule
+   bump after A + B land upstream.
+
+Chains C, D, E, F are out of the critical path; status notes only.
+
+---
+
+
+### Watch Log — 2026-05-12T22:18:58Z
+
+- **DRIFT**: submodule HEAD `e42656493645` differs from `https://github.com/dr-robert-li/dgx-toolbox.git` `main` (`35ec390a01f9`). Inspect: `git -C deps/dgx-toolbox log --oneline e4265649..35ec390a`.
+
 ## How to add issues
 
 Append new entries ABOVE this footer, numbered sequentially, and bump
