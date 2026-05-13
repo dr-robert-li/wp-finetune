@@ -331,7 +331,7 @@ Combined with the recipe `${VAR}` expansion fix from #8, this enables the docume
 
 ---
 
-## #10 (P0) — `unsloth install.sh` pins `torchcodec==0.10.0` which has no aarch64 wheel
+## #10 (P0, RESOLVED upstream @ 75681b8) — `unsloth install.sh` pins `torchcodec==0.10.0` which has no aarch64 wheel
 
 **Files**: upstream `unsloth install.sh` (fetched via `curl -fsSL https://unsloth.ai/install.sh | sh`), invoked by `containers/unsloth-studio.sh:51` after the #4 auto-bootstrap fix lands.
 
@@ -366,7 +366,7 @@ Long-term: file upstream issue against `unsloth-studio` extras-no-deps.txt to bu
 
 ---
 
-## #11 (P0) — `unsloth studio` resolves to system Python, not the bootstrapped venv
+## #11 (P0, RESOLVED upstream @ 75681b8) — `unsloth studio` resolves to system Python, not the bootstrapped venv
 
 **File**: `containers/unsloth-studio.sh:55` (`unsloth studio -H 0.0.0.0 -p ${PORT}`)
 
