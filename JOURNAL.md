@@ -4,6 +4,34 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-05-14 — Phase 1a step 1 done, step 2 running, ecosystem still abrasive
+
+Phase 1a step 1 is closed out. The 500 PASS-anchor pool is filled and locked. 463 of those anchors came over from an earlier Claude Code agent run with rubric overall mean 99.65. The remaining 37 I topped up overnight against the local vLLM backend (Qwen3.6-35B-A3B on the sparkrun endpoint, port 30000), mean 99.82. The +0.17 delta between the two sources sits well inside the noise floor for anchor selection, and `build_calibration_dataset.py` clamps anything at or above 95 to the same ceiling via `ANCHOR_CLAMP=95.0` anyway. No calibration drift from the backend swap.
+
+### Why the backend swap, since people will ask
+
+It was a cost call, not a quality call. Claude-via-CLI is still the flagship reasoner — that is why advisor, audit, and council work stays there. But the rubric carries 41 LLM checks per item. 500 anchors × 41 ≈ 20K LLM calls just for the PASS pool, and the Phase 1b stratified re-judge is another 20K behind it. The subscription rate limits dominate wall time long before quality matters. The local vLLM serves the same 41-prompt JSON schema at batch throughput on the headroom the Spark has after profiling shuts down. Phase 0.12 already wired the routing through `LLM_BACKEND` in `eval/llm_checks.py`, so the switch is one env flip — plus one gotcha that ate the morning.
+
+### The Qwen3 thinking-mode landmine
+
+Qwen3.6 reasoning models route chain-of-thought into a separate `reasoning` field on the response and leave `message.content` as `null`. My vLLM client was reading `content` directly, so every check returned `None` and crashed `json.loads` downstream. The fix is `chat_template_kwargs: {enable_thinking: false}` in the request body to force direct output, with a `reasoning`-field fallback for serving stacks that ignore the kwarg. One-line config, half an hour to actually locate it because the failure mode looks like a JSON schema problem until you log the raw response object.
+
+### Step 2 is on the wire now
+
+`phase0_score_seeds.py --emit-features --workers 4` is scoring the 145 FAIL seeds (27 human + 93 UGC + 25 boundary) against the same vLLM backend right now. Sustained pace is roughly 17 seconds per seed at four workers — about 40 minutes wall time for the full run. Output lands at `output/diagnostic/seed_scorer_features.jsonl` and is the input that unblocks the XGBoost dual-head calibration: `build_calibration_dataset.py` then `calibrate_rubric.py`.
+
+Combined anchor pool once step 2 lands: 500 PASS + 145 FAIL = 645 labeled items spanning the 53 to 100 range. That is the calibration corpus Phase 1a was built around.
+
+### The thing I have to keep naming
+
+The cascading dependency chain across the local ML container ecosystem keeps biting. The pattern through Phase 0 and now into Phase 1a is the same shape: containers ship HF stacks no released PEFT can load against; sparkrun cannot serve local model directories; unsloth auto-pulls latest, which cascades transformers 5.x; aarch64 wheel gaps for torchcodec break the studio bootstrap; Composer plugin security restrictions block PHPCS install inside containers; CLAUDE_CODE_OAUTH_TOKEN and bind-mount plumbing to get the Claude CLI working inside the runtime. Individually each is a single afternoon. Stacked, they have eaten more wall-time across the last fortnight than the actual research work. I am noting the pattern, not editorialising — it is a fact about the state of the tooling, and it bears on how aggressively the v2 plan can lean on any single container path.
+
+### Next action
+
+Let step 2 finish, run the XGBoost calibration head, then kick the Phase 1b stratified 20K re-judge against vLLM. Phase 1a continues.
+
+---
+
 ## 2026-05-12 — Back from hiatus, base profile vindicates the routing thesis
 
 A few weeks away. Coming back I expected to find the model still in the same hole experiment_001 left it in: Spearman 0.096 against the bulk Claude labels, parse rate at 13%, mean E_eff stuck at 69. I'd been carrying around an assumption that the task-token MoE specialisation never took, and that the v2 rebuild needed to address routing collapse first. Today I sat down to actually measure it.
