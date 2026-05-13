@@ -86,12 +86,35 @@ else
     echo "  installed: $(phpstan --version)"
 fi
 
-echo "[5/5] Python ML deps for Phase 1a"
+echo "[5/6] Python ML deps for Phase 1a"
 python3 -m pip install --quiet --no-deps \
     "xgboost>=2.1,<3" \
     "scikit-learn>=1.5,<2" \
     "pyyaml>=6"
 python3 -c 'import xgboost, sklearn, yaml; print(f"  xgb {xgboost.__version__} | sklearn {sklearn.__version__} | yaml {yaml.__version__}")'
+
+echo "[6/6] Claude CLI (for LLM-assisted rubric checks)"
+# Binary is bind-mounted RO from host at /opt/claude (versions/<ver> dir).
+# Expose a stable symlink on $PATH; the actual binary inside that dir is named
+# the same as the version (e.g. 2.1.140).
+if [ -d /opt/claude ] && [ ! -e /usr/local/bin/claude ]; then
+    bin="$(find /opt/claude -maxdepth 1 -type f -executable | head -1)"
+    if [ -n "$bin" ]; then
+        ln -sf "$bin" /usr/local/bin/claude
+        echo "  symlinked $bin -> /usr/local/bin/claude"
+    else
+        echo "  WARN: /opt/claude mounted but no executable found inside"
+    fi
+fi
+if command -v claude >/dev/null 2>&1; then
+    if [ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]; then
+        echo "  claude $(claude --version 2>/dev/null | head -1) + CLAUDE_CODE_OAUTH_TOKEN set"
+    else
+        echo "  claude $(claude --version 2>/dev/null | head -1) but no OAuth token; LLM checks will fall back"
+    fi
+else
+    echo "  claude CLI not available; LLM checks will be deterministic-only"
+fi
 
 if ! grep -q ".composer/vendor/bin" /root/.bashrc 2>/dev/null; then
     echo 'export PATH="$HOME/.composer/vendor/bin:$PATH"' >> /root/.bashrc
