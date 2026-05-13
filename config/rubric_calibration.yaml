@@ -1,0 +1,378 @@
+schema_version: 1
+trained_at_utc: '2026-05-13T23:11:47.467730+00:00'
+data:
+  train_path: data/calibration/train.jsonl
+  holdout_path: data/calibration/holdout.jsonl
+  train_sha16: 2fd5a7592e57c353
+  holdout_sha16: 224ca724f49ba120
+  n_train: 527
+  n_holdout: 39
+  feature_dim: 250
+  check_registry_size: 241
+feature_schema:
+  check_ids_sorted:
+  - A11Y-N01
+  - A11Y-N02
+  - A11Y-N03
+  - A11Y-N04
+  - A11Y-N05
+  - A11Y-N06
+  - A11Y-N07
+  - A11Y-N08
+  - A11Y-N09
+  - A11Y-N10
+  - A11Y-N11
+  - A11Y-N12
+  - A11Y-N13
+  - A11Y-P01
+  - A11Y-P02
+  - A11Y-P03
+  - A11Y-P04
+  - A11Y-P05
+  - A11Y-P06
+  - A11Y-P07
+  - A11Y-P08
+  - A11Y-P09
+  - A11Y-P10
+  - A11Y-P11
+  - A11Y-P12
+  - ERR-N01
+  - ERR-N02
+  - ERR-N03
+  - ERR-N04
+  - ERR-N05
+  - ERR-N06
+  - ERR-N07
+  - ERR-N08
+  - ERR-N09
+  - ERR-N10
+  - ERR-N11
+  - ERR-N12
+  - ERR-P01
+  - ERR-P02
+  - ERR-P03
+  - ERR-P04
+  - ERR-P05
+  - ERR-P06
+  - ERR-P07
+  - ERR-P08
+  - ERR-P09
+  - ERR-P10
+  - ERR-P11
+  - I18N-N01
+  - I18N-N02
+  - I18N-N03
+  - I18N-N04
+  - I18N-N05
+  - I18N-N06
+  - I18N-N07
+  - I18N-N08
+  - I18N-N09
+  - I18N-N10
+  - I18N-N11
+  - I18N-N12
+  - I18N-N13
+  - I18N-P01
+  - I18N-P02
+  - I18N-P03
+  - I18N-P04
+  - I18N-P05
+  - I18N-P06
+  - I18N-P07
+  - I18N-P08
+  - I18N-P09
+  - I18N-P10
+  - PERF-N01
+  - PERF-N02
+  - PERF-N03
+  - PERF-N04
+  - PERF-N05
+  - PERF-N06
+  - PERF-N07
+  - PERF-N08
+  - PERF-N09
+  - PERF-N10
+  - PERF-N11
+  - PERF-N12
+  - PERF-N13
+  - PERF-P01
+  - PERF-P02
+  - PERF-P03
+  - PERF-P04
+  - PERF-P05
+  - PERF-P06
+  - PERF-P07
+  - PERF-P08
+  - PERF-P09
+  - PERF-P10
+  - PERF-P11
+  - PERF-P12
+  - SEC-N01
+  - SEC-N02
+  - SEC-N03
+  - SEC-N04
+  - SEC-N05
+  - SEC-N06
+  - SEC-N07
+  - SEC-N08
+  - SEC-N09
+  - SEC-N10
+  - SEC-N11
+  - SEC-N12
+  - SEC-N13
+  - SEC-N14
+  - SEC-N15
+  - SEC-N16
+  - SEC-N17
+  - SEC-N18
+  - SEC-N19
+  - SEC-N20
+  - SEC-P01
+  - SEC-P02
+  - SEC-P03
+  - SEC-P04
+  - SEC-P05
+  - SEC-P06
+  - SEC-P07
+  - SEC-P08
+  - SEC-P09
+  - SEC-P10
+  - SEC-P11
+  - SEC-P12
+  - SEC-P13
+  - SQL-N01
+  - SQL-N02
+  - SQL-N03
+  - SQL-N04
+  - SQL-N05
+  - SQL-N06
+  - SQL-N07
+  - SQL-N08
+  - SQL-N09
+  - SQL-N10
+  - SQL-N11
+  - SQL-N12
+  - SQL-N13
+  - SQL-N14
+  - SQL-N15
+  - SQL-N16
+  - SQL-N17
+  - SQL-P01
+  - SQL-P02
+  - SQL-P03
+  - SQL-P04
+  - SQL-P05
+  - SQL-P06
+  - SQL-P07
+  - SQL-P08
+  - SQL-P09
+  - STR-N01
+  - STR-N02
+  - STR-N03
+  - STR-N04
+  - STR-N05
+  - STR-N06
+  - STR-N07
+  - STR-N08
+  - STR-N09
+  - STR-N10
+  - STR-N11
+  - STR-N12
+  - STR-N13
+  - STR-N14
+  - STR-P01
+  - STR-P02
+  - STR-P03
+  - STR-P04
+  - STR-P05
+  - STR-P06
+  - STR-P07
+  - STR-P08
+  - STR-P09
+  - STR-P10
+  - STR-P11
+  - STR-P12
+  - STR-P13
+  - WAPI-N01
+  - WAPI-N02
+  - WAPI-N03
+  - WAPI-N04
+  - WAPI-N05
+  - WAPI-N06
+  - WAPI-N07
+  - WAPI-N08
+  - WAPI-N09
+  - WAPI-N10
+  - WAPI-N11
+  - WAPI-N12
+  - WAPI-N13
+  - WAPI-N14
+  - WAPI-P01
+  - WAPI-P02
+  - WAPI-P03
+  - WAPI-P04
+  - WAPI-P05
+  - WAPI-P06
+  - WAPI-P07
+  - WAPI-P08
+  - WAPI-P09
+  - WAPI-P10
+  - WAPI-P11
+  - WAPI-P12
+  - WAPI-P13
+  - WPCS-N01
+  - WPCS-N02
+  - WPCS-N03
+  - WPCS-N04
+  - WPCS-N05
+  - WPCS-N06
+  - WPCS-N07
+  - WPCS-N08
+  - WPCS-N09
+  - WPCS-N10
+  - WPCS-N11
+  - WPCS-N12
+  - WPCS-N13
+  - WPCS-N14
+  - WPCS-N15
+  - WPCS-N16
+  - WPCS-N17
+  - WPCS-N18
+  - WPCS-N19
+  - WPCS-N20
+  - WPCS-P01
+  - WPCS-P02
+  - WPCS-P03
+  - WPCS-P04
+  - WPCS-P05
+  - WPCS-P06
+  - WPCS-P07
+  - WPCS-P08
+  - WPCS-P09
+  - WPCS-P10
+  - WPCS-P11
+  - WPCS-P12
+  dim_order:
+  - D1_wpcs
+  - D2_security
+  - D3_sql
+  - D4_perf
+  - D5_wp_api
+  - D6_i18n
+  - D7_a11y
+  - D8_errors
+  - D9_structure
+verdict_classifier:
+  model_path: models/calibration/verdict_classifier.json
+  hp:
+    max_depth: 4
+    n_estimators: 100
+    learning_rate: 0.05
+    min_child_weight: 5
+  scale_pos_weight: 10.212765957446809
+  cv_auc_mean: 0.9886921296296297
+  holdout_accuracy: 0.9230769230769231
+  holdout_auc: 1.0
+  holdout_confusion:
+  - - 20
+    - 0
+  - - 3
+    - 16
+  top_features:
+  - feature: score::D9_structure
+    importance: 0.2722754180431366
+  - feature: WPCS-P06
+    importance: 0.11167781054973602
+  - feature: WAPI-N12
+    importance: 0.0991075187921524
+  - feature: SEC-N02
+    importance: 0.09398165345191956
+  - feature: WPCS-P01
+    importance: 0.08969365805387497
+  - feature: WAPI-P08
+    importance: 0.06048313528299332
+  - feature: score::D4_perf
+    importance: 0.05875983461737633
+  - feature: WPCS-N02
+    importance: 0.037820812314748764
+  - feature: score::D2_security
+    importance: 0.03181104734539986
+  - feature: score::D1_wpcs
+    importance: 0.028694692999124527
+  - feature: SEC-N04
+    importance: 0.02699902094900608
+  - feature: I18N-P01
+    importance: 0.02296571247279644
+  - feature: ERR-P09
+    importance: 0.017412127926945686
+  - feature: STR-P02
+    importance: 0.01469289232045412
+  - feature: WPCS-P09
+    importance: 0.010983312502503395
+  - feature: score::D5_wp_api
+    importance: 0.010526692494750023
+  - feature: PERF-P09
+    importance: 0.0062444377690553665
+  - feature: score::D8_errors
+    importance: 0.005870201159268618
+  gate:
+    metric: holdout_accuracy
+    threshold: 0.85
+    pass: true
+overall_regressor:
+  model_path: models/calibration/overall_regressor.json
+  hp:
+    max_depth: 5
+    n_estimators: 100
+    learning_rate: 0.05
+    min_child_weight: 5
+  cv_spearman_mean: 0.4847942672509308
+  holdout_spearman: 0.8382369686343336
+  holdout_pearson: 0.8125511482395602
+  holdout_mae: 13.225593128520199
+  top_features:
+  - feature: score::D9_structure
+    importance: 0.6858561635017395
+  - feature: STR-P02
+    importance: 0.0865943655371666
+  - feature: WAPI-N12
+    importance: 0.04585568979382515
+  - feature: WPCS-P01
+    importance: 0.034636177122592926
+  - feature: SEC-N02
+    importance: 0.020956439897418022
+  - feature: score::D8_errors
+    importance: 0.015858521685004234
+  - feature: score::D4_perf
+    importance: 0.01563180796802044
+  - feature: WAPI-P08
+    importance: 0.012662774883210659
+  - feature: score::D2_security
+    importance: 0.01155591569840908
+  - feature: score::D5_wp_api
+    importance: 0.010037041269242764
+  - feature: SEC-N04
+    importance: 0.01003221981227398
+  - feature: WPCS-P06
+    importance: 0.00824732892215252
+  - feature: score::D1_wpcs
+    importance: 0.005496711004525423
+  - feature: ERR-P09
+    importance: 0.005363970063626766
+  - feature: WPCS-P09
+    importance: 0.005309631582349539
+  - feature: SEC-N03
+    importance: 0.0039110747165977955
+  - feature: WPCS-N02
+    importance: 0.003572868648916483
+  - feature: WPCS-P11
+    importance: 0.0032970099709928036
+  - feature: I18N-N13
+    importance: 0.003286236198619008
+  - feature: WPCS-P07
+    importance: 0.0027670369017869234
+  gate:
+    metric: holdout_spearman
+    threshold: 0.7
+    pass: true
+gates_overall_pass: true
