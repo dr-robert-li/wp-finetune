@@ -22,9 +22,9 @@ Qwen3.6 reasoning models route chain-of-thought into a separate `reasoning` fiel
 
 Combined anchor pool once step 2 lands: 500 PASS + 145 FAIL = 645 labeled items spanning the 53 to 100 range. That is the calibration corpus Phase 1a was built around.
 
-### The thing I have to keep naming
+### As I've said before...
 
-The cascading dependency chain across the local ML container ecosystem keeps biting. The pattern through Phase 0 and now into Phase 1a is the same shape: containers ship HF stacks no released PEFT can load against; sparkrun cannot serve local model directories; unsloth auto-pulls latest, which cascades transformers 5.x; aarch64 wheel gaps for torchcodec break the studio bootstrap; Composer plugin security restrictions block PHPCS install inside containers; CLAUDE_CODE_OAUTH_TOKEN and bind-mount plumbing to get the Claude CLI working inside the runtime. Individually each is a single afternoon. Stacked, they have eaten more wall-time across the last fortnight than the actual research work. I am noting the pattern, not editorialising — it is a fact about the state of the tooling, and it bears on how aggressively the v2 plan can lean on any single container path.
+The cascading dependency chain across the local ML container ecosystem keeps biting. The pattern through Phase 0 and now into Phase 1a is the same shape: containers ship HF stacks no released PEFT can load against; sparkrun cannot serve local model directories; unsloth auto-pulls latest, which cascades transformers 5.x; aarch64 wheel gaps for torchcodec break the studio bootstrap; Composer plugin security restrictions block PHPCS install inside containers. Individually each takes a while to diagnose, resolve and wire. Stacked, they have eaten more wall-time across the last week than the actual research work. It is a fact about the state of the tooling, and it bears on how aggressively the v2 plan can lean on any single container path from the DGX Toolbox.
 
 ### Next action
 
