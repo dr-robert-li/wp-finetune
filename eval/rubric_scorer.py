@@ -178,6 +178,13 @@ def _predict_calibrated(triggered_checks: dict[str, list[str]],
         verdict_int = int(_calibration_state["clf"].predict(X)[0])
     except Exception:
         return None, None
+    # XGBoost regressor is unbounded — clip to the rubric scale [0, 100] so
+    # downstream consumers (Phase 1b re-judge audit, training-mix weighting)
+    # don't surface -6.9 or 104.6 as legitimate signal.
+    if overall < 0.0:
+        overall = 0.0
+    elif overall > 100.0:
+        overall = 100.0
     verdict = "FAIL" if verdict_int == 1 else "PASS"
     return overall, verdict
 
