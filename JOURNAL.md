@@ -4,6 +4,45 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-05-14 (evening) — Phase 1a done, calibration gates pass, sklearn pin filed
+
+Phase 1a closed out today. Steps 1 through 8 all landed; the score_code wiring at Steps 9-10 was already in `d457a8b` from earlier in the week. Both acceptance gates clear with room to spare.
+
+### Gate results
+
+| Head | Metric | Value | Gate |
+|------|--------|-------|------|
+| Verdict classifier | accuracy on 39-row boundary holdout | 0.9231 | ≥ 0.85 |
+| Verdict classifier | AUC | 1.0000 | — |
+| Overall regressor | Spearman | +0.8382 | ≥ 0.70 |
+| Overall regressor | Pearson | +0.8126 | — |
+| Overall regressor | MAE | 13.23 | — |
+
+Top regressor feature is `score::D9_structure` at 0.69 importance. The PASS anchor pool saturates the other rubric dimensions at the ceiling, so D9 carries most of the residual signal by construction. Worth watching whether that hands too much leverage to a single dim once Phase 1b's stratified re-judge feeds back through the calibrated head, but not blocking.
+
+### Calibration corpus shape
+
+- Train: 527 rows (480 PASS / 47 FAIL).
+- Holdout: 39 rows (20 PASS anchors reserved for discrimination + 19 boundary FAIL).
+- wp-bench leakage audit dropped 0 of 500 anchors after the tightened call-site regex.
+- 79 of 145 seeds dropped for missing ground truth — no per-dim `human_critique` scores, or no UGC `overall_score` / `verdict`. That is an input-data gap, not a Step 3-5 regression. Worth a pass through seed-annotation completeness before Phase 1b but not blocking the gate.
+
+### The sklearn / xgboost trap
+
+Pinned `scikit-learn<1.7` in `config/requirements-profiling.txt`. sklearn 1.7+ removed the `_estimator_type` attribute from `ClassifierMixin` and `RegressorMixin`. xgboost 2.1.x's sklearn-API class still reads that attribute at `save_model` time, so the fit succeeds, the holdout passes, and then `clf.save_model(...)` raises `TypeError: _estimator_type undefined` on the way out. There is no xgboost 2.2; the project jumped straight from 2.1.4 to 3.0 with breaking API changes. Easiest fix is to hold sklearn back.
+
+This is not a container concern. Neither library ships in the container layer — both are project-layer pins. Filed as a known-trap note upstream and kept the pin local. If two or three future projects independently trip on it, promote.
+
+### vLLM held up
+
+Qwen3.6-35B-A3B-FP8 on the sparkrun endpoint ran the full Step 1 top-up (37 anchors, mean 99.82, +0.17 over the Claude segment) and all of Step 2 (145 seeds at 4 workers, 51 minutes wall time, 144 of 145 with full 41-check LLM coverage). One seed (`ugc_wp_org_004`) had all 41 LLM checks unavailable but retained deterministic 4-tool scoring, so it still feeds calibration cleanly. Backend agreement with the prior Claude run is tight — every non-NaN per-dim Spearman delta sits under 0.05, no sign flips. Hybrid Phase 0.12 strategy holds: flagship reasoner for advisor and audit, local vLLM for bulk rubric and re-judge.
+
+### Where this leaves Phase 1b
+
+Stratified 20K re-judge against the same vLLM endpoint, now feeding model output through the calibrated rubric (`calibrated_overall` and `calibrated_verdict` emitted by `score_code`). The endpoint at port 30000 stays up between sessions. Phase 1a is officially closed; next session opens with the Phase 1b pipeline.
+
+---
+
 ## 2026-05-14 — Phase 1a step 1 done, step 2 running, ecosystem still abrasive
 
 Phase 1a step 1 is closed out. The 500 PASS-anchor pool is filled and locked. 463 of those anchors came over from an earlier Claude Code agent run with rubric overall mean 99.65. The remaining 37 I topped up overnight against the local vLLM backend (Qwen3.6-35B-A3B on the sparkrun endpoint, port 30000), mean 99.82. The +0.17 delta between the two sources sits well inside the noise floor for anchor selection, and `build_calibration_dataset.py` clamps anything at or above 95 to the same ceiling via `ANCHOR_CLAMP=95.0` anyway. No calibration drift from the backend swap.
