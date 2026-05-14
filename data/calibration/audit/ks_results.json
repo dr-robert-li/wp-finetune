@@ -1,0 +1,232 @@
+{
+  "alpha": 0.05,
+  "n_tests": 0,
+  "bonferroni_alpha": null,
+  "min_n_for_ks": 5,
+  "results": [
+    {
+      "source": "human",
+      "feature": "rubric_overall_0_100",
+      "n_kept": 27,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "human",
+      "feature": "rubric_triggered_check_count",
+      "n_kept": 27,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "human",
+      "feature": "D1_wpcs",
+      "n_kept": 27,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "human",
+      "feature": "D2_security",
+      "n_kept": 4,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "human",
+      "feature": "D3_sql",
+      "n_kept": 2,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "human",
+      "feature": "D4_perf",
+      "n_kept": 3,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "human",
+      "feature": "D5_wp_api",
+      "n_kept": 10,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "human",
+      "feature": "D8_errors",
+      "n_kept": 7,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "human",
+      "feature": "D9_structure",
+      "n_kept": 9,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "human",
+      "feature": "D7_a11y",
+      "n_kept": 1,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "ugc",
+      "feature": "rubric_overall_0_100",
+      "n_kept": 93,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "ugc",
+      "feature": "rubric_triggered_check_count",
+      "n_kept": 93,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "ugc",
+      "feature": "D1_wpcs",
+      "n_kept": 93,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "ugc",
+      "feature": "D2_security",
+      "n_kept": 34,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "ugc",
+      "feature": "D5_wp_api",
+      "n_kept": 43,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "ugc",
+      "feature": "D8_errors",
+      "n_kept": 50,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "ugc",
+      "feature": "D9_structure",
+      "n_kept": 36,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "ugc",
+      "feature": "D6_i18n",
+      "n_kept": 17,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "ugc",
+      "feature": "D7_a11y",
+      "n_kept": 15,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "ugc",
+      "feature": "D3_sql",
+      "n_kept": 16,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "ugc",
+      "feature": "D4_perf",
+      "n_kept": 24,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "ugc_boundary",
+      "feature": "rubric_overall_0_100",
+      "n_kept": 25,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "ugc_boundary",
+      "feature": "rubric_triggered_check_count",
+      "n_kept": 25,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "ugc_boundary",
+      "feature": "D1_wpcs",
+      "n_kept": 25,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "ugc_boundary",
+      "feature": "D7_a11y",
+      "n_kept": 8,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "ugc_boundary",
+      "feature": "D2_security",
+      "n_kept": 14,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "ugc_boundary",
+      "feature": "D8_errors",
+      "n_kept": 9,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "ugc_boundary",
+      "feature": "D9_structure",
+      "n_kept": 8,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "ugc_boundary",
+      "feature": "D6_i18n",
+      "n_kept": 8,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "ugc_boundary",
+      "feature": "D4_perf",
+      "n_kept": 3,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "ugc_boundary",
+      "feature": "D5_wp_api",
+      "n_kept": 8,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    },
+    {
+      "source": "ugc_boundary",
+      "feature": "D3_sql",
+      "n_kept": 1,
+      "n_dropped": 0,
+      "status": "insufficient_n"
+    }
+  ]
+}

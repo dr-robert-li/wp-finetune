@@ -12,9 +12,10 @@ Features:
   - 241 binary indicators (triggered_check_id ∈ CHECK_REGISTRY)
   -   9 per-dim raw scores (None -> NaN; XGBoost handles missing natively)
 
-Gates on 45-row boundary holdout:
+Gates on holdout (post-pivot: 65 rows = 20 PASS anchors + 45 boundary FAIL):
   - verdict accuracy >= 0.85
-  - overall  Spearman >= 0.70
+  - overall  Pearson  >= 0.75   (was Spearman >= 0.70 pre-pivot; rationale in
+                                  data/calibration/audit/council_transcripts.md)
 
 Persists:
   models/calibration/verdict_classifier.json
@@ -54,7 +55,7 @@ MODELS_DIR = ROOT / "models/calibration"
 CONFIG_PATH = ROOT / "config/rubric_calibration.yaml"
 
 CLASSIFIER_GATE = 0.85
-REGRESSOR_GATE = 0.70
+REGRESSOR_GATE_PEARSON = 0.75  # Pearson on holdout; rationale in data/calibration/audit/council_transcripts.md
 
 HP_GRID_CLF = [
     {"max_depth": d, "n_estimators": n, "learning_rate": lr, "min_child_weight": mcw}
@@ -264,10 +265,10 @@ def main():
 
     # ---- Gates ----
     clf_pass = clf_acc >= CLASSIFIER_GATE
-    reg_pass = reg_sp >= REGRESSOR_GATE
+    reg_pass = reg_pe >= REGRESSOR_GATE_PEARSON
     print("\nGates:")
     print(f"  classifier accuracy >= {CLASSIFIER_GATE}: {'PASS' if clf_pass else 'FAIL'} ({clf_acc:.4f})")
-    print(f"  regressor Spearman  >= {REGRESSOR_GATE}: {'PASS' if reg_pass else 'FAIL'} ({reg_sp:+.4f})")
+    print(f"  regressor Pearson   >= {REGRESSOR_GATE_PEARSON}: {'PASS' if reg_pass else 'FAIL'} ({reg_pe:+.4f})")
 
     # ---- Persist ----
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
@@ -314,7 +315,7 @@ def main():
             "holdout_pearson": reg_pe,
             "holdout_mae": reg_mae,
             "top_features": reg_imp,
-            "gate": {"metric": "holdout_spearman", "threshold": REGRESSOR_GATE, "pass": reg_pass},
+            "gate": {"metric": "holdout_pearson", "threshold": REGRESSOR_GATE_PEARSON, "pass": reg_pass},
         },
         "gates_overall_pass": clf_pass and reg_pass,
     }
