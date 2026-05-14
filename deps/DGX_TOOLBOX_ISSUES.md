@@ -2,7 +2,7 @@
 
 Tracked by: wp-finetune project (Robert Li)
 Started: 2026-05-11
-Last updated: 2026-05-12
+Last updated: 2026-05-13
 
 This file collects systemic issues affecting any dgx-toolbox user, NOT
 wp-finetune-specific problems. Each entry has: severity, reproduction,
@@ -663,6 +663,16 @@ Chains C, D, E, F are out of the critical path; status notes only.
 ### Watch Log — 2026-05-12T22:18:58Z
 
 - **DRIFT**: submodule HEAD `e42656493645` differs from `https://github.com/dr-robert-li/dgx-toolbox.git` `main` (`35ec390a01f9`). Inspect: `git -C deps/dgx-toolbox log --oneline e4265649..35ec390a`.
+
+
+### Watch Log — 2026-05-13T05:49:17Z
+
+- **DRIFT**: submodule HEAD `35ec390a01f9` differs from `https://github.com/dr-robert-li/dgx-toolbox.git` `main` (`96bec66e9391`). Inspect: `git -C deps/dgx-toolbox log --oneline 35ec390a..96bec66e`.
+
+
+### Watch Log — 2026-05-13T10:31:24Z
+
+- **DRIFT**: submodule HEAD `35ec390a01f9` differs from `https://github.com/dr-robert-li/dgx-toolbox.git` `main` (`19f45a6f9d14`). Inspect: `git -C deps/dgx-toolbox log --oneline 35ec390a..19f45a6f`.
 
 ## How to add issues
 
