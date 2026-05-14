@@ -1,12 +1,12 @@
 schema_version: 1
-trained_at_utc: '2026-05-13T23:11:47.467730+00:00'
+trained_at_utc: '2026-05-14T09:05:02.764281+00:00'
 data:
   train_path: data/calibration/train.jsonl
   holdout_path: data/calibration/holdout.jsonl
-  train_sha16: 2fd5a7592e57c353
-  holdout_sha16: 224ca724f49ba120
-  n_train: 527
-  n_holdout: 39
+  train_sha16: 9b5dc5c1f2463e8e
+  holdout_sha16: 78bfb8f348360dfb
+  n_train: 580
+  n_holdout: 65
   feature_dim: 250
   check_registry_size: 241
 feature_schema:
@@ -264,115 +264,109 @@ feature_schema:
   - D9_structure
 verdict_classifier:
   model_path: models/calibration/verdict_classifier.json
-  hp:
-    max_depth: 4
+  hp: &id001
+    max_depth: 3
     n_estimators: 100
     learning_rate: 0.05
     min_child_weight: 5
-  scale_pos_weight: 10.212765957446809
-  cv_auc_mean: 0.9886921296296297
-  holdout_accuracy: 0.9230769230769231
-  holdout_auc: 1.0
+  scale_pos_weight: 4.8
+  cv_auc_mean: 0.9935416666666667
+  holdout_accuracy: 0.8769230769230769
+  holdout_auc: 0.9800000000000001
   holdout_confusion:
   - - 20
     - 0
-  - - 3
-    - 16
+  - - 8
+    - 37
   top_features:
   - feature: score::D9_structure
-    importance: 0.2722754180431366
-  - feature: WPCS-P06
-    importance: 0.11167781054973602
+    importance: 0.2560272216796875
   - feature: WAPI-N12
-    importance: 0.0991075187921524
-  - feature: SEC-N02
-    importance: 0.09398165345191956
+    importance: 0.11530580371618271
   - feature: WPCS-P01
-    importance: 0.08969365805387497
+    importance: 0.10922173410654068
   - feature: WAPI-P08
-    importance: 0.06048313528299332
+    importance: 0.10485300421714783
+  - feature: WPCS-P06
+    importance: 0.07477911561727524
   - feature: score::D4_perf
-    importance: 0.05875983461737633
-  - feature: WPCS-N02
-    importance: 0.037820812314748764
+    importance: 0.0700882151722908
   - feature: score::D2_security
-    importance: 0.03181104734539986
-  - feature: score::D1_wpcs
-    importance: 0.028694692999124527
-  - feature: SEC-N04
-    importance: 0.02699902094900608
-  - feature: I18N-P01
-    importance: 0.02296571247279644
-  - feature: ERR-P09
-    importance: 0.017412127926945686
+    importance: 0.04318949580192566
   - feature: STR-P02
-    importance: 0.01469289232045412
-  - feature: WPCS-P09
-    importance: 0.010983312502503395
-  - feature: score::D5_wp_api
-    importance: 0.010526692494750023
-  - feature: PERF-P09
-    importance: 0.0062444377690553665
+    importance: 0.0344184935092926
   - feature: score::D8_errors
-    importance: 0.005870201159268618
+    importance: 0.03375430777668953
+  - feature: ERR-P09
+    importance: 0.032690759748220444
+  - feature: score::D5_wp_api
+    importance: 0.028539089486002922
+  - feature: SEC-N04
+    importance: 0.02699045091867447
+  - feature: WPCS-N02
+    importance: 0.021889004856348038
+  - feature: I18N-P01
+    importance: 0.019547434523701668
+  - feature: WPCS-P09
+    importance: 0.011964079923927784
+  - feature: score::D7_a11y
+    importance: 0.008957010693848133
+  - feature: score::D1_wpcs
+    importance: 0.007784745190292597
   gate:
     metric: holdout_accuracy
     threshold: 0.85
     pass: true
 overall_regressor:
   model_path: models/calibration/overall_regressor.json
-  hp:
-    max_depth: 5
-    n_estimators: 100
-    learning_rate: 0.05
-    min_child_weight: 5
-  cv_spearman_mean: 0.4847942672509308
-  holdout_spearman: 0.8382369686343336
-  holdout_pearson: 0.8125511482395602
-  holdout_mae: 13.225593128520199
+  hp: *id001
+  cv_spearman_mean: 0.6414102430374753
+  holdout_spearman: 0.6465623455004195
+  holdout_pearson: 0.765914542680612
+  holdout_mae: 16.563726514386822
   top_features:
   - feature: score::D9_structure
-    importance: 0.6858561635017395
+    importance: 0.36429721117019653
   - feature: STR-P02
-    importance: 0.0865943655371666
+    importance: 0.11911571770906448
   - feature: WAPI-N12
-    importance: 0.04585568979382515
-  - feature: WPCS-P01
-    importance: 0.034636177122592926
-  - feature: SEC-N02
-    importance: 0.020956439897418022
-  - feature: score::D8_errors
-    importance: 0.015858521685004234
-  - feature: score::D4_perf
-    importance: 0.01563180796802044
+    importance: 0.1065995916724205
   - feature: WAPI-P08
-    importance: 0.012662774883210659
+    importance: 0.0772739127278328
+  - feature: STR-N03
+    importance: 0.0750097930431366
+  - feature: PERF-P09
+    importance: 0.04282636195421219
+  - feature: WPCS-P01
+    importance: 0.032065894454717636
   - feature: score::D2_security
-    importance: 0.01155591569840908
-  - feature: score::D5_wp_api
-    importance: 0.010037041269242764
-  - feature: SEC-N04
-    importance: 0.01003221981227398
+    importance: 0.027776353061199188
+  - feature: score::D4_perf
+    importance: 0.026016315445303917
   - feature: WPCS-P06
-    importance: 0.00824732892215252
-  - feature: score::D1_wpcs
-    importance: 0.005496711004525423
+    importance: 0.02134161815047264
+  - feature: score::D8_errors
+    importance: 0.01962844654917717
+  - feature: SEC-N04
+    importance: 0.010059714317321777
+  - feature: score::D5_wp_api
+    importance: 0.009458747692406178
+  - feature: SQL-N16
+    importance: 0.007967832498252392
+  - feature: SEC-N02
+    importance: 0.0070899976417422295
+  - feature: STR-N12
+    importance: 0.007045706268399954
   - feature: ERR-P09
-    importance: 0.005363970063626766
-  - feature: WPCS-P09
-    importance: 0.005309631582349539
-  - feature: SEC-N03
-    importance: 0.0039110747165977955
+    importance: 0.0069818622432649136
+  - feature: ERR-N07
+    importance: 0.0051065958105027676
   - feature: WPCS-N02
-    importance: 0.003572868648916483
-  - feature: WPCS-P11
-    importance: 0.0032970099709928036
-  - feature: I18N-N13
-    importance: 0.003286236198619008
-  - feature: WPCS-P07
-    importance: 0.0027670369017869234
+    importance: 0.004971612710505724
+  - feature: score::D1_wpcs
+    importance: 0.004875523969531059
   gate:
-    metric: holdout_spearman
-    threshold: 0.7
+    metric: holdout_pearson
+    threshold: 0.75
     pass: true
 gates_overall_pass: true

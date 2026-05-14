@@ -94,25 +94,35 @@ def derive_human_overall(seed: dict) -> Optional[float]:
 
 
 def derive_gt(seed_id: str, seed_lookup: dict[str, dict]) -> tuple[Optional[float], Optional[str], str]:
-    """Return (gt_overall, gt_verdict, subtlety). None if cannot derive."""
+    """Return (gt_overall, gt_verdict, subtlety). None if cannot derive.
+
+    Schema-tolerant: convention is schema-follows-`seed_type`, not -file.
+    `critique_then_fix` seeds carry `human_critique` (per-dim 0-10 scores);
+    `deep_judge_cot` seeds carry `human_reasoning` (overall_score + verdict).
+    Both can appear in any source file. Earlier code branched on `source` and
+    silently dropped cross-schema seeds — see audit at
+    `data/calibration/audit/AUDIT-2026-05-14.md`.
+    """
     rec = seed_lookup.get(seed_id)
     if rec is None:
         return None, None, "unknown"
-    source = rec["source"]
     raw = rec["raw"]
     subtlety = raw.get("defect_subtlety", "unknown")
 
-    if source == "human":
-        overall = derive_human_overall(raw)
-        return overall, "FAIL", subtlety  # all human seeds are defective annotations
-
-    # UGC + UGC-boundary share schema
+    # Prefer explicit overall_score + verdict (deep_judge_cot schema)
     hr = raw.get("human_reasoning") or {}
     overall = hr.get("overall_score")
     verdict = hr.get("verdict")
-    if overall is None or verdict is None:
-        return None, None, subtlety
-    return float(overall), str(verdict).upper(), subtlety
+    if overall is not None and verdict is not None:
+        return float(overall), str(verdict).upper(), subtlety
+
+    # Fall back to per-dim scores (critique_then_fix schema). All FAIL pool
+    # seeds, so verdict is implicit FAIL when only the critique block exists.
+    overall = derive_human_overall(raw)
+    if overall is not None:
+        return overall, "FAIL", subtlety
+
+    return None, None, subtlety
 
 
 def extract_wpbench_call_sites() -> set[str]:
