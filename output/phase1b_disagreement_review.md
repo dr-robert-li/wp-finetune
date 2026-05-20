@@ -3,25 +3,28 @@
 **Source:** `data/phase1b/rejudge_full_20k.jsonl` (20000 rows)  
 **Sampling:** 20 disagreements per Claude-bucket, balanced PASS->FAIL / FAIL->PASS  
 **Seed:** 42  
-**Reviewer:** AI reviewer pass (Phase 1b)  
+**Reviewer:** AI reviewer pass + human final vote  
 **Review date:** 2026-05-20  
+**Status:** ✅ FINAL — all 80 cases resolved
 
 ---
 
 ## Reviewer Analysis & Aggregate Verdicts
 
-### Summary Table
+### Summary Table (FINAL — post human vote)
 
-| Bucket | Sub-group | n | CLAUDE | CAL | UNCLEAR | NEITHER | Majority |
-|--------|-----------|---|--------|-----|---------|---------|----------|
-| 0–4.99 | FAIL→PASS (all) | 20 | 0 | 20 | 0 | 0 | **CAL** |
-| 7–7.99 | PASS→FAIL | 10 | 10 | 0 | 0 | 0 | **CLAUDE** |
-| 7–7.99 | FAIL→PASS | 10 | 0 | 8 | 2 | 0 | **CAL** |
-| 8–8.99 | PASS→FAIL | 10 | 10 | 0 | 0 | 0 | **CLAUDE** |
-| 8–8.99 | FAIL→PASS | 10 | 0 | 10 | 0 | 0 | **CAL** |
-| 9–10 | PASS→FAIL | 10 | 8 | 0 | 0 | 2 | **CLAUDE** |
-| 9–10 | FAIL→PASS | 10 | 1 | 8 | 1 | 0 | **CAL** |
-| **TOTAL** | | **80** | **29** | **46** | **3** | **2** | **CAL 61.3%** |
+| Bucket | Sub-group | n | CLAUDE | CAL | NEITHER | Majority |
+|--------|-----------|---|--------|-----|---------|----------|
+| 0–4.99 | FAIL→PASS (all) | 20 | 0 | 20 | 0 | **CAL** |
+| 7–7.99 | PASS→FAIL | 10 | 10 | 0 | 0 | **CLAUDE** |
+| 7–7.99 | FAIL→PASS | 10 | 2 | 8 | 0 | **CAL** |
+| 8–8.99 | PASS→FAIL | 10 | 10 | 0 | 0 | **CLAUDE** |
+| 8–8.99 | FAIL→PASS | 10 | 0 | 10 | 0 | **CAL** |
+| 9–10 | PASS→FAIL | 10 | 8 | 0 | 2 | **CLAUDE** |
+| 9–10 | FAIL→PASS | 10 | 2 | 8 | 0 | **CAL** |
+| **TOTAL** | | **80** | **32** | **46** | **2** | **CAL 59.0%** |
+
+> _Human reviewer resolved all 3 UNCLEAR cases as CLAUDE: #1 (Jetpack XML-RPC raw POST), #2 (LearnPress save_post no internal nonce), #3 (CF7 quiz filter no nonce). This adds 3 to CLAUDE column, 0 to CAL._
 
 ---
 
@@ -33,7 +36,7 @@
 
 2. **7–7.99 / 8–8.99 / 9–10 FAIL→PASS:** Claude FAILs primarily on `wpcs_compliance` (score 7, threshold 8) due to missing `@since`, `@param`, `@return` PHPDoc on WooCommerce internal classes. WooCommerce uses PSR-style docblocks that legitimately omit `@since`. Rubric D1_wpcs=10 because no *code* WPCS violations exist, only annotation style preferences. CAL is correct — these are production-quality classes.
 
-### Why CLAUDE is correct (PASS→FAIL sub-groups, all buckets)
+### Why CLAUDE is correct (PASS→FAIL sub-groups + 3 UNCLEAR resolved)
 
 **SEC-N04 false positive pattern — systematic calibration flaw.** Across all PASS→FAIL cases in 7–7.99, 8–8.99, and 9–10:
 - Claude PASSes code with proper `$wpdb->prepare()`, `register_rest_route()` with `permission_callback`, `dbDelta()`, and admin-context migration scripts.
@@ -41,37 +44,18 @@
 - `SEC-N04` is **context-unaware**: it cannot distinguish admin-only migration scripts, REST routes with permission callbacks, or DB helper classes where auth is enforced by the caller.
 - This is a **systematic calibration defect** in the PASS→FAIL direction.
 
+**3 UNCLEAR cases resolved CLAUDE by human reviewer:**
+- `WP_Com_Markdown::check_for_early_methods` — raw `$_POST` read is a genuine concern even in XML-RPC context; not a false positive.
+- LearnPress `save_post` handler — `SEC-N04` + `SEC-N18` are legitimate; function should verify nonce internally for defensiveness.
+- `wpcf7_quiz_validation_filter` — unprotected `$_POST[$name]` read at filter level; Claude's sec=7 is correct.
+
 ### NEITHER (2 cases — 9-10 bucket)
-- `setVp8Munger` (LiveKit protobuf): Not WordPress code. Claude scored 9.x — Claude also wrong.
-- `scssphp Compiler.__construct`: Vendored SCSS library, not WP plugin code. Both judges incorrect.
+- `setVp8Munger` (LiveKit protobuf): Not WordPress code. Both judges wrong.
+- `scssphp Compiler.__construct`: Vendored SCSS library, not WP plugin code. Both judges wrong. Pre-filter vendored paths.
 
 ---
 
-## UNCLEAR Cases — Needs Your Vote
-
-These 3 cases are genuinely borderline:
-
-### UNCLEAR #1 — 7-7.99 #14
-- **`WP_Com_Markdown::check_for_early_methods`** (Jetpack)
-- Claude FAIL / Cal PASS (borderline)
-- Code reads raw `$_POST` data and primes an in-process cache before the IXR XML-RPC parser runs. `SEC-N04` fires legitimately (no nonce before POST read). However, this is XML-RPC context where nonces don't apply — XML-RPC has its own auth layer.
-- **Your vote:** [ ] CLAUDE  [ ] CAL
-
-### UNCLEAR #2 — 7-7.99 #18
-- **LearnPress `save_post` handler**
-- Claude FAIL / Cal PASS
-- Long function with direct `update_post_meta` calls, `SEC-N04` + `SEC-N18` both fire. Code saves post meta without verifying nonce or capability *inside* the function body. In WP `save_post` hooks, the nonce check is conventionally done before the hook fires, but this function doesn't verify it internally — a genuine defensiveness gap.
-- **Your vote:** [ ] CLAUDE  [ ] CAL
-
-### UNCLEAR #3 — 9-10 #11
-- **`wpcf7_quiz_validation_filter`** (Contact Form 7)
-- Claude FAIL (sec=7) / Cal PASS
-- Reads `$_POST[$name]` without nonce verification. Uses `hash_equals` + `wp_hash` correctly for quiz answer comparison. CF7 handles nonce at form submission level, not per-field filter. But missing nonce verify *inside this filter* is technically a gap.
-- **Your vote:** [ ] CLAUDE  [ ] CAL
-
----
-
-## Calibration Trustworthiness Verdict
+## Calibration Trustworthiness Verdict (FINAL)
 
 **CAL is CONDITIONALLY TRUSTWORTHY — downstream-ready with one fix.**
 
@@ -88,10 +72,11 @@ These 3 cases are genuinely borderline:
    - Classes that extend `WP_REST_Controller`
 2. **Re-run calibration** on the ~35% PASS→FAIL disagreement population with patched SEC-N04.
 3. **0-4.99 bucket:** Apply test-code exclusion as a *pre-filter by path pattern* (`/phpunit/`, `/tests/`, `-test.php`) before quality scoring, not inside the quality judge.
+4. **Vendor pre-filter:** Exclude `vendor/`, `node_modules/`, vendored lib paths from scoring entirely (catches LiveKit, scssphp false entries).
 
 ---
 
-## Per-Bucket Case Verdicts
+## Per-Bucket Case Verdicts (FINAL)
 
 ### Bucket 0–4.99 — FAIL→PASS (n=20)
 **CLAUDE=0 | CAL=20 | Majority: CAL**  
@@ -142,21 +127,21 @@ _SEC-N04 false positives on rank-math migration scripts + DB helpers. Claude cor
 ---
 
 ### Bucket 7–7.99 — FAIL→PASS (n=10)
-**CLAUDE=0 | CAL=8 | UNCLEAR=2 | Majority: CAL**  
-_Claude over-penalizes WPCS/docblock. CAL correct (8/10). Cases #14 and #18 UNCLEAR._
+**CLAUDE=2 | CAL=8 | Majority: CAL**  
+_CAL correct 8/10. Cases #14 and #18 resolved CLAUDE by human reviewer (genuine security gaps)._
 
-| Case | Verdict |
-|------|--------|
-| #11 seo-by-rank-math savelinks batch INSERT | **CAL** |
-| #12 AdminMenu::fix_admin_menu | **CAL** |
-| #13 WooCommerce API handler | **CAL** |
-| #14 WP_Com_Markdown::check_for_early_methods | **UNCLEAR** |
-| #15 woocommerce-payments process_payment | **CAL** |
-| #16 TFPostsWidget::register_controls | **CAL** |
-| #17 sydneytoolbox portfolio render | **CAL** |
-| #18 learnpress save_post | **UNCLEAR** |
-| #19 WidgetImporter::import_data | **CAL** |
-| #20 admin-menu fix submenu | **CAL** |
+| Case | Verdict | Note |
+|------|---------|------|
+| #11 seo-by-rank-math savelinks batch INSERT | **CAL** | |
+| #12 AdminMenu::fix_admin_menu | **CAL** | |
+| #13 WooCommerce API handler | **CAL** | |
+| #14 WP_Com_Markdown::check_for_early_methods | **CLAUDE** | ✏️ Human vote — raw $_POST in XML-RPC |
+| #15 woocommerce-payments process_payment | **CAL** | |
+| #16 TFPostsWidget::register_controls | **CAL** | |
+| #17 sydneytoolbox portfolio render | **CAL** | |
+| #18 learnpress save_post | **CLAUDE** | ✏️ Human vote — no internal nonce verify |
+| #19 WidgetImporter::import_data | **CAL** | |
+| #20 admin-menu fix submenu | **CAL** | |
 
 ---
 
@@ -195,21 +180,22 @@ _SEC-N04 false positives #1-#8. NEITHER for #9 (LiveKit protobuf — not WP code
 ---
 
 ### Bucket 9–10 — FAIL→PASS (n=10)
-**CLAUDE=1 | CAL=8 | UNCLEAR=1 | Majority: CAL**
+**CLAUDE=2 | CAL=8 | Majority: CAL**
 
 | Case | Verdict | Reason |
 |------|---------|--------|
-| #11 wpcf7_quiz_validation_filter | **UNCLEAR** | Missing nonce before $_POST read; CF7 handles at form level |
+| #11 wpcf7_quiz_validation_filter | **CLAUDE** | ✏️ Human vote — unprotected $_POST read at filter level |
 | #12 get_activity_summary (unparameterized SQL) | **CLAUDE** | SQL-N01/N03 correctly fire; no prepare() |
 | #13–#20 (WC/plugin production classes) | **CAL** ×8 | Claude WPCS/docblock over-penalization |
 
 ---
 
-## Final Tally
+## Final Tally (FINAL — all 80 resolved)
 
-| | CLAUDE | CAL | UNCLEAR | NEITHER |
-|--|--------|-----|---------|--------|
-| Count | 29 | 46 | 3 | 2 |
-| % (excl UNCLEAR/NEITHER) | 38.7% | **61.3%** | — | — |
+| | CLAUDE | CAL | NEITHER |
+|--|--------|-----|---------|
+| Count | 32 | 46 | 2 |
+| % (excl NEITHER) | 41.0% | **59.0%** | — |
 
-**Overall: CAL is correct in 61.3% of unambiguous cases. Trustworthy for FAIL→PASS upgrades. Requires SEC-N04 patch before trusting PASS→FAIL downgrades.**
+**Overall: CAL is correct in 59.0% of adjudicated cases.**  
+**Trustworthy for FAIL→PASS upgrades. Requires SEC-N04 context-awareness patch before trusting PASS→FAIL downgrades.**
