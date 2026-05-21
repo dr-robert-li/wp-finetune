@@ -24,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 
 ## Current Position
 
-Phase: 04.1 (reasoning-data-generation-inserted) — EXECUTING
-Plan: 03 of 03 — COMPLETED
-Next phase: 4.2 (Reasoning Dataset Assembly) — ready to plan
-Status: Phase 4.1 Plans 01-03 all complete; Phase 2 gap closure verified complete
+Phase: 04.2 (reasoning-dataset-assembly) — COMPLETE (gate passed 2026-05-21)
+Plan: 01 of 01 — COMPLETED (Tasks 0-3 done; human-verify gate PASSED)
+Next phase: 4.3 (Reasoning Fine-Tune) — ready to plan
+Status: Phase 4.2 reasoning dataset shipped — 418 examples (341 train / 77 val) after vendor+truncation filter
 
 Progress: [██░░░░░░░░] 26% (phases 1, 2, 3, 4 partial, 6 complete — 5 of 19 total)
 
@@ -107,7 +107,8 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-- [Phase 4.2]: Needs Phase 4.1 bulk reasoning data — NOW READY
+- [Phase 4.2]: COMPLETE — gate passed, 418-example dataset shipped to data/reasoning_dataset/
+- [Phase 4.3]: ⚠️ Dataset is SMALL (418 total / 341 train) for a reasoning finetune — all 3 external review models agreed. Non-blocking but a real 4.3 readiness risk: use conservative LR (≤2e-5 per roadmap), strong val monitoring, consider early-stop; weigh CoT backfill if val unstable.
 - [Phase 4.3]: Unsloth PEFT stacking on Qwen3 MoE unresolved — Option A vs B needs a fresh Unsloth docs fetch before training begins
 - [Phase 7]: Phase 4.4 (v1.2 complete — adapter merged) must complete before Phase 7 can execute
 - [Phase 6]: dgx-toolbox Phase 13 (telemetry/ package) must be complete before Phase 6 can execute
@@ -135,9 +136,21 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-05-14T22:39:00+10:00
-Stopped at: Phase 1b 20K rejudge launched (informal calibration sub-stream, not in ROADMAP)
-Resume file: .planning/phases/04.2-reasoning-dataset-assembly/.continue-here.md (older; Phase 4.2 Task 0 paused)
+Last session: 2026-05-21T15:05:00+10:00
+Stopped at: Phase 4.2 COMPLETE — gate passed, vendor/truncation filter applied, 418-example dataset committed. Next: plan Phase 4.3 (reasoning fine-tune).
+Resume file: none (phase complete)
+
+### Phase 4.2 progress (2026-05-21)
+
+- ✅ Task 0 — consistency validation. Rewrote validator mega-prompt → batched ThreadPoolExecutor (10-ex batches, workers=3, haiku/claude_agent per D-01). Fixed parse bug (status colon + null reason). Result: 365/375 consistent, 10 rejected (2.7%, genuine contradictions).
+- ✅ Task 1 — assembly. Fixed 2 KeyErrors (replay examples lack metadata.source_file → defensive fallback) + tagged replay stream/format. Mix policy decision: keep ALL 365 reasoning + 15% replay (CoT supply-capped at 190, can't hit 60%). Output: data/reasoning_dataset/ — openai_train.jsonl (350) + openai_val.jsonl (79) = 429; mix 44.3 CoT/40.8 CtF/14.9 replay; stratified split consistent across train/val; metadata.json written. Canonical template verified (CoT+CtF have [/REASONING]+<judge_output>; replay raw).
+- ✅ Task 2 — SKILL.md structural checks pass (Trigger, 4 steps, agent constraint, Key Rules).
+- ✅ Task 3 — checkpoint:human-verify GATE PASSED (2026-05-21). Multi-model external review (GPT-5.5/Opus 4.7/Gemini 3.1) flagged vendor contamination + truncated-PASS; Claude Code agent inspected 29 flagged rows against actual data. Verdict: 2 qualitative claims TRUE (10 protobuf rows scored as WP; idx251 truncated+PASS), scaled claims FALSE (CoT JSON 181/181 valid; reasoning↔verdict 10/10 coherent; review's evidence was phase1b calibration artifact, wrong dataset).
+- ✅ FILTER FIX: added reproducible `filter_reason()` to assemble_reasoning_dataset.py (protobuf/GPBUtil/SDK-namespace vendor regex + brace-imbalance>2 truncation). Validator intermediate (consistency_valid.jsonl) was lost → applied filter in-place to reviewed output (re-validation would re-roll the LLM gate). Removed exactly 11 (10 vendor: 8 CoT + 2 replay; 1 truncated CoT). Backups: data/reasoning_dataset/*.pre_vendorfilter.* (untracked, local safety net).
+- ✅ FINAL dataset: 429→418 (341 train / 77 val), mix 43.3 CoT / 41.9 CtF / 14.8 replay. Verified: 0 vendor, 0 brace-imbalance, 0 "protobuf"; CoT 181/181 valid+markers; CtF 175/175 markers.
+- ⚖️ D-05 deviation ACCEPTED by human: locked mix 60/25/15 → actual 43/42/15 (CoT supply caps ~181, can't reach 60%). Kept 3 correctly-FAILed truncation rows (138/147/287) as reject-broken→FAIL signal.
+- ⚠️ Unit tests stale: scripts/test_validate_reasoning_consistency.py + test_assemble_reasoning_dataset.py import removed `process_examples` API + mock-patch removed funcs. Pipeline functionally verified instead. Tests need separate update pass (cf. quick-task 260403-utp pattern).
+- Uncommitted: scripts/validate_reasoning_consistency.py, scripts/assemble_reasoning_dataset.py, data/reasoning_dataset/* (new).
 
 ### Active Background Work (2026-05-14 → 2026-05-19)
 
