@@ -4,6 +4,53 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-05-21 — Phase 1b 20K landed, SEC-N04 false-positive hunt, calibration shipped
+
+Phase 1b is closed. The stratified 20K re-judge ran end to end, the calibrated rubric got one targeted fix, and after two human review passes the calibration is cleared for downstream. The headline number: Claude-vs-calibrated agreement walked from 57.3% (pilot) → 65.2% (raw 20K) → 75.3% on the consumption file. Long way to get there.
+
+### The 20K cost what it always costs — decode
+
+Launched the 20K against the vLLM endpoint and immediately ate an OOM that killed the terminal. Root cause was the usual Spark unified-memory trap: `--gpu-memory-utilization 0.8` reserves ~102Gi of the 121Gi, and 8 workers on top tipped it over. Restarted vLLM with prefix caching on, `max-num-batched-tokens` 8192 → 32768, `max-model-len` 131072 → 32768. Freed ~25Gi. Relaunched at 4 workers with `--resume`.
+
+The recipe changes did nothing for throughput, which I should have predicted. Probed a single batched 41-check call: 137s wall, 1566 completion tokens, **11.4 tok/s decode**. Prefix caching only helps prefill, and prefill is a rounding error here — this is decode-bound on a 3B-active MoE, full stop. No knob fixes that short of a faster model or fewer output tokens. Accepted the ~5-day run. It finished in 4.7 days, 20000 rows, zero failures.
+
+### Agreement review — the SEC-N04 pattern
+
+Pulled 80 disagreements (20 per Claude-bucket, balanced both directions) and reviewed. CAL won 46/80, but the interesting part was the structure, not the headline:
+
+- **FAIL→PASS direction — CAL is right.** Claude blanket-FAILs PHPUnit test code as "excluded from training" (a curation decision masquerading as a quality verdict) and over-penalizes WooCommerce PSR-style docblocks that legitimately omit `@since`. The rubric scores both correctly.
+- **PASS→FAIL direction — CAL is wrong, and systematically.** Every case traced to `SEC-N04` ("privileged action without `current_user_can()`"). It is context-blind: it fires on admin-only migration scripts, REST routes with a `permission_callback`, and DB helper methods where the caller enforces auth. D2_security collapses to 3.0, drags `calibrated_overall` under threshold.
+
+One check, one direction, ~71% of the PASS→FAIL disagreements. That is a fixable defect, not a calibration write-off.
+
+### The fix, and resisting the urge to over-engineer it
+
+Three levers on `eval/rubric_definitions.py:226` and `eval/rubric_scorer.py`:
+
+1. Rewrote the SEC-N04 LLM prompt with five explicit exclusion clauses (REST + permission_callback, `WP_REST_Controller` subclasses, admin-context migration/install/upgrade/activation files, DB-helper methods, entry-point guard delegation).
+2. Dropped severity 4 → 2.
+3. Added `_should_suppress_sec_n04(code, file_path)` — a post-process that drops the check when the file path is admin-context or the code carries REST auth patterns.
+
+Plus a test/vendor pre-filter at pool iteration so PHPUnit and vendored libs never enter scoring in the first place.
+
+Re-judged only the affected slice — 2689 PASS→FAIL-with-SEC-N04 rows, ~18.7hr — rather than burning another 4.7 days on the full 20K. Spliced the corrections back in. 1642 (61.1%) flipped to PASS, matching the 20-row smoke test exactly. Agreement 65.2% → 73.4% raw, 75.3% on the path-filtered consumption file.
+
+### Don't trust the mechanism, verify the outcome
+
+The advisor caught the trap I was about to walk into: 73.4% confirms the patch *fires as designed*, not that the newly-PASS code is *training-worthy*. The 1642 flips are a different population than the originally-reviewed 80 — I'd validated the wrong sample. And my admin-path regex could in principle over-match any plugin file with "update" in the name.
+
+So I checked. Branch breakdown of the flips: admin_path 39, rest 27, **llm_revised 1216 (74%)**, other 361. The bulk is the LLM re-judging itself under the better prompt, not blunt heuristic suppression — reassuring. The 39 admin-path matches were all bona-fide migration/upgrade/activation files, not random "update" hits. Dumped 25 stratified cases for a second human review.
+
+Verdict came back **23/25 training-worthy, 2 bad lifts, 0 unclear → ship** (≥18/20 was the bar). The two misses are honest residue: a WooCommerce migration `db_query` with a raw `phpcs:ignore`'d query (orthogonal SQL-safety issue, not SEC-N04), and a jupiterx `export_popup_action` that the severity 4→2 drop let squeak to 38.0 — genuinely auth-missing, web-reachable. 8% residual, both edge cases.
+
+### Where this leaves things
+
+`data/phase1b/rejudge_20k_downstream.jsonl` — 18894 rows, 14987 PASS / 3907 FAIL, 75.3% agreement, test/vendor stripped — is the consumption-ready artifact. Raw 20K and the pre-fix backup are both retained.
+
+Open caveats I'm carrying forward, none blocking: the XGBoost head was not retrained on the post-suppression feature distribution (empirically consistent across smoke + both reviews, fine for v1); the severity 4→2 drop is slightly too generous for genuine no-context cases, so a future pass should make the drop *conditional* on suppression-context being present. That refinement costs another rerun, so it waits until something actually needs it.
+
+---
+
 ## 2026-05-14 (late evening) — Dropped-seed audit, schema-tolerant `derive_gt`, v2 calibration, Pearson gate
 
 The Phase 1a closeout earlier today left one loose end I wasn't comfortable letting slide into Phase 1b: 79 of 145 FAIL seeds were dropped during calibration GT derivation, and the triage note treated that as an input-data gap rather than a verified non-issue. With the Phase 1b stratified-rejudge pilot already running (PID 136878, 800 functions through the v1 calibrated rubric) I wanted the audit landed before consuming any pilot output.

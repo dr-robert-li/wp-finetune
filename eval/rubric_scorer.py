@@ -693,6 +693,33 @@ def _ensure_php_tag(code: str) -> str:
     return "<?php\n" + code
 
 
+# Phase 1b review (2026-05-20): SEC-N04 fires LLM false-positives on admin
+# migration scripts, REST routes with permission_callback, and DB helper
+# methods. The LLM cannot reliably see the cross-function auth context.
+# Suppress SEC-N04 when local code / path evidence shows auth is enforced
+# elsewhere. See output/phase1b_disagreement_review.md for analysis.
+_SEC_N04_ADMIN_PATH_RE = re.compile(
+    r"(?:^|/)(?:update-[^/]*\.php|install[^/]*\.php|[^/]*upgrade[^/]*\.php|"
+    r"[^/]*migration[^/]*\.php|[^/]*activation[^/]*\.php|"
+    r"wp-admin/includes/upgrade\.php|wp-admin/install\.php)$",
+    re.IGNORECASE,
+)
+_SEC_N04_REST_RE = re.compile(
+    r"\bregister_rest_route\s*\(|"
+    r"\bpermission_callback\s*=>\s*|"
+    r"\bextends\s+WP_REST_[A-Za-z_]*Controller\b",
+)
+
+
+def _should_suppress_sec_n04(code: str, file_path: str) -> tuple[bool, str]:
+    """Return (suppress, reason). Reviewer-derived heuristics."""
+    if _SEC_N04_ADMIN_PATH_RE.search(file_path or ""):
+        return True, "admin-context file (migration/install/upgrade/activation)"
+    if _SEC_N04_REST_RE.search(code):
+        return True, "REST endpoint with permission_callback or WP_REST_Controller subclass"
+    return False, ""
+
+
 def score_code(code: str, file_path: str = "<generated>") -> RubricScore:
     """Score a PHP code string against the WordPress code quality rubric.
 
@@ -757,6 +784,13 @@ def score_code(code: str, file_path: str = "<generated>") -> RubricScore:
                     all_check_hits[cid] = bool(hit)
             for cid, ev in llm_out["evidence"].items():
                 all_evidence.setdefault(cid, []).append(ev)
+
+    # --- Context-aware suppressions (Phase 1b review fix) ---
+    if all_check_hits.get("SEC-N04"):
+        suppress, reason = _should_suppress_sec_n04(code, file_path)
+        if suppress:
+            all_check_hits["SEC-N04"] = False
+            all_evidence.setdefault("SEC-N04", []).append(f"[suppressed: {reason}]")
 
     # --- Compute scores ---
     na_dims = determine_na_dimensions(code)
