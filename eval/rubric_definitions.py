@@ -223,8 +223,15 @@ _reg("SEC-N02", "D2_security", "negative", 3, "phpcs",
      "WordPress.Security.ValidatedSanitizedInput")
 _reg("SEC-N03", "D2_security", "negative", 4, "phpcs",
      "WordPress.Security.NonceVerification")
-_reg("SEC-N04", "D2_security", "negative", 4, "llm",
-     "Privileged action without current_user_can() check")
+_reg("SEC-N04", "D2_security", "negative", 2, "llm",
+     "Privileged state-modifying action (writes DB/options/files) lacks a current_user_can() check inside this function. "
+     "Do NOT fire when ANY of these are present: "
+     "(a) the function is a REST endpoint handler whose route registration includes a permission_callback; "
+     "(b) the function is a method on a class that extends WP_REST_Controller / WP_REST_Posts_Controller / etc.; "
+     "(c) the function is admin-context migration / install / upgrade code (filename contains 'update-', 'install', 'upgrade', 'migration', 'activation') where auth is enforced by the runtime; "
+     "(d) the function is a low-level helper inside a DB / repository / model class whose callers handle auth; "
+     "(e) capability or nonce verification is delegated to a clearly-named guard function called at function entry. "
+     "Only fire on functions that BOTH perform a privileged write AND are reachable from an unauthenticated request path.")
 _reg("SEC-N05", "D2_security", "negative", 3, "phpcs",
      "WordPress.Security.SafeRedirect")
 _reg("SEC-N06", "D2_security", "negative", 4, "phpcs",

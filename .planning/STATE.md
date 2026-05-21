@@ -135,6 +135,50 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-04-23T02:51:34.011Z
-Stopped at: context exhaustion at 92% (2026-04-23)
-Resume file: None
+Last session: 2026-05-14T22:39:00+10:00
+Stopped at: Phase 1b 20K rejudge launched (informal calibration sub-stream, not in ROADMAP)
+Resume file: .planning/phases/04.2-reasoning-dataset-assembly/.continue-here.md (older; Phase 4.2 Task 0 paused)
+
+### Active Background Work (2026-05-14 → 2026-05-19)
+
+**Stream: Judge Re-Calibration (Phase 1a/1b — informal, predates next roadmap phase)**
+
+- Phase 1a COMPLETE — XGBoost dual-head classifier + regressor; schema-tolerant derive_gt(); Pearson ≥ 0.75 gate (council vote swap from Spearman); v2 calibration trained on 580-row dataset
+- Phase 1b pilot COMPLETE — 800 functions stratified, calibrated_overall clip [0,100] applied, 57.3% agreement w/ Claude verdict (divergence at 7-7.99 boundary noted)
+- **Phase 1b 20K rejudge COMPLETE 2026-05-19T23:53** — 20000/20000, 0 failures, 4.7 days elapsed
+  - Output: `data/phase1b/rejudge_full_20k.jsonl` (17.6M, 14 keys/row)
+  - Calibrated_overall: mean 70.3, range [0, 98.4]
+  - Verdict dist: 14137 PASS / 5862 FAIL / 1 None
+  - Bucket strat preserved: 9178×(8-8.99 + 9-10), 866×(7-7.99), 778×(0-4.99); 5-6.99 pool gap as known
+  - vLLM config: bf16 Qwen3.6-35B-A3B, prefix-caching enabled, max_model_len=32768, max_num_batched_tokens=32768, gpu-mem-util=0.8
+  - Bottleneck: decode-bound at 11.4 tok/s per stream → ~0.045 functions/s aggregate across 4 workers
+
+## Session Activity
+
+| Date | Activity |
+|------|----------|
+| 2026-04-23 | Phase 4.1 complete — 196 CoT + 179 CtF bulk examples accepted. Data quality fixes: rejection examples restored, metadata corrected. |
+| 2026-04-23 | Session resumed — ready for Phase 4.2 planning |
+| 2026-05-14 | Phase 1a calibration complete (v2 dual-head XGBoost, Pearson gate); Phase 1b pilot 800 done; 20K launched workers=6 after OOM recovery. |
+| 2026-05-15 | Phase 1b 20K vLLM restart w/ prefix-caching + 32k batch tokens + 32k model_len; rejudge workers=4 --resume; decode-bound at 11.4 tok/s confirmed. |
+| 2026-05-19 | Phase 1b 20K rejudge COMPLETE — 20000 rows, 14137 PASS / 5862 FAIL, calibrated mean 70.3. |
+| 2026-05-20 | Disagreement review done (CAL 46/80 = 59%, conditionally trustworthy). SEC-N04 false-positive pattern flagged. Patched: SEC-N04 prompt + severity 4->2, context-aware suppression (admin paths + REST routes + WP_REST_Controller), test/vendor pre-filter. Launched 2689-row PASS->FAIL subset rerun (PID 1378489, ETA ~18.7hr). Smoke 20/20 confirmed 60% flip FAIL->PASS. |
+| 2026-05-21 | SEC-N04 subset rerun COMPLETE (2689 rows, 1642=61.1% flipped FAIL->PASS). Spliced into rejudge_full_20k.jsonl (backup: rejudge_full_20k.pre_secn04.jsonl). **Agreement 65.2% -> 73.4%.** New verdict dist: 15780 PASS / 4219 FAIL / 1 None. Bucket 8-8.99: 70.0%, 9-10: 83.1%. |
+| 2026-05-21 | Advisor review: flip mechanism validated, outcome not yet. Flip-branch analysis: admin_path=39 (all legit migration/upgrade files), rest=27, llm_revised=1216 (74% — LLM self-revised w/ new prompt), other=361. Dumped 25-case new-flip spot-check (output/phase1b_newflip_review.md) — GATING human eyeball. Built consumption-ready data/phase1b/rejudge_20k_downstream.jsonl (18894 rows after dropping 1105 test/vendor + 1 None; 14987 PASS/3907 FAIL; **75.3% agreement**). 772 of 778 in 0-4.99 bucket were test code. |
+
+### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
+
+**Status:** READY for downstream use. Consumption file: `data/phase1b/rejudge_20k_downstream.jsonl` (18894 rows, 75.3% agreement).
+- ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
+- ✅ Test/vendor pre-filter applied (1105 dropped)
+- ✅ **GATE PASSED: new-flip review 23/25 training-worthy (92% ≥ 90% threshold). output/phase1b_newflip_review_completed.md.**
+- Residual error mode (2/25 = 8%): (1) db_query WooCommerce migration — admin-path suppression hides unrelated raw-SQL issue; (2) export_popup_action jupiterx — severity 4->2 let genuine auth-missing case squeak to 38.0 (marginal). Both edge cases.
+
+**Carried caveats:**
+- XGBoost not retrained on post-suppression feature distribution (empirically consistent w/ smoke + review, accept for v1)
+- 1 None row dropped from consumption file
+- 3181 cl=FAIL->cal=PASS unchanged (reviewer validated CAL-correct: docblock over-strictness)
+
+**Future refinement (non-blocking):** make SEC-N04 severity drop (4->2) conditional on suppression-context present, to keep genuine no-context auth-missing cases at FAIL. Would require another rerun.
+
+**Uncommitted changes:** eval/rubric_definitions.py, eval/rubric_scorer.py, scripts/phase1b_stratified_rejudge.py, scripts/phase1b_rerun_subset.py, scripts/monitor_phase1b_rerun.sh, data/phase1b/rejudge_20k_downstream.jsonl, .planning/STATE.md.

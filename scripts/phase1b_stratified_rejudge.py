@@ -54,6 +54,26 @@ BUCKETS = [
 ]
 
 
+# Phase 1b review (2026-05-20): exclude test code and vendored third-party libs
+# from the function pool. Tests are not training data (Claude blanket-FAILs
+# them; calibration scores them PASS — neither is right for downstream use).
+# Vendored libs are non-WordPress code that pollutes scoring.
+import re as _re_pf
+_PREFILTER_RE = _re_pf.compile(
+    r"(?:^|/)("
+    r"tests?/|test/|phpunit/|"
+    r"vendor/|node_modules/|"
+    r"third[-_]?party/|"
+    r"[^/]*-test\.php$|[^/]*[._-]tests?\.php$"
+    r")",
+    _re_pf.IGNORECASE,
+)
+
+
+def _is_excluded_path(source_file: str) -> bool:
+    return bool(_PREFILTER_RE.search(source_file or ""))
+
+
 def iter_pool() -> Iterator[dict]:
     for d in (PASSED_DIR, FAILED_DIR):
         if not d.exists():
@@ -66,6 +86,8 @@ def iter_pool() -> Iterator[dict]:
             if isinstance(items, dict):
                 items = [items]
             for it in items:
+                if _is_excluded_path(it.get("source_file") or ""):
+                    continue
                 yield it
 
 
@@ -137,7 +159,8 @@ def stratified_sample(pool: list[dict], n_total: int, seed: int = 0) -> list[dic
 
 def score_one(item: dict) -> dict:
     code = item.get("body") or item.get("code") or ""
-    sc = score_code(code)
+    file_path = item.get("source_file") or "<generated>"
+    sc = score_code(code, file_path=file_path)
     return {
         "row_id": f"{item.get('source_repo')}::{item.get('source_file')}::{item.get('function_name')}",
         "source_repo": item.get("source_repo"),
