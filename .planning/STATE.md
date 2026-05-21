@@ -194,4 +194,4 @@ Resume file: none (phase complete)
 
 **Future refinement (non-blocking):** make SEC-N04 severity drop (4->2) conditional on suppression-context present, to keep genuine no-context auth-missing cases at FAIL. Would require another rerun.
 
-**Uncommitted changes:** eval/rubric_definitions.py, eval/rubric_scorer.py, scripts/phase1b_stratified_rejudge.py, scripts/phase1b_rerun_subset.py, scripts/monitor_phase1b_rerun.sh, data/phase1b/rejudge_20k_downstream.jsonl, .planning/STATE.md.
+**Committed in 1e53e31** (2026-05-21, "SEC-N04 + 20K calibration shipped"): eval/rubric_definitions.py, eval/rubric_scorer.py, scripts/phase1b_*.py, scripts/monitor_phase1b_*.sh, data/phase1b/* (rejudge_full_20k, rejudge_20k_downstream, rerun_secn04_fix, secn04_subset_row_ids). Phase 1b stream is COMMITTED — earlier "uncommitted" note was stale. NOTE: output/triage_decision.md has an uncommitted clobber (auto-regen flipped 30_70 human-override → NO_SURVIVORS) — do NOT commit; needs HUMAN_OVERRIDE sentinel (see 04.3-CONTEXT follow-ups).
