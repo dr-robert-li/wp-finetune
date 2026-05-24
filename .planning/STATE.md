@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
-status: verifying
-stopped_at: context exhaustion at 92% (2026-04-23)
-last_updated: "2026-04-23T02:51:34.015Z"
+status: executing
+stopped_at: "Phase 4.2 COMPLETE — gate passed, vendor/truncation filter applied, 418-example dataset committed. Next: plan Phase 4.3 (reasoning fine-tune)."
+last_updated: "2026-05-24T06:41:39.824Z"
 progress:
-  total_phases: 16
-  completed_phases: 3
-  total_plans: 12
-  completed_plans: 12
-  percent: 100
+  total_phases: 8
+  completed_phases: 6
+  total_plans: 26
+  completed_plans: 24
+  percent: 92
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 Phase: 04.2 (reasoning-dataset-assembly) — COMPLETE (gate passed 2026-05-21)
 Plan: 01 of 01 — COMPLETED (Tasks 0-3 done; human-verify gate PASSED)
 Next phase: 4.3 (Reasoning Fine-Tune) — ready to plan
-Status: Phase 4.2 reasoning dataset shipped — 418 examples (341 train / 77 val) after vendor+truncation filter
+Status: Ready to execute
 
 Progress: [██░░░░░░░░] 26% (phases 1, 2, 3, 4 partial, 6 complete — 5 of 19 total)
 
@@ -181,13 +181,15 @@ Resume file: none (phase complete)
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** READY for downstream use. Consumption file: `data/phase1b/rejudge_20k_downstream.jsonl` (18894 rows, 75.3% agreement).
+**Status:** Ready to execute
+
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)
 - ✅ **GATE PASSED: new-flip review 23/25 training-worthy (92% ≥ 90% threshold). output/phase1b_newflip_review_completed.md.**
 - Residual error mode (2/25 = 8%): (1) db_query WooCommerce migration — admin-path suppression hides unrelated raw-SQL issue; (2) export_popup_action jupiterx — severity 4->2 let genuine auth-missing case squeak to 38.0 (marginal). Both edge cases.
 
 **Carried caveats:**
+
 - XGBoost not retrained on post-suppression feature distribution (empirically consistent w/ smoke + review, accept for v1)
 - 1 None row dropped from consumption file
 - 3181 cl=FAIL->cal=PASS unchanged (reviewer validated CAL-correct: docblock over-strictness)
