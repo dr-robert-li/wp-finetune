@@ -187,21 +187,21 @@ Plans:
 - [ ] 04.1-03-PLAN.md — Bulk generation of both streams via Claude Code agents (NOT API) after pilot approval
 
 ### Phase 4.2: Reasoning Dataset Assembly — INSERTED
-**Goal**: Both generation streams are merged into a quality-validated training dataset with score consistency enforcement, canonical output template compliance, and the correct training mix (reasoning examples + 30% flat judge replay + 20% wp_gen replay) — ready for continued fine-tuning
+**Goal**: Both generation streams are merged into a quality-validated training dataset with score consistency enforcement, canonical output template compliance, and the correct training mix (60% CoT + 25% CtF + 15% replay, D-05) — ready for continued fine-tuning
 **Depends on**: Phase 4.1 (both generation streams complete)
 **Requirements**: DGEN-04, DGEN-05
 **Success Criteria** (what must be TRUE):
   1. Score consistency validation rejects any example where the written reasoning contradicts the numeric scores (e.g., reasoning describes a critical SQL injection vulnerability but the security dimension score is ≥7) — rejection rate and example count logged to metadata.json
   2. All retained reasoning examples conform to the canonical output template: dimension-by-dimension analysis prose followed by `[/REASONING]` separator followed by a JSON scores block inside `<judge_output>` tags — no example deviates from this structure
-  3. The assembled training mix contains: reasoning examples (deep CoT + critique-then-fix) plus 30% flat judge replay examples from the original phase 1/2 judge training data plus 20% wp_gen replay examples from the phase 1 training set — actual counts and percentages recorded in metadata.json
+  3. The assembled training mix contains reasoning examples (CoT + CtF) plus replay at 60/25/15 ratio (CoT/CtF/replay per D-05) — actual counts and percentages recorded in metadata.json
   4. `data/reasoning_dataset/openai_train.jsonl` and `openai_val.jsonl` are exported with an 80/20 split (larger val slice than main dataset due to smaller total size)
-**Skill**: `wp-finetune:run-reasoning-assembly` (NEW — create during phase planning)
+**Skill**: `wp-finetune:run-reasoning-assembly` (created 2026-04-23)
   - **LLM execution**: Claude Code agents ONLY for any LLM-judged consistency checks. NO Anthropic API. Score consistency validation MAY be deterministic (regex/threshold rules: "if reasoning text contains 'critical' and security score >=7 → reject") OR may spawn Claude Code agents for nuanced cases (NOT API). Decision deferred to phase planning.
   - DGX usage: NONE — pure Python (json manipulation, regex, file I/O)
   - Pattern: read 4.1 batch outputs → run deterministic consistency rules → for ambiguous cases, spawn Claude Code agents to judge consistency → assemble training mix via Python → export multi-format
   - Fix-test-validate loop: dry-run consistency rules on 10 known-good + 10 known-bad pilot examples → tune thresholds → run on full dataset → human review of rejected examples → adjust if false-positive rate >5% → re-run
   - Quality audit: rejection rate per rule type, training mix percentage verification, output schema validation
-**Plans**: TBD
+**Plans**: 1 plan
 
 ### Phase 4.3: Reasoning Fine-Tune — INSERTED
 **Goal**: The winning ratio adapter is continued-fine-tuned on the assembled reasoning dataset at a 5-10x lower learning rate than Phase 3, with MoE router weights confirmed frozen, producing a reasoning adapter that does not suffer format collapse, generation regression, or loss divergence
@@ -223,7 +223,10 @@ Plans:
   - Checkpoint eval loop: at each checkpoint, run `eval_judge.py` on 50 samples → if parse failure rate >5%, abort training early (RTRN-04 abort condition)
   - Idempotency: `idempotency_check="adapters/qwen3-30b-wp-{winning}-reasoning/adapter_config.json"`
   - Invokes `wp-finetune:review-telemetry` after training completes
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 04.3-01-PLAN.md — Reasoning continued-FT of the merged 30_70 base (Option B): D-03 readiness gate, train_config_reasoning.yaml, train_model.py deltas (target_parameters/warmup_steps/router-freeze walker), checkpoint_parse_check.py abort hook, DGX dry-run gate, training run + review-telemetry
 
 ### Phase 4.4: Reasoning Eval & Adapter Merge — INSERTED
 **Goal**: The reasoning adapter passes all existing quality gates (Spearman, PHPCS pass rate, wp-bench) with no regression versus the winning ratio baseline, human reviews a sample of reasoning outputs to confirm quality, and the adapter is merged into base weights
@@ -251,7 +254,7 @@ Plans:
   - Adapter merge: after human approval, `dgx.execute("unsloth_studio", "python", "-m", "scripts.merge_adapter", ...)` with idempotency check on `models/qwen3-30b-wp-{winning}-reasoning-merged/`
   - Post-merge validation: load merged model, run 10 inference samples for both `<wp_gen>` and `<wp_judge>`, verify coherent output and correct task token routing
   - Invokes `wp-finetune:review-telemetry` for consolidated eval summary
-**Plans**: TBD
+**Plans**: 1 plan
 
 ---
 
@@ -265,7 +268,7 @@ Plans:
   3. GGUF quantization produced for Ollama local serving (~9GB)
   4. Model responds at vLLM (:8020), Ollama (:11434), LiteLLM (:4000), Open-WebUI (:12000)
   5. HuggingFace Hub page has model card with eval metrics (including wp-bench scores), quantized download links, and usage examples
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
 - [ ] 05-01: Packaging (merge LoRA adapter, AWQ quantization, GGUF quantization)
@@ -326,7 +329,7 @@ Plans:
   - Idempotency: `idempotency_check="output/profiling/{ratio}/routing_report.json"`
   - Execution test loop: after each ratio profile, validate Jaccard >=0.94 against full-set; if fail → re-profile with larger subsample and re-test
   - Human review checkpoint: present E_eff comparison table + protected expert set before ratio selection
-**Plans**: TBD
+**Plans**: 1 plan
 
 ### Phase 8: Reward Infrastructure
 **Goal**: A composite reward pipeline is built and validated end-to-end before any RL training begins — PHPCS anchor, security hard gate, VeRPO partial credit, MO-GRPO normalization, and anti-hack eval set all verified independently
@@ -343,7 +346,7 @@ Plans:
   - Fix-test-validate loop: each reward component (PHPCS, security, VeRPO, MO-GRPO norm) is built, unit-tested, and validated independently before integration
   - Integration test: end-to-end reward computation on 50 held-out gen+judge examples with known-good and known-bad cases
   - Anti-hack eval set validated: run reward pipeline on adversarial examples (verbose padding, template critiques, self-preferencing) — all must score below threshold
-**Plans**: TBD
+**Plans**: 1 plan
 
 ### Phase 9: GSPO Training
 **Goal**: Dual-mode RL refines both generation quality and judge reasoning quality on the FULL MoE (not sieve-constrained), with router-shift stabilization. GSPO (sequence-level) is the primary RL objective for MoE stability (D-08). Whether to also evaluate GRPO (with larger group size + Pro-GRPO expand-then-prune) as a fallback is an implementation decision made at Phase 9 planning time based on GSPO availability and feasibility. Judge is the primary bottleneck (Spearman 0.57 vs gen 0.99+ at SFT stage) and receives equal or greater RL budget. Gen rewards use PHPCS + security + VeRPO. Judge rewards use score-reasoning consistency (separately spawned Claude evaluator agent) and fix correctness (PHPCS/security scanner on critique-then-fix corrected code). Protected experts from Phase 7 monitored via routing regularizer.
@@ -365,7 +368,7 @@ Plans:
   - Fix-test-validate loop: dry-run first (`--dry-run`), then real training; if training fails (OOM/HANG/THERMAL per failure classifier), `adaptive-planner` adjusts config and loop retries
   - Anti-hack regression: run anti-hack eval set after training completes; if regression detected, flag for human review before proceeding
   - Invokes `wp-finetune:review-telemetry` after training completes for consolidated summary
-**Plans**: TBD
+**Plans**: 1 plan
 
 ### Phase 10: RL Comparative Evaluation
 **Goal**: The RL model is compared against the v1.2 SFT baseline on all quality dimensions, confirming RL improved judge reasoning (the primary target) without regressing generation quality — gates v3.0 MoE-Sieve
@@ -381,7 +384,7 @@ Plans:
   - Embeds `observe-evaluation` telemetry agents inline during eval runs
   - Fix-test-validate loop: if any eval dimension regresses, present specific failure to user with suggested fix (re-train with adjusted regularizer, adjust reward weights) before declaring gate pass/fail
   - Human review checkpoint: present full comparison table (v1.2 SFT vs RL) before gating v3.0
-**Plans**: TBD
+**Plans**: 1 plan
 
 ---
 
@@ -416,7 +419,7 @@ Plans:
   - Idempotency: `idempotency_check="adapters/qwen3-30b-wp-sieve-k{k}/adapter_config.json"` per k-budget
   - Invokes `wp-finetune:review-telemetry` after all k-sweeps complete
   - Human review checkpoint: present k-sweep comparison table before declaring optimal k
-**Plans**: TBD
+**Plans**: 1 plan
 
 ### Phase 12: MoE-Sieve Comparative Evaluation
 **Goal**: Each k-sweep MoE-Sieve adapter is A/B compared against v2.0 RL baseline on all 9 eval dimensions, producing the dimension-level report and seed variance analysis that gates v3.0 pruning
@@ -432,7 +435,7 @@ Plans:
   - Fix-test-validate loop: if eval harness fails (model serving error, wp-bench timeout) → fix serving config → re-run eval for that adapter
   - TOST equivalence test automated: `eval_gate.py --tost --epsilon 2pp --seeds 3` across all k variants
   - Human review checkpoint: present full A/B comparison table before gating pruning phase
-**Plans**: TBD
+**Plans**: 1 plan
 
 ### Phase 13: LoRA Merge & Pruning (AIMER primary, REAP optional)
 **Goal**: Merge LoRA adapters into base weights, then run AIMER (task-agnostic, weight-based, primary per D-09) and optionally REAP (domain-aware, calibration-based) at three compression ratios to determine whether WordPress domain specialization creates enough routing concentration for calibration-based pruning to outperform generalized weight-based pruning
@@ -456,7 +459,7 @@ Plans:
   - Embeds `observe-packaging` telemetry agents inline during merge and pruning steps
   - Human review checkpoint: present full comparison table (6 variants: 2 methods x 3 ratios) before committing to physical pruning
   - Step 6: Physical pruning + router re-normalization → verify pruned model loads and generates coherent output
-**Plans**: TBD
+**Plans**: 1 plan
 
 ### Phase 14: Final Comparative Evaluation
 **Goal**: The pruned model is A/B compared against the v2.0 RL baseline, with inference speed delta and model size reduction measured alongside the 9-dimension quality report
@@ -474,7 +477,7 @@ Plans:
   - Fix-test-validate loop: if pruned model fails to serve (missing weights, router mismatch) → diagnose → fix pruning step → re-serve → re-eval
   - Invokes `wp-finetune:review-telemetry` for consolidated inference performance summary
   - Human review checkpoint: present full comparison report before gating packaging
-**Plans**: TBD
+**Plans**: 1 plan
 
 ### Phase 15: Packaging
 **Goal**: The pruned model passes cascading compression gates (bf16 baseline, optional quantization, format production) and is published to HuggingFace with full compression lineage, then validated end-to-end on the target serving stack
@@ -497,7 +500,7 @@ Plans:
   - Embeds `observe-inference` telemetry agents inline during E2E validation for production-representative latency numbers
   - HuggingFace upload: model card generation with full lineage, eval scores at each gate, AIMER vs REAP results
   - Human review checkpoint: final sign-off before `huggingface-cli upload`
-**Plans**: TBD
+**Plans**: 1 plan
 
 ## Progress
 
