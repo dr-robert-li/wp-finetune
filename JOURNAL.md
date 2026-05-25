@@ -4,6 +4,38 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-05-25 — D-03 backfill: doubled the reasoning set on local vLLM, gated by Claude
+
+The Phase 4.3 plan shipped with a prerequisite I'd written into it myself: D-03, backfill CoT until the reasoning set reaches ~60% CoT before any training run. The 4.2 artifact was 418 examples at 43% CoT — assembled under the all-reasoning retention policy when CoT supply ran short of the 60/25/15 target. 4.3 cannot start against that, so this re-opens Phase 4.1 (generation) and 4.2 (assembly). Net: 418 → 704, 43% → 60.1% CoT.
+
+### Flip the cost shape — generate cheap, gate expensive
+
+The default 4.1 path generates CoT through `claude --print` (subscription-covered, but it's the slow expensive half). Flipped it on the user's call: generate on the local vLLM box (`Qwen/Qwen3.6-35B-A3B` @ 192.168.1.61:30000), gate with spawned Claude Code agents. Generation drops to free local GPU; Claude is spent only on review, which is cheaper per item than generation. The 3.6 generator is a different model than the 30_70 fine-tune base (Qwen3-30B-A3B), so there's no self-distillation degeneracy to worry about.
+
+### The thinking-model tax
+
+First real generation call hung — 139s wall, `finish=length`, 4000 completion tokens, **content empty**. Qwen3.6 is a reasoning model: it spent the whole budget thinking and never reached the JSON. `chat_template_kwargs: {enable_thinking: false}` → 37s, clean judge JSON, ~1050 tokens. We discard the think anyway. The lesson is the same one every time — probe a single call before launching a batch of 550. The buffered `Terminated` from the first run told me nothing; one unbuffered, timed curl told me everything.
+
+### Gating, and not re-litigating what already shipped
+
+The reviewer replaces the haiku consistency validator outright: 16 sonnet agents, ~35 examples each, each writing its verdicts to disk and returning one line so the orchestration doesn't drown its own context. 432/550 consistent (78%); 118 rejected on score↔reasoning contradiction, dimension gaps, or hallucinated WP-API citations.
+
+The existing 356 consistent examples (181 CoT + 175 CtF) weren't re-reviewed. The live `consistency_valid.jsonl` was empty, but the shipped 418 *is* the prior consistent set, so I reconstructed the slim valid entries from its metadata and let them keep the prior haiku gate. The advisor's catch here earned its keep: don't burn hours of generation on an unverified join. So before generating anything I wrote the reconstruction, dry-ran the `(source_file, function_name)` join against the bulk (181/181 + 175/175 clean), and re-assembled the *baseline* — 417, matching the shipped 418 bar one replay example lost to vendor-filter rounding. Only then did the generator launch. `metadata.json` carries a provenance block so nobody later reads `rejection_counts.consistency=118` as a uniform gate rate; it's new-examples-only.
+
+### Center, don't maximize
+
+432 new consistent + 181 existing would have been 66% CoT / 920 total — past the readiness bands (total ≤760, CoT ≤65%). Over-generation was deliberate (gen is free; cull after), so I capped new inclusions to 245, landing 704 / 60.1%, dead center. The 187 surplus are Claude-validated, not garbage — parked in `consistency_valid_reserve.jsonl` rather than deleted, for a later pass that wants a richer set.
+
+### The split bug nobody asked about
+
+Aggregate came out 60.1% CoT but the val split read 54.7%. `stratified_split` stratified by *domain*, and `max(1, round(0.8·N))` forces every singleton-domain example entirely into train. CoT draws from ~94k functions spread across the most plugins, so it owns the most singleton domains, so val gets starved of exactly the stream the gate cares about. Switched to stratify-by-stream — each stream splits ~80/20 independently — and val snapped to 60.3%, train 60.0%.
+
+### Where this leaves things
+
+`data/reasoning_dataset/` is 704 (60.1 CoT / 24.9 CtF / 15.1 replay), readiness gate green on all three bands, template-compliant, vendor/truncation rejections recorded. Pre-backfill state lives in git history; the Apr-21 5000-target orchestrator scaffold that never panned out is deleted. Phase 4.3 training is unblocked — its Task 1 readiness gate, written to fail loudly on the 418 set, now passes.
+
+---
+
 ## 2026-05-21 — Phase 1b 20K landed, SEC-N04 false-positive hunt, calibration shipped
 
 Phase 1b is closed. The stratified 20K re-judge ran end to end, the calibrated rubric got one targeted fix, and after two human review passes the calibration is cleared for downstream. The headline number: Claude-vs-calibrated agreement walked from 57.3% (pilot) → 65.2% (raw 20K) → 75.3% on the consumption file. Long way to get there.

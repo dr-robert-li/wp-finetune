@@ -4,6 +4,18 @@ All notable changes to the wp-qwen3-moe project. Follows [Semantic Versioning](h
 
 ## [Unreleased]
 
+### Added
+- **D-03 CoT backfill pipeline (local vLLM generation + Claude-agent review gate)** — New generator/gate split for growing the reasoning dataset. `scripts/generate_cot_vllm.py` generates deep-judge CoT on a local vLLM endpoint (`Qwen/Qwen3.6-35B-A3B`, `enable_thinking=false`) reusing the Phase 4.1 prompt/loaders/formatter, threaded with checkpoint resume and `(source_file, function_name)` dedup. `scripts/_backfill_review.py` preps batches and folds reviewer verdicts back into the slim `consistency_valid.jsonl` schema; spawned Claude Code agents (sonnet) replace the haiku consistency validator as the gate. `scripts/_backfill_reconstruct_valid.py` rebuilds the existing consistent set from the shipped dataset and dry-run-verifies the assemble join before any generation
+- **`consistency_valid_reserve.jsonl`** — surplus Claude-validated CoT held out of the assembled mix (not discarded) when over-generation exceeds the readiness-gate bands
+- **`metadata.json` `backfill_provenance` block** — documents generator/gate/cap/reserve and clarifies that `rejection_counts.consistency` is the Claude reviewer reject count over NEW examples only (existing entries inherit the prior haiku gate)
+
+### Changed
+- **Reasoning dataset: 418 → 704 examples (D-03 backfill)** — CoT share 43.3% → 60.1% (CtF 24.9%, replay 15.1%), clearing the Phase 4.3 readiness gate (total ∈ [650,760], CoT ∈ [55,65]%, replay ∈ [12,18]%). 550 new CoT generated on local vLLM, 432 passed the Claude-agent gate (78%), 245 included (centered at the ~700/60% target), 187 reserved. Re-opens Phase 4.1 generation + Phase 4.2 assembly per decision D-03
+- **`scripts/assemble_reasoning_dataset.py` — `stratified_split` now stratifies by stream** — was stratifying by domain (`source_file`), where `max(1, round(0.8·N))` forced every singleton-domain example into train and starved the val split of the most domain-fragmented stream (CoT). Now splits each stream (cot/ctf/replay) ~80/20 independently so train/val preserve the aggregate mix
+
+### Fixed
+- **Val-split stream skew** — val CoT share read 54.7% against a 60.1% aggregate (below the 55% band) due to the domain-stratified split above; stream-stratified split restores val to 60.3% (train 60.0%), exact 80/20
+
 ### Changed
 - **Experiment-based naming replaces ratio-based naming** — Training runs now use `{model}_experiment_{NNN}_{date}` convention instead of `ratio_30_70` etc. Training config has explicit `experiment.description` field for experiment intent. `run-training` skill refactored for experiment naming. `triage_ratios.py` and `run_eval_triage.py` use auto-discovery instead of hardcoded ratio lists. `observe-evaluation` skill updated. Legacy ratio configs marked deprecated
 - **Pipeline orchestrator: AI-calibrated targets** — Replaced hardcoded "10% of pool" percentages with AI-calibrated targets. A Claude Code agent reasons about the experiment config (model scale, LoRA rank, epochs, current data state, export ratio, dedup rate) and recommends concrete data targets backward from training requirements. Cached at `data/checkpoints/calibrated_targets.json`, auto-recalibrates when experiment config changes. CLI: `calibrate` command, `--recalibrate` flag
