@@ -1,7 +1,7 @@
 {
   "phase": "04.1",
   "stream": "cot",
-  "generated_at": "2026-04-08T12:27:10.310237Z",
+  "generated_at": "2026-05-25T03:05:01.614608+00:00",
   "function_ids": [
     {
       "source_file": "plugnmeet.json",
@@ -394,6 +394,12 @@
       "phase1_id": "e31afa3dfbf782fd5db1b29c7f842fd0d82076d80d0545aece54d38be67407fa"
     },
     {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "ReachFrequencySpec::getFieldsEnum",
+      "source_dir": "passed",
+      "phase1_id": "64efbb8f27fc2ca45ed77242b671fee1fc13d8df749053f3635a548f7e4d0634"
+    },
+    {
       "source_file": "geidea-online-payments.json",
       "function_name": "WC_Gateway_Geidea::add_card_tokens_menu",
       "source_dir": "failed",
@@ -688,6 +694,12 @@
       "phase1_id": "17e541216f3b1fe38845c66193fb34e3aea7a391fc192b209a4d8c93032cc6a4"
     },
     {
+      "source_file": "advanced-custom-fields.json",
+      "function_name": "ACF_Ajax_User_Setting::get_response",
+      "source_dir": "passed",
+      "phase1_id": "0960740a42606e48d7558e4405e2d5826d9d5ee6f10cf654fc9edd26feaedb2a"
+    },
+    {
       "source_file": "woocommerce.json",
       "function_name": "get_activate_error_message",
       "source_dir": "passed",
@@ -770,6 +782,12 @@
       "function_name": "update_customer",
       "source_dir": "passed",
       "phase1_id": "6efa0d78d8eb6f675eaef970bc6e121e729d099d7085c009931ed4d776f6012f"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "get_subscriptions",
+      "source_dir": "passed",
+      "phase1_id": "60eaf12320abc7567faa6a13c729ef91ad55bc916eb953dfd771587a6445c1ef"
     },
     {
       "source_file": "learnpress-wishlist.json",
@@ -881,6 +899,12 @@
     },
     {
       "source_file": "woocommerce.json",
+      "function_name": "WebhookHandler::process_payment_capture_pending",
+      "source_dir": "failed",
+      "phase1_id": "bd92dfb88a8f2aaee9bf2405d616746ae7436d219ac58f6c2c9c8b08347860e3"
+    },
+    {
+      "source_file": "woocommerce.json",
       "function_name": "render_additional_fields::render_content",
       "source_dir": "passed",
       "phase1_id": "6bf17e409c1e031c234aa11b79aec3108a18abb23a9360f1f0f81b2bbcbafb4b"
@@ -934,34 +958,10 @@
       "phase1_id": "1333f7906030f53a15315565c6440a51d39620f2f59fae6abd7f7bc4115e76ef"
     },
     {
-      "source_file": "pp-express-wc4jp.json",
-      "function_name": "WC_Gateway_PPEC_With_PayPal_Addons::update_failing_payment_method",
-      "source_dir": "passed",
-      "phase1_id": "7c1f0d51e01450014303673a86f6c72c252fa65662c0ae295f8de693504e81be"
-    },
-    {
-      "source_file": "learnpress-wishlist.json",
-      "function_name": "AbstractBlockType::render_content_block_template",
-      "source_dir": "passed",
-      "phase1_id": "40a589ac12646725f6209702e2c74315e4c3218b222d9aca87f3ad74a172ded2"
-    },
-    {
       "source_file": "seo-by-rank-math.json",
       "function_name": "Database::table",
       "source_dir": "passed",
       "phase1_id": "aa84475314f26ae0f90e0221b0e7cdff11109c78643db8da964db6caaf193ba3"
-    },
-    {
-      "source_file": "plugnmeet.json",
-      "function_name": "allowed_numbers::setName",
-      "source_dir": "passed",
-      "phase1_id": "24afa8bcad0fc2deaba8c410985c4aab0dfdf91f69df10d95a6b63b84ba01c34"
-    },
-    {
-      "source_file": "woocommerce-paypal-payments.json",
-      "function_name": "product_filter_context_data",
-      "source_dir": "passed",
-      "phase1_id": "b0d25906f9101352f61269ef84090c0ecb821038d3d73c5ba9312653ac5551c4"
     },
     {
       "source_file": "wp-stats.json",
@@ -970,46 +970,10 @@
       "phase1_id": "389041ad5e65203dec06c43aaeae9de8803f0aaf0a10be83d65a39f1cae042da"
     },
     {
-      "source_file": "advanced-custom-fields.json",
-      "function_name": "acf",
-      "source_dir": "passed",
-      "phase1_id": "28579feb67e7deaa10699b0d7158c21ccb797356752364cd4837b7d1ff9ca37d"
-    },
-    {
-      "source_file": "woocommerce-square.json",
-      "function_name": "WC_REST_Square_Settings_Controller::get_settings",
-      "source_dir": "passed",
-      "phase1_id": "c8c90b998003a0d703f94bfad7c5f27a819db7d2ad1eef21ecc82b2144a0a37d"
-    },
-    {
       "source_file": "wordpress-develop.json",
       "function_name": "WP_Translation_File::translate",
       "source_dir": "passed",
       "phase1_id": "c6a9415bf4303d9bc3ea83c09355b5da0d08c7ffc98c2391a452d1fdd079f318"
-    },
-    {
-      "source_file": "woocommerce-payments.json",
-      "function_name": "initialize_available_currencies",
-      "source_dir": "passed",
-      "phase1_id": "3da2e6eb3d9fd13316a2135fd0a92256bc6e35719ba0f051150d0d3bcafe5671"
-    },
-    {
-      "source_file": "razorpay-quick-payments.json",
-      "function_name": "Request::request",
-      "source_dir": "passed",
-      "phase1_id": "2ca39cf4683cd4625ed5d4a01be36290885b6432b606bb6913509a9abecb9c27"
-    },
-    {
-      "source_file": "wordpress-develop.json",
-      "function_name": "wp_ajax_edit_theme_plugin_file",
-      "source_dir": "passed",
-      "phase1_id": "4cda5c086adc7e92abb56d8bd90bdb5c7df6911165288050e424a0fa0219cec3"
-    },
-    {
-      "source_file": "seo-by-rank-math.json",
-      "function_name": "GTag::get_amp_mode",
-      "source_dir": "passed",
-      "phase1_id": "fbb541972cdf07ebaffb66f14751b02a93f145b34069b71678399667f822f2e5"
     },
     {
       "source_file": "learnpress-wishlist.json",
@@ -1018,94 +982,10 @@
       "phase1_id": "1f7f0d1c345d328b6dbf45f43e2e9e0aefcd0c2d7c3e11041b9e192e9d0c89ca"
     },
     {
-      "source_file": "shapely-companion.json",
-      "function_name": "Epsilon_Control_Toggle::__construct",
-      "source_dir": "passed",
-      "phase1_id": "01dfa9a82463327ffbd70d7b9d19b11ddb34f80317f2f3340ad945d4b60c134b"
-    },
-    {
-      "source_file": "elementor.json",
-      "function_name": "Control_Color::get_default_settings",
-      "source_dir": "passed",
-      "phase1_id": "0ad1a10307ec5ce4a50ae1015ead231ea625de9a98137cf47e93179d8b8a4a57"
-    },
-    {
-      "source_file": "twitter.json",
-      "function_name": "HTMLBuilder::escapeURL",
-      "source_dir": "passed",
-      "phase1_id": "4adf0f9a062dda64ae9129b0445490406d7e1ee1388f35e350ef6b40d5f23ddd"
-    },
-    {
       "source_file": "woocommerce.json",
       "function_name": "get_item_schema",
       "source_dir": "passed",
       "phase1_id": "5fb21e8bb23bd19ac19bfb271c9f53053d88f4d1d977d89578f5c4bb425329be"
-    },
-    {
-      "source_file": "woocommerce-mercadopago.json",
-      "function_name": "Seller::getSiteId",
-      "source_dir": "failed",
-      "phase1_id": "0c43cc4c949128c848ae9e6ef1bc519cdec0b7559edc9922a153283a7fd4e02c"
-    },
-    {
-      "source_file": "masvideos.json",
-      "function_name": "MasVideos_Person::set_tag_ids",
-      "source_dir": "passed",
-      "phase1_id": "885de70e3c7cbe6d1d29be48b2df917a660b24d587f6221df58b3d1c2c482fcb"
-    },
-    {
-      "source_file": "where-did-they-go-from-here.json",
-      "function_name": "sanitize_setting_value",
-      "source_dir": "passed",
-      "phase1_id": "d2ed534ee44d0386cbe26d5074722d9366d37fd97b054f1e6c545613e07e4c85"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "set_cache",
-      "source_dir": "passed",
-      "phase1_id": "cf9f2743e0ee290c973313f699186d852b87d533b14638ef9e3ac65aca14fbbf"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "WC_WCCOM_Site_Installation_Manager::__construct",
-      "source_dir": "passed",
-      "phase1_id": "2c15933361943f767c6c30c548ea6a7404530964fd3c8ebd98b8c2a1079908ce"
-    },
-    {
-      "source_file": "jetpack.json",
-      "function_name": "Image_CDN::init",
-      "source_dir": "passed",
-      "phase1_id": "7fe525c4f68a62c63aecaefc44a663c2432938affc5ba3ad633842debd572277"
-    },
-    {
-      "source_file": "woocommerce-paypal-payments.json",
-      "function_name": "IntegrationRegistry::get_all_registered_editor_script_handles",
-      "source_dir": "passed",
-      "phase1_id": "0018ed4ba35f72eee94624e63dea7e8626c1ae96f4ac4cc57b13670484f9d175"
-    },
-    {
-      "source_file": "jetpack.json",
-      "function_name": "Jetpack_Subscribe_Overlay::init",
-      "source_dir": "passed",
-      "phase1_id": "2853012b31298c2e724fcf5909352d163bfde7df12741ac328c8443857a8df28"
-    },
-    {
-      "source_file": "plugnmeet.json",
-      "function_name": "agent_dispatches::getReplayEnabled",
-      "source_dir": "passed",
-      "phase1_id": "a9ea5c55564c6c9795a6a30ddf5dc56e6ecfef694ff4fbdb1c4784a7fac3cafd"
-    },
-    {
-      "source_file": "jupiterx-core.json",
-      "function_name": "Util::__construct",
-      "source_dir": "passed",
-      "phase1_id": "2671ed980a344eb5d582e413ad761460fc1aaa4ed28f639913bfa6d006838e03"
-    },
-    {
-      "source_file": "wordpress-seo.json",
-      "function_name": "Image_Helper::get_caption",
-      "source_dir": "passed",
-      "phase1_id": "ab218c6d24af1f1232f6c5dd11a89eb6a552d24d9024c61bc6aa6ca8c47b6c8f"
     },
     {
       "source_file": "woocommerce-square.json",
@@ -1114,58 +994,10 @@
       "phase1_id": "4bc487fceea91a57ae0ac08eb95a8f80e9150681ee3381462b71b9dd81351e71"
     },
     {
-      "source_file": "official-facebook-pixel.json",
-      "function_name": "AdAccount::getAdSetsByLabels",
-      "source_dir": "failed",
-      "phase1_id": "0d6ccad425ada7a92df8c5875dcd27227c95948f1ffeae5c39c785cf2074d85d"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "OrdersVersionStringInvalidator::handle_before_order_save",
-      "source_dir": "passed",
-      "phase1_id": "0efc78f5cb94ea02b466eaef2fa3ad9de10f0d739087fbb8d1e0a2318ebe1bb5"
-    },
-    {
-      "source_file": "woocommerce-paypal-payments.json",
-      "function_name": "SettingsProvider::gateway_enabled",
-      "source_dir": "passed",
-      "phase1_id": "ae2be9d871b29f7d5a5fab4802d5331749e42ff34642694e5e6b96d6d7c016a8"
-    },
-    {
-      "source_file": "learnpress-bbpress.json",
-      "function_name": "QuizQuestionsDB::getInstance",
-      "source_dir": "failed",
-      "phase1_id": "f8e18e6e5bf7951268a3151e0b32cb8213d458e6f0bc8aa88078c470783caa5c"
-    },
-    {
-      "source_file": "jupiterx-core.json",
-      "function_name": "Module::save_variation_gallery_data",
-      "source_dir": "passed",
-      "phase1_id": "4470114c5cc3e66704144c26bc8eec3b1a89ce2f82bceaa1ddf9e007bb909a65"
-    },
-    {
-      "source_file": "plugnmeet.json",
-      "function_name": "Plugnmeet_Admin::sanitize_array_fields",
-      "source_dir": "passed",
-      "phase1_id": "92bc6cf98cc5caaf715809ff87e89008bedd93540258d2371b053053fb92f269"
-    },
-    {
       "source_file": "advanced-custom-fields.json",
       "function_name": "acf_get_textarea_input",
       "source_dir": "passed",
       "phase1_id": "5ba6970f0dc7b6df0c00d30ab37b2acac23410a1152ce501774057bc066c7c75"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "WC_Admin::init_page_controller",
-      "source_dir": "passed",
-      "phase1_id": "3239cf464c5bead07de7603160119b82bbd3c8fef512ae6cb9014d367c741681"
-    },
-    {
-      "source_file": "official-facebook-pixel.json",
-      "function_name": "EventSourceGroup::getEndpoint",
-      "source_dir": "passed",
-      "phase1_id": "7e742abd63b196225cddc308d354c14d31569f651db4a98875f32834d3060eee"
     },
     {
       "source_file": "pinterest-for-woocommerce.json",
@@ -1174,100 +1006,10 @@
       "phase1_id": "14552df420f429da65146f7745866508e836720eab2578702194f9666679d34c"
     },
     {
-      "source_file": "jupiterx-core.json",
-      "function_name": "JupiterX_Widget_Posts::widget",
-      "source_dir": "passed",
-      "phase1_id": "72f188f82afc42602e34b43e9f21be67f4bcc15b9ece1a55f97b4c8c6a039ad3"
-    },
-    {
-      "source_file": "plugnmeet.json",
-      "function_name": "IngressInput::name",
-      "source_dir": "failed",
-      "phase1_id": "bfcb4b7f1e846917e085dd6ca4acd538e1d4f6fd62e8395144cfe1ea6009555d"
-    },
-    {
-      "source_file": "wp-scss.json",
-      "function_name": "ForRule::__toString",
-      "source_dir": "failed",
-      "phase1_id": "6cc11213183f73a36e1f00b07977d97bb9d6e120fdf7de2d2801383591079310"
-    },
-    {
       "source_file": "woocommerce.json",
       "function_name": "get_customer_id_by_user_id",
       "source_dir": "passed",
       "phase1_id": "b50fef3a764b281a78bd518136065643173c4199e37f12020d96a4a43797597a"
-    },
-    {
-      "source_file": "jetpack.json",
-      "function_name": "jetpack_load_shortcodes",
-      "source_dir": "passed",
-      "phase1_id": "98804187dc0aa53e60a3c9661e1e519ecacee44e83b70f16da9f1cf7dfbb9b2c"
-    },
-    {
-      "source_file": "wordpress-develop.json",
-      "function_name": "ParagonIE_Sodium_Compat::ristretto255_scalar_sub",
-      "source_dir": "passed",
-      "phase1_id": "8c0005a721b07be20e065b4302660559c4bcbd8aeac06ffea8257e3f6a37cbfc"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "get_background_sync_interval::process_deleted_option",
-      "source_dir": "passed",
-      "phase1_id": "e76c0ec09b334acb0c05078e1ba960dcb2b90a1b63edd2748248a9ce779af3d1"
-    },
-    {
-      "source_file": "wp-mail-smtp.json",
-      "function_name": "EventsCollection::get_default_params",
-      "source_dir": "failed",
-      "phase1_id": "be36429bcc12d683998bd2b3f682d774574ca9f17c5b5fe2f923ba92fca3b12b"
-    },
-    {
-      "source_file": "wordpress-develop.json",
-      "function_name": "WP_Filesystem_Direct::chmod",
-      "source_dir": "passed",
-      "phase1_id": "c1933648271cd040165472efc2d67a40884103dbb771cd081e4dcd3808f582a5"
-    },
-    {
-      "source_file": "plugnmeet.json",
-      "function_name": "packet_drift::clearNtpReportDrift",
-      "source_dir": "failed",
-      "phase1_id": "f94bac9ba2b8b055cb1fa75b0f63507da2c201f9c7f119f6116aa366151774c5"
-    },
-    {
-      "source_file": "wp-scss.json",
-      "function_name": "ListUtil::last",
-      "source_dir": "failed",
-      "phase1_id": "6c8dba9dcd75cfc11b1b897d9f357a214efad73b4c98e8b48cc45cac64130cb8"
-    },
-    {
-      "source_file": "woocommerce-payments.json",
-      "function_name": "is_enabled",
-      "source_dir": "passed",
-      "phase1_id": "547c5a6d456c9a6dd19c94f59e458215818bfe482da0580345a352a4380c0963"
-    },
-    {
-      "source_file": "plugnmeet.json",
-      "function_name": "GetActiveRoomInfoRes::clearRoom",
-      "source_dir": "failed",
-      "phase1_id": "f5bc60ab9bac34f05547c660a3c6cf10ce2b90c266f14143de048bc6ceb77286"
-    },
-    {
-      "source_file": "woocommerce-paypal-payments.json",
-      "function_name": "VaultPaymentTokenDeleted::__construct",
-      "source_dir": "passed",
-      "phase1_id": "578ec50a935f4e424cebb213eab30d9c5e6c0dd6aa8d4496c49dd9c086370e4b"
-    },
-    {
-      "source_file": "duplicate-post.json",
-      "function_name": "Options_Form_Generator::__construct",
-      "source_dir": "passed",
-      "phase1_id": "f0d93c8bc5317a6af8ed8fa171a6afa4d80bf793d5b5b56a084dc2c448a27100"
-    },
-    {
-      "source_file": "gutenberg.json",
-      "function_name": "WP_REST_Global_Styles_Controller_Gutenberg_Test::test_get_items",
-      "source_dir": "failed",
-      "phase1_id": "c700545f990853a6e707cdd35c46602eab3733c15ace550e7b57802bda40b3a2"
     },
     {
       "source_file": "jupiterx-core.json",
@@ -1276,46 +1018,10 @@
       "phase1_id": "a5fd7aae53a4af94cd4487a688ce9d66e182d7cd4a2273eae43fa55f4388e440"
     },
     {
-      "source_file": "google-listings-and-ads.json",
-      "function_name": "get_interval",
-      "source_dir": "passed",
-      "phase1_id": "a0f6525639d31aa3a762d524e7d38480bed5926ea33792c60beff3b11eb33017"
-    },
-    {
-      "source_file": "masvideos.json",
-      "function_name": "MasVideos_Meta_Box_Episode_Data::prepare_sources",
-      "source_dir": "passed",
-      "phase1_id": "590f8abe6a00b158a7f7c5c8609b90dbb6a8259d4369596f202d92a2ca75c7be"
-    },
-    {
-      "source_file": "google-site-kit.json",
-      "function_name": "Email_Report_Data_Section_Part::set_dimensions",
-      "source_dir": "passed",
-      "phase1_id": "d454ff8c67f8dd0eaa5ee3e6c18e1983cebec8440894d101f773ae6825b8af1e"
-    },
-    {
-      "source_file": "wp-mail-smtp.json",
-      "function_name": "method_exists::get_wp_mail_initiator",
-      "source_dir": "failed",
-      "phase1_id": "4b5192cd5a714311b9be3272818145b25720e43dbcd722c5180b89a550dc7235"
-    },
-    {
-      "source_file": "masvideos.json",
-      "function_name": "MasVideos_TMDB_Configuration::setAPIKey",
-      "source_dir": "failed",
-      "phase1_id": "c90f22c4d7985df56e2ff56ac57e95f4edb6daa38ac446838e67c078457cddc0"
-    },
-    {
       "source_file": "google-site-kit.json",
       "function_name": "Has_Connected_Admins::query_connected_admins",
       "source_dir": "passed",
       "phase1_id": "93c095dc256557dc81e0905c89b7916708d6bf0c50896705243844a16fc30661"
-    },
-    {
-      "source_file": "wp-scss.json",
-      "function_name": "prependSelectors",
-      "source_dir": "failed",
-      "phase1_id": "3a791dd6b33f49c67be38dcf1b79c0ab62338eaa21d8908434ca8c6bd99a9d96"
     },
     {
       "source_file": "woocommerce.json",
@@ -1324,58 +1030,10 @@
       "phase1_id": "cff1565b6a0aa77ac92a9cdbc10599c23c89adf72e8d4387e9173fa9f593a212"
     },
     {
-      "source_file": "woocommerce.json",
-      "function_name": "WC_Customer::set_billing_first_name",
-      "source_dir": "passed",
-      "phase1_id": "fd77c64dac2df2522bca62928c3ba3bab79f9f10a4bd5f4835b59f3115030072"
-    },
-    {
-      "source_file": "amp-wp.json",
-      "function_name": "PairedBrowsing::init_app",
-      "source_dir": "passed",
-      "phase1_id": "db2eb153b1de297c290e8d83149b357e0837a18a7f15b68491c2cf47d1a4e207"
-    },
-    {
-      "source_file": "woo-widget-product-slideshow.json",
-      "function_name": "end",
-      "source_dir": "failed",
-      "phase1_id": "feb2c10bd563f17eeb57640ae73052524b35931e49aae0d8c8212cb979697a91"
-    },
-    {
-      "source_file": "wordpress-develop.json",
-      "function_name": "File_Upload_Upgrader::cleanup",
-      "source_dir": "passed",
-      "phase1_id": "5d4897d934d28ae2680f1a658ea10925a1ff9a7bee3abc05c7e96a2d47487758"
-    },
-    {
-      "source_file": "platnosci-online-blue-media.json",
-      "function_name": "Gateway::getStateDate",
-      "source_dir": "failed",
-      "phase1_id": "b6296a7ebff2caa9759593b5f6b38f49bbd0dfe040fa0808c0b2939776990c98"
-    },
-    {
       "source_file": "learnpress-wishlist.json",
       "function_name": "AdminTemplate::html_popup_items_to_select_clone",
       "source_dir": "passed",
       "phase1_id": "197ea8133b40e6db409199cef5dccb13064c21dd0fe07e414b833d2aa192bd09"
-    },
-    {
-      "source_file": "elementor.json",
-      "function_name": "Control_Gallery::get_default_settings",
-      "source_dir": "passed",
-      "phase1_id": "07218fe5b762985686105ee1c3ff0e0f4a7213ae83419d96536d805c8d468bdc"
-    },
-    {
-      "source_file": "woocommerce-paypal-payments.json",
-      "function_name": "VaultPaymentTokenDeleted::responsible_for_request",
-      "source_dir": "passed",
-      "phase1_id": "b43b652a8cae50541caea6ea732f03026b157214680dc14cd70d9fc1ce92e17b"
-    },
-    {
-      "source_file": "jetpack.json",
-      "function_name": "Jetpack_Sitemap_State::initial",
-      "source_dir": "passed",
-      "phase1_id": "384ac0e515fd0786bd00004411d1bf1f546b79cd7f75c6d080b5b6846fc41562"
     },
     {
       "source_file": "learnpress-wishlist.json",
@@ -1384,46 +1042,10 @@
       "phase1_id": "01151c1dad652574427c3af02c803cf0cc6af1f173a11026c890c6845c922dc1"
     },
     {
-      "source_file": "plugnmeet.json",
-      "function_name": "InsightsTranscriptionConfigReq::getAllowedSpokenLangs",
-      "source_dir": "passed",
-      "phase1_id": "761df04f5aaf5c262474d5102500a03f1384fecc6b39c18681cd73dd2ccf2443"
-    },
-    {
-      "source_file": "hello-plus.json",
-      "function_name": "Ehp_Footer::get_type",
-      "source_dir": "failed",
-      "phase1_id": "8a7d17cbee0b4d802910c36684824e8151b8b2b6d51a47804704c7d4b69f9380"
-    },
-    {
-      "source_file": "learnpress-wishlist.json",
-      "function_name": "get_nonce_action",
-      "source_dir": "passed",
-      "phase1_id": "2be911af0fe54a3ca3f68295307bc2be49ca6ae66d75a6bcd682677fe65106ed"
-    },
-    {
       "source_file": "jupiterx-core.json",
       "function_name": "Module::handle_editor",
       "source_dir": "failed",
       "phase1_id": "42efa7feb82c417298d9d4a6e45de4b1fc11e9ec63ef9c1a0e26d9f65de578e9"
-    },
-    {
-      "source_file": "seo-by-rank-math.json",
-      "function_name": "build_root_map",
-      "source_dir": "failed",
-      "phase1_id": "05be7318a30184dd9e4a66f1607006886d78cea7fef99dddf614bd2ae07024d9"
-    },
-    {
-      "source_file": "official-facebook-pixel.json",
-      "function_name": "ApiRequest::addParam",
-      "source_dir": "failed",
-      "phase1_id": "d3c5f5d9a80c24bdd5b3227994b8e550c7e107d83ded7024049940136910815e"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "prepare_context_data::update_preview_post_template_html_data",
-      "source_dir": "failed",
-      "phase1_id": "3de94edb0868b53ae79e1d707a04df558b9034180322c1f7cf2f0f27a9f5d485"
     },
     {
       "source_file": "wordpress-develop.json",
@@ -1444,40 +1066,10 @@
       "phase1_id": "5db3ca77bb6c0ed337d32c35d4701f9079018612d5986aee5ffad3c115223e78"
     },
     {
-      "source_file": "plugnmeet.json",
-      "function_name": "permission::getRegion",
-      "source_dir": "passed",
-      "phase1_id": "249a3dd19ca22b1abf3a0fde208c6ce00e404677f1a5d57219fb199da912bb9b"
-    },
-    {
       "source_file": "bs-payone-woocommerce.json",
       "function_name": "Przelewy24::init_form_fields",
       "source_dir": "failed",
       "phase1_id": "d84ca1fa350f28d64eb0fc0c0f112a7bc0480f04ac6555586e51f3104d4eef68"
-    },
-    {
-      "source_file": "list-category-posts.json",
-      "function_name": "CatList::get_conditional_title",
-      "source_dir": "failed",
-      "phase1_id": "e2ff9c40e47682cb826d5773d945dfcf175aa34f609474c41e7e59f7d760021b"
-    },
-    {
-      "source_file": "wordpress-importer.json",
-      "function_name": "BaseByteReadStream::seek_outside_of_buffer",
-      "source_dir": "failed",
-      "phase1_id": "08fcc5d7f90a5caafde81220d5fa341a5be056510de5042f0b1a0cf5c44dfff9"
-    },
-    {
-      "source_file": "official-facebook-pixel.json",
-      "function_name": "UserLeadGenDisclaimerResponseFields::getFieldTypes",
-      "source_dir": "failed",
-      "phase1_id": "1429df71731bba8ff1b6247b43240b39fa9a180db9aceb501cf3dd9b93d57f97"
-    },
-    {
-      "source_file": "plugnmeet.json",
-      "function_name": "type::setType",
-      "source_dir": "passed",
-      "phase1_id": "af464209ee98e9d5fb137d1910080953dd4d7dc3ad0654e6ef555a65a2de3e49"
     },
     {
       "source_file": "plugnmeet.json",
@@ -1490,12 +1082,6 @@
       "function_name": "WPCOM_Liveblog_AMP::is_amp_polling",
       "source_dir": "failed",
       "phase1_id": "64e5bc8de92d591f030176b46554edddd345a9d6d3b9022c0d0a10eaa13b294a"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "lazy_load_namespace::rest_api_init",
-      "source_dir": "passed",
-      "phase1_id": "73ee3fd541ea29098634bd49c17dc3c49474b1444ae46f16914870630a199214"
     },
     {
       "source_file": "woocommerce-shipping.json",
@@ -1514,12 +1100,6 @@
       "function_name": "WP_Fatal_Error_Handler::should_handle_error",
       "source_dir": "passed",
       "phase1_id": "5008764cc638699458355fc0a677a953df611952a8bfb01b65bc17ba827b0ee0"
-    },
-    {
-      "source_file": "plugnmeet.json",
-      "function_name": "LockSettings::getLockMicrophone",
-      "source_dir": "passed",
-      "phase1_id": "0298f3a8b0112a7748d1abd4d1f7bf723db19e360c9e117a40691894cf325d46"
     },
     {
       "source_file": "masvideos.json",
@@ -1570,12 +1150,6 @@
       "phase1_id": "58822a65e029699571fbab5ff6fc606a7cb1c8ab717c2ac7986d484678f1b00b"
     },
     {
-      "source_file": "onoffice-for-wp-websites.json",
-      "function_name": "DataFormConfiguration::setActionType",
-      "source_dir": "passed",
-      "phase1_id": "b9ffd75261b06ddb0a6c0a5cc7bcb194481382fa3efb358e1c9fa19a2b5594b0"
-    },
-    {
       "source_file": "woocommerce.json",
       "function_name": "wc_doing_it_wrong",
       "source_dir": "passed",
@@ -1588,40 +1162,3323 @@
       "phase1_id": "432457cb409e4ef5bbb9117371d7973affc216f4023892a4b658a554339f88ec"
     },
     {
-      "source_file": "cdekdelivery.json",
-      "function_name": "IntakeDeleteAction::__construct",
-      "source_dir": "failed",
-      "phase1_id": "c430b8009b1c9e25111d6cd9bb51282ade21c5e29263c419dfeb23d61d389e58"
-    },
-    {
-      "source_file": "jet-style-manager.json",
-      "function_name": "Controls_Stack::add_control",
-      "source_dir": "failed",
-      "phase1_id": "7e3c12f090be418c04ad50aaea4e99c41bd524b7ff29f27a1c7ea0b796336461"
-    },
-    {
-      "source_file": "onoffice-for-wp-websites.json",
-      "function_name": "ScriptLoaderRegistrator::enqueue",
-      "source_dir": "passed",
-      "phase1_id": "40e63e45c041042ac36986719e6cf9bc5065594e73d9df3323385f5f5bbbf052"
-    },
-    {
       "source_file": "seo-by-rank-math.json",
       "function_name": "Front::get_featured_image_id_args",
       "source_dir": "passed",
       "phase1_id": "0ac737953ff376bb3754cd3b3b7e93766bde7538d86761e9a8898d9298c1bb9a"
     },
     {
-      "source_file": "jupiterx-core.json",
-      "function_name": "Frontend::__construct",
+      "source_file": "contact-form-7.json",
+      "function_name": "spam",
       "source_dir": "failed",
-      "phase1_id": "b513614cdc391ca2b65b64f1fccf3a7d650528a6fd6e3d5be80c25b065c04a6f"
+      "phase1_id": "f9879ccd4e455536a0cb6dfe86764ebedc62654a59d407181f8f3c410c9f1ddd"
+    },
+    {
+      "source_file": "platnosci-online-blue-media.json",
+      "function_name": "Auditor::test_autopay_version",
+      "source_dir": "failed",
+      "phase1_id": "dc20f258cdf0defbad60aa3e78b41134fed372f9e5d9bffc93efe7cf92a67287"
+    },
+    {
+      "source_file": "jet-style-manager.json",
+      "function_name": "Plugin::instance",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "plugnmeet.json",
+      "function_name": "RoomCreateFeatures::hasAllowPolls",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wp-scss.json",
+      "function_name": "Declaration::create",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "a3-responsive-slider.json",
+      "function_name": "Template_Widget_Global_Settings::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "LP_Widget_Course_Extra::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
     },
     {
       "source_file": "wordpress-develop.json",
-      "function_name": "WP_Customize_Selective_Refresh::enqueue_preview_scripts",
+      "function_name": "_prime_post_caches",
       "source_dir": "passed",
-      "phase1_id": "31e6bed6cc33224cabe5ad7bc2c5a9699bbc707d334e617c5feca8daa3c626cb"
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "plugnmeet.json",
+      "function_name": "ImageOutput::setCaptureInterval",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "advanced-custom-fields.json",
+      "function_name": "ACF_Ajax_Query::get_response",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "create_data_for_product_cpt",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jetpack.json",
+      "function_name": "parse_options",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "QuizQuestionsDB::get_quiz_questions",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "razorpay-payment-button-elementor.json",
+      "function_name": "Stakeholder::fetchStakeholderDoc",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "WP_Theme_JSON::flatten_tree",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "CoursePriceFilterBlockType::get_supports",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "learn_press_is_instructors",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "google-listings-and-ads.json",
+      "function_name": "SyncerHooks::handle_delete_coupon",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "twentytwentytwo.json",
+      "function_name": "twentytwentytwo_styles",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "FulfillmentsTracker::track_fulfillment_tracking_lookup_attempt",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "WC_Widget_Brand_Nav::layered_nav_dropdown",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "doqrcode.json",
+      "function_name": "QRinputItem::__construct",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "aqua-page-builder.json",
+      "function_name": "AQ_Text_Block::form",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jetpack.json",
+      "function_name": "Jetpack_Google_Font_Face::add_font",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "LP_Rest_Material_Controller::delete_material",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "OfflineConversionDataSetUsageFields::getFieldTypes",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "Uri::withHost",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "LP_User_Item_Course::offsetExists",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "Icon_Set_Base::build_config",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "Event::setDataProcessingOptionsState",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "Gutenberg_REST_Static_Templates_Controller::get_items",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "Application::createCodelessEventMapping",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "item_types_support",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "razorpay-quick-payments.json",
+      "function_name": "Payment::otpGenerate",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "where-did-they-go-from-here.json",
+      "function_name": "get_cache",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-wishlist.json",
+      "function_name": "ListInstructorsElementor::render",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "Redirections_Tools_Page::register_admin_menu",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "Redirects_Page_Integration::register_hooks",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "WP_REST_Font_Families_Controller::prepare_font_face_links",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "WC_Report_Customers::get_chart_widgets",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-paypal-payments.json",
+      "function_name": "GatewayWithoutPayPalAdminNotice::check",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "FacebookWordpressEasyDigitalDownloads::injectPurchaseEvent",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "duplicate-post.json",
+      "function_name": "Options_Form_Generator::is_checked",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-gateway-stripe.json",
+      "function_name": "update_order_meta",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "google-site-kit.json",
+      "function_name": "OAuth_Client::set_refresh_token",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "elementor.json",
+      "function_name": "Widget_Icon_List::render",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-square.json",
+      "function_name": "Product_Import::extract_square_item_variation_data",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-payments.json",
+      "function_name": "WC_Payments_Dependency_Service::is_woo_core_version_compatible",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "sydney-toolbox.json",
+      "function_name": "Sydney_Toolbox::includes",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "learn_press_question_type_support",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wp-mail-smtp.json",
+      "function_name": "EventsCollection::get_count",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-wishlist.json",
+      "function_name": "CourseCountStudentDynamicElementor::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "get_available_actions",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "WC_Payment_Gateway::is_available",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jetpack.json",
+      "function_name": "VideoPress_Shortcode::shortcode_callback",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "update_pretty_slug",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "Plans_Page_Integration::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "modify_dynamic_tags_before_rendering",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "CourseOfflineAddressDynamicElementor::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-payments.json",
+      "function_name": "WC_REST_Payments_Disputes_Controller::register_routes",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "update_section",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "new_answer",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "LP_User_Item_Course::get_result",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "LP_Meta_Box_Repeater_Field::save",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "melhor-envio-cotacao.json",
+      "function_name": "CartService::add",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "LP_Admin_Editor_Quiz::new_question",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "google-site-kit.json",
+      "function_name": "create_report_row",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wp-scss.json",
+      "function_name": "StylesheetParser::namespacedExpression",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "print_message",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "seo-by-rank-math.json",
+      "function_name": "Plugin_Importer::get_user_ids",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "ParagonIE_Sodium_Crypto32::secretstream_xchacha20poly1305_push",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "liveblog.json",
+      "function_name": "WPCOM_Liveblog_AMP::enqueue_styles",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-wishlist.json",
+      "function_name": "get_list",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "vk-blocks.json",
+      "function_name": "VK_Blocks_Options::get_vk_blocks_options_defaults",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "LP_Autoloader::load_file",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "sodium_crypto_secretbox_open",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "WC_REST_Report_Top_Sellers_V1_Controller::prepare_item_for_response",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-square.json",
+      "function_name": "is_payment_gateway_configuration_page",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "LP_User_Item_Course::get_completed_items",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-payments.json",
+      "function_name": "WC_Payments_Order_Service::attach_intent_info_to_order__legacy",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "LP_Section_Items_DB::insert_data",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "LP_Page_Controller::menu_active",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "google-listings-and-ads.json",
+      "function_name": "set_jetpack_connected",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "WP_Widget_Media_Audio::enqueue_admin_scripts",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-wishlist.json",
+      "function_name": "CountCoursesFreeDynamicElementor::render",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "PluginsHelper::get_wccom_disconnected_notice",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "seo-by-rank-math.json",
+      "function_name": "get_snippet_details",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "search-with-google.json",
+      "function_name": "autoloader",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "UserItemModel::get_user_item_model_from_db",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woo-product-reviews-shortcode.json",
+      "function_name": "_tabs_capture",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "twitter.json",
+      "function_name": "Tweet::isHTTPURL",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "query-monitor.json",
+      "function_name": "Debug_Bar::ensure_ajaxurl",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "LP_Assets::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-wishlist.json",
+      "function_name": "convert_result_questions",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "seo-by-rank-math.json",
+      "function_name": "add_prop_publisher",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "Form::register_section_submit_button",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "pp-express-wc4jp.json",
+      "function_name": "WC_Gateway_PPEC_Checkout_Handler::do_payment",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-legacy-rest-api.json",
+      "function_name": "get_product_shipping_class",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "blocks-animation.json",
+      "function_name": "Blocks_CSS::add_css_to_otter",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wp-optimizer.json",
+      "function_name": "GD::load",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "facebook-for-woocommerce.json",
+      "function_name": "ShippingProfilesFeed::get_flat_rate_shipping_method_data",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "liveblog.json",
+      "function_name": "WPCOM_Liveblog_Entry_Key_Events::format_content_first_linebreak",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "seo-by-rank-math.json",
+      "function_name": "Redirection::add_destination",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "FacebookWordpressContactForm7::injectMailSentListener",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-payments.json",
+      "function_name": "WC_Payments_Onboarding_Service::maybe_add_test_drive_settings_to_new_account_request",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "LP_Jwt_Courses_V1_Controller::retake_course",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "WP_Http_Cookie::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "remove_user_item_ids",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "insert-pages.json",
+      "function_name": "wpip_options_page",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "elementor.json",
+      "function_name": "Control_Animation::get_default_animations",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "Init::get_woo_exporters",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "CourseModel::get_description",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "razorpay-quick-payments.json",
+      "function_name": "Order::edit",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "block_core_navigation_sort_menu_items_by_parent_id",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "facebook-for-woocommerce.json",
+      "function_name": "CollectionPage::modify_product_query",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "facebook-for-woocommerce.json",
+      "function_name": "CsvFeedFileWriter::write_temp_feed_file",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "google-listings-and-ads.json",
+      "function_name": "TrackerSnapshot::get_settings",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "CustomData::setBillingContact",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "boldgrid-easy-seo.json",
+      "function_name": "Boldgrid_Seo_Util::prepare_words",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wp-scss.json",
+      "function_name": "pushBlock",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "ID_Helper::get_user_schema_id",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "where-did-they-go-from-here.json",
+      "function_name": "Language_Handler::object_id_cur_lang",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "send",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "Controller::register_routes",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wp-unit-converter.json",
+      "function_name": "Wp_Unit_Converter::load_dependencies",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-shipping.json",
+      "function_name": "Advanced::render",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "mailchimp.json",
+      "function_name": "Mailchimp_Form_Submission::handle_form_submission",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "bs-payone-woocommerce.json",
+      "function_name": "TransactionLog::displayList",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "PromptBuilder::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "ProductWalker::add_time_limit",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "advanced-custom-fields.json",
+      "function_name": "acf_is_multisite_main_site",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "seo-by-rank-math.json",
+      "function_name": "Slack::get_enhanced_data",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woo-postnl.json",
+      "function_name": "Container::get_checkout_post_data",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wp-mail-smtp.json",
+      "function_name": "Mailer::set_reply_to",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "pp-express-wc4jp.json",
+      "function_name": "WC_Gateway_PPEC_Plugin::show_spb_notice",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "onoffice-for-wp-websites.json",
+      "function_name": "Impressum::load",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wp-scss.json",
+      "function_name": "selectors",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-mercadopago.json",
+      "function_name": "Gateway::registerSaveCheckoutSettings",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "prepare_items",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "printful-shipping-for-woocommerce.json",
+      "function_name": "Printful_Admin::route",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "WP_Image_Editor_Imagick::set_quality",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "Base::register_controls",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "gutenberg_override_attachments_rest_controller",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-gateway-stripe.json",
+      "function_name": "prepare_payment_information_for_confirmation_token",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "MIXInsightsResultFields::getFieldTypes",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "onoffice-for-wp-websites.json",
+      "function_name": "ContentFilterShortCodeEstateList::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "get_i18n_string_plural",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "wpdb::_do_query",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "get_course_taxonomy",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "LP_Rest_Material_Controller::check_external_file",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "kafkai.json",
+      "function_name": "API::call",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "render_panel_templates",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "google-site-kit.json",
+      "function_name": "OAuth_Client::get_access_token",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "embed-google-drive.json",
+      "function_name": "Embed_Google_Drive::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-paypal-payments.json",
+      "function_name": "ApplePayButton::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "generate_join_for_clause",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "WP_REST_URL_Details_Controller::get_description",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-square.json",
+      "function_name": "WC_REST_Square_Cash_App_Settings_Controller::get_settings",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "say-what.json",
+      "function_name": "WpCliSupport::insert_replacement",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "PaymentRequestDetailsFields::getFieldTypes",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "import_widget_data",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "elementor.json",
+      "function_name": "Autoloader::run",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woo-razorpay.json",
+      "function_name": "renderPaymentTransferMetaBox",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "LP_Object_Query::get_default_query_vars",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "DataBase::getInstance",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "Tests_Resolve_Patterns_In_Template_Parts::test_get_template_part_resolves_pattern_blocks",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "performance-lab.json",
+      "function_name": "perflab_load_server_timing_api_from_dropin",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "WC_Cart_Session::find_cookie_by_name",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-payments.json",
+      "function_name": "UPE_Payment_Method::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "classic-editor.json",
+      "function_name": "Classic_Editor::add_redirect_helper",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "pagarme-payments-for-woocommerce.json",
+      "function_name": "WoocommercePlatformOrderDecorator::setBaseTotalRefunded",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "redirect_post",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "seo-by-rank-math.json",
+      "function_name": "nginx_item",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "grigora-kit.json",
+      "function_name": "grigora_sanitize_author",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "LP_Email_Type_Order::check_and_get_order",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "header-and-footer-scripts.json",
+      "function_name": "HeaderAndFooterScripts::post_meta_clean",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "query-monitor.json",
+      "function_name": "register_qm_output_raw_conditionals",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "contact-form-7.json",
+      "function_name": "WPCF7_FormTag::get_cols_option",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "masvideos.json",
+      "function_name": "masvideos_videos_array_orderby_menu_order",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-importer.json",
+      "function_name": "AuthorityState::handle",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "Crawl_Cleanup_Helper::query_var_page_url",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-mercadopago.json",
+      "function_name": "RefundHandler::executeRefund",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "LessonPostModel::find",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "get_url_instructor",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "google-listings-and-ads.json",
+      "function_name": "GoogleServiceProvider::handle_unauthorized_error",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "wp_setup_nav_menu_item",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "LP_Settings::get_group",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "LegacyRestApiStub::add_query_vars_for_legacy_rest_api_stub",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "Block_Post_Time_To_Read_Word_Count_Test::test_word_count",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "WC_Abstract_Order::get_status",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "seo-by-rank-math.json",
+      "function_name": "redirections",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "masvideos.json",
+      "function_name": "masvideos_delete_person_transients",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "twitter.json",
+      "function_name": "Timeline::setBaseOptions",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "ParagonIE_Sodium_Core32_Int64::toInt32",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "say-what.json",
+      "function_name": "Main::upgrade_db_to_3",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "AdCreationPackageConfig::getSelf",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "CourseCategoriesBlockType::render_content_block_template",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "advanced-custom-fields.json",
+      "function_name": "acf_field_color_picker::format_value",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "Block_Navigation_Link_Variations_Test::handle_pre_65_post_type_variation_unregistration",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "WP_Textdomain_Registry::get",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "Conditions_Logic::manage_remaining_singulars",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "wp_admin_css_uri",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "ProductReviews::render_legacy_block",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "learn_press_admin_view",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "pp-express-wc4jp.json",
+      "function_name": "PayPal_Checkout_Payment_Item_Physical_Details::loadFromGetECResponse",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "item_types_label",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-paypal-payments.json",
+      "function_name": "TrustlyPaymentMethod::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "CSS::field_init",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "Text::register_text_style_settings",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "grigora-kit.json",
+      "function_name": "grigora_ste_theme_sitelogowidth_replace",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "AbstractBlock::initialize",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "In_Taxonomy::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "a3-responsive-slider.json",
+      "function_name": "Template_1_Slider_Styles::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "get_meta_value_by_key",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "prepare_object_for_response_core",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "fonto.json",
+      "function_name": "save_fields",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "LP_Admin_Ajax::init",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "WC_Download_Handler::readfile_chunked",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "ProductFilters::get_canonical_url_no_pagination",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "LeadGenAppointmentBookingInfoFields::getFieldTypes",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "FulfillmentsSettings::auto_fulfill_items_on_processing",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "facebook-for-woocommerce.json",
+      "function_name": "Polylang::get_available_languages",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "getid3_lyrics3::getLyrics3Data",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wp-unit-converter.json",
+      "function_name": "Wp_Unit_Converter_i18n::load_plugin_textdomain",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "WC_Privacy_Erasers::download_data_eraser",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jetpack.json",
+      "function_name": "Jetpack_Sitemap_Librarian::query_most_recent_posts",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "LP_Abstract_Settings_Page::admin_page_settings",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "google-site-kit.json",
+      "function_name": "Report_Options::normalize_range",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "amp.json",
+      "function_name": "get_included_dirs",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-paypal-payments.json",
+      "function_name": "RefundPayerFactory::from_paypal_response",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-mailerlite-sign-up-forms.json",
+      "function_name": "AdminNotice::oldWPNotice",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "CommerceOrder::createAcknowledgeOrder",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "where-did-they-go-from-here.json",
+      "function_name": "Metabox_API::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "getID3::GetFileFormatArray",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "LP_REST_Lazy_Load_Controller::register_routes",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "filter_oembed_response_data",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "admin_posts_columns_header",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-legacy-rest-api.json",
+      "function_name": "is_xml_request",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "Price_List::render_image",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "plugnmeet.json",
+      "function_name": "GetAnalyticsDownloadTokenRes::setStatus",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "RegisterUserFormElementor::render",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "masvideos.json",
+      "function_name": "search_movies",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-payments.json",
+      "function_name": "WC_REST_Payments_Refunds_Controller::process_order_refund",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "elementor.json",
+      "function_name": "Embed::get_oembed_data",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "auxin-elements.json",
+      "function_name": "auxin_widget_button_callback",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "facebook-for-woocommerce.json",
+      "function_name": "Connection::get_redirect_url",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "global-payments-woocommerce.json",
+      "function_name": "InitiatePaymentRequest::do_request",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-square.json",
+      "function_name": "String_Utility::str_exists",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "masvideos.json",
+      "function_name": "get_movie_id_by_imdb_id",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "onoffice-for-wp-websites.json",
+      "function_name": "DefaultValueRowSaver::addLocaleToModelForText",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "bs-payone-woocommerce.json",
+      "function_name": "PayPalV2Base::after_payment_successful",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "autoconvert-greeklish-permalinks.json",
+      "function_name": "automatic_taxonomies_option",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "Plugin::layout_builder_single_product",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wp-db-backup.json",
+      "function_name": "stow",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-mercadopago.json",
+      "function_name": "registerDiscountAndCommissionFeesOnCart",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "CustomData::setItemNumber",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "WC_Countries::get_country_locale_field_selectors",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "get_default_page_to_edit",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "contact-form-7.json",
+      "function_name": "wpcf7_tag_generator_textarea",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "pagarme-payments-for-woocommerce.json",
+      "function_name": "Core::scripts_admin",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "DataStore::get_cache_key",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jetpack.json",
+      "function_name": "ajax_url",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "learn_press_is_plugin_install",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "PaymentUtils::get_saved_payment_methods",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "LP_Jwt_Users_V1_Controller::get_quiz_tab_contents",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "WP_Customize_Selective_Refresh::add_dynamic_partials",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "WP_Block_Supports_Custom_CSS_Test::tear_down",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-wishlist.json",
+      "function_name": "LP_Reset_Data::init",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "AbstractProductGrid::get_block_type_attributes",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "LP_Course_Item::get_status_title",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "webp-express.json",
+      "function_name": "ConvertersHelper::getDefaultConverterNames",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "seo-by-rank-math.json",
+      "function_name": "usermeta",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "CoursePriceElementor::render",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "WC_REST_Setting_Options_V2_Controller::filter_setting",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "onoffice-for-wp-websites.json",
+      "function_name": "RewriteRuleBuilder::addDynamicRewriteRulesForAddressDetail",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "Image_Accordion::register_style_content_controls",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-wishlist.json",
+      "function_name": "SingleCourseOfflineTemplate::html_deliver_type",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "rometheme-for-elementor.json",
+      "function_name": "Rkit_TestimonialCarousel::render",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "EventRegistrationSettingFields::getFieldTypes",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "update_attached_file",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "cdekdelivery.json",
+      "function_name": "SettingsController::__invoke",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "on_edit",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "seo-by-rank-math.json",
+      "function_name": "title",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "ShippingController::show_local_pickup_details",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "performance-lab.json",
+      "function_name": "webp_uploads_update_sources",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woo-widget-product-slideshow.json",
+      "function_name": "Admin_Interface::register_popover_scripts",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "WP_Duotone_Gutenberg::enqueue_block_css",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "html_material",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "web-worker-offloading.json",
+      "function_name": "OD_HTML_Tag_Processor::next_token",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "learn_press_get_question_support_answer_options",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-payments.json",
+      "function_name": "WC_Payments_Onboarding_Service::exclude_placeholder_payment_methods",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wp-mail-smtp.json",
+      "function_name": "AlertsTab::display",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "seo-by-rank-math.json",
+      "function_name": "Local_Seo::location_sitemap",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-gateway-stripe.json",
+      "function_name": "is_enabled_at_checkout",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "InstalledExtensions::get_klaviyo_extension_data",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-square.json",
+      "function_name": "Gateway::get_application_id",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-wishlist.json",
+      "function_name": "LP_Abstract_Post_Data::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "ProductsBySlug::get_route_response",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "twentytwenty.json",
+      "function_name": "twentytwenty_block_editor_styles",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-gateway-stripe.json",
+      "function_name": "WC_Stripe_Payment_Gateway::is_no_linked_source_error",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "CheckoutSessions::get_route_post_response",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "LP_Profile::query_orders",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "WP_Theme_JSON_Gutenberg_Test::test_sanitize_for_block_with_style_variations",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "jupiterx_lessc_parser::fixTags",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-wishlist.json",
+      "function_name": "CourseButtonBlockType::get_supports",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "register_block_core_footnotes_post_meta",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-mercadopago.json",
+      "function_name": "StoreTranslations::setPseCheckoutTranslations",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "performance-lab.json",
+      "function_name": "Image_Prioritizer_Video_Tag_Visitor::preload_poster_image",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-paypal-payments.json",
+      "function_name": "Context::is_cart_ajax",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "WP_Customize_Themes_Section::filter_drawer_content_template",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "platnosci-online-blue-media.json",
+      "function_name": "Order_Creator::generate_random_hash",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "plugnmeet.json",
+      "function_name": "CreateAgentDispatchRequest::setRoom",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "google-site-kit.json",
+      "function_name": "Health_Checks::check_service_connectivity",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "AdminEditQizTemplate::html_popup_items_to_select_clone",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jetpack.json",
+      "function_name": "vaultpress_jetpack_more_info",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-square.json",
+      "function_name": "Sync_Page::output",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-wishlist.json",
+      "function_name": "LP_Profile::get_tabs",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "LegacyRestApiStub::register",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "LP_Jwt_Courses_V1_Controller::get_course_need_login_check",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "fonto.json",
+      "function_name": "field_actions",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "amp.json",
+      "function_name": "PairedRouting::filter_request_after_endpoint_extraction",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "AdminOrderItemsTemplate::order_items_layout",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-importer.json",
+      "function_name": "WPURL::replace_base_url",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "vindi-payment-gateway.json",
+      "function_name": "build_product_items_for_bill",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-wishlist.json",
+      "function_name": "lp_course_level",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "list-category-posts.json",
+      "function_name": "create_tax_query",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woo-product-reviews-shortcode.json",
+      "function_name": "_get_available_premium_license",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-legacy-rest-api.json",
+      "function_name": "get_tax_classes_count",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "FacebookWordpressTestBase::getDefaultAAMSettings",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-wishlist.json",
+      "function_name": "LP_Abstract_Object_Data::read_meta",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "elementor.json",
+      "function_name": "Frontend::init",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "webp-express.json",
+      "function_name": "DismissableMessages::processAjaxDismissMessage",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wp-scss.json",
+      "function_name": "libSelectorParse",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "masvideos.json",
+      "function_name": "masvideos_account_videos",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-wishlist.json",
+      "function_name": "LP_User_Item_Course::evaluate_course_by_mark",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "Global_Widget::get_style_depends",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "WP_Theme_JSON_Gutenberg::get_stylesheet",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "default-quantity-for-woocommerce.json",
+      "function_name": "PluginMeta::plugin_meta_links",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "WP_Filesystem_SSH2::chmod",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "LP_User_Item_Course::evaluate_course_by_question",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "google-listings-and-ads.json",
+      "function_name": "AccountService::maybe_add_merchant_center_url",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wp-scss.json",
+      "function_name": "Value::assertSimpleSelector",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "AdminListStudentsEnrolled::enrolled_students_layout",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "plugnmeet.json",
+      "function_name": "ParticipantInfo::setVersion",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "seo-by-rank-math.json",
+      "function_name": "Json_Manager::encode",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-gateway-stripe.json",
+      "function_name": "WC_Stripe_Agentic_Commerce_Feed_Validator::validate_required_fields",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "ProductReviewDate::render",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "WC_REST_System_Status_Tools_V2_Controller::register_routes",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "contact-form-7.json",
+      "function_name": "WPCF7_WelcomePanelColumn_Flamingo::title",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "vk-block-patterns.json",
+      "function_name": "vbp_admin_control",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "plugnmeet.json",
+      "function_name": "Plugnmeet_Public::getJsOptions",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "learn_press_get_notice_dismiss",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "onoffice-for-wp-websites.json",
+      "function_name": "EstateKindTypeReader::read",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wp-super-cache.json",
+      "function_name": "wpsc_delete_post_cache",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "maybe_prevent_deletion_of_post",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "query-monitor.json",
+      "function_name": "QM_Dispatcher_Redirect::filter_wp_redirect",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "grigora-kit.json",
+      "function_name": "grigora_st_install_theme",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "masvideos.json",
+      "function_name": "MasVideos_Widget_Movies_Rating_Filter::get_filtered_movie_count",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "ShopifyPlatform::register_platform",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "ajax_header_remove",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "Summary::render_content",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "google-listings-and-ads.json",
+      "function_name": "AttributesTab::handle_update_product",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "LP_Shortcode_Profile::can_view_profile",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "advanced-custom-fields.json",
+      "function_name": "get_registration_error_state",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "Tests_Blocks_RenderBlockCorePostExcerpt::test_should_render_correct_excerpt",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "elementor.json",
+      "function_name": "Compatibility::save_polylang_meta",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "amp.json",
+      "function_name": "filter_resource_hints_to_remove_emoji_dns_prefetch",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "remove_item",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "Walker::display_element",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "vindi-payment-gateway.json",
+      "function_name": "create_shipping_product",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "Global_Widget::add_render_attributes",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "dropbox-photo-sideloader.json",
+      "function_name": "getRequestToken",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "facebook-for-woocommerce.json",
+      "function_name": "SettingsMoved::possibly_add_or_delete_note",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "facebook-for-woocommerce.json",
+      "function_name": "Response::set_data",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "cmb2.json",
+      "function_name": "maybe_custom_field_object",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "paystack-add-on-for-gravity-forms.json",
+      "function_name": "GFPaystackApi::send_request",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "Controller::get_item_schema",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "WP_Robots_Integration::format_robots",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "blocks-animation.json",
+      "function_name": "Form_Data_Response::set_error",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "performance-lab.json",
+      "function_name": "Embed_Optimizer_Tag_Visitor::reduce_layout_shifts",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "WooCommerce::add_woocommerce_tracker_send_event_wrapper",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "pingback",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "advanced-custom-fields.json",
+      "function_name": "acf_field_image::initialize",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "sodium_crypto_stream",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "plugnmeet.json",
+      "function_name": "EgressInfo::setBackupStorageUsed",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "WC_Embed::get_ratings",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "a3-responsive-slider.json",
+      "function_name": "Card_Skin_Card_Footer::tab_data",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "elementor.json",
+      "function_name": "find_element_recursive",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "set_transient",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "can_finish",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-payments.json",
+      "function_name": "WC_Payments_WooPay_Button_Handler::init",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "define_category_lookup_tables_in_wpdb",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-paypal-payments.json",
+      "function_name": "PaymentMethodsDefinition::group_apms",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "html_price_suffix",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "sydney-toolbox.json",
+      "function_name": "aThemes_Portfolio::prepare_term",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "BusinessImage::getSelf",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "Robots_Txt_Helper::add_sitemap",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "platnosci-online-blue-media.json",
+      "function_name": "Settings_Tabs::get_available_tabs_ids",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "block_core_page_list_get_submenu_visibility",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "EmailColors::get_default_colors",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "wc_terms_and_conditions_checkbox_text",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "a3-responsive-slider.json",
+      "function_name": "Template_2_Global::init_form_fields",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "ParagonIE_Sodium_File::updateHashWithFile",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "save_locations",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-legacy-rest-api.json",
+      "function_name": "WC_API_Products::create_product",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jetpack.json",
+      "function_name": "get_by_likes",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "list-category-posts.json",
+      "function_name": "CatList::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "jupiterx_lessc_parser::interpolation",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "get_sitemap_url",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-gateway-stripe.json",
+      "function_name": "WC_Stripe_Customer::get_payment_methods",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "masvideos.json",
+      "function_name": "masvideos_template_single_video_tabs",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jetpack.json",
+      "function_name": "Jetpack_Comments::comment_form_before",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "QuestionPostFIBModel::get_default_answers",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "amp.json",
+      "function_name": "Parser::fix_newlines",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "wc_get_screen_ids",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "fonto.json",
+      "function_name": "timezone_offset",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "bs-payone-woocommerce.json",
+      "function_name": "is_amazonpay",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "cms-tree-page-view.json",
+      "function_name": "cms_tpv_admin_menu",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-services.json",
+      "function_name": "WC_REST_Connect_Shipping_Label_Controller::__construct",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "unregister_setting",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "aruba-hispeed-cache.json",
+      "function_name": "AbstractPurger::setPurger",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "get_content_html",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "a3-responsive-slider.json",
+      "function_name": "Template_2_Control::subtab_data",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "WC_Admin_List_Table_Products::order_by_global_unique_id_asc_post_clauses",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wp-optimizer.json",
+      "function_name": "get_current_theme",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "plugnmeet.json",
+      "function_name": "SIPHeaderOptions::value",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "pinterest-for-woocommerce.json",
+      "function_name": "RefreshToken::schedule_event",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "CoursePriceBlockType::render_content_block_template",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-mercadopago.json",
+      "function_name": "isAutoUpdate",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-extra-checkout-fields-for-brazil.json",
+      "function_name": "Extra_Checkout_Fields_For_Brazil::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "WP_Widget_Pages::widget",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "Pricing_Table::show_featured_list",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "WP_Site_Health::can_perform_loopback",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "pp-express-wc4jp.json",
+      "function_name": "WC_Gateway_PPEC_Admin_Handler::maybe_reset_api_credentials",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "Vehicle::getVideosMetadata",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "LP_Async_Request::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "register_sidebars",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "contact-form-7.json",
+      "function_name": "WPCF7_Stripe::link",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "pp-express-wc4jp.json",
+      "function_name": "WC_Gateway_PPEC_Checkout_Handler::get_checkout_details",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "Event::normalize",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "Inclusive_Language_Analysis::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wp-scss.json",
+      "function_name": "StylesheetParser::eachRule",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "get_comment_statuses",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "Conflicting_Plugins_Service::detect_conflicting_plugins",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "embed-optimizer.json",
+      "function_name": "OD_URL_Metric_Group_Collection::get_groups_by_lcp_element",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "WP_REST_Font_Families_Controller::get_item_schema",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "advanced-custom-fields.json",
+      "function_name": "acf_admin_field_group::__construct",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "grigora-kit.json",
+      "function_name": "grigora_text_trimmer",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wp-optimizer.json",
+      "function_name": "Mod_Settings::restricted_access",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "check_permission",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "seo-by-rank-math.json",
+      "function_name": "Yoast_HowTo_Converter::convert",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "masvideos.json",
+      "function_name": "masvideos_get_episode_terms",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "WC_Order_Item::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "a3-responsive-slider.json",
+      "function_name": "Template_Widget_Pager::settings_include",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "google-listings-and-ads.json",
+      "function_name": "BudgetRecommendations::find_closest",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "IGUserForIGOnlyAPI::createMessage",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "razorpay-quick-payments.json",
+      "function_name": "Curl::get_expect_header",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "plugnmeet.json",
+      "function_name": "State::value",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "masvideos.json",
+      "function_name": "MasVideos_Structured_Data::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "AbstractRoute::get_response_by_request_method",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "AdCreativeLinkDataImageLayerSpec::getReferencedEnums",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-mercadopago.json",
+      "function_name": "WoocommerceMercadoPago::defineConstants",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "webp-express.json",
+      "function_name": "WCFMPage::addToHead",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-wishlist.json",
+      "function_name": "LP_Jwt_Courses_V1_Controller::register_routes",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "smart-custom-fields.json",
+      "function_name": "Smart_Custom_Fields_Field_Text::get_field",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "CourseAuthorUrlElementor::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-square.json",
+      "function_name": "get_product_id_by_square_id",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "WP_Async_Request::get_query_args",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "seo-by-rank-math.json",
+      "function_name": "set_post_robots",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "get_others_pending",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-services.json",
+      "function_name": "WC_Connect_Settings_Pages::get_sections",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "query-monitor.json",
+      "function_name": "QM_Dispatcher_Redirect::before_output",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "WP_Navigation_Fallback::get_most_recently_published_navigation",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wp-unit-converter.json",
+      "function_name": "Wp_Unit_Converter_Register_Settings::wpuc_options_submenu_page_field_shortcode_render_callback",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "edit-author-slug.json",
+      "function_name": "ba_eas_author_link",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-gateway-stripe.json",
+      "function_name": "WC_REST_Stripe_Locations_Controller::get_all_locations",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "WP_Theme_JSON_Gutenberg_Test::test_get_styles_for_block_handles_block_custom_css",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "pagarme-payments-for-woocommerce.json",
+      "function_name": "Gateway::getElementId",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "google-listings-and-ads.json",
+      "function_name": "MerchantStatuses::product_is_expiring",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "a3-responsive-slider.json",
+      "function_name": "Template_Widget_Control::add_tab",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "Post_Type_Helper::has_archive",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "is_blog_admin",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-payments.json",
+      "function_name": "Compatibility::attach_order_modifier",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "LP_Settings_Emails_Group::get_current_section",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "WC_Order::get_total_qty_refunded",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "File::is_file_size_valid",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-payments.json",
+      "function_name": "WC_Payments_Account::maybe_activate_woopay",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "facebook-for-woocommerce.json",
+      "function_name": "get_file_name",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "UserData::setState",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-wishlist.json",
+      "function_name": "LP_REST_Widgets_Controller::register_routes",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "learn_press_get_checkout_url",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wp-scss.json",
+      "function_name": "StylesheetParser::singleInterpolation",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "cmb2.json",
+      "function_name": "display",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "WC_Widget_Layered_Nav::init_settings",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wp-scss.json",
+      "function_name": "AdaptingLogger::warn",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "onoffice-for-wp-websites.json",
+      "function_name": "RecordManagerInsertGeneric::insertByRow",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "getid3_ogg::OggPageSegmentLength",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "Controller::create_item_permissions_check",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-wishlist.json",
+      "function_name": "LP_Quiz_CURD::delete",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "google-listings-and-ads.json",
+      "function_name": "AttributeMappingDataController::get_schema_properties",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "set_post_value",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "LP_Order::get_guest_customer_name",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "IGUserForIGOnlyAPI::deleteMessengerProfile",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "amp.json",
+      "function_name": "AMP_Imgur_Embed_Handler::filter_embed_oembed_html",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-mercadopago.json",
+      "function_name": "Notices::adminNotice",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "Enabled_Analysis_Features_Repository::get_enabled_features",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "plugnmeet.json",
+      "function_name": "RoomArtifactTokenUsage::setCompletionTokens",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "google-site-kit.json",
+      "function_name": "AMP_Tag::render",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "LP_REST_Users_Controller::register_routes",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "html_modal_students_target",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "WP_Filesystem_FTPext::__destruct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jetpack.json",
+      "function_name": "Jetpack_Infinite_Scroll_Extras::instance",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wp-optimizer.json",
+      "function_name": "get_activity_palette",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "content_url",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-paypal-payments.json",
+      "function_name": "FraudNetAssets::should_load_fraudnet_script",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-wishlist.json",
+      "function_name": "_group_orders",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-wishlist.json",
+      "function_name": "learn_press_register_sidebars",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-square.json",
+      "function_name": "Payment_Gateway_Apple_Pay_API::do_post_parse_response_validation",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "SEO_Links_Repository::get_incoming_link_counts_for_post_ids",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "default-quantity-for-woocommerce.json",
+      "function_name": "Settings::dqfwc_save_taxonomy_custom_meta",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "Application::createDomainReport",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "Form::get_step_fields",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "google-listings-and-ads.json",
+      "function_name": "LocationRatesProcessor::process",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "LP_Page_Controller::is_page_instructors",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woo-postnl.json",
+      "function_name": "Main::init",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "printful-shipping-for-woocommerce.json",
+      "function_name": "Printful_Admin_Settings::save_printful_settings",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "page_created",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "gutenberg_content_guidelines_enqueue_block_registry_scripts",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "printful-shipping-for-woocommerce.json",
+      "function_name": "Printful_Admin_Dashboard::_get_consumer_key",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "yith-woocommerce-ajax-search.json",
+      "function_name": "YIT_Licence::check",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "count_unmigrated",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wp-optimizer.json",
+      "function_name": "QueryCache::commit",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wordpress-develop.json",
+      "function_name": "GenerativeAiResult::toAudioFile",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "plugnmeet.json",
+      "function_name": "LivekitSip::initOnce",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "facebook-for-woocommerce.json",
+      "function_name": "Base::perform_request",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "ProductCatalog::getProductGroups",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "official-facebook-pixel.json",
+      "function_name": "Page::deleteLocations",
+      "source_dir": "failed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "wp-optimizer.json",
+      "function_name": "wp_cache_delete",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "rometheme-for-elementor.json",
+      "function_name": "Rkit_Tabs::register_controls",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-gateway-stripe.json",
+      "function_name": "WC_Stripe_UPE_Payment_Method_Amazon_Pay::create_payment_token_for_user",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woo-product-reviews-shortcode.json",
+      "function_name": "_install_with_new_user",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "query-filter.json",
+      "function_name": "Spyc::_inlineEscape",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-gateway-stripe.json",
+      "function_name": "WC_Stripe_Customer::map_customer_data",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "Post_Type_By_Author::__construct",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "plugnmeet.json",
+      "function_name": "SegmentedFileOutput::setDisableManifest",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "CSSList::isRootList",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "learnpress-wishlist.json",
+      "function_name": "LP_Rest_Material_Controller::material_upload_file",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-payments.json",
+      "function_name": "WC_Payments_In_Person_Payments_Receipts_Service::validate_required_fields",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "plugnmeet.json",
+      "function_name": "RegionInfo::setDistance",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "pagarme-payments-for-woocommerce.json",
+      "function_name": "AbstractBrands::getConfigDataProvider",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "ymc-crossword.json",
+      "function_name": "YmcCrossword_Admin_Variables::get_align_question",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
+    },
+    {
+      "source_file": "woocommerce-gateway-stripe.json",
+      "function_name": "WC_REST_Stripe_Settings_Controller::update_payment_methods_order",
+      "source_dir": "passed",
+      "generator": "vllm_qwen3.6_35b"
     }
-  ]
+  ],
+  "backfill_note": "D-03 backfill 2026-05-25: +550 vLLM-generated CoT inputs (Claude-agent gated)"
 }
