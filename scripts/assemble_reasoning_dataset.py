@@ -250,16 +250,19 @@ def load_replay_examples(target_n):
 
 
 def stratified_split(examples, train_ratio=0.8, seed=42):
-    """Split by domain, random within domains."""
+    """Split stratified by stream (cot/ctf/replay) so train and val preserve the
+    aggregate stream mix. Domain-stratifying instead forced every singleton-domain
+    example into train (max(1, round(0.8*N))), starving val of the most
+    domain-fragmented stream (CoT). Random within stream spreads domains."""
     random.seed(seed)
-    by_domain = defaultdict(list)
+    by_stream = defaultdict(list)
     for ex in examples:
-        domain = (ex.get("metadata") or {}).get("source_file") or "__replay__"
-        by_domain[domain].append(ex)
+        stream = (ex.get("metadata") or {}).get("stream") or "unknown"
+        by_stream[stream].append(ex)
 
     train = []
     val = []
-    for domain, items in sorted(by_domain.items()):
+    for stream, items in sorted(by_stream.items()):
         random.shuffle(items)
         split = max(1, round(len(items) * train_ratio))
         train.extend(items[:split])
