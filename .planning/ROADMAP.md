@@ -151,7 +151,7 @@ Plans:
 Plans:
 - [x] 04-01-PLAN.md — Base-model E_eff profiling script + triage decision script (RoutingCollector hooks, E_eff computation, GATE-02 elimination logic with unit tests)
 - [x] 04-02-PLAN.md — Eval orchestrator + DGX execution (clone wp-bench, create run_eval_triage.py, execute profiling + sequential adapter eval + wp-bench + triage)
-- [ ] 04-03-PLAN.md — Human review checkpoint (inspect profiling E_eff + eval results + wp-bench scores, approve triage survivors for Phase 7)
+- [x] 04-03-PLAN.md — Human review checkpoint (inspect profiling E_eff + eval results + wp-bench scores, approve triage survivors for Phase 7)
 
 ---
 
@@ -519,7 +519,7 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 1. Pipeline Ready | v1.0 | 2/2 | Complete | 2026-03-26 |
 | 2. Dataset Production | v1.0 | 6/7 | Complete | 2026-03-29 |
 | 3. Model Prep and Training | v1.0 | 3/3 | Complete | 2026-03-27 |
-| 4. Evaluation | v1.0 | 2/3 | In Progress|  |
+| 4. Evaluation | v1.0 | 3/3 | Complete   | 2026-05-25 |
 | 4.1. Reasoning Data Generation | v1.2 | 1/3 | In Progress|  |
 | 4.2. Reasoning Dataset Assembly | v1.2 | 0/? | Not started | - |
 | 4.3. Reasoning Fine-Tune | v1.2 | 0/? | Not started | - |
