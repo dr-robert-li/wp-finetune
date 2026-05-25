@@ -205,21 +205,37 @@ def load_model_and_tokenizer(config: dict):
 
 
 def apply_lora(model, config: dict):
-    """Apply LoRA adapter via FastLanguageModel.get_peft_model."""
+    """Apply LoRA adapter via FastLanguageModel.get_peft_model.
+
+    Delta 1 (04.3-01): plumb target_parameters for MoE expert coverage and make
+    modules_to_save optional (omitted in Option B reasoning config, Pitfall 4).
+    """
     from unsloth import FastLanguageModel  # noqa: PLC0415
 
     lora_cfg = config["lora"]
-    model = FastLanguageModel.get_peft_model(
-        model,
+
+    peft_kwargs: dict = dict(
         r=lora_cfg["r"],  # 32
         target_modules=lora_cfg["target_modules"],  # [q_proj, k_proj, v_proj, o_proj, gate_up_proj, down_proj]
         lora_alpha=lora_cfg["lora_alpha"],  # 64
-        lora_dropout=lora_cfg["lora_dropout"],  # 0.05
+        lora_dropout=lora_cfg["lora_dropout"],  # 0.0 (adapter source of truth)
         bias="none",
         use_gradient_checkpointing="unsloth",
-        modules_to_save=lora_cfg["modules_to_save"],  # ["embed_tokens", "lm_head"] — LOCKED
         random_state=42,
     )
+
+    # target_parameters: MoE fused expert tensors (mlp.experts.gate_up_proj / down_proj).
+    # Only pass when present — absent for non-MoE or Phase 3 re-runs.
+    if lora_cfg.get("target_parameters"):
+        peft_kwargs["target_parameters"] = lora_cfg["target_parameters"]
+
+    # modules_to_save: optional — omit for Option B reasoning run (Pitfall 4, 04.3-01).
+    # Embeddings already baked into the merged base; re-tuning on a tiny set drifts
+    # the working <wp_gen>/<wp_judge> special tokens.
+    if lora_cfg.get("modules_to_save"):
+        peft_kwargs["modules_to_save"] = lora_cfg["modules_to_save"]
+
+    model = FastLanguageModel.get_peft_model(model, **peft_kwargs)
     return model
 
 
@@ -375,7 +391,8 @@ def build_trainer(model, tokenizer, train_dataset, val_dataset, config: dict):
             gradient_accumulation_steps=train_cfg["gradient_accumulation_steps"],
             learning_rate=train_cfg["learning_rate"],
             lr_scheduler_type=train_cfg["lr_scheduler_type"],
-            warmup_ratio=train_cfg["warmup_ratio"],
+            warmup_ratio=train_cfg.get("warmup_ratio", 0.0),
+            warmup_steps=train_cfg.get("warmup_steps", 0),  # Delta 2 (04.3-01): absolute warmup_steps; warmup_ratio degenerates at ~88 total steps
             bf16=train_cfg["bf16"],
             fp16=False,
             gradient_checkpointing=train_cfg.get("gradient_checkpointing", False),
@@ -410,14 +427,15 @@ def print_training_summary(config: dict, train_dataset, val_dataset) -> None:
     print(f"  LoRA alpha:   {lora['lora_alpha']}")
     print(f"  Dropout:      {lora['lora_dropout']}")
     print(f"  Target mods:  {lora['target_modules']}")
-    print(f"  Modules save: {lora['modules_to_save']}")
+    print(f"  Modules save: {lora.get('modules_to_save', 'omitted')}")  # optional key (04.3-01)
     print(f"  Epochs:       {train['num_train_epochs']}")
     print(f"  LR:           {train['learning_rate']}")
     print(f"  Batch size:   {train['per_device_train_batch_size']}")
     print(f"  Grad accum:   {train['gradient_accumulation_steps']}")
     print(f"  Eff batch:    {train['per_device_train_batch_size'] * train['gradient_accumulation_steps']}")
     print(f"  LR schedule:  {train['lr_scheduler_type']}")
-    print(f"  Warmup ratio: {train['warmup_ratio']}")
+    print(f"  Warmup ratio: {train.get('warmup_ratio', 'n/a')}")  # optional key (04.3-01)
+    print(f"  Warmup steps: {train.get('warmup_steps', 0)}")  # absolute warmup echo (04.3-01)
     print(f"  BF16:         {train['bf16']}")
     print(f"  Max seq len:  {config['model']['max_seq_length']}")
     print(f"  Train size:   {len(train_dataset)}")
@@ -425,6 +443,46 @@ def print_training_summary(config: dict, train_dataset, val_dataset) -> None:
     print(f"  Output dir:   {train['output_dir']}")
     print(f"  Tracking:     MLflow (local file store)")
     print("=" * 60)
+
+
+# ---------------------------------------------------------------------------
+# Router-freeze assertion (Delta 3, 04.3-01 — RTRN-03)
+# ---------------------------------------------------------------------------
+
+
+def assert_router_frozen_and_report(model) -> None:
+    """Walk named_parameters(), report trainable%, and assert no mlp.gate.* is trainable.
+
+    Called in --dry-run after apply_lora to verify the router is frozen by omission
+    (no mlp.gate.* parameter appears in target_modules or target_parameters).
+
+    Prints:
+        Trainable params: T / N (P%) — where P is a single-digit percent
+        Router-freeze check PASSED - no mlp.gate.* parameter is trainable (RTRN-03)
+    Raises AssertionError (prefixed "ROUTER NOT FROZEN") if any mlp.gate.* is trainable.
+    """
+    import re  # noqa: PLC0415
+
+    total_params = 0
+    trainable_params = 0
+    trainable_router: list[str] = []
+
+    for name, param in model.named_parameters():
+        total_params += param.numel()
+        if param.requires_grad:
+            trainable_params += param.numel()
+            # Qwen3MoeSparseMoeBlock gating linear: mlp.gate.weight / mlp.gate.bias
+            if re.search(r"mlp\.gate\.", name):
+                trainable_router.append(name)
+
+    pct = 100.0 * trainable_params / total_params if total_params > 0 else 0.0
+    print(f"Trainable params: {trainable_params:,} / {total_params:,} ({pct:.2f}%)")
+
+    assert not trainable_router, (
+        f"ROUTER NOT FROZEN — the following mlp.gate.* parameters are trainable "
+        f"(RTRN-03 violation): {trainable_router}"
+    )
+    print("Router-freeze check PASSED - no mlp.gate.* parameter is trainable (RTRN-03)")
 
 
 # ---------------------------------------------------------------------------
@@ -468,6 +526,8 @@ def train(args: argparse.Namespace) -> None:
     print_training_summary(config, train_dataset, val_dataset)
 
     if args.dry_run:
+        # Delta 3 (04.3-01): router-freeze walker — call AFTER apply_lora (RTRN-03)
+        assert_router_frozen_and_report(model)
         print("\nDRY RUN MODE — skipping training.")
         return
 
