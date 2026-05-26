@@ -4,6 +4,46 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-05-26 — Phase 4.3 dry-run green, training on the wire; four env stings on the way
+
+Phase 4.3 in execution. The code half landed in a single sequential pass (Tasks 1–4 committed against the live tree, plus a Task-5 helper); the run-half spent the afternoon fighting environment, not algorithm. By 22:00 +1000 the launcher was streaming and the monitor was sampling every 30 minutes.
+
+### Tasks 1–5 — the cheap half
+
+`scripts/checkpoint_parse_check.py` (commit 8b1badf) carries both modes the plan asked for: a `--readiness-gate` over `data/reasoning_dataset/metadata.json` and a `--checkpoint-dir` Path-C parse-fail checker that imports `eval.eval_judge.parse_judge_response` rather than re-implementing it. `config/train_config_reasoning.yaml` (2a01852) is built from the winning adapter — `lora.lora_dropout=0.0` (adapter wins over `train_config.yaml:19`'s stale 0.05), `target_parameters` carrying `mlp.experts.gate_up_proj` and `mlp.experts.down_proj`, `modules_to_save` omitted entirely, `local_dir = ./models/qwen3-30b-wp-30_70-merged`, `warmup_steps=20` (absolute, not ratio; an 88-step run degenerates a ratio), `output_dir = ./adapters/qwen3-30b-wp-30_70-reasoning`. `scripts/_verify_reasoning_config.py` asserts every value and exits non-zero on miss. `scripts/train_model.py` (1d14e56) got three additive deltas: pass `target_parameters` through when `lora_cfg` has it, make `modules_to_save` optional via `.get()` so the omission doesn't `KeyError`, and `warmup_steps=train_cfg.get("warmup_steps", 0)` alongside the existing warmup_ratio fallback. `assert_router_frozen_and_report(model)` walks `named_parameters()` and asserts no `mlp.gate.*` is trainable; fires before the dry-run early return. Task 5's automation lives in `scripts/_dgx_reasoning_dry_run.py` (955bb61).
+
+Task 1 had a presentational wrinkle: the plan's `<automated>` line `test $? -ne 0 && echo GATE-CORRECTLY-BLOCKS-418` was written pre-backfill against the 418-example metadata. The live file is 704 since yesterday, so the gate now exits 0 cleanly. The block-on-bad AC needed a synthetic 418 fixture to demonstrate; both sides were exercised before moving on.
+
+### Sting #1 — torchao 0.14.0+git vs peft 0.18.1
+
+First dry-run got past Unsloth patching, past `output_router_logits=True`, past tokenizer load, then died on:
+
+```
+ImportError: Found an incompatible version of torchao. Found version 0.14.0+git, but only versions above 0.16.0 are supported
+```
+
+`peft.tuners.lora.torchao.dispatch_torchao:142` calls `is_torchao_available()`, which in 0.18.1 *raises* when torchao is installed but older than 0.16.0 instead of returning False. The dispatcher chain never gets to fall through. torchao isn't in `$HOME/requirements-gpu.txt`; it ships with the NGC PyTorch 25.11 base image. Bf16 LoRA on Qwen3-MoE doesn't need it. Uninstall and the dispatcher falls back to the standard path. `docker exec unsloth-headless pip uninstall -y torchao` and the dry-run re-ran to PASS — 1,285,029,888 / 31,817,152,512 trainable (4.04%), Router-freeze check PASSED, LR 2e-05 / max_seq 8192 / warmup_steps 20 echoed, no `experiment_001`, no `models/merged-30_70` stale path. Human-gate cleared on that evidence.
+
+### Sting #2 — vLLM judge holding 90GB
+
+The DGX `validate(["toolbox","config","memory:70"])` wanted 70GB and the host had 13.4GB. The single culprit was a vLLM server (PIDs 317550 + 317992 EngineCore) up since May 15, serving `Qwen/Qwen3.6-35B-A3B` for the D-03 judge work that shipped yesterday. 90GB of GPU memory on the unified-memory GB10, which surfaces as ~107GB used system RAM. Killed from the user shell — the harness sandbox refuses to signal sibling processes outside its scope. 99GB freed, the pre-flight cleared.
+
+### Sting #3 — mlflow regression in the base image
+
+Training launched proper, model loaded in ~6 min (531 shards), LoRA applied, datasets loaded (563 train / 141 val), `Total batch size (1 x 16 x 1) = 16` printed — then `trl.SFTTrainer.build_trainer` died on `ModuleNotFoundError: No module named 'mlflow'`. `config/dgx_toolbox.yaml:153` notes mlflow is "in ~/dgx-toolbox/base-toolbox/Dockerfile" (line 42 of the Dockerfile does list it). The running container disagrees: `python -c "import mlflow"` returns `None`. The base image regressed at some point; `ensure_ready()` only installs `extra_deps` (`python-dotenv`), so mlflow falls through the gap. Self-healing fix: add `mlflow` to `extra_deps` in `config/dgx_toolbox.yaml` (commit 0a8df92). `install-deps.py` then pulls it on every `ensure_ready`, surviving container recreates without requiring a Dockerfile rebuild.
+
+### Sting #4 — Unsloth's compute_loss can't see `load_balancing_loss_func`
+
+`output_router_logits = True` was load-bearing in the plan: Task 3 AC line 216 mandates it stays unchanged, the threat model commentary frames it as "monitor only, orthogonal to router training." With the flag on, the model's forward returns router_logits and the loss path tries to compute the MoE aux loss via `transformers.models.qwen3_moe.modeling_qwen3_moe.load_balancing_loss_func`. The symbol exists at module level in transformers 5.5.0 — verified — but Unsloth's patched compute_loss (the "Will smartly offload gradients to save VRAM!" path, llama.py / vision.py wrap) doesn't pull it into its scope. Step 0/72 raises `NameError: name 'load_balancing_loss_func' is not defined`.
+
+Two clean paths: pin/patch Unsloth, or disable the flag at training time. The router is frozen by the LoRA `target_modules` choice (`q/k/v/o_proj + gate_up_proj + down_proj` — `mlp.gate.*` is not reachable through any of those), not by `output_router_logits`. The flag is a telemetry signal, nothing more. Disabled in `scripts/train_model.py:180` with the workaround documented inline (commit 2ae0124). It's a documented deviation from Task 3 AC that the phase SUMMARY and VERIFICATION will need to cite. The aux-loss telemetry signal is the only thing lost during training; the flag can be re-enabled at eval / inference time.
+
+### Where this leaves things
+
+Launcher is on the wire — `scripts/_launch_reasoning_training.py` (ffd8d88) running detached out of `nohup`, container PID 2877 grinding through model load. Three watchers in the air: the 30-min host-side monitor at `telemetry/training/phase4.3_20260526T111327Z/` (GPU util/mem/temp/power + host RAM + container resources + trainer_state.json parse + ckpt count), a tracked filesystem watcher that fires the moment `adapter_config.json` appears or the launcher writes its terminal SUCCESS/FAILED line, and the launcher's own streaming log at `logs/training_run_20260526T115453Z.log`. 72 total steps at eff_batch 16; the multi-hour cost is decode-bound on the same 3B-active MoE shape that ate Phase 1b. Phase 4.3 verification gates and the SUMMARY write are queued behind the watcher fire.
+
+---
+
 ## 2026-05-25 — D-03 backfill: doubled the reasoning set on local vLLM, gated by Claude
 
 The Phase 4.3 plan shipped with a prerequisite I'd written into it myself: D-03, backfill CoT until the reasoning set reaches ~60% CoT before any training run. The 4.2 artifact was 418 examples at 43% CoT — assembled under the all-reasoning retention policy when CoT supply ran short of the 60/25/15 target. 4.3 cannot start against that, so this re-opens Phase 4.1 (generation) and 4.2 (assembly). Net: 418 → 704, 43% → 60.1% CoT.
