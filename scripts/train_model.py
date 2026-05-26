@@ -175,10 +175,16 @@ def load_model_and_tokenizer(config: dict):
         dtype=torch.bfloat16,
     )
 
-    # Enable MoE load balancing loss (TRNG-04) — set on config after loading
-    # (model_kwargs doesn't work with Unsloth's FastLanguageModel wrapper)
-    model.config.output_router_logits = True
-    print("  output_router_logits = True (MoE load balancing monitoring enabled)")
+    # MoE load balancing loss (TRNG-04) — disabled at training time as an env
+    # workaround: Unsloth's patched compute_loss ("smartly offload gradients")
+    # raises NameError: 'load_balancing_loss_func' is not defined when this is
+    # True (the function exists at transformers.models.qwen3_moe module level
+    # but isn't imported into Unsloth's patched scope). Router is frozen by
+    # LoRA target_modules choice (not by this flag), so router-training risk
+    # is unchanged; only the aux-loss telemetry signal is lost during training.
+    # Re-enable at eval/inference time if needed. See Phase 4.3 SUMMARY.md.
+    model.config.output_router_logits = False
+    print("  output_router_logits = False (env workaround — Unsloth patched compute_loss NameError)")
 
     # Load extended tokenizer (with <wp_gen> and <wp_judge>)
     from transformers import AutoTokenizer  # noqa: PLC0415
