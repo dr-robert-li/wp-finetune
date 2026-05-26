@@ -156,3 +156,4 @@ status_artifacts:
 extra_deps:
   - python-dotenv
   - mlflow
+  - openai
