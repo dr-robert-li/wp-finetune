@@ -150,6 +150,9 @@ status_artifacts:
     type: file
 
 # Extra pip packages to install in containers (beyond pinned_versions and base-toolbox)
-# NOTE: pyyaml, scipy, mlflow, peft, hf_transfer are in ~/dgx-toolbox/base-toolbox/Dockerfile
+# NOTE: pyyaml, scipy, peft, hf_transfer are in ~/dgx-toolbox/base-toolbox/Dockerfile.
+# mlflow WAS in the base image but is missing from the current unsloth-headless
+# container — added to extra_deps so ensure_ready() installs it via install-deps.py.
 extra_deps:
   - python-dotenv
+  - mlflow
