@@ -256,6 +256,9 @@ Plans:
   - Invokes `wp-finetune:review-telemetry` for consolidated eval summary
 **Plans**: 1 plan
 
+Plans:
+- [ ] 04.4-01-PLAN.md — Reasoning eval + Unsloth merge + wp-bench HARD gate + REVL-01..08 gates + staging-then-promote (Path 1: Unsloth merge → vLLM bf16; 14 tasks across waves W0 smoke → W1 staging merge → W2 sequential eval gates → W4 REVL post-processing → W5 human checkpoint → W6 promote)
+
 ---
 
 ### Phase 5: Packaging and Deployment (DEFERRED → v3.0 Phase 15)
