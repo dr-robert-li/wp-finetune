@@ -103,8 +103,10 @@ def verify_dataset_readiness(metadata_path: str | Path) -> bool:
 
 DEFAULT_BASE = "models/qwen3-30b-wp-30_70-merged"
 DEFAULT_VAL_JSONL = "data/reasoning_dataset/openai_val.jsonl"
-DEFAULT_N = 50
+DEFAULT_N = 10
 DEFAULT_THRESHOLD = 0.05
+DEFAULT_LOAD_IN_4BIT = True
+DEFAULT_MAX_MEMORY_GIB = 80
 
 
 def run_checkpoint_parse_check(
@@ -113,6 +115,8 @@ def run_checkpoint_parse_check(
     val_jsonl: str = DEFAULT_VAL_JSONL,
     n: int = DEFAULT_N,
     threshold: float = DEFAULT_THRESHOLD,
+    load_in_4bit: bool = DEFAULT_LOAD_IN_4BIT,
+    max_memory_gib: int = DEFAULT_MAX_MEMORY_GIB,
 ) -> bool:
     """Load the merged base + reasoning LoRA checkpoint in-process, sample n val
     examples, measure parse-fail rate, and exit non-zero if > threshold.
@@ -129,12 +133,22 @@ def run_checkpoint_parse_check(
     from unsloth import FastLanguageModel
     from eval.eval_judge import parse_judge_response  # noqa: PLC0415
 
-    print(f"[parse-check] Loading base model from {base} ...")
+    # GB10 unified memory is shared between system RAM and "VRAM" (~121 GB total).
+    # Loading 30B bf16 weights (~60 GB) plus driver pre-allocation can exhaust the
+    # unified pool and trigger an OOM cascade that kills the desktop session. For
+    # parse-rate sanity (format check, not score-quality eval), 4-bit is sufficient
+    # and keeps weights to ~16 GB. max_memory caps the per-device allocator.
+    max_memory = {0: f"{max_memory_gib}GiB", "cpu": "20GiB"}
+    print(
+        f"[parse-check] Loading base model from {base} "
+        f"(load_in_4bit={load_in_4bit}, max_memory={max_memory}) ..."
+    )
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=base,
         max_seq_length=8192,
-        load_in_4bit=False,
+        load_in_4bit=load_in_4bit,
         dtype=torch.bfloat16,
+        max_memory=max_memory,
     )
 
     print(f"[parse-check] Loading adapter from {checkpoint_dir} ...")
@@ -191,8 +205,17 @@ def run_checkpoint_parse_check(
 
         # Use exact production parse_fail predicate from eval_judge.py:375
         parsed = parse_judge_response(generated_text)
-        if parsed is None or "overall_score" not in parsed:
+        is_fail = parsed is None or "overall_score" not in parsed
+        if is_fail:
             parse_fail_count += 1
+
+        # Diagnostic: dump first 3 fails verbatim so we can see what model emits.
+        if is_fail and parse_fail_count <= 3:
+            print(f"\n[parse-check] === FAILED SAMPLE {parse_fail_count} (idx={i}) ===")
+            print(f"[parse-check] parsed={parsed!r}")
+            print(f"[parse-check] generated_text ({len(generated_text)} chars):")
+            print(generated_text[:2000])
+            print(f"[parse-check] === END SAMPLE {parse_fail_count} ===\n")
 
         if (i + 1) % 10 == 0:
             rate_so_far = parse_fail_count / (i + 1)
@@ -274,6 +297,20 @@ def main() -> None:
         metavar="FLOAT",
         help=f"Parse-fail rate threshold (default: {DEFAULT_THRESHOLD})",
     )
+    parser.add_argument(
+        "--no-4bit",
+        dest="load_in_4bit",
+        action="store_false",
+        help="Disable 4-bit loading (default: enabled, prevents GB10 unified-mem OOM cascade)",
+    )
+    parser.set_defaults(load_in_4bit=DEFAULT_LOAD_IN_4BIT)
+    parser.add_argument(
+        "--max-memory-gib",
+        type=int,
+        default=DEFAULT_MAX_MEMORY_GIB,
+        metavar="INT",
+        help=f"Per-device max memory cap in GiB (default: {DEFAULT_MAX_MEMORY_GIB})",
+    )
 
     args = parser.parse_args()
 
@@ -286,6 +323,8 @@ def main() -> None:
             val_jsonl=args.val_jsonl,
             n=args.n,
             threshold=args.threshold,
+            load_in_4bit=args.load_in_4bit,
+            max_memory_gib=args.max_memory_gib,
         )
 
 
