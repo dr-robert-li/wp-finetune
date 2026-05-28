@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: executing
-stopped_at: "Phase 4.2 COMPLETE — gate passed, vendor/truncation filter applied, 418-example dataset committed. Next: plan Phase 4.3 (reasoning fine-tune)."
-last_updated: "2026-05-25T20:19:46.833Z"
+stopped_at: Phase 4.4 context gathered
+last_updated: "2026-05-28T03:58:43.962Z"
 progress:
-  total_phases: 8
-  completed_phases: 6
+  total_phases: 9
+  completed_phases: 7
   total_plans: 26
-  completed_plans: 24
-  percent: 75
+  completed_plans: 25
+  percent: 78
 ---
 
 # Project State
@@ -20,16 +20,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 04.3 — reasoning-fine-tune-inserted
+**Current focus:** Phase 04.4 — reasoning-eval-and-merge (ready to plan)
 
 ## Current Position
 
-Phase: 04.3 (reasoning-fine-tune-inserted) — EXECUTING
-Plan: 1 of 1
-Next phase: 4.3 (Reasoning Fine-Tune) — ready to plan
-Status: Executing Phase 04.3
+Phase: 04.3 (reasoning-fine-tune-inserted) — COMPLETE (with RTRN-04 caveat carried to 4.4)
+Plan: 1 of 1 — SUMMARY shipped 2026-05-28
+Next phase: 4.4 (Reasoning Eval + Merge) — ready to plan; must solve eval-architecture blocker (vLLM cannot serve target_parameters MoE LoRA; HF + bnb 4-bit collapses MoE router; bf16 OOMs on GB10)
+Status: Phase 04.3 complete; ready for Phase 04.4 planning
 
-Progress: [█████████░] 92%
+Progress: [██████████] 96%
 
 ## Performance Metrics
 
@@ -108,8 +108,8 @@ Recent decisions affecting current work:
 ### Blockers/Concerns
 
 - [Phase 4.2]: COMPLETE — gate passed, 418-example dataset shipped to data/reasoning_dataset/
-- [Phase 4.3]: ⚠️ Dataset is SMALL (418 total / 341 train) for a reasoning finetune — all 3 external review models agreed. Non-blocking but a real 4.3 readiness risk: use conservative LR (≤2e-5 per roadmap), strong val monitoring, consider early-stop; weigh CoT backfill if val unstable.
-- [Phase 4.3]: Unsloth PEFT stacking on Qwen3 MoE unresolved — Option A vs B needs a fresh Unsloth docs fetch before training begins
+- [Phase 4.3]: COMPLETE — training loss 1.22→0.86, ckpt-72 shipped. RTRN-04 post-hoc gate INVALID at 4-bit on Qwen3-MoE (router-quant collapse → degenerate output regardless of adapter). Training-loss curve is the success signal.
+- [Phase 4.4 BLOCKER]: ⚠️ Eval architecture for MoE-expert LoRA on GB10 unresolved. vLLM cannot serve `target_parameters` MoE-expert LoRA (module-level only); HF + bnb 4-bit collapses MoE routing; HF bf16 OOMs (60+ GiB weights + driver overhead vs 121 GiB unified). Three candidate paths: (1) Unsloth FastLanguageModel bf16 in-process with strict memory mgmt (kill Chromium, floor 70 GiB), (2) Unsloth merge → bf16 vLLM serve (verify target_parameters merge support), (3) GGUF Q8 via llama.cpp. Decision belongs at 4.4 planning.
 - [Phase 7]: Phase 4.4 (v1.2 complete — adapter merged) must complete before Phase 7 can execute
 - [Phase 6]: dgx-toolbox Phase 13 (telemetry/ package) must be complete before Phase 6 can execute
 - [Phase 8]: Phase 7 (router profiling + protected expert set) must complete before Phase 8 (reward infrastructure) begins
@@ -136,9 +136,10 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-05-25T20:19:40.306Z
-Stopped at: Phase 4.2 COMPLETE — gate passed, vendor/truncation filter applied, 418-example dataset committed. Next: plan Phase 4.3 (reasoning fine-tune).
-Resume file: None
+Last session: 2026-05-28T03:58:43.940Z
+Stopped at: Phase 4.4 context gathered
+Resume file: .planning/phases/04.4-reasoning-eval-adapter-merge-inserted/04.4-CONTEXT.md
+Next: plan Phase 4.4 (reasoning-eval-and-merge) — must resolve eval-arch decision before any rigorous eval can run.
 
 ### Phase 4.2 progress (2026-05-21)
 
