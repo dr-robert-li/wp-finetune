@@ -57,6 +57,9 @@ def _extract_php_code(text: str) -> str:
     Handles fenced code blocks (```php ... ``` or ``` ... ```) or
     falls back to returning the full text.
     """
+    # Strip <think>...</think> blocks (Qwen3 reasoning mode)
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+
     # Try ```php fenced block
     match = re.search(r"```php\s*\n(.*?)```", text, re.DOTALL)
     if match:
@@ -267,6 +270,7 @@ def run_eval(
     limit: Optional[int] = None,
     output_path: str = "output/eval_gen_results.json",
     model: Optional[str] = None,
+    base_url: Optional[str] = None,
 ) -> dict:
     """Run 9-dimension rubric evaluation on wp_gen examples.
 
@@ -283,8 +287,11 @@ def run_eval(
         dict with overall_mean, overall_median, grade_distribution,
         per_dimension metrics, floor_rules, and backward-compat rates.
     """
-    dgx = _get_dgx()
-    client = openai.OpenAI(base_url=dgx.vllm_endpoint(), api_key="none")
+    import os
+    resolved_base_url = base_url or os.environ.get("EVAL_GEN_BASE_URL")
+    if not resolved_base_url:
+        resolved_base_url = _get_dgx().vllm_endpoint()
+    client = openai.OpenAI(base_url=resolved_base_url, api_key="none")
     resolved_model = model or _detect_model(client)
 
     # Load and filter wp_gen examples
