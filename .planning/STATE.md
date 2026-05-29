@@ -136,8 +136,15 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-05-30T00:30:00.000Z
-Stopped at: Phase 4.4 W0-03 SMOKE GATE PASS. Both merges done + reasoning certified + smoke passed. PR1 (sentinel guard) + PR2 (dual-stage smoke) COMPLETE. Next: PR3 (W5-01 stratifier B1-B4) then W1-W6 eval cascade (REVL-01..08).
+Last session: 2026-05-30T06:30:00.000Z
+Stopped at: W1-W6 cascade BLOCKED on eval-harness prose compat (2 layers). Findings + council direction in EVAL-HARNESS-COMPAT.md. Next: resolve Blocker-2 dim-map → build eval/output_parsers.py → preflight → orchestrator → cascade. Merges + smoke all done/certified.
+
+### Session 2026-05-30 W1-W6 cascade attempt → eval-harness compat blocker
+
+- Attempted W1-W6 eval cascade kickoff (user: full-set + wp-bench). W1 merge already done (reasoning-merged certified). W2-02 orchestrator + serve_reasoning + REVL-03/06/07/08 NOT built (planned). eval_gen/eval_judge exist (Phase-4); run_eval_triage.py (53K) reusable machinery; wp-bench dir+config present.
+- **BLOCKER 1 (council ACKED)**: eval_judge.parse_judge_response JSON-only; reasoning model emits prose → REVL-01 Spearman uncomputable both sides (model + GT). eval_gen <think> contamination risk. Council binding: Option B (output_format json|prose|auto flag, shared eval/output_parsers.py), two-GT (rubric_scorer=canonical/REVL-01A HARD; teacher-target=diagnostic/REVL-01B SOFT), per-row provenance, no silent fallback, parser-coverage preflight HARD gate. GRPO reward MUST ground in rubric_scorer (not assistant targets).
+- **BLOCKER 2 (NEW, needs council resolution)**: dimension-taxonomy mismatch. Reasoning prose 9-dim rubric {wpcs, security, sql, perf, wp_api, i18n, a11y, code_quality, dependency_integrity} ≠ eval_judge {D1-D7 + D8_error_handling, D9_code_structure}. 7/9 clean; 2 diverge (Code Quality, Dependency Integrity vs D8, D9). Affects parser dim-map + REVL-01 per-dim Spearman. Recommended: overall-Spearman HARD + 7-dim-clean per-dim SOFT. See EVAL-HARNESS-COMPAT.md.
+- NO eval-harness code touched yet (shared Phase-4 infra; dim-map unresolved). Stopped before building to avoid silent-failure on wrong dim-map.
 
 ### Session 2026-05-29/30 PR1+PR2 + W0-03 smoke PASS
 
