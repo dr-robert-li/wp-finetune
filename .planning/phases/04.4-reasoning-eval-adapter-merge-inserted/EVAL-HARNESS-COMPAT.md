@@ -70,6 +70,29 @@ signal; per-dim on 7 clean dims is diagnostic. Avoids forcing invalid 2-dim mapp
 5. Build W2-02 orchestrator (D-03 baseline re-eval → REVL-02 → REVL-01A/B → REVL-04).
 6. Launch W1-W6 cascade.
 
+## Blocker 3 — prose has no `overall_score` (HARD-gate derivation, NEEDS council)
+
+REVL-01A HARD = Spearman(model_overall vs rubric_scorer_overall). But reasoning
+PROSE output emits 8 per-dimension `score N/10` lines and NO overall score
+(CtF-JSON output DOES carry overall_score). So for prose rows, `model_overall`
+must be DERIVED from the per-dim scores.
+
+Options for prose model_overall:
+1. **Weighted mean** of model's parsed dim scores via `DIMENSION_WEIGHTS`
+   (symmetric with how rubric_scorer computes its overall) — RECOMMENDED.
+2. Simple mean of the 6 clean dims.
+3. Skip prose rows from overall Spearman (only CtF-json rows contribute) — loses
+   most of the signal (85 prose vs 36 json).
+
+Recommendation: (1) weighted mean — matches rubric aggregation, uses all emitted
+dims, keeps full sample. Provenance: tag `model_overall_source: prose_weighted_mean
+| json_overall`. CtF-json rows use their emitted overall_score directly.
+
+### Validation already done (parsers, Blocker 1+2)
+- eval/output_parsers.py: model output 5/5 parse (4 prose + 1 json); teacher GT
+  111/121 (108 json trailing-block + 3 prose); gen code extracts clean. 12 tests.
+- Committed 0b14735. dim_map.json + parsers are the validated core.
+
 ## Downstream impact (why surfacing, not patching)
 eval_judge/eval_gen feed Phase-4 triage, Phase-7 MoE-Sieve eval, Phase-10/11 GRPO
 reward. If GRPO reward grounds in parse_judge_response, the format-detection +
