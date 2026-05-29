@@ -266,7 +266,20 @@ def run_eval(
     output_path: str = "output/eval_judge_results.json",
     model: Optional[str] = None,
     base_url: Optional[str] = None,
+    output_format: str = "auto",
+    gt_mode: str = "dataset",
 ) -> dict:
+    """...
+
+    output_format: 'json'|'prose'|'auto' — how to parse MODEL judge output
+        (council Option B). 'auto' = JSON-first, prose fallback. Reasoning v1.2
+        emits prose; Phase-4 JSON callers use 'auto' (unaffected).
+    gt_mode: 'dataset' (legacy: dataset assistant-target GT, Phase-4 behavior) or
+        'calibrated_canonical' (Phase-4.4 REVL-01: canonical GT = rubric
+        calibrated_overall HARD + dataset teacher as SOFT diagnostic; per-dim
+        Spearman restricted to dim_map clean set; rows missing calibrated_overall
+        EXCLUDED + counted, no raw-rubric fallback; GT-variance preflight).
+    """
     """Compute per-dimension Spearman correlation between model judge scores
     and ground truth scores from the test dataset.
 
@@ -293,6 +306,16 @@ def run_eval(
     Returns:
         dict with overall_spearman, per_dimension, and backward-compat fields.
     """
+    if output_format not in ("json", "prose", "auto"):
+        raise ValueError(f"output_format must be json|prose|auto, got {output_format!r}")
+    if gt_mode not in ("dataset", "calibrated_canonical"):
+        raise ValueError(f"gt_mode must be dataset|calibrated_canonical, got {gt_mode!r}")
+    if gt_mode == "calibrated_canonical":
+        return _run_eval_reasoning(
+            dataset_path=dataset_path, limit=limit, output_path=output_path,
+            model=model, base_url=base_url, output_format=output_format,
+        )
+
     import os
     resolved_base_url = base_url or os.environ.get("EVAL_JUDGE_BASE_URL")
     if not resolved_base_url:
@@ -539,6 +562,194 @@ def run_eval(
     # Print human-readable correlation table to stderr
     _print_correlation_table(summary)
 
+    return summary
+
+
+def _derive_prose_overall(dim_scores_0_100: dict, weights: dict) -> Optional[float]:
+    """Weighted mean over emitted+mapped dims, weights renormalized over present dims.
+
+    Symmetric with rubric aggregation (council Option 1). dim_scores are 0-100.
+    Returns None if no weighted dims present.
+    """
+    num = 0.0
+    den = 0.0
+    for dim, score in dim_scores_0_100.items():
+        w = weights.get(dim)
+        if w is not None:
+            num += w * score
+            den += w
+    return (num / den) if den > 0 else None
+
+
+def _gt_variance_ok(values: list[float], min_stdev: float, min_unique: int) -> tuple[bool, dict]:
+    """REVL-01A guard: refuse degenerate (rank-collapsed) canonical GT."""
+    import statistics
+    if len(values) < 2:
+        return False, {"reason": "n<2", "n": len(values)}
+    stdev = statistics.pstdev(values)
+    uniq = len(set(round(v, 3) for v in values))
+    ok = stdev >= min_stdev and uniq >= min_unique
+    return ok, {"stdev": round(stdev, 3), "unique": uniq,
+                "min_stdev": min_stdev, "min_unique": min_unique, "ok": ok}
+
+
+def _run_eval_reasoning(
+    dataset_path: str,
+    limit: Optional[int],
+    output_path: str,
+    model: Optional[str],
+    base_url: Optional[str],
+    output_format: str,
+) -> dict:
+    """REVL-01 calibrated-canonical eval path (Phase 4.4, council two-GT/Option 3).
+
+    Canonical GT = rubric calibrated_overall (HARD, REVL-01A overall Spearman).
+    Teacher GT = dataset assistant-target (SOFT diagnostic, REVL-01B).
+    Per-dim Spearman = 6 clean dims only, RAW rubric per-dim basis (calibration is
+    overall-only). Rows missing calibrated_overall EXCLUDED + counted (no raw
+    fallback). GT-variance preflight on canonical GT before computing REVL-01A.
+    """
+    import os
+    from eval.output_parsers import parse_judge_scores, load_dim_map
+
+    dm = load_dim_map()
+    clean_dims = set(v for k, v in dm["clean_mapped_dims"].items() if not k.startswith("_"))
+    weights = {k: v for k, v in dm["dimension_weights"].items() if not k.startswith("_")}
+    pf = dm["gt_variance_preflight"]
+
+    resolved_base_url = base_url or os.environ.get("EVAL_JUDGE_BASE_URL")
+    if not resolved_base_url:
+        resolved_base_url = _get_dgx().vllm_endpoint()
+    client = openai.OpenAI(base_url=resolved_base_url, api_key="none")
+    resolved_model = model or _detect_model(client)
+
+    examples = []
+    with Path(dataset_path).open() as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            ex = json.loads(line)
+            um = next((m["content"] for m in ex.get("messages", []) if m["role"] == "user"), "")
+            if um.startswith("<wp_judge>"):
+                examples.append(ex)
+    if limit is not None:
+        examples = examples[:limit]
+    print(f"[REVL-01] {len(examples)} judge examples via {resolved_base_url} "
+          f"(model={resolved_model}, fmt={output_format}, gt=calibrated_canonical)",
+          file=sys.stderr)
+
+    overall_model: list[float] = []
+    overall_gt_canon: list[float] = []     # calibrated rubric (HARD)
+    overall_model_b: list[float] = []
+    overall_gt_teacher: list[float] = []   # dataset teacher (SOFT)
+    dim_model: dict[str, list[float]] = {d: [] for d in clean_dims}
+    dim_gt: dict[str, list[float]] = {d: [] for d in clean_dims}
+    pair_records: list[dict] = []
+    excluded = {"parse_fail": 0, "no_calibrated_gt": 0, "api_error": 0}
+
+    for i, ex in enumerate(examples):
+        msgs = ex["messages"]
+        user_msgs = [m for m in msgs if m["role"] == "user"]
+        user_text = user_msgs[0]["content"] if user_msgs else ""
+        code = _extract_code_from_judge_prompt(user_text)
+        try:
+            resp = client.chat.completions.create(
+                model=resolved_model, messages=user_msgs, max_tokens=1024, temperature=0.0)
+            generated = resp.choices[0].message.content or ""
+        except Exception as e:  # noqa: BLE001
+            excluded["api_error"] += 1
+            continue
+
+        parsed = parse_judge_scores(generated, output_format)
+        if parsed is None or not parsed.get("dimension_scores"):
+            excluded["parse_fail"] += 1
+            continue
+        parse_mode = parsed["_format"]
+        model_dims = parsed["dimension_scores"]  # internal keys, 0-100
+
+        # model_overall: json emits overall; prose -> weighted-mean derivation
+        if "overall" in parsed:
+            model_overall = float(parsed["overall"])
+            derived = False
+        else:
+            mo = _derive_prose_overall(model_dims, weights)
+            if mo is None:
+                excluded["parse_fail"] += 1
+                continue
+            model_overall = mo
+            derived = True
+
+        # Canonical GT = rubric calibrated_overall. NO raw fallback.
+        rub = score_code(code)
+        if rub.calibrated_overall is None:
+            excluded["no_calibrated_gt"] += 1
+            continue
+        gt_canon = float(rub.calibrated_overall)
+        # raw rubric per-dim (0-10 -> 0-100) for SOFT per-dim
+        rub_dims_100 = {k: float(v) * 10.0 for k, v in rub.dimension_scores.items()
+                        if v is not None}
+
+        # Teacher GT (SOFT diagnostic) from dataset assistant-target
+        teacher = _extract_gt_from_assistant(msgs)
+
+        overall_model.append(model_overall)
+        overall_gt_canon.append(gt_canon)
+        if teacher is not None:
+            overall_model_b.append(model_overall)
+            overall_gt_teacher.append(float(teacher["overall"]))
+
+        rec = {"index": i, "parse_mode": parse_mode, "derived_overall": derived,
+               "model_overall": model_overall, "gt_canonical": gt_canon,
+               "gt_canonical_source": "rubric_calibrated_overall",
+               "gt_teacher": (float(teacher["overall"]) if teacher else None),
+               "gt_teacher_source": ("dataset_assistant_target" if teacher else "missing"),
+               "dimensions": {}}
+        for d in clean_dims:
+            if d in model_dims and d in rub_dims_100:
+                dim_model[d].append(model_dims[d])
+                dim_gt[d].append(rub_dims_100[d])
+                rec["dimensions"][d] = {"model": model_dims[d], "gt_raw_rubric": rub_dims_100[d]}
+        pair_records.append(rec)
+        if (i + 1) % 25 == 0:
+            print(f"  [{i+1}/{len(examples)}] paired={len(overall_model)}", file=sys.stderr)
+
+    # GT-variance preflight (HARD guard) on canonical GT
+    var_ok, var_detail = _gt_variance_ok(overall_gt_canon, pf["min_stdev"], pf["min_unique_ranks"])
+
+    revl01a = _safe_spearman(overall_model, overall_gt_canon) if var_ok else {
+        "corr": None, "p_value": None, "n_pairs": len(overall_gt_canon),
+        "error": "GT_VARIANCE_PREFLIGHT_FAILED", "detail": var_detail}
+    revl01b = _safe_spearman(overall_model_b, overall_gt_teacher)
+    per_dim = {d: _safe_spearman(dim_model[d], dim_gt[d]) for d in sorted(clean_dims)}
+
+    summary = {
+        "revl01a_overall_spearman_HARD": revl01a,
+        "revl01a_gt": "rubric_calibrated_overall",
+        "revl01a_variance_preflight": var_detail,
+        "revl01b_overall_spearman_teacher_SOFT": revl01b,
+        "per_dimension_clean_SOFT": per_dim,
+        "per_dim_basis": "raw_rubric",
+        "clean_dims": sorted(clean_dims),
+        "n_examples": len(examples),
+        "n_paired_canonical": len(overall_gt_canon),
+        "n_paired_teacher": len(overall_gt_teacher),
+        "excluded": excluded,
+        # back-compat top-level
+        "overall_spearman": revl01a,
+        "spearman_corr": revl01a.get("corr"),
+    }
+    out = Path(output_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(summary, indent=2))
+    pairs_path = out.with_suffix(".pairs.jsonl")
+    with pairs_path.open("w") as pf_f:
+        for r in pair_records:
+            pf_f.write(json.dumps(r) + "\n")
+    print(f"[REVL-01] saved {output_path} + {pairs_path}", file=sys.stderr)
+    print(f"[REVL-01] REVL-01A(HARD) corr={revl01a.get('corr')} "
+          f"var_ok={var_ok} | REVL-01B(SOFT) corr={revl01b.get('corr')} | "
+          f"excluded={excluded}", file=sys.stderr)
     return summary
 
 

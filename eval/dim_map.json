@@ -4,6 +4,17 @@
   "revl01_gate_design": "option_3",
   "hard_gate": "overall_spearman",
   "soft_gate": "per_dim_spearman_clean_only",
+  "canonical_gt": "rubric_calibrated_overall",
+  "canonical_gt_note": "REVL-01A HARD = Spearman(model_overall vs rubric calibrated_overall). Raw rubric overall is near-ceiling (stdev~4, range[79,100]) -> rank-collapsed -> meaningless Spearman (eval_judge:396). Phase-1a XGBoost calibrated_overall has real variance (stdev~10, range[49,95]). NO fallback to raw rubric for HARD gate: rows missing calibrated_overall are EXCLUDED + counted (no silent rank-collapse reintroduction).",
+  "per_dim_basis": "raw_rubric",
+  "per_dim_basis_note": "Calibration is OVERALL-ONLY (rubric_scorer exposes calibrated_overall, not calibrated per-dim). 6-clean per-dim Spearman (SOFT) uses RAW rubric dimension_scores. Explicitly raw-basis to avoid silent mixed-calibration. GT-variance preflight flags any degenerate (rank-collapsed) per-dim GT.",
+  "teacher_gt": "dataset_assistant_target",
+  "teacher_gt_note": "REVL-01B SOFT diagnostic only (how well model matches training-target distribution). NOT canonical (avoids self-imitation / label-noise optimization per council).",
+  "gt_variance_preflight": {
+    "min_stdev": 2.0,
+    "min_unique_ranks": 5,
+    "_doc": "REVL-01A refuses to run if canonical GT distribution is degenerate (stdev < min_stdev OR distinct values < min_unique_ranks) — guards against rank-collapse recurring silently."
+  },
 
   "clean_mapped_dims": {
     "_doc": "Reasoning-prose dimension label -> eval_judge internal key. 6 unambiguous. Per-dim Spearman computed ONLY on these (SOFT).",
@@ -31,6 +42,19 @@
     "D1_wpcs", "D2_security", "D3_sql", "D4_perf", "D5_wp_api",
     "D6_i18n", "D7_a11y", "D8_errors", "D9_structure"
   ],
+
+  "dimension_weights": {
+    "_doc": "Rubric Section D weights (mirror of eval.rubric_definitions.DIMENSION_WEIGHTS, sum=1.0). Single source for prose model_overall derivation (REVL-01A HARD, Option 1): weighted mean over the dims the model actually emitted+mapped, weights renormalized over present dims (symmetric with rubric aggregation). Phase 7/10 reward shaping reads from HERE to avoid drift.",
+    "D1_wpcs": 0.10,
+    "D2_security": 0.20,
+    "D3_sql": 0.15,
+    "D4_perf": 0.10,
+    "D5_wp_api": 0.10,
+    "D6_i18n": 0.10,
+    "D7_a11y": 0.08,
+    "D8_errors": 0.10,
+    "D9_structure": 0.07
+  },
 
   "gt_provenance": {
     "_doc": "Two-GT design (council). Canonical = rubric_scorer (REVL-01A HARD, feeds Phase7/10 reward). Teacher-target = parsed assistant target (REVL-01B SOFT diagnostic).",
