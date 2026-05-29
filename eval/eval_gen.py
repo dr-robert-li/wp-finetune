@@ -311,7 +311,7 @@ def run_eval(
     if limit is not None:
         examples = examples[:limit]
 
-    print(f"Evaluating {len(examples)} wp_gen examples via {dgx.vllm_endpoint()}", file=sys.stderr)
+    print(f"Evaluating {len(examples)} wp_gen examples via {resolved_base_url}", file=sys.stderr)
 
     # Per-example JSONL output path
     jsonl_path = Path(output_path).with_suffix(".jsonl")
