@@ -85,3 +85,35 @@ class TestSimilarityAndDistinctness:
     def test_explanation_richness(self):
         r = explanation_richness(GOOD_JUDGE)
         assert r > 30  # substantive chars per scored dimension
+
+
+class TestBimodalJudgeCoherence:
+    """Judge output is bimodal: CoT->prose, CtF->JSON. Both must pass."""
+
+    def test_strip_think(self):
+        from scripts._p0_smoke_common import strip_think
+        assert strip_think("<think>\n\n</think>\n\nfunction f(){}") == "function f(){}"
+
+    def test_json_judge_coherent(self):
+        from scripts._p0_smoke_common import judge_coherent
+        js = ('<think>\n\n</think>\n\n{"overall_score":50,"wpcs_compliance":60,'
+              '"security_score":80,"performance_score":80,"i18n_score":70,'
+              '"accessibility_score":70,"documentation_score":60}')
+        ok, detail = judge_coherent(js)
+        assert ok, detail
+        assert "json" in detail
+
+    def test_prose_still_works(self):
+        from scripts._p0_smoke_common import judge_coherent
+        ok, _ = judge_coherent(GOOD_JUDGE)
+        assert ok
+
+    def test_think_prefixed_prose(self):
+        from scripts._p0_smoke_common import judge_coherent
+        ok, _ = judge_coherent("<think>\n\n</think>\n\n" + GOOD_JUDGE)
+        assert ok
+
+    def test_garbage_still_fails(self):
+        from scripts._p0_smoke_common import judge_coherent
+        ok, _ = judge_coherent("<think></think>\n\nthe quick brown fox")
+        assert not ok

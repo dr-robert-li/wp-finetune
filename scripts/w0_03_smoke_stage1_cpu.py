@@ -102,13 +102,20 @@ def main() -> int:
             print(f"[stage1] WALL-CLOCK GUARD: exceeded {STAGE1_TIMEOUT_SEC}s; treating as collapse")
             _write_halt("A_degenerate", f"stage1 timeout >{STAGE1_TIMEOUT_SEC}s", outputs)
             return 1
-        inputs = tok(p["instruction"], return_tensors="pt")
+        # Apply chat template (vLLM chat.completions does this server-side; the
+        # raw transformers path must do it explicitly or the model gets malformed
+        # input and emits EOS immediately → false "empty/degenerate").
+        enc = tok.apply_chat_template(
+            [{"role": "user", "content": p["instruction"]}],
+            add_generation_prompt=True, return_tensors="pt", return_dict=True,
+        )
+        n_in = enc["input_ids"].shape[1]
         with torch.no_grad():
             gen = model.generate(
-                **inputs, max_new_tokens=args.max_tokens, do_sample=False,
+                **enc, max_new_tokens=args.max_tokens, do_sample=False,
                 temperature=None, top_p=None, top_k=None,
             )
-        out = tok.decode(gen[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
+        out = tok.decode(gen[0][n_in:], skip_special_tokens=True)
         bad, reason = is_degenerate(out, max_new_tokens=args.max_tokens)
         outputs.append({"source_val_idx": p["source_val_idx"], "kind": p["kind"],
                         "degenerate": bad, "reason": reason, "output": out})

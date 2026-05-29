@@ -31,8 +31,8 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts._p0_smoke_common import (  # noqa: E402
-    is_degenerate, judge_coherent_prose, baseline_similarity,
-    explanation_richness, inter_prompt_distinctness,
+    is_degenerate, judge_coherent, baseline_similarity,
+    explanation_richness, inter_prompt_distinctness, strip_think,
 )
 from scripts._p0_vllm_smoke_serve import (  # noqa: E402
     boot_vllm, wait_healthy, generate, stop_vllm, VllmBootTimeout,
@@ -56,10 +56,10 @@ def _php_lint_passes(out: str) -> bool:
     except Exception:
         # if PHP linter unavailable, fall back to a non-degenerate code heuristic
         return ("<?php" in out) or ("function" in out)
-    code = out
-    if "```" in out:
+    code = strip_think(out)  # drop Qwen3 <think></think> before lint
+    if "```" in code:
         import re
-        m = re.search(r"```(?:php)?\s*(.*?)```", out, re.DOTALL)
+        m = re.search(r"```(?:php)?\s*(.*?)```", code, re.DOTALL)
         if m:
             code = m.group(1)
     try:
@@ -161,7 +161,7 @@ def main() -> int:
             rec.update({"pass": False, "fail_reason": f"degenerate:{why}"})
             any_degenerate = True
         elif kind == "judge":
-            coh, detail = judge_coherent_prose(o)
+            coh, detail = judge_coherent(o)
             rec["coherence_detail"] = detail
             rec["richness"] = round(explanation_richness(o), 1)
             if not coh:

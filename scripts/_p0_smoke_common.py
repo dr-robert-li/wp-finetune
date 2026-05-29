@@ -72,22 +72,60 @@ def is_degenerate(out: str, max_new_tokens: int = 512) -> tuple[bool, str]:
     return False, "ok"
 
 
-def judge_coherent_prose(out: str) -> tuple[bool, str]:
-    """Prose dimensional reasoning: >=5 dims named AND >=5 'score X/10 — text' lines.
+def strip_think(out: str) -> str:
+    """Remove Qwen3 thinking-mode blocks (often empty `<think>\\n\\n</think>`)."""
+    return re.sub(r"<think>.*?</think>", "", out, flags=re.DOTALL).strip()
 
-    Requires the explanation tail (—/- + non-space) so a bare 'score 9/10'
-    score-spam string does NOT pass (council strictness). 'None/10' allowed.
+
+def _json_judge_coherent(out: str) -> tuple[bool, str]:
+    """CtF-format judge output is JSON: {overall_score, wpcs_compliance, ...}.
+
+    Accept if parseable AND carries >=5 score-like numeric keys.
     """
-    s = out
+    import json as _json
+    s = strip_think(out)
+    # tolerate code-fenced json
+    m = re.search(r"\{.*\}", s, re.DOTALL)
+    if not m:
+        return False, "no-json-object"
+    try:
+        obj = _json.loads(m.group(0))
+    except Exception:
+        return False, "json-parse-failed"
+    score_keys = [k for k, v in obj.items()
+                  if ("score" in k.lower() or k.lower() in
+                      ("overall", "wpcs_compliance", "security_score"))
+                  and isinstance(v, (int, float))]
+    ok = len(score_keys) >= 5
+    return ok, f"json dims/scores={len(score_keys)}"
+
+
+def judge_coherent(out: str) -> tuple[bool, str]:
+    """Judge coherence — BIMODAL. CoT-format -> prose dimensional scoring;
+    CtF-format -> JSON judgment. Coherent if EITHER form is well-structured.
+
+    Prose: >=5 of 9 dims named AND >=5 'score X/10 — text' lines (explanation
+    tail required so score-spam fails; 'None/10' allowed).
+    JSON: parseable object with >=5 numeric score keys.
+    """
+    s = strip_think(out)
     dim_hits = sum(1 for d in DIMENSIONS if d.lower() in s.lower())
     explained = len(SCORE_LINE_RE.findall(s))
     total_scores = len(SCORE_ANY_RE.findall(s))
-    ok = dim_hits >= 5 and explained >= 5
-    detail = f"dims={dim_hits}/9 explained_scores={explained} total_scores={total_scores}"
-    if not ok:
-        if total_scores >= 5 and explained < 5:
-            detail += " — score-spam? (scores present but no explanation tails)"
-    return ok, detail
+    prose_ok = dim_hits >= 5 and explained >= 5
+    if prose_ok:
+        return True, f"prose dims={dim_hits}/9 explained={explained}"
+    json_ok, json_detail = _json_judge_coherent(out)
+    if json_ok:
+        return True, json_detail
+    detail = f"prose dims={dim_hits}/9 explained={explained} total={total_scores}; {json_detail}"
+    if total_scores >= 5 and explained < 5:
+        detail += " — score-spam? (no explanation tails)"
+    return False, detail
+
+
+# Back-compat alias (tests + earlier imports).
+judge_coherent_prose = judge_coherent
 
 
 def baseline_similarity(out: str, baseline: str) -> float:
