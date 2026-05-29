@@ -495,23 +495,70 @@ def _build_triage_table(
     return "\n".join(lines)
 
 
+HUMAN_OVERRIDE_SENTINEL = "HUMAN_OVERRIDE"
+
+
+def _read_existing_status(out_path: Path) -> Optional[str]:
+    """Return the first STATUS: line of an existing decision file, or None."""
+    if not out_path.exists():
+        return None
+    try:
+        first = out_path.read_text().splitlines()[0].strip()
+    except (IndexError, OSError):
+        return None
+    return first if first.startswith("STATUS:") else None
+
+
+def _is_human_override(status_line: str) -> bool:
+    """Sanity-check the sentinel: must be a well-formed HUMAN_OVERRIDE acceptance.
+
+    Guards against a bare prefix match. Requires the form
+    ``STATUS: HUMAN_OVERRIDE — <ratio> ACCEPTED`` (em dash or hyphen, any ratio).
+    """
+    if HUMAN_OVERRIDE_SENTINEL not in status_line:
+        return False
+    body = status_line.split("STATUS:", 1)[1].strip()
+    # Must start with the sentinel and assert an ACCEPTED ratio (not just the word).
+    return body.startswith(HUMAN_OVERRIDE_SENTINEL) and "ACCEPTED" in body
+
+
 def write_triage_decision(
     triage_result: TriageResult,
     profiling_summary: Optional[dict],
     out_path: str,
-) -> None:
+    force_override: bool = False,
+) -> bool:
     """Write triage decision markdown to file.
 
     The file begins with a machine-parseable STATUS line.
+
+    HUMAN_OVERRIDE guard: if the existing file's STATUS line is a well-formed
+    ``HUMAN_OVERRIDE ... ACCEPTED`` sentinel, refuse to overwrite (the automated
+    gate result would clobber a deliberate human decision — see Phase 4 triage,
+    30_70 accepted despite Spearman 0.5698). Pass ``force_override=True`` (CLI
+    ``--force-override``) to bypass.
 
     Args:
         triage_result: TriageResult from triage_ratios().
         profiling_summary: Optional E_eff summary dict.
         out_path: Path to write output markdown.
+        force_override: If True, overwrite even a HUMAN_OVERRIDE sentinel.
+
+    Returns:
+        True if written, False if skipped to preserve a human override.
     """
     out_path = Path(out_path)
+    existing_status = _read_existing_status(out_path)
+    if existing_status and _is_human_override(existing_status) and not force_override:
+        logger.warning(
+            "REFUSING to overwrite %s: existing file is a HUMAN_OVERRIDE sentinel "
+            "(%r). Pass --force-override to regenerate.",
+            out_path, existing_status,
+        )
+        return False
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(triage_result.triage_table + "\n")
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -536,6 +583,11 @@ def main():
         default="output/triage_decision.md",
         help="Output path for triage decision markdown",
     )
+    parser.add_argument(
+        "--force-override",
+        action="store_true",
+        help="Overwrite even if the existing decision file is a HUMAN_OVERRIDE sentinel",
+    )
     args = parser.parse_args()
 
     eval_results = load_eval_results(args.eval_dir)
@@ -544,12 +596,19 @@ def main():
         return 1
 
     triage_result = triage_ratios(eval_results)
-    write_triage_decision(triage_result, profiling_summary=None, out_path=args.output)
+    written = write_triage_decision(
+        triage_result, profiling_summary=None,
+        out_path=args.output, force_override=args.force_override,
+    )
 
     print(f"STATUS: {triage_result.status}")
     print(f"Survivors: {', '.join(triage_result.survivors) if triage_result.survivors else 'NONE'}")
     print(f"Best experiment: {triage_result.best_experiment or 'N/A'}")
-    print(f"Triage decision written to: {args.output}")
+    if written:
+        print(f"Triage decision written to: {args.output}")
+    else:
+        print(f"SKIPPED write: {args.output} holds a HUMAN_OVERRIDE sentinel "
+              f"(use --force-override to regenerate)")
     return 0
 
 

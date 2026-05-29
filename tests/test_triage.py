@@ -15,11 +15,13 @@ from scripts.triage_ratios import (
     SECURITY_GATE,
     SPEARMAN_GATE,
     TriageResult,
+    _is_human_override,
     compute_gen_quality_score,
     compute_overall_score,
     discover_experiments,
     load_eval_results,
     triage_ratios,
+    write_triage_decision,
 )
 
 
@@ -504,3 +506,53 @@ class TestTriageOutput:
         outcome = triage_ratios(results)
         assert "gen_quality_score" in outcome.triage_table.lower() or "gen quality" in outcome.triage_table.lower()
         assert "spearman" in outcome.triage_table.lower()
+
+
+class TestHumanOverrideGuard:
+    """PR1: write_triage_decision must not clobber a HUMAN_OVERRIDE sentinel."""
+
+    def _no_survivors_result(self):
+        # All ratios fail PHPCS → NO_SURVIVORS automated outcome.
+        results = {r: _make_ratio_result(phpcs_rate=0.50) for r in ["30_70", "40_60"]}
+        return triage_ratios(results)
+
+    def test_sentinel_recognized(self):
+        assert _is_human_override("STATUS: HUMAN_OVERRIDE — 30_70 ACCEPTED") is True
+        assert _is_human_override("STATUS: HUMAN_OVERRIDE - 40_60 ACCEPTED") is True
+
+    def test_sentinel_rejects_bare_prefix(self):
+        # Bare word without ACCEPTED must NOT be treated as a valid override.
+        assert _is_human_override("STATUS: HUMAN_OVERRIDE") is False
+
+    def test_sentinel_rejects_no_survivors(self):
+        assert _is_human_override("STATUS: NO_SURVIVORS") is False
+        assert _is_human_override("STATUS: OK") is False
+
+    def test_refuses_to_clobber_override(self, tmp_path):
+        target = tmp_path / "triage_decision.md"
+        target.write_text("STATUS: HUMAN_OVERRIDE — 30_70 ACCEPTED\n\n## human decision\n")
+        original = target.read_text()
+        written = write_triage_decision(self._no_survivors_result(), None, str(target))
+        assert written is False
+        assert target.read_text() == original  # unchanged
+
+    def test_force_override_clobbers(self, tmp_path):
+        target = tmp_path / "triage_decision.md"
+        target.write_text("STATUS: HUMAN_OVERRIDE — 30_70 ACCEPTED\n\n## human decision\n")
+        written = write_triage_decision(
+            self._no_survivors_result(), None, str(target), force_override=True
+        )
+        assert written is True
+        assert target.read_text().startswith("STATUS: NO_SURVIVORS")
+
+    def test_writes_when_no_existing_file(self, tmp_path):
+        target = tmp_path / "triage_decision.md"
+        written = write_triage_decision(self._no_survivors_result(), None, str(target))
+        assert written is True
+        assert target.exists()
+
+    def test_overwrites_non_override_status(self, tmp_path):
+        target = tmp_path / "triage_decision.md"
+        target.write_text("STATUS: NO_SURVIVORS\n\n## stale automated run\n")
+        written = write_triage_decision(self._no_survivors_result(), None, str(target))
+        assert written is True
