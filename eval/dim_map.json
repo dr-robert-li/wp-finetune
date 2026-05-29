@@ -1,0 +1,40 @@
+{
+  "_doc": "REVL-01 dimension reconciliation between v1.2 reasoning prose rubric and eval_judge rubric. Checked-in artifact: parser AND gate read from here (council Option 3, 2026-05-30). Empirically derived from data/reasoning_dataset/openai_val.jsonl (85/85 CoT judge rows). Phase 7/10 may extend; do not re-litigate silently.",
+
+  "revl01_gate_design": "option_3",
+  "hard_gate": "overall_spearman",
+  "soft_gate": "per_dim_spearman_clean_only",
+
+  "clean_mapped_dims": {
+    "_doc": "Reasoning-prose dimension label -> eval_judge internal key. 6 unambiguous. Per-dim Spearman computed ONLY on these (SOFT).",
+    "WPCS Compliance": "D1_wpcs",
+    "Security": "D2_security",
+    "SQL Safety": "D3_sql",
+    "Performance": "D4_perf",
+    "WP API Usage": "D5_wp_api",
+    "Accessibility": "D7_a11y"
+  },
+
+  "excluded_reasoning_dims": {
+    "_doc": "Emitted by reasoning prose but no clean eval_judge equivalent. Parsed + logged with provenance, NOT scored, NOT silently zero-weighted.",
+    "Code Quality": "no_clean_eval_equivalent (loosely ~D9_structure; mapping rejected as semantic stretch per council)",
+    "Dependency Integrity": "no_eval_equivalent"
+  },
+
+  "absent_from_reasoning_prose": {
+    "_doc": "eval_judge dims NOT emitted by reasoning prose output. Cannot be scored from prose model output; rubric_scorer still provides GT for these but model-side is unavailable.",
+    "D6_i18n": "reasoning prose emits no I18n line (85/85 CoT rows confirm absent)",
+    "D8_errors": "no reasoning-prose equivalent (error_handling)"
+  },
+
+  "all_eval_judge_dims": [
+    "D1_wpcs", "D2_security", "D3_sql", "D4_perf", "D5_wp_api",
+    "D6_i18n", "D7_a11y", "D8_errors", "D9_structure"
+  ],
+
+  "gt_provenance": {
+    "_doc": "Two-GT design (council). Canonical = rubric_scorer (REVL-01A HARD, feeds Phase7/10 reward). Teacher-target = parsed assistant target (REVL-01B SOFT diagnostic).",
+    "canonical": "rubric_scorer",
+    "teacher_target": "assistant_target_judge_output_or_prose"
+  }
+}
