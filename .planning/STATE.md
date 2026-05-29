@@ -136,8 +136,20 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-05-29T13:15:00.000Z
-Stopped at: Phase 4.4 reasoning-adapter MERGE COMPLETE + PROMOTED. Both merges done (v3 baseline + reasoning). Next: W0-03 smoke gate (gated behind PR1+PR2 council blockers B1-B4+F1) then 8-gate eval sequence.
+Last session: 2026-05-30T00:30:00.000Z
+Stopped at: Phase 4.4 W0-03 SMOKE GATE PASS. Both merges done + reasoning certified + smoke passed. PR1 (sentinel guard) + PR2 (dual-stage smoke) COMPLETE. Next: PR3 (W5-01 stratifier B1-B4) then W1-W6 eval cascade (REVL-01..08).
+
+### Session 2026-05-29/30 PR1+PR2 + W0-03 smoke PASS
+
+- **PR1 (4f2ea11)**: triage_ratios HUMAN_OVERRIDE sentinel guard (refuse-clobber + --force-override + sanity assert), restored override file, 7 tests.
+- **PR2 (a4a8a7a/b25306b/dc5374a/PR2b/2f723df/c246a20)**: dual-stage W0-03 smoke gate.
+  - Council redesign: original adapter-vs-old-baseline via Unsloth in-process is STALE (merge forensics changed inputs). New: merged-reasoning vs merged-v2, both bf16 vLLM-servable, no 4-bit. Threat model shifted (4-bit collapse → vLLM serving divergence + reasoning-effect-present).
+  - Stage 1 CPU degenerate pre-flight (3 prompts, 128 tok, 180s guard); Stage 2 vLLM certifying (10 prompts, full check stack).
+  - smoke_common classifiers (19 unit tests): is_degenerate (loop/length/4.3-fingerprint), judge_coherent (BIMODAL prose-OR-json), baseline_similarity (no-op canary), inter_prompt_distinctness (mode-collapse), strip_think.
+  - PR2a committed manifest data/phase4_4/smoke_prompts.json (5 judge + 5 gen, CtF idx 85); PR2b committed baseline outputs (vLLM merged-v2).
+  - 3 harness bugs found on first run (model output was GOOD): chat-template missing (Stage1 false-empty); judge bimodal CoT→prose/CtF→JSON (prose-only false-failed JSON); <think></think> contaminating php_lint. All fixed + 5 added tests.
+  - **CERTIFIED VERDICT (c246a20)**: smoke_pass=True exit=0 distinctness=0.879. judge 5/5 (prose 9/9 dims + 1 CtF json), gen 5/5 php_lint, baseline-sim 0.02-0.42 (<0.85 canary → reasoning diverges). Artifact: merge-artifacts/w0_03_smoke_PASS_verdict.json.
+  - Data finding flagged: reasoning judge output is dimensional PROSE (CoT) or JSON (CtF), NOT <REASONING>-tagged. parse_judge_response(JSON-only) would have false-failed all CoT — coherence redesigned prose-aware + json-aware.
 Resume file: .planning/phases/04.4-reasoning-eval-adapter-merge-inserted/04.4-CONTEXT.md
 Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertions + smoke-gate hardening), THEN W0-03 smoke gate against models/qwen3-30b-wp-30_70-reasoning-merged/ vs models/qwen3-30b-wp-30_70-merged-v2/ baseline, THEN REVL-01..08 eval gates
 
