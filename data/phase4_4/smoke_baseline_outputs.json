@@ -1,0 +1,66 @@
+{
+  "baseline_model": "models/qwen3-30b-wp-30_70-merged-v2",
+  "n": 10,
+  "outputs": [
+    {
+      "source_val_idx": 0,
+      "kind": "judge",
+      "task_token": "<wp_judge>",
+      "baseline_output": "<think>\n\n</think>\n\n## Reasoning\n\nD1 WPCS: [PHPDoc with @param present, snake_case naming convention followed, @return documented] -> 9/10. D2 SQL Safety: [no SQL queries in this function] -> 10/10. D3 Security: [returns data without output, no security-sensitive operations] -> 8/10. D4 Performance: [no performance concerns for this scope] -> 8/10. D5 WP API Usage: [standard PHP logic, no WP API needed for this scope] -> 8/10. D6 Code Quality: [concise single-responsibility function] -> 8/10. D7 Dependency Integrity: [depends on: get_installed_plugins, rest_ensure_response, get_data, InstalledExtensions::get_data] -> 8/10. D8 i18n: [N/A - no user-facing strings in this function] -> 7/10. D9 Accessibility: [N/A - no HTML output in this function] -> 7/10. Overall: 73/100. Verdict: PASS.\n\n## Answer\n\n{\"overall_score\": 73, \"wpcs_compliance\": 9, \"sql_safety\": 10, \"security\": 8, \"performance\": 8, \"wp_api_usage\": 8, \"code_quality\": 8, \"dependency_integrity\": 8, \"i18n\": 7, \"accessibility\": 7, \"verdict\": \"PASS\", \"critical_failures\": []}"
+    },
+    {
+      "source_val_idx": 1,
+      "kind": "judge",
+      "task_token": "<wp_judge>",
+      "baseline_output": "<think>\n\n</think>\n\n## Reasoning\n\nD1 WPCS: [PHPDoc present but incomplete (missing @param or @return), snake_case naming convention followed, @return documented] -> 9/10. D2 SQL Safety: [no SQL queries in this function] -> 10/10. D3 Security: [returns data without output, no security-sensitive operations] -> 8/10. D4 Performance: [no performance concerns for this scope] -> 8/10. D5 WP API Usage: [standard PHP logic, no WP API needed for this scope] -> 8/10. D6 Code Quality: [concise single-responsibility function] -> 8/10. D7 Dependency Integrity: [depends on: custom_orders_table_usage_is_enabled, wc_get_container, get] -> 8/10. D8 i18n: [N/A - no user-facing strings in this function] -> 7/10. D9 Accessibility: [N/A - no HTML output in this function] -> 7/10. Overall: 73/100. Verdict: PASS.\n\n## Answer\n\n{\"overall_score\": 73, \"wpcs_compliance\": 9, \"sql_safety\": 10, \"security\": 8, \"performance\": 8, \"wp_api_usage\": 8, \"code_quality\": 8, \"dependency_integrity\": 8, \"i18n\": 7, \"accessibility\": 7, \"verdict\": \"PASS\", \"critical_failures\": []}"
+    },
+    {
+      "source_val_idx": 2,
+      "kind": "judge",
+      "task_token": "<wp_judge>",
+      "baseline_output": "<think>\n\n</think>\n\n## Reasoning\n\nD1 WPCS: [PHPDoc with @param present, snake_case naming convention followed, @return documented, @since tag present] -> 9/10. D2 SQL Safety: [no SQL queries in this function] -> 10/10. D3 Security: [returns data without output, no security-sensitive operations] -> 9/10. D4 Performance: [no performance concerns for this scope] -> 9/10. D5 WP API Usage: [standard PHP logic, no WP API needed for this scope] -> 9/10. D6 Code Quality: [concise single-responsibility function] -> 9/10. D7 Dependency Integrity: [depends on: add_time_limit] -> 8/10. D8 i18n: [N/A - no user-facing strings in this function] -> 7/10. D9 Accessibility: [N/A - no HTML output in this function] -> 7/10. Overall: 77/100. Verdict: PASS.\n\n## Answer\n\n{\"overall_score\": 77, \"wpcs_compliance\": 9, \"sql_safety\": 10, \"security\": 9, \"performance\": 9, \"wp_api_usage\": 9, \"code_quality\": 9, \"dependency_integrity\": 8, \"i18n\": 7, \"accessibility\": 7, \"verdict\": \"PASS\", \"critical_failures\": []}"
+    },
+    {
+      "source_val_idx": 3,
+      "kind": "judge",
+      "task_token": "<wp_judge>",
+      "baseline_output": "<think>\n\n</think>\n\n{\n  \"overall_score\": 50,\n  \"wpcs_compliance\": 60,\n  \"security_score\": 80,\n  \"performance_score\": 80,\n  \"i18n_score\": 70,\n  \"accessibility_score\": 70,\n  \"documentation_score\": 60,\n  \"must_fix_issues\": [\n    \"MEDIUM: Missing PHPDoc block \\u2014 functions must have @param, @return, and @since tags\",\n    \"MEDIUM: Missing PHPDoc documentation block with @param, @return, and @since\"\n  ],\n  \"suggested_improvements\": [\n    \"Add complete PHPDoc blocks with @param, @return, and @since tags for all functions\"\n  ],\n  \"passes_threshold\": false,\n  \"explanation\": \"This function (TypeHelper::normalize_type_rows) fails quality review due to WordPress Coding Standards violations including incomplete documentation. Key dimension scores: wpcs=6/10, i18n=7/10.\"\n}"
+    },
+    {
+      "source_val_idx": 85,
+      "kind": "judge",
+      "task_token": "<wp_judge>",
+      "baseline_output": "<think>\n\n</think>\n\n{\n  \"overall_score\": 50,\n  \"wpcs_compliance\": 70,\n  \"security_score\": 60,\n  \"performance_score\": 90,\n  \"i18n_score\": 70,\n  \"accessibility_score\": 70,\n  \"documentation_score\": 70,\n  \"must_fix_issues\": [\n    \"CRITICAL: Missing nonce verification on state-changing handler\",\n    \"LOW: Code does not follow WordPress coding standards best practices\"\n  ],\n  \"suggested_improvements\": [\n    \"Sanitize all input using sanitize_text_field(), absint(), or appropriate sanitization functions before use\",\n    \"Add nonce verification with wp_verify_nonce() or check_ajax_referer() for request handlers\"\n  ],\n  \"passes_threshold\": false,\n  \"explanation\": \"This function (ACF_Admin_Field_Group::mb_options) fails quality review due to security concerns such as insufficient nonce verification or capability checks. Critical failures identified: Missing nonce verification on state-changing handler. Key dimension scores: security=6/10, wpcs=7/10, i18n=7/10, code_quality=7/10.\"\n}"
+    },
+    {
+      "source_val_idx": 120,
+      "kind": "gen",
+      "task_token": "<wp_gen>",
+      "baseline_output": "<think>\n\n</think>\n\n## Reasoning\n\nStep-by-step:\n1. Identify the goal: Add closing markup after widget output. This is a common pattern for maintaining balanced HTML structure in widget renderers.\n2. Function takes no parameters \u2014 it operates on instance state or globals.\n3. No early-return guards needed here; the function's responsibility is singular.\n4. Return the assembled HTML string; ensure all dynamic values are escaped with appropriate esc_*() functions to prevent XSS.\n5. The implementation follows WordPress coding standards with proper naming conventions and documentation.\n\n## Answer\n\nfunction after_widget_wrapper_html() {\n\t\techo '</div>';\n\t}"
+    },
+    {
+      "source_val_idx": 121,
+      "kind": "gen",
+      "task_token": "<wp_gen>",
+      "baseline_output": "<think>\n\n</think>\n\nfunction process_refund( $order_id, $amount = null, $reason = '' ) {\n\t\t$order = wc_get_order( $order_id );\n\t\tif ( ! $order ) {\n\t\t\treturn false;\n\t\t}\n\n\t\t$transaction_id = $order->get_transaction_id();\n\t\tif ( ! $transaction_id ) {\n\t\t\treturn false;\n\t\t}\n\n\t\t$refund = $this->create_refund( $order, $amount, $reason );\n\n\t\tif ( is_wp_error( $refund ) ) {\n\t\t\treturn $refund;\n\t\t}\n\n\t\t$refund_id = $refund->get_id();\n\t\t$order->add_order_note(\n\t\t\tsprintf(\n\t\t\t\t/* translators: %1$s: refund ID, %2$s: transaction ID */\n\t\t\t\t__( 'Refund ID %1$s (via transaction %2$s) for %3$s', 'woocommerce-square' ),\n\t\t\t\t$refund_id,\n\t\t\t\t$transaction_id,\n\t\t\t\t$reason\n\t\t\t)\n\t\t);\n\n\t\treturn true;\n\t}"
+    },
+    {
+      "source_val_idx": 123,
+      "kind": "gen",
+      "task_token": "<wp_gen>",
+      "baseline_output": "<think>\n\n</think>\n\nfunction set_from( $email, $name = '' ) {\n\t\t$this->set_body_param(\n\t\t\t[\n\t\t\t\t'From' => [\n\t\t\t\t\t$email => $name,\n\t\t\t\t],\n\t\t\t]\n\t\t);\n\t}"
+    },
+    {
+      "source_val_idx": 124,
+      "kind": "gen",
+      "task_token": "<wp_gen>",
+      "baseline_output": "<think>\n\n</think>\n\n## Reasoning\n\nStep 1: This implements a WordPress-specific pattern that follows established conventions for plugin/theme development, ensuring compatibility with the WordPress ecosystem. Step 2: The function returns a well-defined value type, making it predictable for callers and suitable for use as a filter callback or in conditional logic. Step 3: The function is designed for reusability, accepting parameters that allow it to be used across multiple contexts without modification.\n\n## Answer\n\nfunction createQuotationByOrder($orderId)\n    {\n        $order = wc_get_order($orderId);\n        $quotation = $this->createQuotation($order);\n\n        if ($quotation->getSuccess()) {\n            $this->updateOrderQuotation($order, $quotation);\n        }\n\n        return $quotation;\n    }"
+    },
+    {
+      "source_val_idx": 125,
+      "kind": "gen",
+      "task_token": "<wp_gen>",
+      "baseline_output": "<think>\n\n</think>\n\n## Reasoning\n\nStep 1: This implements a WordPress-specific pattern that follows established conventions for plugin/theme development, ensuring compatibility with the WordPress ecosystem. Step 2: The function returns a well-defined value type, making it predictable for callers and suitable for use as a filter callback or in conditional logic. Step 3: The function is designed for reusability, accepting parameters that allow it to be used across multiple contexts without modification.\n\n## Answer\n\nfunction filter_styles( $styles ) {\n\t\t$filtered = array();\n\n\t\tforeach ( $styles as $style ) {\n\t\t\tif ( ! $this->is_style_allowed( $style ) ) {\n\t\t\t\tcontinue;\n\t\t\t}\n\n\t\t\t$filtered[] = $style;\n\t\t}\n\n\t\treturn $filtered;\n\t}"
+    }
+  ]
+}
