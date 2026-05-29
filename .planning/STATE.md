@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: MVP
 status: executing
 stopped_at: Phase 4.4 context gathered
-last_updated: "2026-05-28T03:58:43.962Z"
+last_updated: "2026-05-29T12:15:00.000Z"
 progress:
   total_phases: 9
   completed_phases: 7
@@ -109,7 +109,7 @@ Recent decisions affecting current work:
 
 - [Phase 4.2]: COMPLETE — gate passed, 418-example dataset shipped to data/reasoning_dataset/
 - [Phase 4.3]: COMPLETE — training loss 1.22→0.86, ckpt-72 shipped. RTRN-04 post-hoc gate INVALID at 4-bit on Qwen3-MoE (router-quant collapse → degenerate output regardless of adapter). Training-loss curve is the success signal.
-- [Phase 4.4 BLOCKER]: ⚠️ Eval architecture for MoE-expert LoRA on GB10 unresolved. vLLM cannot serve `target_parameters` MoE-expert LoRA (module-level only); HF + bnb 4-bit collapses MoE routing; HF bf16 OOMs (60+ GiB weights + driver overhead vs 121 GiB unified). Three candidate paths: (1) Unsloth FastLanguageModel bf16 in-process with strict memory mgmt (kill Chromium, floor 70 GiB), (2) Unsloth merge → bf16 vLLM serve (verify target_parameters merge support), (3) GGUF Q8 via llama.cpp. Decision belongs at 4.4 planning.
+- [Phase 4.4 BLOCKER — UPDATED 2026-05-29]: Eval architecture investigation produced 4 findings: (a) **v1 30_70 baseline merge ACCEPTED** as `models/qwen3-30b-wp-30_70-merged-v2/` via CPU-only raw-HF+PEFT script `_p0_unsloth_merge_v3.py` — adapter contains zero `gate_up_proj` LoRA tensors (training never wrote them); v3 correctly fuses everything that exists (down_proj per-expert + attn + embed/lm_head). (b) **RESEARCH "Pitfall 5" narrative requires revision** — v1 partial baseline was not caused by PEFT dropping target_parameters at merge time; the gate_up_proj LoRA was never trained. (c) **P0 v2 (GPU Unsloth) OOMed** on GB10 unified memory: `max_memory={0:'80GiB','cpu':'30GiB'}` is an accelerate hint, not a hard cap; Unsloth pinned ~110 GiB GPU+CPU pages on a 121 GiB total system. CPU-only v3 path avoids NVRM entirely. (d) **ckpt-72 reasoning adapter uses Unsloth's fused-experts shared-rank LoRA layout** (`mlp.experts.base_layer.lora_A/B` + `mlp.experts.lora_A/B`); raw PEFT `merge_and_unload()` would silently corrupt per-expert deltas because PEFT's strided B-indexing convention (`B[:, e::E]`) DIFFERS from Unsloth's training-time contiguous-block convention (`B[:, e*R:(e+1)*R]`). Council-approved merge path: **unsloth-static fused-MoE candidate** — hybrid (attention-only PEFT adapter merge + custom Unsloth-convention per-expert MoE delta application + gate/up chunk split for Llama-style fused output dim). Promotion gates: tensor-level + multi-layer forward-pass equivalence anchors against Unsloth's `_extract_lora_from_wrapper`.
 - [Phase 7]: Phase 4.4 (v1.2 complete — adapter merged) must complete before Phase 7 can execute
 - [Phase 6]: dgx-toolbox Phase 13 (telemetry/ package) must be complete before Phase 6 can execute
 - [Phase 8]: Phase 7 (router profiling + protected expert set) must complete before Phase 8 (reward infrastructure) begins
@@ -136,10 +136,40 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-05-28T03:58:43.940Z
-Stopped at: Phase 4.4 context gathered
+Last session: 2026-05-29T13:15:00.000Z
+Stopped at: Phase 4.4 reasoning-adapter MERGE COMPLETE + PROMOTED. Both merges done (v3 baseline + reasoning). Next: W0-03 smoke gate (gated behind PR1+PR2 council blockers B1-B4+F1) then 8-gate eval sequence.
 Resume file: .planning/phases/04.4-reasoning-eval-adapter-merge-inserted/04.4-CONTEXT.md
-Next: plan Phase 4.4 (reasoning-eval-and-merge) — must resolve eval-arch decision before any rigorous eval can run.
+Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertions + smoke-gate hardening), THEN W0-03 smoke gate against models/qwen3-30b-wp-30_70-reasoning-merged/ vs models/qwen3-30b-wp-30_70-merged-v2/ baseline, THEN REVL-01..08 eval gates
+
+### Session 2026-05-29 reasoning MERGE COMPLETE + PROMOTED
+
+- **Reasoning adapter ckpt-72 merged + promoted** → `models/qwen3-30b-wp-30_70-reasoning-merged/` (13 shards). Merge type: unsloth-static fused-MoE per-expert + PEFT attention. Script `scripts/_p0_merge_unsloth_static_moe.py`.
+- **Council "broadcast" math FALSIFIED before launch.** Pre-flight probe `scripts/_p0_extraction_probe.py`: broadcast `(B@A)*scale` → all experts gave cos_sim 0.08 vs per-expert (orthogonal, 12× over-magnitude). Correct = per-expert contiguous block `delta_e = B[:, e*R:(e+1)*R] @ A[e*R:(e+1)*R, :] * scale`, byte-exact (max_diff<1e-6) to Unsloth `_extract_lora_from_wrapper` (moe_utils.py:421-426).
+- **transformers 5.3.0 stores experts as FUSED stacked 3D params** (`gate_up_proj (128,1536,2048)`, `down_proj (128,2048,768)`) — no nn.ModuleList, no gate/up split (gate_up stays fused). First merge attempt crashed `Qwen3MoeExperts not subscriptable`; fixed to operate on `param.data[e]`.
+- **5-gate promotion ALL PASS** (recorded in `models/qwen3-30b-wp-30_70-reasoning-merged/merge_report.json`):
+  1. static-classified (Hypothesis A/C, no router LoRA)
+  2. tensor-anchor byte-exact to Unsloth source (384 checks, max_diff 0.0) — `scripts/_p0_anchor_tensor_full.py`
+  3. forward-anchor bf16-calibrated 9/9 router-invariant — `scripts/_p0_anchor_forward_rankpath.py`
+  4. fp32-control rms sub-bf16-floor — `scripts/_p0_anchor_fp32_control.py`
+  5. merge_report nonzero touched counts (gate_up 6144, down 6144, per-expert-differ 0.000129)
+- **Forward-anchor threshold recalibration (council A+B).** Initial fp32-grade thresholds (cos≥0.99999, rel_l2≤1e-3) FAILED AS EXPECTED — bf16-stored 30B weights can't meet fp32 equivalence. fp32 weight-control is PRIMARY certifier (cand == bf16(true fp32 merge), rms 2-3e-5 < bf16_floor 9e-5). Forward anchor demoted to bf16-calibrated corroboration (cos≥0.99990, rel_l2≤1e-2, mean≤2e-3, router-invariant hard-required) → PASS 9/9. Observed cos 0.99996.
+- New scripts: `_p0_merge_unsloth_static_moe.py`, `_p0_extraction_probe.py`, `_p0_anchor_tensor_full.py`, `_p0_anchor_forward_rankpath.py`, `_p0_anchor_fp32_control.py`. Logs: `logs/phase4.4/unsloth_static_merge.log`, `forward_anchor.log`.
+
+### Session 2026-05-29 P0 forensics
+
+### Session 2026-05-29 P0 forensics
+
+- **v1 30_70 baseline ACCEPTED as v3 CPU-only merge.** P0 v2 (Unsloth GPU) OOMed at 15:28:19 local during PEFT adapter load — root cause: `max_memory` accelerate hint not enforced, GPU+CPU pinned pages exceeded 121 GiB unified ceiling. Path A (CPU-only raw-HF+PEFT) implemented in `scripts/_p0_unsloth_merge_v3.py` + launcher `_run_p0_remerge_v3.py`. Result: `models/qwen3-30b-wp-30_70-merged-v2/` (13 shards, 56.9 GiB), RETURNCODE 0 in ~3 min.
+- **v3 differential check uncovered structural finding.** v1 adapter contains 0 `gate_up_proj` LoRA tensors (12674 keys total: 12288 per-expert down_proj + 384 attention + 2 modules_to_save). Council ruling: v3 IS correct baseline; no further v1 merge work.
+- **ckpt-72 reasoning adapter ≠ v1 structure.** 576 keys, 12 patterns × 48 layers, all under Unsloth fused-experts shared-rank format: `mlp.experts.base_layer.lora_A (4096, 2048)` + `lora_B (1536, 4096)` (fused gate_up_proj), `mlp.experts.lora_A (4096, 768)` + `lora_B (2048, 4096)` (fused down_proj). 4096 = 32 × 128.
+- **Block-diagonal disambiguation test** (`scripts/_p0_ckpt72_block_diag_test_v2.py`): cross/diag norm ratio ≈ 0.99 under both Unsloth contiguous-block and PEFT strided conventions. Initially interpreted as "dense cross-mix → Path I invalid" but Unsloth source probe revealed cross-terms are random-init artifacts; PEFT and Unsloth runtimes both use diagonal-block-only contractions. Block-diagonal test was misframed as a lossless-extraction proxy.
+- **Unsloth source probe (`unsloth_zoo/temporary_patches/moe_utils.py`)** confirmed Hypothesis A/C (static linear weight-level delta, no router dependence). Training-time convention: `delta[e] = weight_B[:, e*R:(e+1)*R] @ weight_A[e*R:(e+1)*R, :] * scaling`. **PEFT 0.18.1's `get_delta_weight` uses INCOMPATIBLE strided convention** (`B[:, e::E]`) — would silently corrupt per-expert deltas on Unsloth-trained adapters.
+- **Gate/up split convention confirmed** for Qwen3-MoE: `gate, up = x.chunk(2, dim=-1)` (gate first half, up second half of fused 1536-dim output).
+- **Council direction (binding)**: rename "Path I" → "unsloth-static fused-MoE candidate". Hybrid merge: attention-only PEFT temp adapter + custom Unsloth-convention MoE per-expert delta + gate/up chunk split. Two-stage anchor: tensor-level pre-flight + multi-layer (0/23/47) forward-pass equivalence. Candidate dir `models/qwen3-30b-wp-30_70-reasoning-merged-unsloth-static-candidate/`. Promotion only after all 5 gates pass (static-classified, tensor-match, forward-match, sanity checks, merge_report.json shows non-zero touched counts).
+- **04.4-RESEARCH.md Pitfall 5 narrative requires revision** before W5-01/W5-02 fire (prevents reviewer bias toward incorrect baseline-degradation conclusion).
+- New files: `scripts/_p0_unsloth_merge_v2.py` (v2, deprecated — OOMed), `_p0_unsloth_merge_v3.py` (v3, accepted), `_run_p0_remerge_v3.py`, `_p0_v3_diff_check.py`, `_p0_ckpt72_block_diag_test.py`, `_p0_ckpt72_block_diag_test_v2.py`. Logs: `logs/phase4.4/p0_remerge*.log`.
+
+### Phase 4.2 progress (2026-05-21) — superseded by 4.4 context but kept for audit
 
 ### Phase 4.2 progress (2026-05-21)
 
