@@ -82,8 +82,14 @@ def _run_wpbench(tag: str) -> dict:
     try:
         import yaml as _yaml
         conf = _yaml.safe_load(open(cfg)) or {}
-        conf["output_path"] = str(out)
-        conf["api_base"] = f"http://localhost:{PORT}/v1"
+        # Schema: models is a LIST; api_base + name are per-model. Served name is
+        # 'wp-30_70' (serve_30_70_vllm.sh --served-model-name, same for both dirs).
+        endpoint = f"http://localhost:{PORT}/v1"
+        if conf.get("models"):
+            conf["models"][0]["api_base"] = endpoint
+            conf["models"][0]["name"] = "wp-30_70"
+        conf.setdefault("output", {})["path"] = str(out)
+        conf["output"]["jsonl_path"] = str(out.with_suffix(".jsonl"))
         tmp = OUT_DIR / tag / "wp_bench_config_tmp.yaml"
         _yaml.dump(conf, open(tmp, "w"))
         r = subprocess.run(["wp-bench", "run", "--config", str(tmp)],
