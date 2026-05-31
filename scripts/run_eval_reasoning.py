@@ -87,23 +87,79 @@ def _run_wpbench(tag: str) -> dict:
         endpoint = f"http://localhost:{PORT}/v1"
         if conf.get("models"):
             conf["models"][0]["api_base"] = endpoint
-            conf["models"][0]["name"] = "wp-30_70"
+            # wp-bench routes via litellm, which needs an explicit provider prefix.
+            # vLLM serves an OpenAI-compatible API as model `wp-30_70`; `openai/` tells
+            # litellm to use the OpenAI provider and send bare `wp-30_70` to api_base.
+            # (Bare `wp-30_70` => "LLM Provider NOT provided" BadRequestError.)
+            conf["models"][0]["name"] = "openai/wp-30_70"
+        # wp_env_dir / dataset cache_dir in the base config are relative to PROJECT_ROOT,
+        # but HarnessConfig.from_file() resolves relatives against the *config file's dir*.
+        # We dump the tmp config into output/.../<tag>/, so rewrite relevant paths to
+        # absolute before dumping or wp-env start fails with FileNotFoundError on the runtime.
+        grader = conf.get("grader")
+        if isinstance(grader, dict) and grader.get("wp_env_dir"):
+            wed = Path(grader["wp_env_dir"])
+            if not wed.is_absolute():
+                wed = (PROJECT_ROOT / wed).resolve()
+            grader["wp_env_dir"] = str(wed)
         conf.setdefault("output", {})["path"] = str(out)
         conf["output"]["jsonl_path"] = str(out.with_suffix(".jsonl"))
         tmp = OUT_DIR / tag / "wp_bench_config_tmp.yaml"
         _yaml.dump(conf, open(tmp, "w"))
-        r = subprocess.run(["wp-bench", "run", "--config", str(tmp)],
-                           capture_output=True, text=True, timeout=3600, cwd=str(WP_BENCH_DIR))
+        # wp-bench's environment.py shells out via `npx wp-env ...`. Two host
+        # quirks break that: (1) `wp-env` is a global bin, not a registry package,
+        # so bare `npx wp-env` 404s/hangs — shadow npx with a repo shim that execs
+        # the command directly; (2) node's IPv6-first happy-eyeballs intermittently
+        # ETIMEDOUTs wp-env's config-read GitHub call — force IPv4-first.
+        env = os.environ.copy()
+        shim = str(PROJECT_ROOT / "scripts" / "_wpbench_shim")
+        env["PATH"] = shim + os.pathsep + env.get("PATH", "")
+        node_opts = env.get("NODE_OPTIONS", "").strip()
+        env["NODE_OPTIONS"] = (node_opts + " --dns-result-order=ipv4first "
+                               "--network-family-autoselection-attempt-timeout=2000").strip()
+        # wp-bench's models.py calls litellm.completion() WITHOUT passing the
+        # config's api_base/api_key, so route via litellm's OpenAI-provider env:
+        #   OPENAI_API_BASE -> the live vLLM endpoint  (else hits real OpenAI)
+        #   OPENAI_API_KEY  -> any non-empty value     (vLLM ignores it)
+        env.setdefault("OPENAI_API_KEY", "EMPTY")
+        env["OPENAI_API_BASE"] = endpoint
+        env["OPENAI_BASE_URL"] = endpoint
+        # Strip Qwen3 <think> scaffold from model output before scoring (mirrors
+        # eval_gen.py:60). usercustomize.py auto-loads when its dir is on PYTHONPATH.
+        pth = str(PROJECT_ROOT / "scripts" / "_wpbench_pth")
+        env["PYTHONPATH"] = pth + os.pathsep + env.get("PYTHONPATH", "")
+        r = subprocess.run(["wp-bench", "run", "--config", str(tmp)], env=env,
+                           capture_output=True, text=True, timeout=7200, cwd=str(WP_BENCH_DIR))
+        full_log = OUT_DIR / tag / "wp_bench_run.log"
+        full_log.write_text(f"=== STDOUT ===\n{r.stdout}\n=== STDERR ===\n{r.stderr}\n")
         if r.returncode != 0:
             return {"wpbench_score": None, "error": f"exit {r.returncode}",
-                    "detail": (r.stderr or r.stdout)[:500], "ran": True}
-        res = json.loads(out.read_text()) if out.exists() else {}
-        return {"wpbench_score": res.get("score") or res.get("wpbench_score"), "ran": True}
+                    "detail": (r.stderr or r.stdout)[-1500:], "log": str(full_log), "ran": True}
+        # wp-bench writes a TIMESTAMPED file (wp_bench_results_<ts>.json), not the
+        # configured output.path. Pick the newest match; score is metadata.scores.overall.
+        cands = sorted(out.parent.glob(out.stem + "_*.json"), key=lambda p: p.stat().st_mtime)
+        score_file = cands[-1] if cands else (out if out.exists() else None)
+        res = json.loads(score_file.read_text()) if score_file else {}
+        scores = res.get("metadata", {}).get("scores", {})
+        return {"wpbench_score": scores.get("overall"), "scores": scores,
+                "results_file": str(score_file) if score_file else None, "ran": True}
     except FileNotFoundError:
         return {"wpbench_score": None, "error": "wp-bench CLI not on PATH "
                 "(pip install -e wp-bench/python)", "ran": False}
     except Exception as e:  # noqa: BLE001
         return {"wpbench_score": None, "error": str(e)[:300], "ran": False}
+
+
+def _wpbench_with_boot(model_dir: str, name: str, tag: str, gpu_mem_util: float) -> dict:
+    """Boot vLLM on model_dir, run REVL-04 wp-bench against the live endpoint, stop."""
+    try:
+        boot_vllm(model_dir, name, PORT, gpu_mem_util)
+        wait_healthy(PORT, name)
+        return _run_wpbench(tag)
+    except VllmBootTimeout as e:
+        return {"wpbench_score": None, "error": f"boot: {e}", "ran": False}
+    finally:
+        stop_vllm(name)
 
 
 def main() -> int:
@@ -113,11 +169,35 @@ def main() -> int:
     ap.add_argument("--gpu-mem-util", type=float, default=0.55)
     ap.add_argument("--skip-wpbench", action="store_true")
     ap.add_argument("--skip-preflight", action="store_true")
+    ap.add_argument("--wpbench-only", action="store_true",
+                    help="Skip preflight + eval_gen/judge; only (re)run REVL-04 wp-bench on "
+                         "both models, reusing eval numbers from the existing summary.json.")
     args = ap.parse_args()
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     failure = OUT_DIR / "04.4_failure_summary.md"
     if failure.exists():
         failure.unlink()
+
+    # --wpbench-only: reuse prior eval numbers, re-run just REVL-04 on each model.
+    if args.wpbench_only:
+        prior_path = OUT_DIR / "summary.json"
+        if not prior_path.exists():
+            failure.write_text("--wpbench-only requires an existing summary.json "
+                               "(prior eval numbers). None found.\n")
+            print("HALT: no prior summary.json for --wpbench-only.", file=sys.stderr)
+            return 1
+        prior = json.loads(prior_path.read_text())
+        baseline = prior.get("baseline", {})
+        reasoning = prior.get("reasoning", {})
+        print("=== --wpbench-only: REVL-04 wp-bench on reasoning-merged + baseline ===",
+              file=sys.stderr)
+        wpbench_reasoning = ({} if args.skip_wpbench
+                             else _wpbench_with_boot(REASONING, "wp-eval-reasoning-vllm",
+                                                     "reasoning_merged", args.gpu_mem_util))
+        wpbench_baseline = ({} if args.skip_wpbench
+                            else _wpbench_with_boot(BASELINE, "wp-eval-baseline-vllm2",
+                                                    "baseline_30_70", args.gpu_mem_util))
+        return _finalize(baseline, reasoning, wpbench_baseline, wpbench_reasoning, args)
 
     # Step 0: REVL-01 GT preflight (HARD)
     if not args.skip_preflight:
@@ -174,18 +254,16 @@ def main() -> int:
         stop_vllm("wp-eval-reasoning-vllm")
 
     # baseline wp-bench (separate boot) if not skipped
-    wpbench_baseline = {}
-    if not args.skip_wpbench:
-        try:
-            boot_vllm(BASELINE, "wp-eval-baseline-vllm2", PORT, args.gpu_mem_util)
-            wait_healthy(PORT, "wp-eval-baseline-vllm2")
-            wpbench_baseline = _run_wpbench("baseline_30_70")
-        except VllmBootTimeout as e:
-            wpbench_baseline = {"wpbench_score": None, "error": f"boot: {e}", "ran": False}
-        finally:
-            stop_vllm("wp-eval-baseline-vllm2")
+    wpbench_baseline = ({} if args.skip_wpbench
+                        else _wpbench_with_boot(BASELINE, "wp-eval-baseline-vllm2",
+                                                "baseline_30_70", args.gpu_mem_util))
 
-    # Step 3: gates (halt-on-regression)
+    return _finalize(baseline, reasoning, wpbench_baseline, wpbench_reasoning, args)
+
+
+def _finalize(baseline: dict, reasoning: dict, wpbench_baseline: dict,
+              wpbench_reasoning: dict, args) -> int:
+    """Compute gates (halt-on-regression), write summary.json + the REVL-04 artifact."""
     gates = {}
     b_phpcs = baseline.get("phpcs_pass_rate")
     r_phpcs = reasoning.get("phpcs_pass_rate")
@@ -215,14 +293,34 @@ def main() -> int:
     }
     (OUT_DIR / "summary.json").write_text(json.dumps(summary, indent=2))
 
+    # REVL-04 standalone artifact (plan + tests/phase4_4/test_wp_bench_artifact.py expect
+    # `pass: bool` and `meets_baseline: bool` here; nothing wrote it before).
+    wp_gate = gates.get("REVL-04_wpbench_HARD")
+    if wp_gate is not None:
+        b_wp = wp_gate.get("baseline")
+        r_wp = wp_gate.get("reasoning")
+        meets = bool(b_wp is not None and r_wp is not None and r_wp >= b_wp)
+        artifact = {
+            "gate": "REVL-04",
+            "baseline_score": b_wp,
+            "reasoning_score": r_wp,
+            "meets_baseline": meets,
+            "pass": wp_gate.get("pass"),
+        }
+        if wp_gate.get("note"):
+            artifact["note"] = wp_gate["note"]
+        (PROJECT_ROOT / "output" / "04.4_wp_bench_results.json").write_text(
+            json.dumps(artifact, indent=2))
+
     hard_fails = [k for k, v in gates.items() if v.get("pass") is False]
     print("\n=== GATES ===", file=sys.stderr)
     for k, v in gates.items():
         print(f"  {k}: {v}", file=sys.stderr)
     if hard_fails:
-        failure.write_text("REVL gates FAILED: " + ", ".join(hard_fails) +
-                           f"\n\nSee {OUT_DIR / 'summary.json'}\n")
-        print(f"\nHALT: {hard_fails}. {failure}", file=sys.stderr)
+        (OUT_DIR / "04.4_failure_summary.md").write_text(
+            "REVL gates FAILED: " + ", ".join(hard_fails) +
+            f"\n\nSee {OUT_DIR / 'summary.json'}\n")
+        print(f"\nHALT: {hard_fails}.", file=sys.stderr)
         return 1
     print(f"\nALL GATES PASS (or manual-pending). summary: {OUT_DIR / 'summary.json'}", file=sys.stderr)
     return 0

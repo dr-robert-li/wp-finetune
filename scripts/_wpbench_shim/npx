@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# wp-bench's environment.py hardcodes `npx wp-env ...`. On hosts without npm
+# registry access (or where `wp-env` is only a global bin, not a local package),
+# real npx hangs/ETIMEDOUTs or 404s. wp-env is installed globally, so exec the
+# resolved command directly — no registry round-trip.
+exec "$@"
