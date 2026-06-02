@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 04.4 REJECTED at REVL-05 — decide Phase 4.3 re-train vs ship-baseline (D-05)
+**Current focus:** Phase 04.3 RE-OPENED for format-stability (RTRN-05) — 04.3-02 diagnostic-bisect plan ready to execute
 
 ## Current Position
 
-Phase: 04.4 (reasoning-eval-adapter-merge) — REJECTED-pending-disposition (REVL-05 human FAIL 2026-06-02)
-Plan: gates built+run this session (REVL-01/02/03/04/05/07/08 + REVL-06 N/A)
-Next: D-05 iterate-vs-abandon — RECOMMENDED (re-)open Phase 4.3 for FORMAT-STABILITY re-train (target 35% terse-JSON collapse); fallback = ship v1 merged-v2 as v1.2-final, archive ckpt-72 unmerged. ckpt-72 NOT promoted.
-Status: Phase 04.4 closes REJECTED; reasoning-merged not canonical; v1 baseline (merged-v2) remains certified fallback
+Phase: 04.3 (reasoning-fine-tune) — RE-OPENED. D-05 resolved → iterate (format-stability fix), not ship-baseline.
+Plan: 04.3-02-PLAN.md PLANNED + plan-checker PASS (1 revise iteration; commit cf90391). Covers Steps 0–4 = deterministic ckpt-50-vs-ckpt-72 terse-JSON bisect → 04.3-REOPEN-RESULTS.md verdict. Steps 5–8 (retrain/FS-gate/PHP-sentinel/REVL re-run) deferred to a follow-up plan keyed off the verdict. New req RTRN-05 minted.
+Next: EXECUTE 04.3-02 → `/gsd:execute-phase 04.3`. ckpt-72 NOT promoted; merged-v2 stays certified fallback.
+Status: Phase 04.4 remains CLOSED-REJECTED; reasoning-merged not canonical; v1 baseline (merged-v2) certified fallback throughout
 
 Progress: [██████████] 96%
 
@@ -137,7 +137,10 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-02T21:31:00.000Z
+Last session: 2026-06-03T09:10:00.000Z
+Stopped at: Session resumed → D-05 resolved toward re-open Phase 4.3 (format-stability). Routing to /gsd:plan-phase 04.3 to formalize `04.3-REOPEN-PLAN.md` (peer-reviewed, repo-grounded) into a numbered PLAN.md. ckpt-72 NOT promoted; merged-v2 fallback intact.
+
+Prior session: 2026-06-02T21:31:00.000Z
 Stopped at: Phase 4.4 CLOSED **REJECTED** at REVL-05 (human). All automated gates run; merge NOT promoted; D-05 disposition pending (recommend Phase 4.3 format-stability re-train). See `04.4-GATE-LEDGER.md` + `04.4-D05-DIAGNOSIS.md`. Resume = decide D-05.
 
 ### Session 2026-06-02 — Phase 4.4 gate execution → REVL-05 REJECTED
