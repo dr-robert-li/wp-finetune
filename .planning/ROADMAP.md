@@ -201,12 +201,12 @@ Plans:
   - Pattern: read 4.1 batch outputs → run deterministic consistency rules → for ambiguous cases, spawn Claude Code agents to judge consistency → assemble training mix via Python → export multi-format
   - Fix-test-validate loop: dry-run consistency rules on 10 known-good + 10 known-bad pilot examples → tune thresholds → run on full dataset → human review of rejected examples → adjust if false-positive rate >5% → re-run
   - Quality audit: rejection rate per rule type, training mix percentage verification, output schema validation
-**Plans**: 1 plan
+**Plans**: 2 plans
 
 ### Phase 4.3: Reasoning Fine-Tune — INSERTED
 **Goal**: The winning ratio adapter is continued-fine-tuned on the assembled reasoning dataset at a 5-10x lower learning rate than Phase 3, with MoE router weights confirmed frozen, producing a reasoning adapter that does not suffer format collapse, generation regression, or loss divergence
 **Depends on**: Phase 4.2 (reasoning dataset assembled and validated)
-**Requirements**: RTRN-01, RTRN-02, RTRN-03, RTRN-04
+**Requirements**: RTRN-01, RTRN-02, RTRN-03, RTRN-04, RTRN-05
 **Success Criteria** (what must be TRUE):
   1. `train_config_reasoning.yaml` specifies a learning rate at most 2e-5 (5-10x lower than Phase 3's 2e-4) with warmup, and the training run starts from the winning ratio adapter checkpoint — gradient norms in the first 100 steps stay below 3 (not the 5-10 seen in early Phase 3)
   2. `max_seq_length` is set to 8192 in the training config, and the training run processes examples longer than 4096 tokens without truncation errors or OOM
@@ -227,6 +227,7 @@ Plans:
 
 Plans:
 - [ ] 04.3-01-PLAN.md — Reasoning continued-FT of the merged 30_70 base (Option B): D-03 readiness gate, train_config_reasoning.yaml, train_model.py deltas (target_parameters/warmup_steps/router-freeze walker), checkpoint_parse_check.py abort hook, DGX dry-run gate, training run + review-telemetry
+- [ ] 04.3-02-PLAN.md — RTRN-05 format-stability diagnostic bisect (Steps 0-4): parameterize capture/merge scripts (+contamination grep-blocker), merge ckpt-50 through the 5 gates, capture ckpt-50 vs ckpt-72 on an identical slice, Wilson-CI terse-rate compare with pre-registered CI-overlap→n≥300 escalation → 04.3-REOPEN-RESULTS.md verdict (ckpt-72 NOT promoted; merged-v2 fallback intact)
 
 ### Phase 4.4: Reasoning Eval & Adapter Merge — INSERTED
 **Goal**: The reasoning adapter passes all existing quality gates (Spearman, PHPCS pass rate, wp-bench) with no regression versus the winning ratio baseline, human reviews a sample of reasoning outputs to confirm quality, and the adapter is merged into base weights
