@@ -2,7 +2,12 @@
 
 Reads output/eval_reasoning/revl03_claude_eval.jsonl (one JSON object per sample,
 written by the orchestrating session's agents) and writes revl03_aggregate.json:
-  - dimension_coverage_rate = mean over samples of count(true in dimension_coverage)/9
+  - dimension_coverage_rate = mean over samples of
+        count(true in dimension_coverage) / N_DIMS
+    where N_DIMS is the per-sample dimension_coverage key count (the model's real
+    rubric is 8 dims — see scripts.revl03_evaluator_agent.REVL03_DIMENSIONS — NOT a
+    naive 9; i18n + error_handling are structurally absent from the prose output and
+    are NOT in the denominator, consistent with the REVL-01 dim_map.json reconciliation).
   - score_reasoning_consistency_rate = mean over samples of
         count(true in consistency restricted to CLAIMED dims) / count(claimed dims)
     where claimed dims = dims marked true in that sample's dimension_coverage.
@@ -44,7 +49,8 @@ def aggregate(eval_jsonl: str, aggregate_out: str, threshold: float = PASS_THRES
     coverage_scores, consistency_scores, coherences = [], [], []
     for s in samples:
         cov = s.get("dimension_coverage", {}) or {}
-        coverage_scores.append(_truthy_count(cov) / 9.0)
+        n_dims = len(cov)  # the model's real rubric is 8 dims; denominator = keys present
+        coverage_scores.append((_truthy_count(cov) / n_dims) if n_dims else 0.0)
 
         claimed = [k for k, v in cov.items() if v is True]
         cons = s.get("score_reasoning_consistency", {}) or {}
