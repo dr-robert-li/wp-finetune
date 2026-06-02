@@ -43,26 +43,53 @@ DEFAULT_CAPTURED = "output/eval_reasoning/reasoning_merged/captured_responses.js
 DEFAULT_PLAN_OUT = "output/eval_reasoning/revl03_agent_plan.jsonl"
 EVAL_OUT_PATH = "output/eval_reasoning/revl03_claude_eval.jsonl"
 
+# REVL-03 dimension set = the model's ACTUAL emitted reasoning-prose taxonomy
+# (verified: 85/85 CoT rows emit exactly these 8 headings). This is consistent with
+# the REVL-01 dim_map.json reconciliation (council Option 3, 2026-05-30): the prose
+# rubric is 6 clean-mapped dims + Code Quality + Dependency Integrity. The eval_judge
+# dims i18n and error_handling are STRUCTURALLY ABSENT from prose (the model was never
+# trained to emit them) — scoring coverage against them would measure taxonomy
+# mismatch, not reasoning quality, and penalize unreachable dimensions. So REVL-03
+# coverage is measured over the model's own 8-dim rubric (the denominator the model
+# can actually satisfy), keyed by these exact names.
+REVL03_DIMENSIONS = [
+    ("wpcs", "WPCS Compliance"),
+    ("security", "Security"),
+    ("sql_safety", "SQL Safety"),
+    ("performance", "Performance"),
+    ("wp_api_usage", "WP API Usage"),
+    ("accessibility", "Accessibility"),
+    ("code_quality", "Code Quality"),
+    ("dependency_integrity", "Dependency Integrity"),
+]
+
 
 def build_agent_prompt(extracted_reasoning: str, model_scores, prompt: str) -> str:
-    """Verbatim opaque prompt (04.4-RESEARCH.md Example 3)."""
+    """Opaque evaluator prompt (04.4-RESEARCH.md Example 3), dimension set pinned to
+    the model's real 8-dim reasoning taxonomy (NOT an improvised D1..D9)."""
+    keys = [k for k, _ in REVL03_DIMENSIONS]
+    dim_lines = "\n".join(f"   - {k} ({label})" for k, label in REVL03_DIMENSIONS)
+    keys_json = json.dumps(keys)
     return (
         "You are evaluating WordPress code-review reasoning quality.\n"
         "You are NOT told which model produced this output.\n\n"
         "GENERATED REASONING:\n"
         f"{extracted_reasoning}\n\n"
-        "MODEL'S NUMERIC SCORES (per the 9-dimension rubric):\n"
+        "MODEL'S NUMERIC SCORES:\n"
         f"{json.dumps(model_scores, indent=2)}\n\n"
         "CODE UNDER REVIEW:\n"
         f"{prompt}\n\n"
+        "The rubric has exactly these 8 dimensions (use these exact keys):\n"
+        f"{dim_lines}\n\n"
         "Answer three questions in strict JSON:\n"
-        "1. dimension_coverage (object): for each of the 9 dimensions (D1..D9), does\n"
+        "1. dimension_coverage (object): for EACH of the 8 dimension keys above, does\n"
         "   the reasoning text explicitly address that dimension? true/false per key.\n"
         "2. score_reasoning_consistency (object): for each dimension where the\n"
         "   reasoning makes a claim, does the numeric score align with the claim?\n"
-        "   true/false per key.\n"
+        "   true/false per key (use the same 8 keys).\n"
         "3. coherence (1-5 integer): is the reasoning logically structured,\n"
         "   issue-specific, and free of contradictions?\n\n"
+        f"Both objects MUST use exactly these keys: {keys_json}.\n"
         "Output ONLY the JSON object — no prose."
     )
 
