@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: executing
-stopped_at: Phase 4.4 context gathered
-last_updated: "2026-05-29T12:15:00.000Z"
+stopped_at: Phase 4.4 REJECTED (REVL-05) — pending Phase 4.3 re-train disposition
+last_updated: "2026-06-02T21:31:00.000Z"
 progress:
   total_phases: 9
   completed_phases: 7
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 04.4 — reasoning-eval-and-merge (ready to plan)
+**Current focus:** Phase 04.4 REJECTED at REVL-05 — decide Phase 4.3 re-train vs ship-baseline (D-05)
 
 ## Current Position
 
-Phase: 04.3 (reasoning-fine-tune-inserted) — COMPLETE (with RTRN-04 caveat carried to 4.4)
-Plan: 1 of 1 — SUMMARY shipped 2026-05-28
-Next phase: 4.4 (Reasoning Eval + Merge) — ready to plan; must solve eval-architecture blocker (vLLM cannot serve target_parameters MoE LoRA; HF + bnb 4-bit collapses MoE router; bf16 OOMs on GB10)
-Status: Phase 04.3 complete; ready for Phase 04.4 planning
+Phase: 04.4 (reasoning-eval-adapter-merge) — REJECTED-pending-disposition (REVL-05 human FAIL 2026-06-02)
+Plan: gates built+run this session (REVL-01/02/03/04/05/07/08 + REVL-06 N/A)
+Next: D-05 iterate-vs-abandon — RECOMMENDED (re-)open Phase 4.3 for FORMAT-STABILITY re-train (target 35% terse-JSON collapse); fallback = ship v1 merged-v2 as v1.2-final, archive ckpt-72 unmerged. ckpt-72 NOT promoted.
+Status: Phase 04.4 closes REJECTED; reasoning-merged not canonical; v1 baseline (merged-v2) remains certified fallback
 
 Progress: [██████████] 96%
 
@@ -110,7 +110,8 @@ Recent decisions affecting current work:
 - [Phase 4.2]: COMPLETE — gate passed, 418-example dataset shipped to data/reasoning_dataset/
 - [Phase 4.3]: COMPLETE — training loss 1.22→0.86, ckpt-72 shipped. RTRN-04 post-hoc gate INVALID at 4-bit on Qwen3-MoE (router-quant collapse → degenerate output regardless of adapter). Training-loss curve is the success signal.
 - [Phase 4.4 BLOCKER — UPDATED 2026-05-29]: Eval architecture investigation produced 4 findings: (a) **v1 30_70 baseline merge ACCEPTED** as `models/qwen3-30b-wp-30_70-merged-v2/` via CPU-only raw-HF+PEFT script `_p0_unsloth_merge_v3.py` — adapter contains zero `gate_up_proj` LoRA tensors (training never wrote them); v3 correctly fuses everything that exists (down_proj per-expert + attn + embed/lm_head). (b) **RESEARCH "Pitfall 5" narrative requires revision** — v1 partial baseline was not caused by PEFT dropping target_parameters at merge time; the gate_up_proj LoRA was never trained. (c) **P0 v2 (GPU Unsloth) OOMed** on GB10 unified memory: `max_memory={0:'80GiB','cpu':'30GiB'}` is an accelerate hint, not a hard cap; Unsloth pinned ~110 GiB GPU+CPU pages on a 121 GiB total system. CPU-only v3 path avoids NVRM entirely. (d) **ckpt-72 reasoning adapter uses Unsloth's fused-experts shared-rank LoRA layout** (`mlp.experts.base_layer.lora_A/B` + `mlp.experts.lora_A/B`); raw PEFT `merge_and_unload()` would silently corrupt per-expert deltas because PEFT's strided B-indexing convention (`B[:, e::E]`) DIFFERS from Unsloth's training-time contiguous-block convention (`B[:, e*R:(e+1)*R]`). Council-approved merge path: **unsloth-static fused-MoE candidate** — hybrid (attention-only PEFT adapter merge + custom Unsloth-convention per-expert MoE delta application + gate/up chunk split for Llama-style fused output dim). Promotion gates: tensor-level + multi-layer forward-pass equivalence anchors against Unsloth's `_extract_lora_from_wrapper`.
-- [Phase 7]: Phase 4.4 (v1.2 complete — adapter merged) must complete before Phase 7 can execute
+- [Phase 4.4 — RESOLVED/REJECTED 2026-06-02]: All eval-architecture blockers above were resolved (merge done + 5-gate certified; eval-harness prose compat shipped via eval/output_parsers.py + dim_map.json). Gates RAN: REVL-01/02/04 PASS, REVL-03 MARGINAL, REVL-07 PASS-SOFT, REVL-08 FLAG-SOFT, REVL-06 N/A. **REVL-05 human review REJECTED** the reasoning-merged model (35% terse-JSON judge collapse + invalid-PHP-pass). ckpt-72 NOT promoted. Disposition pending: Phase 4.3 format-stability re-train (recommended) vs ship v1 merged-v2 as v1.2-final. See 04.4-GATE-LEDGER.md + 04.4-D05-DIAGNOSIS.md.
+- [Phase 7]: BLOCKED — needs a v1.2 reasoning adapter promoted; Phase 4.4 rejected ckpt-72, so Phase 7 waits on either the 4.3 re-train OR an explicit decision to ship v1 merged-v2 as v1.2-final (baseline carries no reasoning enhancement).
 - [Phase 6]: dgx-toolbox Phase 13 (telemetry/ package) must be complete before Phase 6 can execute
 - [Phase 8]: Phase 7 (router profiling + protected expert set) must complete before Phase 8 (reward infrastructure) begins
 - [Phase 10]: Phase 9 (GSPO training) must complete before Phase 10 (RL eval) — RL eval gates v3.0 MoE-Sieve
@@ -135,6 +136,24 @@ Recent decisions affecting current work:
 | 260403-vvg | Fix stale unsloth refs in dgx_toolbox; fix CONFIG_PATH; add missing dataloader fields to 30_70/40_60 configs | 2026-04-03 | f340b22 | [260403-vvg-fix-stale-unsloth-refs-and-config-incons](./quick/260403-vvg-fix-stale-unsloth-refs-and-config-incons/) |
 
 ## Session Continuity
+
+Last session: 2026-06-02T21:31:00.000Z
+Stopped at: Phase 4.4 CLOSED **REJECTED** at REVL-05 (human). All automated gates run; merge NOT promoted; D-05 disposition pending (recommend Phase 4.3 format-stability re-train). See `04.4-GATE-LEDGER.md` + `04.4-D05-DIAGNOSIS.md`. Resume = decide D-05.
+
+### Session 2026-06-02 — Phase 4.4 gate execution → REVL-05 REJECTED
+
+- **Session-start recovery:** prior context contained FABRICATED tool output (nonexistent `/home/robert_li/models`, a phantom `VALIDATION.md`, invented scores). Re-verified everything with clean tools. Truth: 8 REVL gates (REQUIREMENTS.md:129-136), merge already done + 5-gate-certified at `models/qwen3-30b-wp-30_70-reasoning-merged` (merge_report.json). `04.4-02-PLAN.md` is legitimate, NOT hallucinated. Deleted my wrong ground-truth doc.
+- **REVL-04** ✅ PASS — committed wp-bench 8-blocker fix chain (commit a1cc63a): 0.4616 ≥ 0.4286. Repro helpers `_wpbench_shim/npx` + `_wpbench_pth/usercustomize.py`.
+- **REVL-06** 🚫 N/A (Option C) — judge-only model emits 0 `<corrected_code>` across 478 rows; fix-correctness already gated by REVL-04. Slot retired, not vacuously passed. Forces W5-01 (REVL-05) to CoT-only.
+- **REVL-03** ⚠️ MARGINAL — built capture+emitter+aggregator (commits ae0cbe7/a77a3ee). Advisor caught a taxonomy bug: pinned to model's REAL 8-dim rubric (was naive D1..D9 incl. unreachable error_handling), consistent w/ REVL-01 dim_map.json. Final 0.814 (2048-capture, parseable 0.992), but bootstrap 95% CI [0.751, 0.871] STRADDLES 0.80 + between-run spread 0.038 — not a clean pass. Deferred to REVL-05.
+- **REVL-07** ✅ PASS (SOFT) + **REVL-08** ⚠️ FLAG (SOFT) — commit 6b80177. REVL-07 F1-opt thr 50.0 (F1 0.924). REVL-08 median 456<500 (terse) — confirmed REAL bimodal behavior, NOT a capture-cap artifact (re-captured @2048; max 1121≪2048).
+- **Bimodality finding:** model output is ~63% full-prose+[/REASONING] / ~35% terse direct-JSON (no reasoning). Same prose/JSON split as W0-03 smoke. The terse mode drags REVL-03 coverage to its floor.
+- **REVL-05** ❌ **REJECTED** (commit 1cd809f) — `output/v1.2_human_review_completed.md` sentinel HUMAN_REJECTED: persistent terse-JSON mode + boilerplate drift + annotated CRITICAL (model passed syntactically-invalid PHP, `$this->` in a standalone function = runtime fatal). Corroborates the REVL-03 marginal as genuinely disqualifying. Built `build_human_review.py` + sentinel gate (commit 62d0d42).
+- **D-05 diagnosis** (commit f3cd4e7, `04.4-D05-DIAGNOSIS.md`): terse-JSON 35%, NO trigger cluster (uniform across format / code-length / difficulty). Scoring mostly harsh-not-lax (4.1% canonical false-pass; underscores GT 36% vs overscores 5%). Read = training-config / FORMAT-STABILITY failure, not data/approach. Recommend targeted Phase 4.3 re-train; v1 merged-v2 stays certified fallback. ckpt-72 NOT promoted.
+- **Phase 4.3 re-train first task** (when opened): compare terse-JSON rate at **checkpoint-50 vs checkpoint-72** (both exist under `adapters/qwen3-30b-wp-30_70-reasoning/`) on a held-out slice → answers late-collapse (LR/epoch) vs format-token root cause cheaply before any GPU re-train.
+- Commits this session (9): a1cc63a, ae0cbe7, a77a3ee, 6b80177, 0a6d59e, fa4ef70, 62d0d42, 1cd809f, f3cd4e7.
+
+### Session 2026-05-30 (prior) — W1-W6 cascade eval-harness compat
 
 Last session: 2026-05-30T06:30:00.000Z
 Stopped at: W1-W6 cascade BLOCKED on eval-harness prose compat (2 layers). Findings + council direction in EVAL-HARNESS-COMPAT.md. Next: resolve Blocker-2 dim-map → build eval/output_parsers.py → preflight → orchestrator → cascade. Merges + smoke all done/certified.

@@ -4,6 +4,33 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-06-02 — Phase 4.4 gates run end-to-end; REVL-05 rejects the reasoning merge
+
+Phase 4.4 closed today, but not the way the roadmap drew it. The reasoning-merged model ran the full REVL-01..08 gate battery and was **rejected at the human gate (REVL-05)**. ckpt-72 is not promoted. The honest outcome is the win — the eval caught a real defect instead of rubber-stamping a merge — but it means a return to Phase 4.3 rather than a march into Phase 7.
+
+### Session-start: the context was lying
+
+Resume loaded a "ground truth" that turned out to be fabricated — a phantom `/home/robert_li/models` directory, a `VALIDATION.md` that doesn't exist, eval scores that were never produced. Several tool results in the prior context were confabulated. Re-derived everything from the live tree with clean reads: the eight REVL gates are real (REQUIREMENTS.md:129-136), the merge was already done and 5-gate-certified at `models/qwen3-30b-wp-30_70-reasoning-merged/` (merge_report.json present), and `04.4-02-PLAN.md` is a legitimate plan, not a hallucination. Deleted the bad ground-truth note before it could mislead a future resume. Lesson logged: when context asserts a file or a number, verify against disk before building on it.
+
+### The gates, in order
+
+- **REVL-04 (wp-bench, HARD)** — passed, 0.4616 ≥ 0.4286. Getting there cost an eight-blocker fix chain in `run_eval_reasoning.py` (litellm provider prefix, OPENAI_API_BASE/KEY env, an npx shim, IPv4-first NODE_OPTIONS, timestamped-results discovery, a `<think>`-strip usercustomize). Committed with its repro helpers.
+- **REVL-06 (CtF fix correctness)** — declared **N/A**. The model is judge-only; it emits zero `<corrected_code>` across all 478 cot+ctf rows because it was never trained to. A `<corrected_code>` lint/PHPCS gate over an empty set is vacuous either way. Fix-correctness is already covered by REVL-04's execution tests. Retired the slot honestly rather than let it vacuously pass — and that forced REVL-05 to CoT-only.
+- **REVL-03 (opaque reasoning quality)** — **marginal**. Two methodology catches here. First, I'd injected a naive D1..D9 dimension set including `error_handling` and `code_structure`, which the prose model never emits, while omitting `dependency_integrity`, which it does — measuring taxonomy mismatch, not quality. Pinned the evaluator to the model's real 8-dim rubric, consistent with REVL-01's `dim_map.json`. Second, the corrected number (0.814) sits inside its own noise: a bootstrap 95% CI of [0.751, 0.871] straddles the 0.80 floor, and two runs gave 0.852 vs 0.814 — a spread wider than the margin. Not a clean pass. Deferred the tiebreak to the human.
+- **REVL-07 / REVL-08 (SOFT)** — confusion matrix (F1-opt threshold 50.0, F1 0.924) and reasoning-length distribution (median 456, flag for terse). Chased the terse-median as a possible 1024-token capture artifact; re-captured at 2048 and proved it real — max length 1121, nowhere near the cap.
+
+### The real finding: bimodal collapse
+
+Across the captures the model splits ~63% full per-dimension prose / ~35% terse direct-JSON with no reasoning at all — the same prose/JSON bimodality the W0-03 smoke gate first hinted at. The terse mode is what drags REVL-03 to its floor. The human reviewer rejected on exactly this, plus an annotated critical: the model scored syntactically-invalid PHP (`$this->` inside a standalone function — a runtime fatal) as a pass. A judge that passes invalid PHP is a genuine defect, and it corroborates the REVL-03 marginal rather than contradicting it. Marginal-automated + human-reject are the same signal seen twice.
+
+### Disposition
+
+Ran the D-05 diagnosis on CPU before deciding anything. Terse-JSON is 35% with **no trigger cluster** — uniform across format (cot/ctf both ~36%), code length (684 vs 636 chars), and difficulty (gt_canonical 94.8 either way). That rules out a data-surgery fix; it's a training-config / format-stability failure, ckpt-72 falling into a valid-but-degenerate output mode about a third of the time. Scoring is otherwise harsher-than-GT, not lax (4.1% canonical false-pass), so the approach is sound — the config isn't. Recommendation: re-open Phase 4.3 with a format-stability objective, keep `qwen3-30b-wp-30_70-merged-v2` as the certified fallback to unblock Phase 7 if schedule demands, and do not promote ckpt-72. First task of the re-train is cheap: compare terse rates at checkpoint-50 vs checkpoint-72 (both on disk) on a held-out slice to separate late-collapse from a format-token cause before spending GPU.
+
+Nine commits. The gate battery did its job.
+
+---
+
 ## 2026-05-26 — Phase 4.3 dry-run green, training on the wire; four env stings on the way
 
 Phase 4.3 in execution. The code half landed in a single sequential pass (Tasks 1–4 committed against the live tree, plus a Task-5 helper); the run-half spent the afternoon fighting environment, not algorithm. By 22:00 +1000 the launcher was streaming and the monitor was sampling every 30 minutes.
