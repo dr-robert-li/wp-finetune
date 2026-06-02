@@ -123,6 +123,7 @@ Requirements for deep reasoning fine-tuning of the winning ratio adapter. Depend
 - [ ] **RTRN-02**: max_seq_length increased to 8192 to accommodate full reasoning chains
 - [ ] **RTRN-03**: MoE router weights are confirmed frozen during continued training (no routing shift)
 - [ ] **RTRN-04**: Training completes 1-2 epochs on combined reasoning dataset without OOM or loss divergence
+- [ ] **RTRN-05**: Reasoning adapter judge output is format-stable — terse-JSON (no `[/REASONING]` close tag) rate ≤10% on a held-out slice (Wilson 95% upper ≤15%, n≥300), diagnosed via checkpoint bisect (ckpt-50 vs ckpt-72) before any corrective retrain. Closes the Phase 4.4 REVL-05 rejection (35% terse-JSON collapse).
 
 ### Reasoning Evaluation
 
@@ -312,6 +313,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RTRN-02 | Phase 4.3 | Pending |
 | RTRN-03 | Phase 4.3 | Pending |
 | RTRN-04 | Phase 4.3 | Pending |
+| RTRN-05 | Phase 4.3 | Pending |
 | REVL-01 | Phase 4.4 | Pending |
 | REVL-02 | Phase 4.4 | Pending |
 | REVL-03 | Phase 4.4 | Pending |
