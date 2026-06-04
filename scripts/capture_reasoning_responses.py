@@ -75,7 +75,24 @@ def main() -> int:
     ap.add_argument("--max-tokens", type=int, default=1024)
     ap.add_argument("--min-parseable-rate", type=float, default=0.80)
     ap.add_argument("--limit", type=int, default=None)
+    # --- RTRN-05 parameterization (04.3-02 Task 2): make the served checkpoint a CLI arg. ---
+    # REASONING/SERVED_MODEL/PORT remain ONLY as overridable argparse DEFAULTS here; the code
+    # below reads args.model_dir/args.served_name/args.port, never the module constants directly,
+    # so no ckpt-72 path is a code-read constant (contamination grep-blocker, T-0432-01).
+    ap.add_argument("--model-dir", default=REASONING,
+                    help="Resolved merged model dir to serve (full path). Overrides the legacy "
+                         "REASONING default; the resolved value is echoed and header-stamped.")
+    ap.add_argument("--served-name", default=SERVED_MODEL,
+                    help="Alias vLLM serves the model under (the client model= value).")
+    ap.add_argument("--port", type=int, default=PORT)
     args = ap.parse_args()
+
+    model_dir = args.model_dir
+    served_name = args.served_name
+    port = args.port
+    # Echo the resolved checkpoint BEFORE any model work (provenance / T-0432-04).
+    print(f"[capture] resolved model-dir: {model_dir}", file=sys.stderr)
+    print(f"[capture] resolved served-name: {served_name}  port: {port}", file=sys.stderr)
 
     import openai
     from eval.eval_judge import parse_judge_response
@@ -95,18 +112,24 @@ def main() -> int:
     hist_path = out_path.parent / "capture_format_histogram.json"
 
     name = "wp-eval-reasoning-vllm"
-    endpoint = f"http://localhost:{PORT}/v1"
+    endpoint = f"http://localhost:{port}/v1"
     captured = []
     try:
-        boot_vllm(REASONING, name, PORT, args.gpu_mem_util)
-        wait_healthy(PORT, name)
+        boot_vllm(model_dir, name, port, args.gpu_mem_util)
+        wait_healthy(port, name)
         client = openai.OpenAI(base_url=endpoint, api_key="none")
         with open(out_path, "w") as fh:
+            # FIRST LINE = provenance header carrying the FULL resolved model-dir (T-0432-04).
+            # Not appended to `captured`, so the format histogram (n_total etc.) is unaffected.
+            prov = {"__provenance__": model_dir,
+                    "note": (f"capture_reasoning_responses resolved model-dir={model_dir} "
+                             f"served-name={served_name} max-tokens={args.max_tokens}")}
+            fh.write(json.dumps(prov) + "\n")
             for idx, row in todo:
                 msgs = _user_messages(row)
                 try:
                     resp = client.chat.completions.create(
-                        model=SERVED_MODEL, messages=msgs,
+                        model=served_name, messages=msgs,
                         max_tokens=args.max_tokens, temperature=0.0)
                     response = resp.choices[0].message.content or ""
                 except Exception as e:  # noqa: BLE001
