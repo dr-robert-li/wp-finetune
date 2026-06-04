@@ -106,7 +106,9 @@ DEFAULT_VAL_JSONL = "data/reasoning_dataset/openai_val.jsonl"
 DEFAULT_N = 10
 DEFAULT_THRESHOLD = 0.05
 DEFAULT_LOAD_IN_4BIT = True
-DEFAULT_MAX_MEMORY_GIB = 80
+DEFAULT_MAX_MEMORY_GIB = 0  # 0 => no max_memory cap. On GB10 unified memory a cap pre-allocs
+# ~= the cap and drains the pool (the May-28 80GiB cap caused 115->16.5 GiB drain). 4-bit is
+# the real footprint bound (~60GB bf16 -> ~16GB). Set >0 only on discrete-VRAM hardware.
 DEFAULT_MAX_NEW_TOKENS = 2048           # 04.3-03: discriminator slice (was hardcoded 1024)
 DEFAULT_INCLUDE_STREAMS = "cot,ctf"     # 04.3-03: match the 04.3-02 structural slice
 
@@ -318,7 +320,11 @@ def _load_model(base: str, checkpoint_dir: str | None, no_adapter: bool,
     import torch
     from unsloth import FastLanguageModel
 
-    max_memory = {0: f"{max_memory_gib}GiB", "cpu": "20GiB"}
+    # On GB10 unified memory, an explicit max_memory cap is HARMFUL: NVRM pre-allocates
+    # ~= the cap (e.g. 80+20 GiB), draining the unified pool toward the OOM-cascade floor.
+    # 4-bit (load_in_4bit, the real ~60GB->~16GB protector from the May-28 OOM fix) already
+    # bounds the footprint. max_memory_gib <= 0 => no cap (let the 4-bit weights size the load).
+    max_memory = None if max_memory_gib <= 0 else {0: f"{max_memory_gib}GiB", "cpu": "20GiB"}
     print(f"[parse-check] Loading base model from {base} "
           f"(load_in_4bit={load_in_4bit}, max_memory={max_memory}) ...")
     model, tokenizer = FastLanguageModel.from_pretrained(
@@ -640,7 +646,9 @@ def main() -> None:
         type=int,
         default=DEFAULT_MAX_MEMORY_GIB,
         metavar="INT",
-        help=f"Per-device max memory cap in GiB (default: {DEFAULT_MAX_MEMORY_GIB})",
+        help=f"Per-device max memory cap in GiB (default: {DEFAULT_MAX_MEMORY_GIB}; "
+             "<=0 => NO cap — correct for GB10 unified memory, where a cap pre-allocs ~= "
+             "the cap and drains the pool. 4-bit already bounds the footprint).",
     )
     # 04.3-03 discriminator args
     parser.add_argument(
