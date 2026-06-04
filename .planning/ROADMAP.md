@@ -226,8 +226,8 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 04.3-01-PLAN.md — Reasoning continued-FT of the merged 30_70 base (Option B): D-03 readiness gate, train_config_reasoning.yaml, train_model.py deltas (target_parameters/warmup_steps/router-freeze walker), checkpoint_parse_check.py abort hook, DGX dry-run gate, training run + review-telemetry
-- [ ] 04.3-02-PLAN.md — RTRN-05 format-stability diagnostic bisect (Steps 0-4): parameterize capture/merge scripts (+contamination grep-blocker), merge ckpt-50 through the 5 gates, capture ckpt-50 vs ckpt-72 on an identical slice, Wilson-CI terse-rate compare with pre-registered CI-overlap→n≥300 escalation → 04.3-REOPEN-RESULTS.md verdict (ckpt-72 NOT promoted; merged-v2 fallback intact)
+- [x] 04.3-01-PLAN.md — Reasoning continued-FT of the merged 30_70 base (Option B): D-03 readiness gate, train_config_reasoning.yaml, train_model.py deltas (target_parameters/warmup_steps/router-freeze walker), checkpoint_parse_check.py abort hook, DGX dry-run gate, training run + review-telemetry
+- [x] 04.3-02-PLAN.md — RTRN-05 format-stability diagnostic bisect (Steps 0-4): parameterize capture/merge scripts (+contamination grep-blocker), merge ckpt-50 through the 5 gates, capture ckpt-50 vs ckpt-72 on an identical slice, Wilson-CI terse-rate compare with pre-registered CI-overlap→n≥300 escalation → 04.3-REOPEN-RESULTS.md verdict (ckpt-72 NOT promoted; merged-v2 fallback intact)
 
 ### Phase 4.4: Reasoning Eval & Adapter Merge — INSERTED
 **Goal**: The reasoning adapter passes all existing quality gates (Spearman, PHPCS pass rate, wp-bench) with no regression versus the winning ratio baseline, human reviews a sample of reasoning outputs to confirm quality, and the adapter is merged into base weights
@@ -526,7 +526,7 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 4. Evaluation | v1.0 | 3/3 | Complete   | 2026-05-25 |
 | 4.1. Reasoning Data Generation | v1.2 | 1/3 | In Progress|  |
 | 4.2. Reasoning Dataset Assembly | v1.2 | 0/? | Not started | - |
-| 4.3. Reasoning Fine-Tune | v1.2 | 0/? | Not started | - |
+| 4.3. Reasoning Fine-Tune | v1.2 | 2/3 | In Progress|  |
 | 4.4. Reasoning Eval & Merge | v1.2 | 0/? | Not started | - |
 | 5. Packaging and Deployment | v1.0 | 0/3 | Deferred to v3.0 | - |
 | 6. Adaptive Training Planner | v1.1 | 6/6 | Complete | 2026-04-01 |

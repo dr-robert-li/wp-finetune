@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: executing
-stopped_at: Phase 4.4 REJECTED (REVL-05) — pending Phase 4.3 re-train disposition
-last_updated: "2026-06-02T21:31:00.000Z"
+stopped_at: "04.3-02 executed end-to-end (RTRN-05 bisect Steps 0–4). Verdict REQUIRES_ADDITIONAL_ITERATION — ckpt-50 (65% terse) WORSE than ckpt-72 (37%), disjoint Wilson CIs; all 3 decision-table rows refuted; targets 0% terse; collapse = base-prior revert. Next: follow-up plan whose first step is the unmerged-adapter-on-base discriminator. ckpt-72 NOT promoted; merged-v2 fallback intact."
+last_updated: "2026-06-04T01:30:25.426Z"
 progress:
   total_phases: 9
-  completed_phases: 7
-  total_plans: 26
+  completed_phases: 6
+  total_plans: 30
   completed_plans: 25
-  percent: 78
+  percent: 67
 ---
 
 # Project State
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 04.3 RE-OPENED for format-stability (RTRN-05) — 04.3-02 diagnostic-bisect plan ready to execute
+**Current focus:** Phase 04.3 — reasoning-fine-tune-inserted
 
 ## Current Position
 
-Phase: 04.3 (reasoning-fine-tune) — RE-OPENED. D-05 resolved → iterate (format-stability fix), not ship-baseline.
-Plan: 04.3-02-PLAN.md PLANNED + plan-checker PASS (1 revise iteration; commit cf90391). Covers Steps 0–4 = deterministic ckpt-50-vs-ckpt-72 terse-JSON bisect → 04.3-REOPEN-RESULTS.md verdict. Steps 5–8 (retrain/FS-gate/PHP-sentinel/REVL re-run) deferred to a follow-up plan keyed off the verdict. New req RTRN-05 minted.
-Next: EXECUTE 04.3-02 → `/gsd:execute-phase 04.3`. ckpt-72 NOT promoted; merged-v2 stays certified fallback.
-Status: Phase 04.4 remains CLOSED-REJECTED; reasoning-merged not canonical; v1 baseline (merged-v2) certified fallback throughout
+Phase: 04.3 (reasoning-fine-tune-inserted) — EXECUTING (04.3-02 COMPLETE; phase stays open for follow-up)
+Plan: 04.3-02 COMPLETE (RTRN-05 bisect, Steps 0–4). Verdict: REQUIRES_ADDITIONAL_ITERATION. Commits 8af4513 (params), 25bc633 (verdict).
+Next: PLAN a follow-up keyed off the verdict. FIRST step = unmerged-adapter-on-base (PEFT) inference discriminator on the cot+ctf @2048 slice — splits the merge-vs-training confound. Neither Path-A nor Path-B launches until that resolves. ckpt-72 NOT promoted; merged-v2 stays certified fallback.
+Status: 04.3-02 done — bisect conclusive (ckpt-50 65% terse WORSE than ckpt-72 37%, disjoint Wilson CIs); all 3 pre-registered rows refuted; targets 0% terse; collapse = merged model reverting to base-prior bare-JSON schema. Phase 7 remains blocked.
 
 Progress: [██████████] 96%
 
@@ -182,6 +182,7 @@ Stopped at: W1-W6 cascade BLOCKED on eval-harness prose compat (2 layers). Findi
   - 3 harness bugs found on first run (model output was GOOD): chat-template missing (Stage1 false-empty); judge bimodal CoT→prose/CtF→JSON (prose-only false-failed JSON); <think></think> contaminating php_lint. All fixed + 5 added tests.
   - **CERTIFIED VERDICT (c246a20)**: smoke_pass=True exit=0 distinctness=0.879. judge 5/5 (prose 9/9 dims + 1 CtF json), gen 5/5 php_lint, baseline-sim 0.02-0.42 (<0.85 canary → reasoning diverges). Artifact: merge-artifacts/w0_03_smoke_PASS_verdict.json.
   - Data finding flagged: reasoning judge output is dimensional PROSE (CoT) or JSON (CtF), NOT <REASONING>-tagged. parse_judge_response(JSON-only) would have false-failed all CoT — coherence redesigned prose-aware + json-aware.
+
 Resume file: .planning/phases/04.4-reasoning-eval-adapter-merge-inserted/04.4-CONTEXT.md
 Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertions + smoke-gate hardening), THEN W0-03 smoke gate against models/qwen3-30b-wp-30_70-reasoning-merged/ vs models/qwen3-30b-wp-30_70-merged-v2/ baseline, THEN REVL-01..08 eval gates
 
