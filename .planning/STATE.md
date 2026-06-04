@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: executing
-stopped_at: "04.3-02 executed end-to-end (RTRN-05 bisect Steps 0–4). Verdict REQUIRES_ADDITIONAL_ITERATION — ckpt-50 (65% terse) WORSE than ckpt-72 (37%), disjoint Wilson CIs; all 3 decision-table rows refuted; targets 0% terse; collapse = base-prior revert. Next: follow-up plan whose first step is the unmerged-adapter-on-base discriminator. ckpt-72 NOT promoted; merged-v2 fallback intact."
-last_updated: "2026-06-04T01:30:25.426Z"
+stopped_at: "04.3-03 EXECUTING — Task 1 code committed WIP (1acd70d): checkpoint_parse_check.py has the runtime MoE-binding guard (probe_moe_binding: forward-ACTIVATION-delta primary + structural fallback), --no-adapter/--include-streams/--max-new-tokens 2048/--out histogram, user-only prompts; 9/9 GPU-free tests pass. BLOCKER: --binding-dryrun gate NOT yet passed. Unsloth must run INSIDE the unsloth-headless container (docker exec -w /workspace/wp-finetune ...; host conda has no torch accelerator). A 4-bit 30B load drained free RAM 115->16.5 GiB (NVRM pre-allocates ~the max_memory budget 80+20=100 GiB, far beyond ~16GB weights); aborted at an 18 GiB watchdog floor (host-reboot OOM-cascade risk — .planning/debug/resolved/parse-check-reboots-host.md). NEXT DECISIVE ACTION (advisor): retry the dry-run with --max-memory-gib 24 (weights ~16GB; 24+20 budget -> ~77 GiB free if the cap binds) under the same tight-poll pkill-at-18GiB watchdog. If peak bounds safely -> budget was the cause, unblocked (size headroom for Task-2's heavier n=120/2048 captures too). If it STILL drains -> fixed driver pre-alloc; hand the heavy loads to the USER (debug-note protocol: user runs, orchestrator log-forensics) with docker exec + watchdog + journalctl -f -k. NOTE isolate multi-user.target frees only ~6 GiB (desktop uses ~6) — NOT a memory fix. Cheap parallel de-risk: the binding-representation question can be answered on a toy MoE on CPU. ckpt-72 NOT promoted; merged-v2 fallback intact."
+last_updated: "2026-06-04T11:25:45.067Z"
 progress:
-  total_phases: 9
-  completed_phases: 6
-  total_plans: 30
-  completed_plans: 25
-  percent: 67
+  total_phases: 16
+  completed_phases: 3
+  total_plans: 19
+  completed_plans: 14
+  percent: 19
 ---
 
 # Project State
@@ -138,8 +138,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-03T09:10:00.000Z
-Stopped at: Session resumed → D-05 resolved toward re-open Phase 4.3 (format-stability). Routing to /gsd:plan-phase 04.3 to formalize `04.3-REOPEN-PLAN.md` (peer-reviewed, repo-grounded) into a numbered PLAN.md. ckpt-72 NOT promoted; merged-v2 fallback intact.
+Last session: 2026-06-04T11:25:45.062Z
+Stopped at: context exhaustion at 79% (2026-06-04)
 
 Prior session: 2026-06-02T21:31:00.000Z
 Stopped at: Phase 4.4 CLOSED **REJECTED** at REVL-05 (human). All automated gates run; merge NOT promoted; D-05 disposition pending (recommend Phase 4.3 format-stability re-train). See `04.4-GATE-LEDGER.md` + `04.4-D05-DIAGNOSIS.md`. Resume = decide D-05.
@@ -184,7 +184,7 @@ Stopped at: W1-W6 cascade BLOCKED on eval-harness prose compat (2 layers). Findi
   - **CERTIFIED VERDICT (c246a20)**: smoke_pass=True exit=0 distinctness=0.879. judge 5/5 (prose 9/9 dims + 1 CtF json), gen 5/5 php_lint, baseline-sim 0.02-0.42 (<0.85 canary → reasoning diverges). Artifact: merge-artifacts/w0_03_smoke_PASS_verdict.json.
   - Data finding flagged: reasoning judge output is dimensional PROSE (CoT) or JSON (CtF), NOT <REASONING>-tagged. parse_judge_response(JSON-only) would have false-failed all CoT — coherence redesigned prose-aware + json-aware.
 
-Resume file: .planning/phases/04.4-reasoning-eval-adapter-merge-inserted/04.4-CONTEXT.md
+Resume file: None
 Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertions + smoke-gate hardening), THEN W0-03 smoke gate against models/qwen3-30b-wp-30_70-reasoning-merged/ vs models/qwen3-30b-wp-30_70-merged-v2/ baseline, THEN REVL-01..08 eval gates
 
 ### Session 2026-05-29 reasoning MERGE COMPLETE + PROMOTED
