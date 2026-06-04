@@ -218,8 +218,29 @@ def save_candidate(model, tokenizer, candidate_path: str) -> int:
 
 
 def main() -> int:
+    import argparse
+    # --- RTRN-05 parameterization (04.3-02 Task 2): adapter + out-dir are CLI args. ---
+    # ADAPTER_PATH/CANDIDATE_PATH/REPORT_PATH remain ONLY as overridable argparse DEFAULTS;
+    # main() reads the resolved adapter_path/out_dir locals below, never the ckpt-72 module
+    # constant directly, so no ckpt-72 path is a code-read constant (contamination blocker,
+    # T-0432-01). Merge math + the 5 promotion gates are untouched.
+    ap = argparse.ArgumentParser(description="Unsloth-static fused-MoE candidate merge (parameterized)")
+    ap.add_argument("--adapter-path", default=ADAPTER_PATH,
+                    help="LoRA adapter/checkpoint dir to merge (full path). Overrides the legacy "
+                         "ADAPTER_PATH default; the resolved value is echoed + written to merge_report.json.")
+    ap.add_argument("--out-dir", default=CANDIDATE_PATH,
+                    help="Candidate output dir (staging). Overrides the legacy CANDIDATE_PATH default.")
+    args = ap.parse_args()
+
+    adapter_path = args.adapter_path
+    out_dir = args.out_dir
+    report_path = f"{out_dir}/merge_report.json"
+    # Echo the resolved adapter + out-dir BEFORE any work (provenance / T-0432-04).
+    print(f"[merge] resolved adapter-path: {adapter_path}")
+    print(f"[merge] resolved out-dir:      {out_dir}")
+
     t0 = time.time()
-    cfg = json.load(open(f"{ADAPTER_PATH}/adapter_config.json"))
+    cfg = json.load(open(f"{adapter_path}/adapter_config.json"))
     scale = get_scaling(cfg)
     r = cfg["r"]
 
@@ -227,7 +248,9 @@ def main() -> int:
         "status":        "candidate_pending_anchor",
         "merge_type":    "unsloth_static_moe_per_expert_plus_peft_attention",
         "base_model":    BASE_MODEL_PATH,
-        "adapter":       ADAPTER_PATH,
+        "adapter":       adapter_path,
+        "resolved_adapter_path": adapter_path,
+        "out_dir":       out_dir,
         "scale":         scale,
         "r":             r,
         "lora_alpha":    cfg.get("lora_alpha"),
@@ -249,23 +272,25 @@ def main() -> int:
         "forward_anchor": "pending",
     }
 
-    adapter_tensors = load_adapter_tensors(ADAPTER_PATH)
+    adapter_tensors = load_adapter_tensors(adapter_path)
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL_PATH)
-    tmp_attn_dir = "/tmp/ckpt72_attn_only_adapter"
+    # Per-run tmp adapter dir derived from out_dir so a ckpt-50 run never collides with /
+    # overwrites a ckpt-72 run's scratch dir.
+    tmp_attn_dir = f"/tmp/attn_only_adapter_{Path(out_dir).name}"
 
-    build_attention_only_adapter(ADAPTER_PATH, tmp_attn_dir)
+    build_attention_only_adapter(adapter_path, tmp_attn_dir)
     model = peft_merge_attention(BASE_MODEL_PATH, tmp_attn_dir)
     model = apply_moe_delta_per_expert(model, adapter_tensors, scale, r, report)
 
-    Path(CANDIDATE_PATH).parent.mkdir(parents=True, exist_ok=True)
-    n_shards = save_candidate(model, tokenizer, CANDIDATE_PATH)
+    Path(out_dir).parent.mkdir(parents=True, exist_ok=True)
+    n_shards = save_candidate(model, tokenizer, out_dir)
     report["shard_count"] = n_shards
 
     report["wall_clock_sec"] = round(time.time() - t0, 1)
-    Path(REPORT_PATH).parent.mkdir(parents=True, exist_ok=True)
-    json.dump(report, open(REPORT_PATH, "w"), indent=2)
+    Path(report_path).parent.mkdir(parents=True, exist_ok=True)
+    json.dump(report, open(report_path, "w"), indent=2)
     print(f"\n[DONE] Candidate written in {report['wall_clock_sec']}s")
-    print(f"  Report: {REPORT_PATH}")
+    print(f"  Report: {report_path}")
     print(f"  STATUS: candidate_pending_anchor — DO NOT PROMOTE until anchors pass")
     return 0
 
