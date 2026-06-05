@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: executing
-stopped_at: "04.3-03 EXECUTING — Task 1 code committed WIP (1acd70d): checkpoint_parse_check.py has the runtime MoE-binding guard (probe_moe_binding: forward-ACTIVATION-delta primary + structural fallback), --no-adapter/--include-streams/--max-new-tokens 2048/--out histogram, user-only prompts; 9/9 GPU-free tests pass. BLOCKER: --binding-dryrun gate NOT yet passed. Unsloth must run INSIDE the unsloth-headless container (docker exec -w /workspace/wp-finetune ...; host conda has no torch accelerator). A 4-bit 30B load drained free RAM 115->16.5 GiB (NVRM pre-allocates ~the max_memory budget 80+20=100 GiB, far beyond ~16GB weights); aborted at an 18 GiB watchdog floor (host-reboot OOM-cascade risk — .planning/debug/resolved/parse-check-reboots-host.md). NEXT DECISIVE ACTION (advisor): retry the dry-run with --max-memory-gib 24 (weights ~16GB; 24+20 budget -> ~77 GiB free if the cap binds) under the same tight-poll pkill-at-18GiB watchdog. If peak bounds safely -> budget was the cause, unblocked (size headroom for Task-2's heavier n=120/2048 captures too). If it STILL drains -> fixed driver pre-alloc; hand the heavy loads to the USER (debug-note protocol: user runs, orchestrator log-forensics) with docker exec + watchdog + journalctl -f -k. NOTE isolate multi-user.target frees only ~6 GiB (desktop uses ~6) — NOT a memory fix. Cheap parallel de-risk: the binding-representation question can be answered on a toy MoE on CPU. ckpt-72 NOT promoted; merged-v2 fallback intact."
-last_updated: "2026-06-04T11:25:45.067Z"
+stopped_at: context exhaustion at 79% (2026-06-04)
+last_updated: "2026-06-05T12:39:13.643Z"
 progress:
-  total_phases: 16
-  completed_phases: 3
-  total_plans: 19
-  completed_plans: 14
-  percent: 19
+  total_phases: 9
+  completed_phases: 6
+  total_plans: 31
+  completed_plans: 26
+  percent: 67
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 Phase: 04.3 (reasoning-fine-tune-inserted) — EXECUTING (04.3-02 COMPLETE; phase stays open for follow-up)
 Plan: 04.3-02 COMPLETE (RTRN-05 bisect, Steps 0–4). Verdict: REQUIRES_ADDITIONAL_ITERATION. Commits 8af4513 (params), 25bc633 (verdict).
 Next: EXECUTE 04.3-03 → `/gsd:execute-phase 04.3 --wave 1` (only 04.3-03 incomplete). 04.3-03-PLAN.md PLANNED + plan-checker PASS (3 review rounds: 3B+2W → 1B → 1B all resolved; one Write-truncation recovered + re-verified). 4 tasks (3 auto + 1 human-verify GPU checkpoint), autonomous:false. The merge-vs-training discriminator: Task1 runtime MoE-binding guard (live named_modules, BINDING_FAILED halt) → CP1 → Task2 three capture arms (merged-vLLM-bf16 fresh + merged-Unsloth-4bit + unmerged-Unsloth-4bit load_adapter, identical cot+ctf @120 slice) → Task3 Wilson-CI compare + engine cross-check → DISCRIMINATOR verdict {MERGE_ARTIFACT|TRAINING_UNDERIMPRINT|INCONCLUSIVE|BINDING_FAILED}. ckpt-72 NOT promoted; merged-v2 stays certified fallback.
-Status: 04.3-02 done — bisect conclusive (ckpt-50 65% terse WORSE than ckpt-72 37%, disjoint Wilson CIs); all 3 pre-registered rows refuted; targets 0% terse; collapse = merged model reverting to base-prior bare-JSON schema. Phase 7 remains blocked.
+Status: Ready to execute
 Note: `04.3-REOPEN-PLAN.md` is a peer-reviewed BRIEF (0 executable tasks), folded into 04.3-02 — do NOT `/gsd:execute-phase` it; the plan-index lists it incomplete only by filename pattern. The next actionable artifact is a NEW follow-up plan (`04.3-03`) keyed off the REQUIRES_ADDITIONAL_ITERATION verdict.
 
 Progress: [██████████] 96%
@@ -258,7 +258,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Executing Phase 04.3
+**Status:** Ready to execute
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)
