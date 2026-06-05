@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # 04.3-03 Task 1: binding-dryrun gate under free-RAM watchdog.
-# Launches the 30B 4-bit load inside unsloth-headless, polls host free RAM,
-# pkills the load inside the container if available RAM drops below TRIP_MIB.
+# Launches the 30B bf16 load (--no-4bit, ~57 GiB flat; the bf16 pivot — 4-bit
+# on-the-fly is RULED OUT, ~108 GiB double-hold) inside unsloth-headless, polls
+# host free RAM, pkills the load in the container if available RAM drops below
+# TRIP_MIB. The ~57 GiB bf16 peak is itself SAFE; the watchdog is a backstop.
 # Catastrophe floor is ~16 GiB (kernel OOM-cascade reboots host); trip well above.
 set -u
 
@@ -30,7 +32,7 @@ docker exec -e PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
   python -u -m scripts.checkpoint_parse_check \
   --checkpoint-dir adapters/qwen3-30b-wp-30_70-reasoning/checkpoint-72 \
   --base models/qwen3-30b-wp-30_70-merged-v2 \
-  --binding-dryrun --max-memory-gib 0 \
+  --binding-dryrun --no-4bit --max-memory-gib 0 \
   >> "$LOG" 2>&1 &
 LOAD_PID=$!
 wlog "load launched host_pid=$LOAD_PID"
