@@ -87,3 +87,10 @@ Decisions (locked):
 ## Sources
 - thinkingmachines.ai/tinker, tinker-docs.thinkingmachines.ai (quickstart, model-lineup, rendering)
 - github.com/thinking-machines-lab/tinker-cookbook (README, model_info.py, supervised/, recipes/chat_sl, renderers/, tutorials/)
+
+## P2 STEP 1+2 RESULTS (2026-06-07) — HITL gate before the full run
+Driver: `scripts/tinker_reasoning_sft.py` (one driver, parameterized by --max-steps/--epochs).
+- **Step 1 smoke** (4 steps, eval 4): path validated end-to-end (forward_backward/optim_step/save_weights/sample/decode all work). Output degenerate (`<judge_output>` loop) — expected at 4 steps; terse 4/4.
+- **Step 2 short** (70 steps = 1 epoch, rank 32, LR 4.99e-4 via hyperparam_utils): loss 12.40 -> 6.77; **terse rate 0/20 = 0.000 at temp=0 / max_tokens 1536**. Eval samples are proper dimensional prose + [/REASONING]. The REVL-05 ~35% terse collapse does NOT reproduce after one clean epoch on Tinker.
+- Caveat: temp=0 is the most format-stable sampling; the full-run eval must also test a higher temp (~0.7) for apples-to-apples with the REVL-05 35%.
+- **NEXT (gated): Step 3 full run** — proposed: epochs 2-3, full val eval (n=77) at temp 0.0 AND ~0.7, save checkpoints, then export weights if downstream phases need a local artifact.
