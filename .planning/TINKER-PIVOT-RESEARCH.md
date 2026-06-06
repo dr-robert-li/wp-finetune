@@ -59,6 +59,31 @@ plus `Qwen3-30B-A3B-Base` and `Qwen3-30B-A3B-Instruct-2507`. Exact architecture 
 - **P4 Decide:** if format-stable → this is the v1.2 reasoning model; export weights if downstream
   phases (RL / MoE-Sieve / packaging) need a local artifact.
 
+## P0 + P1 RESOLVED (2026-06-07)
+
+**P0 (connectivity)** — PASS. `.venv-tinker` (gitignored) with `tinker` 0.22.3 + `tinker-cookbook`
+0.4.1. Auth OK; `Qwen/Qwen3-30B-A3B` (+Base +Instruct-2507) accessible (41 models);
+`forward_backward`/`optim_step` loop validated on Llama-3.2-1B. Re-run: `scripts/_tinker_smoke.py --loop`.
+
+**P1 (data adapter + decisions)** — DONE. `scripts/tinker_reasoning_data.py` builds train/val
+SupervisedDatasets from `data/reasoning_dataset/openai_{train,val}.jsonl` via the cookbook's
+`FromConversationFileBuilder` (our files are already its expected `messages` JSONL format — no custom
+dataset code). Smoke: 70 train + 17 val batches @ bs=8 (the full 704 set), markers verified to survive.
+
+Decisions (locked):
+1. **Special tokens** → train as **plain-text literals**. Phase 4.3 added `<wp_gen>`/`<wp_judge>` as
+   tokenizer special tokens; Tinker uses the stock Qwen3 tokenizer so they can't be added. Verified
+   `<wp_gen>`/`<wp_judge>`/`[/REASONING]`/`<judge_output>` all survive the tokenize→decode round-trip.
+   Low-risk: the format-stability markers REVL-05 failed on were already plain text.
+2. **Renderer** → `qwen3_disable_thinking` (our format is in-band prose + `[/REASONING]` + `<judge_output>`,
+   NOT native `<think>` — don't let the thinking renderer inject scaffolding).
+3. **train_on_what** → `LAST_ASSISTANT_MESSAGE` (rows are single-turn user→assistant; ALL_ASSISTANT_MESSAGES warns).
+4. **Base** → `Qwen/Qwen3-30B-A3B` (matches Phase 4.3). **max_length** 8192.
+
+**NEXT = P2 (SFT run — COSTS cloud compute, checkpoint with user before launch):** LoRA on
+`Qwen3-30B-A3B` via `create_lora_training_client`, LR via `hyperparam_utils` scaling, small run first
+(few steps) then full; save checkpoints; then P3 eval terse rate, P4 decide. Open: rank, LR, epochs, $cost.
+
 ## Sources
 - thinkingmachines.ai/tinker, tinker-docs.thinkingmachines.ai (quickstart, model-lineup, rendering)
 - github.com/thinking-machines-lab/tinker-cookbook (README, model_info.py, supervised/, recipes/chat_sl, renderers/, tutorials/)
