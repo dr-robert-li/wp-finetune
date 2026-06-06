@@ -26,8 +26,15 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 
 Phase: 04.3 (reasoning-fine-tune-inserted) — PIVOTED to Tinker (cloud); local execution ABANDONED
 Plan: 04.3-03 (local merge-vs-training discriminator) — OBVIATED by the pivot (no local merge; sample the LoRA directly on Tinker). Do NOT resume the local discriminator / multi-user.target job / 4-bit build.
-Next: **P1 of the Tinker pivot** — (1) write a `ChatDatasetBuilder` over `data/reasoning_dataset/openai_{train,val}.jsonl` (`conversation_to_datum`); (2) RESOLVE the special-token question (did Phase 4.3 add `<wp_gen>`/`<wp_judge>` to the tokenizer? Tinker uses the stock Qwen3 tokenizer); (3) pick renderer (`qwen3` thinking vs `qwen3_disable_thinking` — the format-stability lever REVL-05 failed on) + base variant. Then P2 SFT (LoRA Qwen3-30B-A3B), P3 eval terse rate, P4 decide. See `.planning/TINKER-PIVOT-RESEARCH.md`.
-Status: Tinker pivot — P0 connectivity/loop smoke PASS; P1 in progress.
+Next: **P4 — DECIDE/PROMOTE**. P0-P3 DONE. The reasoning LoRA was re-trained on Tinker
+(`wp-reasoning-v2`, Qwen3-30B-A3B r32, 3 epochs, loss 12.40->2.45) and the REVL-05 terse-JSON
+collapse is FIXED: terse 1.3% @greedy / 9.1% @temp0.7 (n=77) vs the ~35% that rejected ckpt-72.
+Checkpoints on Tinker: wp-reasoning-v2-ep{1,2,3}. P4: (a) promote wp-reasoning-v2 as the v1.2
+reasoning model; (b) export weights via `rest_client.get_checkpoint_archive_url_from_tinker_path`
+if downstream phases need a local artifact (vLLM serves it at ~63 GiB — fits the GB10); (c) re-run
+the REVL rubric/Spearman + invalid-PHP (judge-QUALITY) checks on wp-reasoning-v2 to clear the OTHER
+REVL-05 finding before Phase 7. Driver: `scripts/tinker_reasoning_sft.py`; data: `scripts/tinker_reasoning_data.py`.
+Status: Tinker pivot — P0-P3 DONE (terse collapse fixed). P4 decide/promote/export + REVL judge-quality re-run.
 Note: Local artifacts `models/qwen3-30b-wp-30_70-merged-v2` + `...-reasoning-merged` + `adapters/.../checkpoint-72` are READ-ONLY references/fallback only (NOT promoted). The GB10 memory wall is documented in `output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md`. `04.3-REOPEN-PLAN.md` remains a 0-task brief — do not execute.
 
 Progress: [██████████] 96%
