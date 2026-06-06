@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: executing
-stopped_at: context exhaustion at 79% (2026-06-04)
-last_updated: "2026-06-05T12:39:13.643Z"
+stopped_at: "PIVOT TO TINKER (2026-06-07). Local 30B finetune ABANDONED — bf16 in-process load+adapter transient ~122 GiB > 124.6 GiB total on the GB10 unified pool; proven across Unsloth/transformers/4-bit/streaming/12-shard-reshard/112-GiB-floor and multi-user.target (output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md). 04.3-03 merge-vs-training discriminator + the local merge are MOOT. NEW PATH: Thinking Machines Tinker (managed cloud LoRA + OpenAI-compatible sampling). P0 DONE: auth OK, Qwen/Qwen3-30B-A3B(+Base+Instruct-2507) accessible, forward_backward/optim_step loop PASS (scripts/_tinker_smoke.py --loop; .venv-tinker gitignored; TINKER_API_KEY in .env gitignored). NEXT = P1: ChatDatasetBuilder over data/reasoning_dataset/openai_{train,val}.jsonl (conversation_to_datum) + RESOLVE special-token deps (Tinker uses stock Qwen3 tokenizer) + pick renderer (qwen3 thinking vs qwen3_disable_thinking — the format-stability lever) + base variant. Plan: .planning/TINKER-PIVOT-RESEARCH.md. GIT: local main 25 commits ahead of origin/main; journal commit ab58706; push to main BLOCKED by auto-mode classifier — user must push or add a Bash permission rule."
+last_updated: "2026-06-07T08:15:00.000Z"
 progress:
-  total_phases: 9
-  completed_phases: 6
-  total_plans: 31
-  completed_plans: 26
-  percent: 67
+  total_phases: 16
+  completed_phases: 3
+  total_plans: 19
+  completed_plans: 14
+  percent: 19
 ---
 
 # Project State
@@ -20,15 +20,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 04.3 — reasoning-fine-tune-inserted
+**Current focus:** Phase 04.3 reasoning fine-tune — PIVOTED to **Thinking Machines Tinker** (cloud LoRA) after the GB10 proved unable to load/train the 30B locally. P0 done; P1 (data adapter + decisions) next.
 
 ## Current Position
 
-Phase: 04.3 (reasoning-fine-tune-inserted) — EXECUTING (04.3-02 COMPLETE; phase stays open for follow-up)
-Plan: 04.3-02 COMPLETE (RTRN-05 bisect, Steps 0–4). Verdict: REQUIRES_ADDITIONAL_ITERATION. Commits 8af4513 (params), 25bc633 (verdict).
-Next: EXECUTE 04.3-03 → `/gsd:execute-phase 04.3 --wave 1` (only 04.3-03 incomplete). 04.3-03-PLAN.md PLANNED + plan-checker PASS (3 review rounds: 3B+2W → 1B → 1B all resolved; one Write-truncation recovered + re-verified). 4 tasks (3 auto + 1 human-verify GPU checkpoint), autonomous:false. The merge-vs-training discriminator: Task1 runtime MoE-binding guard (live named_modules, BINDING_FAILED halt) → CP1 → Task2 three capture arms (merged-vLLM-bf16 fresh + merged-Unsloth-4bit + unmerged-Unsloth-4bit load_adapter, identical cot+ctf @120 slice) → Task3 Wilson-CI compare + engine cross-check → DISCRIMINATOR verdict {MERGE_ARTIFACT|TRAINING_UNDERIMPRINT|INCONCLUSIVE|BINDING_FAILED}. ckpt-72 NOT promoted; merged-v2 stays certified fallback.
-Status: Ready to execute
-Note: `04.3-REOPEN-PLAN.md` is a peer-reviewed BRIEF (0 executable tasks), folded into 04.3-02 — do NOT `/gsd:execute-phase` it; the plan-index lists it incomplete only by filename pattern. The next actionable artifact is a NEW follow-up plan (`04.3-03`) keyed off the REQUIRES_ADDITIONAL_ITERATION verdict.
+Phase: 04.3 (reasoning-fine-tune-inserted) — PIVOTED to Tinker (cloud); local execution ABANDONED
+Plan: 04.3-03 (local merge-vs-training discriminator) — OBVIATED by the pivot (no local merge; sample the LoRA directly on Tinker). Do NOT resume the local discriminator / multi-user.target job / 4-bit build.
+Next: **P1 of the Tinker pivot** — (1) write a `ChatDatasetBuilder` over `data/reasoning_dataset/openai_{train,val}.jsonl` (`conversation_to_datum`); (2) RESOLVE the special-token question (did Phase 4.3 add `<wp_gen>`/`<wp_judge>` to the tokenizer? Tinker uses the stock Qwen3 tokenizer); (3) pick renderer (`qwen3` thinking vs `qwen3_disable_thinking` — the format-stability lever REVL-05 failed on) + base variant. Then P2 SFT (LoRA Qwen3-30B-A3B), P3 eval terse rate, P4 decide. See `.planning/TINKER-PIVOT-RESEARCH.md`.
+Status: Tinker pivot — P0 connectivity/loop smoke PASS; P1 in progress.
+Note: Local artifacts `models/qwen3-30b-wp-30_70-merged-v2` + `...-reasoning-merged` + `adapters/.../checkpoint-72` are READ-ONLY references/fallback only (NOT promoted). The GB10 memory wall is documented in `output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md`. `04.3-REOPEN-PLAN.md` remains a 0-task brief — do not execute.
 
 Progress: [██████████] 96%
 
@@ -258,7 +258,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Ready to execute
+**Status:** Executing Phase 04.3
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)
