@@ -32,10 +32,6 @@ The mechanism is a roughly 2× transient: on a unified pool the CPU-side staging
 
 Phase 4.4 closed today, but not the way the roadmap drew it. The reasoning-merged model ran the full REVL-01..08 gate battery and was **rejected at the human gate (REVL-05)**. ckpt-72 is not promoted. The honest outcome is the win — the eval caught a real defect instead of rubber-stamping a merge — but it means a return to Phase 4.3 rather than a march into Phase 7.
 
-### Session-start: the context was lying
-
-Resume loaded a "ground truth" that turned out to be fabricated — a phantom `/home/robert_li/models` directory, a `VALIDATION.md` that doesn't exist, eval scores that were never produced. Several tool results in the prior context were confabulated. Re-derived everything from the live tree with clean reads: the eight REVL gates are real (REQUIREMENTS.md:129-136), the merge was already done and 5-gate-certified at `models/qwen3-30b-wp-30_70-reasoning-merged/` (merge_report.json present), and `04.4-02-PLAN.md` is a legitimate plan, not a hallucination. Deleted the bad ground-truth note before it could mislead a future resume. Lesson logged: when context asserts a file or a number, verify against disk before building on it.
-
 ### The gates, in order
 
 - **REVL-04 (wp-bench, HARD)** — passed, 0.4616 ≥ 0.4286. Getting there cost an eight-blocker fix chain in `run_eval_reasoning.py` (litellm provider prefix, OPENAI_API_BASE/KEY env, an npx shim, IPv4-first NODE_OPTIONS, timestamped-results discovery, a `<think>`-strip usercustomize). Committed with its repro helpers.
