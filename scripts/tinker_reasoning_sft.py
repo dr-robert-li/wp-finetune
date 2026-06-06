@@ -88,9 +88,16 @@ def main():
     ap.add_argument("--eval-n", type=int, default=4)
     ap.add_argument("--eval-max-tokens", type=int, default=2048)
     ap.add_argument("--eval-temperature", type=float, default=0.0)
+    ap.add_argument("--eval-temps", default=None,
+                    help="csv of temps for the FINAL eval, e.g. '0.0,0.7' (default: --eval-temperature)")
+    ap.add_argument("--per-epoch-eval-n", type=int, default=0,
+                    help="if >0, eval this many val prompts at temp 0 after each epoch (late-collapse guard) + save a per-epoch checkpoint")
+    ap.add_argument("--final-eval-n", type=int, default=0, help="override --eval-n for the final eval")
     ap.add_argument("--save-name", default=None)
     args = ap.parse_args()
     save_name = args.save_name or f"wp-reasoning-{args.stage}"
+    final_eval_n = args.final_eval_n or args.eval_n
+    final_temps = [float(t) for t in args.eval_temps.split(",")] if args.eval_temps else [args.eval_temperature]
 
     train_ds, _ = build_datasets(batch_size=args.batch_size)
     val_rows = [json.loads(l) for l in open(VAL_PATH)]
@@ -108,6 +115,7 @@ def main():
     step = 0
     losses = []
     stop = False
+    last_sampling_client = None
     for epoch in range(args.epochs):
         for i in range(len(train_ds)):
             batch = train_ds.get_batch(i)
@@ -123,24 +131,38 @@ def main():
             if args.max_steps and step >= args.max_steps:
                 stop = True
                 break
+
+        # Per-epoch checkpoint + quick late-collapse guard eval (temp 0).
+        ep_name = f"{save_name}-ep{epoch + 1}"
+        last_sampling_client = tc.save_weights_and_get_sampling_client(name=ep_name)
+        print(f"[sft] epoch {epoch + 1} done (step {step}); checkpoint saved name={ep_name}", flush=True)
+        if args.per_epoch_eval_n > 0:
+            t, n = terse_eval(last_sampling_client, renderer, tok, val_rows,
+                              n=args.per_epoch_eval_n, max_tokens=args.eval_max_tokens,
+                              temperature=0.0)
+            print(f"[epoch-eval] ep{epoch + 1} terse@temp0 = {t}/{n} = {t / n if n else float('nan'):.3f}", flush=True)
         if stop:
             break
 
     print(f"[sft] training done: {step} steps. "
           f"loss first={losses[0] if losses else '?'} last={losses[-1] if losses else '?'}", flush=True)
 
-    sampling_client = tc.save_weights_and_get_sampling_client(name=save_name)
-    print(f"[sft] saved weights -> sampling client (name={save_name})", flush=True)
+    sampling_client = last_sampling_client or tc.save_weights_and_get_sampling_client(name=save_name)
 
-    terse, total = terse_eval(sampling_client, renderer, tok, val_rows,
-                              n=args.eval_n, max_tokens=args.eval_max_tokens,
-                              temperature=args.eval_temperature, debug=True)
-    rate = terse / total if total else float("nan")
-    print(f"[eval] terse(no [/REASONING]) = {terse}/{total} = {rate:.3f} "
-          f"(temp={args.eval_temperature}, max_tokens={args.eval_max_tokens})", flush=True)
+    # Final eval on the last checkpoint, across all requested temps.
+    final_rates = {}
+    for ti, temp in enumerate(final_temps):
+        terse, total = terse_eval(sampling_client, renderer, tok, val_rows,
+                                  n=final_eval_n, max_tokens=args.eval_max_tokens,
+                                  temperature=temp, debug=(ti == 0))
+        rate = terse / total if total else float("nan")
+        final_rates[temp] = (terse, total, rate)
+        print(f"[eval] terse(no [/REASONING]) @temp{temp} = {terse}/{total} = {rate:.3f} "
+              f"(max_tokens={args.eval_max_tokens})", flush=True)
+    rates_str = " ".join(f"terse@{t}={r[2]:.3f}" for t, r in final_rates.items())
     print(f"RESULT stage={args.stage} steps={step} "
           f"loss_first={losses[0] if losses else 'NA'} loss_last={losses[-1] if losses else 'NA'} "
-          f"terse_rate={rate:.3f} n_eval={total}", flush=True)
+          f"n_eval={final_eval_n} {rates_str}", flush=True)
 
 
 if __name__ == "__main__":
