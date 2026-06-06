@@ -7,7 +7,10 @@
 # Catastrophe floor is ~16 GiB (kernel OOM-cascade reboots host); trip well above.
 set -u
 
-TRIP_MIB=20480          # 20 GiB: margin over the documented 18 GiB floor
+TRIP_MIB=18432          # 18 GiB safe backstop. (The 2026-06-06 112-GiB-allowance test at 9920 is
+                        # reverted: it tripped at 82% weight-load / ~114.7 GiB used WITHOUT completing
+                        # — the bf16 in-process load+adapter needs >=124.6 GiB total, infeasible on
+                        # this machine at ANY floor. See MEMORY-INVESTIGATION-bf16.md. Do not re-lower.)
 POLL_SEC=1
 LOG=logs/binding_dryrun_ckpt72.log
 WLOG=logs/binding_dryrun_watchdog.log
