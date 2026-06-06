@@ -94,3 +94,20 @@ Driver: `scripts/tinker_reasoning_sft.py` (one driver, parameterized by --max-st
 - **Step 2 short** (70 steps = 1 epoch, rank 32, LR 4.99e-4 via hyperparam_utils): loss 12.40 -> 6.77; **terse rate 0/20 = 0.000 at temp=0 / max_tokens 1536**. Eval samples are proper dimensional prose + [/REASONING]. The REVL-05 ~35% terse collapse does NOT reproduce after one clean epoch on Tinker.
 - Caveat: temp=0 is the most format-stable sampling; the full-run eval must also test a higher temp (~0.7) for apples-to-apples with the REVL-05 35%.
 - **NEXT (gated): Step 3 full run** — proposed: epochs 2-3, full val eval (n=77) at temp 0.0 AND ~0.7, save checkpoints, then export weights if downstream phases need a local artifact.
+
+## P2 STEP 3 (full run) + P3 RESULTS (2026-06-07) — SUCCESS
+`wp-reasoning-v2`, Qwen3-30B-A3B LoRA rank32, LR 4.99e-4, 3 epochs / 210 steps.
+- loss 12.40 -> 2.45. Per-epoch terse@temp0: ep1/ep2/ep3 all 0/20 (no late collapse).
+- FINAL eval n=77: **terse@greedy = 1/77 = 1.3%**, **terse@temp0.7 = 7/77 = 9.1%**.
+- vs REVL-05 ~35% terse-JSON collapse -> RESOLVED. The clean Tinker re-train fixes the format-stability
+  failure that rejected ckpt-72. Checkpoints on Tinker: wp-reasoning-v2-ep{1,2,3}.
+- REMAINING (separate from format): the other REVL-05 finding (judge passed syntactically-invalid PHP)
+  is a judge-QUALITY issue, not measured by terse rate — needs the rubric/REVL eval re-run on this model.
+
+## P4 — DECIDE (next)
+- Keeper: ep3 (lowest loss, format held). Optional: eval ep2@temp0.7 to compare format-stability-vs-quality.
+- Promote wp-reasoning-v2 as the v1.2 reasoning model; export weights via
+  rest_client.get_checkpoint_archive_url_from_tinker_path(...) if downstream phases (RL/MoE-Sieve/packaging)
+  need a local artifact (vLLM serves the merged/exported model at ~63 GiB — that DOES fit the GB10).
+- Re-run the REVL rubric/Spearman + invalid-PHP checks on wp-reasoning-v2 (sample via Tinker OpenAI-compatible
+  endpoint) to clear the remaining REVL-05 judge-quality item before promotion to Phase 7.
