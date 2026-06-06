@@ -4,6 +4,30 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-06-07 — The bf16 wall, and giving up on local finetuning of a 30B
+
+This is the entry I didn't want to write, but it's the most useful one in a while. After REVL-05 sent us back to Phase 4.3 for a format-stability re-train, I spent days trying to get the 30B reasoning model to load and run on the local box, and I finally accepted it isn't going to happen here. We're moving the finetuning to **Thinking Machines' Tinker API**.
+
+**Context.** The plan converged on a clean bf16 re-train plus a merge-vs-training discriminator to settle whether the terse-JSON collapse was a merge artifact or an under-imprinted adapter. All of it needs the same thing first: load Qwen3-30B-A3B (≈57 GB in bf16) in-process, attach the LoRA, and generate. On paper a 124.6 GB unified-memory box should swallow a 57 GB model with room to spare. It does not.
+
+**The wall.** Every in-process load peaks around **100–103 GB and dies**, no matter how I come at it:
+
+- Unsloth bf16 — tripped at ~61% of weight loading.
+- Unsloth on-the-fly 4-bit — same ~100 GB peak (the 4-bit copy grows while the bf16 shards are still held).
+- transformers `BitsAndBytesConfig` 4-bit — identical.
+- transformers bf16 streaming with `device_map={"":0}` + `low_cpu_mem_usage=True` — still ~103 GB.
+- Re-sharding the checkpoint into twelve ~5 GB shards (my best hypothesis — kill the 47.6 GB mega-shard's CPU buffer) — **falsified**, identical curve.
+
+The mechanism is a roughly 2× transient: on a unified pool the CPU-side staging copy and the on-device copy of the weights coexist during load, so materializing a 57 GB model briefly needs ~115–120 GB, and the adapter wants more on top. I measured it directly — python RSS ~34 GB while ~65 GB sat on the device, ~100 GB total and still climbing.
+
+**What I tried to muscle through it.** I lowered the watchdog floor aggressively — allow 112 GB consumed, trip at ~10 GB free. It tripped at **82% of weight loading, 114.7 GB used, still not done.** Extrapolating the tail, just finishing the weights needs ~120–122 GB, and the adapter pushes the whole thing past the 124.6 GB total. So there's no floor that works: the requirement genuinely exceeds the machine. I also had a `multi-user.target` plan staged (drop the desktop, reclaim GNOME's ~6 GB, run headless) — but the math says even that ~6 GB doesn't close a >124 GB requirement once the adapter loads. The host never actually rebooted through any of this; the watchdog held every time. The wall is real, not a tooling bug.
+
+**Decision.** Stop fighting the hardware. Outsource the finetuning to **Tinker** — Thinking Machines' managed LoRA training + sampling API. It runs the model on their GPUs, so the local memory ceiling simply stops mattering. It supports `Qwen/Qwen3-30B-A3B` (our exact base), our dataset is already in the chat format its `conversation_to_datum` path expects, and I can re-run the reasoning SFT in the cloud, sample and eval it directly, then export the LoRA weights if I ever want them back locally for serving. Connectivity is verified end-to-end: auth, model access, and a `forward_backward`/`optim_step` loop on a 1B all pass.
+
+**The hard learning.** 128 GB of local memory is not always enough. A 30B model is just a bit too large to finetune locally — not because of the parameter count on disk, but because the load transient on a unified pool roughly doubles it, and "57 GB into 124 GB" quietly becomes "120+ GB into 124 GB." I spent days proving a venue impossible when the better call was to recognise earlier that the box was the constraint and reach for the right tool. The bf16 pivot itself was sound — the science was never the problem — but I anchored on "it should fit" long past the point where the measurements said otherwise. Next time the transient math comes first, before the clever loader tricks. The local `merged-v2` and `ckpt-72` stay as read-only references; the real work moves to the cloud.
+
+---
+
 ## 2026-06-02 — Phase 4.4 gates run end-to-end; REVL-05 rejects the reasoning merge
 
 Phase 4.4 closed today, but not the way the roadmap drew it. The reasoning-merged model ran the full REVL-01..08 gate battery and was **rejected at the human gate (REVL-05)**. ckpt-72 is not promoted. The honest outcome is the win — the eval caught a real defect instead of rubber-stamping a merge — but it means a return to Phase 4.3 rather than a march into Phase 7.
