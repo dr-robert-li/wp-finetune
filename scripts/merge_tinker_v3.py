@@ -194,13 +194,248 @@ def spearman_agree(
     return spearman_rho(tinker_scores, merged_scores) >= thresh
 
 
-if __name__ == "__main__":  # pragma: no cover
-    # CLI merge (stock base load + per-expert apply + manual lm_head + staging save +
-    # merge_report) is implemented in Task 2. Task 1 ships the importable math above.
-    import sys
-    print(
-        "merge_tinker_v3: delta/fidelity functions importable. "
-        "Run the merge via the Task-2 CLI (added next).",
-        file=sys.stderr,
+# --------------------------------------------------------------------------- #
+# CLI merge (stock base load + per-expert apply + manual lm_head + staging save).
+# Heavy deps (transformers/peft/safetensors) are imported lazily inside the merge
+# functions so module import stays light (Task-1 < 5 s invariant). NO model load or
+# file IO happens at import or at `--help`.
+# --------------------------------------------------------------------------- #
+
+NUM_LAYERS = 48
+NUM_EXPERTS = 128
+ATTN_PROJS = ["q_proj", "k_proj", "v_proj", "o_proj"]
+STOCK_VOCAB = 151936
+GATE_UP_OUT = 1536  # 2 * per-expert mlp dim (gate first, up second)
+
+DEFAULT_ADAPTER_TAR = "models/tinker_export/wp-reasoning-v3/checkpoint.tar"
+DEFAULT_BASE = "models/Qwen3-30B-A3B"
+DEFAULT_OUTPUT_DIR = "models/_staging/qwen3-30b-wp-30_70-reasoning-merged-v3"
+DEFAULT_REPORT = "output/merge_v3/merge_report.json"
+RAM_FLOOR_GIB = 70.0
+
+
+def _free_ram_gib() -> float:
+    """Available RAM in GiB from /proc/meminfo (MemAvailable). Used for the RAM floor."""
+    try:
+        with open("/proc/meminfo") as fh:
+            for line in fh:
+                if line.startswith("MemAvailable:"):
+                    kb = float(line.split()[1])
+                    return kb / (1024.0 * 1024.0)
+    except OSError:
+        pass
+    return float("inf")  # unknown -> do not block (Task-3 launcher also guards)
+
+
+def _untar_adapter(tar_path: str, dest: str) -> str:
+    """Extract adapter_config.json + adapter_model.safetensors from checkpoint.tar."""
+    import os
+    import tarfile
+
+    os.makedirs(dest, exist_ok=True)
+    with tarfile.open(tar_path, "r:*") as tf:
+        for m in tf.getmembers():
+            name = os.path.basename(m.name)
+            if name in ("adapter_config.json", "adapter_model.safetensors"):
+                m.name = name  # flatten any leading dirs
+                tf.extract(m, dest)
+    return dest
+
+
+def _load_adapter_tensors(adapter_dir: str) -> "dict":
+    """Load all LoRA tensors from the (single) adapter_model.safetensors into CPU."""
+    import os
+
+    from safetensors import safe_open
+
+    tensors = {}
+    path = os.path.join(adapter_dir, "adapter_model.safetensors")
+    with safe_open(path, framework="pt", device="cpu") as f:
+        for k in f.keys():
+            tensors[k] = f.get_tensor(k)
+    return tensors
+
+
+def _k(layer: int, w: str, ab: str) -> str:
+    """Tinker MoE expert key: base_model.model.model.layers.{L}.mlp.experts.{w}.lora_{A|B}.weight"""
+    return f"base_model.model.model.layers.{layer}.mlp.experts.{w}.lora_{ab}.weight"
+
+
+def _build_attention_only_adapter(adapter_tensors: dict, adapter_cfg: dict, tmp_dir: str) -> str:
+    """Write a temp PEFT adapter holding ONLY self_attn q/k/v/o LoRA (2D, standard)."""
+    import json
+    import os
+
+    from safetensors.torch import save_file
+
+    os.makedirs(tmp_dir, exist_ok=True)
+    attn = {k: v for k, v in adapter_tensors.items()
+            if any(f".{p}." in k for p in ATTN_PROJS)}
+    assert attn, "no self_attn LoRA tensors found in adapter"
+    save_file(attn, os.path.join(tmp_dir, "adapter_model.safetensors"))
+    cfg = dict(adapter_cfg)
+    cfg["target_modules"] = ATTN_PROJS
+    cfg["target_parameters"] = []
+    cfg["modules_to_save"] = None
+    with open(os.path.join(tmp_dir, "adapter_config.json"), "w") as fh:
+        json.dump(cfg, fh, indent=2)
+    return tmp_dir
+
+
+def _run_merge(args) -> int:
+    import json
+    import os
+    import tempfile
+    import time
+
+    from peft import PeftModel
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    t0 = time.time()
+    os.makedirs(os.path.dirname(args.report) or ".", exist_ok=True)
+
+    # 1) Extract adapter + read scale = lora_alpha / r (never hardcoded at call sites).
+    work = tempfile.mkdtemp(prefix="tinker_v3_adapter_")
+    _untar_adapter(args.adapter_tar, work)
+    with open(os.path.join(work, "adapter_config.json")) as fh:
+        acfg = json.load(fh)
+    r = int(acfg["r"])
+    scale = float(acfg.get("lora_alpha", r)) / float(r)
+    adapter = _load_adapter_tensors(work)
+
+    # 2) Load STOCK base on CPU bf16. device_map is an explicit CPU placement, never
+    #    "auto" (MoE cannot be auto-offloaded mid-merge without corrupting expert math).
+    model = AutoModelForCausalLM.from_pretrained(
+        args.base, device_map={"": "cpu"}, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True,
     )
-    sys.exit(0)
+    assert model.config.tie_word_embeddings is False, (
+        "tie_word_embeddings must be False so the manual lm_head LoRA does not leak into embed_tokens"
+    )
+    assert model.config.vocab_size == STOCK_VOCAB, (
+        f"base vocab {model.config.vocab_size} != stock {STOCK_VOCAB} (wrong base?)"
+    )
+    lm_head_w = model.lm_head.weight
+    assert tuple(lm_head_w.shape) == (STOCK_VOCAB, model.config.hidden_size), tuple(lm_head_w.shape)
+
+    report = {
+        "status": "staging_pending_anchor",
+        "merge_type": "tinker_per_expert_moe_plus_peft_attention_plus_manual_lm_head",
+        "base_path": args.base,
+        "adapter_tar": args.adapter_tar,
+        "out_dir": args.output_dir,
+        "scale": scale, "r": r, "lora_alpha": acfg.get("lora_alpha"),
+        "math_convention": "tinker_shared_A_per_expert_B (w1/w3) | per_expert_A_shared_B (w2)",
+    }
+
+    # 3) MoE per-expert deltas (all 48 layers). Tinker per-expert MoE convention:
+    # gate_up = cat([B_w1[e]@A_w1, B_w3[e]@A_w3]); down = B_w2@A_w2[e]; cast bf16 before add.
+    gate_up_touched = down_touched = 0
+    differ = {}
+    for L in range(NUM_LAYERS):
+        experts = model.model.layers[L].mlp.experts
+        gate_up_param = experts.gate_up_proj   # (E,1536,2048)
+        down_param = experts.down_proj         # (E,2048,768)
+        A_w1 = adapter[_k(L, "w1", "A")]; B_w1 = adapter[_k(L, "w1", "B")]
+        A_w3 = adapter[_k(L, "w3", "A")]; B_w3 = adapter[_k(L, "w3", "B")]
+        A_w2 = adapter[_k(L, "w2", "A")]; B_w2 = adapter[_k(L, "w2", "B")]
+        if L == 0:
+            # per_expert_delta_differ guard over >=4 experts for w1/w2/w3 (gate-half=w1, up-half=w3).
+            gu = [build_gate_up_delta(A_w1, B_w1, A_w3, B_w3, e, scale) for e in range(4)]
+            differ["w1"] = round(per_expert_differ([g[:GATE_UP_OUT // 2] for g in gu]), 6)
+            differ["w3"] = round(per_expert_differ([g[GATE_UP_OUT // 2:] for g in gu]), 6)
+            differ["w2"] = round(per_expert_differ([build_down_delta(A_w2, B_w2, e, scale) for e in range(4)]), 6)
+        for e in range(NUM_EXPERTS):
+            gate_up_param.data[e] += build_gate_up_delta(A_w1, B_w1, A_w3, B_w3, e, scale).to(torch.bfloat16)
+            down_param.data[e] += build_down_delta(A_w2, B_w2, e, scale).to(torch.bfloat16)
+            gate_up_touched += 1; down_touched += 1
+    report["per_expert_delta_differ_check"] = differ
+    report["gate_up_touched"] = gate_up_touched
+    report["down_touched"] = down_touched
+    if not all(differ[w] > 1e-5 for w in ("w1", "w2", "w3")):
+        report["status"] = "ABORT_broadcast_merge"
+        with open(args.report, "w") as fh:
+            json.dump(report, fh, indent=2)
+        print(f"ABORT: per-expert deltas not distinct: {differ}", flush=True)
+        return 4
+
+    # 4) Attention via attention-only temp PEFT adapter (q/k/v/o), then merge_and_unload.
+    q_before = model.model.layers[0].self_attn.q_proj.weight.detach().clone()
+    attn_dir = tempfile.mkdtemp(prefix="tinker_v3_attn_")
+    _build_attention_only_adapter(adapter, acfg, attn_dir)
+    model = PeftModel.from_pretrained(model, attn_dir).merge_and_unload()
+    q_after = model.model.layers[0].self_attn.q_proj.weight
+    report["attention_q_proj_changed"] = bool((q_before - q_after).abs().max().item() > 1e-6)
+    assert report["attention_q_proj_changed"], "attention merge did not change q_proj"
+
+    # 5) Manual lm_head LoRA (PEFT skips unembed_tokens because the key is unembed_tokens, not lm_head).
+    A_un = adapter["base_model.model.model.unembed_tokens.lora_A.weight"]
+    B_un = adapter["base_model.model.model.unembed_tokens.lora_B.weight"]
+    model.lm_head.weight.data += build_lm_head_delta(A_un, B_un, scale).to(torch.bfloat16)
+    assert tuple(model.lm_head.weight.shape) == (STOCK_VOCAB, model.config.hidden_size)
+    report["lm_head_applied"] = True
+    report["lm_head_touched"] = 1
+
+    # 6) Save merged model + STOCK tokenizer (never the extended 151,938 tokenizer) to staging.
+    tmp_out = args.output_dir + ".tmp_merge"
+    if os.path.exists(tmp_out):
+        import shutil
+        shutil.rmtree(tmp_out)
+    os.makedirs(tmp_out, exist_ok=True)
+    model.save_pretrained(tmp_out, safe_serialization=True, max_shard_size="5GB")
+    tok = AutoTokenizer.from_pretrained(args.base)
+    tok.save_pretrained(tmp_out)
+    report["base_vocab"] = STOCK_VOCAB
+    report["tokenizer_vocab"] = len(tok)
+    assert report["tokenizer_vocab"] == STOCK_VOCAB, (
+        f"tokenizer vocab {report['tokenizer_vocab']} != {STOCK_VOCAB} (extended tokenizer leaked)"
+    )
+    if os.path.exists(args.output_dir):
+        import shutil
+        shutil.rmtree(args.output_dir)
+    os.rename(tmp_out, args.output_dir)
+    import glob
+    report["shard_count"] = len(glob.glob(os.path.join(args.output_dir, "model-*-of-*.safetensors")))
+    report["wall_clock_sec"] = round(time.time() - t0, 1)
+    report["status"] = "staging_written_pending_anchor"
+    with open(args.report, "w") as fh:
+        json.dump(report, fh, indent=2)
+    print(f"[DONE] staging merge written to {args.output_dir} in {report['wall_clock_sec']}s", flush=True)
+    print(f"  differ {differ} | shards {report['shard_count']} | report {args.report}", flush=True)
+    print("  STATUS: staging_written_pending_anchor — DO NOT PROMOTE until 3 anchors pass", flush=True)
+    return 0
+
+
+def main() -> int:
+    import argparse
+    import sys
+
+    ap = argparse.ArgumentParser(description="Tinker per-expert MoE LoRA merge -> v3 staging")
+    ap.add_argument("--adapter-tar", default=DEFAULT_ADAPTER_TAR,
+                    help="Tinker HF PEFT LoRA checkpoint.tar (adapter_config + adapter_model.safetensors)")
+    ap.add_argument("--base", default=DEFAULT_BASE, help="Stock base model dir (Qwen3-30B-A3B, vocab 151936)")
+    ap.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR,
+                    help="Staging output dir (must be under _staging/ unless --force-canonical)")
+    ap.add_argument("--report", default=DEFAULT_REPORT, help="merge_report.json path")
+    ap.add_argument("--force-canonical", action="store_true",
+                    help="Allow writing outside _staging/ (DANGER: can overwrite canonical). Default off.")
+    args = ap.parse_args()
+
+    # Staging-isolation guard: refuse a non-_staging output dir unless explicitly forced.
+    if "_staging/" not in args.output_dir and not args.force_canonical:
+        print(f"REFUSE: --output-dir {args.output_dir!r} is not under _staging/ and "
+              f"--force-canonical not set. Canonical write blocked.", file=sys.stderr)
+        return 3
+
+    # RAM floor: this CPU merge holds the ~57 GiB bf16 model + fp32 deltas; abort below 70 GiB.
+    free = _free_ram_gib()
+    if free < RAM_FLOOR_GIB:
+        print(f"ABORT: free RAM {free:.1f} GiB < floor {RAM_FLOOR_GIB} GiB. "
+              f"Close Chromium/heavy apps and retry.", file=sys.stderr)
+        return 2
+
+    return _run_merge(args)
+
+
+if __name__ == "__main__":  # pragma: no cover
+    import sys
+    sys.exit(main())
