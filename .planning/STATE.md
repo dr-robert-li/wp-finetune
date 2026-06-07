@@ -4,12 +4,12 @@ milestone: v1.0
 milestone_name: MVP
 status: executing
 stopped_at: context exhaustion at 79% (2026-06-04)
-last_updated: "2026-06-07T22:28:24.121Z"
+last_updated: "2026-06-07T23:53:35.949Z"
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 34
-  completed_plans: 26
+  completed_plans: 29
   percent: 67
 ---
 
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 ## Current Position
 
 Phase: 04.4 (reasoning-eval-adapter-merge-inserted) — EXECUTING
-Plan: 1 of 5
+Plan: 2 of 5
 Next: **REVL-05 human re-gate against `wp-reasoning-v3`, then Phase 7.** P0-P5 DONE. The
 judge-quality corrective branch is complete and promoted **`wp-reasoning-v3`** (Tinker run
 `3497a27e...:train:0`) — it fixes BOTH halves of REVL-05. Approach (see
@@ -44,10 +44,10 @@ in `04.3-P4-TINKER-RESULTS.md`.) Driver: `scripts/tinker_reasoning_sft.py --trai
 data: `scripts/build_reasoning_negatives.py` + `build_augmented_train.py`; gates:
 `check_invalid_php_sentinel.py` + `check_verdict_confusion.py` + `tinker_fs_gate.py` +
 `eval/eval_judge.py --responses-jsonl`.
-Status: Executing Phase 04.4
+Status: Ready to execute
 Note: Local artifacts `models/qwen3-30b-wp-30_70-merged-v2` + `...-reasoning-merged` + `adapters/.../checkpoint-72` are READ-ONLY references/fallback only (NOT promoted). The GB10 memory wall is documented in `output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md`. `04.3-REOPEN-PLAN.md` remains a 0-task brief — do not execute.
 
-Progress: [██████████] 96%
+Progress: [█████████░] 85%
 
 ## Performance Metrics
 
@@ -275,7 +275,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Executing Phase 04.4
+**Status:** Ready to execute
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)
