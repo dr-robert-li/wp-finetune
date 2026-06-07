@@ -44,7 +44,7 @@ in `04.3-P4-TINKER-RESULTS.md`.) Driver: `scripts/tinker_reasoning_sft.py --trai
 data: `scripts/build_reasoning_negatives.py` + `build_augmented_train.py`; gates:
 `check_invalid_php_sentinel.py` + `check_verdict_confusion.py` + `tinker_fs_gate.py` +
 `eval/eval_judge.py --responses-jsonl`.
-Status: Tinker pivot — P0-P5 DONE. REVL-05 judge-quality RESOLVED; wp-reasoning-v3 is the v1.2 reasoning model. Awaiting REVL-05 human re-gate -> Phase 7.
+Status: Tinker pivot — P0-P5 DONE. **REVL-05 human gate APPROVED 2026-06-07T10:56:39Z** (output/v1.2_human_review_v3.md) — wp-reasoning-v3 ACCEPTED as the v1.2 reasoning model. Phase 04.3 reasoning fine-tune COMPLETE. NEXT: Phase 4.4 (adapter merge — note Tinker export is already an HF PEFT LoRA adapter) -> Phase 7 (router profiling).
 Note: Local artifacts `models/qwen3-30b-wp-30_70-merged-v2` + `...-reasoning-merged` + `adapters/.../checkpoint-72` are READ-ONLY references/fallback only (NOT promoted). The GB10 memory wall is documented in `output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md`. `04.3-REOPEN-PLAN.md` remains a 0-task brief — do not execute.
 
 Progress: [██████████] 96%
