@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: executing
-stopped_at: "PIVOT TO TINKER (2026-06-07). Local 30B finetune ABANDONED — bf16 in-process load+adapter transient ~122 GiB > 124.6 GiB total on the GB10 unified pool; proven across Unsloth/transformers/4-bit/streaming/12-shard-reshard/112-GiB-floor and multi-user.target (output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md). 04.3-03 merge-vs-training discriminator + the local merge are MOOT. NEW PATH: Thinking Machines Tinker (managed cloud LoRA + OpenAI-compatible sampling). P0 DONE: auth OK, Qwen/Qwen3-30B-A3B(+Base+Instruct-2507) accessible, forward_backward/optim_step loop PASS (scripts/_tinker_smoke.py --loop; .venv-tinker gitignored; TINKER_API_KEY in .env gitignored). NEXT = P1: ChatDatasetBuilder over data/reasoning_dataset/openai_{train,val}.jsonl (conversation_to_datum) + RESOLVE special-token deps (Tinker uses stock Qwen3 tokenizer) + pick renderer (qwen3 thinking vs qwen3_disable_thinking — the format-stability lever) + base variant. Plan: .planning/TINKER-PIVOT-RESEARCH.md. GIT: local main 25 commits ahead of origin/main; journal commit ab58706; push to main BLOCKED by auto-mode classifier — user must push or add a Bash permission rule."
-last_updated: "2026-06-07T08:15:00.000Z"
+stopped_at: "P4 DONE (Tinker, 2026-06-07). Prior session's ep1/2/3 had EVAPORATED — driver used deprecated save_weights_and_get_sampling_client (ephemeral; live Tinker query showed 0 persistent checkpoints), so P4 required a FULL RE-TRAIN. Driver durability FIXED (save_weights_for_sampler ttl=None + create_sampling_client + save_state + incremental manifest). Re-trained wp-reasoning-v2 (Qwen3-30B-A3B r32, 3 ep, loss 12.40->2.40); persisted ep1/2/3 + final-state on run a37be9b1...:train:0; manifest output/tinker/wp-reasoning-v2-manifest.json; PROMOTED ep3. EXPORTED: ep3 sampler -> HF PEFT LoRA adapter models/tinker_export/wp-reasoning-v2/checkpoint.tar (1976MB; adapter_config.json+adapter_model.safetensors; archive endpoint accepts sampler_weights ONLY, not save_state weights/). REVL judge-quality re-run via Tinker sampling (no vLLM/no GB10; eval_judge gained offline --responses-jsonl mode, GT/Spearman byte-identical to baseline): [1] FS-gate terse cot+ctf PASS — temp0 5.8% (Wilson 11.6%, n=120) + temp0.7 5.6% (Wilson 8.4%, n=360) vs ~35% baseline = COLLAPSE FIXED; [2] REVL-01A rubric/Spearman PASS — 0.316 (n=116) >= baseline 0.171 (~ckpt-72 0.350); [3] invalid-PHP sentinel FAIL — 4/24 false-passes (syntax fn()-> @51, this-> outside class @57, fabricated wp_* @57, fabricated wp_* @100): judge PASS/FAIL threshold too lenient + 1 true blind spot. VERDICT: format FIXED + Spearman PASS, but REVL-05 invalid-PHP critical PERSISTS -> NOT a clean REVL-05 ship. NEXT corrective branch (not P4): add should_fail/invalid-PHP negatives to SFT mix + calibrate verdict threshold, then re-run gate 3. Results: .planning/phases/04.3-reasoning-fine-tune-inserted/04.3-P4-TINKER-RESULTS.md. GIT: push to main BLOCKED by auto-mode classifier — user must push."
+last_updated: "2026-06-07T04:20:00.000Z"
 progress:
   total_phases: 16
   completed_phases: 3
@@ -20,21 +20,27 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 04.3 reasoning fine-tune — PIVOTED to **Thinking Machines Tinker** (cloud LoRA) after the GB10 proved unable to load/train the 30B locally. P0 done; P1 (data adapter + decisions) next.
+**Current focus:** Phase 04.3 reasoning fine-tune — on **Thinking Machines Tinker** (cloud LoRA). P0–P4 DONE: `wp-reasoning-v2` ep3 promoted + exported; terse collapse FIXED + REVL-01A Spearman PASS, but invalid-PHP judge-quality (REVL-05 critical) still FAILS (4/24) → a judge-quality corrective retrain is needed before Phase 7.
 
 ## Current Position
 
 Phase: 04.3 (reasoning-fine-tune-inserted) — PIVOTED to Tinker (cloud); local execution ABANDONED
 Plan: 04.3-03 (local merge-vs-training discriminator) — OBVIATED by the pivot (no local merge; sample the LoRA directly on Tinker). Do NOT resume the local discriminator / multi-user.target job / 4-bit build.
-Next: **P4 — DECIDE/PROMOTE**. P0-P3 DONE. The reasoning LoRA was re-trained on Tinker
-(`wp-reasoning-v2`, Qwen3-30B-A3B r32, 3 epochs, loss 12.40->2.45) and the REVL-05 terse-JSON
-collapse is FIXED: terse 1.3% @greedy / 9.1% @temp0.7 (n=77) vs the ~35% that rejected ckpt-72.
-Checkpoints on Tinker: wp-reasoning-v2-ep{1,2,3}. P4: (a) promote wp-reasoning-v2 as the v1.2
-reasoning model; (b) export weights via `rest_client.get_checkpoint_archive_url_from_tinker_path`
-if downstream phases need a local artifact (vLLM serves it at ~63 GiB — fits the GB10); (c) re-run
-the REVL rubric/Spearman + invalid-PHP (judge-QUALITY) checks on wp-reasoning-v2 to clear the OTHER
-REVL-05 finding before Phase 7. Driver: `scripts/tinker_reasoning_sft.py`; data: `scripts/tinker_reasoning_data.py`.
-Status: Tinker pivot — P0-P3 DONE (terse collapse fixed). P4 decide/promote/export + REVL judge-quality re-run.
+Next: **Judge-quality corrective branch** (NOT P4 — P0-P4 DONE). P4 promoted+exported
+`wp-reasoning-v2` ep3 and re-ran REVL judge-quality on Tinker. Scorecard (see
+`04.3-P4-TINKER-RESULTS.md`): FS-gate terse cot+ctf **PASS** (5.8% temp0 / 5.6% temp0.7 vs
+~35% baseline — collapse FIXED); REVL-01A rubric/Spearman **PASS** (0.316 ≥ 0.171 baseline);
+invalid-PHP sentinel **FAIL** (4/24 false-passes — the REVL-05 judge-quality critical
+PERSISTS). So ep3 is the v1.2 reasoning **candidate** (format-fixed) but does NOT clear a
+clean REVL-05. Corrective branch (before Phase 7): (1) add should_fail/invalid-PHP negatives
+to the reasoning SFT set (targets are currently all PASS-leaning — no FAIL-on-broken signal);
+(2) calibrate the PASS/FAIL verdict threshold (3/4 false-passes scored 51–57); (3) re-run the
+invalid-PHP sentinel (zero false-pass) before the human gate. Then re-train + re-promote.
+Tinker run `a37be9b1...:train:0`; manifest `output/tinker/wp-reasoning-v2-manifest.json`;
+export `models/tinker_export/wp-reasoning-v2/checkpoint.tar`. Driver: `scripts/tinker_reasoning_sft.py`;
+REVL: `scripts/capture_judge_responses_tinker.py` + `eval/eval_judge.py --responses-jsonl` +
+`scripts/{build,check}_invalid_php_sentinel.py` + `scripts/tinker_fs_gate.py`.
+Status: Tinker pivot — P0-P4 DONE. Format collapse FIXED + Spearman PASS; invalid-PHP judge-quality needs a corrective retrain.
 Note: Local artifacts `models/qwen3-30b-wp-30_70-merged-v2` + `...-reasoning-merged` + `adapters/.../checkpoint-72` are READ-ONLY references/fallback only (NOT promoted). The GB10 memory wall is documented in `output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md`. `04.3-REOPEN-PLAN.md` remains a 0-task brief — do not execute.
 
 Progress: [██████████] 96%

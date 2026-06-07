@@ -268,6 +268,7 @@ def run_eval(
     base_url: Optional[str] = None,
     output_format: str = "auto",
     gt_mode: str = "dataset",
+    responses_jsonl: Optional[str] = None,
 ) -> dict:
     """...
 
@@ -314,6 +315,7 @@ def run_eval(
         return _run_eval_reasoning(
             dataset_path=dataset_path, limit=limit, output_path=output_path,
             model=model, base_url=base_url, output_format=output_format,
+            responses_jsonl=responses_jsonl,
         )
 
     import os
@@ -600,6 +602,7 @@ def _run_eval_reasoning(
     model: Optional[str],
     base_url: Optional[str],
     output_format: str,
+    responses_jsonl: Optional[str] = None,
 ) -> dict:
     """REVL-01 calibrated-canonical eval path (Phase 4.4, council two-GT/Option 3).
 
@@ -608,6 +611,13 @@ def _run_eval_reasoning(
     Per-dim Spearman = 6 clean dims only, RAW rubric per-dim basis (calibration is
     overall-only). Rows missing calibrated_overall EXCLUDED + counted (no raw
     fallback). GT-variance preflight on canonical GT before computing REVL-01A.
+
+    OFFLINE mode (responses_jsonl): instead of querying a served endpoint, model
+    responses are read from a pre-captured `{index, response}` JSONL (e.g. produced
+    by Tinker sampling — the model has no HTTP endpoint). `index` MUST be the
+    position in the filtered wp_judge example list, matching the enumeration below.
+    GT extraction + Spearman + preflight are byte-identical to the online path, so
+    the resulting REVL-01A is comparable to the served-vLLM baseline.
     """
     import os
     from eval.output_parsers import parse_judge_scores, load_dim_map
@@ -617,11 +627,28 @@ def _run_eval_reasoning(
     weights = {k: v for k, v in dm["dimension_weights"].items() if not k.startswith("_")}
     pf = dm["gt_variance_preflight"]
 
-    resolved_base_url = base_url or os.environ.get("EVAL_JUDGE_BASE_URL")
-    if not resolved_base_url:
-        resolved_base_url = _get_dgx().vllm_endpoint()
-    client = openai.OpenAI(base_url=resolved_base_url, api_key="none")
-    resolved_model = model or _detect_model(client)
+    offline_responses: Optional[dict[int, str]] = None
+    client = None
+    resolved_model = model or "offline-captured"
+    if responses_jsonl:
+        offline_responses = {}
+        with open(responses_jsonl) as rf:
+            for line in rf:
+                line = line.strip()
+                if not line:
+                    continue
+                rec = json.loads(line)
+                if "__provenance__" in rec:
+                    continue
+                offline_responses[int(rec["index"])] = rec.get("response", "")
+        print(f"[REVL-01] OFFLINE: {len(offline_responses)} captured responses "
+              f"from {responses_jsonl}", file=sys.stderr)
+    else:
+        resolved_base_url = base_url or os.environ.get("EVAL_JUDGE_BASE_URL")
+        if not resolved_base_url:
+            resolved_base_url = _get_dgx().vllm_endpoint()
+        client = openai.OpenAI(base_url=resolved_base_url, api_key="none")
+        resolved_model = model or _detect_model(client)
 
     examples = []
     with Path(dataset_path).open() as f:
@@ -635,7 +662,8 @@ def _run_eval_reasoning(
                 examples.append(ex)
     if limit is not None:
         examples = examples[:limit]
-    print(f"[REVL-01] {len(examples)} judge examples via {resolved_base_url} "
+    _src = f"OFFLINE:{responses_jsonl}" if offline_responses is not None else resolved_base_url
+    print(f"[REVL-01] {len(examples)} judge examples via {_src} "
           f"(model={resolved_model}, fmt={output_format}, gt=calibrated_canonical)",
           file=sys.stderr)
 
@@ -653,13 +681,19 @@ def _run_eval_reasoning(
         user_msgs = [m for m in msgs if m["role"] == "user"]
         user_text = user_msgs[0]["content"] if user_msgs else ""
         code = _extract_code_from_judge_prompt(user_text)
-        try:
-            resp = client.chat.completions.create(
-                model=resolved_model, messages=user_msgs, max_tokens=1024, temperature=0.0)
-            generated = resp.choices[0].message.content or ""
-        except Exception as e:  # noqa: BLE001
-            excluded["api_error"] += 1
-            continue
+        if offline_responses is not None:
+            if i not in offline_responses:
+                excluded["api_error"] += 1
+                continue
+            generated = offline_responses[i] or ""
+        else:
+            try:
+                resp = client.chat.completions.create(
+                    model=resolved_model, messages=user_msgs, max_tokens=1024, temperature=0.0)
+                generated = resp.choices[0].message.content or ""
+            except Exception as e:  # noqa: BLE001
+                excluded["api_error"] += 1
+                continue
 
         parsed = parse_judge_scores(generated, output_format)
         if parsed is None or not parsed.get("dimension_scores"):
@@ -824,6 +858,20 @@ def main():
              "(e.g. http://localhost:8001/v1). Falls back to EVAL_JUDGE_BASE_URL "
              "env, then to config/dgx_toolbox.yaml ports.vllm.",
     )
+    parser.add_argument(
+        "--gt-mode", choices=["dataset", "calibrated_canonical"], default="dataset",
+        help="GT mode; calibrated_canonical = REVL-01A path.",
+    )
+    parser.add_argument(
+        "--output-format", choices=["json", "prose", "auto"], default="auto",
+        help="how to parse MODEL judge output.",
+    )
+    parser.add_argument(
+        "--responses-jsonl", default=None,
+        help="OFFLINE mode (calibrated_canonical only): read model responses from a "
+             "{index, response} JSONL instead of querying an endpoint. Index = position "
+             "in the filtered wp_judge list (Tinker-captured).",
+    )
     args = parser.parse_args()
 
     summary = run_eval(
@@ -832,6 +880,9 @@ def main():
         output_path=args.output,
         model=args.model,
         base_url=args.base_url,
+        output_format=args.output_format,
+        gt_mode=args.gt_mode,
+        responses_jsonl=args.responses_jsonl,
     )
 
     print(json.dumps(summary, indent=2))
