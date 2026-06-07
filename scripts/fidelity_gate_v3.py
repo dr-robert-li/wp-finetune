@@ -41,17 +41,24 @@ def _http_get_json(url: str, timeout: int = 10) -> dict:
 
 
 def assert_served_identity(endpoint: str, merge_report_path: str = MERGE_REPORT,
-                           staging_dir: str = STAGING_DIR) -> dict:
+                           staging_dir: str = STAGING_DIR,
+                           served_model_name: str = SERVED_MODEL_NAME) -> dict:
     """Confirm the vLLM endpoint serves the v3 staging weights, NOT the stale ckpt-72 canonical.
 
-    Fingerprint = served-model-name == wp-reasoning-v3 AND the staging it was launched from is
-    the anchor-certified v3 (merge_report status + 13 shards on disk). /v1/models alone cannot
-    prove weight identity, so we bind the served name to the certified staging fingerprint.
+    Fingerprint = served-model-name matches ``served_model_name`` AND the staging it was
+    launched from is the anchor-certified v3 (merge_report status + 13 shards on disk).
+    /v1/models alone cannot prove weight identity, so we bind the served name to the
+    certified staging fingerprint.
+
+    ``served_model_name`` defaults to ``SERVED_MODEL_NAME`` ("wp-reasoning-v3") for
+    callers that use serve_reasoning_v3_vllm.sh.  Pass "wp-30_70" when the model is booted
+    via serve_30_70_vllm.sh / boot_vllm() (which always serves as wp-30_70 regardless of
+    MODEL_DIR).  The merge_report + on-disk shard count still carry the real v3 fingerprint.
     """
     base = endpoint.rstrip("/")
     models = _http_get_json(f"{base}/models")
     served = [m.get("id") for m in models.get("data", [])]
-    name_ok = SERVED_MODEL_NAME in served
+    name_ok = served_model_name in served
     rep = json.load(open(merge_report_path)) if os.path.exists(merge_report_path) else {}
     report_ok = (rep.get("status") == "staging_anchor_certified"
                  and rep.get("shard_count") == EXPECTED_SHARDS
@@ -61,8 +68,9 @@ def assert_served_identity(endpoint: str, merge_report_path: str = MERGE_REPORT,
         if os.path.isdir(staging_dir) else 0
     disk_ok = shards_on_disk == EXPECTED_SHARDS
     ok = bool(name_ok and report_ok and disk_ok)
-    detail = {"served_models": served, "name_ok": name_ok, "report_certified": report_ok,
-              "shards_on_disk": shards_on_disk, "fingerprint_shards": EXPECTED_SHARDS, "ok": ok}
+    detail = {"served_models": served, "expected_name": served_model_name, "name_ok": name_ok,
+              "report_certified": report_ok, "shards_on_disk": shards_on_disk,
+              "fingerprint_shards": EXPECTED_SHARDS, "ok": ok}
     if not ok:
         raise PreconditionError(f"served identity check failed (stale ckpt-72?): {detail}")
     return detail
