@@ -42,16 +42,22 @@ def _log(msg, fh):
 def main() -> int:
     os.makedirs(OUT_DIR, exist_ok=True)
     os.makedirs(os.path.dirname(LOG), exist_ok=True)
-    report = {"status": "running", "endpoint": ENDPOINT}
+    reuse = os.environ.get("REUSE_SERVE") == "1"   # attach to an already-running warm container
+    report = {"status": "running", "endpoint": ENDPOINT, "reuse_serve": reuse}
     rc = 1
     with open(LOG, "a") as fh:
         try:
-            _log(f"booting v3 serve via {SERVE_SH} on :{PORT}", fh)
-            env = dict(os.environ, PORT=str(PORT), CONTAINER_NAME=NAME)
-            subprocess.run(["bash", SERVE_SH], cwd=ROOT, env=env, check=True,
-                           stdout=fh, stderr=subprocess.STDOUT)
-            served = wait_healthy(PORT, NAME)
-            _log(f"served healthy: {served}", fh)
+            if reuse:
+                _log("REUSE_SERVE=1 — attaching to warm container (no boot/stop)", fh)
+                served = wait_healthy(PORT, NAME)
+                _log(f"served healthy: {served}", fh)
+            else:
+                _log(f"booting v3 serve via {SERVE_SH} on :{PORT}", fh)
+                env = dict(os.environ, PORT=str(PORT), CONTAINER_NAME=NAME)
+                subprocess.run(["bash", SERVE_SH], cwd=ROOT, env=env, check=True,
+                               stdout=fh, stderr=subprocess.STDOUT)
+                served = wait_healthy(PORT, NAME)
+                _log(f"served healthy: {served}", fh)
 
             # --- Preconditions (abort on any failure) ---
             pre = fg.run_preconditions(ENDPOINT)
@@ -104,8 +110,11 @@ def main() -> int:
             report["status"] = "error"; report["error"] = repr(e)
             _log(f"ERROR: {e!r}", fh); rc = 4
         finally:
-            stop_vllm(NAME)
-            _log("vLLM stopped", fh)
+            if reuse:
+                _log("REUSE_SERVE=1 — leaving container up for next iteration", fh)
+            else:
+                stop_vllm(NAME)
+                _log("vLLM stopped", fh)
 
     with open(REPORT, "w") as fh:
         json.dump(report, fh, indent=2)

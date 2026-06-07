@@ -96,31 +96,43 @@ def assert_tokenizer_vocab(staging_dir: str = STAGING_DIR) -> dict:
 
 def assert_think_disabled(endpoint: str, served_model: str = SERVED_MODEL_NAME) -> dict:
     """Probe one short generation; v3 must match Tinker qwen3_disable_thinking. We send
-    chat_template_kwargs enable_thinking=false AND apply strip_think_blocks before scoring.
-    Precondition passes if the probe does not lead with <think> OR strip_think_blocks neutralizes
+    chat_template_kwargs enable_thinking=false AND apply strip_think before scoring.
+    Precondition passes if the probe does not lead with <think> OR strip_think neutralizes
     any think scaffold (robust double-guard).
     """
-    from eval.output_parsers import strip_think_blocks
+    from eval.output_parsers import strip_think
 
     base = endpoint.rstrip("/")
-    payload = {
-        "model": served_model,
-        "messages": [{"role": "user", "content": "Reply with the single word OK."}],
-        "max_tokens": 16, "temperature": 0.0,
-        "chat_template_kwargs": {"enable_thinking": False},
-    }
-    req = urllib.request.Request(f"{base}/chat/completions",
-                                 data=json.dumps(payload).encode(),
-                                 headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        resp = json.loads(r.read().decode())
+
+    def _probe(with_kwargs: bool):
+        payload = {
+            "model": served_model,
+            "messages": [{"role": "user", "content": "Reply with the single word OK."}],
+            "max_tokens": 16, "temperature": 0.0,
+        }
+        if with_kwargs:
+            payload["chat_template_kwargs"] = {"enable_thinking": False}
+        req = urllib.request.Request(f"{base}/chat/completions",
+                                     data=json.dumps(payload).encode(),
+                                     headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            return json.loads(r.read().decode())
+
+    try:
+        resp = _probe(with_kwargs=True)
+        kwargs_accepted = True
+    except urllib.error.HTTPError:
+        # template may not define enable_thinking; fall back — strip_think still guards scoring.
+        resp = _probe(with_kwargs=False)
+        kwargs_accepted = False
     text = resp["choices"][0]["message"]["content"]
     leads_think = text.lstrip().startswith("<think>")
-    stripped = strip_think_blocks(text)
+    stripped = strip_think(text)
     strip_effective = (stripped != text) or (not leads_think)
     ok = (not leads_think) or strip_effective
     detail = {"probe_leads_with_think": leads_think, "strip_effective": strip_effective,
-              "think_handling": "enable_thinking_false+strip_think_blocks", "ok": ok}
+              "enable_thinking_kwarg_accepted": kwargs_accepted,
+              "think_handling": "enable_thinking_false+strip_think", "ok": ok}
     if not ok:
         raise PreconditionError(f"think-disable precondition failed: {detail}")
     return detail
@@ -149,21 +161,39 @@ L3_MIN_SPEARMAN = 0.95
 L3_MIN_PARSE_COVERAGE = 0.90
 
 
-def _generate_chat(endpoint: str, model: str, user_contents: list, max_tokens: int = 1024) -> list:
-    """Generate at temp 0 with thinking disabled; return strip_think_blocks(text) per prompt."""
+def _generate_chat(endpoint: str, model: str, user_contents: list, max_tokens: int = 2048) -> list:
+    """Generate at temp 0 with thinking disabled; return strip_think(text) per prompt.
+
+    Tries chat_template_kwargs enable_thinking=false; if the served template rejects it, falls
+    back to no-kwargs for the rest (strip_think still neutralizes any think scaffold at scoring).
+    """
     import openai
 
-    from eval.output_parsers import strip_think_blocks
+    from eval.output_parsers import strip_think
     client = openai.OpenAI(base_url=endpoint, api_key="none")
+    use_kwargs = True
     outs = []
     for c in user_contents:
+        kw = {"extra_body": {"chat_template_kwargs": {"enable_thinking": False}}} if use_kwargs else {}
         try:
             resp = client.chat.completions.create(
                 model=model, messages=[{"role": "user", "content": c}],
-                max_tokens=max_tokens, temperature=0.0,
-                extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+                max_tokens=max_tokens, temperature=0.0, **kw,
             )
-            outs.append(strip_think_blocks(resp.choices[0].message.content or ""))
+            outs.append(strip_think(resp.choices[0].message.content or ""))
+        except openai.BadRequestError:
+            if use_kwargs:
+                use_kwargs = False  # template rejects enable_thinking; drop it for the rest + retry this one
+                try:
+                    resp = client.chat.completions.create(
+                        model=model, messages=[{"role": "user", "content": c}],
+                        max_tokens=max_tokens, temperature=0.0,
+                    )
+                    outs.append(strip_think(resp.choices[0].message.content or ""))
+                    continue
+                except Exception as e:  # noqa: BLE001
+                    print(f"[gen] error (no-kwargs retry): {e}", file=sys.stderr)
+            outs.append("")
         except Exception as e:  # noqa: BLE001
             print(f"[gen] error: {e}", file=sys.stderr)
             outs.append("")
