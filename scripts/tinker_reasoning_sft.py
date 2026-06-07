@@ -10,6 +10,8 @@ terse rate = fraction of val prompts whose sampled output LACKS [/REASONING]
 (the REVL-05 collapse metric: bare-JSON with no prose CoT).
 """
 import argparse
+import datetime
+import math
 import os
 import sys
 
@@ -53,12 +55,43 @@ def _loss_of(fb_out):
     return find(d) if isinstance(d, dict) else None
 
 
-def _sample_text(resp, tok):
+def _res(f):
+    """Resolve a Tinker future/APIFuture to its value."""
+    return f.result() if hasattr(f, "result") else f
+
+
+def _wilson_upper(k, n, z=1.96):
+    """Wilson score 95% upper bound for a binomial rate k/n."""
+    if n == 0:
+        return float("nan")
+    p = k / n
+    denom = 1 + z * z / n
+    center = (p + z * z / (2 * n)) / denom
+    half = (z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))) / denom
+    return center + half
+
+
+def _write_manifest(path, payload):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(payload, f, indent=2)
+    print(f"[manifest] wrote {path}", flush=True)
+
+
+def _all_sample_texts(resp, tok):
+    """Decode ALL sampled sequences from one sample() response (num_samples>=1)."""
     r = resp.result() if hasattr(resp, "result") else resp
     seqs = getattr(r, "sequences", None) or getattr(r, "samples", None) or []
-    seq = seqs[0]
-    toks = getattr(seq, "tokens", None) or getattr(seq, "token_ids", None) or getattr(seq, "output_tokens", None)
-    return tok.decode(toks)
+    out = []
+    for seq in seqs:
+        toks = (getattr(seq, "tokens", None) or getattr(seq, "token_ids", None)
+                or getattr(seq, "output_tokens", None))
+        out.append(tok.decode(toks))
+    return out
+
+
+def _sample_text(resp, tok):
+    return _all_sample_texts(resp, tok)[0]
 
 
 def terse_eval(sampling_client, renderer, tok, val_rows, n, max_tokens, temperature, debug=False):
@@ -78,6 +111,30 @@ def terse_eval(sampling_client, renderer, tok, val_rows, n, max_tokens, temperat
     return terse, total
 
 
+def terse_gate_eval(sampling_client, renderer, tok, val_rows, target_n, max_tokens, temperature):
+    """Monte-Carlo terse rate to reach n>=target_n by drawing K samples/prompt.
+
+    For temp>0 the Step-6 format-stability gate needs n>=300 to size the Wilson
+    upper bound; the val set is only ~77 unique prompts, so we draw multiple
+    samples per prompt. At temp 0 (greedy) sampling is deterministic, so K is
+    forced to 1 and n == len(val_rows).
+    """
+    n_rows = len(val_rows)
+    k = 1 if temperature == 0.0 else max(1, math.ceil(target_n / n_rows))
+    sp = tinker.SamplingParams(max_tokens=max_tokens, temperature=temperature,
+                               stop=renderer.get_stop_sequences())
+    terse = total = 0
+    for row in val_rows:
+        user_msgs = [m for m in row["messages"] if m.get("role") == "user"]
+        prompt = renderer.build_generation_prompt(user_msgs)
+        resp = sampling_client.sample(prompt=prompt, num_samples=k, sampling_params=sp)
+        for text in _all_sample_texts(resp, tok):
+            total += 1
+            if "[/REASONING]" not in text:
+                terse += 1
+    return terse, total
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--stage", default="smoke")
@@ -94,10 +151,26 @@ def main():
                     help="if >0, eval this many val prompts at temp 0 after each epoch (late-collapse guard) + save a per-epoch checkpoint")
     ap.add_argument("--final-eval-n", type=int, default=0, help="override --eval-n for the final eval")
     ap.add_argument("--save-name", default=None)
+    ap.add_argument("--manifest", default=None,
+                    help="path to write the persistent-checkpoint manifest (tinker paths) — incrementally, per epoch")
+    ap.add_argument("--save-state", action="store_true",
+                    help="also save_state() the final checkpoint (durable training ckpt -> export source)")
+    ap.add_argument("--gate-temps", default=None,
+                    help="csv of temps for the Step-6 format-stability gate, e.g. '0.0,0.7'")
+    ap.add_argument("--gate-n", type=int, default=300,
+                    help="target sample count for the temp>0 gate arm (multi-sample to reach n; Wilson upper sizing)")
     args = ap.parse_args()
     save_name = args.save_name or f"wp-reasoning-{args.stage}"
     final_eval_n = args.final_eval_n or args.eval_n
     final_temps = [float(t) for t in args.eval_temps.split(",")] if args.eval_temps else [args.eval_temperature]
+    gate_temps = [float(t) for t in args.gate_temps.split(",")] if args.gate_temps else []
+    manifest_path = args.manifest or f"output/tinker/{save_name}-manifest.json"
+    manifest = {
+        "save_name": save_name, "base_model": BASE_MODEL, "rank": args.rank,
+        "renderer": RENDERER_NAME, "epochs": args.epochs, "checkpoints": [],
+        "promoted": None, "state_path": None,
+        "created": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    }
 
     train_ds, _ = build_datasets(batch_size=args.batch_size)
     val_rows = [json.loads(l) for l in open(VAL_PATH)]
@@ -132,10 +205,18 @@ def main():
                 stop = True
                 break
 
-        # Per-epoch checkpoint + quick late-collapse guard eval (temp 0).
+        # Per-epoch PERSISTENT sampler checkpoint (ttl None = never expires) +
+        # quick late-collapse guard eval (temp 0). Manifest is written every epoch
+        # so a lost process can never again strand the reference (the P4 failure mode).
         ep_name = f"{save_name}-ep{epoch + 1}"
-        last_sampling_client = tc.save_weights_and_get_sampling_client(name=ep_name)
-        print(f"[sft] epoch {epoch + 1} done (step {step}); checkpoint saved name={ep_name}", flush=True)
+        sampler_path = _res(tc.save_weights_for_sampler(name=ep_name, ttl_seconds=None)).path
+        last_sampling_client = tc.create_sampling_client(model_path=sampler_path)
+        manifest["checkpoints"].append({"epoch": epoch + 1, "name": ep_name,
+                                        "sampler_path": sampler_path})
+        manifest["promoted"] = ep_name
+        _write_manifest(manifest_path, manifest)
+        print(f"[sft] epoch {epoch + 1} done (step {step}); persistent sampler ckpt "
+              f"name={ep_name} path={sampler_path}", flush=True)
         if args.per_epoch_eval_n > 0:
             t, n = terse_eval(last_sampling_client, renderer, tok, val_rows,
                               n=args.per_epoch_eval_n, max_tokens=args.eval_max_tokens,
@@ -147,7 +228,20 @@ def main():
     print(f"[sft] training done: {step} steps. "
           f"loss first={losses[0] if losses else '?'} last={losses[-1] if losses else '?'}", flush=True)
 
-    sampling_client = last_sampling_client or tc.save_weights_and_get_sampling_client(name=save_name)
+    if last_sampling_client is None:
+        # No per-epoch save happened (e.g. --max-steps smoke); persist now.
+        sampler_path = _res(tc.save_weights_for_sampler(name=save_name, ttl_seconds=None)).path
+        last_sampling_client = tc.create_sampling_client(model_path=sampler_path)
+        manifest["checkpoints"].append({"epoch": None, "name": save_name, "sampler_path": sampler_path})
+        manifest["promoted"] = save_name
+    sampling_client = last_sampling_client
+
+    # Durable training checkpoint of the FINAL model state -> export source.
+    if args.save_state:
+        state_path = _res(tc.save_state(name=f"{save_name}-final-state", ttl_seconds=None)).path
+        manifest["state_path"] = state_path
+        _write_manifest(manifest_path, manifest)
+        print(f"[sft] final save_state path={state_path}", flush=True)
 
     # Final eval on the last checkpoint, across all requested temps.
     final_rates = {}
@@ -163,6 +257,29 @@ def main():
     print(f"RESULT stage={args.stage} steps={step} "
           f"loss_first={losses[0] if losses else 'NA'} loss_last={losses[-1] if losses else 'NA'} "
           f"n_eval={final_eval_n} {rates_str}", flush=True)
+
+    # Step-6 format-stability gate (pre-registered): FAIL if terse>0.10 OR
+    # Wilson-95-upper>0.15. temp>0 arms are sized to n>=gate_n via multi-sample.
+    if gate_temps:
+        gate = {"threshold_rate": 0.10, "threshold_wilson_upper": 0.15, "gate_n": args.gate_n, "arms": []}
+        overall_pass = True
+        for temp in gate_temps:
+            t, n = terse_gate_eval(sampling_client, renderer, tok, val_rows,
+                                   target_n=args.gate_n, max_tokens=args.eval_max_tokens,
+                                   temperature=temp)
+            rate = t / n if n else float("nan")
+            wu = _wilson_upper(t, n)
+            arm_pass = (rate <= 0.10) and (wu <= 0.15)
+            overall_pass = overall_pass and arm_pass
+            gate["arms"].append({"temp": temp, "terse": t, "n": n, "rate": rate,
+                                 "wilson_upper": wu, "pass": arm_pass})
+            print(f"[fs-gate] temp{temp} terse={t}/{n} rate={rate:.4f} "
+                  f"wilson_upper={wu:.4f} -> {'PASS' if arm_pass else 'FAIL'}", flush=True)
+        gate["pass"] = overall_pass
+        manifest["fs_gate"] = gate
+        _write_manifest(manifest_path, manifest)
+        print(f"FS_GATE {'PASS' if overall_pass else 'FAIL'} "
+              f"promoted={manifest['promoted']} manifest={manifest_path}", flush=True)
 
 
 if __name__ == "__main__":
