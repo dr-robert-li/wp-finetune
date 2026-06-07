@@ -255,10 +255,14 @@ Plans:
   - Adapter merge: after human approval, `dgx.execute("unsloth_studio", "python", "-m", "scripts.merge_adapter", ...)` with idempotency check on `models/qwen3-30b-wp-{winning}-reasoning-merged/`
   - Post-merge validation: load merged model, run 10 inference samples for both `<wp_gen>` and `<wp_judge>`, verify coherent output and correct task token routing
   - Invokes `wp-finetune:review-telemetry` for consolidated eval summary
-**Plans**: 1 plan
+**Plans**: 5 plans (v3 scoped replan — old 04.4-01 archived to archive-stale-v2-prereval/; OBSOLETE ckpt-72 Unsloth path superseded by wp-reasoning-v3 Tinker merge)
 
 Plans:
-- [ ] 04.4-01-PLAN.md — Reasoning eval + Unsloth merge + wp-bench HARD gate + REVL-01..08 gates + staging-then-promote (Path 1: Unsloth merge → vLLM bf16; 14 tasks across waves W0 smoke → W1 staging merge → W2 sequential eval gates → W4 REVL post-processing → W5 human checkpoint → W6 promote)
+- [ ] 04.4-01-PLAN.md — [W1] merge_tinker_v3.py (Tinker per-expert MoE convention) + Wave-0 tests + CPU merge to v3 staging + 3 anchor gates (tensor/fp32-control/forward)
+- [ ] 04.4-02-PLAN.md — [W2] v3 vLLM serve + 3-layer merge-fidelity gate (L2 24-prompt invalid-PHP sentinel + L3 Spearman≥0.95 BLOCKING; L1 corroboration) → REVL-01/02 carry decision
+- [ ] 04.4-03-PLAN.md — [W3] REVL-04 wp-bench HARD gate fresh on merged-served v3 (parameterized run_eval_reasoning, namespaced output, served-identity assert)
+- [ ] 04.4-04-PLAN.md — [W4] REVL-01/02 carry-or-rerun + thin REVL-03 + SOFT REVL-07/08 on merged-served + REVL-06 N/A note + v3 gate ledger
+- [ ] 04.4-05-PLAN.md — [W5] thin REVL-05 human spot-check (HUMAN_APPROVED_V3_POSTMERGE) → triple-gated idempotent promote → post-merge 10+10 validation
 
 ---
 
