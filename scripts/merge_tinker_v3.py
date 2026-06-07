@@ -204,7 +204,14 @@ def spearman_agree(
 NUM_LAYERS = 48
 NUM_EXPERTS = 128
 ATTN_PROJS = ["q_proj", "k_proj", "v_proj", "o_proj"]
-STOCK_VOCAB = 151936
+STOCK_VOCAB = 151936       # stock MODEL embedding/lm_head rows (padded)
+STOCK_TOK_LEN = 151669     # stock Qwen3 TOKENIZER real token count (< padded model vocab).
+                           # NOTE: the model embedding is padded to 151936; the tokenizer only
+                           # has 151669 tokens. The extended tokenizer (151671) adds <wp_gen>/
+                           # <wp_judge> as SINGLE special ids 151669/151670 -- but v3 was trained
+                           # on the STOCK tokenizer (tinker_reasoning_data.py:15-16) where those
+                           # markers are PLAIN TEXT. Serving the extended tokenizer would diverge
+                           # from training and break task routing. So: stock tokenizer is required.
 GATE_UP_OUT = 1536  # 2 * per-expert mlp dim (gate first, up second)
 
 DEFAULT_ADAPTER_TAR = "models/tinker_export/wp-reasoning-v3/checkpoint.tar"
@@ -384,10 +391,26 @@ def _run_merge(args) -> int:
     model.save_pretrained(tmp_out, safe_serialization=True, max_shard_size="5GB")
     tok = AutoTokenizer.from_pretrained(args.base)
     tok.save_pretrained(tmp_out)
-    report["base_vocab"] = STOCK_VOCAB
-    report["tokenizer_vocab"] = len(tok)
-    assert report["tokenizer_vocab"] == STOCK_VOCAB, (
-        f"tokenizer vocab {report['tokenizer_vocab']} != {STOCK_VOCAB} (extended tokenizer leaked)"
+    # Integrity check (T-0441-02): the served tokenizer must tokenize the task markers the
+    # SAME way v3 training did -- as PLAIN TEXT (multi-piece), not single special ids. The
+    # extended tokenizer maps <wp_judge> -> one id (151670); the stock one splits it into
+    # >1 BPE pieces. We assert the stock behaviour + in-range ids (no OOB vs the 151936 model).
+    wp_pieces = len(tok.encode("<wp_judge>", add_special_tokens=False))
+    max_id = max(tok.get_vocab().values())
+    report["base_vocab"] = STOCK_VOCAB                 # model embedding rows (151936)
+    report["tokenizer_vocab"] = len(tok)               # stock tokenizer real token count (151669)
+    report["tokenizer_max_id"] = max_id
+    report["tokenizer_wp_judge_pieces"] = wp_pieces
+    report["tokenizer_is_stock_text_routing"] = wp_pieces > 1
+    assert wp_pieces > 1, (
+        f"extended tokenizer leaked: <wp_judge> tokenizes to a single id "
+        f"({tok.encode('<wp_judge>', add_special_tokens=False)}); v3 trained on STOCK text tokenization"
+    )
+    assert len(tok) == STOCK_TOK_LEN, (
+        f"tokenizer len {len(tok)} != stock {STOCK_TOK_LEN} (wrong/extended tokenizer)"
+    )
+    assert max_id < STOCK_VOCAB, (
+        f"tokenizer max id {max_id} >= model vocab {STOCK_VOCAB} (out-of-range token ids)"
     )
     if os.path.exists(args.output_dir):
         import shutil
