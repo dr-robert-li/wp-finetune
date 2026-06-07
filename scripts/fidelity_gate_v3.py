@@ -135,6 +135,126 @@ def run_preconditions(endpoint: str) -> dict:
     }
 
 
+# --------------------------------------------------------------------------- #
+# Three-layer fidelity gate (L1 corroboration, L2 sentinel BLOCKING, L3 Spearman BLOCKING).
+# --------------------------------------------------------------------------- #
+
+POLICY_THRESHOLD = 70.0          # VERDICT-POLICY: effective FAIL if model FAIL OR overall < 70
+SENTINEL_PROMPTS = "data/reasoning_dataset/invalid_php_sentinel.jsonl"
+SENTINEL_TINKER_SUMMARY = "output/format_stability/invalid_php_sentinel_v3_summary.json"
+VAL_PROMPTS = "data/reasoning_dataset/openai_val.jsonl"
+TINKER_PAIRS = "output/eval_reasoning/reasoning_v3_tinker/eval_judge_results.pairs.jsonl"
+L2_MIN_AGREE = 22                # >= 22/24 sentinel verdict agreement
+L3_MIN_SPEARMAN = 0.95
+L3_MIN_PARSE_COVERAGE = 0.90
+
+
+def _generate_chat(endpoint: str, model: str, user_contents: list, max_tokens: int = 1024) -> list:
+    """Generate at temp 0 with thinking disabled; return strip_think_blocks(text) per prompt."""
+    import openai
+
+    from eval.output_parsers import strip_think_blocks
+    client = openai.OpenAI(base_url=endpoint, api_key="none")
+    outs = []
+    for c in user_contents:
+        try:
+            resp = client.chat.completions.create(
+                model=model, messages=[{"role": "user", "content": c}],
+                max_tokens=max_tokens, temperature=0.0,
+                extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+            )
+            outs.append(strip_think_blocks(resp.choices[0].message.content or ""))
+        except Exception as e:  # noqa: BLE001
+            print(f"[gen] error: {e}", file=sys.stderr)
+            outs.append("")
+    return outs
+
+
+def _policy_verdict(text: str) -> tuple:
+    """(effective_verdict, overall, false_pass) under VERDICT-POLICY (PASS iff overall>=70 & model not FAIL)."""
+    from scripts.check_invalid_php_sentinel import _verdict
+    from eval.output_parsers import parse_judge_scores
+
+    model_v = _verdict(text)
+    parsed = parse_judge_scores(text, "auto") or {}
+    overall = parsed.get("overall")
+    if model_v == "FAIL":
+        eff, fp = "FAIL", False
+    elif overall is not None:
+        fp = overall >= POLICY_THRESHOLD
+        eff = "PASS" if fp else "FAIL"
+    else:
+        fp = model_v == "PASS"
+        eff = "PASS" if fp else "FAIL"
+    return eff, overall, fp
+
+
+def run_l2_sentinel(endpoint: str, out_jsonl: str) -> dict:
+    """L2 (BLOCKING): 24 invalid-PHP sentinel prompts on merged-served must agree with the
+    Tinker-sampled policy verdicts (all FAIL) >= 22/24, with 0/24 merged false-pass."""
+    prompts = [json.loads(l) for l in open(SENTINEL_PROMPTS)]
+    user = [p["messages"][0]["content"] for p in prompts]
+    responses = _generate_chat(endpoint, SERVED_MODEL_NAME, user)
+    tinker = json.load(open(SENTINEL_TINKER_SUMMARY))
+    # Tinker effective policy verdicts: rows recorded policy_false_pass; effective FAIL unless false-pass.
+    tinker_eff = ["PASS" if r.get("policy_false_pass") else "FAIL" for r in tinker["rows"]]
+    merged_eff, false_pass, rows = [], 0, []
+    for i, (p, txt) in enumerate(zip(prompts, responses)):
+        eff, overall, fp = _policy_verdict(txt)
+        merged_eff.append(eff)
+        false_pass += int(fp)
+        rows.append({"index": i, "defect_category": p["metadata"].get("defect_category"),
+                     "verdict": eff, "overall_score": overall, "policy_false_pass": fp,
+                     "response_head": txt[:160]})
+    with open(out_jsonl, "w") as fh:
+        for r in rows:
+            fh.write(json.dumps(r) + "\n")
+    agree = sentinel_agreement(tinker_eff, merged_eff)
+    n = len(tinker_eff)
+    passed = (agree >= L2_MIN_AGREE) and (false_pass == 0)
+    return {"layer": "L2_sentinel", "n": n, "agreement": agree, "min_agree": L2_MIN_AGREE,
+            "merged_false_pass": false_pass, "tinker_false_pass": sum(r.get("policy_false_pass", 0) for r in tinker["rows"]),
+            "pass": passed}
+
+
+def run_l3_spearman(endpoint: str, out_jsonl: str) -> dict:
+    """L3 (BLOCKING): Spearman(tinker_overall, merged_overall) >= 0.95 on the 121 REVL-01 val rows."""
+    from eval.output_parsers import parse_judge_scores
+
+    pairs = [json.loads(l) for l in open(TINKER_PAIRS)]
+    val = [json.loads(l) for l in open(VAL_PROMPTS)]
+    judge = [r for r in val if any("<wp_judge>" in m.get("content", "")
+                                    for m in r["messages"] if m["role"] == "user")]
+    assert len(judge) == len(pairs), f"val judge {len(judge)} != tinker pairs {len(pairs)}"
+    user = [next(m["content"] for m in r["messages"] if m["role"] == "user") for r in judge]
+    responses = _generate_chat(endpoint, SERVED_MODEL_NAME, user)
+    tinker_used, merged_used, rows = [], [], []
+    for i, (pr, txt) in enumerate(zip(pairs, responses)):
+        parsed = parse_judge_scores(txt, "auto") or {}
+        m_overall = parsed.get("overall")
+        t_overall = pr.get("model_overall")
+        ok = (m_overall is not None and t_overall is not None)
+        if ok:
+            tinker_used.append(t_overall); merged_used.append(m_overall)
+        rows.append({"index": pr.get("index", i), "tinker_overall": t_overall,
+                     "merged_overall": m_overall, "parse_ok": ok})
+    with open(out_jsonl, "w") as fh:
+        for r in rows:
+            fh.write(json.dumps(r) + "\n")
+    from scripts.merge_tinker_v3 import spearman_rho
+    rho = spearman_rho(tinker_used, merged_used) if len(tinker_used) >= 2 else 0.0
+    coverage = len(tinker_used) / len(pairs)
+    passed = (rho >= L3_MIN_SPEARMAN) and (coverage >= L3_MIN_PARSE_COVERAGE)
+    return {"layer": "L3_spearman", "n": len(pairs), "n_used": len(tinker_used),
+            "parse_coverage": round(coverage, 4), "spearman": round(rho, 4),
+            "min_spearman": L3_MIN_SPEARMAN, "pass": passed}
+
+
+def l2_failure_diagnosis() -> list:
+    """Encoded diagnostic order for a failed L2 (formatting is likeliest, not merge arithmetic)."""
+    return ["tokenizer_parity", "think_disable", "prompt_template", "merge_math"]
+
+
 if __name__ == "__main__":  # pragma: no cover
     # Task 2 wires the full L1/L2/L3 gate. Standalone preconditions probe:
     ep = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8021/v1"
