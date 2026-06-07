@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: executing
-stopped_at: "P4 DONE (Tinker, 2026-06-07). Prior session's ep1/2/3 had EVAPORATED — driver used deprecated save_weights_and_get_sampling_client (ephemeral; live Tinker query showed 0 persistent checkpoints), so P4 required a FULL RE-TRAIN. Driver durability FIXED (save_weights_for_sampler ttl=None + create_sampling_client + save_state + incremental manifest). Re-trained wp-reasoning-v2 (Qwen3-30B-A3B r32, 3 ep, loss 12.40->2.40); persisted ep1/2/3 + final-state on run a37be9b1...:train:0; manifest output/tinker/wp-reasoning-v2-manifest.json; PROMOTED ep3. EXPORTED: ep3 sampler -> HF PEFT LoRA adapter models/tinker_export/wp-reasoning-v2/checkpoint.tar (1976MB; adapter_config.json+adapter_model.safetensors; archive endpoint accepts sampler_weights ONLY, not save_state weights/). REVL judge-quality re-run via Tinker sampling (no vLLM/no GB10; eval_judge gained offline --responses-jsonl mode, GT/Spearman byte-identical to baseline): [1] FS-gate terse cot+ctf PASS — temp0 5.8% (Wilson 11.6%, n=120) + temp0.7 5.6% (Wilson 8.4%, n=360) vs ~35% baseline = COLLAPSE FIXED; [2] REVL-01A rubric/Spearman PASS — 0.316 (n=116) >= baseline 0.171 (~ckpt-72 0.350); [3] invalid-PHP sentinel FAIL — 4/24 false-passes (syntax fn()-> @51, this-> outside class @57, fabricated wp_* @57, fabricated wp_* @100): judge PASS/FAIL threshold too lenient + 1 true blind spot. VERDICT: format FIXED + Spearman PASS (but 0.316<ckpt-72 0.350 — only ~ckpt-72 quality, not an improvement), and REVL-05 invalid-PHP critical PERSISTS -> NOT a clean REVL-05 ship. ROOT CAUSE (verified, NOT 'no FAIL signal'): targets are verdict-balanced (train 253 FAIL/225 PASS/85 none) but lack syntactic-invalidity/fabricated-API coverage + lenient PASS threshold (3/4 false-passes @51-57). P5 CORRECTIVE DONE -> wp-reasoning-v3 (run 3497a27e...:train:0, augmented train 593 = 563 + 30 should_fail negatives; verdict POLICY overall>=70 & no auto-FAIL class via post-hoc threshold, NO teacher relabel; two-sided confusion gate added). v2(P4)->v3 scorecard (ALL 4 PASS): FS terse 5.8%/5.6% -> 0%/1.1%; REVL-01A 0.316 -> 0.263 (>=0.171 baseline; dip = score-correlation traded for verdict quality); sentinel POLICY false-pass 1/24 -> 0/24 (@100 fabricated blind spot FIXED); confusion false-FAIL-on-PASS 40%->24% + recall-on-FAIL 64%->78% (Pareto win, not over-strict). EXPORTED models/tinker_export/wp-reasoning-v3/checkpoint.tar (HF PEFT LoRA). REVL-05 judge-quality RESOLVED; wp-reasoning-v3 = v1.2 reasoning model. NEXT: REVL-05 human re-gate -> Phase 7. Results: 04.3-P5-CORRECTIVE-RESULTS.md + VERDICT-POLICY.md (P4: 04.3-P4-TINKER-RESULTS.md). GIT: push to main BLOCKED by auto-mode classifier — user must push."
-last_updated: "2026-06-07T08:25:00.000Z"
+stopped_at: context exhaustion at 79% (2026-06-04)
+last_updated: "2026-06-07T20:58:41.624Z"
 progress:
-  total_phases: 16
-  completed_phases: 3
-  total_plans: 19
-  completed_plans: 14
-  percent: 19
+  total_phases: 9
+  completed_phases: 6
+  total_plans: 34
+  completed_plans: 26
+  percent: 67
 ---
 
 # Project State
@@ -20,12 +20,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 04.3 reasoning fine-tune — on **Thinking Machines Tinker** (cloud LoRA). P0–P5 DONE: judge-quality corrective complete → **`wp-reasoning-v3`** ep3 promoted + exported as the v1.2 reasoning model. ALL FOUR gates pass; REVL-05 judge-quality RESOLVED. Next = REVL-05 human re-gate then Phase 7.
+**Current focus:** Phase 04.4 — reasoning-eval-adapter-merge-inserted
 
 ## Current Position
 
-Phase: 04.3 (reasoning-fine-tune-inserted) — PIVOTED to Tinker (cloud); local execution ABANDONED
-Plan: 04.3-03 (local merge-vs-training discriminator) — OBVIATED by the pivot (no local merge; sample the LoRA directly on Tinker). Do NOT resume the local discriminator / multi-user.target job / 4-bit build.
+Phase: 04.4 (reasoning-eval-adapter-merge-inserted) — EXECUTING
+Plan: 1 of 5
 Next: **REVL-05 human re-gate against `wp-reasoning-v3`, then Phase 7.** P0-P5 DONE. The
 judge-quality corrective branch is complete and promoted **`wp-reasoning-v3`** (Tinker run
 `3497a27e...:train:0`) — it fixes BOTH halves of REVL-05. Approach (see
@@ -44,7 +44,7 @@ in `04.3-P4-TINKER-RESULTS.md`.) Driver: `scripts/tinker_reasoning_sft.py --trai
 data: `scripts/build_reasoning_negatives.py` + `build_augmented_train.py`; gates:
 `check_invalid_php_sentinel.py` + `check_verdict_confusion.py` + `tinker_fs_gate.py` +
 `eval/eval_judge.py --responses-jsonl`.
-Status: Tinker pivot — P0-P5 DONE. **REVL-05 human gate APPROVED 2026-06-07T10:56:39Z** (output/v1.2_human_review_v3.md) — wp-reasoning-v3 ACCEPTED as the v1.2 reasoning model. Phase 04.3 reasoning fine-tune COMPLETE. NEXT: Phase 4.4 (adapter merge — note Tinker export is already an HF PEFT LoRA adapter) -> Phase 7 (router profiling).
+Status: Executing Phase 04.4
 Note: Local artifacts `models/qwen3-30b-wp-30_70-merged-v2` + `...-reasoning-merged` + `adapters/.../checkpoint-72` are READ-ONLY references/fallback only (NOT promoted). The GB10 memory wall is documented in `output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md`. `04.3-REOPEN-PLAN.md` remains a 0-task brief — do not execute.
 
 Progress: [██████████] 96%
@@ -275,7 +275,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Executing Phase 04.3
+**Status:** Executing Phase 04.4
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)
