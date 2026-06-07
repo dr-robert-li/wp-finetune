@@ -45,7 +45,9 @@ def main() -> int:
     ap.add_argument("--responses-jsonl", required=True)
     ap.add_argument("--output", default="output/format_stability/invalid_php_sentinel_summary.json")
     ap.add_argument("--pass-score", type=float, default=60.0,
-                    help="overall_score >= this (with no explicit verdict) counts as a pass")
+                    help="overall_score >= this (with no explicit verdict) counts as a RAW pass")
+    ap.add_argument("--threshold", type=float, default=70.0,
+                    help="v1.2 verdict policy: overall < threshold -> effective FAIL")
     args = ap.parse_args()
 
     rows = [json.loads(l) for l in open(args.dataset) if l.strip()]
@@ -60,7 +62,8 @@ def main() -> int:
         responses[int(rec["index"])] = rec.get("response", "")
 
     results = []
-    false_pass = 0
+    raw_false_pass = 0       # model APPROVED (verdict PASS or no-verdict+high score)
+    policy_false_pass = 0    # effective verdict PASS under the v1.2 policy
     unparseable = 0
     correct_fail = 0
     for i, row in enumerate(rows):
@@ -68,48 +71,60 @@ def main() -> int:
         verdict = _verdict(text)
         parsed = parse_judge_scores(text, "auto") if text else None
         overall = parsed.get("overall") if parsed else None
+        # RAW: did the model's own output approve the broken code?
         if verdict == "PASS":
-            is_false_pass = True
+            raw_fp = True
         elif verdict == "FAIL":
-            is_false_pass = False
+            raw_fp = False
         elif overall is not None and overall >= args.pass_score:
-            is_false_pass = True
+            raw_fp = True
         else:
-            is_false_pass = False
+            raw_fp = False
+        # POLICY: effective verdict = FAIL if model FAIL OR overall < threshold.
+        if verdict == "FAIL":
+            policy_fp = False
+        elif overall is not None:
+            policy_fp = overall >= args.threshold
+        else:
+            policy_fp = verdict == "PASS"  # no score, model said PASS -> approved
         if not text or (verdict is None and overall is None):
             unparseable += 1
-        if is_false_pass:
-            false_pass += 1
-        elif verdict == "FAIL":
+        raw_false_pass += raw_fp
+        policy_false_pass += policy_fp
+        if verdict == "FAIL" or (overall is not None and overall < args.threshold):
             correct_fail += 1
         results.append({
             "index": i,
             "defect_category": row.get("metadata", {}).get("defect_category"),
             "verdict": verdict,
             "overall_score": overall,
-            "false_pass": is_false_pass,
+            "raw_false_pass": raw_fp,
+            "policy_false_pass": policy_fp,
             "response_head": (text or "")[:160],
         })
 
     n = len(rows)
     summary = {
-        "n": n, "false_pass": false_pass, "correct_fail": correct_fail,
-        "unparseable": unparseable, "pass_score_threshold": args.pass_score,
-        "gate_pass": false_pass == 0,
+        "n": n, "raw_false_pass": raw_false_pass, "policy_false_pass": policy_false_pass,
+        "correct_fail": correct_fail, "unparseable": unparseable,
+        "pass_score_threshold": args.pass_score, "policy_threshold": args.threshold,
+        "gate_pass": policy_false_pass == 0,
         "rows": results,
     }
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(summary, indent=2))
-    print(f"[sentinel] n={n} false_pass={false_pass} correct_fail={correct_fail} "
-          f"unparseable={unparseable} -> GATE {'PASS' if false_pass == 0 else 'FAIL'}",
-          file=sys.stderr)
+    print(f"[sentinel] n={n} RAW_false_pass={raw_false_pass} "
+          f"POLICY_false_pass={policy_false_pass} (thr={args.threshold}) "
+          f"correct_fail={correct_fail} unparseable={unparseable} -> "
+          f"GATE {'PASS' if policy_false_pass == 0 else 'FAIL'}", file=sys.stderr)
     for r in results:
-        if r["false_pass"]:
-            print(f"  FALSE-PASS [{r['defect_category']}] verdict={r['verdict']} "
+        if r["raw_false_pass"] or r["policy_false_pass"]:
+            tag = "POLICY+RAW" if r["policy_false_pass"] else "raw-only(boundary)"
+            print(f"  [{tag}] {r['defect_category']} verdict={r['verdict']} "
                   f"overall={r['overall_score']}", file=sys.stderr)
     print(f"[sentinel] summary -> {out}", file=sys.stderr)
-    return 0 if false_pass == 0 else 2
+    return 0 if policy_false_pass == 0 else 2
 
 
 if __name__ == "__main__":
