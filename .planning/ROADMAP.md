@@ -258,7 +258,7 @@ Plans:
 **Plans**: 5 plans (v3 scoped replan — old 04.4-01 archived to archive-stale-v2-prereval/; OBSOLETE ckpt-72 Unsloth path superseded by wp-reasoning-v3 Tinker merge)
 
 Plans:
-- [ ] 04.4-01-PLAN.md — [W1] merge_tinker_v3.py (Tinker per-expert MoE convention) + Wave-0 tests + CPU merge to v3 staging + 3 anchor gates (tensor/fp32-control/forward)
+- [x] 04.4-01-PLAN.md — [W1] merge_tinker_v3.py (Tinker per-expert MoE convention) + Wave-0 tests + CPU merge to v3 staging + 3 anchor gates (tensor/fp32-control/forward)
 - [ ] 04.4-02-PLAN.md — [W2] v3 vLLM serve + 3-layer merge-fidelity gate (L2 24-prompt invalid-PHP sentinel + L3 Spearman≥0.95 BLOCKING; L1 corroboration) → REVL-01/02 carry decision
 - [ ] 04.4-03-PLAN.md — [W3] REVL-04 wp-bench HARD gate fresh on merged-served v3 (parameterized run_eval_reasoning, namespaced output, served-identity assert)
 - [ ] 04.4-04-PLAN.md — [W4] REVL-01/02 carry-or-rerun + thin REVL-03 + SOFT REVL-07/08 on merged-served + REVL-06 N/A note + v3 gate ledger
@@ -531,7 +531,7 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 4.1. Reasoning Data Generation | v1.2 | 1/3 | In Progress|  |
 | 4.2. Reasoning Dataset Assembly | v1.2 | 0/? | Not started | - |
 | 4.3. Reasoning Fine-Tune | v1.2 | 2/3 | In Progress|  |
-| 4.4. Reasoning Eval & Merge | v1.2 | 0/? | Not started | - |
+| 4.4. Reasoning Eval & Merge | v1.2 | 1/5 | In Progress|  |
 | 5. Packaging and Deployment | v1.0 | 0/3 | Deferred to v3.0 | - |
 | 6. Adaptive Training Planner | v1.1 | 6/6 | Complete | 2026-04-01 |
 | 7. Router Profiling & Protected Expert Set | v2.0 | 0/? | Not started | - |
