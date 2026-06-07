@@ -22,7 +22,7 @@ from tinker_cookbook.tokenizer_utils import get_tokenizer
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import json
-from tinker_reasoning_data import BASE_MODEL, RENDERER_NAME, VAL_PATH, build_datasets
+from tinker_reasoning_data import BASE_MODEL, RENDERER_NAME, TRAIN_PATH, VAL_PATH, build_datasets
 
 
 def _loss_of(fb_out):
@@ -138,6 +138,8 @@ def terse_gate_eval(sampling_client, renderer, tok, val_rows, target_n, max_toke
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--stage", default="smoke")
+    ap.add_argument("--train-path", default=None,
+                    help="override train JSONL (e.g. the corrective augmented set)")
     ap.add_argument("--rank", type=int, default=32)
     ap.add_argument("--epochs", type=int, default=1)
     ap.add_argument("--max-steps", type=int, default=None)
@@ -172,8 +174,10 @@ def main():
         "created": datetime.datetime.now(datetime.timezone.utc).isoformat(),
     }
 
-    train_ds, _ = build_datasets(batch_size=args.batch_size)
+    train_path = args.train_path or TRAIN_PATH
+    train_ds, _ = build_datasets(train_path=train_path, batch_size=args.batch_size)
     val_rows = [json.loads(l) for l in open(VAL_PATH)]
+    print(f"[sft] train_path={train_path}", flush=True)
     lr = hp.get_lr(BASE_MODEL, is_lora=True)
     tok = get_tokenizer(BASE_MODEL)
     renderer = renderers.get_renderer(RENDERER_NAME, tokenizer=tok)
