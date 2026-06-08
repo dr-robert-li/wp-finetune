@@ -103,6 +103,17 @@ def _run_wpbench(tag: str, out_dir: Path) -> dict:
             # litellm to use the OpenAI provider and send bare `wp-30_70` to api_base.
             # (Bare `wp-30_70` => "LLM Provider NOT provided" BadRequestError.)
             conf["models"][0]["name"] = "openai/wp-30_70"
+            # The v3 reasoning model emits long <think> CoT before the answer, so each
+            # completion far exceeds wp-bench's ModelConfig default request_timeout=300s
+            # (the terse baseline never hit it). Bump the per-request budget and force
+            # serial requests so a single GB10 isn't splitting throughput across 4
+            # concurrent CoT generations (which compounds the timeout). Do NOT set
+            # max_tokens — capping the reasoning model risks the CoT eating the budget
+            # and truncating the PHP answer => wp-bench scores cut-off code => false FAIL
+            # on a HARD promotion gate. eval_gen/eval_judge already proved the model
+            # terminates on its own (api_error=0), so no cap is needed.
+            conf["models"][0]["request_timeout"] = 1800.0
+            conf.setdefault("run", {})["concurrency"] = 1
         # wp_env_dir / dataset cache_dir in the base config are relative to PROJECT_ROOT,
         # but HarnessConfig.from_file() resolves relatives against the *config file's dir*.
         # We dump the tmp config into output/.../<tag>/, so rewrite relevant paths to
