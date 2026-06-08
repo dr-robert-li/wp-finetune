@@ -103,17 +103,27 @@ def _run_wpbench(tag: str, out_dir: Path) -> dict:
             # litellm to use the OpenAI provider and send bare `wp-30_70` to api_base.
             # (Bare `wp-30_70` => "LLM Provider NOT provided" BadRequestError.)
             conf["models"][0]["name"] = "openai/wp-30_70"
-            # The v3 reasoning model emits long <think> CoT before the answer, so each
-            # completion far exceeds wp-bench's ModelConfig default request_timeout=300s
-            # (the terse baseline never hit it). Bump the per-request budget and force
-            # serial requests so a single GB10 isn't splitting throughput across 4
-            # concurrent CoT generations (which compounds the timeout). Do NOT set
-            # max_tokens — capping the reasoning model risks the CoT eating the budget
-            # and truncating the PHP answer => wp-bench scores cut-off code => false FAIL
-            # on a HARD promotion gate. eval_gen/eval_judge already proved the model
-            # terminates on its own (api_error=0), so no cap is needed.
+            # The Qwen3 chat template ENABLES thinking by default. With thinking on, v3
+            # opens <think> and (on gen-style prompts) never closes it — it writes the
+            # code INSIDE an unterminated think block. wp-bench then either (a) times out
+            # waiting on the long generation, or (b) scores a "<think>\n..." prefix that
+            # php_lint / knowledge-startswith both reject. The accepted plan-02 fidelity
+            # proof invoked v3 with chat_template_kwargs enable_thinking=false; we do the
+            # same here (injected in scripts/_wpbench_pth/usercustomize.py, applied to BOTH
+            # models for a symmetric comparison) so v3 emits clean direct code like the
+            # baseline. request_timeout 1800 (headroom over wp-bench's 300s default);
+            # max_tokens 2048 mirrors eval/eval_gen.run_eval (its gen outputs were med 186
+            # / max 1933 tokens, all < 2048 => no truncation). concurrency 4 keeps vLLM
+            # continuous-batching throughput (the original conc=4 failure was the 300s
+            # per-request cap, not GPU starvation; conc=1 only blew the 2h outer cap).
             conf["models"][0]["request_timeout"] = 1800.0
-            conf.setdefault("run", {})["concurrency"] = 1
+            conf["models"][0]["max_tokens"] = 2048
+            conf.setdefault("run", {})["concurrency"] = 4
+            # Smoke knob: WPBENCH_LIMIT=N runs only N tests per phase (knowledge +
+            # execution) for a fast pre-flight before the full 344-test suite. Unset => full.
+            _wpb_limit = os.environ.get("WPBENCH_LIMIT")
+            if _wpb_limit:
+                conf["run"]["limit"] = int(_wpb_limit)
         # wp_env_dir / dataset cache_dir in the base config are relative to PROJECT_ROOT,
         # but HarnessConfig.from_file() resolves relatives against the *config file's dir*.
         # We dump the tmp config into output/.../<tag>/, so rewrite relevant paths to
