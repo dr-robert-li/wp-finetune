@@ -24,9 +24,23 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 
 ## Current Position
 
-Phase: 04.4 (reasoning-eval-adapter-merge-inserted) — EXECUTING
-Plan: 2 of 5
-Next: **REVL-05 human re-gate against `wp-reasoning-v3`, then Phase 7.** P0-P5 DONE. The
+Phase: 04.4 (reasoning-eval-adapter-merge-inserted) — BLOCKED (D-05, REVL-04 FAIL)
+Plan: 3 of 5 (plans 04/05 BLOCKED)
+Next: **D-05 = ITERATE (user decision 2026-06-08).** Phase 04.4 plan 03 ran the REVL-04
+wp-bench HARD gate fresh on merged-served v3 (full 344-test suite, faithful invocation):
+**reasoning 0.3716 < baseline 0.4537 → FAIL.** The `target_modules=all-linear` reasoning
+merge degraded base WP coding (execution corr 0.292 vs 0.417). v3's JUDGE path still
+transferred (plan 02 fidelity L3≥0.95, human-approved) — good judge, worse generator. Promotion
+BLOCKED (plan 05 reads wp-bench `pass==true`, which is false). User chose **Iterate** (not abandon):
+recover base coding ability via Phase 4.3+ re-train (more reasoning data / adjusted LR/epochs /
+fresh-LoRA-on-different-base) OR a more targeted merge that avoids all-linear gen-layer damage.
+v3 staging is archived, NOT promoted. **Resume = run a planning workflow to define the iteration**
+(re-open Phase 4.3 or insert a targeted-merge remediation plan), then re-run REVL-04 on the new
+candidate. Evidence: `output/eval_reasoning_v3/04.4_wp_bench_results.json` + `04.4-03-SUMMARY.md`.
+
+---
+### (Historical, pre-04.4-merge) v3 corrective-training readiness — SUPERSEDED by the REVL-04 result above
+**REVL-05 human re-gate against `wp-reasoning-v3`, then Phase 7.** P0-P5 DONE. The
 judge-quality corrective branch is complete and promoted **`wp-reasoning-v3`** (Tinker run
 `3497a27e...:train:0`) — it fixes BOTH halves of REVL-05. Approach (see
 `04.3-P5-CORRECTIVE-RESULTS.md` + `VERDICT-POLICY.md`): 30 invalid-PHP/fabricated-API
@@ -125,6 +139,7 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
+- [Phase 4.4 — BLOCKED 2026-06-08, D-05 ITERATE]: **REVL-04 wp-bench HARD gate FAILED on the v3 reasoning-merge.** Fresh full 344-test run on merged-served v3 vs baseline merged-v2: **reasoning 0.3716 < baseline 0.4537, pass=false** (`output/eval_reasoning_v3/04.4_wp_bench_results.json`). Faithful — no `<think>` leakage, no max_tokens truncation, both serves thinking-OFF (the defensible "did the merge preserve base coding ability" comparison). Root-cause of 3 harness iterations: Qwen3 template enables thinking by default → v3 wrote code inside an unterminated `<think>` → fixed by `chat_template_kwargs enable_thinking=false` (commits fbda6d3, 3267f3b; matches plan-02 fidelity invocation). The `target_modules=all-linear` merge degraded generation layers (execution corr 0.292 vs 0.417); JUDGE path still transferred (plan 02 L3≥0.95). **User chose ITERATE** (not abandon). Plans 04.4-04/05 BLOCKED. **Next: planning workflow to define the iteration** (re-open Phase 4.3 re-train OR a targeted-merge that spares gen layers), then re-run REVL-04 on the new candidate. v3 staging archived, NOT promoted. See `04.4-03-SUMMARY.md`.
 - [Phase 4.2]: COMPLETE — gate passed, 418-example dataset shipped to data/reasoning_dataset/
 - [Phase 4.3]: COMPLETE — training loss 1.22→0.86, ckpt-72 shipped. RTRN-04 post-hoc gate INVALID at 4-bit on Qwen3-MoE (router-quant collapse → degenerate output regardless of adapter). Training-loss curve is the success signal.
 - [Phase 4.4 BLOCKER — UPDATED 2026-05-29]: Eval architecture investigation produced 4 findings: (a) **v1 30_70 baseline merge ACCEPTED** as `models/qwen3-30b-wp-30_70-merged-v2/` via CPU-only raw-HF+PEFT script `_p0_unsloth_merge_v3.py` — adapter contains zero `gate_up_proj` LoRA tensors (training never wrote them); v3 correctly fuses everything that exists (down_proj per-expert + attn + embed/lm_head). (b) **RESEARCH "Pitfall 5" narrative requires revision** — v1 partial baseline was not caused by PEFT dropping target_parameters at merge time; the gate_up_proj LoRA was never trained. (c) **P0 v2 (GPU Unsloth) OOMed** on GB10 unified memory: `max_memory={0:'80GiB','cpu':'30GiB'}` is an accelerate hint, not a hard cap; Unsloth pinned ~110 GiB GPU+CPU pages on a 121 GiB total system. CPU-only v3 path avoids NVRM entirely. (d) **ckpt-72 reasoning adapter uses Unsloth's fused-experts shared-rank LoRA layout** (`mlp.experts.base_layer.lora_A/B` + `mlp.experts.lora_A/B`); raw PEFT `merge_and_unload()` would silently corrupt per-expert deltas because PEFT's strided B-indexing convention (`B[:, e::E]`) DIFFERS from Unsloth's training-time contiguous-block convention (`B[:, e*R:(e+1)*R]`). Council-approved merge path: **unsloth-static fused-MoE candidate** — hybrid (attention-only PEFT adapter merge + custom Unsloth-convention per-expert MoE delta application + gate/up chunk split for Llama-style fused output dim). Promotion gates: tensor-level + multi-layer forward-pass equivalence anchors against Unsloth's `_extract_lora_from_wrapper`.
