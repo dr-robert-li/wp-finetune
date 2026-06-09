@@ -375,12 +375,21 @@ def _run_merge(args) -> int:
     assert report["attention_q_proj_changed"], "attention merge did not change q_proj"
 
     # 5) Manual lm_head LoRA (PEFT skips unembed_tokens because the key is unembed_tokens, not lm_head).
-    A_un = adapter["base_model.model.model.unembed_tokens.lora_A.weight"]
-    B_un = adapter["base_model.model.model.unembed_tokens.lora_B.weight"]
-    model.lm_head.weight.data += build_lm_head_delta(A_un, B_un, scale).to(torch.bfloat16)
-    assert tuple(model.lm_head.weight.shape) == (STOCK_VOCAB, model.config.hidden_size)
-    report["lm_head_applied"] = True
-    report["lm_head_touched"] = 1
+    # When --exclude-lm-head is set (D-IT-04 attempt-1), skip this stage entirely and record
+    # lm_head_excluded=True in the report.  Default (False) preserves the original v3 behaviour.
+    if getattr(args, "exclude_lm_head", False):
+        report["lm_head_excluded"] = True
+        report["lm_head_applied"] = False
+        report["lm_head_touched"] = 0
+        report["merge_type"] = "tinker_per_expert_moe_plus_peft_attention_NO_lm_head"
+    else:
+        A_un = adapter["base_model.model.model.unembed_tokens.lora_A.weight"]
+        B_un = adapter["base_model.model.model.unembed_tokens.lora_B.weight"]
+        model.lm_head.weight.data += build_lm_head_delta(A_un, B_un, scale).to(torch.bfloat16)
+        assert tuple(model.lm_head.weight.shape) == (STOCK_VOCAB, model.config.hidden_size)
+        report["lm_head_excluded"] = False
+        report["lm_head_applied"] = True
+        report["lm_head_touched"] = 1
 
     # 6) Save merged model + STOCK tokenizer (never the extended 151,938 tokenizer) to staging.
     tmp_out = args.output_dir + ".tmp_merge"
@@ -441,6 +450,10 @@ def main() -> int:
     ap.add_argument("--report", default=DEFAULT_REPORT, help="merge_report.json path")
     ap.add_argument("--force-canonical", action="store_true",
                     help="Allow writing outside _staging/ (DANGER: can overwrite canonical). Default off.")
+    ap.add_argument("--exclude-lm-head", action="store_true", default=False,
+                    help="(D-IT-04) Skip the manual lm_head LoRA stage; set lm_head_excluded=true in "
+                         "merge_report.json. Default OFF — omitting this flag reproduces the v3 "
+                         "manual_lm_head merge path exactly.")
     args = ap.parse_args()
 
     # Staging-isolation guard: refuse a non-_staging output dir unless explicitly forced.
