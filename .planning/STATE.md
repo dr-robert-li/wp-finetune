@@ -31,7 +31,13 @@ parse gate: parse_failure_rate=0.2479 >> 0.05 threshold (plan 08 exit 7, D-IT-09
 wp-bench never ran on v4. v3 REVL-04 also failed (0.3716 < 0.4537). Promotion BLOCKED.
 **Fail-path (D-IT-05):** attempt-2 = exclude q_proj in addition to lm_head (MoE-expert-layers-only
 merge); if attempt-2 fails: D-IT-02 diagnosis before any 04.3 retrain.
-**Resume = human decision on attempt-2 vs D-IT-02.** No plan created here.
+**HUMAN DECISION 2026-06-10: D-IT-02 DIAGNOSIS FIRST** (chosen over blind attempt-2). Rationale:
+attempt-1 evidence falsifies the lm_head hypothesis — excluding lm_head made the parse rate WORSE
+(0.248 > v3 0.190), so the generation regression is NOT lm_head-driven. Diagnose WHICH merged
+component degrades generation (component ablation: attention q/k/v/o PEFT vs MoE per-expert deltas,
+measured on the cheap 121-row parse census) BEFORE another full merge attempt. No diagnosis plan
+created yet. **Resume = scope + run D-IT-02 component-ablation diagnosis** (route: /gsd:debug or
+insert a diagnosis plan into 04.4), then decide attempt-2 vs 04.3 retrain from the root cause.
 Evidence: `output/eval_reasoning_v4_nolmhead/revl01a_v4.json` + `04.4-08-SUMMARY.md`.
 
 ---
