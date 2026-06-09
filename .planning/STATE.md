@@ -25,18 +25,14 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 ## Current Position
 
 Phase: 04.4 (reasoning-eval-adapter-merge-inserted) — EXECUTING
-Plan: 4 of 7
-Next: **D-05 = ITERATE (user decision 2026-06-08).** Phase 04.4 plan 03 ran the REVL-04
-wp-bench HARD gate fresh on merged-served v3 (full 344-test suite, faithful invocation):
-**reasoning 0.3716 < baseline 0.4537 → FAIL.** The `target_modules=all-linear` reasoning
-merge degraded base WP coding (execution corr 0.292 vs 0.417). v3's JUDGE path still
-transferred (plan 02 fidelity L3≥0.95, human-approved) — good judge, worse generator. Promotion
-BLOCKED (plan 05 reads wp-bench `pass==true`, which is false). User chose **Iterate** (not abandon):
-recover base coding ability via Phase 4.3+ re-train (more reasoning data / adjusted LR/epochs /
-fresh-LoRA-on-different-base) OR a more targeted merge that avoids all-linear gen-layer damage.
-v3 staging is archived, NOT promoted. **Resume = run a planning workflow to define the iteration**
-(re-open Phase 4.3 or insert a targeted-merge remediation plan), then re-run REVL-04 on the new
-candidate. Evidence: `output/eval_reasoning_v3/04.4_wp_bench_results.json` + `04.4-03-SUMMARY.md`.
+Plan: 4 of 7 (plans 06/07/08 of the merge-remediation track completed)
+Next: **REVL-04 still BLOCKED.** v4 attempt-1 (lm_head excluded, q_proj kept) disqualified at
+parse gate: parse_failure_rate=0.2479 >> 0.05 threshold (plan 08 exit 7, D-IT-09 fail-fast);
+wp-bench never ran on v4. v3 REVL-04 also failed (0.3716 < 0.4537). Promotion BLOCKED.
+**Fail-path (D-IT-05):** attempt-2 = exclude q_proj in addition to lm_head (MoE-expert-layers-only
+merge); if attempt-2 fails: D-IT-02 diagnosis before any 04.3 retrain.
+**Resume = human decision on attempt-2 vs D-IT-02.** No plan created here.
+Evidence: `output/eval_reasoning_v4_nolmhead/revl01a_v4.json` + `04.4-08-SUMMARY.md`.
 
 ---
 ### (Historical, pre-04.4-merge) v3 corrective-training readiness — SUPERSEDED by the REVL-04 result above
