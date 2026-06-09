@@ -44,9 +44,19 @@ from scripts.merge_tinker_v3 import (  # noqa: E402
 )
 
 STOCK_BASE = "models/Qwen3-30B-A3B"
-STAGING = "models/_staging/qwen3-30b-wp-30_70-reasoning-merged-v3"
+_DEFAULT_STAGING = "models/_staging/qwen3-30b-wp-30_70-reasoning-merged-v3"
 ADAPTER_TAR = "models/tinker_export/wp-reasoning-v3/checkpoint.tar"
-REPORT = "output/merge_v3/merge_report.json"
+_DEFAULT_REPORT = "output/merge_v3/merge_report.json"
+
+# Allow callers (e.g. the v4 launcher) to redirect STAGING/REPORT without touching defaults.
+# Parse args early so STAGING/REPORT are available at module level for the rest of main().
+import argparse as _argparse
+_ap = _argparse.ArgumentParser(add_help=False)
+_ap.add_argument("--report", default=_DEFAULT_REPORT)
+_ap.add_argument("--staging", default=_DEFAULT_STAGING)
+_known, _unknown = _ap.parse_known_args()
+STAGING = _known.staging
+REPORT = _known.report
 
 HIDDEN = 2048
 GATE_HALF = 768          # per-expert gate (or up) output dim
