@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: MVP
 status: executing
 stopped_at: Phase 04.4 REVL-04 merge-remediation context gathered (iteration)
-last_updated: "2026-06-09T15:36:19.110Z"
+last_updated: "2026-06-09T15:42:30.756Z"
 progress:
   total_phases: 9
   completed_phases: 6
@@ -100,6 +100,7 @@ Progress: [████████░░] 83%
 | Phase 06-adaptive-training-planner P04 | 5 | 2 tasks | 0 files |
 | Phase 04-evaluation P02 | 6 | 1 tasks | 1 files |
 | Phase 04.1 P02 | 142 | 2 tasks | 4 files |
+| Phase 04.4 P06 | 8 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -131,6 +132,9 @@ Recent decisions affecting current work:
 - [Phase 04-evaluation]: Task 2 execution deferred: CUDA unavailable in current Python env (cpu-only torch); GPU execution requires correct CUDA-enabled environment activation on DGX Spark
 - [Phase 04-evaluation]: run_eval_and_wpbench_for_ratio keeps vLLM alive between eval_gen, eval_judge, and wp-bench for same ratio to avoid restart overhead
 - [Phase 04.1-02]: Model name claude-sonnet-4-6-20250514 does not exist; correct name is claude-sonnet-4-5 for this API key
+- [Phase ?]: 04.4-06
+- [Phase ?]: D-IT-04 applied: lm_head LoRA stage dropped; D-IT-05 attempt-1 scope q_proj kept
+- [Phase ?]: v4 flag defaults OFF preserving v3 reproducibility; anchors parameterized with --report/--staging back-compat defaults
 
 ### Pending Todos
 
