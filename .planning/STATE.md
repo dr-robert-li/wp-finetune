@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: executing
-stopped_at: Phase 04.4 REVL-04 merge-remediation context gathered (iteration)
-last_updated: "2026-06-09T18:24:59.682Z"
+stopped_at: "Completed 04.4-08-PLAN.md: REVL-04 v4 precondition early-exit (exit 7)"
+last_updated: "2026-06-09T18:35:15.641Z"
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 36
-  completed_plans: 31
+  completed_plans: 32
   percent: 67
 ---
 
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 ## Current Position
 
 Phase: 04.4 (reasoning-eval-adapter-merge-inserted) — EXECUTING
-Plan: 3 of 7
+Plan: 4 of 7
 Next: **D-05 = ITERATE (user decision 2026-06-08).** Phase 04.4 plan 03 ran the REVL-04
 wp-bench HARD gate fresh on merged-served v3 (full 344-test suite, faithful invocation):
 **reasoning 0.3716 < baseline 0.4537 → FAIL.** The `target_modules=all-linear` reasoning
@@ -62,7 +62,7 @@ data: `scripts/build_reasoning_negatives.py` + `build_augmented_train.py`; gates
 Status: Ready to execute
 Note: Local artifacts `models/qwen3-30b-wp-30_70-merged-v2` + `...-reasoning-merged` + `adapters/.../checkpoint-72` are READ-ONLY references/fallback only (NOT promoted). The GB10 memory wall is documented in `output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md`. `04.3-REOPEN-PLAN.md` remains a 0-task brief — do not execute.
 
-Progress: [█████████░] 86%
+Progress: [█████████░] 89%
 
 ## Performance Metrics
 
@@ -102,6 +102,7 @@ Progress: [█████████░] 86%
 | Phase 04.1 P02 | 142 | 2 tasks | 4 files |
 | Phase 04.4 P06 | 8 | 2 tasks | 4 files |
 | Phase 04.4-reasoning-eval-adapter-merge-inserted P07 | 0 | 2 tasks | 3 files |
+| Phase 04.4-reasoning-eval-adapter-merge-inserted P08 | 12 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -137,6 +138,7 @@ Recent decisions affecting current work:
 - [Phase ?]: D-IT-04 applied: lm_head LoRA stage dropped; D-IT-05 attempt-1 scope q_proj kept
 - [Phase ?]: v4 flag defaults OFF preserving v3 reproducibility; anchors parameterized with --report/--staging back-compat defaults
 - [Phase 04.4-07 2026-06-10]: D-IT-04/05 attempt-1 hypothesis falsified — lm_head exclusion + q_proj retention did NOT recover merged-served parse rate (0.2479 > 0.05; marginally worse than v3 0.1901); Spearman also regressed (0.1534 < baseline 0.2678); REVL-02 PHPCS passed (1.0); plan 08 will early-exit on parse_gate_pass=false
+- [Phase 04.4-reasoning-eval-adapter-merge-inserted]: 04.4-08: REVL-04 exit 7 is designed correct behavior — parse_gate_pass=False (0.2479) fired D-IT-09 fail-fast; v4 attempt-1 disqualified at parse gate; fail-path = attempt-2 (exclude q_proj, D-IT-05) or D-IT-02 diagnosis
 
 ### Pending Todos
 
@@ -177,8 +179,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-09T18:24:59.672Z
-Stopped at: Phase 04.4 REVL-04 merge-remediation context gathered (iteration)
+Last session: 2026-06-09T18:35:15.632Z
+Stopped at: Completed 04.4-08-PLAN.md: REVL-04 v4 precondition early-exit (exit 7)
 
 Prior session: 2026-06-02T21:31:00.000Z
 Stopped at: Phase 4.4 CLOSED **REJECTED** at REVL-05 (human). All automated gates run; merge NOT promoted; D-05 disposition pending (recommend Phase 4.3 format-stability re-train). See `04.4-GATE-LEDGER.md` + `04.4-D05-DIAGNOSIS.md`. Resume = decide D-05.

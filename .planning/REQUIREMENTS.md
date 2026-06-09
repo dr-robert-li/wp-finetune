@@ -130,7 +130,7 @@ Requirements for deep reasoning fine-tuning of the winning ratio adapter. Depend
 - [ ] **REVL-01**: eval_judge.py Spearman correlation on reasoning adapter meets or exceeds winning ratio baseline
 - [ ] **REVL-02**: eval_gen.py PHPCS pass rate on reasoning adapter shows no regression (within 2pp of baseline)
 - [ ] **REVL-03**: Reasoning quality evaluated by separately spawned Claude evaluator agent (independent context window, receives only generated code + reasoning as opaque inputs, no shared state with model under test) measuring dimension coverage (all 9 dimensions addressed) and score-reasoning consistency
-- [ ] **REVL-04**: wp-bench scores on reasoning adapter meet or exceed winning ratio baseline
+- [x] **REVL-04**: wp-bench scores on reasoning adapter meet or exceed winning ratio baseline
 - [ ] **REVL-05**: Human reviews sample of reasoning outputs to confirm quality before declaring v1.2 complete
 - [ ] **REVL-06**: Fix correctness — critique-then-fix corrected code verified through PHPCS + security scanner to confirm the fix actually resolves the identified issue
 - [ ] **REVL-07**: Classification accuracy — confusion matrix (TP/TN/FP/FN) computed at score thresholds from eval_judge.py per-example data, measuring whether the model correctly distinguishes good from bad code
@@ -317,7 +317,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REVL-01 | Phase 4.4 | Pending |
 | REVL-02 | Phase 4.4 | Pending |
 | REVL-03 | Phase 4.4 | Pending |
-| REVL-04 | Phase 4.4 | Pending |
+| REVL-04 | Phase 4.4 | Complete |
 | REVL-05 | Phase 4.4 | Pending |
 | REVL-06 | Phase 4.4 | Pending |
 | REVL-07 | Phase 4.4 | Pending |
