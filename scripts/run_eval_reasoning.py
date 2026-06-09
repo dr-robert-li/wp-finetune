@@ -215,11 +215,18 @@ def main() -> int:
     ap.add_argument("--out-dir", default=None,
                     help="Output directory. Default: output/eval_reasoning (legacy canonical). "
                          "Override to e.g. output/eval_reasoning_v3 for the v3 run.")
+    # Plan 04.4-08: --merge-report lets the v4 harness fingerprint-check against
+    # output/merge_v4_nolmhead/merge_report.json (the v4 report) rather than the v3 report,
+    # satisfying threat T-0448-01 (served-identity re-asserted against the v4 candidate).
+    ap.add_argument("--merge-report", default=MERGE_REPORT_V3,
+                    help="Path to the merge_report.json used for assert_served_identity. "
+                         "Default: %(default)s (v3). Override to the v4 report for v4 runs.")
     args = ap.parse_args()
 
     # Resolve effective paths from CLI overrides (no code path closes over module globals).
     reasoning_model = args.reasoning_model
     baseline_model = args.baseline_model
+    merge_report = args.merge_report
     out_dir: Path = (Path(args.out_dir) if args.out_dir else OUT_DIR)
     if not out_dir.is_absolute():
         out_dir = PROJECT_ROOT / out_dir
@@ -300,14 +307,16 @@ def main() -> int:
                          "revl01a": rjud.get("revl01a_overall_spearman_HARD", {}),
                          "revl01b": rjud.get("revl01b_overall_spearman_teacher_SOFT", {}),
                          "excluded": rjud.get("excluded", {})}
-        # Assert served-model identity before wp-bench scoring (T-0443-01 mitigation).
-        # serve_30_70_vllm.sh (used by boot_vllm) serves with --served-model-name wp-30_70;
-        # the merge_report + on-disk shard count carry the real v3 fingerprint.
+        # Assert served-model identity before wp-bench scoring (T-0443-01 / T-0448-01
+        # mitigation). serve_30_70_vllm.sh (used by boot_vllm) serves with
+        # --served-model-name wp-30_70; the merge_report + on-disk shard count carry the
+        # real candidate fingerprint. Use the --merge-report CLI arg (defaults to MERGE_REPORT_V3
+        # for backward compat; pass the v4 report for v4 runs via _04.4_revl04_v4.py).
         if not args.skip_wpbench:
             print("[reasoning] asserting served-model identity before wp-bench ...",
                   file=sys.stderr)
             try:
-                assert_served_identity(endpoint, merge_report_path=MERGE_REPORT_V3,
+                assert_served_identity(endpoint, merge_report_path=merge_report,
                                        staging_dir=str(PROJECT_ROOT / reasoning_model)
                                        if not reasoning_model.startswith("/")
                                        else reasoning_model,
