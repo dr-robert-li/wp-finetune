@@ -4,12 +4,12 @@ milestone: v1.0
 milestone_name: MVP
 status: executing
 stopped_at: Phase 04.4 REVL-04 merge-remediation context gathered (iteration)
-last_updated: "2026-06-09T11:00:04.194Z"
+last_updated: "2026-06-09T15:36:19.110Z"
 progress:
   total_phases: 9
   completed_phases: 6
-  total_plans: 34
-  completed_plans: 29
+  total_plans: 36
+  completed_plans: 30
   percent: 67
 ---
 
@@ -24,8 +24,8 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 
 ## Current Position
 
-Phase: 04.4 (reasoning-eval-adapter-merge-inserted) — BLOCKED (D-05, REVL-04 FAIL)
-Plan: 3 of 5 (plans 04/05 BLOCKED)
+Phase: 04.4 (reasoning-eval-adapter-merge-inserted) — EXECUTING
+Plan: 2 of 7
 Next: **D-05 = ITERATE (user decision 2026-06-08).** Phase 04.4 plan 03 ran the REVL-04
 wp-bench HARD gate fresh on merged-served v3 (full 344-test suite, faithful invocation):
 **reasoning 0.3716 < baseline 0.4537 → FAIL.** The `target_modules=all-linear` reasoning
@@ -62,7 +62,7 @@ data: `scripts/build_reasoning_negatives.py` + `build_augmented_train.py`; gates
 Status: Ready to execute
 Note: Local artifacts `models/qwen3-30b-wp-30_70-merged-v2` + `...-reasoning-merged` + `adapters/.../checkpoint-72` are READ-ONLY references/fallback only (NOT promoted). The GB10 memory wall is documented in `output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md`. `04.3-REOPEN-PLAN.md` remains a 0-task brief — do not execute.
 
-Progress: [█████████░] 85%
+Progress: [████████░░] 83%
 
 ## Performance Metrics
 
@@ -171,7 +171,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-09T11:00:04.186Z
+Last session: 2026-06-09T15:36:19.102Z
 Stopped at: Phase 04.4 REVL-04 merge-remediation context gathered (iteration)
 
 Prior session: 2026-06-02T21:31:00.000Z
@@ -217,7 +217,7 @@ Stopped at: W1-W6 cascade BLOCKED on eval-harness prose compat (2 layers). Findi
   - **CERTIFIED VERDICT (c246a20)**: smoke_pass=True exit=0 distinctness=0.879. judge 5/5 (prose 9/9 dims + 1 CtF json), gen 5/5 php_lint, baseline-sim 0.02-0.42 (<0.85 canary → reasoning diverges). Artifact: merge-artifacts/w0_03_smoke_PASS_verdict.json.
   - Data finding flagged: reasoning judge output is dimensional PROSE (CoT) or JSON (CtF), NOT <REASONING>-tagged. parse_judge_response(JSON-only) would have false-failed all CoT — coherence redesigned prose-aware + json-aware.
 
-Resume file: .planning/phases/04.4-reasoning-eval-adapter-merge-inserted/04.4-CONTEXT.md
+Resume file: None
 Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertions + smoke-gate hardening), THEN W0-03 smoke gate against models/qwen3-30b-wp-30_70-reasoning-merged/ vs models/qwen3-30b-wp-30_70-merged-v2/ baseline, THEN REVL-01..08 eval gates
 
 ### Session 2026-05-29 reasoning MERGE COMPLETE + PROMOTED
