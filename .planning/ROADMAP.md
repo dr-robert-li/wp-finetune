@@ -265,7 +265,7 @@ Plans (v3 track — superseded by remediation):
 
 Plans (merge-fix remediation track — exclude lm_head, attempt-1; gate order REVL-01A→REVL-04→REVL-05):
 - [x] 04.4-06-PLAN.md — [W6] re-merge with manual lm_head stage DROPPED (--exclude-lm-head, q_proj kept) → new v4 candidate models/_staging/...-merged-v4-nolmhead + output/merge_v4_nolmhead/merge_report.json; 3 anchors re-certify
-- [ ] 04.4-07-PLAN.md — [W7] REVL-01A parse-failure census on merged-served v4 (≤5% progression gate, fresh) + judge Spearman + REVL-02 fresh PHPCS + REVL-03 thin + REVL-07/08 SOFT + REVL-06 N/A → 04.4-GATE-LEDGER-V4.md; emits parse_gate_pass
+- [x] 04.4-07-PLAN.md — [W7] REVL-01A parse-failure census on merged-served v4 (≤5% progression gate, fresh) + judge Spearman + REVL-02 fresh PHPCS + REVL-03 thin + REVL-07/08 SOFT + REVL-06 N/A → 04.4-GATE-LEDGER-V4.md; emits parse_gate_pass
 - [ ] 04.4-08-PLAN.md — [W8] REVL-04 wp-bench HARD gate (autonomous, fail-fast): precondition early-exit on parse_gate_pass≤5% before the ~2.7h run; pass = reasoning≥baseline (~0.4537); fail-path note (attempt-2 q_proj per D-IT-05, then D-IT-02) — not a plan
 - [ ] 04.4-09-PLAN.md — [W9] REVL-05 thin v4 spot-check (HUMAN_APPROVED_V4_POSTMERGE) + triple-gated idempotent promote v4→canonical + post-merge 10+10 validation → closes 4.4, unblocks Phase 7
 
@@ -536,7 +536,7 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 4.1. Reasoning Data Generation | v1.2 | 1/3 | In Progress|  |
 | 4.2. Reasoning Dataset Assembly | v1.2 | 0/? | Not started | - |
 | 4.3. Reasoning Fine-Tune | v1.2 | 2/3 | In Progress|  |
-| 4.4. Reasoning Eval & Merge | v1.2 | 4/7 | In Progress|  |
+| 4.4. Reasoning Eval & Merge | v1.2 | 5/7 | In Progress|  |
 | 5. Packaging and Deployment | v1.0 | 0/3 | Deferred to v3.0 | - |
 | 6. Adaptive Training Planner | v1.1 | 6/6 | Complete | 2026-04-01 |
 | 7. Router Profiling & Protected Expert Set | v2.0 | 0/? | Not started | - |
