@@ -255,14 +255,19 @@ Plans:
   - Adapter merge: after human approval, `dgx.execute("unsloth_studio", "python", "-m", "scripts.merge_adapter", ...)` with idempotency check on `models/qwen3-30b-wp-{winning}-reasoning-merged/`
   - Post-merge validation: load merged model, run 10 inference samples for both `<wp_gen>` and `<wp_judge>`, verify coherent output and correct task token routing
   - Invokes `wp-finetune:review-telemetry` for consolidated eval summary
-**Plans**: 5 plans (v3 scoped replan — old 04.4-01 archived to archive-stale-v2-prereval/; OBSOLETE ckpt-72 Unsloth path superseded by wp-reasoning-v3 Tinker merge)
+**Plans**: v3 track (01-03) + merge-fix remediation track (06+). Old 04.4-01 archived to archive-stale-v2-prereval/; stale v3-pinned 04.4-04/05 archived to archive-stale-v3-lmhead/ (REVL-04 FAILED on v3 merge → merge-fix-first iteration, see CONTEXT ITERATION + DISCUSSION-LOG 2026-06-09)
 
-Plans:
+Plans (v3 track — superseded by remediation):
 - [x] 04.4-01-PLAN.md — [W1] merge_tinker_v3.py (Tinker per-expert MoE convention) + Wave-0 tests + CPU merge to v3 staging + 3 anchor gates (tensor/fp32-control/forward)
 - [x] 04.4-02-PLAN.md — [W2] v3 vLLM serve + 3-layer merge-fidelity gate (L2 24-prompt invalid-PHP sentinel + L3 Spearman≥0.95 BLOCKING; L1 corroboration) → REVL-01/02 carry decision
-- [ ] 04.4-03-PLAN.md — [W3] REVL-04 wp-bench HARD gate fresh on merged-served v3 (parameterized run_eval_reasoning, namespaced output, served-identity assert)
-- [ ] 04.4-04-PLAN.md — [W4] REVL-01/02 carry-or-rerun + thin REVL-03 + SOFT REVL-07/08 on merged-served + REVL-06 N/A note + v3 gate ledger
-- [ ] 04.4-05-PLAN.md — [W5] thin REVL-05 human spot-check (HUMAN_APPROVED_V3_POSTMERGE) → triple-gated idempotent promote → post-merge 10+10 validation
+- [✗] 04.4-03-PLAN.md — [W3] REVL-04 wp-bench HARD gate fresh on merged-served v3 — **FAILED** (reasoning 0.3716 < baseline 0.4537; 19% parse fails). Root cause: lm_head LoRA delta on extended-vocab base. Failure record kept.
+- [~] 04.4-04/05-PLAN.md — ARCHIVED to archive-stale-v3-lmhead/ (v3-pinned, never executed; superseded by remediation track below)
+
+Plans (merge-fix remediation track — exclude lm_head, attempt-1; gate order REVL-01A→REVL-04→REVL-05):
+- [ ] 04.4-06-PLAN.md — [W6] re-merge with manual lm_head stage DROPPED (--exclude-lm-head, q_proj kept) → new v4 candidate models/_staging/...-merged-v4-nolmhead + output/merge_v4_nolmhead/merge_report.json; 3 anchors re-certify
+- [ ] 04.4-07-PLAN.md — [W7] REVL-01A parse-failure census on merged-served v4 (≤5% progression gate, fresh) + judge Spearman + REVL-02 fresh PHPCS + REVL-03 thin + REVL-07/08 SOFT + REVL-06 N/A → 04.4-GATE-LEDGER-V4.md; emits parse_gate_pass
+- [ ] 04.4-08-PLAN.md — [W8] REVL-04 wp-bench HARD gate (autonomous, fail-fast): precondition early-exit on parse_gate_pass≤5% before the ~2.7h run; pass = reasoning≥baseline (~0.4537); fail-path note (attempt-2 q_proj per D-IT-05, then D-IT-02) — not a plan
+- [ ] 04.4-09-PLAN.md — [W9] REVL-05 thin v4 spot-check (HUMAN_APPROVED_V4_POSTMERGE) + triple-gated idempotent promote v4→canonical + post-merge 10+10 validation → closes 4.4, unblocks Phase 7
 
 ---
 
