@@ -372,10 +372,22 @@ Two cheap probes, NO full ablation:
    codegen/execution damage; attention deltas are codegen-safe.** (Caveat: 30-task subset, noisy,
    but consistent across overall + execution + anchored.)
 
-OPEN (not yet measured): WHERE judge skill lives (attention vs MoE). The probe measured codegen
-only. If judge skill is also MoE-borne, reducing MoE for codegen-safety may cost judge quality
-(re-entangle). A judge census (eval_judge parse+Spearman) on attn-only vs MoE-only would settle it
-(~1h each) — or fold it into the retrain by measuring judge quality on the retrained candidate.
+JUDGE-SKILL LOCATION (2026-06-10, SETTLED): judge census (parse+Spearman, RC-A-fixed harness) on
+the two variants -> artifact dit02_judge_location_result.json:
+  | variant   | parse_rate | Spearman |
+  | attn-only | 1.000 (121/121 FAIL) | None (0 pairs) — NO judge ability |
+  | MoE-only  | 0.066 (8/121)        | 0.3124 — BEST of all (> v3_full 0.2446, > baseline 0.2678) |
+=> **Judge skill lives ENTIRELY in the MoE deltas.** Attention-only yields 100% unparseable judge
+output (zero judge skill). MoE-only judges better than the full merge. So judge skill AND codegen
+damage are BOTH in MoE — entangled in one component. Attention deltas are NET-HARMFUL: they add
+codegen damage (0.043) and slightly LOWER judge Spearman (v3_full 0.2446 < MoE-only 0.3124) while
+contributing no judge skill. (Auto-verdict said "INCOMPLETE" only because attn Spearman is None;
+the None IS the signal — attention has no judge ability.)
+
+CONSEQUENCE: "cut MoE" would kill the judge. The retrain cannot remove MoE; it must make the MoE
+judge-training less codegen-destructive (lower MoE rank/LR, more wp_gen replay) AND can drop the
+attention target entirely (net-harmful). MoE-only merge (Spearman 0.3124 / codegen 0.4071) beats
+v3_full on both axes but still < baseline codegen 0.4537 -> retrain required.
 
 ## RESOLUTION
 
