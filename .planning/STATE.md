@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: executing
-stopped_at: Phase 04.3 context gathered (corrective-retrain re-open)
-last_updated: "2026-06-10T12:59:43.816Z"
+stopped_at: Phase 04.3 PLANNED (corrective Tinker MoE-only grid; 4 plans, verified — ready to execute)
+last_updated: "2026-06-11T05:41:00.000Z"
 progress:
   total_phases: 9
   completed_phases: 6
