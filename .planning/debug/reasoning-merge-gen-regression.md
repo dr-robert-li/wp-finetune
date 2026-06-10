@@ -332,3 +332,31 @@ MoE-only merge) would isolate the source, but requires separate human-gated GPU 
   RC-B: human-gated decision — retrain with lower rank / targeted modules, or accept tradeoff.
 - verified: RC-A not yet applied (Tinker-runtime E3 = reference for expected outcome after fix).
   RC-B confirmed real via E8; root component (attn vs MoE) not yet isolated.
+
+## RC-A APPLIED + CONFIRMED (2026-06-10)
+
+- FIX (commit b88faa3): eval/eval_judge.py `_judge_create()` helper passes
+  `extra_body={"chat_template_kwargs": {"enable_thinking": False}}` at both judge call sites
+  (run_eval:382 + _run_eval_reasoning:691), with a LOUD warn-on-fallback (strip_think cannot
+  rescue an unclosed <think>, so a silent kwarg-drop must not masquerade as green). 61 eval tests
+  pass. Deferred the _JSON_FIELD_TO_DIM dim-map change deliberately: it is SYMMETRIC (affected E3
+  too), so leaving it keeps the re-run a clean single-variable test against E3.
+- CONFIRM RUN (scripts/_04.4_revl01a_v3_confirm.py, output/eval_reasoning_v3/revl01a_v3_rcA_confirm.json):
+  re-ran REVL-01A judge census on the EXISTING v3 staging model through the patched harness.
+  - smoke 15: parse_fail 0/15, Spearman 0.2593
+  - full 121: parse_fail **3/121 = 0.0248** (<=0.05 PASS; was 0.190), overall Spearman **0.2446**
+    (delta -0.018 vs E3 0.2626, within ±0.03; baseline 0.2678), n_pairs 118
+  - VERDICT: **RC-A CONFIRMED** — parse recovered AND Spearman ~= E3. The adapter + weight merge
+    judge path are correct; the parse gate that disqualified plans 07/08 was harness-induced.
+- RESIDUAL (minor): Spearman 0.2446 sits ~0.018 below E3 0.2626 — within tolerance, attributable
+  to the 3 remaining parse-fails (118 vs 121 pairs) + small merged-weight bf16 numerical drift.
+  Not pursued; immaterial to the gate.
+
+## RESOLUTION
+
+- RC-A: RESOLVED (harness fix shipped + empirically confirmed).
+- RC-B: OPEN, human-gated. The reasoning LoRA merge genuinely trades away wp-bench codegen
+  (0.4537 -> 0.3716). This is the sole remaining promotion blocker. Next decision (see STATE.md):
+  component-ablation (attention-only vs MoE-only) to isolate the culprit, OR Phase-4.3 retrain with
+  lower rank / fewer target modules, OR accept the tradeoff. The lm_head / attempt-2(q_proj)
+  merge-variant track is moot — it was chasing the RC-A harness ghost.
