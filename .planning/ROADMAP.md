@@ -205,6 +205,7 @@ Plans:
 
 ### Phase 4.3: Reasoning Fine-Tune — INSERTED
 **Goal**: The winning ratio adapter is continued-fine-tuned on the assembled reasoning dataset at a 5-10x lower learning rate than Phase 3, with MoE router weights confirmed frozen, producing a reasoning adapter that does not suffer format collapse, generation regression, or loss divergence
+**Goal (RE-OPENED 2026-06-11 — corrective Tinker MoE-only retrain; supersedes the DGX-framed goal above)**: Produce a merge-ready grid-winner reasoning LoRA adapter whose MoE judge skill is less codegen-destructive when merged into the stock base — closing the REVL-04 wp-bench codegen gap (>= baseline 0.4537) WITHOUT losing judge skill (POINT Spearman >= v3 floor 0.263) and without regressing format stability (RTRN-05). Delivered via a rank {8,16,32} x replay {15,30,50%} MoE-only grid with a pre-registered selection rule and per-candidate eval economy; no candidate clearing the HARD gate => documented escalation, not auto-ship. NOTE: RTRN-01/02/03 above are local-DGX-framed and SUPERSEDED by the Tinker regime (LR 4.99e-4, cloud LoRA) per CONTEXT.md ROADMAP-drift; RTRN-05 still binds; RTRN-04 4-bit post-hoc gate is retired (invalid on quantized Qwen3-MoE).
 **Depends on**: Phase 4.2 (reasoning dataset assembled and validated)
 **Requirements**: RTRN-01, RTRN-02, RTRN-03, RTRN-04, RTRN-05
 **Success Criteria** (what must be TRUE):
@@ -223,11 +224,17 @@ Plans:
   - Checkpoint eval loop: at each checkpoint, run `eval_judge.py` on 50 samples → if parse failure rate >5%, abort training early (RTRN-04 abort condition)
   - Idempotency: `idempotency_check="adapters/qwen3-30b-wp-{winning}-reasoning/adapter_config.json"`
   - Invokes `wp-finetune:review-telemetry` after training completes
-**Plans**: 1 plan
+**Plans**: 4 plans (corrective Tinker MoE-only retrain, re-planned 2026-06-11). Prior DGX/Unsloth plans 04.3-01/02 are OBVIATED by the Tinker pivot + RC-B attribution and archived under `_archive-unsloth-2026-06-11/` (kept for audit; do NOT execute).
 
 Plans:
-- [x] 04.3-01-PLAN.md — Reasoning continued-FT of the merged 30_70 base (Option B): D-03 readiness gate, train_config_reasoning.yaml, train_model.py deltas (target_parameters/warmup_steps/router-freeze walker), checkpoint_parse_check.py abort hook, DGX dry-run gate, training run + review-telemetry
-- [x] 04.3-02-PLAN.md — RTRN-05 format-stability diagnostic bisect (Steps 0-4): parameterize capture/merge scripts (+contamination grep-blocker), merge ckpt-50 through the 5 gates, capture ckpt-50 vs ckpt-72 on an identical slice, Wilson-CI terse-rate compare with pre-registered CI-overlap→n≥300 escalation → 04.3-REOPEN-RESULTS.md verdict (ckpt-72 NOT promoted; merged-v2 fallback intact)
+- [ ] 04.3-01-PLAN.md — Enabling code (Wave 1): add `--train-attn`/`--train-unembed` MoE-only flags to `tinker_reasoning_sft.py` (D-N1); add `is_moe_only` detection + gated attention/unembed merge stages to `merge_tinker_v3.py`; add the `is_moe_only=True` merge-convention test
+- [ ] 04.3-02-PLAN.md — Replay variants (Wave 1): NEW `build_replay_mix.py` (pure wp_gen, leakage-guarded, D-N4); verify phase1 pool >=423; build the 30%/50% replay train variants (negatives preserved)
+- [ ] 04.3-03-PLAN.md — Grid driver (Wave 2): NEW `run_grid_eval.py` — cheap pre-merge judge filter -> only-if-pass merge -> REVL-04 wp-bench; bars POINT Spearman >= 0.263 (D-N7) + wp-bench >= 0.4537 HARD (D-N8); pre-registered selection rule; escalation exit 2 (no auto-ship)
+- [ ] 04.3-04-PLAN.md — Grid execution + selection (Wave 3): train the 9 MoE-only rank{8,16,32}xreplay{15,30,50%} candidates; assemble `grid_manifest.json`; run the grid; apply the pre-registered rule; confirm the winner (2nd 344-test wp-bench + post-merge judge); export merge-ready v4 adapter for Phase 04.4 — OR documented escalation
+
+(Archived, OBVIATED — local DGX/Unsloth iteration, kept for audit only:)
+- [x] 04.3-01-PLAN.md (archived) — Reasoning continued-FT of the merged 30_70 base (Option B)
+- [x] 04.3-02-PLAN.md (archived) — RTRN-05 format-stability diagnostic bisect (ckpt-50 vs ckpt-72)
 
 ### Phase 4.4: Reasoning Eval & Adapter Merge — INSERTED
 **Goal**: The reasoning adapter passes all existing quality gates (Spearman, PHPCS pass rate, wp-bench) with no regression versus the winning ratio baseline, human reviews a sample of reasoning outputs to confirm quality, and the adapter is merged into base weights
