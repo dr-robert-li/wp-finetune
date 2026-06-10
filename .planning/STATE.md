@@ -36,16 +36,26 @@ Next: **RC-B is the SOLE remaining blocker.** D-IT-02 diagnosis (debug session
     Spearman -> **0.2446** (~= E3 Tinker-runtime 0.2626, baseline 0.2678). The parse gate that
     arrested plans 07/08 was a harness ghost. Evidence:
     `output/eval_reasoning_v3/revl01a_v3_rcA_confirm.json`.
-  - **RC-B (CONFIRMED real, ROOT-ATTRIBUTED 2026-06-10):** wp-bench codegen drop 0.4537 -> 0.3716
-    under CORRECT thinking-off inference. Genuine reasoning↔codegen interference. Two cheap probes
-    isolated it: (1) per-expert delta-norms UNIFORM across 128 experts -> MoE-subset salvage DEAD;
-    (2) single-component wp-bench probe (anchored, WPBENCH_LIMIT=30) -> **MoE per-expert deltas carry
-    the codegen damage; attention deltas are codegen-SAFE** (attn-only execution-correctness 0.375 =
-    baseline exactly; MoE-only 0.3125 ~ v3_full 0.292; overall MoE damage 75% of gap vs attn 41%).
-    Artifact: `output/eval_reasoning_probe_dit02/dit02_attribution_result.json`.
-**HUMAN DECISION 2026-06-10: attribution probe -> RETRAIN.** Resume = re-open Phase 4.3 and retrain
-to cut MoE interference: lower MoE LoRA rank and/or fewer expert layers (lean attention-heavier —
-attention is codegen-safe), then re-merge + re-gate REVL-04 (now reliable post RC-A harness fix).
+  - **RC-B (CONFIRMED real, FULLY ATTRIBUTED 2026-06-10):** wp-bench codegen drop 0.4537 -> 0.3716
+    under CORRECT thinking-off inference. Genuine reasoning↔codegen interference. Three cheap probes
+    (NO full ablation): (1) per-expert delta-norms UNIFORM across 128 experts -> MoE-subset salvage
+    DEAD; (2) single-component wp-bench probe (anchored, WPBENCH_LIMIT=30) -> CODEGEN damage is mostly
+    MoE (attn-only execution-correctness 0.375 = baseline EXACTLY; MoE-only 0.3125 ~ v3_full 0.292);
+    (3) single-component JUDGE census -> **judge skill lives ENTIRELY in MoE** (attn-only = 100%
+    parse fail / no judge; MoE-only Spearman 0.3124, BETTER than v3_full 0.2446). NET PICTURE:
+    **MoE deltas carry BOTH judge skill AND codegen damage (entangled in one component); attention
+    deltas are net-HARMFUL (add codegen damage + slightly hurt judge Spearman, contribute no judge
+    skill).** MoE-only is strictly better than v3_full on BOTH axes but still < baseline codegen.
+    Artifacts: `output/eval_reasoning_probe_dit02/dit02_attribution_result.json` +
+    `dit02_judge_location_result.json` + `dit02_expert_delta_norms.json`.
+**HUMAN DECISION 2026-06-10: attribution probe -> RETRAIN.** CORRECTED direction (judge==MoE, so
+"cut MoE" would kill judge; "lean attention-heavier" is WRONG — attention is judge-useless):
+re-open Phase 4.3 and retrain to make the MoE judge-training LESS codegen-destructive without
+losing judge skill — candidate levers: lower MoE LoRA rank/LR (smaller perturbation), MORE wp_gen
+codegen replay (protect base coding), consider DROPPING the attention target entirely (net-harmful),
+find the MoE rank/replay sweet spot. Re-merge + re-gate REVL-04 (reliable post RC-A fix). The
+MoE-only merge (Spearman 0.3124, codegen 0.4071) is a cheap interim improvement over v3_full but
+still fails REVL-04 (< baseline ~0.4537) — retrain is required to close the codegen gap.
 OPEN sub-question to settle in/around the retrain: confirm judge skill survives reduced-MoE (the
 probe measured codegen only; if judge skill is MoE-borne, balance rank accordingly). The lm_head /
 attempt-2(q_proj) merge-variant track is moot — it chased the RC-A harness ghost.
