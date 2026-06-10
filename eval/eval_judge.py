@@ -32,6 +32,48 @@ from scripts.dgx_toolbox import get_toolbox
 # Module-level toolbox singleton (lazy)
 _dgx = None
 
+# RC-A fix (Phase 04.4 / D-IT-02): Qwen3 reasoning adapters Tinker-trained under the
+# qwen3_disable_thinking renderer never learned to CLOSE a <think> block. Served via vLLM
+# WITHOUT chat_template_kwargs enable_thinking=False, the merged model emits an UNCLOSED
+# <think> block -> judge JSON is unparseable -> 19-25% parse failures + Spearman collapse.
+# strip_think() CANNOT rescue this: its regex `<think>.*?</think>` requires the closing tag,
+# which is exactly what's missing. So the kwarg is the ONLY guard. If a served template
+# rejects the kwarg we drop it for the rest of the run but WARN LOUDLY — a silently dropped
+# kwarg would reproduce the bug with no backstop and masquerade as a green run.
+_thinking_kwarg_supported = True
+
+
+def _judge_create(client, *, model, messages, max_tokens=1024, temperature=0.0):
+    """Query a vLLM judge endpoint with enable_thinking=False (RC-A fix).
+
+    Mirrors the graceful-fallback pattern in scripts/fidelity_gate_v3.py. Non-template
+    exceptions propagate to the caller's existing api_error handling.
+    """
+    global _thinking_kwarg_supported
+    if _thinking_kwarg_supported:
+        try:
+            return client.chat.completions.create(
+                model=model, messages=messages, max_tokens=max_tokens,
+                temperature=temperature,
+                extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+            )
+        except Exception as e:  # noqa: BLE001
+            emsg = str(e).lower()
+            if "enable_thinking" in emsg or "chat_template" in emsg or "template" in emsg:
+                _thinking_kwarg_supported = False
+                print(
+                    "WARNING [eval_judge RC-A]: served template REJECTED "
+                    "chat_template_kwargs enable_thinking=False; dropping it for the rest "
+                    "of this run. strip_think CANNOT remove UNCLOSED <think> blocks, so "
+                    "judge parse failures from unterminated reasoning are NOT guarded this "
+                    "run. Treat any parse_failure_rate from this run as SUSPECT.",
+                    file=sys.stderr, flush=True,
+                )
+            else:
+                raise
+    return client.chat.completions.create(
+        model=model, messages=messages, max_tokens=max_tokens, temperature=temperature)
+
 
 def _get_dgx():
     global _dgx
@@ -379,7 +421,8 @@ def run_eval(
 
         # Query model in wp_judge mode
         try:
-            response = client.chat.completions.create(
+            response = _judge_create(
+                client,
                 model=resolved_model,
                 messages=user_messages,
                 max_tokens=1024,
@@ -688,8 +731,8 @@ def _run_eval_reasoning(
             generated = offline_responses[i] or ""
         else:
             try:
-                resp = client.chat.completions.create(
-                    model=resolved_model, messages=user_msgs, max_tokens=1024, temperature=0.0)
+                resp = _judge_create(
+                    client, model=resolved_model, messages=user_msgs, max_tokens=1024, temperature=0.0)
                 generated = resp.choices[0].message.content or ""
             except Exception as e:  # noqa: BLE001
                 excluded["api_error"] += 1
