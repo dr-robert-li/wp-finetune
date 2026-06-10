@@ -25,20 +25,27 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 ## Current Position
 
 Phase: 04.4 (reasoning-eval-adapter-merge-inserted) — EXECUTING
-Plan: 4 of 7 (plans 06/07/08 of the merge-remediation track completed)
-Next: **REVL-04 still BLOCKED.** v4 attempt-1 (lm_head excluded, q_proj kept) disqualified at
-parse gate: parse_failure_rate=0.2479 >> 0.05 threshold (plan 08 exit 7, D-IT-09 fail-fast);
-wp-bench never ran on v4. v3 REVL-04 also failed (0.3716 < 0.4537). Promotion BLOCKED.
-**Fail-path (D-IT-05):** attempt-2 = exclude q_proj in addition to lm_head (MoE-expert-layers-only
-merge); if attempt-2 fails: D-IT-02 diagnosis before any 04.3 retrain.
-**HUMAN DECISION 2026-06-10: D-IT-02 DIAGNOSIS FIRST** (chosen over blind attempt-2). Rationale:
-attempt-1 evidence falsifies the lm_head hypothesis — excluding lm_head made the parse rate WORSE
-(0.248 > v3 0.190), so the generation regression is NOT lm_head-driven. Diagnose WHICH merged
-component degrades generation (component ablation: attention q/k/v/o PEFT vs MoE per-expert deltas,
-measured on the cheap 121-row parse census) BEFORE another full merge attempt. No diagnosis plan
-created yet. **Resume = scope + run D-IT-02 component-ablation diagnosis** (route: /gsd:debug or
-insert a diagnosis plan into 04.4), then decide attempt-2 vs 04.3 retrain from the root cause.
-Evidence: `output/eval_reasoning_v4_nolmhead/revl01a_v4.json` + `04.4-08-SUMMARY.md`.
+Plan: 4 of 7 (plans 06/07/08 done; D-IT-02 diagnosis complete; RC-A fixed+confirmed)
+Next: **RC-B is the SOLE remaining blocker.** D-IT-02 diagnosis (debug session
+`reasoning-merge-gen-regression`) split the "merge regression" into two independent causes:
+  - **RC-A (CONFIRMED + FIXED 2026-06-10):** the judge parse-failure/Spearman regression was an
+    EVAL HARNESS BUG, not the merge. eval_judge omitted `enable_thinking=False` → merged Qwen3
+    emitted UNCLOSED `<think>` → unparseable judge JSON. Fix (commit b88faa3): `_judge_create()`
+    helper passes the kwarg at both judge call sites with loud fallback. CONFIRMED by re-running
+    REVL-01A on EXISTING v3 staging through the patched harness: parse 0.190 -> **0.0248** (<=0.05),
+    Spearman -> **0.2446** (~= E3 Tinker-runtime 0.2626, baseline 0.2678). The parse gate that
+    arrested plans 07/08 was a harness ghost. Evidence:
+    `output/eval_reasoning_v3/revl01a_v3_rcA_confirm.json`.
+  - **RC-B (CONFIRMED real, OPEN):** wp-bench codegen drop 0.4537 -> 0.3716 (exec corr 0.417 ->
+    0.292) under CORRECT thinking-off inference (E8: 0/344 `<think>`). Genuine reasoning↔codegen
+    interference from the LoRA fine-tune. v3 and v4 share byte-identical MoE+attn weights (E1), so
+    v4 wp-bench would reconfirm ~0.37 — not worth 2.7h. **Attention-vs-MoE component NOT yet isolated.**
+**Resume = decide the RC-B path** (human-gated): (a) component-ablation merge (attention-only vs
+MoE-only) + wp-bench to isolate the codegen-degrading component, then merge only the harmless one;
+(b) Phase-4.3 retrain with lower rank / fewer target modules to cut interference; (c) accept the
+tradeoff / keep v1 merged-v2 codegen baseline + serve reasoning judge separately. The lm_head and
+attempt-2(q_proj) merge-variant track is moot — it was chasing the RC-A harness ghost.
+Evidence: debug `.planning/debug/reasoning-merge-gen-regression.md` + `revl01a_v3_rcA_confirm.json`.
 
 ---
 ### (Historical, pre-04.4-merge) v3 corrective-training readiness — SUPERSEDED by the REVL-04 result above
