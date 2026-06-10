@@ -1,5 +1,5 @@
 ---
-status: root_cause_found
+status: resolved
 slug: reasoning-merge-gen-regression
 trigger: "04.4 — reasoning LoRA merge degrades base WP generation/judge ability (D-IT-02 diagnosis)"
 created: "2026-06-10"
@@ -352,11 +352,36 @@ MoE-only merge) would isolate the source, but requires separate human-gated GPU 
   to the 3 remaining parse-fails (118 vs 121 pairs) + small merged-weight bf16 numerical drift.
   Not pursued; immaterial to the gate.
 
+## RC-B ATTRIBUTION (2026-06-10) — MoE carries the codegen damage
+
+Two cheap probes, NO full ablation:
+
+1. Per-expert delta-norm check (no GPU): deltas UNIFORM across all 128 experts (entropy 0.9990,
+   top16-mass 0.1424, CV 0.096) -> no judge-expert subset -> MoE-SUBSET salvage DEAD.
+2. Single-component wp-bench probe (WPBENCH_LIMIT=30, anchored): built attn-only + MoE-only merges
+   (both lm_head-excluded), ran wp-bench subset vs baseline_v2 + v3_full anchors.
+   Artifact: output/eval_reasoning_probe_dit02/dit02_attribution_result.json
+   | model       | overall | correctness(exec) | knowledge |
+   | baseline_v2 | 0.4857  | 0.375             | 0.633     |
+   | v3_full     | 0.3810  | 0.292             | 0.500     |
+   | attn-only   | 0.4429  | 0.375 (=baseline) | 0.533     |
+   | MoE-only    | 0.4071  | 0.3125            | 0.533     |
+   subset gap 0.105 ~= known full-set gap 0.082 (anchored). overall: MoE damage 0.079 (75% of gap)
+   vs attn 0.043 (41%). CORRECTNESS (the RC-B execution signal) is unambiguous: attn-only execution
+   = baseline EXACTLY (0.375), MoE-only = 0.3125 ~ v3_full. => **MoE per-expert deltas carry the
+   codegen/execution damage; attention deltas are codegen-safe.** (Caveat: 30-task subset, noisy,
+   but consistent across overall + execution + anchored.)
+
+OPEN (not yet measured): WHERE judge skill lives (attention vs MoE). The probe measured codegen
+only. If judge skill is also MoE-borne, reducing MoE for codegen-safety may cost judge quality
+(re-entangle). A judge census (eval_judge parse+Spearman) on attn-only vs MoE-only would settle it
+(~1h each) — or fold it into the retrain by measuring judge quality on the retrained candidate.
+
 ## RESOLUTION
 
 - RC-A: RESOLVED (harness fix shipped + empirically confirmed).
-- RC-B: OPEN, human-gated. The reasoning LoRA merge genuinely trades away wp-bench codegen
-  (0.4537 -> 0.3716). This is the sole remaining promotion blocker. Next decision (see STATE.md):
-  component-ablation (attention-only vs MoE-only) to isolate the culprit, OR Phase-4.3 retrain with
-  lower rank / fewer target modules, OR accept the tradeoff. The lm_head / attempt-2(q_proj)
-  merge-variant track is moot — it was chasing the RC-A harness ghost.
+- RC-B: ROOT-ATTRIBUTED to MoE per-expert deltas (codegen-safe attention). Path chosen (human):
+  attribution probe -> Phase-4.3 RETRAIN. Retrain direction: cut MoE interference — lower MoE LoRA
+  rank and/or fewer expert layers (and/or lean attention-heavier since attention is codegen-safe),
+  then re-merge + re-gate REVL-04. Open sub-question: confirm judge skill survives reduced-MoE
+  (measure on the retrained candidate). The lm_head / attempt-2(q_proj) merge-variant track is moot.
