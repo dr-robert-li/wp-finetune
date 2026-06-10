@@ -36,16 +36,21 @@ Next: **RC-B is the SOLE remaining blocker.** D-IT-02 diagnosis (debug session
     Spearman -> **0.2446** (~= E3 Tinker-runtime 0.2626, baseline 0.2678). The parse gate that
     arrested plans 07/08 was a harness ghost. Evidence:
     `output/eval_reasoning_v3/revl01a_v3_rcA_confirm.json`.
-  - **RC-B (CONFIRMED real, OPEN):** wp-bench codegen drop 0.4537 -> 0.3716 (exec corr 0.417 ->
-    0.292) under CORRECT thinking-off inference (E8: 0/344 `<think>`). Genuine reasoning↔codegen
-    interference from the LoRA fine-tune. v3 and v4 share byte-identical MoE+attn weights (E1), so
-    v4 wp-bench would reconfirm ~0.37 — not worth 2.7h. **Attention-vs-MoE component NOT yet isolated.**
-**Resume = decide the RC-B path** (human-gated): (a) component-ablation merge (attention-only vs
-MoE-only) + wp-bench to isolate the codegen-degrading component, then merge only the harmless one;
-(b) Phase-4.3 retrain with lower rank / fewer target modules to cut interference; (c) accept the
-tradeoff / keep v1 merged-v2 codegen baseline + serve reasoning judge separately. The lm_head and
-attempt-2(q_proj) merge-variant track is moot — it was chasing the RC-A harness ghost.
-Evidence: debug `.planning/debug/reasoning-merge-gen-regression.md` + `revl01a_v3_rcA_confirm.json`.
+  - **RC-B (CONFIRMED real, ROOT-ATTRIBUTED 2026-06-10):** wp-bench codegen drop 0.4537 -> 0.3716
+    under CORRECT thinking-off inference. Genuine reasoning↔codegen interference. Two cheap probes
+    isolated it: (1) per-expert delta-norms UNIFORM across 128 experts -> MoE-subset salvage DEAD;
+    (2) single-component wp-bench probe (anchored, WPBENCH_LIMIT=30) -> **MoE per-expert deltas carry
+    the codegen damage; attention deltas are codegen-SAFE** (attn-only execution-correctness 0.375 =
+    baseline exactly; MoE-only 0.3125 ~ v3_full 0.292; overall MoE damage 75% of gap vs attn 41%).
+    Artifact: `output/eval_reasoning_probe_dit02/dit02_attribution_result.json`.
+**HUMAN DECISION 2026-06-10: attribution probe -> RETRAIN.** Resume = re-open Phase 4.3 and retrain
+to cut MoE interference: lower MoE LoRA rank and/or fewer expert layers (lean attention-heavier —
+attention is codegen-safe), then re-merge + re-gate REVL-04 (now reliable post RC-A harness fix).
+OPEN sub-question to settle in/around the retrain: confirm judge skill survives reduced-MoE (the
+probe measured codegen only; if judge skill is MoE-borne, balance rank accordingly). The lm_head /
+attempt-2(q_proj) merge-variant track is moot — it chased the RC-A harness ghost.
+Evidence: debug `.planning/debug/reasoning-merge-gen-regression.md` + `revl01a_v3_rcA_confirm.json`
++ `dit02_attribution_result.json` + `dit02_expert_delta_norms.json`.
 
 ---
 ### (Historical, pre-04.4-merge) v3 corrective-training readiness — SUPERSEDED by the REVL-04 result above
