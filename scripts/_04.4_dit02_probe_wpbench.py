@@ -69,6 +69,10 @@ def main() -> int:
 
         scores = {}
         for tag, d, container in MODELS:
+            # _run_wpbench writes its tmp config + log to OUT_DIR/<tag>/ but does not mkdir it;
+            # a missing parent raises FileNotFoundError that the harness mislabels as
+            # "wp-bench CLI not on PATH". Create the per-tag dir up front.
+            (OUT_DIR / tag).mkdir(parents=True, exist_ok=True)
             _log(f"--- {tag}: boot + wp-bench subset ({d}) ---", fh)
             res = _wpbench_with_boot(str(ROOT / d), container, tag, 0.55, OUT_DIR)
             ran = res.get("ran")
