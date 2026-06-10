@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: executing
-stopped_at: "Completed 04.4-08-PLAN.md: REVL-04 v4 precondition early-exit (exit 7)"
-last_updated: "2026-06-09T18:35:15.641Z"
+stopped_at: Phase 04.3 context gathered (corrective-retrain re-open)
+last_updated: "2026-06-10T12:59:43.816Z"
 progress:
   total_phases: 9
   completed_phases: 6
@@ -28,6 +28,7 @@ Phase: 04.4 (reasoning-eval-adapter-merge-inserted) — EXECUTING
 Plan: 4 of 7 (plans 06/07/08 done; D-IT-02 diagnosis complete; RC-A fixed+confirmed)
 Next: **RC-B is the SOLE remaining blocker.** D-IT-02 diagnosis (debug session
 `reasoning-merge-gen-regression`) split the "merge regression" into two independent causes:
+
   - **RC-A (CONFIRMED + FIXED 2026-06-10):** the judge parse-failure/Spearman regression was an
     EVAL HARNESS BUG, not the merge. eval_judge omitted `enable_thinking=False` → merged Qwen3
     emitted UNCLOSED `<think>` → unparseable judge JSON. Fix (commit b88faa3): `_judge_create()`
@@ -36,6 +37,7 @@ Next: **RC-B is the SOLE remaining blocker.** D-IT-02 diagnosis (debug session
     Spearman -> **0.2446** (~= E3 Tinker-runtime 0.2626, baseline 0.2678). The parse gate that
     arrested plans 07/08 was a harness ghost. Evidence:
     `output/eval_reasoning_v3/revl01a_v3_rcA_confirm.json`.
+
   - **RC-B (CONFIRMED real, FULLY ATTRIBUTED 2026-06-10):** wp-bench codegen drop 0.4537 -> 0.3716
     under CORRECT thinking-off inference. Genuine reasoning↔codegen interference. Three cheap probes
     (NO full ablation): (1) per-expert delta-norms UNIFORM across 128 experts -> MoE-subset salvage
@@ -60,6 +62,7 @@ OPEN sub-question to settle in/around the retrain: confirm judge skill survives 
 probe measured codegen only; if judge skill is MoE-borne, balance rank accordingly). The lm_head /
 attempt-2(q_proj) merge-variant track is moot — it chased the RC-A harness ghost.
 Evidence: debug `.planning/debug/reasoning-merge-gen-regression.md` + `revl01a_v3_rcA_confirm.json`
+
 + `dit02_attribution_result.json` + `dit02_expert_delta_norms.json`.
 
 ---
@@ -203,8 +206,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-09T18:35:15.632Z
-Stopped at: Completed 04.4-08-PLAN.md: REVL-04 v4 precondition early-exit (exit 7)
+Last session: 2026-06-10T12:59:43.809Z
+Stopped at: Phase 04.3 context gathered (corrective-retrain re-open)
 
 Prior session: 2026-06-02T21:31:00.000Z
 Stopped at: Phase 4.4 CLOSED **REJECTED** at REVL-05 (human). All automated gates run; merge NOT promoted; D-05 disposition pending (recommend Phase 4.3 format-stability re-train). See `04.4-GATE-LEDGER.md` + `04.4-D05-DIAGNOSIS.md`. Resume = decide D-05.
@@ -249,7 +252,7 @@ Stopped at: W1-W6 cascade BLOCKED on eval-harness prose compat (2 layers). Findi
   - **CERTIFIED VERDICT (c246a20)**: smoke_pass=True exit=0 distinctness=0.879. judge 5/5 (prose 9/9 dims + 1 CtF json), gen 5/5 php_lint, baseline-sim 0.02-0.42 (<0.85 canary → reasoning diverges). Artifact: merge-artifacts/w0_03_smoke_PASS_verdict.json.
   - Data finding flagged: reasoning judge output is dimensional PROSE (CoT) or JSON (CtF), NOT <REASONING>-tagged. parse_judge_response(JSON-only) would have false-failed all CoT — coherence redesigned prose-aware + json-aware.
 
-Resume file: None
+Resume file: .planning/phases/04.3-reasoning-fine-tune-inserted/04.3-CONTEXT.md
 Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertions + smoke-gate hardening), THEN W0-03 smoke gate against models/qwen3-30b-wp-30_70-reasoning-merged/ vs models/qwen3-30b-wp-30_70-merged-v2/ baseline, THEN REVL-01..08 eval gates
 
 ### Session 2026-05-29 reasoning MERGE COMPLETE + PROMOTED
