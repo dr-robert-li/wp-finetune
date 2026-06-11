@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: executing
-stopped_at: Phase 04.3 context gathered (corrective-retrain re-open)
-last_updated: "2026-06-11T01:51:48.322Z"
+stopped_at: Phase 04.3 COMPLETE — corrective Tinker MoE-only rank×replay grid run end-to-end; winner r32-rp30 (rank32/replay30%) cleared REVL-04 wp-bench 0.4603 ≥ 0.4537 (confirmed via deterministic re-run) with judge gates passing (ρ0.294, sentinel 0/24, recall 0.69, FS-stable); exported models/tinker_export/wp-reasoning-v4-winner/checkpoint.tar. Next: Phase 04.4 merge-fix re-gate (post-merge REVL-01..05) of the v4 adapter.
+last_updated: "2026-06-12T07:10:00.000Z"
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 36
-  completed_plans: 33
-  percent: 67
+  completed_plans: 36
+  percent: 72
 ---
 
 # Project State
@@ -20,12 +20,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 04.3 — reasoning-fine-tune-inserted
+**Current focus:** Phase 04.4 — reasoning-eval-adapter-merge-inserted (re-gate the v4 winner adapter)
 
 ## Current Position
 
-Phase: 04.3 (reasoning-fine-tune-inserted) — EXECUTING
-Plan: 4 of 4
+Phase: 04.3 (reasoning-fine-tune-inserted) — COMPLETE (4/4 plans). Winner `wp-reasoning-v4-winner`
+(r32-rp30, MoE-only rank32/replay30%) exported: REVL-04 wp-bench 0.4603 ≥ 0.4537 (confirmed,
+deterministic) + judge gates pass (ρ0.294, sentinel 0/24, recall 0.69, FS-stable). 8/9 candidates
+filtered cheaply by the judge economy. Hand-off to Phase 04.4 for the post-merge re-gate.
+Plan: 4 of 4 (COMPLETE)
 Next: **RC-B is the SOLE remaining blocker.** D-IT-02 diagnosis (debug session
 `reasoning-merge-gen-regression`) split the "merge regression" into two independent causes:
 
