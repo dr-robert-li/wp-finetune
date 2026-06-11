@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: executing
-stopped_at: Phase 04.3 PLANNED (corrective Tinker MoE-only grid; 4 plans, verified — ready to execute)
-last_updated: "2026-06-11T05:41:00.000Z"
+stopped_at: Phase 04.3 context gathered (corrective-retrain re-open)
+last_updated: "2026-06-11T00:13:38.985Z"
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 36
-  completed_plans: 32
+  completed_plans: 33
   percent: 67
 ---
 
@@ -20,12 +20,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 04.4 — reasoning-eval-adapter-merge-inserted
+**Current focus:** Phase 04.3 — reasoning-fine-tune-inserted
 
 ## Current Position
 
-Phase: 04.4 (reasoning-eval-adapter-merge-inserted) — EXECUTING
-Plan: 4 of 7 (plans 06/07/08 done; D-IT-02 diagnosis complete; RC-A fixed+confirmed)
+Phase: 04.3 (reasoning-fine-tune-inserted) — EXECUTING
+Plan: 2 of 4
 Next: **RC-B is the SOLE remaining blocker.** D-IT-02 diagnosis (debug session
 `reasoning-merge-gen-regression`) split the "merge regression" into two independent causes:
 
@@ -89,7 +89,7 @@ data: `scripts/build_reasoning_negatives.py` + `build_augmented_train.py`; gates
 Status: Ready to execute
 Note: Local artifacts `models/qwen3-30b-wp-30_70-merged-v2` + `...-reasoning-merged` + `adapters/.../checkpoint-72` are READ-ONLY references/fallback only (NOT promoted). The GB10 memory wall is documented in `output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md`. `04.3-REOPEN-PLAN.md` remains a 0-task brief — do not execute.
 
-Progress: [█████████░] 89%
+Progress: [█████████░] 92%
 
 ## Performance Metrics
 
@@ -206,7 +206,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-10T12:59:43.809Z
+Last session: 2026-06-11T00:13:38.976Z
 Stopped at: Phase 04.3 context gathered (corrective-retrain re-open)
 
 Prior session: 2026-06-02T21:31:00.000Z
@@ -252,7 +252,7 @@ Stopped at: W1-W6 cascade BLOCKED on eval-harness prose compat (2 layers). Findi
   - **CERTIFIED VERDICT (c246a20)**: smoke_pass=True exit=0 distinctness=0.879. judge 5/5 (prose 9/9 dims + 1 CtF json), gen 5/5 php_lint, baseline-sim 0.02-0.42 (<0.85 canary → reasoning diverges). Artifact: merge-artifacts/w0_03_smoke_PASS_verdict.json.
   - Data finding flagged: reasoning judge output is dimensional PROSE (CoT) or JSON (CtF), NOT <REASONING>-tagged. parse_judge_response(JSON-only) would have false-failed all CoT — coherence redesigned prose-aware + json-aware.
 
-Resume file: .planning/phases/04.3-reasoning-fine-tune-inserted/04.3-CONTEXT.md
+Resume file: None
 Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertions + smoke-gate hardening), THEN W0-03 smoke gate against models/qwen3-30b-wp-30_70-reasoning-merged/ vs models/qwen3-30b-wp-30_70-merged-v2/ baseline, THEN REVL-01..08 eval gates
 
 ### Session 2026-05-29 reasoning MERGE COMPLETE + PROMOTED
