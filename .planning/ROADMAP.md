@@ -227,8 +227,8 @@ Plans:
 **Plans**: 4 plans (corrective Tinker MoE-only retrain, re-planned 2026-06-11). Prior DGX/Unsloth plans 04.3-01/02 are OBVIATED by the Tinker pivot + RC-B attribution and archived under `_archive-unsloth-2026-06-11/` (kept for audit; do NOT execute).
 
 Plans:
-- [x] 04.3-01-PLAN.md — Enabling code (Wave 1): add `--train-attn`/`--train-unembed` MoE-only flags to `tinker_reasoning_sft.py` (D-N1); add `is_moe_only` detection + gated attention/unembed merge stages to `merge_tinker_v3.py`; add the `is_moe_only=True` merge-convention test
-- [x] 04.3-02-PLAN.md — Replay variants (Wave 1): NEW `build_replay_mix.py` (pure wp_gen, leakage-guarded, D-N4); verify phase1 pool >=423; build the 30%/50% replay train variants (negatives preserved)
+- [ ] 04.3-01-PLAN.md — Enabling code (Wave 1): add `--train-attn`/`--train-unembed` MoE-only flags to `tinker_reasoning_sft.py` (D-N1); add `is_moe_only` detection + gated attention/unembed merge stages to `merge_tinker_v3.py`; add the `is_moe_only=True` merge-convention test
+- [ ] 04.3-02-PLAN.md — Replay variants (Wave 1): NEW `build_replay_mix.py` (pure wp_gen, leakage-guarded, D-N4); verify phase1 pool >=423; build the 30%/50% replay train variants (negatives preserved)
 - [x] 04.3-03-PLAN.md — Grid driver (Wave 2): NEW `run_grid_eval.py` — cheap pre-merge judge filter -> only-if-pass merge -> REVL-04 wp-bench; bars POINT Spearman >= 0.263 (D-N7) + wp-bench >= 0.4537 HARD (D-N8); pre-registered selection rule; escalation exit 2 (no auto-ship)
 - [ ] 04.3-04-PLAN.md — Grid execution + selection (Wave 3): train the 9 MoE-only rank{8,16,32}xreplay{15,30,50%} candidates; assemble `grid_manifest.json`; run the grid; apply the pre-registered rule; confirm the winner (2nd 344-test wp-bench + post-merge judge); export merge-ready v4 adapter for Phase 04.4 — OR documented escalation
 
