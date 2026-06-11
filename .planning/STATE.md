@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: MVP
 status: executing
 stopped_at: Phase 04.3 context gathered (corrective-retrain re-open)
-last_updated: "2026-06-11T00:13:38.985Z"
+last_updated: "2026-06-11T00:21:29.931Z"
 progress:
   total_phases: 9
   completed_phases: 6
@@ -130,6 +130,7 @@ Progress: [█████████░] 92%
 | Phase 04.4 P06 | 8 | 2 tasks | 4 files |
 | Phase 04.4-reasoning-eval-adapter-merge-inserted P07 | 0 | 2 tasks | 3 files |
 | Phase 04.4-reasoning-eval-adapter-merge-inserted P08 | 12 | 1 tasks | 2 files |
+| Phase 04.3-reasoning-fine-tune-inserted P03 | 4min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -166,6 +167,9 @@ Recent decisions affecting current work:
 - [Phase ?]: v4 flag defaults OFF preserving v3 reproducibility; anchors parameterized with --report/--staging back-compat defaults
 - [Phase 04.4-07 2026-06-10]: D-IT-04/05 attempt-1 hypothesis falsified — lm_head exclusion + q_proj retention did NOT recover merged-served parse rate (0.2479 > 0.05; marginally worse than v3 0.1901); Spearman also regressed (0.1534 < baseline 0.2678); REVL-02 PHPCS passed (1.0); plan 08 will early-exit on parse_gate_pass=false
 - [Phase 04.4-reasoning-eval-adapter-merge-inserted]: 04.4-08: REVL-04 exit 7 is designed correct behavior — parse_gate_pass=False (0.2479) fired D-IT-09 fail-fast; v4 attempt-1 disqualified at parse gate; fail-path = attempt-2 (exclude q_proj, D-IT-05) or D-IT-02 diagnosis
+- [Phase 04.3-03]: decide() extracted as pure module-level function (no subprocess/file-IO) so a selection-key or exit-2 bug surfaces in minutes via synthetic test, not after ~24h of live grid runs (T-04.3-08)
+- [Phase 04.3-03]: Judge bar mode default is 'point' (POINT Spearman >= 0.263); ci_lower mode available as noise-guard diagnostic but is NOT the acceptance threshold (D-N7 resolved 2026-06-11)
+- [Phase 04.3-03]: Wpbench baseline 0.4537 is the full 344-test HARD gate (D-N8); the dit02 30-test probe value 0.4857 is NOT used as the acceptance threshold
 
 ### Pending Todos
 
