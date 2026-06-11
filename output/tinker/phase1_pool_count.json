@@ -1,0 +1,24 @@
+{
+  "total_raw_functions": 82165,
+  "total_distinct": 66593,
+  "already_used": 67,
+  "leakage_excluded": 17,
+  "leakage_breakdown": {
+    "val_matches": 17,
+    "sentinel_matches": 0
+  },
+  "available_after_dedup": 66509,
+  "targets": {
+    "30pct_extra_n": 132,
+    "50pct_extra_n": 423
+  },
+  "feasibility": {
+    "30pct_feasible": true,
+    "50pct_feasible": true,
+    "max_achievable_pct": 41.6,
+    "max_achievable_note": "50% fully achievable (66509 >> 423 needed)",
+    "extra_replay_n_max": 50000
+  },
+  "dedup_key": "function body (assistant content) \u2014 NOT user message description",
+  "leakage_guard_note": "sentinel is 100% wp_judge format; val checked by body; user-message _codes() guard added as belt-and-suspenders"
+}
