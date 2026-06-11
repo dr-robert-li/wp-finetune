@@ -165,109 +165,137 @@ def _run_candidate_judge_gates(
     confusion_json = candidate_out / "confusion_result.json"
     fs_json = candidate_out / "fs_result.json"
 
-    # Step 1: capture judge responses on the Tinker sampler
-    # capture_judge_responses_tinker.py imports `tinker` -> MUST run under .venv-tinker
-    # (the project/miniconda venv has no tinker), not sys.executable.
-    print(f"[{candidate_tag}] capture judge responses from Tinker sampler...", flush=True)
-    rc = subprocess.call([
-        args.tinker_python,
-        str(PROJECT_ROOT / "scripts" / "capture_judge_responses_tinker.py"),
-        "--tinker-path", sampler_path,
-        "--dataset", dataset,
-        "--out", str(responses_jsonl),
-    ])
-    if rc != 0:
-        raise RuntimeError(f"[{candidate_tag}] capture_judge_responses_tinker failed (rc={rc})")
+    sentinel_responses = candidate_out / "sentinel_responses.jsonl"
 
-    # Step 2: eval_judge --responses-jsonl -> Spearman point + ci_lower
+    def _capture(dataset_path: str, out_path: Path, label: str):
+        # capture_judge_responses_tinker.py imports `tinker` -> .venv-tinker (args.tinker_python),
+        # not the project venv. RESUMABLE: reuse a non-empty capture so a mid-grid crash never
+        # re-spends Tinker sampling (--force overrides).
+        if out_path.exists() and out_path.stat().st_size > 0 and not args.force:
+            print(f"[{candidate_tag}] reuse existing {label} capture ({out_path})", flush=True)
+            return
+        print(f"[{candidate_tag}] capture {label} responses from Tinker sampler...", flush=True)
+        rc = subprocess.call([
+            args.tinker_python,
+            str(PROJECT_ROOT / "scripts" / "capture_judge_responses_tinker.py"),
+            "--tinker-path", sampler_path,
+            "--dataset", dataset_path,
+            "--out", str(out_path),
+        ])
+        if rc != 0:
+            raise RuntimeError(f"[{candidate_tag}] capture ({label}) failed (rc={rc})")
+
+    # Step 1: capture judge responses on the val set (judge Spearman + confusion both reuse this)
+    _capture(dataset, responses_jsonl, "judge-val")
+
+    # Step 2: eval_judge --responses-jsonl -> REVL-01A POINT Spearman (calibrated_canonical GT).
+    # Flags: --gt-mode calibrated_canonical (required for offline mode), --output (NOT --out:
+    # ambiguous with --output-format), --output-format auto (captured judge output is prose-or-json).
     print(f"[{candidate_tag}] eval_judge --responses-jsonl ...", flush=True)
     rc = subprocess.call([
         sys.executable, "-m", "eval.eval_judge",
         "--responses-jsonl", str(responses_jsonl),
-        "--out", str(judge_results_json),
+        "--gt-mode", "calibrated_canonical",
+        "--output-format", "auto",
+        "--output", str(judge_results_json),
         "--dataset", dataset,
     ], cwd=str(PROJECT_ROOT))
     if rc != 0:
         raise RuntimeError(f"[{candidate_tag}] eval_judge failed (rc={rc})")
-
     judge_data = json.loads(judge_results_json.read_text())
-    spearman_point = judge_data.get("revl01a_overall_spearman_HARD", {}).get("corr", 0.0)
-    ci_lower = judge_data.get("revl01a_overall_spearman_HARD", {}).get("ci_lower", 0.0)
+    revl = judge_data.get("revl01a_overall_spearman_HARD", {}) or {}
+    spearman_point = revl.get("corr", 0.0) or 0.0
+    ci_lower = revl.get("ci_lower", 0.0) or 0.0   # absent for point mode -> diagnostic only
 
-    # Step 3: invalid-PHP sentinel gate
+    # Step 3: invalid-PHP sentinel gate. The sentinel prompts (24 held-out invalid-PHP cases) are
+    # NOT in the judge-val capture -> a SEPARATE capture of the sentinel dataset is required.
+    # Output key is policy_false_pass; flag is --output; exits 0 (all pass) / 1 (false-passes found).
+    _capture(args.sentinel_dataset, sentinel_responses, "sentinel")
     print(f"[{candidate_tag}] check_invalid_php_sentinel ...", flush=True)
     rc = subprocess.call([
         sys.executable,
         str(PROJECT_ROOT / "scripts" / "check_invalid_php_sentinel.py"),
-        "--responses-jsonl", str(responses_jsonl),
-        "--out", str(sentinel_json),
+        "--dataset", args.sentinel_dataset,
+        "--responses-jsonl", str(sentinel_responses),
+        "--output", str(sentinel_json),
     ])
-    if rc not in (0, 1):  # 0 = all pass, 1 = some false-passes found (both are valid exits)
-        raise RuntimeError(
-            f"[{candidate_tag}] check_invalid_php_sentinel error (rc={rc})"
-        )
+    if rc not in (0, 2):  # check_invalid_php_sentinel: 0 = 0 policy false-pass (PASS), 2 = FAIL
+        raise RuntimeError(f"[{candidate_tag}] check_invalid_php_sentinel error (rc={rc})")
     sentinel_data = json.loads(sentinel_json.read_text())
-    sentinel_false_passes = sentinel_data.get("false_passes", 1)
+    sentinel_false_passes = sentinel_data.get("policy_false_pass", 1)
 
-    # Step 4: verdict confusion gate
+    # Step 4: verdict confusion gate (reuses the judge-val capture). Output rates are
+    # policy.{false_FAIL_on_teacherPASS, recall_on_teacherFAIL} as [hit, tot, rate] lists.
     print(f"[{candidate_tag}] check_verdict_confusion ...", flush=True)
     rc = subprocess.call([
         sys.executable,
         str(PROJECT_ROOT / "scripts" / "check_verdict_confusion.py"),
+        "--dataset", dataset,
         "--responses-jsonl", str(responses_jsonl),
-        "--out", str(confusion_json),
+        "--output", str(confusion_json),
     ])
     if rc not in (0, 1):
-        raise RuntimeError(
-            f"[{candidate_tag}] check_verdict_confusion error (rc={rc})"
-        )
+        raise RuntimeError(f"[{candidate_tag}] check_verdict_confusion error (rc={rc})")
     confusion_data = json.loads(confusion_json.read_text())
-    pareto_ok = confusion_data.get("pareto_ok", False)
 
-    # Step 5: FS terse Wilson-upper gate (RTRN-05)
-    # tinker_fs_gate.py imports tinker_cookbook (renderer/tokenizer) -> .venv-tinker, not sys.executable.
-    print(f"[{candidate_tag}] tinker_fs_gate ...", flush=True)
-    rc = subprocess.call([
-        args.tinker_python,
-        str(PROJECT_ROOT / "scripts" / "tinker_fs_gate.py"),
-        "--responses-jsonl", str(responses_jsonl),
-        "--out", str(fs_json),
-    ])
-    if rc not in (0, 1):
-        raise RuntimeError(f"[{candidate_tag}] tinker_fs_gate error (rc={rc})")
-    fs_data = json.loads(fs_json.read_text())
-    wilson_upper = fs_data.get("wilson_upper", 1.0)
+    def _rate(v):
+        if isinstance(v, (list, tuple)) and len(v) >= 3:
+            return float(v[2])
+        return float(v) if isinstance(v, (int, float)) else float("nan")
 
-    # Build gate dict (PATTERNS lines 300-321)
+    _pol = confusion_data.get("policy", {})
+    conf_false_fail = _rate(_pol.get("false_FAIL_on_teacherPASS"))
+    conf_recall = _rate(_pol.get("recall_on_teacherFAIL"))
+    # Pareto (VERDICT-POLICY.md): recall on teacher-FAIL rises vs P4 (>= 0.638) AND false-FAIL on
+    # teacher-PASS not materially worse than P4 (<= 0.403). Both axes vs the P4 policy baseline.
+    pareto_ok = (conf_recall >= 0.638) and (conf_false_fail <= 0.403)
+
+    # Build the three cheap gates first so we can short-circuit the slow FS sampling.
     gates: dict[str, dict] = {}
-
-    # D-N7: judge_spearman gate — point estimate vs bar (default mode); ci_lower recorded as diagnostic
     judge_bar_mode = args.judge_bar_mode
     judge_bar = args.judge_bar
-    if judge_bar_mode == "point":
-        judge_pass = spearman_point >= judge_bar
-    else:  # ci_lower mode
-        judge_pass = ci_lower >= judge_bar
-
+    judge_pass = (spearman_point >= judge_bar) if judge_bar_mode == "point" else (ci_lower >= judge_bar)
     gates["judge_spearman"] = {
-        "rho": spearman_point,
-        "ci_lower": ci_lower,
-        "bar": judge_bar,
-        "mode": judge_bar_mode,
-        "pass": judge_pass,
+        "rho": spearman_point, "ci_lower": ci_lower, "bar": judge_bar,
+        "mode": judge_bar_mode, "pass": judge_pass,
     }
     gates["sentinel_0_policy"] = {
-        "false_passes": sentinel_false_passes,
-        "pass": sentinel_false_passes == 0,
+        "policy_false_pass": sentinel_false_passes, "pass": sentinel_false_passes == 0,
     }
     gates["confusion_gate"] = {
-        "pareto_ok": pareto_ok,
-        "pass": pareto_ok,
+        "false_FAIL_on_teacherPASS": conf_false_fail, "recall_on_teacherFAIL": conf_recall,
+        "p4_false_fail_baseline": 0.403, "p4_recall_baseline": 0.638,
+        "pareto_ok": pareto_ok, "pass": pareto_ok,
     }
-    gates["fs_gate"] = {
-        "wilson_upper": wilson_upper,
-        "pass": wilson_upper <= 0.15,
-    }
+
+    # Step 5: FS terse Wilson-upper gate (RTRN-05). tinker_fs_gate.py samples FRESH on the sampler
+    # (cot+ctf scope, not the judge capture; the slowest gate) and imports tinker_cookbook ->
+    # .venv-tinker. Top-level "pass" = (rate <= 0.10 AND wilson_upper <= 0.15) across arms;
+    # exits 0=PASS / 2=FAIL. SHORT-CIRCUIT: pre_merge_pass needs all four gates, so if any cheaper
+    # gate already failed, the FS sampling cannot change the outcome -> skip it (saves Tinker time
+    # on doomed candidates). Correctness-neutral: a skipped candidate is already filtered.
+    cheap_pass = judge_pass and (sentinel_false_passes == 0) and pareto_ok
+    if cheap_pass:
+        print(f"[{candidate_tag}] tinker_fs_gate ...", flush=True)
+        rc = subprocess.call([
+            args.tinker_python,
+            str(PROJECT_ROOT / "scripts" / "tinker_fs_gate.py"),
+            "--tinker-path", sampler_path,
+            "--dataset", dataset,
+            "--gate-n", str(args.fs_gate_n),
+            "--out", str(fs_json),
+        ])
+        if rc not in (0, 2):
+            raise RuntimeError(f"[{candidate_tag}] tinker_fs_gate error (rc={rc})")
+        fs_data = json.loads(fs_json.read_text())
+        fs_pass = bool(fs_data.get("pass", False))
+        wilson_upper = max((a.get("wilson_upper", 1.0) for a in fs_data.get("arms", [])), default=1.0)
+        gates["fs_gate"] = {"wilson_upper": wilson_upper, "fs_pass": fs_pass, "pass": fs_pass}
+    else:
+        print(f"[{candidate_tag}] tinker_fs_gate SKIPPED (cheaper gate already failed; "
+              f"judge={judge_pass} sentinel0={sentinel_false_passes == 0} pareto={pareto_ok})", flush=True)
+        gates["fs_gate"] = {"wilson_upper": None, "fs_pass": None,
+                            "pass": False, "skipped": "cheaper gate already failed"}
 
     return gates
 
@@ -307,6 +335,13 @@ def main() -> int:
                     help="Interpreter for the Tinker-dependent steps (capture + fs_gate import "
                          "tinker/tinker_cookbook, absent from the project venv). "
                          "Default: <root>/.venv-tinker/bin/python.")
+    ap.add_argument("--sentinel-dataset",
+                    default="data/reasoning_dataset/invalid_php_sentinel.jsonl",
+                    help="Held-out invalid-PHP sentinel dataset (REVL-05); captured separately "
+                         "from the judge-val set. Default: invalid_php_sentinel.jsonl.")
+    ap.add_argument("--fs-gate-n", type=int, default=300,
+                    help="tinker_fs_gate target sample count for the temp>0 Wilson-sizing arm. "
+                         "Default: 300.")
     args = ap.parse_args()
 
     if not os.path.exists(args.tinker_python):
@@ -323,7 +358,8 @@ def main() -> int:
         print(f"ERROR: grid manifest not found: {manifest_path}", file=sys.stderr, flush=True)
         return 1
     grid_manifest = json.loads(manifest_path.read_text())
-    candidates = grid_manifest.get("candidates", grid_manifest)
+    # Manifest may be a bare list (Plan 04 schema) or a dict with a "candidates" list.
+    candidates = grid_manifest.get("candidates", []) if isinstance(grid_manifest, dict) else grid_manifest
     if not isinstance(candidates, list):
         print("ERROR: grid manifest must be a JSON object with 'candidates' list or a bare list.",
               file=sys.stderr, flush=True)
