@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: MVP
 status: executing
 stopped_at: Phase 04.3 context gathered (corrective-retrain re-open)
-last_updated: "2026-06-11T01:30:44.145Z"
+last_updated: "2026-06-11T01:36:31.906Z"
 progress:
   total_phases: 9
   completed_phases: 6
@@ -131,6 +131,7 @@ Progress: [█████████░] 89%
 | Phase 04.4-reasoning-eval-adapter-merge-inserted P07 | 0 | 2 tasks | 3 files |
 | Phase 04.4-reasoning-eval-adapter-merge-inserted P08 | 12 | 1 tasks | 2 files |
 | Phase 04.3-reasoning-fine-tune-inserted P03 | 4min | 3 tasks | 2 files |
+| Phase 04.3 P01 | 18min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -170,6 +171,8 @@ Recent decisions affecting current work:
 - [Phase 04.3-03]: decide() extracted as pure module-level function (no subprocess/file-IO) so a selection-key or exit-2 bug surfaces in minutes via synthetic test, not after ~24h of live grid runs (T-04.3-08)
 - [Phase 04.3-03]: Judge bar mode default is 'point' (POINT Spearman >= 0.263); ci_lower mode available as noise-guard diagnostic but is NOT the acceptance threshold (D-N7 resolved 2026-06-11)
 - [Phase 04.3-03]: Wpbench baseline 0.4537 is the full 344-test HARD gate (D-N8); the dit02 30-test probe value 0.4857 is NOT used as the acceptance threshold
+- [Phase 04.3]: Preserved --exclude-lm-head merge_type on non-MoE-only path in merge_tinker_v3.py to avoid silent regression: PATTERNS only set merge_type in is_moe_only branch; added else branch for tinker_per_expert_moe_plus_peft_attention_NO_lm_head (Rule 1 auto-fix)
+- [Phase 04.3]: Used patch.object on force-resolved lazy transformers class objects (_AMFCLM = transformers.AutoModelForCausalLM at import time) rather than patch('transformers.AutoModelForCausalLM'): _LazyModule always re-derives class from internal mapping bypassing __dict__ writes; patching from_pretrained on the resolved class is the only reliable intercept
 
 ### Pending Todos
 
