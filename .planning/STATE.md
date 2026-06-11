@@ -4,12 +4,12 @@ milestone: v1.0
 milestone_name: MVP
 status: executing
 stopped_at: Phase 04.3 context gathered (corrective-retrain re-open)
-last_updated: "2026-06-11T01:36:31.906Z"
+last_updated: "2026-06-11T01:51:48.322Z"
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 36
-  completed_plans: 32
+  completed_plans: 33
   percent: 67
 ---
 
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 ## Current Position
 
 Phase: 04.3 (reasoning-fine-tune-inserted) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Next: **RC-B is the SOLE remaining blocker.** D-IT-02 diagnosis (debug session
 `reasoning-merge-gen-regression`) split the "merge regression" into two independent causes:
 
@@ -89,7 +89,7 @@ data: `scripts/build_reasoning_negatives.py` + `build_augmented_train.py`; gates
 Status: Ready to execute
 Note: Local artifacts `models/qwen3-30b-wp-30_70-merged-v2` + `...-reasoning-merged` + `adapters/.../checkpoint-72` are READ-ONLY references/fallback only (NOT promoted). The GB10 memory wall is documented in `output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md`. `04.3-REOPEN-PLAN.md` remains a 0-task brief — do not execute.
 
-Progress: [█████████░] 89%
+Progress: [█████████░] 92%
 
 ## Performance Metrics
 
@@ -132,6 +132,7 @@ Progress: [█████████░] 89%
 | Phase 04.4-reasoning-eval-adapter-merge-inserted P08 | 12 | 1 tasks | 2 files |
 | Phase 04.3-reasoning-fine-tune-inserted P03 | 4min | 3 tasks | 2 files |
 | Phase 04.3 P01 | 18min | 3 tasks | 3 files |
+| Phase 04.3-reasoning-fine-tune-inserted P02 | 15 | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -173,6 +174,7 @@ Recent decisions affecting current work:
 - [Phase 04.3-03]: Wpbench baseline 0.4537 is the full 344-test HARD gate (D-N8); the dit02 30-test probe value 0.4857 is NOT used as the acceptance threshold
 - [Phase 04.3]: Preserved --exclude-lm-head merge_type on non-MoE-only path in merge_tinker_v3.py to avoid silent regression: PATTERNS only set merge_type in is_moe_only branch; added else branch for tinker_per_expert_moe_plus_peft_attention_NO_lm_head (Rule 1 auto-fix)
 - [Phase 04.3]: Used patch.object on force-resolved lazy transformers class objects (_AMFCLM = transformers.AutoModelForCausalLM at import time) rather than patch('transformers.AutoModelForCausalLM'): _LazyModule always re-derives class from internal mapping bypassing __dict__ writes; patching from_pretrained on the resolved class is the only reliable intercept
+- [Phase ?]: Phase 04.3-02: Body-keyed leakage guard for wp_gen replay; pool is 66K+ not short
 
 ### Pending Todos
 
@@ -213,7 +215,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-11T01:30:44.137Z
+Last session: 2026-06-11T01:51:36.165Z
 Stopped at: Phase 04.3 context gathered (corrective-retrain re-open)
 
 Prior session: 2026-06-02T21:31:00.000Z
