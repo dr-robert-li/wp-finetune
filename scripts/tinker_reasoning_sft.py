@@ -141,6 +141,10 @@ def main():
     ap.add_argument("--train-path", default=None,
                     help="override train JSONL (e.g. the corrective augmented set)")
     ap.add_argument("--rank", type=int, default=32)
+    ap.add_argument("--train-attn", action="store_true", default=False,
+                    help="include attention q/k/v/o in LoRA target (default: MoE-only, D-N1)")
+    ap.add_argument("--train-unembed", action="store_true", default=False,
+                    help="include unembed_tokens in LoRA target (default: excluded, D-N1)")
     ap.add_argument("--epochs", type=int, default=1)
     ap.add_argument("--max-steps", type=int, default=None)
     ap.add_argument("--batch-size", type=int, default=8)
@@ -169,6 +173,7 @@ def main():
     manifest_path = args.manifest or f"output/tinker/{save_name}-manifest.json"
     manifest = {
         "save_name": save_name, "base_model": BASE_MODEL, "rank": args.rank,
+        "train_attn": args.train_attn, "train_unembed": args.train_unembed,
         "renderer": RENDERER_NAME, "epochs": args.epochs, "checkpoints": [],
         "promoted": None, "state_path": None,
         "created": datetime.datetime.now(datetime.timezone.utc).isoformat(),
@@ -187,7 +192,13 @@ def main():
           f"bs={args.batch_size}", flush=True)
 
     sc = tinker.ServiceClient()
-    tc = sc.create_lora_training_client(base_model=BASE_MODEL, rank=args.rank)
+    tc = sc.create_lora_training_client(
+        base_model=BASE_MODEL,
+        rank=args.rank,
+        train_mlp=True,                    # MoE expert w1/w2/w3 — always on
+        train_attn=args.train_attn,        # False by default = MoE-only (D-N1)
+        train_unembed=args.train_unembed,  # False by default
+    )
 
     step = 0
     losses = []
