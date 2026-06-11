@@ -4,12 +4,12 @@ milestone: v1.0
 milestone_name: MVP
 status: executing
 stopped_at: Phase 04.3 context gathered (corrective-retrain re-open)
-last_updated: "2026-06-11T00:21:29.931Z"
+last_updated: "2026-06-11T01:30:44.145Z"
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 36
-  completed_plans: 33
+  completed_plans: 32
   percent: 67
 ---
 
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 ## Current Position
 
 Phase: 04.3 (reasoning-fine-tune-inserted) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Next: **RC-B is the SOLE remaining blocker.** D-IT-02 diagnosis (debug session
 `reasoning-merge-gen-regression`) split the "merge regression" into two independent causes:
 
@@ -89,7 +89,7 @@ data: `scripts/build_reasoning_negatives.py` + `build_augmented_train.py`; gates
 Status: Ready to execute
 Note: Local artifacts `models/qwen3-30b-wp-30_70-merged-v2` + `...-reasoning-merged` + `adapters/.../checkpoint-72` are READ-ONLY references/fallback only (NOT promoted). The GB10 memory wall is documented in `output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md`. `04.3-REOPEN-PLAN.md` remains a 0-task brief — do not execute.
 
-Progress: [█████████░] 92%
+Progress: [█████████░] 89%
 
 ## Performance Metrics
 
@@ -210,7 +210,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-11T00:13:38.976Z
+Last session: 2026-06-11T01:30:44.137Z
 Stopped at: Phase 04.3 context gathered (corrective-retrain re-open)
 
 Prior session: 2026-06-02T21:31:00.000Z

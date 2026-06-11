@@ -227,7 +227,7 @@ Plans:
 **Plans**: 4 plans (corrective Tinker MoE-only retrain, re-planned 2026-06-11). Prior DGX/Unsloth plans 04.3-01/02 are OBVIATED by the Tinker pivot + RC-B attribution and archived under `_archive-unsloth-2026-06-11/` (kept for audit; do NOT execute).
 
 Plans:
-- [ ] 04.3-01-PLAN.md — Enabling code (Wave 1): add `--train-attn`/`--train-unembed` MoE-only flags to `tinker_reasoning_sft.py` (D-N1); add `is_moe_only` detection + gated attention/unembed merge stages to `merge_tinker_v3.py`; add the `is_moe_only=True` merge-convention test
+- [x] 04.3-01-PLAN.md — Enabling code (Wave 1): add `--train-attn`/`--train-unembed` MoE-only flags to `tinker_reasoning_sft.py` (D-N1); add `is_moe_only` detection + gated attention/unembed merge stages to `merge_tinker_v3.py`; add the `is_moe_only=True` merge-convention test
 - [ ] 04.3-02-PLAN.md — Replay variants (Wave 1): NEW `build_replay_mix.py` (pure wp_gen, leakage-guarded, D-N4); verify phase1 pool >=423; build the 30%/50% replay train variants (negatives preserved)
 - [x] 04.3-03-PLAN.md — Grid driver (Wave 2): NEW `run_grid_eval.py` — cheap pre-merge judge filter -> only-if-pass merge -> REVL-04 wp-bench; bars POINT Spearman >= 0.263 (D-N7) + wp-bench >= 0.4537 HARD (D-N8); pre-registered selection rule; escalation exit 2 (no auto-ship)
 - [ ] 04.3-04-PLAN.md — Grid execution + selection (Wave 3): train the 9 MoE-only rank{8,16,32}xreplay{15,30,50%} candidates; assemble `grid_manifest.json`; run the grid; apply the pre-registered rule; confirm the winner (2nd 344-test wp-bench + post-merge judge); export merge-ready v4 adapter for Phase 04.4 — OR documented escalation
@@ -542,7 +542,7 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 4. Evaluation | v1.0 | 3/3 | Complete   | 2026-06-07 |
 | 4.1. Reasoning Data Generation | v1.2 | 1/3 | In Progress|  |
 | 4.2. Reasoning Dataset Assembly | v1.2 | 0/? | Not started | - |
-| 4.3. Reasoning Fine-Tune | v1.2 | 3/4 | In Progress|  |
+| 4.3. Reasoning Fine-Tune | v1.2 | 2/4 | In Progress|  |
 | 4.4. Reasoning Eval & Merge | v1.2 | 6/7 | In Progress|  |
 | 5. Packaging and Deployment | v1.0 | 0/3 | Deferred to v3.0 | - |
 | 6. Adaptive Training Planner | v1.1 | 6/6 | Complete | 2026-04-01 |
