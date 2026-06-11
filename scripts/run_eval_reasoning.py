@@ -86,6 +86,10 @@ def _serve_and_eval(model_dir: str, name: str, tag: str, dataset: str,
 
 def _run_wpbench(tag: str, out_dir: Path) -> dict:
     """REVL-04 wp-bench against the live endpoint. Requires wp-bench CLI + config."""
+    # The --wpbench-only path reaches here without _serve_and_eval having created the
+    # per-tag subdir, so the later open(tmp,"w") would raise FileNotFoundError (mis-reported
+    # as "CLI not on PATH"). Ensure the tag dir exists for the from-scratch wpbench-only run.
+    (out_dir / tag).mkdir(parents=True, exist_ok=True)
     out = out_dir / tag / "wp_bench_results.json"
     cfg = PROJECT_ROOT / "config" / "wp-bench.yaml"
     if not WP_BENCH_DIR.exists() or not cfg.exists():

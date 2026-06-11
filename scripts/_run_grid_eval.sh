@@ -11,5 +11,9 @@ set -a
 [ -f .env ] && source .env
 set +a
 
+# wp-bench CLI lives in miniconda/bin; run_eval_reasoning's wp-bench subprocess inherits
+# this PATH, so miniconda/bin MUST be present or `wp-bench` 404s as "CLI not on PATH"
+# (obs 2866/2869). Launching python by absolute path does not add it — export explicitly.
+export PATH="/home/robert_li/miniconda3/bin:$PATH"
 PROJECT_PY=/home/robert_li/miniconda3/bin/python
 exec "$PROJECT_PY" scripts/run_grid_eval.py "$@"
