@@ -365,24 +365,34 @@ def _run_merge(args) -> int:
         print(f"ABORT: per-expert deltas not distinct: {differ}", flush=True)
         return 4
 
+    # MoE-only detection (T-04.3-01): derived from adapter key inspection, NOT a trusted flag.
+    # An adapter with no self_attn.{q,k,v,o}_proj tensors is MoE-only; the attention and
+    # unembed merge stages must be skipped to avoid the three v3 break points (lines 281/374/386).
+    is_moe_only = not any(
+        any(f".{p}." in k for p in ATTN_PROJS)
+        for k in adapter
+    )
+    report["is_moe_only_adapter"] = is_moe_only
+
     # 4) Attention via attention-only temp PEFT adapter (q/k/v/o), then merge_and_unload.
-    q_before = model.model.layers[0].self_attn.q_proj.weight.detach().clone()
-    attn_dir = tempfile.mkdtemp(prefix="tinker_v3_attn_")
-    _build_attention_only_adapter(adapter, acfg, attn_dir)
-    model = PeftModel.from_pretrained(model, attn_dir).merge_and_unload()
-    q_after = model.model.layers[0].self_attn.q_proj.weight
-    report["attention_q_proj_changed"] = bool((q_before - q_after).abs().max().item() > 1e-6)
-    assert report["attention_q_proj_changed"], "attention merge did not change q_proj"
+    # Skipped for MoE-only adapters (no attn keys present; _build_attention_only_adapter would assert).
+    if not is_moe_only:
+        q_before = model.model.layers[0].self_attn.q_proj.weight.detach().clone()
+        attn_dir = tempfile.mkdtemp(prefix="tinker_v3_attn_")
+        _build_attention_only_adapter(adapter, acfg, attn_dir)
+        model = PeftModel.from_pretrained(model, attn_dir).merge_and_unload()
+        q_after = model.model.layers[0].self_attn.q_proj.weight
+        report["attention_q_proj_changed"] = bool(
+            (q_before - q_after).abs().max().item() > 1e-6)
+        assert report["attention_q_proj_changed"], "attention merge did not change q_proj"
+    else:
+        report["attention_q_proj_changed"] = False
+        report["attention_skipped"] = True
 
     # 5) Manual lm_head LoRA (PEFT skips unembed_tokens because the key is unembed_tokens, not lm_head).
-    # When --exclude-lm-head is set (D-IT-04 attempt-1), skip this stage entirely and record
-    # lm_head_excluded=True in the report.  Default (False) preserves the original v3 behaviour.
-    if getattr(args, "exclude_lm_head", False):
-        report["lm_head_excluded"] = True
-        report["lm_head_applied"] = False
-        report["lm_head_touched"] = 0
-        report["merge_type"] = "tinker_per_expert_moe_plus_peft_attention_NO_lm_head"
-    else:
+    # Skipped when --exclude-lm-head (D-IT-04 attempt-1) or is_moe_only (no unembed keys in adapter).
+    lm_head_excluded = getattr(args, "exclude_lm_head", False) or is_moe_only
+    if not lm_head_excluded:
         A_un = adapter["base_model.model.model.unembed_tokens.lora_A.weight"]
         B_un = adapter["base_model.model.model.unembed_tokens.lora_B.weight"]
         model.lm_head.weight.data += build_lm_head_delta(A_un, B_un, scale).to(torch.bfloat16)
@@ -390,6 +400,14 @@ def _run_merge(args) -> int:
         report["lm_head_excluded"] = False
         report["lm_head_applied"] = True
         report["lm_head_touched"] = 1
+    else:
+        report["lm_head_excluded"] = True
+        report["lm_head_applied"] = False
+        report["lm_head_touched"] = 0
+        if is_moe_only:
+            report["merge_type"] = "tinker_per_expert_moe_only_NO_attn_NO_lm_head"
+        else:
+            report["merge_type"] = "tinker_per_expert_moe_plus_peft_attention_NO_lm_head"
 
     # 6) Save merged model + STOCK tokenizer (never the extended 151,938 tokenizer) to staging.
     tmp_out = args.output_dir + ".tmp_merge"
