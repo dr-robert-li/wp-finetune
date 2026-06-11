@@ -55,6 +55,8 @@ merged_model/
 output/
 !output/diagnostic/
 !output/triage_decision.md
+!output/tinker/
+!output/tinker/**
 
 # Telemetry output (ephemeral run data)
 telemetry/
