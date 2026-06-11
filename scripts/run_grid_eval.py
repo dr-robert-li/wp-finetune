@@ -166,9 +166,11 @@ def _run_candidate_judge_gates(
     fs_json = candidate_out / "fs_result.json"
 
     # Step 1: capture judge responses on the Tinker sampler
+    # capture_judge_responses_tinker.py imports `tinker` -> MUST run under .venv-tinker
+    # (the project/miniconda venv has no tinker), not sys.executable.
     print(f"[{candidate_tag}] capture judge responses from Tinker sampler...", flush=True)
     rc = subprocess.call([
-        sys.executable,
+        args.tinker_python,
         str(PROJECT_ROOT / "scripts" / "capture_judge_responses_tinker.py"),
         "--tinker-path", sampler_path,
         "--dataset", dataset,
@@ -223,9 +225,10 @@ def _run_candidate_judge_gates(
     pareto_ok = confusion_data.get("pareto_ok", False)
 
     # Step 5: FS terse Wilson-upper gate (RTRN-05)
+    # tinker_fs_gate.py imports tinker_cookbook (renderer/tokenizer) -> .venv-tinker, not sys.executable.
     print(f"[{candidate_tag}] tinker_fs_gate ...", flush=True)
     rc = subprocess.call([
-        sys.executable,
+        args.tinker_python,
         str(PROJECT_ROOT / "scripts" / "tinker_fs_gate.py"),
         "--responses-jsonl", str(responses_jsonl),
         "--out", str(fs_json),
@@ -299,7 +302,17 @@ def main() -> int:
                     help="vLLM GPU memory utilization for wp-bench. Default: 0.55.")
     ap.add_argument("--force", action="store_true",
                     help="Re-run candidates even if summary.json already records a terminal verdict.")
+    ap.add_argument("--tinker-python",
+                    default=str(PROJECT_ROOT / ".venv-tinker" / "bin" / "python"),
+                    help="Interpreter for the Tinker-dependent steps (capture + fs_gate import "
+                         "tinker/tinker_cookbook, absent from the project venv). "
+                         "Default: <root>/.venv-tinker/bin/python.")
     args = ap.parse_args()
+
+    if not os.path.exists(args.tinker_python):
+        print(f"ERROR: --tinker-python not found: {args.tinker_python} "
+              f"(capture + fs_gate need the .venv-tinker interpreter)", file=sys.stderr, flush=True)
+        return 1
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
