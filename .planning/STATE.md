@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
-status: executing
-stopped_at: Completed 04.4-03-PLAN.md (8-gate cascade, automated_pass=false)
+status: halted_awaiting_human_decision
+stopped_at: "Phase 04.4 HALTED at automated gate — automated_pass=false (3 HARD fails). Wave 4 (REVL-05 human review + promotion) BLOCKED. Awaiting human decision: retrain vs waiver."
 last_updated: "2026-06-13T12:25:25.096Z"
 progress:
   total_phases: 9
@@ -24,12 +24,34 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 
 ## Current Position
 
-Phase: 04.4 (reasoning-eval-adapter-merge-inserted) — EXECUTING
-(r32-rp30, MoE-only rank32/replay30%) exported: REVL-04 wp-bench 0.4603 ≥ 0.4537 (confirmed,
-deterministic) + judge gates pass (ρ0.294, sentinel 0/24, recall 0.69, FS-stable). 8/9 candidates
-filtered cheaply by the judge economy. Hand-off to Phase 04.4 for the post-merge re-gate.
-Plan: 4 of 4
-Next: **RC-B is the SOLE remaining blocker.** D-IT-02 diagnosis (debug session
+Phase: 04.4 (reasoning-eval-adapter-merge-inserted) — HALTED at automated gate (3/4 plans done)
+Plans 01-03 COMPLETE. Plan 04 (REVL-05 human review + canonical promotion) BLOCKED — gated on
+automated_pass which is FALSE.
+
+**8-gate cascade verdict (Plan 03, automated_verdict.json) — automated_pass=FALSE:**
+  - REVL-04 wp-bench: 0.4603 ≥ 0.4537 → PASS (codegen reproduced grid exactly; clean re-merge,
+    anchors certified, byte-identity vs grid = non-identical but score-identical).
+  - sentinel: 0/24 policy false-pass → PASS.
+  - **REVL-01A Spearman (merged endpoint): 0.240 < 0.263 bar → FAIL** (n_pairs=120, p=0.008;
+    measured enable_thinking=False, i.e. NOT the RC-A parse-ghost — a REAL drop from grid ~0.31
+    MoE-only sampler). This alone makes automated_pass=false.
+  - **confusion Pareto: false_FAIL 0.468 > 0.403 → FAIL** (recall 0.845 passes; model over-strict
+    on teacher-PASS cases). Corroborates REVL-01A: the merge degraded JUDGE calibration on the
+    merged endpoint — the exact D-V4-03 failure mode this phase exists to catch.
+  - REVL-02 PHPCS: 0.9412 < 0.98 → FAIL, but small-N (1/17) and NON-binding (verdict false without it).
+  - SOFT all healthy: REVL-03 coherence 0.831, REVL-07 F1 0.721, REVL-08 length normal,
+    REVL-06 N/A (judge-only). Knowledge-dip −0.012 flagged (visibility only).
+
+Next: **HUMAN DECISION required.** The binding finding is robust judge-calibration degradation on
+the merged endpoint (REVL-01A + confusion, both n=120-class, not small-N, not RC-A ghost). Codegen
+(REVL-04) passed. Options: (a) RETRAIN — re-open Phase 04.3 with adjusted levers to preserve judge
+skill through the merge; (b) WAIVER — override to Wave 4 human review, knowingly promoting a model
+whose judge skill measurably degraded. "Adjust gate bars" is NOT curative — REVL-01A alone fails.
+Ledger: .planning/phases/04.4-reasoning-eval-adapter-merge-inserted/04.4-GATE-LEDGER-V4-WINNER.md
+
+---
+### (Historical, superseded) Pre-04.4 RC-A/RC-B diagnosis — RC-A was the harness ghost, now fixed
+**RC-B is the SOLE remaining blocker.** D-IT-02 diagnosis (debug session
 `reasoning-merge-gen-regression`) split the "merge regression" into two independent causes:
 
   - **RC-A (CONFIRMED + FIXED 2026-06-10):** the judge parse-failure/Spearman regression was an
