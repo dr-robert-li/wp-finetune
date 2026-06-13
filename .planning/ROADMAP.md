@@ -2,7 +2,7 @@
 
 ## Milestones
 
-- 🚧 **v1.0 MVP** - Phases 1-5 (3 of 4 active complete; Phase 4 in progress; Phase 5 deferred to v3.0 Phase 15)
+- ✅ **v1.0 MVP** - Phases 1-5 (Phases 1-4 complete; Phase 5 deferred/closed → v3.0 Phase 15)
 - ✅ **v1.1 Adaptive Training Infrastructure** - Phase 6 (complete 2026-04-01)
 - 🚧 **v1.2 Judge Reasoning Fine-Tune** - Phases 4.1-4.4 (inserted after Phase 4, before Phase 7)
 - 📋 **v2.0 RL Alignment** - Phases 7-10 (planned)
@@ -37,16 +37,16 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 </details>
 
-- [ ] **Phase 4: Evaluation** - Run static eval suite + wp-bench, human review of results
-- [ ] **Phase 5: Packaging and Deployment** - Quantize, serve, and publish to HuggingFace (deferred to v3.0 — subsumed by Phase 15)
-- [ ] **Phase 6: Adaptive Training Planner** - Power-primary adaptive config engine with batch coupling, telemetry extensions, and warmup probes
+- [x] **Phase 4: Evaluation** - Run static eval suite + wp-bench, human review of results (COMPLETE — triage identified the winning 30/70 ratio adapter; extended by v1.2 Phases 4.1-4.4)
+- [x] **Phase 5: Packaging and Deployment** - Quantize, serve, and publish to HuggingFace (CLOSED — DEFERRED to v3.0/Phase 15; not implemented in v1.0, intentionally out of scope)
+- [x] **Phase 6: Adaptive Training Planner** - Power-primary adaptive config engine with batch coupling, telemetry extensions, and warmup probes (COMPLETE 2026-04-01, v1.1)
 
 <details>
 <summary>v1.2 Judge Reasoning Fine-Tune (Phases 4.1-4.4) — INSERTED — depends on Phase 4 triage completing</summary>
 
-- [ ] **Phase 4.1: Reasoning Data Generation** - Curate human-annotated seeds, then pilot-validate and run parallel deep judge CoT and critique-then-fix data generation streams
-- [ ] **Phase 4.2: Dataset Assembly** - Score consistency validation, training mix assembly, and export of the reasoning dataset
-- [ ] **Phase 4.3: Reasoning Fine-Tune** - Continued SFT on winning ratio adapter at lower LR with frozen router and 8192-token sequences
+- [x] **Phase 4.1: Reasoning Data Generation** - Curate human-annotated seeds, then pilot-validate and run parallel deep judge CoT and critique-then-fix data generation streams (COMPLETE — reasoning dataset produced)
+- [x] **Phase 4.2: Dataset Assembly** - Score consistency validation, training mix assembly, and export of the reasoning dataset (COMPLETE — openai_train/val exported)
+- [x] **Phase 4.3: Reasoning Fine-Tune** - Continued SFT on winning ratio adapter at lower LR with frozen router and 8192-token sequences (COMPLETE — Tinker MoE-only grid; r32-rp30 v4-winner selected)
 - [x] **Phase 4.4: Reasoning Eval & Merge** - Verify reasoning adapter meets all quality gates; human review; merge adapter (COMPLETE 2026-06-14 — v4-winner promoted to canonical under D-V4-10 waiver; 10+10 validation 10/10·10/10)
 
 </details>
@@ -546,8 +546,8 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 2. Dataset Production | v1.0 | 6/7 | Complete | 2026-03-29 |
 | 3. Model Prep and Training | v1.0 | 3/3 | Complete | 2026-03-27 |
 | 4. Evaluation | v1.0 | 3/3 | Complete   | 2026-06-07 |
-| 4.1. Reasoning Data Generation | v1.2 | 1/3 | In Progress|  |
-| 4.2. Reasoning Dataset Assembly | v1.2 | 0/? | Not started | - |
+| 4.1. Reasoning Data Generation | v1.2 | 3/3 | Complete | 2026-04-23 |
+| 4.2. Reasoning Dataset Assembly | v1.2 | 2/2 | Complete | 2026-04-25 |
 | 4.3. Reasoning Fine-Tune | v1.2 | 4/4 | Complete   | 2026-06-11 |
 | 4.4. Reasoning Eval & Merge | v1.2 | 5/4 | Complete   | 2026-06-13 |
 | 5. Packaging and Deployment | v1.0 | 0/3 | Deferred to v3.0 | - |

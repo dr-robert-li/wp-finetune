@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: ready_to_plan
-stopped_at: Phase 04.4 complete (5/4) — ready to discuss Phase 06
+stopped_at: "Phases 1-6 + 4.1-4.4 all closed (v1.0 MVP, v1.1, v1.2 complete; Phase 5 deferred to v3.0). Next: Phase 7 (Router Profiling & Protected Expert Set, v2.0) on the promoted v1.2 reasoning-merged-v4."
 last_updated: 2026-06-13T19:42:03.105Z
 progress:
   total_phases: 9
@@ -20,7 +20,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 06 — adaptive training planner
+**Current focus:** Phase 7 — Router Profiling & Protected Expert Set (v2.0)
 
 ## Current Position
 
