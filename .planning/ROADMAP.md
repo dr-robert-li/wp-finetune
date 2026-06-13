@@ -262,7 +262,7 @@ Plans:
   - Adapter merge: after human approval, `dgx.execute("unsloth_studio", "python", "-m", "scripts.merge_adapter", ...)` with idempotency check on `models/qwen3-30b-wp-{winning}-reasoning-merged/`
   - Post-merge validation: load merged model, run 10 inference samples for both `<wp_gen>` and `<wp_judge>`, verify coherent output and correct task token routing
   - Invokes `wp-finetune:review-telemetry` for consolidated eval summary
-**Plans**: v3 track (01-03) + merge-fix remediation track (06+). Old 04.4-01 archived to archive-stale-v2-prereval/; stale v3-pinned 04.4-04/05 archived to archive-stale-v3-lmhead/ (REVL-04 FAILED on v3 merge → merge-fix-first iteration, see CONTEXT ITERATION + DISCUSSION-LOG 2026-06-09)
+**Plans**: ACTIVE = v4-winner post-merge re-gate (ITERATION 2, fresh 01-04 — see the ACTIVE block below). Prior tracks are DEAD/archived: v3 track (01-03) + merge-fix remediation (06-09) both failed REVL-04 → 04.3 retrained MoE-only → wp-reasoning-v4-winner; their plans+summaries moved to archive-stale-v4-nolmhead/. Earlier sets in archive-stale-v2-prereval/ + archive-stale-v3-lmhead/ (see CONTEXT ITERATION 2 + DISCUSSION-LOG)
 
 Plans (v3 track — superseded by remediation):
 - [x] 04.4-01-PLAN.md — [W1] merge_tinker_v3.py (Tinker per-expert MoE convention) + Wave-0 tests + CPU merge to v3 staging + 3 anchor gates (tensor/fp32-control/forward)
