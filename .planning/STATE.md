@@ -28,26 +28,35 @@ Phase: 04.4 (reasoning-eval-adapter-merge-inserted) — HALTED at automated gate
 Plans 01-03 COMPLETE. Plan 04 (REVL-05 human review + canonical promotion) BLOCKED — gated on
 automated_pass which is FALSE.
 
-**8-gate cascade verdict (Plan 03, automated_verdict.json) — automated_pass=FALSE:**
-  - REVL-04 wp-bench: 0.4603 ≥ 0.4537 → PASS (codegen reproduced grid exactly; clean re-merge,
-    anchors certified, byte-identity vs grid = non-identical but score-identical).
-  - sentinel: 0/24 policy false-pass → PASS.
-  - **REVL-01A Spearman (merged endpoint): 0.240 < 0.263 bar → FAIL** (n_pairs=120, p=0.008;
-    measured enable_thinking=False, i.e. NOT the RC-A parse-ghost — a REAL drop from grid ~0.31
-    MoE-only sampler). This alone makes automated_pass=false.
-  - **confusion Pareto: false_FAIL 0.468 > 0.403 → FAIL** (recall 0.845 passes; model over-strict
-    on teacher-PASS cases). Corroborates REVL-01A: the merge degraded JUDGE calibration on the
-    merged endpoint — the exact D-V4-03 failure mode this phase exists to catch.
-  - REVL-02 PHPCS: 0.9412 < 0.98 → FAIL, but small-N (1/17) and NON-binding (verdict false without it).
-  - SOFT all healthy: REVL-03 coherence 0.831, REVL-07 F1 0.721, REVL-08 length normal,
-    REVL-06 N/A (judge-only). Knowledge-dip −0.012 flagged (visibility only).
+**8-gate cascade verdict (Plan 03) — automated_pass=FALSE; mechanism DIAGNOSED + recalibrated:**
+  - REVL-04 wp-bench: 0.4603 ≥ 0.4537 → PASS (codegen reproduced grid exactly).
+  - sentinel: 0/24 policy false-pass → PASS (confirmed safe under recalibration).
+  - REVL-01A Spearman 0.240 < 0.263 → FAIL — but a NOISE-BAND fail: bootstrap 95% CI [0.061,0.410]
+    SPANS the bar; paired Δρ(merged−grid) CI [−0.169,+0.052] INCLUDES 0 (not significant); REVL-01B
+    teacher-corr ROSE (0.504 vs 0.476). Rank-invariant → not recalibratable.
+  - confusion false_FAIL 0.452 > 0.403 → FAIL (recalibration improved 0.468→0.452; explicit-FAIL
+    token floor blocks full clearance). CI [0.265,0.537] spans bar — also within noise.
+  - REVL-02 PHPCS 0.9412 < 0.98 → FAIL — small-N (1/17), binomially non-binding.
+  - SOFT all healthy (REVL-03 0.831, REVL-07 F1 0.721, REVL-08 normal, REVL-06 N/A).
 
-Next: **HUMAN DECISION required.** The binding finding is robust judge-calibration degradation on
-the merged endpoint (REVL-01A + confusion, both n=120-class, not small-N, not RC-A ghost). Codegen
-(REVL-04) passed. Options: (a) RETRAIN — re-open Phase 04.3 with adjusted levers to preserve judge
-skill through the merge; (b) WAIVER — override to Wave 4 human review, knowingly promoting a model
-whose judge skill measurably degraded. "Adjust gate bars" is NOT curative — REVL-01A alone fails.
-Ledger: .planning/phases/04.4-reasoning-eval-adapter-merge-inserted/04.4-GATE-LEDGER-V4-WINNER.md
+**MECHANISM DIAGNOSIS (04.4-D-V4-JUDGE-MECHANISM-DIAGNOSIS.md, human chose "diagnose first"):** The
+"judge degradation" is NOT a skill loss. The merge applies a SIGNIFICANT rank-preserving calibration
+offset (−3.58pt, 95% CI [−6.09,−1.24], ~2.9 SE) while judge RANKING skill is statistically
+unchanged. All 3 residual fails are noise-band (REVL-01A, confusion) or small-N (REVL-02) — the model
+is statistically indistinguishable from the validated grid winner that PASSED. Offset is a bf16-merge
+inference artifact, not a training deficiency → retrain is low-value.
+
+**RECALIBRATION DONE (D-V4-09):** judge score_offset=+3.58 recorded in
+`output/eval_reasoning_v4_winner/judge_recalibration.json` — MUST be inherited by Phase 8's 30%
+wp_judge reward (gate/reward consistency). It cleared 0 failing gates (offset is rank-invariant +
+explicit-FAIL floor) but confirmed sentinel safe + produced the Phase-8 constant.
+
+Next: **HUMAN WAIVER DECISION on 3 residual blockers** (all statistically weak: REVL-01A noise-band,
+confusion noise-band, REVL-02 small-N). Options: (a) WAIVER → run Wave 4 REVL-05 human review +
+promote (diagnosis-backed: indistinguishable from passing grid winner; judge ranking intact); (b)
+RETRAIN (re-open 04.3 — low expected value per diagnosis). recalibrated verdict:
+`output/eval_reasoning_v4_winner/automated_verdict.recalibrated.json`. Ledger:
+`.planning/phases/04.4-reasoning-eval-adapter-merge-inserted/04.4-GATE-LEDGER-V4-WINNER.md`
 
 ---
 ### (Historical, superseded) Pre-04.4 RC-A/RC-B diagnosis — RC-A was the harness ghost, now fixed
