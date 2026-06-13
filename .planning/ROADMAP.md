@@ -276,6 +276,12 @@ Plans (merge-fix remediation track — exclude lm_head, attempt-1; gate order RE
 - [x] 04.4-08-PLAN.md — [W8] REVL-04 wp-bench HARD gate (autonomous, fail-fast): precondition early-exit on parse_gate_pass≤5% before the ~2.7h run; pass = reasoning≥baseline (~0.4537); fail-path note (attempt-2 q_proj per D-IT-05, then D-IT-02) — not a plan
 - [ ] 04.4-09-PLAN.md — [W9] REVL-05 thin v4 spot-check (HUMAN_APPROVED_V4_POSTMERGE) + triple-gated idempotent promote v4→canonical + post-merge 10+10 validation → closes 4.4, unblocks Phase 7
 
+Plans (v4-winner post-merge re-gate — ITERATION 2, ACTIVE 2026-06-13; merge-fix tracks above ARCHIVED to archive-stale-v4-nolmhead/ — both DEAD, failed REVL-04; 04.3 retrained MoE-only → wp-reasoning-v4-winner r32-rp30. Fresh plan set numbered 01-04):
+- [ ] 04.4-01-PLAN.md — [W1] Clean re-merge the MoE-only v4-winner into models/_staging/...-merged-v4 (is_moe_only path, D-V4-07) + re-certify 3 anchors + byte-identity check vs the grid 0.4603 staging → reuse_revl04 boolean (D-V4-02)
+- [ ] 04.4-02-PLAN.md — [W2] Single GPU serve of clean staging → capture judge-val + 24 sentinel + reasoning + gen + eval_gen(REVL-02) from the MERGED endpoint (D-V4-03); conditional REVL-04 re-bench only if reuse_revl04==false (D-V4-02/05)
+- [ ] 04.4-03-PLAN.md — [W3] Offline full 8-gate cascade from captures (D-V4-01): HARD REVL-01A≥0.263 (D-V4-04)/REVL-02 PHPCS within-2pp (re-measured)/REVL-04≥0.4537/sentinel 0/24/confusion Pareto + SOFT REVL-03/06/07/08 + per-dim guard flagging the knowledge dip (D-V4-06) → GATE-LEDGER-V4-WINNER + automated_pass
+- [ ] 04.4-04-PLAN.md — [W4] REVL-05 human review (gated on automated_pass, human-last D-V4-01) → triple-gated idempotent promote to canonical v4-suffixed dir (D-V4-08) + post-merge 10+10 validation → closes 4.4, unblocks Phase 7
+
 ---
 
 ### Phase 5: Packaging and Deployment (DEFERRED → v3.0 Phase 15)
