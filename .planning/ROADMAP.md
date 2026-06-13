@@ -47,7 +47,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 4.1: Reasoning Data Generation** - Curate human-annotated seeds, then pilot-validate and run parallel deep judge CoT and critique-then-fix data generation streams
 - [ ] **Phase 4.2: Dataset Assembly** - Score consistency validation, training mix assembly, and export of the reasoning dataset
 - [ ] **Phase 4.3: Reasoning Fine-Tune** - Continued SFT on winning ratio adapter at lower LR with frozen router and 8192-token sequences
-- [ ] **Phase 4.4: Reasoning Eval & Merge** - Verify reasoning adapter meets all quality gates; human review; merge adapter
+- [x] **Phase 4.4: Reasoning Eval & Merge** - Verify reasoning adapter meets all quality gates; human review; merge adapter (COMPLETE 2026-06-14 — v4-winner promoted to canonical under D-V4-10 waiver; 10+10 validation 10/10·10/10)
 
 </details>
 
@@ -280,7 +280,7 @@ Plans (v4-winner post-merge re-gate — ITERATION 2, ACTIVE 2026-06-13; merge-fi
 - [x] 04.4-01-PLAN.md — [W1] Clean re-merge the MoE-only v4-winner into models/_staging/...-merged-v4 (is_moe_only path, D-V4-07) + re-certify 3 anchors + byte-identity check vs the grid 0.4603 staging → reuse_revl04 boolean (D-V4-02)
 - [x] 04.4-02-PLAN.md — [W2] Single GPU serve of clean staging → capture judge-val + 24 sentinel + reasoning + gen + eval_gen(REVL-02) from the MERGED endpoint (D-V4-03); conditional REVL-04 re-bench only if reuse_revl04==false (D-V4-02/05)
 - [x] 04.4-03-PLAN.md — [W3] Offline full 8-gate cascade from captures (D-V4-01): HARD REVL-01A≥0.263 (D-V4-04)/REVL-02 PHPCS within-2pp (re-measured)/REVL-04≥0.4537/sentinel 0/24/confusion Pareto + SOFT REVL-03/06/07/08 + per-dim guard flagging the knowledge dip (D-V4-06) → GATE-LEDGER-V4-WINNER + automated_pass
-- [ ] 04.4-04-PLAN.md — [W4] REVL-05 human review (gated on automated_pass, human-last D-V4-01) → triple-gated idempotent promote to canonical v4-suffixed dir (D-V4-08) + post-merge 10+10 validation → closes 4.4, unblocks Phase 7
+- [x] 04.4-04-PLAN.md — [W4] REVL-05 human review (gated on automated_pass, human-last D-V4-01) → triple-gated idempotent promote to canonical v4-suffixed dir (D-V4-08) + post-merge 10+10 validation → closes 4.4, unblocks Phase 7
 
 ---
 
@@ -549,7 +549,7 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 4.1. Reasoning Data Generation | v1.2 | 1/3 | In Progress|  |
 | 4.2. Reasoning Dataset Assembly | v1.2 | 0/? | Not started | - |
 | 4.3. Reasoning Fine-Tune | v1.2 | 4/4 | Complete   | 2026-06-11 |
-| 4.4. Reasoning Eval & Merge | v1.2 | 3/4 | In Progress|  |
+| 4.4. Reasoning Eval & Merge | v1.2 | 5/4 | Complete   | 2026-06-13 |
 | 5. Packaging and Deployment | v1.0 | 0/3 | Deferred to v3.0 | - |
 | 6. Adaptive Training Planner | v1.1 | 6/6 | Complete | 2026-04-01 |
 | 7. Router Profiling & Protected Expert Set | v2.0 | 0/? | Not started | - |
