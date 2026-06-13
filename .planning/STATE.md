@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
-status: ready_to_plan
-stopped_at: "Phases 1-6 + 4.1-4.4 all closed (v1.0 MVP, v1.1, v1.2 complete; Phase 5 deferred to v3.0). Next: Phase 7 (Router Profiling & Protected Expert Set, v2.0) on the promoted v1.2 reasoning-merged-v4."
-last_updated: 2026-06-13T19:42:03.105Z
+status: planning
+stopped_at: Phase 7 context gathered
+last_updated: "2026-06-13T23:04:24.454Z"
 progress:
-  total_phases: 9
-  completed_phases: 7
+  total_phases: 10
+  completed_phases: 8
   total_plans: 33
   completed_plans: 33
-  percent: 78
+  percent: 80
 ---
 
 # Project State
@@ -40,8 +40,10 @@ gates, offset rank-invariant) → **WAIVER** (D-V4-10) → REVL-05 sign-off (reg
 invalid-PHP-pass 0/24, terse 0.8%) → triple-gated promote.
 
 **Forward obligations (todos created):**
+
   - **Phase 8 MUST inherit the judge recalibration** `output/eval_reasoning_v4_winner/judge_recalibration.json`
     (score_offset=+3.58, D-V4-09) as a HARD input to the 30% wp_judge reward — gate/reward consistency.
+
   - **Phase 7/8 gate definitions** should adopt a CI-aware noise-band disposition (require bootstrap
     lower bound to clear the bar, measured identically on baseline + candidate) — D-V4-10 hardening.
 
@@ -53,6 +55,7 @@ the intended next phase (likely Phase 7) before planning. Artifacts: `04.4-04-SU
 
 ---
 ### (Historical, superseded) Pre-04.4 RC-A/RC-B diagnosis — RC-A was the harness ghost, now fixed
+
 **RC-B is the SOLE remaining blocker.** D-IT-02 diagnosis (debug session
 `reasoning-merge-gen-regression`) split the "merge regression" into two independent causes:
 
@@ -250,8 +253,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-13T12:25:25.087Z
-Stopped at: Completed 04.4-03-PLAN.md (8-gate cascade, automated_pass=false)
+Last session: 2026-06-13T23:04:24.445Z
+Stopped at: Phase 7 context gathered
 
 Prior session: 2026-06-02T21:31:00.000Z
 Stopped at: Phase 4.4 CLOSED **REJECTED** at REVL-05 (human). All automated gates run; merge NOT promoted; D-05 disposition pending (recommend Phase 4.3 format-stability re-train). See `04.4-GATE-LEDGER.md` + `04.4-D05-DIAGNOSIS.md`. Resume = decide D-05.
@@ -296,7 +299,7 @@ Stopped at: W1-W6 cascade BLOCKED on eval-harness prose compat (2 layers). Findi
   - **CERTIFIED VERDICT (c246a20)**: smoke_pass=True exit=0 distinctness=0.879. judge 5/5 (prose 9/9 dims + 1 CtF json), gen 5/5 php_lint, baseline-sim 0.02-0.42 (<0.85 canary → reasoning diverges). Artifact: merge-artifacts/w0_03_smoke_PASS_verdict.json.
   - Data finding flagged: reasoning judge output is dimensional PROSE (CoT) or JSON (CtF), NOT <REASONING>-tagged. parse_judge_response(JSON-only) would have false-failed all CoT — coherence redesigned prose-aware + json-aware.
 
-Resume file: None
+Resume file: .planning/phases/07-router-profiling-protected-expert-set/07-CONTEXT.md
 Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertions + smoke-gate hardening), THEN W0-03 smoke gate against models/qwen3-30b-wp-30_70-reasoning-merged/ vs models/qwen3-30b-wp-30_70-merged-v2/ baseline, THEN REVL-01..08 eval gates
 
 ### Session 2026-05-29 reasoning MERGE COMPLETE + PROMOTED
