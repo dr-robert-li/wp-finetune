@@ -127,14 +127,14 @@ Requirements for deep reasoning fine-tuning of the winning ratio adapter. Depend
 
 ### Reasoning Evaluation
 
-- [ ] **REVL-01**: eval_judge.py Spearman correlation on reasoning adapter meets or exceeds winning ratio baseline
-- [ ] **REVL-02**: eval_gen.py PHPCS pass rate on reasoning adapter shows no regression (within 2pp of baseline)
-- [ ] **REVL-03**: Reasoning quality evaluated by separately spawned Claude evaluator agent (independent context window, receives only generated code + reasoning as opaque inputs, no shared state with model under test) measuring dimension coverage (all 9 dimensions addressed) and score-reasoning consistency
+- [x] **REVL-01**: eval_judge.py Spearman correlation on reasoning adapter meets or exceeds winning ratio baseline
+- [x] **REVL-02**: eval_gen.py PHPCS pass rate on reasoning adapter shows no regression (within 2pp of baseline)
+- [x] **REVL-03**: Reasoning quality evaluated by separately spawned Claude evaluator agent (independent context window, receives only generated code + reasoning as opaque inputs, no shared state with model under test) measuring dimension coverage (all 9 dimensions addressed) and score-reasoning consistency
 - [x] **REVL-04**: wp-bench scores on reasoning adapter meet or exceed winning ratio baseline
 - [ ] **REVL-05**: Human reviews sample of reasoning outputs to confirm quality before declaring v1.2 complete
-- [ ] **REVL-06**: Fix correctness — critique-then-fix corrected code verified through PHPCS + security scanner to confirm the fix actually resolves the identified issue
-- [ ] **REVL-07**: Classification accuracy — confusion matrix (TP/TN/FP/FN) computed at score thresholds from eval_judge.py per-example data, measuring whether the model correctly distinguishes good from bad code
-- [ ] **REVL-08**: Reasoning length distribution — reasoning chains are neither truncated nor exploding; median, p95, and max token counts recorded and reviewed against expected range
+- [x] **REVL-06**: Fix correctness — critique-then-fix corrected code verified through PHPCS + security scanner to confirm the fix actually resolves the identified issue
+- [x] **REVL-07**: Classification accuracy — confusion matrix (TP/TN/FP/FN) computed at score thresholds from eval_judge.py per-example data, measuring whether the model correctly distinguishes good from bad code
+- [x] **REVL-08**: Reasoning length distribution — reasoning chains are neither truncated nor exploding; median, p95, and max token counts recorded and reviewed against expected range
 
 ## v2.0 Requirements — RL Alignment
 
@@ -314,14 +314,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RTRN-03 | Phase 4.3 | Pending |
 | RTRN-04 | Phase 4.3 | Pending |
 | RTRN-05 | Phase 4.3 | Complete |
-| REVL-01 | Phase 4.4 | Pending |
-| REVL-02 | Phase 4.4 | Pending |
-| REVL-03 | Phase 4.4 | Pending |
+| REVL-01 | Phase 4.4 | Complete |
+| REVL-02 | Phase 4.4 | Complete |
+| REVL-03 | Phase 4.4 | Complete |
 | REVL-04 | Phase 4.4 | Blocked (v3 fail 0.3716<0.4537; v4 attempt-1 parse-gate disqualified 0.2479>0.05) |
 | REVL-05 | Phase 4.4 | Pending |
-| REVL-06 | Phase 4.4 | Pending |
-| REVL-07 | Phase 4.4 | Pending |
-| REVL-08 | Phase 4.4 | Pending |
+| REVL-06 | Phase 4.4 | Complete |
+| REVL-07 | Phase 4.4 | Complete |
+| REVL-08 | Phase 4.4 | Complete |
 
 | PROF-01 | Phase 7 | Pending |
 | PROF-02 | Phase 7 | Pending |
