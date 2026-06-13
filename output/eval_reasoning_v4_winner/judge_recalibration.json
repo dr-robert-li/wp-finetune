@@ -1,0 +1,20 @@
+{
+  "score_offset": 3.58,
+  "applies_to": "wp_judge overall score",
+  "reference": "tinker_sampler_grid_r32-rp30 (the pre-merge validated judge)",
+  "method": "paired mean (sampler - merged) over n=118 common val pairs; bf16-merge inference-path calibration artifact",
+  "ci_95": [1.24, 6.09],
+  "se": 1.25,
+  "n": 118,
+  "seed": 20260614,
+  "p_offset_significant": 0.999,
+  "z_approx": 2.9,
+  "rank_invariant": true,
+  "note": "Corrects threshold-based judge uses (confusion verdicts, absolute pass/fail cutoffs) and the Phase-8 reward 30% wp_judge component (D-V4-09 / D-11); does NOT affect rank metrics (REVL-01A Spearman). Under MO-GRPO within-group normalization a uniform offset largely cancels; apply for absolute-threshold consistency. Recalibration equivalent: apply policy cutoff at (policy_threshold - 3.58) on raw merged-endpoint scores, OR add 3.58 to scores before applying the original policy threshold.",
+  "recalibrated_threshold_equivalent": 66.42,
+  "recalibrated_threshold_note": "66.42 = policy 70.0 - 3.58 offset; applying this threshold to raw merged-endpoint scores is equivalent to applying the policy-70 threshold to recalibrated (+3.58) scores",
+  "source_diagnosis": ".planning/phases/04.4-reasoning-eval-adapter-merge-inserted/04.4-D-V4-JUDGE-MECHANISM-DIAGNOSIS.md",
+  "phase_8_inheritance": "Phase-8 planning MUST consume this artifact. The 30% frozen wp_judge reward component (D-11) should apply this +3.58 offset (or equivalently use threshold 66.42) to maintain consistency between gate-time and RL-reward-time judge calibration.",
+  "produced_date": "2026-06-14",
+  "produced_by": "04.4 post-diagnosis recalibration step (D-V4-09)"
+}

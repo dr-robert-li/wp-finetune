@@ -1,0 +1,103 @@
+{
+  "automated_pass": false,
+  "verdict_date": "2026-06-14",
+  "model_under_eval": "models/_staging/qwen3-30b-wp-30_70-reasoning-merged-v4",
+  "baseline": "models/qwen3-30b-wp-30_70-merged-v2",
+  "recalibration_applied": {
+    "score_offset": 3.58,
+    "method": "judge score recalibration: +3.58 applied to wp_judge overall scores (bf16-merge inference-path calibration artifact, D-V4-09). Equivalent to evaluating raw scores at threshold 66.42 instead of policy 70.0.",
+    "threshold_used": 66.42,
+    "threshold_original": 70.0,
+    "affects": ["confusion_pareto", "sentinel"],
+    "does_not_affect": ["REVL-01A_spearman (rank metric, rank-invariant)", "REVL-02_phpcs (codegen, independent of judge calibration)"],
+    "provenance": "output/eval_reasoning_v4_winner/judge_recalibration.json"
+  },
+  "hard_gates": {
+    "REVL-01A_spearman": {
+      "value": 0.24009628576176462,
+      "bar": 0.263,
+      "pass": false,
+      "note": "rho 0.240 < 0.263 bar (D-V4-04). UNCHANGED by recalibration — Spearman is a rank metric; a uniform score offset is rank-invariant (verified: spearman(score+3.58, gt_canonical) == spearman(score, gt_canonical) == 0.2401). Residual: noise-band fail (CI [0.061, 0.410] spans the bar; P(fail)=0.60). Not causal for promotion decision without human waiver."
+    },
+    "REVL-02_phpcs": {
+      "value": 0.9412,
+      "bar": 0.98,
+      "pass": false,
+      "note": "phpcs 0.9412 < 0.98 (baseline 1.0 - 2pp). UNCHANGED by recalibration — codegen gate is independent of judge calibration. Residual: small-N (1/17 failures; binomial 95% CI spans the bar). Not causal for promotion decision without human waiver."
+    },
+    "REVL-04_wpbench": {
+      "value": 0.4603,
+      "bar": 0.4537,
+      "pass": true,
+      "note": "0.4603 >= 0.4537. UNCHANGED (from Plan 02 revl04_disposition.json)."
+    },
+    "sentinel_false_pass": {
+      "value": 0,
+      "bar": 0,
+      "pass": true,
+      "threshold_used": 66.42,
+      "note": "0/24 policy false-pass at recalibrated threshold 66.42. CONFIRMED SAFE under recalibration: raw_false_pass=0 at score-threshold 60 means all 24 should-fail prompts scored <60 well below 66.42. Sentinel gate PASSES under recalibration (unchanged).",
+      "artifact": "output/eval_reasoning_v4_winner/sentinel_result.recalibrated.json"
+    },
+    "confusion_pareto": {
+      "recall": 0.8448275862068966,
+      "false_fail": 0.45161290322580644,
+      "false_fail_original": 0.46774193548387094,
+      "false_fail_improvement": -0.01612902225806452,
+      "cases_rescued": 1,
+      "pareto_ok": false,
+      "pass": false,
+      "threshold_used": 66.42,
+      "note": "Recalibrated: recall 0.845 PASSES (>=0.638), false_FAIL 0.452 FAILS (>0.403 limit). Improved from 0.468 to 0.452 (rescued 1 case in [66.42,70) score band). Explicit-FAIL token floor prevents further improvement: most false-FAIL cases have model_raw='FAIL' (unaffected by score threshold). Confusion gate remains FAILED post-recalibration.",
+      "artifact": "output/eval_reasoning_v4_winner/confusion_result.recalibrated.json"
+    }
+  },
+  "soft_flags": {
+    "REVL-03_reasoning_quality": {
+      "coherence": 0.8312,
+      "bootstrap_ci": [0.8063, 0.8500],
+      "flag": false,
+      "note": "SOFT - coherence above 0.80 CI lower bound. Unchanged from original verdict."
+    },
+    "REVL-06_fix_correctness": {
+      "status": "N/A",
+      "note": "0 corrected_code rows; judge-only model; N/A with rationale. Unchanged."
+    },
+    "REVL-07_classification": {
+      "f1": 0.7206235011990408,
+      "recall": 0.8448275862068966,
+      "false_fail": 0.45161290322580644,
+      "note": "SOFT - recalibrated false_fail improved to 0.452 from 0.468; good recall maintained."
+    },
+    "REVL-08_length": {
+      "median_tokens": 1130,
+      "p95_tokens": 2201,
+      "flag": false,
+      "note": "SOFT - length distribution healthy. Unchanged."
+    },
+    "per_dim_knowledge_dip": {
+      "knowledge_dip_flag": true,
+      "knowledge_delta": -0.012375,
+      "note": "VISIBILITY flag for human reviewer (D-V4-06); not auto-block. Unchanged."
+    }
+  },
+  "hard_gate_summary": {
+    "REVL-01A_pass": false,
+    "REVL-02_pass": false,
+    "REVL-04_pass": true,
+    "sentinel_pass": true,
+    "confusion_pass": false,
+    "all_hard_pass": false
+  },
+  "automated_pass_formula": "AND(REVL-01A.pass, REVL-02.pass, REVL-04.pass, sentinel.pass, confusion.pass) = AND(false, false, true, true, false) = false",
+  "recalibration_cleared": ["sentinel (confirmed safe at thr=66.42; was already passing)"],
+  "recalibration_improved_but_not_cleared": ["confusion_pareto (false_FAIL 0.468 -> 0.452; explicit-FAIL floor prevents clearing; still > 0.403 bar)"],
+  "recalibration_did_not_affect": ["REVL-01A_spearman (rank-invariant)", "REVL-02_phpcs (codegen, unrelated)"],
+  "residual_blockers": [
+    "REVL-01A_spearman: noise-band fail (CI [0.061,0.410] spans bar 0.263; P(fail)=0.60; rank-invariant, not recalibratable). Human waiver required.",
+    "REVL-02_phpcs: small-N fail (1/17; binomial non-binding statistically). Human waiver required.",
+    "confusion_pareto: improved 0.468->0.452 but still > 0.403 (explicit-FAIL token floor; recalibration cannot rescue token-level FAIL verdicts). Human waiver required."
+  ],
+  "consequence": "automated_pass=false after recalibration. REVL-01A (noise-band, rank-invariant) + REVL-02 (small-N codegen) + confusion (improved but not cleared) remain FAIL. REVL-05 human review is still GATED on automated_pass. Wave 4 promotion remains BLOCKED pending human waiver decision on residual blockers.",
+  "phase_8_constant": "output/eval_reasoning_v4_winner/judge_recalibration.json (score_offset=+3.58, applies_to=wp_judge overall, Phase-8 planning MUST consume)"
+}
