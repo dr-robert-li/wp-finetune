@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: halted_awaiting_human_decision
-stopped_at: "Phase 04.4 HALTED at automated gate — automated_pass=false (3 HARD fails). Wave 4 (REVL-05 human review + promotion) BLOCKED. Awaiting human decision: retrain vs waiver."
-last_updated: "2026-06-13T12:25:25.096Z"
+stopped_at: "Phase 04.4 recalibration done (D-V4-09). Judge +3.58 offset applied: sentinel safe at thr=66.42 (0/24), confusion improved 0.468->0.452 (not cleared; explicit-FAIL floor). REVL-01A noise-band (rank-invariant, CI spans bar) + REVL-02 small-N (1/17) + confusion (0.452>0.403) remain FAIL. automated_pass still false. Phase-8 constant recorded (output/eval_reasoning_v4_winner/judge_recalibration.json). Awaiting human waiver decision on 3 residual blockers before REVL-05 + Wave 4 promotion."
+last_updated: "2026-06-14T04:48:00.000Z"
 progress:
   total_phases: 9
   completed_phases: 7
