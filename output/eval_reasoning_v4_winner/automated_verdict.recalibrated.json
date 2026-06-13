@@ -90,7 +90,8 @@
     "all_hard_pass": false
   },
   "automated_pass_formula": "AND(REVL-01A.pass, REVL-02.pass, REVL-04.pass, sentinel.pass, confusion.pass) = AND(false, false, true, true, false) = false",
-  "recalibration_cleared": ["sentinel (confirmed safe at thr=66.42; was already passing)"],
+  "recalibration_confirmed_safe": ["sentinel (was already passing; policy_false_pass=0 confirmed still holds at thr=66.42)"],
+  "recalibration_cleared_failing_gates": [],
   "recalibration_improved_but_not_cleared": ["confusion_pareto (false_FAIL 0.468 -> 0.452; explicit-FAIL floor prevents clearing; still > 0.403 bar)"],
   "recalibration_did_not_affect": ["REVL-01A_spearman (rank-invariant)", "REVL-02_phpcs (codegen, unrelated)"],
   "residual_blockers": [
