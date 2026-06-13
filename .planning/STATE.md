@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
-status: halted_awaiting_human_decision
-stopped_at: "Phase 04.4 recalibration done (D-V4-09). Judge +3.58 offset applied: sentinel safe at thr=66.42 (0/24), confusion improved 0.468->0.452 (not cleared; explicit-FAIL floor). REVL-01A noise-band (rank-invariant, CI spans bar) + REVL-02 small-N (1/17) + confusion (0.452>0.403) remain FAIL. automated_pass still false. Phase-8 constant recorded (output/eval_reasoning_v4_winner/judge_recalibration.json). Awaiting human waiver decision on 3 residual blockers before REVL-05 + Wave 4 promotion."
-last_updated: "2026-06-14T04:48:00.000Z"
+status: ready_to_plan
+stopped_at: Phase 04.4 complete (5/4) — ready to discuss Phase 06
+last_updated: 2026-06-13T19:42:03.105Z
 progress:
   total_phases: 9
   completed_phases: 7
   total_plans: 33
-  completed_plans: 31
+  completed_plans: 33
   percent: 78
 ---
 
@@ -20,43 +20,36 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 04.4 — reasoning-eval-adapter-merge-inserted
+**Current focus:** Phase 06 — adaptive training planner
 
 ## Current Position
 
-Phase: 04.4 (reasoning-eval-adapter-merge-inserted) — HALTED at automated gate (3/4 plans done)
-Plans 01-03 COMPLETE. Plan 04 (REVL-05 human review + canonical promotion) BLOCKED — gated on
-automated_pass which is FALSE.
+Phase: 04.4 (reasoning-eval-adapter-merge-inserted) — **COMPLETE 2026-06-14 (4/4 plans, waiver-promoted)**
 
-**8-gate cascade verdict (Plan 03) — automated_pass=FALSE; mechanism DIAGNOSED + recalibrated:**
-  - REVL-04 wp-bench: 0.4603 ≥ 0.4537 → PASS (codegen reproduced grid exactly).
-  - sentinel: 0/24 policy false-pass → PASS (confirmed safe under recalibration).
-  - REVL-01A Spearman 0.240 < 0.263 → FAIL — but a NOISE-BAND fail: bootstrap 95% CI [0.061,0.410]
-    SPANS the bar; paired Δρ(merged−grid) CI [−0.169,+0.052] INCLUDES 0 (not significant); REVL-01B
-    teacher-corr ROSE (0.504 vs 0.476). Rank-invariant → not recalibratable.
-  - confusion false_FAIL 0.452 > 0.403 → FAIL (recalibration improved 0.468→0.452; explicit-FAIL
-    token floor blocks full clearance). CI [0.265,0.537] spans bar — also within noise.
-  - REVL-02 PHPCS 0.9412 < 0.98 → FAIL — small-N (1/17), binomially non-binding.
-  - SOFT all healthy (REVL-03 0.831, REVL-07 F1 0.721, REVL-08 normal, REVL-06 N/A).
+**Outcome:** v1.2 reasoning-merged-v4 promoted to canonical `models/qwen3-30b-wp-30_70-reasoning-merged-v4`
+(13 shards), serves correctly. Post-merge 10+10 validation: **wp_gen 10/10, wp_judge 10/10, routing 20/20**.
 
-**MECHANISM DIAGNOSIS (04.4-D-V4-JUDGE-MECHANISM-DIAGNOSIS.md, human chose "diagnose first"):** The
-"judge degradation" is NOT a skill loss. The merge applies a SIGNIFICANT rank-preserving calibration
-offset (−3.58pt, 95% CI [−6.09,−1.24], ~2.9 SE) while judge RANKING skill is statistically
-unchanged. All 3 residual fails are noise-band (REVL-01A, confusion) or small-N (REVL-02) — the model
-is statistically indistinguishable from the validated grid winner that PASSED. Offset is a bf16-merge
-inference artifact, not a training deficiency → retrain is low-value.
+**How it closed (D-V4-10 waiver):** The automated 8-gate cascade returned `automated_pass=false` on 3
+blockers — REVL-01A Spearman 0.240<0.263, confusion false_FAIL 0.452>0.403, REVL-02 PHPCS 0.9412 (1/17).
+The mechanism diagnosis (`04.4-D-V4-JUDGE-MECHANISM-DIAGNOSIS.md`) proved all 3 are statistically weak:
+bootstrap CIs span their bars, paired Δρ(merged−grid) includes 0, REVL-01B teacher-corr ROSE — the model
+is statistically indistinguishable from the grid winner that PASSED 4.3. The only real effect is a
+SIGNIFICANT but rank-preserving −3.58pt calibration offset (bf16-merge artifact), corrected downstream.
+REVL-04 codegen PASSED (0.4603, reproduced grid exactly). Human chose: diagnose → recalibrate (cleared 0
+gates, offset rank-invariant) → **WAIVER** (D-V4-10) → REVL-05 sign-off (regression scan clean:
+invalid-PHP-pass 0/24, terse 0.8%) → triple-gated promote.
 
-**RECALIBRATION DONE (D-V4-09):** judge score_offset=+3.58 recorded in
-`output/eval_reasoning_v4_winner/judge_recalibration.json` — MUST be inherited by Phase 8's 30%
-wp_judge reward (gate/reward consistency). It cleared 0 failing gates (offset is rank-invariant +
-explicit-FAIL floor) but confirmed sentinel safe + produced the Phase-8 constant.
+**Forward obligations (todos created):**
+  - **Phase 8 MUST inherit the judge recalibration** `output/eval_reasoning_v4_winner/judge_recalibration.json`
+    (score_offset=+3.58, D-V4-09) as a HARD input to the 30% wp_judge reward — gate/reward consistency.
+  - **Phase 7/8 gate definitions** should adopt a CI-aware noise-band disposition (require bootstrap
+    lower bound to clear the bar, measured identically on baseline + candidate) — D-V4-10 hardening.
 
-Next: **HUMAN WAIVER DECISION on 3 residual blockers** (all statistically weak: REVL-01A noise-band,
-confusion noise-band, REVL-02 small-N). Options: (a) WAIVER → run Wave 4 REVL-05 human review +
-promote (diagnosis-backed: indistinguishable from passing grid winner; judge ranking intact); (b)
-RETRAIN (re-open 04.3 — low expected value per diagnosis). recalibrated verdict:
-`output/eval_reasoning_v4_winner/automated_verdict.recalibrated.json`. Ledger:
-`.planning/phases/04.4-reasoning-eval-adapter-merge-inserted/04.4-GATE-LEDGER-V4-WINNER.md`
+Next: Phase 04.4 complete. The v1.2 reasoning model unblocks **Phase 7 (Router Profiling)** — the
+downstream v2.0 dependency. NOTE: `phase.complete` routed `next_phase=06` (Adaptive Training Planner),
+but Phase 6 is a v1.1 phase already marked complete 2026-04-01 (its detail checkbox is stale) — confirm
+the intended next phase (likely Phase 7) before planning. Artifacts: `04.4-04-SUMMARY.md`,
+`04.4-D-V4-10-WAIVER.md`, `postmerge_validation_v4.json`.
 
 ---
 ### (Historical, superseded) Pre-04.4 RC-A/RC-B diagnosis — RC-A was the harness ghost, now fixed
@@ -129,7 +122,7 @@ Progress: [█████████░] 94%
 
 **Velocity:**
 
-- Total plans completed: 4
+- Total plans completed: 9
 - Average duration: 9 min
 - Total execution time: 0.62 hours
 
@@ -140,6 +133,7 @@ Progress: [█████████░] 94%
 | 01-pipeline-ready | 2 | 27 min | 13 min |
 | 02-dataset-production | 2 | ~10 min | ~5 min |
 | 03-model-prep-and-training | 2 | 34 min | 17 min |
+| 04.4 | 5 | - | - |
 
 **Recent Trend:**
 
@@ -376,7 +370,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Ready to execute
+**Status:** Ready to plan
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)
