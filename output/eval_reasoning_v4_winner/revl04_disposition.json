@@ -1,0 +1,24 @@
+{
+  "gate": "REVL-04",
+  "revl04_reasoning": 0.4603,
+  "baseline": 0.4537,
+  "meets_baseline": true,
+  "per_dim": {
+    "knowledge": 0.490625,
+    "correctness": 0.4375
+  },
+  "rebench_ran": true,
+  "wp_env_healthy": true,
+  "source": "output/eval_reasoning_v4_winner/revl04_rebench/",
+  "fresh_baseline_drift_check": 0.4299,
+  "fresh_baseline_note": "The fresh-benched baseline-v2 scored 0.4299, landing 0.024 below the 0.4537 policy constant (D-V4-02/D-N8). This is a drift sanity-check only — the policy bar is pinned at 0.4537 (the full 344-test grid baseline from 04.3-04). Reasoning v4-winner 0.4603 clears BOTH the policy bar (0.4603 >= 0.4537) AND the fresh baseline (0.4603 > 0.4299), so the REVL-04 gate passes robustly under both comparisons.",
+  "reuse_revl04": false,
+  "wp_env_preflight": "wp core is-installed exit 0 confirmed pre-launch (canonical REVL-04-COMPLETION.md check)",
+  "rebench_path": {
+    "summary": "output/eval_reasoning_v4_winner/revl04_rebench/summary.json",
+    "wp_bench_results": "output/eval_reasoning_v4_winner/revl04_rebench/04.4_wp_bench_results.json",
+    "reasoning_dir": "output/eval_reasoning_v4_winner/revl04_rebench/reasoning_merged/",
+    "baseline_dir": "output/eval_reasoning_v4_winner/revl04_rebench/baseline_30_70/"
+  },
+  "timestamp": "2026-06-13T12:04:00Z"
+}
