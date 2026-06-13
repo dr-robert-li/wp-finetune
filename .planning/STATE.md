@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: executing
-stopped_at: Phase 04.3 COMPLETE — corrective Tinker MoE-only rank×replay grid run end-to-end; winner r32-rp30 (rank32/replay30%) cleared REVL-04 wp-bench 0.4603 ≥ 0.4537 (confirmed via deterministic re-run) with judge gates passing (ρ0.294, sentinel 0/24, recall 0.69, FS-stable); exported models/tinker_export/wp-reasoning-v4-winner/checkpoint.tar. Next: Phase 04.4 merge-fix re-gate (post-merge REVL-01..05) of the v4 adapter.
-last_updated: "2026-06-12T07:10:00.000Z"
+stopped_at: Phase 04.4 context gathered (v4-winner re-gate, iteration 2)
+last_updated: "2026-06-13T06:07:59.458Z"
 progress:
   total_phases: 9
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 36
-  completed_plans: 36
-  percent: 72
+  completed_plans: 34
+  percent: 78
 ---
 
 # Project State
@@ -218,8 +218,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-11T01:51:36.165Z
-Stopped at: Phase 04.3 context gathered (corrective-retrain re-open)
+Last session: 2026-06-13T06:07:59.449Z
+Stopped at: Phase 04.4 context gathered (v4-winner re-gate, iteration 2)
 
 Prior session: 2026-06-02T21:31:00.000Z
 Stopped at: Phase 4.4 CLOSED **REJECTED** at REVL-05 (human). All automated gates run; merge NOT promoted; D-05 disposition pending (recommend Phase 4.3 format-stability re-train). See `04.4-GATE-LEDGER.md` + `04.4-D05-DIAGNOSIS.md`. Resume = decide D-05.
@@ -264,7 +264,7 @@ Stopped at: W1-W6 cascade BLOCKED on eval-harness prose compat (2 layers). Findi
   - **CERTIFIED VERDICT (c246a20)**: smoke_pass=True exit=0 distinctness=0.879. judge 5/5 (prose 9/9 dims + 1 CtF json), gen 5/5 php_lint, baseline-sim 0.02-0.42 (<0.85 canary → reasoning diverges). Artifact: merge-artifacts/w0_03_smoke_PASS_verdict.json.
   - Data finding flagged: reasoning judge output is dimensional PROSE (CoT) or JSON (CtF), NOT <REASONING>-tagged. parse_judge_response(JSON-only) would have false-failed all CoT — coherence redesigned prose-aware + json-aware.
 
-Resume file: None
+Resume file: .planning/phases/04.4-reasoning-eval-adapter-merge-inserted/04.4-CONTEXT.md
 Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertions + smoke-gate hardening), THEN W0-03 smoke gate against models/qwen3-30b-wp-30_70-reasoning-merged/ vs models/qwen3-30b-wp-30_70-merged-v2/ baseline, THEN REVL-01..08 eval gates
 
 ### Session 2026-05-29 reasoning MERGE COMPLETE + PROMOTED
