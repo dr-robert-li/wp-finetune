@@ -1,0 +1,228 @@
+{
+  "n": 24,
+  "raw_false_pass": 0,
+  "policy_false_pass": 0,
+  "correct_fail": 24,
+  "unparseable": 0,
+  "pass_score_threshold": 60.0,
+  "policy_threshold": 66.42,
+  "gate_pass": true,
+  "rows": [
+    {
+      "index": 0,
+      "defect_category": "syntax_missing_brace",
+      "verdict": "FAIL",
+      "overall_score": 45.0,
+      "raw_false_pass": false,
+      "policy_false_pass": false,
+      "response_head": "WPCS Compliance: score 3/10 \u2014 The function `wp_get_total` is missing its closing brace, which is a critical syntax error. It also lacks a proper docblock. While"
+    },
+    {
+      "index": 1,
+      "defect_category": "syntax_missing_semicolon",
+      "verdict": "FAIL",
+      "overall_score": 19.0,
+      "raw_false_pass": false,
+      "policy_false_pass": false,
+      "response_head": "register_my_widget() is missing its opening brace and the get_option() call is missing its semicolon, so the function does not parse.\n\nWPCS Compliance: score 3/"
+    },
+    {
+      "index": 2,
+      "defect_category": "syntax_unclosed_string",
+      "verdict": "FAIL",
+      "overall_score": 19.0,
+      "raw_false_pass": false,
+      "policy_false_pass": false,
+      "response_head": "my_notice() is missing its closing > and the div is never closed, so all subsequent page content is swallowed into the notice div and the page is malformed.\n\nWP"
+    },
+    {
+      "index": 3,
+      "defect_category": "syntax_unclosed_paren",
+      "verdict": "FAIL",
+      "overall_score": null,
+      "raw_false_pass": false,
+      "policy_false_pass": false,
+      "response_head": "The function body is missing its closing brace before the semicolon, so the file does not parse.\n\nWPCS Compliance: score 3/10 \u2014 Unparseable code cannot satisfy "
+    },
+    {
+      "index": 4,
+      "defect_category": "syntax_stray_token",
+      "verdict": "FAIL",
+      "overall_score": 19.0,
+      "raw_false_pass": false,
+      "policy_false_pass": false,
+      "response_head": "my_calc() uses the invalid `+*` operator, which is not a valid PHP or WordPress operator and would cause a parse error.\n\nWPCS Compliance: score 4/10 \u2014 No PHPDoc"
+    },
+    {
+      "index": 5,
+      "defect_category": "syntax_unclosed_array",
+      "verdict": "FAIL",
+      "overall_score": 19.0,
+      "raw_false_pass": false,
+      "policy_false_pass": false,
+      "response_head": "The function body is missing \u2014 the return statement is not inside any block, and there is no closing brace. The code cannot be evaluated.\n\nWPCS Compliance: scor"
+    },
+    {
+      "index": 6,
+      "defect_category": "syntax_bad_arrow",
+      "verdict": "FAIL",
+      "overall_score": 47.0,
+      "raw_false_pass": false,
+      "policy_false_pass": false,
+      "response_head": "WPCS Compliance: score 3/10 \u2014 camelCase function name violates WPCS snake_case convention; no PHPDoc block; missing type hints; arrow function syntax is valid P"
+    },
+    {
+      "index": 7,
+      "defect_category": "syntax_double_semicolon_func",
+      "verdict": "FAIL",
+      "overall_score": 25.0,
+      "raw_false_pass": false,
+      "policy_false_pass": false,
+      "response_head": "WPCS Compliance: score 3/10 \u2014 The function name is malformed with double semicolons (`function;;`). PHP will parse this as a function declaration followed by an"
+    },
+    {
+      "index": 8,
+      "defect_category": "xss_unescaped_echo",
+      "verdict": "FAIL",
+      "overall_score": 22.0,
+      "raw_false_pass": false,
+      "policy_false_pass": false,
+      "response_head": "show_user_name() concatenates $_GET['name'] into an HTML string, a reflected XSS pattern that passes user input to echo without any escaping.\n\nWPCS Compliance: "
+    },
+    {
+      "index": 9,
+      "defect_category": "xss_unescaped_attr",
+      "verdict": "FAIL",
+      "overall_score": 22.0,
+      "raw_false_pass": false,
+      "policy_false_pass": false,
+      "response_head": "render_link() concatenates $_REQUEST['url'] into an href attribute, a cross-site scripting sink that captures any URL parameter and injects it into the page wit"
+    },
+    {
+      "index": 10,
+      "defect_category": "xss_printf_raw",
+      "verdict": "FAIL",
+      "overall_score": 23.0,
+      "raw_false_pass": false,
+      "policy_false_pass": false,
+      "response_head": "my_title() prints $_GET['t'] into a <title> tag without any escaping, a stored/reflected XSS sink.\n\nWPCS Compliance: score 4/10 \u2014 No PHPDoc block and the snippe"
+    },
+    {
+      "index": 11,
+      "defect_category": "sqli_direct_concat",
+      "verdict": "FAIL",
+      "overall_score": 20.0,
+      "raw_false_pass": false,
+      "policy_false_pass": false,
+      "response_head": "get_user_posts() interpolates $_GET['uid'] into an SQL string, a textbook SQL-injection pattern.\n\nWPCS Compliance: score 4/10 \u2014 No PHPDoc block and the snippet "
+    },
+    {
+      "index": 12,
+      "defect_category": "sqli_query_interp",
+      "verdict": "FAIL",
+      "overall_score": 19.0,
+      "raw_false_pass": false,
+      "policy_false_pass": false,
+      "response_head": "delete_meta() concatenates $_POST['k'] into a DELETE query, a SQL injection with no prepare or esc_like.\n\nWPCS Compliance: score 4/10 \u2014 No PHPDoc block and the "
+    },
+    {
+      "index": 13,
+      "defect_category": "no_nonce_delete",
+      "verdict": "FAIL",
+      "overall_score": 22.0,
+      "raw_false_pass": false,
+      "policy_false_pass": false,
+      "response_head": "The admin_post handler force-deletes a post with no nonce or capability check, enabling CSRF-driven post deletion from any page.\n\nWPCS Compliance: score 4/10 \u2014 "
+    },
+    {
+      "index": 14,
+      "defect_category": "no_cap_check_option",
+      "verdict": "FAIL",
+      "overall_score": 23.0,
+      "raw_false_pass": false,
+      "policy_false_pass": false,
+      "response_head": "save_settings() writes a POST value to the WP options table without any nonce or capability check, a CSRF + missing-authorisation pattern that will write arbitr"
+    },
+    {
+      "index": 15,
+      "defect_category": "this_outside_class",
+      "verdict": "FAIL",
+      "overall_score": 45.0,
+      "raw_false_pass": false,
+      "policy_false_pass": false,
+      "response_head": "WPCS Compliance: score 3/10 \u2014 The function `get_widget_title()` lacks a docblock, violating WordPress Coding Standards (WPCS) which require documentation for al"
+    },
+    {
+      "index": 16,
+      "defect_category": "self_outside_class",
+      "verdict": "FAIL",
+      "overall_score": 29.0,
+      "raw_false_pass": false,
+      "policy_false_pass": false,
+      "response_head": "build() references self::$instance without any null or class check, which will cause a fatal error or E_STRICT notice if the singleton has not yet been instanti"
+    },
+    {
+      "index": 17,
+      "defect_category": "fabricated_wp_fn",
+      "verdict": "FAIL",
+      "overall_score": 23.0,
+      "raw_false_pass": false,
+      "policy_false_pass": false,
+      "response_head": "cache_user() calls wp_store_user_cache_forever(), which is not a real WordPress function and fatals at runtime.\n\nWPCS Compliance: score 4/10 \u2014 No PHPDoc block a"
+    },
+    {
+      "index": 18,
+      "defect_category": "fabricated_wp_fn2",
+      "verdict": "FAIL",
+      "overall_score": 45.0,
+      "raw_false_pass": false,
+      "policy_false_pass": false,
+      "response_head": "WPCS Compliance: score 3/10 \u2014 The function `get_theme_color()` is a bare return statement with no docblock, no function comment, and no visibility modifier. It "
+    },
+    {
+      "index": 19,
+      "defect_category": "truncated_dangling",
+      "verdict": "FAIL",
+      "overall_score": 45.0,
+      "raw_false_pass": false,
+      "policy_false_pass": false,
+      "response_head": "WPCS Compliance: score 3/10 \u2014 The code snippet is syntactically incomplete \u2014 the `foreach` block and the function itself are not closed. This violates basic PHP"
+    },
+    {
+      "index": 20,
+      "defect_category": "truncated_undeclared_var",
+      "verdict": "FAIL",
+      "overall_score": 35.0,
+      "raw_false_pass": false,
+      "policy_false_pass": false,
+      "response_head": "WPCS Compliance: score 3/10 \u2014 The code snippet is syntactically incomplete. It shows an array assignment inside a loop (implied by the closing brace and the fun"
+    },
+    {
+      "index": 21,
+      "defect_category": "undefined_constant_call",
+      "verdict": "FAIL",
+      "overall_score": 47.0,
+      "raw_false_pass": false,
+      "policy_false_pass": false,
+      "response_head": "WPCS Compliance: score 3/10 \u2014 camelCase function name violates WPCS snake_case convention; no PHPDoc block; trailing newline missing; minimal whitespace violati"
+    },
+    {
+      "index": 22,
+      "defect_category": "wrong_hook_signature",
+      "verdict": "FAIL",
+      "overall_score": 45.0,
+      "raw_false_pass": false,
+      "policy_false_pass": false,
+      "response_head": "The the_content filter callback converts the raw post content to uppercase with no escaping, producing all-caps HTML output that cannot be edited or styled norm"
+    },
+    {
+      "index": 23,
+      "defect_category": "infinite_recursion",
+      "verdict": "FAIL",
+      "overall_score": 35.0,
+      "raw_false_pass": false,
+      "policy_false_pass": false,
+      "response_head": "WPCS Compliance: score 3/10 \u2014 No PHPDoc block and the snippet shows formatting/style gaps; below WPCS expectations.\n\nSQL Safety: score None/10 \u2014 No $wpdb usage "
+    }
+  ]
+}

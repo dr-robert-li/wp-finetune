@@ -1,0 +1,896 @@
+{
+  "threshold": 66.42,
+  "n": 121,
+  "teacher_dist": {
+    "PASS": 62,
+    "FAIL": 58,
+    "null": 1
+  },
+  "raw": {
+    "false_FAIL_on_teacherPASS": [
+      27,
+      62,
+      0.43548387096774194
+    ],
+    "recall_on_teacherFAIL": [
+      49,
+      58,
+      0.8448275862068966
+    ],
+    "confusion": {
+      "FAIL->FAIL": 49,
+      "FAIL->PASS": 9,
+      "PASS->FAIL": 27,
+      "PASS->PASS": 35,
+      "None->FAIL": 1
+    }
+  },
+  "policy": {
+    "false_FAIL_on_teacherPASS": [
+      28,
+      62,
+      0.45161290322580644
+    ],
+    "recall_on_teacherFAIL": [
+      49,
+      58,
+      0.8448275862068966
+    ],
+    "confusion": {
+      "FAIL->FAIL": 49,
+      "FAIL->PASS": 9,
+      "PASS->FAIL": 28,
+      "PASS->PASS": 34,
+      "None->FAIL": 1
+    }
+  },
+  "rows": [
+    {
+      "index": 0,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 70.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 1,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 100.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 2,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 100.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 3,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 95.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 4,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 45.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 5,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 70.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 6,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 49.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 7,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": null,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 8,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 85.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 9,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 65.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 10,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 95.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 11,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 95.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 12,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 63.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 13,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 53.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 14,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 57.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 15,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 100.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 16,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 44.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 17,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 100.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 18,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 43.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 19,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 95.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 20,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 35.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 21,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 45.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 22,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 35.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 23,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 100.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 24,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 59.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 25,
+      "teacher": "FAIL",
+      "model_raw": "PASS",
+      "overall": 75.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 26,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 39.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 27,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 35.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 28,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 90.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 29,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 45.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 30,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 95.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 31,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 100.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 32,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 85.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 33,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 49.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 34,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 25.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 35,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 45.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 36,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 35.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 37,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 75.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 38,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 100.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 39,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 95.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 40,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 45.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 41,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 43.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 42,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 49.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 43,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 25.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 44,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 25.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 45,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 63.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 46,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 95.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 47,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 65.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 48,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": null,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 49,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 45.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 50,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 88.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 51,
+      "teacher": "FAIL",
+      "model_raw": "PASS",
+      "overall": 95.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 52,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 43.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 53,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 69.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 54,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 43.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 55,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 25.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 56,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 95.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 57,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 69.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 58,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 43.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 59,
+      "teacher": "FAIL",
+      "model_raw": "PASS",
+      "overall": 85.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 60,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 23.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 61,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 85.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 62,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 100.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 63,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 15.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 64,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 35.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 65,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 45.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 66,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 25.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 67,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 45.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 68,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 45.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 69,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 85.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 70,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 45.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 71,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 35.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 72,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 19.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 73,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 95.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 74,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 75.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 75,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 95.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 76,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 45.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 77,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 73.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 78,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 49.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 79,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 85.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 80,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 45.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 81,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 25.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 82,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 15.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 83,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 95.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 84,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 45.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 85,
+      "teacher": "FAIL",
+      "model_raw": "PASS",
+      "overall": 75.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 86,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 45.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 87,
+      "teacher": "FAIL",
+      "model_raw": "PASS",
+      "overall": 95.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 88,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 25.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 89,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 45.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 90,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 45.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 91,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": null,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 92,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 23.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 93,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 45.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 94,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 49.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 95,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 65.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 96,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 61.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 97,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 35.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 98,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 25.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 99,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": null,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 100,
+      "teacher": "FAIL",
+      "model_raw": "PASS",
+      "overall": 85.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 101,
+      "teacher": "FAIL",
+      "model_raw": "PASS",
+      "overall": 85.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 102,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 43.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 103,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 35.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 104,
+      "teacher": "FAIL",
+      "model_raw": "PASS",
+      "overall": 85.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 105,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 49.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 106,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 45.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 107,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": null,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 108,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 45.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 109,
+      "teacher": "FAIL",
+      "model_raw": "PASS",
+      "overall": 95.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 110,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 35.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 111,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 45.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 112,
+      "teacher": "PASS",
+      "model_raw": "PASS",
+      "overall": 95.0,
+      "model_policy": "PASS"
+    },
+    {
+      "index": 113,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 47.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 114,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 15.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 115,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 45.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 116,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 45.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 117,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 23.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 118,
+      "teacher": "PASS",
+      "model_raw": "FAIL",
+      "overall": 75.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 119,
+      "teacher": "FAIL",
+      "model_raw": "FAIL",
+      "overall": 65.0,
+      "model_policy": "FAIL"
+    },
+    {
+      "index": 120,
+      "teacher": null,
+      "model_raw": "FAIL",
+      "overall": 45.0,
+      "model_policy": "FAIL"
+    }
+  ]
+}
