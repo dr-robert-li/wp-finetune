@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: executing
-stopped_at: Completed 04.4-02-PLAN.md
-last_updated: "2026-06-13T12:09:51.721Z"
+stopped_at: Completed 04.4-03-PLAN.md (8-gate cascade, automated_pass=false)
+last_updated: "2026-06-13T12:25:25.096Z"
 progress:
   total_phases: 9
   completed_phases: 7
   total_plans: 33
-  completed_plans: 30
+  completed_plans: 31
   percent: 78
 ---
 
@@ -28,7 +28,7 @@ Phase: 04.4 (reasoning-eval-adapter-merge-inserted) — EXECUTING
 (r32-rp30, MoE-only rank32/replay30%) exported: REVL-04 wp-bench 0.4603 ≥ 0.4537 (confirmed,
 deterministic) + judge gates pass (ρ0.294, sentinel 0/24, recall 0.69, FS-stable). 8/9 candidates
 filtered cheaply by the judge economy. Hand-off to Phase 04.4 for the post-merge re-gate.
-Plan: 3 of 4
+Plan: 4 of 4
 Next: **RC-B is the SOLE remaining blocker.** D-IT-02 diagnosis (debug session
 `reasoning-merge-gen-regression`) split the "merge regression" into two independent causes:
 
@@ -92,7 +92,7 @@ data: `scripts/build_reasoning_negatives.py` + `build_augmented_train.py`; gates
 Status: Ready to execute
 Note: Local artifacts `models/qwen3-30b-wp-30_70-merged-v2` + `...-reasoning-merged` + `adapters/.../checkpoint-72` are READ-ONLY references/fallback only (NOT promoted). The GB10 memory wall is documented in `output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md`. `04.3-REOPEN-PLAN.md` remains a 0-task brief — do not execute.
 
-Progress: [█████████░] 91%
+Progress: [█████████░] 94%
 
 ## Performance Metrics
 
@@ -138,6 +138,7 @@ Progress: [█████████░] 91%
 | Phase 04.3-reasoning-fine-tune-inserted P02 | 15 | 3 tasks | 5 files |
 | Phase 04.4-reasoning-eval-adapter-merge-inserted P01 | 15 | 2 tasks | 2 files |
 | Phase 04.4-reasoning-eval-adapter-merge-inserted P02 | bookkeeping-only | 2 tasks | 2 files |
+| Phase 04.4-reasoning-eval-adapter-merge-inserted P03 | 15m | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -183,6 +184,7 @@ Recent decisions affecting current work:
 - [Phase ?]: Added --adapter redirect to _04.4_anchors_v3.py so v4-winner tar overrides v3 default
 - [Phase ?]: reuse_revl04=false: grid staging shards absent, Plan 03 must re-bench REVL-04 on clean canonical staging
 - [Phase ?]: baseline pinned at 0.4537 policy constant (D-V4-02/D-N8); fresh-bench baseline 0.4299 recorded as drift check only in revl04_disposition.json
+- [Phase ?]: automated_pass=false: 3 HARD gate failures (REVL-01A rho 0.240<0.263, REVL-02 PHPCS 0.9412<0.98, confusion Pareto false-FAIL 0.468>0.403) block Wave 4 promotion
 
 ### Pending Todos
 
@@ -223,8 +225,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-13T12:09:51.712Z
-Stopped at: Completed 04.4-02-PLAN.md
+Last session: 2026-06-13T12:25:25.087Z
+Stopped at: Completed 04.4-03-PLAN.md (8-gate cascade, automated_pass=false)
 
 Prior session: 2026-06-02T21:31:00.000Z
 Stopped at: Phase 4.4 CLOSED **REJECTED** at REVL-05 (human). All automated gates run; merge NOT promoted; D-05 disposition pending (recommend Phase 4.3 format-stability re-train). See `04.4-GATE-LEDGER.md` + `04.4-D05-DIAGNOSIS.md`. Resume = decide D-05.
