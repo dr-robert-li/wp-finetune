@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: executing
-stopped_at: Phase 04.4 context gathered (v4-winner re-gate, iteration 2)
-last_updated: "2026-06-13T07:07:52.728Z"
+stopped_at: Completed 04.4-01-PLAN.md
+last_updated: "2026-06-13T07:41:32.658Z"
 progress:
   total_phases: 9
   completed_phases: 7
   total_plans: 33
-  completed_plans: 28
+  completed_plans: 29
   percent: 78
 ---
 
@@ -20,15 +20,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 04.4 — reasoning-eval-adapter-merge-inserted (re-gate the v4 winner adapter)
+**Current focus:** Phase 04.4 — reasoning-eval-adapter-merge-inserted
 
 ## Current Position
 
-Phase: 04.3 (reasoning-fine-tune-inserted) — COMPLETE (4/4 plans). Winner `wp-reasoning-v4-winner`
+Phase: 04.4 (reasoning-eval-adapter-merge-inserted) — EXECUTING
 (r32-rp30, MoE-only rank32/replay30%) exported: REVL-04 wp-bench 0.4603 ≥ 0.4537 (confirmed,
 deterministic) + judge gates pass (ρ0.294, sentinel 0/24, recall 0.69, FS-stable). 8/9 candidates
 filtered cheaply by the judge economy. Hand-off to Phase 04.4 for the post-merge re-gate.
-Plan: 4 of 4 (COMPLETE)
+Plan: 2 of 4
 Next: **RC-B is the SOLE remaining blocker.** D-IT-02 diagnosis (debug session
 `reasoning-merge-gen-regression`) split the "merge regression" into two independent causes:
 
@@ -92,7 +92,7 @@ data: `scripts/build_reasoning_negatives.py` + `build_augmented_train.py`; gates
 Status: Ready to execute
 Note: Local artifacts `models/qwen3-30b-wp-30_70-merged-v2` + `...-reasoning-merged` + `adapters/.../checkpoint-72` are READ-ONLY references/fallback only (NOT promoted). The GB10 memory wall is documented in `output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md`. `04.3-REOPEN-PLAN.md` remains a 0-task brief — do not execute.
 
-Progress: [█████████░] 92%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 
@@ -136,6 +136,7 @@ Progress: [█████████░] 92%
 | Phase 04.3-reasoning-fine-tune-inserted P03 | 4min | 3 tasks | 2 files |
 | Phase 04.3 P01 | 18min | 3 tasks | 3 files |
 | Phase 04.3-reasoning-fine-tune-inserted P02 | 15 | 3 tasks | 5 files |
+| Phase 04.4-reasoning-eval-adapter-merge-inserted P01 | 15 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -178,6 +179,8 @@ Recent decisions affecting current work:
 - [Phase 04.3]: Preserved --exclude-lm-head merge_type on non-MoE-only path in merge_tinker_v3.py to avoid silent regression: PATTERNS only set merge_type in is_moe_only branch; added else branch for tinker_per_expert_moe_plus_peft_attention_NO_lm_head (Rule 1 auto-fix)
 - [Phase 04.3]: Used patch.object on force-resolved lazy transformers class objects (_AMFCLM = transformers.AutoModelForCausalLM at import time) rather than patch('transformers.AutoModelForCausalLM'): _LazyModule always re-derives class from internal mapping bypassing __dict__ writes; patching from_pretrained on the resolved class is the only reliable intercept
 - [Phase ?]: Phase 04.3-02: Body-keyed leakage guard for wp_gen replay; pool is 66K+ not short
+- [Phase ?]: Added --adapter redirect to _04.4_anchors_v3.py so v4-winner tar overrides v3 default
+- [Phase ?]: reuse_revl04=false: grid staging shards absent, Plan 03 must re-bench REVL-04 on clean canonical staging
 
 ### Pending Todos
 
@@ -218,8 +221,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-13T06:07:59.449Z
-Stopped at: Phase 04.4 context gathered (v4-winner re-gate, iteration 2)
+Last session: 2026-06-13T07:41:32.649Z
+Stopped at: Completed 04.4-01-PLAN.md
 
 Prior session: 2026-06-02T21:31:00.000Z
 Stopped at: Phase 4.4 CLOSED **REJECTED** at REVL-05 (human). All automated gates run; merge NOT promoted; D-05 disposition pending (recommend Phase 4.3 format-stability re-train). See `04.4-GATE-LEDGER.md` + `04.4-D05-DIAGNOSIS.md`. Resume = decide D-05.
@@ -264,7 +267,7 @@ Stopped at: W1-W6 cascade BLOCKED on eval-harness prose compat (2 layers). Findi
   - **CERTIFIED VERDICT (c246a20)**: smoke_pass=True exit=0 distinctness=0.879. judge 5/5 (prose 9/9 dims + 1 CtF json), gen 5/5 php_lint, baseline-sim 0.02-0.42 (<0.85 canary → reasoning diverges). Artifact: merge-artifacts/w0_03_smoke_PASS_verdict.json.
   - Data finding flagged: reasoning judge output is dimensional PROSE (CoT) or JSON (CtF), NOT <REASONING>-tagged. parse_judge_response(JSON-only) would have false-failed all CoT — coherence redesigned prose-aware + json-aware.
 
-Resume file: .planning/phases/04.4-reasoning-eval-adapter-merge-inserted/04.4-CONTEXT.md
+Resume file: None
 Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertions + smoke-gate hardening), THEN W0-03 smoke gate against models/qwen3-30b-wp-30_70-reasoning-merged/ vs models/qwen3-30b-wp-30_70-merged-v2/ baseline, THEN REVL-01..08 eval gates
 
 ### Session 2026-05-29 reasoning MERGE COMPLETE + PROMOTED
