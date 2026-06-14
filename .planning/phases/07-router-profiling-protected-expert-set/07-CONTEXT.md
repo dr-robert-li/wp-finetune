@@ -41,9 +41,21 @@ there is exactly one ratio — already merged and promoted in v1.2. No ratio is 
   the protection/headroom trade-off with data rather than re-deciding blind.
 
 ### Profiling stimulus + methodology
-- **D-05:** Drive forward-pass routing capture with the **existing 4.4 captures** — the `<wp_gen>`
-  generation tasks + `<wp_judge>` val prompts already used in the eval set — balanced gen/judge so
-  per-task expert affinity is clean and consistent with how the model is evaluated.
+- **D-05 (AMENDED 2026-06-14):** Drive forward-pass routing capture with the **training data**
+  (`openai_train.jsonl` per-ratio, via `discover_dataset_dirs()` — the same stimulus that produced the
+  D-08 baseline `base_model_eeff.jsonl`). This yields a **clean, matched E_eff delta** vs base and
+  carries `<wp_gen>`/`<wp_judge>` task tokens natively for the PROF-02 per-task split.
+  - **Why amended:** the original D-05 chose "4.4 eval captures" on a *balanced gen/judge* premise that
+    is factually false — the captures are **17 `<wp_gen>` : 155 `<wp_judge>` (≈9:1)**, which would make
+    wp_gen routing statistics unreliable AND mismatch the training-data baseline (confounding D-08).
+    Training data gives ~600× more wp_gen signal and zero baseline rework. (Decided via
+    AskUserQuestion, 2026-06-14; supersedes original D-05.)
+  - **Trade-off accepted:** the protected mask (D-03) reflects *training-data* routing rather than
+    eval/production routing. Acceptable given the conservative co-activation rule errs toward
+    over-protection; revisitable in Phase 13 via the D-04 sensitivity table.
+  - **Original D-05 (superseded):** "Drive forward-pass routing capture with the existing 4.4 captures
+    — the `<wp_gen>` generation tasks + `<wp_judge>` val prompts already used in the eval set —
+    balanced gen/judge."
 - **D-06:** Use the **10% subsample with Jaccard ≥ 0.94** vs full-set ranking per ratio
   (ROADMAP §7 SC3); re-profile with a larger subsample if Jaccard fails.
 
