@@ -355,7 +355,12 @@ Plans:
   - Idempotency: `idempotency_check="output/profiling/{ratio}/routing_report.json"`
   - Execution test loop: after each ratio profile, validate Jaccard >=0.94 against full-set; if fail → re-profile with larger subsample and re-test
   - Human review checkpoint: present E_eff comparison table + protected expert set before ratio selection
-**Plans**: 1 plan
+  - **NOTE (CONTEXT D-01):** SC5 multi-ratio decision matrix DROPPED — Phase-4 triage gave NO_SURVIVORS except 30/70; single survivor already merged/promoted. PROF-05 + GATE-01 are N/A-with-rationale. Stimulus = matched training data (`data/final_dataset/ratio_30_70/openai_train.jsonl`) per amended D-05.
+**Plans**: 2 plans
+
+Plans:
+- [ ] 07-01-PLAN.md — Profiling code + tests + run-profiling skill (merged-model profiler, Jaccard PROF-03, concentration PROF-04, protected mask D-03/D-04, bootstrap CI D-09) — autonomous, GPU-free
+- [ ] 07-02-PLAN.md — DGX profiling run + post-processing + PROF-05/GATE-01 N/A rationale + human sign-off checkpoint
 
 ### Phase 8: Reward Infrastructure
 **Goal**: A composite reward pipeline is built and validated end-to-end before any RL training begins — PHPCS anchor, security hard gate, VeRPO partial credit, MO-GRPO normalization, and anti-hack eval set all verified independently
