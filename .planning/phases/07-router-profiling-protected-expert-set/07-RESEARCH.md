@@ -99,11 +99,13 @@ was generated from ratio training data (`data/final_dataset/`), not eval capture
 stimulus mismatch for D-08 delta reporting. These two findings together constitute the primary open
 planning decision: the planner must choose a profiling stimulus strategy before tasks can be written.
 
-**Primary recommendation:** Supplement D-05 eval captures with the 30/70 training data
-(`data/final_dataset/ratio_30_70/openai_train.jsonl`, 34,855 records) as the primary profiling
-stimulus — this provides balanced wp_gen/wp_judge coverage AND matches the baseline stimulus, enabling
-a clean D-08 delta. Keep the eval captures as secondary stimulus for "aligned with eval" validation.
-The planner must confirm this with the user as an open question before writing task plans.
+**LOCKED-DECISION CONFLICT (requires discuss-phase re-decision before planning):**
+D-05 locks the stimulus to the existing 4.4 eval captures. D-08 requires computing an E_eff delta
+against `base_model_eeff.jsonl`, which was generated from training data (`data/final_dataset/`), not
+eval captures. If Phase 7 profiles the merged model on eval captures only, the D-08 delta conflates
+fine-tuning routing shift with stimulus change — defeating D-08's stated purpose. The two locked
+decisions are mutually unsatisfiable for a clean delta. This must be resolved in discuss-phase before
+planning can write tasks. See Open Question 1.
 
 ---
 
@@ -401,9 +403,11 @@ CTF-format judge prompts. Only `eval_gen_results.jsonl` (17 records) contains `<
 for routing profiling.
 
 **How to avoid:** Supplement with training data. `data/final_dataset/ratio_30_70/openai_train.jsonl`
-(34,855 records) has a 30/70 wp_gen/wp_judge split matching the training ratio, providing ~10K
-wp_gen examples at 10% subsample. This also matches the stimulus used for `base_model_eeff.jsonl`,
-enabling clean D-08 delta reporting.
+(34,855 records) has a 30/70 record-level split (29.3% wp_gen / 70.7% wp_judge by record count,
+~15% / 85% by tokens since judge responses are longer) — providing ~10K wp_gen records at 10%
+subsample vs only 17 from eval captures. It also matches the stimulus used for `base_model_eeff.jsonl`,
+which would enable clean D-08 delta reporting. However, using it requires a discuss-phase re-decision
+on D-05 (which locks stimulus to eval captures) — see Open Question 1.
 
 **Warning signs:** wp_gen E_eff values with high variance across layers; protected mask flagging
 fewer experts than judge mask; Jaccard instability on wp_gen counts with 10% subsample.
@@ -418,10 +422,12 @@ the two most important confounders for "did fine-tuning change routing?".
 **Root cause:** D-08 was specified assuming matching stimuli; D-05 was specified assuming eval
 captures; neither specification noted the conflict.
 
-**How to avoid:** Use the same training data stimulus for both baseline and candidate profiles.
-The base_model_eeff.jsonl already exists for the base model on training data. Profile the merged
-model on the same training data to get a clean delta. If eval captures are also desired for
-completeness, run a secondary profile, but the D-08 delta must use matching stimuli.
+**How to avoid:** This conflict cannot be resolved by the planner — it is a locked-decision
+conflict between D-05 (eval captures) and D-08 (matching stimulus assumption). The planner must flag
+this to discuss-phase for re-decision. Pending that decision, document the stimulus choice and its
+implications in the routing report header. If the user re-decides to use training data as primary
+stimulus, the existing `base_model_eeff.jsonl` can be used directly as the D-08 baseline with
+matching stimulus — no re-profiling of the base model needed.
 
 **Warning signs:** E_eff deltas that are inexplicably large or inconsistent across layers when the
 merged model's router was frozen (D-07 states router was frozen during v1.2 LoRA — so deltas should
@@ -476,10 +482,14 @@ plain text rationale paragraph in the routing report, not a matrix. Document: "S
 
 ## Open Questions
 
-1. **CRITICAL: Profiling stimulus choice (must resolve before task planning)**
-   - What we know: D-05 specifies "existing 4.4 eval captures"; the captures have 17 wp_gen vs 155 wp_judge examples (9:1 imbalance); base_model_eeff.jsonl was generated from training data (34K records, matching D-08 comparison).
-   - What's unclear: The planner cannot write tasks without knowing whether the stimulus is (a) training data only, (b) eval captures only, or (c) training data primary + eval captures secondary.
-   - Recommendation: **Confirm with user.** Researcher recommendation: use training data as primary stimulus (matches baseline, balanced task split), add eval captures as secondary validation. This requires clarifying D-05 intent — "use 4.4 captures" may have assumed they were balanced.
+1. **LOCKED-DECISION CONFLICT: D-05 vs D-08 stimulus mismatch — requires discuss-phase re-decision**
+   - D-05 (locked): Profile stimulus = existing 4.4 eval captures (`output/eval_reasoning_v4_winner/`)
+   - D-08 (locked): E_eff delta against `base_model_eeff.jsonl` (which was generated from training data via `discover_dataset_dirs()`)
+   - Conflict: profiling on eval captures and computing delta vs training-data baseline conflates fine-tuning routing shift with stimulus change. Neither decision is in Claude's Discretion — both are locked.
+   - Evidence: eval captures = 17 wp_gen + 155 wp_judge (9:1 imbalance); training data = 29.3% wp_gen / 70.7% wp_judge by record (34,855 total); baseline stimulus = training data confirmed via `discover_dataset_dirs()` in profile_base_model.py.
+   - Resolution: This must go to discuss-phase. The planner cannot choose between locked decisions.
+   - If user re-decides to training data: D-08 delta is clean; no baseline re-profile needed; update D-05 scope note.
+   - If user confirms eval captures only: document D-08 delta as indicative only (different stimuli); planner adds a caveat task.
 
 2. **Jaccard Stability Subsample Definition**
    - What we know: D-06 says "10% subsample with Jaccard >= 0.94 vs full-set ranking per ratio"; profile_base_model.py computes 10% subsample of examples and profiles that subsample as the primary output (not a parallel full profile).
@@ -500,7 +510,7 @@ plain text rationale paragraph in the routing report, not a matrix. Document: "S
 | `models/qwen3-30b-wp-30_70-reasoning-merged-v4/` | PROF-01/07 (model to profile) | CONFIRMED EXISTS | 13 shards, config.json confirmed 48 layers / 128 experts / top-8 | — |
 | `output/profiling/base_model_eeff.jsonl` | D-08 (E_eff baseline) | CONFIRMED EXISTS | 240 records (48 layers × 5 ratios), model="base", stimulus=training data | — |
 | `output/eval_reasoning_v4_winner/` | D-05 (profiling stimulus — eval captures) | CONFIRMED EXISTS | 17 wp_gen + 155 wp_judge prompts (imbalanced — see Pitfall 1) | — |
-| `data/final_dataset/ratio_30_70/openai_train.jsonl` | Recommended primary stimulus | CONFIRMED EXISTS | 34,855 records, balanced 30/70 wp_gen/wp_judge split | — |
+| `data/final_dataset/ratio_30_70/openai_train.jsonl` | Alternative stimulus (if D-05 re-decided) | CONFIRMED EXISTS | 34,855 records, 30/70 by record count (~15/85 by tokens); matches D-08 baseline stimulus | — |
 | `scripts/profile_base_model.py` | PROF-01/02 (hook infrastructure) | CONFIRMED EXISTS | 25.3K, fully functional | — |
 | numpy, torch, transformers, peft | All PROF-* | Already installed in environment | — | — |
 | `wp-finetune:run-profiling` skill | DGX execution orchestration | DOES NOT EXIST | Must create at planning time (Wave 0 gap) | — |
@@ -582,7 +592,7 @@ base JSONL path.
 |---|-------|---------|---------------|
 | A1 | `layer.mlp.gate` hook still attaches correctly on merged model (not checked by loading model) | Architecture Patterns: Pattern 2 | Hook silently fails if gate module path changed; profiling produces zero counts. MITIGATION: script logs hook count at startup — verify 48 hooks registered. |
 | A2 | MoE router was frozen during v1.2 LoRA (D-07 assertion) | Summary, D-08 pitfall | If router weights changed, E_eff delta interpretation changes (expected vs unexpected shift). MITIGATION: document assumption in routing report header; check CONTEXT.md D-07 confirms this. |
-| A3 | `data/final_dataset/ratio_30_70/openai_train.jsonl` has balanced 30/70 wp_gen/wp_judge split | Pitfall 1, stimulus recommendation | If ratio refers to generation/judge split differently, the "balanced" stimulus claim is wrong. MITIGATION: run `grep -c '<wp_gen>' + grep -c '<wp_judge>'` on the file before using as stimulus. |
+| A3 | `data/final_dataset/ratio_30_70/openai_train.jsonl` record split is 30/70 wp_gen/wp_judge | Pitfall 1 note | Verified: 29.3% wp_gen / 70.7% wp_judge by record in 1K sample. Token split is ~15/85 (judge responses longer). Not "balanced" — but 10K wp_gen records at 10% subsample vs 17 in eval captures is 600x more gen signal. [VERIFIED: codebase] |
 
 **If this table is empty:** Not empty — 3 assumptions logged.
 
