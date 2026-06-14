@@ -47,7 +47,7 @@ metrics:
 
 # Phase 07 Plan 01: Profiling Infrastructure Summary
 
-One-liner: JWT-free MoE router profiling for reasoning-merged-v4 with Jaccard subsample stability, bootstrap-CI concentration metrics, and D-03 co-activation protected-expert mask.
+One-liner: GPU-free MoE router profiling for reasoning-merged-v4 with Jaccard subsample stability, bootstrap-CI concentration metrics, and D-03 co-activation protected-expert mask.
 
 ## What Was Built
 
@@ -141,8 +141,8 @@ All plan greps satisfied:
 All three tasks followed RED/GREEN cycle:
 
 - Task 1: RED `d3d1210` (pre-existing) → GREEN `da995c0`
-- Task 2: RED `05d5a19` → GREEN `02be014`
-- Task 3: RED `f85c9e4` → GREEN `c31d156`
+- Task 2: RED `2b6babc` → GREEN `02be014`
+- Task 3: RED `d45ae96` → GREEN `c31d156`
 
 ## Known Stubs
 
