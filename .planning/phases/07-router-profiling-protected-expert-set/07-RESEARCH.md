@@ -29,12 +29,16 @@ dual-purpose expert breaks the dual-mode model; over-protection only costs pruni
 alongside the chosen conservative mask, so Phase 13 (AIMER/REAP pruning) can revisit the
 protection/headroom trade-off with data rather than re-deciding blind.
 
-**D-05:** Drive forward-pass routing capture with the existing 4.4 captures — the `<wp_gen>`
-generation tasks + `<wp_judge>` val prompts already used in the eval set — balanced gen/judge
-so per-task expert affinity is clean and consistent with how the model is evaluated.
+**D-05 (AMENDED 2026-06-14):** Drive forward-pass routing capture with the **training data**
+(`data/final_dataset/ratio_30_70/openai_train.jsonl`, the same stimulus that produced the D-08
+baseline). The original "existing 4.4 captures" stimulus is SUPERSEDED — its "balanced gen/judge"
+premise was false (17 wp_gen : 155 wp_judge, 9:1). Training data gives a clean matched E_eff delta
+and ~600x more wp_gen signal. (Resolved via AskUserQuestion — see Open Question 1 below.)
 
-**D-06:** Use the 10% subsample with Jaccard >= 0.94 vs full-set ranking per ratio (ROADMAP §7 SC3);
-re-profile with a larger subsample if Jaccard fails.
+**D-06 (literal, RATIFIED 2026-06-14):** Use the 10% subsample with Jaccard >= 0.94 **vs full-set
+ranking** per ratio (ROADMAP §7 SC3); re-profile with a larger subsample if Jaccard fails. The
+cross-subsample A-vs-B proxy floated in Open Question 2 was REJECTED — implement subsample-vs-full
+literally (full 30/70 train set as reference ranking). (Resolved via AskUserQuestion.)
 
 **D-07:** Profile the merged `reasoning-merged-v4` model. The MoE router was frozen during v1.2 LoRA,
 so any routing shift comes from the weights feeding the gate — profiling the merged model captures
@@ -480,9 +484,16 @@ plain text rationale paragraph in the routing report, not a matrix. Document: "S
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED 2026-06-14)
 
-1. **LOCKED-DECISION CONFLICT: D-05 vs D-08 stimulus mismatch — requires discuss-phase re-decision**
+> All three resolved at planning time via orchestrator + AskUserQuestion. Summary:
+> Q1 → training data (D-05 amended). Q2 → subsample-vs-full literal (cross-subsample proxy REJECTED).
+> Q3 → `.npy [48,128]` + `.json` sidecar adopted.
+
+1. **(RESOLVED) LOCKED-DECISION CONFLICT: D-05 vs D-08 stimulus mismatch**
+   - **RESOLUTION:** User amended D-05 → training data (`data/final_dataset/ratio_30_70/openai_train.jsonl`),
+     matching the D-08 baseline stimulus. Clean delta, no baseline re-profile. (Original D-05's "balanced"
+     premise was false.)
    - D-05 (locked): Profile stimulus = existing 4.4 eval captures (`output/eval_reasoning_v4_winner/`)
    - D-08 (locked): E_eff delta against `base_model_eeff.jsonl` (which was generated from training data via `discover_dataset_dirs()`)
    - Conflict: profiling on eval captures and computing delta vs training-data baseline conflates fine-tuning routing shift with stimulus change. Neither decision is in Claude's Discretion — both are locked.
@@ -491,14 +502,16 @@ plain text rationale paragraph in the routing report, not a matrix. Document: "S
    - If user re-decides to training data: D-08 delta is clean; no baseline re-profile needed; update D-05 scope note.
    - If user confirms eval captures only: document D-08 delta as indicative only (different stimuli); planner adds a caveat task.
 
-2. **Jaccard Stability Subsample Definition**
-   - What we know: D-06 says "10% subsample with Jaccard >= 0.94 vs full-set ranking per ratio"; profile_base_model.py computes 10% subsample of examples and profiles that subsample as the primary output (not a parallel full profile).
-   - What's unclear: Does "full set" mean profile ALL examples (not just 10%) as the reference, or does "full-set ranking" refer to the ranking produced by 10% already being stable? Profiling 100% of 34K examples would be 10x slower.
-   - Recommendation: Profile 10% as primary, then independently profile a separate 10% subsample to validate stability. Cross-subsample Jaccard >= 0.94 is a practical proxy for full-set stability without 10x compute cost.
+2. **(RESOLVED) Jaccard Stability Subsample Definition**
+   - **RESOLUTION:** User ratified D-06 **literally** — "full set" means profile ALL examples as the
+     reference ranking, then Jaccard(10% subsample, full) >= 0.94. The cross-subsample A-vs-B proxy
+     recommended below was **REJECTED** (two noisy subsamples agreeing is weaker evidence than
+     subsample-vs-full). Accept the ~10x compute (one-time, single model).
+   - ~~Recommendation: cross-subsample Jaccard as a practical proxy~~ — REJECTED, see resolution.
 
-3. **Protected Mask Export Format for Phases 11/13**
-   - What we know: Phases 11/13 need the mask to filter experts from pruning. No format is specified in ROADMAP or REQUIREMENTS.
-   - Recommendation: Export as both `.npy` `[48, 128]` boolean array and `.json` sidecar `{layer_idx: [expert_ids]}`. The `.npy` is fast to load in PyTorch; the `.json` is human-readable and usable in config files.
+3. **(RESOLVED) Protected Mask Export Format for Phases 11/13**
+   - **RESOLUTION:** Adopted in plans — export both `.npy` `[48, 128]` boolean array and `.json`
+     sidecar `{layer_idx: [expert_ids]}`.
 
 ---
 
