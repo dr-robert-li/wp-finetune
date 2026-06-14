@@ -359,7 +359,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 07-01-PLAN.md — Profiling code + tests + run-profiling skill (merged-model profiler, Jaccard PROF-03, concentration PROF-04, protected mask D-03/D-04, bootstrap CI D-09) — autonomous, GPU-free
+- [x] 07-01-PLAN.md — Profiling code + tests + run-profiling skill (merged-model profiler, Jaccard PROF-03, concentration PROF-04, protected mask D-03/D-04, bootstrap CI D-09) — autonomous, GPU-free
 - [ ] 07-02-PLAN.md — DGX profiling run + post-processing + PROF-05/GATE-01 N/A rationale + human sign-off checkpoint
 
 ### Phase 8: Reward Infrastructure
@@ -557,7 +557,7 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 4.4. Reasoning Eval & Merge | v1.2 | 5/4 | Complete   | 2026-06-13 |
 | 5. Packaging and Deployment | v1.0 | 0/3 | Deferred to v3.0 | - |
 | 6. Adaptive Training Planner | v1.1 | 6/6 | Complete | 2026-04-01 |
-| 7. Router Profiling & Protected Expert Set | v2.0 | 0/? | Not started | - |
+| 7. Router Profiling & Protected Expert Set | v2.0 | 1/2 | In Progress|  |
 | 8. Reward Infrastructure | v2.0 | 0/? | Not started | - |
 | 9. GSPO Training | v2.0 | 0/? | Not started | - |
 | 10. RL Comparative Evaluation | v2.0 | 0/? | Not started | - |
