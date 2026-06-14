@@ -5,13 +5,13 @@ routing counts split by <wp_gen> vs <wp_judge> tokens. Computes E_eff
 (effective number of experts via Shannon entropy) per layer.
 
 Unlike profile_base_model.py, this script:
-  - Loads a MERGED checkpoint (no adapter, no PeftModel wrapper)
+  - Loads a MERGED checkpoint (no adapter, no PEFT wrapper)
   - Defaults to the ratio_30_70 stimulus (matched to baseline)
   - Computes subsample-vs-FULL Jaccard stability (PROF-03, D-06 literal)
   - Emits raw per-layer Jaccard array to jaccard_stability.json sidecar
 
-The CI-aware jaccard_ci_lower >= 0.94 gate lives in compute_concentration.py
-(Task 2). This script does NOT import bootstrap_ci or compute jaccard_ci_lower.
+The CI-aware gate (ci_lower >= 0.94) lives in compute_concentration.py (Task 2).
+This script does NOT import the CI helper or compute the ci gate value directly.
 
 Output (default):
   - output/profiling/reasoning-merged-v4/routing_report.jsonl
@@ -128,7 +128,7 @@ def profile_merged_model(
       - jaccard_stability.json  (raw 48-element per-layer Jaccard array)
 
     Args:
-        model: Loaded merged Qwen3-30B-A3B model (bfloat16, eval mode, NO PeftModel).
+        model: Loaded merged Qwen3-30B-A3B model (bfloat16, eval mode, no PEFT wrapper).
         tokenizer: Extended tokenizer from adapters/tokenizer/.
         data_path: Path to openai_train.jsonl (ratio_30_70 matched stimulus).
         full_subsample_frac: Fraction for the full reference pass (default 1.0 = all).
@@ -157,7 +157,7 @@ def profile_merged_model(
         n_layers=48, n_experts=128, top_k=top_k_jaccard, pad_token_id=pad_id
     )
 
-    # Register hooks — merged model has no PeftModel wrapper
+    # Register hooks — merged model has no PEFT wrapper
     base = model.get_base_model() if hasattr(model, "get_base_model") else model
     hooks = []
     for i, layer in enumerate(base.model.layers):
@@ -363,7 +363,7 @@ def main():
     # Load extended tokenizer
     tokenizer = AutoTokenizer.from_pretrained(str(tokenizer_path))
 
-    # Load merged model — NO PeftModel wrapper (v4 is a merged checkpoint)
+    # Load merged model — NO PEFT wrapper (v4 is a merged checkpoint)
     print(f"Loading merged model from {model_path} ...")
     model = AutoModelForCausalLM.from_pretrained(
         str(model_path),
