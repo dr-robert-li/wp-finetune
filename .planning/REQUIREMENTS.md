@@ -142,10 +142,10 @@ Requirements for RL alignment before MoE-Sieve. Depends on v1.2 completing (need
 
 ### Router Profiling
 
-- [ ] **PROF-01**: Router profiling runs gradient-free forward pass hooking `Qwen3MoeSparseMoeBlock` gating output, count-based ranking per layer
-- [ ] **PROF-02**: Profiling tags each expert's routing count by task token affinity (`<wp_gen>` vs `<wp_judge>`) separately, not just aggregate frequency
-- [ ] **PROF-03**: Profiling uses 10% subsample with Jaccard stability verification against full set (target ≥0.94)
-- [ ] **PROF-04**: Outputs routing concentration report: per-layer CV, cumulative coverage curve at each k, layer-depth skew analysis, and effective expert count E_eff = exp(entropy) per layer (mean, max, variance across layers) — E_eff directly predicts pruning headroom
+- [x] **PROF-01**: Router profiling runs gradient-free forward pass hooking `Qwen3MoeSparseMoeBlock` gating output, count-based ranking per layer
+- [x] **PROF-02**: Profiling tags each expert's routing count by task token affinity (`<wp_gen>` vs `<wp_judge>`) separately, not just aggregate frequency
+- [x] **PROF-03**: Profiling uses 10% subsample with Jaccard stability verification against full set (target ≥0.94)
+- [x] **PROF-04**: Outputs routing concentration report: per-layer CV, cumulative coverage curve at each k, layer-depth skew analysis, and effective expert count E_eff = exp(entropy) per layer (mean, max, variance across layers) — E_eff directly predicts pruning headroom
 - [ ] **PROF-05**: Profile ALL surviving ratios from Phase 4 triage (not just the winner) — profiling is ~minutes per ratio and routing concentration is a critical decision signal for ratio selection
 
 ### Ratio Selection Gate (Phase 7→8)
@@ -323,10 +323,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REVL-07 | Phase 4.4 | Complete |
 | REVL-08 | Phase 4.4 | Complete |
 
-| PROF-01 | Phase 7 | Pending |
-| PROF-02 | Phase 7 | Pending |
-| PROF-03 | Phase 7 | Pending |
-| PROF-04 | Phase 7 | Pending |
+| PROF-01 | Phase 7 | Complete |
+| PROF-02 | Phase 7 | Complete |
+| PROF-03 | Phase 7 | Complete |
+| PROF-04 | Phase 7 | Complete |
 | PROF-05 | Phase 7 | Pending |
 | GATE-01 | Phase 7 | Pending |
 | GATE-02 | Phase 4 | Complete |
