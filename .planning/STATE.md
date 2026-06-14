@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
-status: planning
+status: executing
 stopped_at: Phase 7 context gathered
-last_updated: "2026-06-13T23:04:24.454Z"
+last_updated: "2026-06-14T05:31:47.231Z"
 progress:
   total_phases: 10
   completed_phases: 8
-  total_plans: 33
-  completed_plans: 33
+  total_plans: 35
+  completed_plans: 34
   percent: 80
 ---
 
@@ -20,11 +20,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 7 — Router Profiling & Protected Expert Set (v2.0)
+**Current focus:** Phase 07 — router-profiling-protected-expert-set
 
 ## Current Position
 
-Phase: 04.4 (reasoning-eval-adapter-merge-inserted) — **COMPLETE 2026-06-14 (4/4 plans, waiver-promoted)**
+Phase: 07 (router-profiling-protected-expert-set) — EXECUTING
+Plan: 2 of 2
 
 **Outcome:** v1.2 reasoning-merged-v4 promoted to canonical `models/qwen3-30b-wp-30_70-reasoning-merged-v4`
 (13 shards), serves correctly. Post-merge 10+10 validation: **wp_gen 10/10, wp_judge 10/10, routing 20/20**.
@@ -119,7 +120,7 @@ data: `scripts/build_reasoning_negatives.py` + `build_augmented_train.py`; gates
 Status: Ready to execute
 Note: Local artifacts `models/qwen3-30b-wp-30_70-merged-v2` + `...-reasoning-merged` + `adapters/.../checkpoint-72` are READ-ONLY references/fallback only (NOT promoted). The GB10 memory wall is documented in `output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md`. `04.3-REOPEN-PLAN.md` remains a 0-task brief — do not execute.
 
-Progress: [█████████░] 94%
+Progress: [██████████] 97%
 
 ## Performance Metrics
 
@@ -167,6 +168,7 @@ Progress: [█████████░] 94%
 | Phase 04.4-reasoning-eval-adapter-merge-inserted P01 | 15 | 2 tasks | 2 files |
 | Phase 04.4-reasoning-eval-adapter-merge-inserted P02 | bookkeeping-only | 2 tasks | 2 files |
 | Phase 04.4-reasoning-eval-adapter-merge-inserted P03 | 15m | 3 tasks | 11 files |
+| Phase 07-router-profiling-protected-expert-set P01 | 20 | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -253,7 +255,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-13T23:04:24.445Z
+Last session: 2026-06-14T05:31:47.222Z
 Stopped at: Phase 7 context gathered
 
 Prior session: 2026-06-02T21:31:00.000Z
@@ -299,7 +301,7 @@ Stopped at: W1-W6 cascade BLOCKED on eval-harness prose compat (2 layers). Findi
   - **CERTIFIED VERDICT (c246a20)**: smoke_pass=True exit=0 distinctness=0.879. judge 5/5 (prose 9/9 dims + 1 CtF json), gen 5/5 php_lint, baseline-sim 0.02-0.42 (<0.85 canary → reasoning diverges). Artifact: merge-artifacts/w0_03_smoke_PASS_verdict.json.
   - Data finding flagged: reasoning judge output is dimensional PROSE (CoT) or JSON (CtF), NOT <REASONING>-tagged. parse_judge_response(JSON-only) would have false-failed all CoT — coherence redesigned prose-aware + json-aware.
 
-Resume file: .planning/phases/07-router-profiling-protected-expert-set/07-CONTEXT.md
+Resume file: None
 Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertions + smoke-gate hardening), THEN W0-03 smoke gate against models/qwen3-30b-wp-30_70-reasoning-merged/ vs models/qwen3-30b-wp-30_70-merged-v2/ baseline, THEN REVL-01..08 eval gates
 
 ### Session 2026-05-29 reasoning MERGE COMPLETE + PROMOTED
@@ -373,7 +375,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Ready to plan
+**Status:** Ready to execute
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)
