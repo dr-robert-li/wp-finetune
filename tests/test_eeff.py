@@ -197,11 +197,17 @@ class TestJsonlSchema:
                     assert field in rec, f"Field '{field}' missing from JSONL record: {rec.keys()}"
 
     def test_model_field_is_base(self):
-        """JSONL 'model' field must be 'base'."""
+        """JSONL 'model' field must be 'base' (explicit model_tag='base' for back-compat test)."""
         collector = self._make_collector_with_data()
         with tempfile.TemporaryDirectory() as tmpdir:
             out_path = Path(tmpdir) / "test.jsonl"
-            write_profiling_jsonl(collector, ratio="30_70", subsample_n=100, out_path=str(out_path))
+            write_profiling_jsonl(
+                collector,
+                ratio="30_70",
+                subsample_n=100,
+                out_path=str(out_path),
+                model_tag="base",
+            )
             records = [json.loads(line) for line in out_path.read_text().strip().split("\n")]
             for rec in records:
                 assert rec["model"] == "base"
