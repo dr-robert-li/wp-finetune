@@ -100,8 +100,9 @@ there is exactly one ratio — already merged and promoted in v1.2. No ratio is 
 - `models/qwen3-30b-wp-30_70-reasoning-merged-v4/` — the promoted v1.2 model under profiling (D-07).
 - `output/profiling/base_model_eeff.jsonl` — Phase-4 base-model E_eff baseline for the shift
   comparison (D-08).
-- Phase 4.4 eval captures (`output/eval_reasoning_v4_winner/` — wp_gen + wp_judge prompt sets) — the
-  profiling stimulus (D-05).
+- `data/final_dataset/ratio_30_70/openai_train.jsonl` — the profiling stimulus (D-05, AMENDED
+  2026-06-14 to training data; matched to the `base_model_eeff.jsonl` baseline). The original
+  4.4-eval-captures stimulus (`output/eval_reasoning_v4_winner/`) is SUPERSEDED — see amended D-05.
 
 ### Downstream consumers (why the mask matters)
 - `.planning/ROADMAP.md` §"Phase 11/13" — MoE-Sieve + AIMER/REAP pruning consume the protected mask.
