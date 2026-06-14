@@ -259,6 +259,7 @@ def write_profiling_jsonl(
     ratio: str,
     subsample_n: int,
     out_path: str,
+    model_tag: str = "base",
 ) -> None:
     """Write per-layer profiling data as JSONL records.
 
@@ -304,7 +305,7 @@ def write_profiling_jsonl(
                 "eeff_wp_gen": _nan_to_null(eeff_wp_gen),
                 "eeff_wp_judge": _nan_to_null(eeff_wp_judge),
                 "subsample_n": subsample_n,
-                "model": "base",
+                "model": model_tag,
             }
             f.write(json.dumps(record) + "\n")
 
