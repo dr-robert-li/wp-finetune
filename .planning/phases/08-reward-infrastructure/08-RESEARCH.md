@@ -650,29 +650,31 @@ For each acceptance gate:
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Security failure definition (CRITICAL for implementation)**
+> All five resolved 2026-06-19 and recorded in `08-CONTEXT.md`: Q1→D-08-05, Q2→D-08-06, Q4→D-08-07, Q3/Q5→accepted research defaults. Plans 08-01..04 implement these resolutions.
+
+1. **RESOLVED (D-08-05 → Option C): Security failure definition (CRITICAL for implementation)**
    - What we know: `D2_security` score range is 0-10; 8.0 is an established 80% threshold (obs 2050); CRITICAL_FLOOR_RULES exist for the security dimension; SEC-N* checks are granular
    - What's unclear: Is "security failure" = any SEC-N* check firing (Option A), or D2_security < 8.0 (Option B), or CRITICAL_FLOOR_RULE firing for D2_security (Option C)?
    - Recommendation: Default to Option C (CRITICAL_FLOOR_RULE triggers) as most aligned with rubric severity classification; confirm with user before implementation
 
-2. **VeRPO scope: all 9 dimensions vs WP-standards subset**
+2. **RESOLVED (D-08-06 → WP-standards subset): VeRPO scope: all 9 dimensions vs WP-standards subset**
    - What we know: GRPO-04 says "WordPress standards checks"; all 9 dimensions are available from `score_code()`
    - What's unclear: Does "WP-standards checks" mean only D1_wpcs + specific sniffs, or all 9 rubric dimensions?
    - Recommendation: Apply VeRPO to all checks across all 9 dimensions for maximum signal; narrow to WP-specific if this creates noise
 
-3. **Internal split within the 70% verifiable block**
+3. **RESOLVED (accepted default → 35/35): Internal split within the 70% verifiable block**
    - What we know: GRPO-01 says 70% verifiable = PHPCS pass rate + security (hard gate) + VeRPO partial credit
    - What's unclear: What fraction of the 70% does PHPCS overall vs VeRPO get?
    - Recommendation: Equal split (35/35) with both independently normalized; adjust if training shows imbalance
 
-4. **Judge parse failure handling in reward**
+4. **RESOLVED (D-08-07 → group-mean fallback): Judge parse failure handling in reward**
    - What we know: ~5-25% parse failure rate is possible (RC-A fix reduces this but does not eliminate it)
    - What's unclear: If `judge_score_single` returns `None`, what is the judge component reward? (0, imputed from group mean, skip this sample)
    - Recommendation: Use group mean as fallback; log parse failures in breakdown_dict; flag if parse failure rate > 10%
 
-5. **Anti-hack set size per axis**
+5. **RESOLVED (accepted default → 15/axis = 45): Anti-hack set size per axis**
    - What we know: D-11 specifies 3 axes; suggested 15-20 per axis = 45-60 total
    - What's unclear: CONTEXT.md does not fix a number
    - Recommendation: 15 per axis = 45 total; this fits in a 50-case integration test with the SC2 case
