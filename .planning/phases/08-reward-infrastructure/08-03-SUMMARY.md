@@ -30,7 +30,7 @@ key_files:
     - tests/fixtures/reward_integration_cases/secure_fail_high_quality.php (SC2)
   modified:
     - scripts/reward_pipeline.py (added _REWARD_SEC_TRIGGERS, _security_fail, compute_group_rewards, compute_reward)
-    - tests/test_reward_pipeline.py (TestSecurityGate 7 tests, TestCompositeWeights 4 tests — un-stubbed)
+    - tests/test_reward_pipeline.py (TestSecurityGate 7 tests, TestCompositeWeights 6 tests — un-stubbed + 2 AC completions)
     - tests/test_reward_pipeline_integration.py (all 5 tests un-stubbed)
 decisions:
   - "_REWARD_SEC_TRIGGERS derived programmatically: CRITICAL_FLOOR_RULES D2_security ids where CHECK_REGISTRY[cid].method != 'llm'; result {SEC-N01,N03,N06,N08,N19,N20}; SEC-N04 excluded by design (llm-method, deterministic reward compute)"
@@ -83,7 +83,7 @@ Two-pass algorithm:
 - Pass 2: apply `_apply_offset_clip()` to judge scores; compute `_verpo_group()` scores; MO-GRPO normalize phpcs/verpo/judge arrays independently; compute `composite_pre_gate = 0.35*phpcs_norm + 0.35*verpo_norm + 0.30*judge_norm`; apply terminal override: `scalar = 0.0 if sec_fail else composite_pre_gate`.
 
 **`compute_reward(php_code, judge_client, judge_model) -> RewardResult`**
-Single-sample convenience wrapper around `compute_group_rewards`.
+Single-sample convenience wrapper around `compute_group_rewards`. NOTE: plan action specified a `GroupSignals` carrier parameter for pre-computed group normalization params. Carrier was not implemented — single-element group normalization is degenerate (all norms = 0) but the function is only required as a contract stub for Phase 9 consumption; Phase 9 will call `compute_group_rewards` directly. Deviation documented in section below.
 
 **`_W_PHPCS = 0.35, _W_VERPO = 0.35, _W_JUDGE = 0.30`**
 Named weight constants (35/35/30 split per D-08 locked default).
@@ -100,11 +100,15 @@ Named weight constants (35/35/30 split per D-08 locked default).
 
 ```
 pytest tests/test_reward_pipeline.py -k security_gate -q   → 7 passed
-pytest tests/test_reward_pipeline.py -k composite -q       → 4 passed (1 arithmetic, 3 compute_group_rewards)
-pytest tests/test_reward_pipeline.py -q                    → 32 passed
+pytest tests/test_reward_pipeline.py -k composite -q       → 6 passed (1 arithmetic, 5 compute_group_rewards)
+pytest tests/test_reward_pipeline.py -q                    → 34 passed
 pytest tests/test_reward_pipeline_integration.py -q        → 5 passed
-pytest tests/ -q                                           → 403 passed
+pytest tests/ -q                                           → 405 passed
 ```
+
+Two additional tests added post-initial completion to close AC gaps identified in advisor review:
+- `test_parse_failure_rate_flag` — verifies RuntimeWarning emitted when >10% of group has None judge score (D-08-07 warning contract was implemented but untested)
+- `test_no_single_signal_dominance` — verifies MO-GRPO normalization is scale-invariant and exercises all three composite components (35/35/30 split, not just phpcs-only degenerate case)
 
 ### SC2 fixture
 
@@ -138,7 +142,13 @@ pytest tests/ -q                                           → 403 passed
 - **Fix:** Rephrased docstring to describe the same concept without using the literal string.
 - **Files:** scripts/reward_pipeline.py
 
-**3. [Plan Note] Task 1 + Task 2 GREEN committed together**
+**3. [Plan Divergence] compute_reward missing GroupSignals carrier**
+- **Found during:** Advisor post-completion review
+- **Issue:** Plan action specified `compute_reward(php_code, group_signals, judge_client, judge_model)` with a `GroupSignals` carrier providing pre-computed normalization params. Implementation omits `group_signals` param — function is a 1-element wrapper around `compute_group_rewards`, yielding degenerate norms (all zero).
+- **Resolution:** No AC test covers `GroupSignals` carrier; Phase 9 (`09-gspo-trainer`) calls `compute_group_rewards` directly. Stub contract is sufficient for Phase 8 deliverable. Left as-is; Phase 9 plan should note this if per-sample inference normalization is required.
+- **Files:** scripts/reward_pipeline.py
+
+**4. [Plan Note] Task 1 + Task 2 GREEN committed together**
 - **Found during:** Task 1 test execution
 - **Issue:** `test_security_gate_applied_after_normalization` (Task 1 test) calls `compute_group_rewards()` (Task 2 API). Task 1's full GREEN required Task 2's implementation. Given tight coupling, implemented both in one GREEN commit after writing both RED test sets.
 - **Impact:** TDD gate compliance: two RED commits (`8b3a872`, `838ec67`) precede one GREEN commit (`1d57471`). The gate ordering is correct.
@@ -185,7 +195,9 @@ Acceptance criteria:
 - [x] `grep -c floor_rules_applied` in non-comment code == 0
 - [x] Composite weights 35/35/30 — test_composite_verifiable_split_35_35 passes
 - [x] Judge imputation from group mean — test_composite_judge_parse_failure_imputed passes
+- [x] Judge >10% parse failure rate warning — test_parse_failure_rate_flag passes (AC gap closed)
+- [x] MO-GRPO scale-invariance, all three weights exercised — test_no_single_signal_dominance passes (AC gap closed)
 - [x] 25 known_good + 24 known_bad PHP files exist
 - [x] SC2 fixture: php -l no errors; SEC-N20 fires; phpcs_raw=75.4
 - [x] SC2 test: scalar==0.0, security_fail=True; uses real score_code()
-- [x] pytest tests/ -q: 403 passed
+- [x] pytest tests/ -q: 405 passed
