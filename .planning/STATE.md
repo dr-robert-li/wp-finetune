@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: MVP
 status: milestone_complete
 stopped_at: Milestone complete (Phase 8 was final phase)
-last_updated: 2026-06-19T21:45:33.672Z
+last_updated: 2026-06-19T22:34:07.058Z
 progress:
   total_phases: 11
   completed_phases: 10
@@ -278,6 +278,7 @@ Recent decisions affecting current work:
 | 260403-rut | Remove Unsloth and dgx_toolbox from merge_adapter.py; use AutoModelForCausalLM | 2026-04-03 | e8ae427 | [260403-rut-fix-container-dependency-hell-add-standa](./quick/260403-rut-fix-container-dependency-hell-add-standa/) |
 | 260403-utp | Fix stale eval tests to match current API (rubric refactor) | 2026-04-03 | 49ec4b6 | [260403-utp-fix-stale-eval-tests-to-match-current-ev](./quick/260403-utp-fix-stale-eval-tests-to-match-current-ev/) |
 | 260403-vvg | Fix stale unsloth refs in dgx_toolbox; fix CONFIG_PATH; add missing dataloader fields to 30_70/40_60 configs | 2026-04-03 | f340b22 | [260403-vvg-fix-stale-unsloth-refs-and-config-incons](./quick/260403-vvg-fix-stale-unsloth-refs-and-config-incons/) |
+| 260620-bwf | Update all docs, changelog, and JOURNAL.md to reflect Phase 7 closure + Phase 8 reward infrastructure | 2026-06-20 | 4513027 | [260620-bwf-update-all-docs-changelog-and-journal-md](./quick/260620-bwf-update-all-docs-changelog-and-journal-md/) |
 
 ## Session Continuity
 
