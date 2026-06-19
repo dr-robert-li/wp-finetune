@@ -157,8 +157,8 @@ Requirements for RL alignment before MoE-Sieve. Depends on v1.2 completing (need
 
 - [x] **GRPO-01**: Composite reward pipeline with 70% verifiable / 30% judge weighting — PHPCS pass rate (high-variance anchor), security scanner (hard gate: score=0 on failure), WordPress standards checks (VeRPO partial credit weighted by check difficulty), frozen wp_judge score (MO-GRPO normalized)
 - [ ] **GRPO-02**: Security scanner hard gate — if generation fails security scan, total reward = 0 regardless of all other scores (non-negotiable safety floor)
-- [ ] **GRPO-03**: MO-GRPO normalization on all reward signals — each signal normalized by within-group variance to prevent single-signal dominance
-- [ ] **GRPO-04**: VeRPO-style partial credit for WordPress standards checks — each check weighted by difficulty (estimated from pass rate across group samples; rarely-passed checks contribute more signal)
+- [x] **GRPO-03**: MO-GRPO normalization on all reward signals — each signal normalized by within-group variance to prevent single-signal dominance
+- [x] **GRPO-04**: VeRPO-style partial credit for WordPress standards checks — each check weighted by difficulty (estimated from pass rate across group samples; rarely-passed checks contribute more signal)
 
 ### GSPO Training (GRPO optional — decide at phase planning time)
 
@@ -332,8 +332,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GATE-02 | Phase 4 | Complete |
 | GRPO-01 | Phase 8 | Complete |
 | GRPO-02 | Phase 8 | Pending |
-| GRPO-03 | Phase 8 | Pending |
-| GRPO-04 | Phase 8 | Pending |
+| GRPO-03 | Phase 8 | Complete |
+| GRPO-04 | Phase 8 | Complete |
 | GRPO-05 | Phase 9 | Pending |
 | GRPO-06 | Phase 9 | Pending |
 | GRPO-07 | Phase 9 | Pending |
