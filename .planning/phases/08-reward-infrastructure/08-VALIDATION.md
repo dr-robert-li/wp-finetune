@@ -43,10 +43,10 @@ created: 2026-06-19
 | 08-01-* | 01 | 1 | GRPO-01 | — | `judge_score_single` reuses `_judge_create` thinking-off guard | unit | `pytest tests/test_reward_pipeline.py -k judge_single -q` | ❌ W0 | ⬜ pending |
 | 08-02-* | 02 | 2 | GRPO-03 | — | within-group var-norm `(x-μ)/(σ+ε)`, ε floor on zero-variance | unit | `pytest tests/test_reward_pipeline.py -k mogrpo -q` | ❌ W0 | ⬜ pending |
 | 08-02-* | 02 | 2 | GRPO-04 | — | VeRPO difficulty `1-pass_rate` on WP-standards subset only (D-08-06) | unit | `pytest tests/test_reward_pipeline.py -k verpo -q` | ❌ W0 | ⬜ pending |
-| 08-02-* | 02 | 2 | GRPO-02 | T-08-SEC | CRITICAL_FLOOR_RULE(D2_security) → reward=0 as terminal override AFTER normalize+combine (D-08-05) | unit | `pytest tests/test_reward_pipeline.py -k security_gate -q` | ❌ W0 | ⬜ pending |
-| 08-02-* | 02 | 2 | GRPO-01 | — | composite = 70% verifiable (35 PHPCS / 35 VeRPO) + 30% judge; no single-signal dominance | unit | `pytest tests/test_reward_pipeline.py -k composite -q` | ❌ W0 | ⬜ pending |
-| 08-02-* | 02 | 2 | GRPO-01..04 | T-08-SEC | 50-case integration incl. SC2 secure-fail-but-high-quality → reward exactly 0 | integration | `pytest tests/test_reward_pipeline_integration.py -q` | ❌ W0 | ⬜ pending |
-| 08-03-* | 03 | 3 | (D-11) | — | 45 perturbed adversarial cases (15/axis) score CI-aware below clean baseline: `hi_perturbed < lo_clean` | integration | `pytest tests/test_antihack.py -q` | ❌ W0 | ⬜ pending |
+| 08-03-* | 03 | 3 | GRPO-02 | T-08-SEC | CRITICAL_FLOOR_RULE(D2_security) → reward=0 as terminal override AFTER normalize+combine, fail-CLOSED (D-08-05) | unit | `pytest tests/test_reward_pipeline.py -k security_gate -q` | ❌ W0 | ⬜ pending |
+| 08-03-* | 03 | 3 | GRPO-01 | — | composite = 70% verifiable (35 PHPCS / 35 VeRPO) + 30% judge; no single-signal dominance | unit | `pytest tests/test_reward_pipeline.py -k composite -q` | ❌ W0 | ⬜ pending |
+| 08-03-* | 03 | 3 | GRPO-01..04 | T-08-SEC | 50-case integration incl. SC2 secure-fail-but-high-quality → reward exactly 0 | integration | `pytest tests/test_reward_pipeline_integration.py -q` | ❌ W0 | ⬜ pending |
+| 08-04-* | 04 | 4 | GRPO-01 (D-11) | — | 45 perturbed adversarial cases (15/axis) score CI-aware below clean baseline: `hi_perturbed < lo_clean` | integration | `pytest tests/test_antihack.py -q` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
