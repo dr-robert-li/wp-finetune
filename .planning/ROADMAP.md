@@ -383,7 +383,7 @@ Plans:
 - [x] 08-01-PLAN.md — Foundation: Wave-0 test scaffolding + judge_score_single() RC-A wrapper + injectable recalibration-offset loader (GRPO-01)
 - [x] 08-02-PLAN.md — Reward math core: dataclasses + MO-GRPO within-group normalization + VeRPO difficulty weighting on WP-standards subset (GRPO-03, GRPO-04)
 - [x] 08-03-PLAN.md — Composite 70/30 assembly + security TERMINAL hard gate (fail-closed) + judge-imputation + 50-case integration incl. SC2 (GRPO-01, GRPO-02)
-- [ ] 08-04-PLAN.md — Anti-hack set: 3-axis perturb-real + background-agent scoring + CI-aware gate (hi_perturbed < lo_clean) + acceptance report (D-11)
+- [x] 08-04-PLAN.md — Anti-hack set: 3-axis perturb-real + background-agent scoring + CI-aware gate (hi_perturbed < lo_clean) + acceptance report (D-11)
 
 ### Phase 9: GSPO Training
 **Goal**: Dual-mode RL refines both generation quality and judge reasoning quality on the FULL MoE (not sieve-constrained), with router-shift stabilization. GSPO (sequence-level) is the primary RL objective for MoE stability (D-08). Whether to also evaluate GRPO (with larger group size + Pro-GRPO expand-then-prune) as a fallback is an implementation decision made at Phase 9 planning time based on GSPO availability and feasibility. Judge is the primary bottleneck (Spearman 0.57 vs gen 0.99+ at SFT stage) and receives equal or greater RL budget. Gen rewards use PHPCS + security + VeRPO. Judge rewards use score-reasoning consistency (separately spawned Claude evaluator agent) and fix correctness (PHPCS/security scanner on critique-then-fix corrected code). Protected experts from Phase 7 monitored via routing regularizer.
@@ -564,7 +564,7 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 5. Packaging and Deployment | v1.0 | 0/3 | Deferred to v3.0 | - |
 | 6. Adaptive Training Planner | v1.1 | 6/6 | Complete | 2026-04-01 |
 | 7. Router Profiling & Protected Expert Set | v2.0 | 1/2 | In Progress|  |
-| 8. Reward Infrastructure | v2.0 | 3/4 | In Progress|  |
+| 8. Reward Infrastructure | v2.0 | 4/4 | Complete   | 2026-06-19 |
 | 9. GSPO Training | v2.0 | 0/? | Not started | - |
 | 10. RL Comparative Evaluation | v2.0 | 0/? | Not started | - |
 | 11. Post-RL MoE-Sieve | v3.0 | 0/? | Not started | - |
