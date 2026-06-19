@@ -20,6 +20,8 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
+import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
@@ -39,7 +41,7 @@ os.environ.pop("RUBRIC_USE_LLM_CHECKS", None)
 # mean correction for the bf16-merge inference path (D-08-02 / D-V4-09).
 # NEVER write the numeric literal directly in this file — it must always be
 # read at runtime so a single JSON artifact is the authoritative source.
-_RECALIB_PATH = Path("output/eval_reasoning_v4_winner/judge_recalibration.json")
+_RECALIB_PATH = Path(__file__).resolve().parent.parent / "output/eval_reasoning_v4_winner/judge_recalibration.json"
 
 
 def _load_score_offset(path: Path = _RECALIB_PATH) -> float:
@@ -456,8 +458,26 @@ def compute_group_rewards(
     Returns:
         list[RewardResult]: One result per input, each with (scalar, breakdown).
     """
-    import logging
-    import warnings
+    # CR-01: fail-CLOSED phpcs availability guard (D-08-05 / T-08-SEC).
+    # Five of six _REWARD_SEC_TRIGGERS (SEC-N01/N03/N06/N08/N19) are phpcs-method
+    # checks. When phpcs is absent, run_phpcs() returns _unavailable; those IDs
+    # never enter triggered_checks; _security_fail() returns False → fail-open.
+    # Raise unless the operator has explicitly acknowledged degraded mode via env.
+    if not os.environ.get("REWARD_SKIP_PHPCS_ASSERT"):
+        if shutil.which("phpcs") is None:
+            phpcs_triggers = frozenset(
+                cid for cid in _REWARD_SEC_TRIGGERS
+                if CHECK_REGISTRY[cid].method == "phpcs"
+            )
+            raise RuntimeError(
+                "reward_pipeline: phpcs binary not found in PATH. "
+                "Five of six _REWARD_SEC_TRIGGERS are phpcs-method checks "
+                f"({sorted(phpcs_triggers)}); without phpcs these checks cannot fire "
+                "and the D2_security hard gate will fail-open (T-08-SEC HIGH severity). "
+                "Install phpcs ('composer global require squizlabs/php_codesniffer') or "
+                "set REWARD_SKIP_PHPCS_ASSERT=1 to explicitly acknowledge degraded mode."
+            )
+
     G = len(php_codes)
     if G == 0:
         return []
@@ -471,7 +491,12 @@ def compute_group_rewards(
     for code in php_codes:
         rubric = _extract_verifiable_signals(code)
         rubrics.append(rubric)
-        judge_raw = judge_score_single(code, judge_client, judge_model)
+        try:
+            judge_raw = judge_score_single(code, judge_client, judge_model)
+        except Exception:  # noqa: BLE001
+            # D-08-07: exceptions from judge → None so group-mean imputation runs.
+            # Do not propagate — a single judge error must not abort the entire group.
+            judge_raw = None
         raw_judge_scores.append(judge_raw)
 
     # -----------------------------------------------------------------------
@@ -608,5 +633,12 @@ def compute_reward(
     Returns:
         RewardResult: (scalar, breakdown) for the single sample.
     """
+    warnings.warn(
+        "compute_reward (G=1): MO-GRPO normalization with a single sample always yields "
+        "scalar=0.0 (the sample is the group mean). For meaningful rewards in GRPO training "
+        "use compute_group_rewards with G > 1.",
+        RuntimeWarning,
+        stacklevel=2,
+    )
     results = compute_group_rewards([php_code], judge_client, judge_model)
     return results[0]
