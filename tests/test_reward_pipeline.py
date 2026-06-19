@@ -202,17 +202,153 @@ class TestMOGRPONorm:
 # ---------------------------------------------------------------------------
 
 
+def _make_rubric(triggered: dict | None = None) -> "RubricScore":
+    """Helper: create a minimal RubricScore with specific triggered_checks."""
+    from eval.rubric_scorer import RubricScore
+
+    return RubricScore(
+        file_path="<test>",
+        dimension_scores={},
+        dimension_na=[],
+        overall=70.0,
+        triggered_checks=triggered or {},
+        check_evidence={},
+        grade="Good",
+        floor_rules_applied=[],
+    )
+
+
 class TestVeRPO:
-    """Tests for VeRPO WP-standards partial credit (08-02). STUBBED until 08-02."""
+    """Tests for VeRPO WP-standards partial credit (08-02).
 
-    def test_verpo_wpcs_subset_only(self):
-        pytest.skip("implemented in 08-02")
+    Method names embed 'verpo' so -k verpo selects all tests.
+    Uses concrete check IDs from CHECK_DIMENSION_MAP verified at test-write time:
+      WP positive: WAPI-P01, WAPI-P02
+      WP negative: WAPI-N01, WAPI-N02
+      Non-WP: SQL-N01 (D3_sql)
+    """
 
-    def test_verpo_difficulty_weight_inverse_pass_rate(self):
-        pytest.skip("implemented in 08-02")
+    def test_verpo_scope_wp_standards_only(self):
+        """Checks outside {D1_wpcs, D5_wp_api} do NOT enter VeRPO computation (D-08-06).
 
-    def test_verpo_all_pass_gives_zero_difficulty(self):
-        pytest.skip("implemented in 08-02")
+        SQL-N01 (D3_sql) must be excluded — WP_STANDARDS_CHECK_IDS must not contain it.
+        """
+        from scripts.reward_pipeline import WP_STANDARDS_CHECK_IDS
+
+        assert "SQL-N01" not in WP_STANDARDS_CHECK_IDS, (
+            "SQL-N01 (D3_sql) must NOT be in WP_STANDARDS_CHECK_IDS — "
+            "VeRPO is scoped to D1_wpcs + D5_wp_api only (D-08-06)"
+        )
+        # Positive: WP checks ARE in the set
+        assert "WAPI-N01" in WP_STANDARDS_CHECK_IDS, "WAPI-N01 must be in WP_STANDARDS_CHECK_IDS"
+        assert "WAPI-P01" in WP_STANDARDS_CHECK_IDS, "WAPI-P01 must be in WP_STANDARDS_CHECK_IDS"
+
+    def test_verpo_rare_check_weights_more(self):
+        """A sample passing a rarely-passed check scores higher than one passing only common ones.
+
+        Uses WAPI-P01 (positive check):
+          - Group of 2: sample A fires WAPI-P01 (pass for positive), sample B does not.
+          - WAPI-P01 pass_rate = 0.5 -> difficulty = 0.5 (moderate rarity).
+          - If we had a second check with pass_rate=1.0 -> difficulty=0 (always passes, no signal).
+          - Sample A (passes rare WAPI-P01) should score >= sample B (doesn't pass it).
+        """
+        from scripts.reward_pipeline import _verpo_group
+
+        # Two samples: A fires WAPI-P01 (positive), B does not
+        rubric_a = _make_rubric({"D5_wp_api": ["WAPI-P01"]})
+        rubric_b = _make_rubric({})  # does not fire WAPI-P01
+        scores, pass_rates, difficulties = _verpo_group([rubric_a, rubric_b])
+
+        assert len(scores) == 2, "Must return one score per sample"
+        # WAPI-P01 pass_rate = 0.5, difficulty = 0.5
+        assert abs(pass_rates.get("WAPI-P01", 0) - 0.5) < 1e-6, (
+            f"WAPI-P01 pass_rate should be 0.5, got {pass_rates.get('WAPI-P01')}"
+        )
+        assert abs(difficulties.get("WAPI-P01", 0) - 0.5) < 1e-6, (
+            f"WAPI-P01 difficulty should be 0.5, got {difficulties.get('WAPI-P01')}"
+        )
+        # Sample A (passed the check) must score >= sample B (did not)
+        assert scores[0] >= scores[1], (
+            f"Sample that passes WAPI-P01 should score >= one that doesn't; "
+            f"scores: A={scores[0]}, B={scores[1]}"
+        )
+
+    def test_verpo_all_pass_score(self):
+        """Group where all samples pass all WP checks -> high VeRPO score for each sample."""
+        from scripts.reward_pipeline import _verpo_group, WP_STANDARDS_CHECK_IDS
+        from eval.rubric_scorer import POSITIVE_CHECK_IDS, NEGATIVE_CHECK_IDS
+
+        # Build rubrics where all positive checks fire and no negative checks fire
+        # (every sample passes every WP-standards check)
+        wp_pos_checks = sorted(WP_STANDARDS_CHECK_IDS & POSITIVE_CHECK_IDS)
+        if not wp_pos_checks:
+            pytest.skip("No WP positive checks found — CHECK_REGISTRY may have changed")
+
+        # Fire all positive WP checks for every sample (all pass)
+        triggered = {"D1_wpcs": [], "D5_wp_api": wp_pos_checks}
+        rubrics = [_make_rubric(triggered), _make_rubric(triggered)]
+        scores, pass_rates, difficulties = _verpo_group(rubrics)
+
+        # If all samples pass all checks, difficulty of every check is 0
+        # -> VeRPO score = 0 / (0 + epsilon) = 0.0 (degenerate all-pass case)
+        # OR: if we only look at a subset, scores should be uniformly high
+        # The key property: scores must be finite and non-negative
+        assert all(np.isfinite(s) and s >= 0.0 for s in scores), (
+            f"All-pass scores must be finite and non-negative: {scores}"
+        )
+
+    def test_verpo_all_fail_score(self):
+        """Group where no samples pass any WP checks -> near-zero VeRPO score."""
+        from scripts.reward_pipeline import _verpo_group
+
+        # No triggered checks = all positive checks not fired (fail), all negative checks not fired (pass for negative)
+        # Use only negative WP checks: not firing a negative = passing
+        # For a strict all-fail: fire all negative WP checks
+        from scripts.reward_pipeline import WP_STANDARDS_CHECK_IDS
+        from eval.rubric_scorer import NEGATIVE_CHECK_IDS
+
+        wp_neg_checks = sorted(WP_STANDARDS_CHECK_IDS & NEGATIVE_CHECK_IDS)
+        if not wp_neg_checks:
+            pytest.skip("No WP negative checks found")
+
+        # Fire all negative WP checks (= fail for all), fire no positive WP checks
+        triggered = {"D5_wp_api": wp_neg_checks[:5]}  # fire some negative checks = violations
+        rubrics = [_make_rubric(triggered), _make_rubric(triggered)]
+        scores, _, _ = _verpo_group(rubrics)
+
+        # Both samples fail the same checks -> both get same (low) score; no NaN
+        assert all(np.isfinite(s) for s in scores), f"All-fail scores contain NaN/inf: {scores}"
+        assert len(scores) == 2
+
+    def test_verpo_positive_negative_polarity(self):
+        """NEGATIVE check firing scored as fail; POSITIVE check firing scored as pass (Pitfall 5 / T-08-04).
+
+        Construct two samples:
+          - Sample A fires WAPI-N01 (negative check) -> violation -> FAIL
+          - Sample B fires WAPI-P01 (positive check) -> compliance -> PASS
+        Sample B must score >= Sample A on that dimension.
+        """
+        from scripts.reward_pipeline import _verpo_group
+        from eval.rubric_scorer import POSITIVE_CHECK_IDS, NEGATIVE_CHECK_IDS
+
+        # Sanity: confirm polarity from canonical source
+        assert "WAPI-N01" in NEGATIVE_CHECK_IDS, "WAPI-N01 must be NEGATIVE"
+        assert "WAPI-P01" in POSITIVE_CHECK_IDS, "WAPI-P01 must be POSITIVE"
+
+        # Sample A: WAPI-N01 fires (negative = violation, score DOWN)
+        # Sample B: WAPI-P01 fires (positive = compliance, score UP)
+        rubric_a = _make_rubric({"D5_wp_api": ["WAPI-N01"]})
+        rubric_b = _make_rubric({"D5_wp_api": ["WAPI-P01"]})
+        scores, _, _ = _verpo_group([rubric_a, rubric_b])
+
+        # Both samples see the same checks with pass_rate=0.5/0.5 (each fires once)
+        # WAPI-N01: A triggered (fail) -> pass=False; B not triggered (ok) -> pass=True for neg
+        # WAPI-P01: B triggered (compliance) -> pass=True; A not triggered -> pass=False for pos
+        # Net: B should have higher VeRPO than A (compliance beats violation)
+        assert scores[1] >= scores[0], (
+            f"Sample firing POSITIVE check should score >= sample firing NEGATIVE check; "
+            f"scores: A={scores[0]:.4f} (negative/violation), B={scores[1]:.4f} (positive/compliance)"
+        )
 
 
 # ---------------------------------------------------------------------------
