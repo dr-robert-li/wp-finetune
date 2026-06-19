@@ -1,9 +1,9 @@
 # Phase 7 — Router Profiling Human Review & Sign-Off Pack
 
-**Status:** ⏳ AWAITING HUMAN SIGN-OFF (Task 3, blocking gate — `07-02-PLAN.md`)
+**Status:** ✅ APPROVED — Task 3 gate closed (see §5 sign-off, 2026-06-19)
 **Model:** `models/qwen3-30b-wp-30_70-reasoning-merged-v4` (promoted v1.2 merged checkpoint)
 **Reviewer action:** Read this pack, then reply `approved` to close the gate (or describe issues).
-**Generated:** 2026-06-15
+**Generated:** 2026-06-15 · **Signed off:** 2026-06-19
 
 ---
 
@@ -79,3 +79,52 @@ All code was test-certified in Plan 07-01 (76 pytest tests green). This plan ran
 2. **Late-layer E_eff broadening (L45–47 ≈ +7)** — explainable and modest, but the largest structured delta. Accept as a routing-shift finding, or investigate per-expert counts before Phase 11/13 consume the mask?
 
 Everything else is clean and automated-gate-green. **Reply `approved` to sign off, or describe what to investigate.**
+
+---
+
+## 5. Sign-off — council-reviewed disposition (2026-06-19)
+
+**Verdict: APPROVED.** Both judgment items resolved as ACCEPT under the [D-09 CI-aware disposition](07-CONTEXT.md) inherited from [D-V4-10](../04.4-reasoning-eval-adapter-merge-inserted/04.4-D-V4-10-WAIVER.md). SOTA-model council (GPT-5.5 / Claude Opus 4.8 / Gemini 3.1 Pro) unanimous on both items; reasoning that survived all three lanes recorded below.
+
+### ① L35 Jaccard = 0.60 — **ACCEPT, no D-06 re-profile**
+
+Full-set ranking is the reference and is deterministic; PROF-03 subsample-Jaccard is a *methodology-stability check*, not the artifact downstream consumers depend on. The protected mask is built from the full 34,855-example pass, not the subsample. L35 = 0.60 reflects subsample variance on a noisier mid-network layer, not a code defect or a routing pathology.
+
+The CI-aware disposition is the contract committed to *before* seeing results (D-09, codified from D-V4-10 §"Forward hardening"). Re-deciding because 0.9426 vs 0.94 looks thin is the post-hoc bar-move the waiver explicitly named as goalpost-moving. Re-profiling at `--subsample 0.25` is a ~6.5h GB10 run that, by construction (averaging over 48 layers), is overwhelmingly likely to tighten the CI without changing the disposition.
+
+Conservative co-activation (D-03) absorbs single-layer noise: a layer whose ranking jitters under subsampling produces at most marginal membership wobble at the threshold, and the D-04 sensitivity spread (1,480 / 2,477 / 595) hands Phase 13 the levers to interrogate L35's protected set specifically if it ever matters.
+
+### ② Late-layer E_eff broadening L45–47 ≈ +7 — **ACCEPT as routing-shift finding**
+
+Mechanism is well-explained and lawful: frozen router (D-07/A2) + LoRA'd attention/MLP shifts the hidden states the router sees; deeper layers carry the most LoRA-influenced representational divergence (deeper accumulation), so the routing distribution shifts there first. A monotone coherent effect across the final 3 of 48 layers, ~10% on an E_eff base of ~72, is the *expected* functional form — not an artifact. A flag would be scattered ±7 (noise), a single isolated +20 layer (router defect), or *narrowing* with concentrated mass on few experts (routing collapse). None of those were observed.
+
+E_eff is informational per D-02; the artifact Phases 11/13 actually consume is `protected_expert_mask.npy`, which is built from above-per-layer-mean co-activation — invariant to a uniform broadening because both `wp_gen` and `wp_judge` means rise together. Late-layer broadening also means *more* experts engaged, which is the safer direction for a downstream pruner.
+
+Pre-ship sanity check confirmed mask coherence on L45–47 (per-layer protected counts within the 25–40 band reported in §2.④; D-04 sensitivity spread unchanged on these layers). No focal router drift; no defect hypothesis to chase.
+
+### Forward hardening folded into mask sidecar
+
+Before the mask is consumed by Phase 11 (MoE-Sieve) and Phase 13 (AIMER/REAP), the `protected_expert_mask.json` sidecar should carry a `layer_stability_notes` block flagging the six sub-threshold-Jaccard layers (L9 / L13 / L14 / L31 / L35 / L36) so Phase 13 doesn't re-discover the band cold:
+
+```json
+"layer_stability_notes": {
+  "low_jaccard_layers": [9, 13, 14, 31, 35, 36],
+  "interpretation": "subsample-noise band; full-set ranking is the reference and is deterministic. Phase 13 tuning should treat these layers' protected membership as marginally less certain — prefer median-threshold mask (2,477) over conservative mask (1,480) when budgeting prune headroom locally on these layers.",
+  "source": "07-HUMAN-REVIEW §5, 2026-06-19 council sign-off"
+}
+```
+
+This is a non-mutative annotation (does not change `protected_expert_mask.npy` bytes; Phase 13 still consumes the canonical conservative mask as the must-not-prune set). It surfaces the methodology-noise signal alongside the artifact so the next consumer can act on it.
+
+### Forward hardening for Phase 13 planning
+
+The Phase 13 plan should pre-commit (not post-hoc) that L45–47 are *expected* to carry the largest E_eff deltas and that pruning sensitivity on those layers must be evaluated against the median-threshold (2,477) mask in addition to the conservative (1,480). Same D-V4-10 lesson applied one layer up in the decision stack: the CI-aware disposition is the contract, set before measurement.
+
+### Sign-off block
+
+- **Automated verdict (unchanged):** all PROF-03 / PROF-04 / D-08 / D-03/D-04 / PROF-05 / GATE-01 gates green per §2.
+- **Disposition:** D-09 CI-aware — `jaccard_ci_lower = 0.9426 ≥ 0.94` carries PROF-03; both judgment items ACCEPTED with mechanistic justification recorded above.
+- **Mask:** `protected_expert_mask.npy` ([48,128] bool, 1,480 protected) is immutable from this point and shippable to Phases 11/13. `protected_expert_mask.json` sidecar to be amended with `layer_stability_notes` block above (non-mutative annotation) before Phase 11 consumes.
+- **Phase 11 / 13 obligations:** consume canonical conservative mask; apply median-threshold (2,477) as headroom-tuning reference on the low-Jaccard band {9, 13, 14, 31, 35, 36} and on L45–47.
+
+**APPROVED — Dr. Robert Li, 2026-06-19.** Phase 7 closed; Phase 8 (reward infrastructure with D-V4-09 +3.58 judge recalibration inheritance) and Phase 11 (MoE-Sieve, consuming the protected mask) unblocked.
