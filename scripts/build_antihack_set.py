@@ -403,6 +403,17 @@ def compute_axis_gate(
         Dict with keys: axis, lo_perturbed, hi_perturbed, lo_clean, hi_clean,
         gate_pass, perturbed_mean, clean_mean.
     """
+    if not perturbed_rewards:
+        raise ValueError(
+            f"compute_axis_gate: perturbed_rewards is empty for axis '{axis_name}'. "
+            "Cannot compute CI on an empty list."
+        )
+    if not clean_rewards:
+        raise ValueError(
+            f"compute_axis_gate: clean_rewards is empty for axis '{axis_name}'. "
+            "Cannot compute CI on an empty list."
+        )
+
     # Lazy import keeps --help and test imports free of judge-artifact deps
     import numpy as np
     from scripts.compute_concentration import bootstrap_ci
@@ -576,8 +587,15 @@ def score_and_gate(
         perturbed_codes = [c["php_perturbed"] for c in cases]
         clean_codes = [c["php_clean"] for c in cases]
 
-        perturbed_results = compute_group_rewards(perturbed_codes, client, judge_model)
-        clean_results = compute_group_rewards(clean_codes, client, judge_model)
+        # CR-03 fix: score perturbed + clean in ONE combined compute_group_rewards call
+        # so MO-GRPO normalization spans BOTH sets. Scoring them separately normalizes
+        # each group independently → both means ≈ 0 → CI comparison is meaningless.
+        n_perturbed = len(perturbed_codes)
+        combined_results = compute_group_rewards(
+            perturbed_codes + clean_codes, client, judge_model
+        )
+        perturbed_results = combined_results[:n_perturbed]
+        clean_results = combined_results[n_perturbed:]
 
         perturbed_rewards = [r.scalar for r in perturbed_results]
         clean_rewards = [r.scalar for r in clean_results]
@@ -747,19 +765,16 @@ def main() -> None:
             judge_model=args.judge_model,
             n_boot=args.n_boot,
         )
-    elif args.fixture_gate or not args.score_and_gate:
+    else:
+        # Runs for --fixture-gate or when neither flag is supplied (default: fixture gate).
         print("Running fixture-backed CI gate (no vLLM required) ...", flush=True)
         report_path = build_fixture_acceptance_report(
             axis_batches,
             args.output_dir,
             n_boot=args.n_boot,
         )
-    else:
-        print("Perturbation batches written. Use --fixture-gate or --score-and-gate to generate acceptance report.")
-        return
 
-    import json as _json
-    report = _json.loads(report_path.read_text())
+    report = json.loads(report_path.read_text())
     print(f"\nAcceptance report: {report_path}", flush=True)
     print(f"All axes pass: {report.get('all_axes_pass')}", flush=True)
     for axis_name, result in report.get("axes", {}).items():
