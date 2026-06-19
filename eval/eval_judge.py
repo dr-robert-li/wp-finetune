@@ -245,7 +245,7 @@ def judge_score_single(
         max_tokens=max_tokens,
         temperature=0.0,
     )
-    raw_text = resp.choices[0].message.content
+    raw_text = resp.choices[0].message.content or ""
     parsed = parse_judge_response(raw_text)
     if parsed is None:
         return None
