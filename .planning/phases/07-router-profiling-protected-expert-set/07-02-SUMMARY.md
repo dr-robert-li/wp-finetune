@@ -51,13 +51,13 @@ completed: 2026-06-15
 
 # Phase 7 Plan 02: DGX Profiling Run Summary
 
-**Profiled the promoted v1.2 30B MoE on the matched 30/70 training stimulus — all automated gates green (Jaccard CI 0.9426 ≥ 0.94, D-08 delta 48 rows, mask [48,128]); human sign-off on the E_eff comparison + protected set is PENDING.**
+**Profiled the promoted v1.2 30B MoE on the matched 30/70 training stimulus — all automated gates green (Jaccard CI 0.9426 ≥ 0.94, D-08 delta 48 rows, mask [48,128]); human sign-off APPROVED 2026-06-19 (council-reviewed). Phase 7 CLOSED.**
 
 ## Status
 
 - ✅ **Task 1** — Profiling run + output validation. All artifacts written; Task-1 verify one-liner exits 0 (`OK mask (48, 128) rows 48 jaccard_ci_lower 0.9426`). Baseline untouched.
 - ✅ **Task 2** — PROF-05 + GATE-01 N/A rationale written; Task-2 verify one-liner prints `rationale OK`.
-- ⏳ **Task 3 (BLOCKING)** — Human sign-off on E_eff comparison + protected expert set. **OPEN.** Review pack: `07-HUMAN-REVIEW.md`. Reviewer replies `approved` to close. Phase verification/completion is intentionally deferred until then.
+- ✅ **Task 3 (gate closed)** — Human sign-off on E_eff comparison + protected expert set. **APPROVED 2026-06-19** (Dr. Robert Li; SOTA council GPT-5.5 / Opus 4.8 / Gemini 3.1 Pro unanimous on both judgment items — L35 Jaccard 0.60 ACCEPT under D-09, L45–47 E_eff +7 ACCEPT as routing-shift). Disposition recorded in `07-HUMAN-REVIEW.md` §5. Phase 7 closed; Phases 8 + 11 unblocked.
 
 ## Run
 

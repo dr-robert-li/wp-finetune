@@ -54,7 +54,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 <details>
 <summary>v2.0 RL Alignment (Phases 7-10) — Planned</summary>
 
-- [ ] **Phase 7: Router Profiling & Protected Expert Set** - Gradient-free profiling pass tagging expert routing counts by task token affinity, identify dual-purpose experts that must not be pruned (D-10), with stability verification and concentration report
+- [x] **Phase 7: Router Profiling & Protected Expert Set** - Gradient-free profiling pass tagging expert routing counts by task token affinity, identify dual-purpose experts that must not be pruned (D-10), with stability verification and concentration report (COMPLETE 2026-06-19 — all automated gates green under D-09 CI-aware; 1,480-expert protected mask exported; human sign-off APPROVED, council-unanimous on both judgment items)
 - [ ] **Phase 8: Reward Infrastructure** - Build composite reward pipeline (70% verifiable / 30% judge) with security hard gate, MO-GRPO normalization, VeRPO partial credit, and anti-hack eval set (D-11)
 - [ ] **Phase 9: GSPO Training** - Dual-mode RL (gen + judge reasoning) on FULL MoE with router-shift stabilization and collapse monitoring; GSPO (sequence-level) is the primary objective for MoE stability (D-08); GRPO is an optional fallback decided at Phase 9 planning time; protected experts from Phase 7 monitored
 - [ ] **Phase 10: RL Comparative Evaluation** - Compare RL model against v1.2 SFT baseline on wp-bench and all 9 eval dimensions; gates v3.0
@@ -360,7 +360,7 @@ Plans:
 
 Plans:
 - [x] 07-01-PLAN.md — Profiling code + tests + run-profiling skill (merged-model profiler, Jaccard PROF-03, concentration PROF-04, protected mask D-03/D-04, bootstrap CI D-09) — autonomous, GPU-free
-- [ ] 07-02-PLAN.md — DGX profiling run + post-processing + PROF-05/GATE-01 N/A rationale + human sign-off checkpoint
+- [x] 07-02-PLAN.md — DGX profiling run + post-processing + PROF-05/GATE-01 N/A rationale + human sign-off checkpoint (COMPLETE 2026-06-19 — gates green, council-reviewed APPROVED, Phase 7 closed)
 
 ### Phase 8: Reward Infrastructure
 **Goal**: A composite reward pipeline is built and validated end-to-end before any RL training begins — PHPCS anchor, security hard gate, VeRPO partial credit, MO-GRPO normalization, and anti-hack eval set all verified independently

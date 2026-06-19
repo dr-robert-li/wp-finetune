@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: executing
-stopped_at: Phase 7 context gathered
-last_updated: "2026-06-14T05:31:47.231Z"
+stopped_at: Phase 7 complete — human sign-off APPROVED (2026-06-19); Phase 8 unblocked
+last_updated: "2026-06-19T01:23:00.000Z"
 progress:
   total_phases: 10
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 35
-  completed_plans: 34
-  percent: 80
+  completed_plans: 35
+  percent: 90
 ---
 
 # Project State
@@ -20,12 +20,30 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 07 — router-profiling-protected-expert-set
+**Current focus:** Phase 08 — reward-infrastructure (Phase 07 closed 2026-06-19)
 
 ## Current Position
 
-Phase: 07 (router-profiling-protected-expert-set) — EXECUTING
-Plan: 2 of 2
+Phase: 07 (router-profiling-protected-expert-set) — ✅ COMPLETE (human sign-off APPROVED 2026-06-19)
+Plan: 2 of 2 (both complete)
+Next: Phase 08 (Reward Infrastructure)
+
+**Phase 7 closure (07-HUMAN-REVIEW §5, council-reviewed):** Profiling run of canonical v1.2 merged model on
+matched 30/70 training stimulus (34,855 examples, 785.8M tokens, GB10 6h30m, rc=0). All automated gates green —
+PROF-03 `jaccard_ci_lower=0.9426≥0.94` (D-09 CI-aware), PROF-04 concentration (E_eff gen 60.7 < judge 72.7),
+D-08 delta join 48 rows (+2.75 mean), D-03/D-04 protected mask [48,128] bool, 1,480 experts (mean-threshold,
+conservative co-activation). Two judgment items ACCEPTED unanimously by SOTA council (GPT-5.5 / Opus 4.8 /
+Gemini 3.1 Pro): ① L35 Jaccard=0.60 → ACCEPT under D-09, no D-06 re-profile (full-set ranking is the
+deterministic reference; mask built from full pass, not subsample); ② late-layer L45–47 E_eff +7 → ACCEPT as
+lawful routing shift (frozen router + LoRA'd attn/MLP, monotone ~10% on top of stack, mask invariant to uniform
+broadening). Forward hardening: `protected_expert_mask.json` to carry `layer_stability_notes` (low-Jaccard band
+{9,13,14,31,35,36}) before Phase 11 consumes; Phase 13 to pre-commit median-threshold (2,477) headroom on that
+band + L45–47. `protected_expert_mask.npy` immutable from here, shippable to Phases 11/13.
+**APPROVED — Dr. Robert Li, 2026-06-19.** Unblocks Phase 8 (D-V4-09 +3.58 recalibration inheritance) and
+Phase 11 (MoE-Sieve).
+
+---
+### (Historical) Phase 04.4 closure
 
 **Outcome:** v1.2 reasoning-merged-v4 promoted to canonical `models/qwen3-30b-wp-30_70-reasoning-merged-v4`
 (13 shards), serves correctly. Post-merge 10+10 validation: **wp_gen 10/10, wp_judge 10/10, routing 20/20**.
