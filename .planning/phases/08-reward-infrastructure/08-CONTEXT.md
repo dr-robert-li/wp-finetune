@@ -35,6 +35,12 @@ Build and independently validate a **composite reward pipeline** (`scripts/rewar
 ### Validation gate hygiene (inherits D-09 / D-V4-10)
 - All Phase-8 validation/acceptance gates (anti-hack "all below threshold", integration test on the 50 held-out gen+judge cases) use **CI-aware noise-band dispositions** — report bootstrap CIs, require the lower bound to clear the bar, measured identically on baseline + candidate.
 
+### Resolved from research open questions (2026-06-19)
+- **D-08-05 (security-failure definition, GRPO-02):** "Security failure" = a **CRITICAL_FLOOR_RULE for `D2_security` fires** (research Option C). Reward=0 triggers on the rubric's own critical-security classification, NOT on any minor SEC-N* sniff and NOT on a bare `D2_security < 8.0` score cut.
+- **D-08-06 (VeRPO scope, GRPO-04):** VeRPO difficulty-weighting applies to the **WP-standards subset only** (`D1_wpcs` + WP-specific sniffs), per the literal GRPO-04 / SC4 text. The other dimensions are covered by the 30% judge component — VeRPO is NOT applied across all 9 dimensions.
+- **D-08-07 (judge parse-failure fallback):** When `judge_score_single` returns `None` (parse failure), impute the judge component from the **rollout-group mean**; record the failure in `breakdown_dict`; flag/raise if the per-batch parse-failure rate exceeds **10%**.
+- **Accepted research defaults (planner may proceed without re-asking):** 70% verifiable block split **35% PHPCS-overall / 35% VeRPO**, each independently MO-GRPO normalized; anti-hack set size **15 cases per axis = 45 total** (+ the SC2 secure-fail case → fits the 50-case integration set).
+
 ### Folded Todos
 - **`phase8-inherit-judge-recalibration.md`** (pending) — folded as **D-08-02**: Phase 8 reward MUST consume `judge_recalibration.json` (+3.58, D-V4-09) as a hard input to the 30% `wp_judge` component.
 - **`phase7-8-ci-aware-noiseband-gates.md`** (pending) — folded as the **Validation gate hygiene** decision above (D-09 / D-V4-10): CI-aware noise-band gates for all Phase-8 acceptance checks.
