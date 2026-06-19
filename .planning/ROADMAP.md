@@ -380,7 +380,7 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 08-01-PLAN.md — Foundation: Wave-0 test scaffolding + judge_score_single() RC-A wrapper + injectable recalibration-offset loader (GRPO-01)
+- [x] 08-01-PLAN.md — Foundation: Wave-0 test scaffolding + judge_score_single() RC-A wrapper + injectable recalibration-offset loader (GRPO-01)
 - [ ] 08-02-PLAN.md — Reward math core: dataclasses + MO-GRPO within-group normalization + VeRPO difficulty weighting on WP-standards subset (GRPO-03, GRPO-04)
 - [ ] 08-03-PLAN.md — Composite 70/30 assembly + security TERMINAL hard gate (fail-closed) + judge-imputation + 50-case integration incl. SC2 (GRPO-01, GRPO-02)
 - [ ] 08-04-PLAN.md — Anti-hack set: 3-axis perturb-real + background-agent scoring + CI-aware gate (hi_perturbed < lo_clean) + acceptance report (D-11)
@@ -564,7 +564,7 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 5. Packaging and Deployment | v1.0 | 0/3 | Deferred to v3.0 | - |
 | 6. Adaptive Training Planner | v1.1 | 6/6 | Complete | 2026-04-01 |
 | 7. Router Profiling & Protected Expert Set | v2.0 | 1/2 | In Progress|  |
-| 8. Reward Infrastructure | v2.0 | 0/? | Not started | - |
+| 8. Reward Infrastructure | v2.0 | 1/4 | In Progress|  |
 | 9. GSPO Training | v2.0 | 0/? | Not started | - |
 | 10. RL Comparative Evaluation | v2.0 | 0/? | Not started | - |
 | 11. Post-RL MoE-Sieve | v3.0 | 0/? | Not started | - |
