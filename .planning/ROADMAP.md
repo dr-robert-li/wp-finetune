@@ -564,7 +564,7 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 5. Packaging and Deployment | v1.0 | 0/3 | Deferred to v3.0 | - |
 | 6. Adaptive Training Planner | v1.1 | 6/6 | Complete | 2026-04-01 |
 | 7. Router Profiling & Protected Expert Set | v2.0 | 1/2 | In Progress|  |
-| 8. Reward Infrastructure | v2.0 | 4/4 | Complete   | 2026-06-19 |
+| 8. Reward Infrastructure | v2.0 | 4/4 | Complete    | 2026-06-19 |
 | 9. GSPO Training | v2.0 | 0/? | Not started | - |
 | 10. RL Comparative Evaluation | v2.0 | 0/? | Not started | - |
 | 11. Post-RL MoE-Sieve | v3.0 | 0/? | Not started | - |
