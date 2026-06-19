@@ -357,16 +357,143 @@ class TestVeRPO:
 
 
 class TestSecurityGate:
-    """Tests for security gate (08-03). STUBBED until 08-03."""
+    """Tests for security gate (08-03 Task 1).
+
+    Method names embed 'security_gate' so -k security_gate selects all.
+    Imports kept inside method bodies (project-import pattern from 08-01).
+    Uses module-level _make_rubric() helper (defined above near TestVeRPO).
+    """
 
     def test_security_gate_fail_overrides_to_zero(self):
-        pytest.skip("implemented in 08-03")
+        """DETERMINISTIC D2_security trigger id in triggered_checks -> _security_fail True."""
+        from scripts.reward_pipeline import _security_fail
+        from tests.test_reward_pipeline import _make_rubric
 
-    def test_security_gate_applied_after_normalization(self):
-        pytest.skip("implemented in 08-03")
+        rubric = _make_rubric()
+        rubric.triggered_checks = {"D2_security": ["SEC-N01"]}
+        assert _security_fail(rubric) is True, "SEC-N01 must trigger security fail"
 
     def test_security_gate_non_failing_code_passes(self):
-        pytest.skip("implemented in 08-03")
+        """Clean RubricScore (no D2 trigger) -> _security_fail False."""
+        from scripts.reward_pipeline import _security_fail
+        from tests.test_reward_pipeline import _make_rubric
+
+        rubric = _make_rubric()
+        rubric.triggered_checks = {}  # no triggers at all
+        assert _security_fail(rubric) is False, "Clean rubric must not trigger security fail"
+
+    def test_security_gate_applied_after_normalization(self):
+        """Terminal override is post-combine: failing member's composite_pre_gate is non-zero.
+
+        The 0.0 assigned to scalar must NOT come from zeroing signals before normalization
+        (which would corrupt other group members' norms). Check that breakdown.composite_pre_gate
+        retains the real composite value while scalar == 0.0.
+        """
+        from unittest.mock import MagicMock, patch
+        from scripts.reward_pipeline import compute_group_rewards
+
+        # 4-member group; member 0 is the SC2 fixture code (security-failing)
+        # Mock score_code so member 0 has SEC-N01 triggered, others are clean
+        php_codes = ["<?php // sec_fail\n", "<?php echo 1;\n", "<?php echo 2;\n", "<?php echo 3;\n"]
+
+        def fake_score_code(code: str):
+            from tests.test_reward_pipeline import _make_rubric
+            rubric = _make_rubric()
+            if "sec_fail" in code:
+                rubric.triggered_checks = {"D2_security": ["SEC-N01"]}
+                rubric.overall = 90.0  # High quality on other signals
+            else:
+                rubric.triggered_checks = {}
+                rubric.overall = 70.0
+            return rubric
+
+        with patch("scripts.reward_pipeline.score_code", side_effect=fake_score_code), \
+             patch("scripts.reward_pipeline.judge_score_single", return_value=80.0):
+            results = compute_group_rewards(php_codes, MagicMock(), "test-model")
+
+        sec_result = results[0]
+        assert sec_result.scalar == 0.0, "Security-failing member must have scalar == 0.0"
+        # Terminal means composite_pre_gate holds the real composite (> 0); only scalar is zeroed
+        assert sec_result.breakdown.composite_pre_gate != 0.0, (
+            "composite_pre_gate must hold the real (non-zero) pre-gate composite; "
+            "security override only zeros scalar, not the pre-gate value"
+        )
+        assert sec_result.breakdown.security_fail is True
+
+    def test_security_gate_floor_rules_applied_not_used(self):
+        """D2 trigger fires but floor_rules_applied empty -> _security_fail still True.
+
+        Proves gate reads triggered_checks, not floor_rules_applied.
+        (apply_floor_rules only appends to floor_rules_applied when current > cap,
+        so an already-low D2 score produces empty floor_rules_applied even with triggers.)
+        """
+        from scripts.reward_pipeline import _security_fail
+        from tests.test_reward_pipeline import _make_rubric
+
+        rubric = _make_rubric()
+        rubric.triggered_checks = {"D2_security": ["SEC-N03"]}
+        rubric.floor_rules_applied = []  # explicitly empty — simulate already-low D2
+
+        assert _security_fail(rubric) is True, (
+            "Gate must fire on triggered_checks, not floor_rules_applied; "
+            "floor_rules_applied=[] does not mean no trigger fired"
+        )
+
+    def test_security_gate_sec_n04_excluded_by_design(self):
+        """RubricScore with ONLY SEC-N04 in D2_security -> _security_fail False.
+
+        SEC-N04 is the LLM-method check; excluded from _REWARD_SEC_TRIGGERS by design
+        because RUBRIC_USE_LLM_CHECKS is suppressed at module load (deterministic reward
+        compute per D-08). SEC-N04 cannot fire at reward time.
+        """
+        from scripts.reward_pipeline import _security_fail, _REWARD_SEC_TRIGGERS
+        from tests.test_reward_pipeline import _make_rubric
+
+        rubric = _make_rubric()
+        rubric.triggered_checks = {"D2_security": ["SEC-N04"]}
+
+        # SEC-N04 must NOT be in the reward-time trigger set
+        assert "SEC-N04" not in _REWARD_SEC_TRIGGERS, (
+            "_REWARD_SEC_TRIGGERS must NOT contain SEC-N04 (llm-method, excluded by design)"
+        )
+        # A rubric with ONLY SEC-N04 must NOT trigger the security gate
+        assert _security_fail(rubric) is False, (
+            "SEC-N04-only trigger must not cause security_fail=True under deterministic reward compute"
+        )
+
+    def test_security_gate_all_deterministic_triggers_fire(self):
+        """Each of {SEC-N01, N03, N06, N08, N19, N20} individually -> _security_fail True."""
+        from scripts.reward_pipeline import _security_fail
+        from tests.test_reward_pipeline import _make_rubric
+
+        deterministic_triggers = ["SEC-N01", "SEC-N03", "SEC-N06", "SEC-N08", "SEC-N19", "SEC-N20"]
+        for trigger_id in deterministic_triggers:
+            rubric = _make_rubric()
+            rubric.triggered_checks = {"D2_security": [trigger_id]}
+            assert _security_fail(rubric) is True, (
+                f"{trigger_id} must trigger security_fail=True (deterministic trigger)"
+            )
+
+    def test_security_gate_fail_closed_raises_on_empty_trigger_set(self):
+        """Gate raises RuntimeError (not returns False) when _REWARD_SEC_TRIGGERS is empty.
+
+        Fail-CLOSED contract: empty trigger set = unreadable config = MUST raise.
+        Returning False on empty set = insecure code earns reward = T-08-SEC HIGH severity.
+        """
+        from scripts.reward_pipeline import _security_fail
+        from tests.test_reward_pipeline import _make_rubric
+        import scripts.reward_pipeline as rp
+
+        rubric = _make_rubric()
+        rubric.triggered_checks = {"D2_security": ["SEC-N01"]}
+
+        original = rp._REWARD_SEC_TRIGGERS
+        try:
+            rp._REWARD_SEC_TRIGGERS = frozenset()  # simulate empty/unreadable config
+            with pytest.raises(RuntimeError, match="empty"):
+                _security_fail(rubric)
+        finally:
+            rp._REWARD_SEC_TRIGGERS = original  # restore
 
 
 # ---------------------------------------------------------------------------
