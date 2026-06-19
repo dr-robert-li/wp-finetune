@@ -4,12 +4,12 @@ milestone: v1.0
 milestone_name: MVP
 status: verifying
 stopped_at: Phase 8 planned (4 plans, checker 0 blockers) — ready for execution
-last_updated: "2026-06-19T15:12:50.837Z"
+last_updated: "2026-06-19T15:35:23.864Z"
 progress:
   total_phases: 11
   completed_phases: 9
   total_plans: 39
-  completed_plans: 37
+  completed_plans: 38
   percent: 82
 ---
 
@@ -138,7 +138,7 @@ data: `scripts/build_reasoning_negatives.py` + `build_augmented_train.py`; gates
 Status: Ready to execute
 Note: Local artifacts `models/qwen3-30b-wp-30_70-merged-v2` + `...-reasoning-merged` + `adapters/.../checkpoint-72` are READ-ONLY references/fallback only (NOT promoted). The GB10 memory wall is documented in `output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md`. `04.3-REOPEN-PLAN.md` remains a 0-task brief — do not execute.
 
-Progress: [██████████] 95%
+Progress: [██████████] 97%
 
 ## Performance Metrics
 
@@ -189,6 +189,7 @@ Progress: [██████████] 95%
 | Phase 07-router-profiling-protected-expert-set P01 | 20 | 3 tasks | 10 files |
 | Phase 08-reward-infrastructure P01 | 312 | 3 tasks | 6 files |
 | Phase 08-reward-infrastructure P02 | 281 | 2 tasks | 2 files |
+| Phase 08-reward-infrastructure P03 | 2018 | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -235,6 +236,9 @@ Recent decisions affecting current work:
 - [Phase ?]: reuse_revl04=false: grid staging shards absent, Plan 03 must re-bench REVL-04 on clean canonical staging
 - [Phase ?]: baseline pinned at 0.4537 policy constant (D-V4-02/D-N8); fresh-bench baseline 0.4299 recorded as drift check only in revl04_disposition.json
 - [Phase ?]: automated_pass=false: 3 HARD gate failures (REVL-01A rho 0.240<0.263, REVL-02 PHPCS 0.9412<0.98, confusion Pareto false-FAIL 0.468>0.403) block Wave 4 promotion
+- [Phase ?]: _REWARD_SEC_TRIGGERS derived programmatically: D2_security ids where method!=llm; SEC-N04 excluded by design
+- [Phase ?]: Gate fails CLOSED: RuntimeError on empty trigger set — prevents T-08-SEC fail-open
+- [Phase ?]: Composite weights 35/35/30 (phpcs/verpo/judge) locked per D-08; terminal override post-combine
 
 ### Pending Todos
 
@@ -275,7 +279,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-19T15:12:50.827Z
+Last session: 2026-06-19T15:35:03.493Z
 Stopped at: Phase 8 planned (4 plans, checker 0 blockers) — ready for execution
 
 Prior session: 2026-06-02T21:31:00.000Z
