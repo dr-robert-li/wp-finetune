@@ -497,6 +497,65 @@ class TestSecurityGate:
 
 
 # ---------------------------------------------------------------------------
+# TestPhpcsAvailabilityAssertion — CR-01 fail-closed phpcs guard
+# ---------------------------------------------------------------------------
+
+
+class TestPhpcsAvailabilityAssertion:
+    """Tests for the phpcs availability fail-closed guard in compute_group_rewards (CR-01).
+
+    Method names embed 'phpcs_assert' so -k phpcs_assert selects all tests.
+    """
+
+    def test_phpcs_assert_raises_when_phpcs_absent(self, monkeypatch):
+        """compute_group_rewards raises RuntimeError when phpcs is absent (fail-CLOSED).
+
+        Five of six _REWARD_SEC_TRIGGERS are phpcs-method checks; without phpcs
+        they cannot fire → security gate would fail-open → must raise instead.
+        """
+        import os
+        import scripts.reward_pipeline as rp
+
+        # Ensure escape hatch is NOT set
+        monkeypatch.delenv("REWARD_SKIP_PHPCS_ASSERT", raising=False)
+        # Simulate phpcs absent
+        monkeypatch.setattr(rp.shutil, "which", lambda name: None)
+
+        with pytest.raises(RuntimeError, match="phpcs binary not found"):
+            rp.compute_group_rewards(["<?php echo 1;"], object(), "model")
+
+    def test_phpcs_assert_no_raise_when_phpcs_present(self, monkeypatch):
+        """compute_group_rewards does NOT raise when phpcs is available in PATH."""
+        import scripts.reward_pipeline as rp
+        from unittest.mock import MagicMock, patch
+
+        monkeypatch.delenv("REWARD_SKIP_PHPCS_ASSERT", raising=False)
+        # Simulate phpcs present
+        monkeypatch.setattr(rp.shutil, "which", lambda name: "/usr/bin/phpcs" if name == "phpcs" else None)
+
+        with patch("scripts.reward_pipeline.score_code", side_effect=lambda c: _make_rubric({})), \
+             patch("scripts.reward_pipeline.judge_score_single", return_value=70.0):
+            results = rp.compute_group_rewards(["<?php echo 1;"], MagicMock(), "model")
+
+        assert len(results) == 1, "Must return one result when phpcs is present"
+
+    def test_phpcs_assert_escape_hatch_env(self, monkeypatch):
+        """REWARD_SKIP_PHPCS_ASSERT=1 suppresses the RuntimeError (degraded mode escape hatch)."""
+        import scripts.reward_pipeline as rp
+        from unittest.mock import MagicMock, patch
+
+        monkeypatch.setenv("REWARD_SKIP_PHPCS_ASSERT", "1")
+        # phpcs absent but escape hatch set — must NOT raise
+        monkeypatch.setattr(rp.shutil, "which", lambda name: None)
+
+        with patch("scripts.reward_pipeline.score_code", side_effect=lambda c: _make_rubric({})), \
+             patch("scripts.reward_pipeline.judge_score_single", return_value=70.0):
+            results = rp.compute_group_rewards(["<?php echo 1;"], MagicMock(), "model")
+
+        assert len(results) == 1, "Must return one result when escape hatch is set"
+
+
+# ---------------------------------------------------------------------------
 # TestCompositeWeights — GRPO-01 / 08-03 (70/30 composite signal weights)
 # ---------------------------------------------------------------------------
 
@@ -520,36 +579,93 @@ class TestCompositeWeights:
         return ["<?php echo 1;\n"] * size
 
     def test_composite_weights_sum_to_one(self):
-        """35% phpcs + 35% verpo + 30% judge = 100% (weights sum to 1.0)."""
-        phpcs_w = 0.35
-        verpo_w = 0.35
-        judge_w = 0.30
-        total = phpcs_w + verpo_w + judge_w
-        assert abs(total - 1.0) < 1e-9, f"Weights must sum to 1.0, got {total}"
+        """Imported _W_PHPCS + _W_VERPO + _W_JUDGE from reward_pipeline must sum to 1.0."""
+        from scripts.reward_pipeline import _W_PHPCS, _W_VERPO, _W_JUDGE
+
+        total = _W_PHPCS + _W_VERPO + _W_JUDGE
+        assert abs(total - 1.0) < 1e-9, (
+            f"Module weights must sum to 1.0, got {total} "
+            f"(_W_PHPCS={_W_PHPCS}, _W_VERPO={_W_VERPO}, _W_JUDGE={_W_JUDGE})"
+        )
 
     def test_composite_judge_component_weight(self):
-        """Judge component is weighted 0.30 (30%) in composite.
+        """Judge component is weighted _W_JUDGE (30%) in composite.
 
-        Vary judge score while holding verifiable signals constant and confirm
-        composite changes proportionally to the judge component.
+        Hold phpcs/verpo rubrics constant (identical) so phpcs_norm and verpo_norm
+        vary only via MO-GRPO across the group; vary judge score between runs and
+        confirm the composite_pre_gate differences are proportional to _W_JUDGE * judge_norm.
         """
         from unittest.mock import MagicMock, patch
-        from scripts.reward_pipeline import compute_group_rewards
+        from scripts.reward_pipeline import compute_group_rewards, _W_JUDGE, _W_PHPCS, _W_VERPO
 
+        # 4-member group with VARIED phpcs scores so norms are non-trivial,
+        # but all receiving the SAME judge score (→ judge_norm = 0 for all).
         php_codes = ["<?php echo 1;\n"] * 4
+        phpcs_overalls_varied = [50.0, 60.0, 70.0, 80.0]
+        call_idx = [0]
 
-        # Judge returns the SAME value for all members -> zero judge variance -> judge_norm ~0
-        # Vary judge between two runs and check the composite difference is ~0.30 * norm_diff
-        # We just assert compute_group_rewards succeeds and returns list[RewardResult]
-        with patch("scripts.reward_pipeline.score_code", side_effect=lambda c: _make_rubric({})), \
+        def varying_rubric(code: str):
+            r = _make_rubric({})
+            r.overall = phpcs_overalls_varied[call_idx[0] % len(phpcs_overalls_varied)]
+            call_idx[0] += 1
+            return r
+
+        with patch("scripts.reward_pipeline.score_code", side_effect=varying_rubric), \
              patch("scripts.reward_pipeline.judge_score_single", return_value=80.0):
-            results = compute_group_rewards(php_codes, MagicMock(), "test-model")
+            results_low = compute_group_rewards(php_codes, MagicMock(), "test-model")
 
-        assert len(results) == 4, "Must return one RewardResult per input"
-        # All members identical -> norms all ~0 -> composite ~ 0 for all
-        for r in results:
-            assert hasattr(r, "scalar"), "RewardResult must have .scalar"
-            assert hasattr(r, "breakdown"), "RewardResult must have .breakdown"
+        call_idx[0] = 0
+
+        with patch("scripts.reward_pipeline.score_code", side_effect=varying_rubric), \
+             patch("scripts.reward_pipeline.judge_score_single", return_value=90.0):
+            results_high = compute_group_rewards(php_codes, MagicMock(), "test-model")
+
+        # Within each run, judge variance = 0 → judge_norm = 0 for all members.
+        # But phpcs varies → phpcs_norm is non-zero.
+        # composite = _W_PHPCS*phpcs_norm + _W_VERPO*verpo_norm + _W_JUDGE*0
+        # So composite changes between runs ONLY because judge_norm changes when
+        # a different constant judge score is used (different group means → same
+        # zero-variance normalization). Both runs should have judge_norm == 0
+        # and composites driven entirely by phpcs/verpo — validate that composites
+        # match the 35/35/30 formula using the breakdown fields directly.
+        for i, r in enumerate(results_low):
+            bd = r.breakdown
+            expected = _W_PHPCS * bd.phpcs_norm + _W_VERPO * bd.verpo_norm + _W_JUDGE * bd.judge_norm
+            assert abs(bd.composite_pre_gate - expected) < 1e-6, (
+                f"Member {i}: composite_pre_gate={bd.composite_pre_gate:.6f} "
+                f"!= _W_PHPCS*phpcs_norm + _W_VERPO*verpo_norm + _W_JUDGE*judge_norm "
+                f"= {expected:.6f}"
+            )
+
+        # Vary judge while keeping phpcs/verpo identical: composite must change
+        # proportionally to _W_JUDGE * delta(judge_norm).
+        # Build a group with VARIED judge scores (different per member) to get non-zero
+        # judge_norm, then confirm _W_JUDGE contribution.
+        judge_vals = [50.0, 60.0, 80.0, 95.0]
+        judge_idx = [0]
+
+        def varied_judge(*args, **kwargs):
+            v = judge_vals[judge_idx[0] % len(judge_vals)]
+            judge_idx[0] += 1
+            return v
+
+        # Use a fresh call_idx for rubrics
+        call_idx[0] = 0
+        with patch("scripts.reward_pipeline.score_code", side_effect=lambda c: _make_rubric({})), \
+             patch("scripts.reward_pipeline.judge_score_single", side_effect=varied_judge):
+            results_jv = compute_group_rewards(php_codes, MagicMock(), "test-model")
+
+        # Confirm composite = 35/35/30 formula and judge_norm actually varies
+        judge_norms = [r.breakdown.judge_norm for r in results_jv]
+        assert max(judge_norms) - min(judge_norms) > 0.1, (
+            f"judge_norm must vary when judge scores differ; got {judge_norms}"
+        )
+        for i, r in enumerate(results_jv):
+            bd = r.breakdown
+            expected = _W_PHPCS * bd.phpcs_norm + _W_VERPO * bd.verpo_norm + _W_JUDGE * bd.judge_norm
+            assert abs(bd.composite_pre_gate - expected) < 1e-6, (
+                f"Member {i}: composite_pre_gate must equal 35/35/30 formula"
+            )
 
     def test_composite_verifiable_split_35_35(self):
         """Verifiable component (70%) is split equally: 35% phpcs, 35% verpo.
