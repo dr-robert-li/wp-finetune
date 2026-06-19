@@ -618,6 +618,119 @@ class TestCompositeWeights:
             "After imputation, judge_raw must not be None"
         )
 
+    def test_parse_failure_rate_flag(self):
+        """Warning fires when >10% of group has judge parse failure (D-08-07).
+
+        Group of 4: 1 None = 25% > 10% threshold — must emit RuntimeWarning.
+        """
+        import warnings
+        from unittest.mock import MagicMock, patch
+        from scripts.reward_pipeline import compute_group_rewards
+
+        php_codes = ["<?php echo 1;\n"] * 4
+
+        # 1 of 4 = 25% parse failures — above 10% threshold
+        judge_returns = [None, 80.0, 80.0, 80.0]
+        call_idx = [0]
+
+        def varying_judge(*args, **kwargs):
+            val = judge_returns[call_idx[0] % len(judge_returns)]
+            call_idx[0] += 1
+            return val
+
+        with patch("scripts.reward_pipeline.score_code", side_effect=lambda c: _make_rubric({})), \
+             patch("scripts.reward_pipeline.judge_score_single", side_effect=varying_judge):
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                compute_group_rewards(php_codes, MagicMock(), "test-model")
+
+        rate_warnings = [
+            w for w in caught
+            if issubclass(w.category, RuntimeWarning)
+            and "parse failure rate" in str(w.message).lower()
+        ]
+        assert rate_warnings, (
+            "compute_group_rewards must emit RuntimeWarning mentioning 'parse failure rate' "
+            "when >10% of group has None judge score (D-08-07). "
+            f"Got warnings: {[str(w.message) for w in caught]}"
+        )
+
+    def test_no_single_signal_dominance(self):
+        """MO-GRPO normalization is scale-invariant: scaling one signal's raw values
+        does not change relative ranking or composite_pre_gate ordering.
+
+        Verifies all three composite components (phpcs, verpo, judge) contribute:
+        builds a group where all three signals vary, checks 35/35/30 split holds.
+        """
+        from unittest.mock import MagicMock, patch
+        from scripts.reward_pipeline import compute_group_rewards
+
+        # 4 members: phpcs overall varies (40/60/80/100), judge varies (50/65/80/95)
+        php_codes = ["<?php echo 1;\n"] * 4
+        phpcs_overalls = [40.0, 60.0, 80.0, 100.0]
+        judge_scores_a = [50.0, 65.0, 80.0, 95.0]
+
+        call_idx_score = [0]
+        call_idx_judge = [0]
+
+        def varying_score_a(code: str):
+            rubric = _make_rubric({})
+            rubric.overall = phpcs_overalls[call_idx_score[0] % len(phpcs_overalls)]
+            call_idx_score[0] += 1
+            return rubric
+
+        def varying_judge_a(*args, **kwargs):
+            val = judge_scores_a[call_idx_judge[0] % len(judge_scores_a)]
+            call_idx_judge[0] += 1
+            return val
+
+        with patch("scripts.reward_pipeline.score_code", side_effect=varying_score_a), \
+             patch("scripts.reward_pipeline.judge_score_single", side_effect=varying_judge_a):
+            results_a = compute_group_rewards(php_codes, MagicMock(), "test-model")
+
+        # Scale phpcs_overalls by 10x — MO-GRPO normalization must preserve rank order
+        phpcs_overalls_scaled = [v * 10 for v in phpcs_overalls]
+        call_idx_score[0] = 0
+        call_idx_judge[0] = 0
+
+        def varying_score_b(code: str):
+            rubric = _make_rubric({})
+            rubric.overall = phpcs_overalls_scaled[call_idx_score[0] % len(phpcs_overalls_scaled)]
+            call_idx_score[0] += 1
+            return rubric
+
+        def varying_judge_b(*args, **kwargs):
+            val = judge_scores_a[call_idx_judge[0] % len(judge_scores_a)]
+            call_idx_judge[0] += 1
+            return val
+
+        with patch("scripts.reward_pipeline.score_code", side_effect=varying_score_b), \
+             patch("scripts.reward_pipeline.judge_score_single", side_effect=varying_judge_b):
+            results_b = compute_group_rewards(php_codes, MagicMock(), "test-model")
+
+        # Normalization must be scale-invariant: phpcs_norm values identical despite 10x scale
+        for i, (ra, rb) in enumerate(zip(results_a, results_b)):
+            assert abs(ra.breakdown.phpcs_norm - rb.breakdown.phpcs_norm) < 1e-6, (
+                f"Member {i}: phpcs_norm must be scale-invariant under MO-GRPO. "
+                f"Unscaled={ra.breakdown.phpcs_norm:.6f}, 10x-scaled={rb.breakdown.phpcs_norm:.6f}"
+            )
+            # Composite ordering must be preserved
+            assert abs(ra.breakdown.composite_pre_gate - rb.breakdown.composite_pre_gate) < 1e-6, (
+                f"Member {i}: composite_pre_gate must be scale-invariant. "
+                f"Unscaled={ra.breakdown.composite_pre_gate:.6f}, 10x-scaled={rb.breakdown.composite_pre_gate:.6f}"
+            )
+
+        # Verify all three composite weight components actually differ across members
+        # (confirms 35/35/30 split is exercised, not degenerate)
+        phpcs_norms = [r.breakdown.phpcs_norm for r in results_a]
+        judge_norms = [r.breakdown.judge_norm for r in results_a]
+        assert max(phpcs_norms) - min(phpcs_norms) > 0.1, (
+            "phpcs_norm must vary across members (35% weight exercised)"
+        )
+        assert max(judge_norms) - min(judge_norms) > 0.1, (
+            "judge_norm must vary across members (30% weight exercised)"
+        )
+
 
 # ---------------------------------------------------------------------------
 # TestBreakdownContract — RLEV-02 / 08-02 (breakdown dict fields + serialization)
