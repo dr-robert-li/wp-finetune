@@ -48,11 +48,14 @@ The judge returns structured scores across 9 dimensions: WPCS compliance, SQL sa
 | | 4. Eval Triage — 30/70 wins (gen 0.99+, judge Spearman 0.57) | **Complete** |
 | | 5. Packaging & Deployment | Deferred to v3.0 |
 | v1.1 Adaptive Training | 6. Adaptive Training Planner (power-primary, memory watchdog) | Complete |
-| v1.2 Judge Reasoning | 4.1 Seed Curation + Data Gen → 4.2 Dataset Assembly → 4.3 Reasoning Fine-Tune → 4.4 Eval & Merge | **Next** |
-| v2.0 MoE-Sieve | 7. Router Profiling + Ratio Selection (E_eff) → 8. Selective Training → 9. Eval | Planned |
-| v3.0 GRPO & Deploy | 10. Rewards → 11. Dual-mode GRPO (gen + judge) → 12. Merge + Prune → 13. Eval → 14. Package | Planned |
+| v1.2 Judge Reasoning | 4.1 Seed Curation + Data Gen → 4.2 Dataset Assembly → 4.3 Reasoning Fine-Tune → 4.4 Eval & Merge | **Complete** |
+| v2.0 RL Alignment | 7. Router Profiling (expert mask) | **Complete** |
+| | 8. Reward Infrastructure (composite 70/30, security gate, MO-GRPO, VeRPO) | **Complete** |
+| | 9. GSPO Training | **Next** |
+| | 10. RL Eval | Planned |
+| v3.0 MoE-Sieve, Pruning & Packaging | 11. Post-RL MoE-Sieve → 12. Sieve Eval → 13. Merge + Pruning → 14. Final Eval → 15. Package | Planned |
 
-**Current:** Full pipeline re-execution in progress. All LLM scripts refactored from Anthropic API to Claude Code agent subprocess calls (`scripts/claude_agent.py`). Phase 1 re-extracted (137K functions, 0 corrupted entries after ::class fix). Phase 1 re-judging underway with real Claude Code agents (13 parallel agents across 204 repos). Subsequent phases (2-3, export, training, 4.1-4.2) will re-run on the clean foundation.
+**Current:** v1.2 Judge Reasoning complete — v4-winner promoted to `models/qwen3-30b-wp-30_70-reasoning-merged-v4` (D-V4-10 waiver + REVL-05 sign-off 2026-06-14). Phase 7 Router Profiling closed 2026-06-19: 1,480 experts protected, CI-aware Jaccard gate passed (`jaccard_ci_lower=0.9426≥0.94`), council-approved. Phase 8 Reward Infrastructure complete: composite reward pipeline built and tested (424 tests green), live endpoint UAT deferred to Phase 9 vLLM infra. Next: Phase 9 GSPO Training.
 
 **Building in public.** Read the [Engineering Journal](JOURNAL.md) for real-time decisions, tradeoffs, failures, and lessons learned as the project evolves.
 

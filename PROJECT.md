@@ -93,7 +93,7 @@ The data pipeline lives in this directory and produces the training dataset.
 
 ### Phase C: Base-Model Profiling & Evaluation (Triage)
 
-*Not yet started. Next milestone step.*
+*Complete (v1.2 Phases 4.1–4.4). v4-winner promoted to `models/qwen3-30b-wp-30_70-reasoning-merged-v4` under D-V4-10 waiver + REVL-05 sign-off 2026-06-14.*
 
 Phase 4 profiles the base model first (gates whether to train 60/40 and 70/30), then evaluates available adapters as a triage gate. Survivors are carried to Phase 7 where fine-tuned adapter routing concentration determines the final ratio selection.
 
@@ -247,9 +247,13 @@ Judge training data is additionally sanity-checked: high-quality source code mus
 - [x] Phase A: Data pipeline — 267K examples, 5 ratio exports (v1.0 Phases 1-2)
 - [x] Phase B: Model setup & training — 5 LoRA runs complete on DGX Spark (v1.0 Phase 3)
 - [x] Adaptive training infrastructure — power-primary planner, memory watchdog (v1.1 Phase 6)
-- [ ] Phase C: Base-model profiling + evaluation triage — **next step** (v1.0 Phase 4)
-- [ ] Phase D: MoE-Sieve selective training (v2.0 Phases 7-9)
-- [ ] Phase E: GRPO + pruning + packaging (v3.0 Phases 10-14)
+- [x] Phase C: Judge reasoning fine-tune — v4-winner promoted, +3.58 calibration locked (v1.2 Phases 4.1-4.4, complete 2026-06-14)
+- [x] Phase 7: Router profiling — 1,480 experts protected, CI-aware Jaccard gate passed, council-approved (v2.0, closed 2026-06-19)
+- [x] Phase 8: Reward infrastructure — composite 70/30 pipeline, security terminal gate, MO-GRPO, VeRPO, anti-hack eval set; 424 tests green (v2.0, complete 2026-06-20)
+- [ ] Phase 9: GSPO Training — **next step** (v2.0)
+- [ ] Phase 10: RL Eval (v2.0)
+- [ ] Phase D: MoE-Sieve selective training + eval + merge + pruning (v3.0 Phases 11-13)
+- [ ] Phase E: Final eval + packaging (v3.0 Phases 14-15)
 
 ## Dependencies
 
