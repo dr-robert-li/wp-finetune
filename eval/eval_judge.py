@@ -207,6 +207,52 @@ def parse_judge_response(response: str) -> Optional[dict]:
     return None
 
 
+def judge_score_single(
+    php_code: str,
+    client: "openai.OpenAI",
+    model: str,
+    max_tokens: int = 512,
+) -> "Optional[float]":
+    """Invoke wp_judge on a single PHP code string.
+
+    Returns raw overall_score (0-100) as a float, or None on parse failure.
+
+    CRITICAL: MUST use _judge_create (not client.chat.completions.create directly)
+    to preserve the RC-A enable_thinking=False guard.  Without the guard, the
+    merged Qwen3 model emits unclosed <think> blocks that parse_judge_response
+    cannot rescue — causing 19-25% parse failures (see RC-A fix, Phase 04.4).
+
+    Args:
+        php_code:   The PHP source string to evaluate.
+        client:     An openai.OpenAI instance pointed at the vLLM judge endpoint.
+        model:      The served model name (e.g. "openai/qwen3-wp").
+        max_tokens: Max tokens for the judge response (default 512).
+
+    Returns:
+        float: raw overall_score from the parsed judge response.
+        None:  if the response cannot be parsed or overall_score is missing/non-numeric.
+    """
+    messages = [
+        {
+            "role": "user",
+            "content": f"<wp_judge> Evaluate this WordPress code:\n\n{php_code}",
+        }
+    ]
+    resp = _judge_create(
+        client,
+        model=model,
+        messages=messages,
+        max_tokens=max_tokens,
+        temperature=0.0,
+    )
+    raw_text = resp.choices[0].message.content
+    parsed = parse_judge_response(raw_text)
+    if parsed is None:
+        return None
+    overall = parsed.get("overall_score")
+    return float(overall) if isinstance(overall, (int, float)) else None
+
+
 def _extract_code_from_judge_prompt(user_message: str) -> str:
     """Extract the PHP code being judged from a <wp_judge> user message.
 
