@@ -377,7 +377,13 @@ Plans:
   - Fix-test-validate loop: each reward component (PHPCS, security, VeRPO, MO-GRPO norm) is built, unit-tested, and validated independently before integration
   - Integration test: end-to-end reward computation on 50 held-out gen+judge examples with known-good and known-bad cases
   - Anti-hack eval set validated: run reward pipeline on adversarial examples (verbose padding, template critiques, self-preferencing) — all must score below threshold
-**Plans**: 1 plan
+**Plans**: 4 plans
+
+Plans:
+- [ ] 08-01-PLAN.md — Foundation: Wave-0 test scaffolding + judge_score_single() RC-A wrapper + injectable recalibration-offset loader (GRPO-01)
+- [ ] 08-02-PLAN.md — Reward math core: dataclasses + MO-GRPO within-group normalization + VeRPO difficulty weighting on WP-standards subset (GRPO-03, GRPO-04)
+- [ ] 08-03-PLAN.md — Composite 70/30 assembly + security TERMINAL hard gate (fail-closed) + judge-imputation + 50-case integration incl. SC2 (GRPO-01, GRPO-02)
+- [ ] 08-04-PLAN.md — Anti-hack set: 3-axis perturb-real + background-agent scoring + CI-aware gate (hi_perturbed < lo_clean) + acceptance report (D-11)
 
 ### Phase 9: GSPO Training
 **Goal**: Dual-mode RL refines both generation quality and judge reasoning quality on the FULL MoE (not sieve-constrained), with router-shift stabilization. GSPO (sequence-level) is the primary RL objective for MoE stability (D-08). Whether to also evaluate GRPO (with larger group size + Pro-GRPO expand-then-prune) as a fallback is an implementation decision made at Phase 9 planning time based on GSPO availability and feasibility. Judge is the primary bottleneck (Spearman 0.57 vs gen 0.99+ at SFT stage) and receives equal or greater RL budget. Gen rewards use PHPCS + security + VeRPO. Judge rewards use score-reasoning consistency (separately spawned Claude evaluator agent) and fix correctness (PHPCS/security scanner on critique-then-fix corrected code). Protected experts from Phase 7 monitored via routing regularizer.
