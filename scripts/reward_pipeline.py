@@ -106,6 +106,11 @@ from eval.rubric_scorer import (  # noqa: E402
     POSITIVE_CHECK_IDS,
     NEGATIVE_CHECK_IDS,
 )
+from eval.rubric_definitions import (  # noqa: E402
+    CRITICAL_FLOOR_RULES,
+    CHECK_REGISTRY,
+)
+from eval.eval_judge import judge_score_single  # noqa: E402  (module-level for patch binding)
 
 # ---------------------------------------------------------------------------
 # VeRPO WP-standards subset (D-08-06)
@@ -116,6 +121,77 @@ from eval.rubric_scorer import (  # noqa: E402
 WP_STANDARDS_CHECK_IDS: frozenset = frozenset(
     cid for cid, dim in CHECK_DIMENSION_MAP.items() if dim in ("D1_wpcs", "D5_wp_api")
 )
+
+# ---------------------------------------------------------------------------
+# Security hard gate — GRPO-02 / D-08-05 / T-08-SEC
+# ---------------------------------------------------------------------------
+# _REWARD_SEC_TRIGGERS: deterministic subset of D2_security CRITICAL_FLOOR_RULE trigger ids.
+# Derived programmatically: D2_security trigger ids where CHECK_REGISTRY[cid].method != "llm".
+#
+# SEC-N04 (the only llm-method D2_security trigger) is excluded BY DESIGN:
+#   reward_pipeline.py pops RUBRIC_USE_LLM_CHECKS at module load (Pitfall 6), so
+#   score_code() never fires llm-method checks during reward compute. SEC-N04 therefore
+#   cannot appear in triggered_checks at reward time. Excluding it here keeps the gate
+#   strictly consistent with what can actually fire (D-08 locked constraint).
+#   DO NOT re-enable RUBRIC_USE_LLM_CHECKS to "rescue" SEC-N04 — that breaks determinism.
+#
+# Result: {SEC-N01, SEC-N03, SEC-N06, SEC-N08, SEC-N19, SEC-N20} (6 ids, all phpcs/regex)
+_REWARD_SEC_TRIGGERS: frozenset = frozenset(
+    cid
+    for rule in CRITICAL_FLOOR_RULES
+    if rule[0] == "D2_security"
+    for cid in rule[2]
+    if CHECK_REGISTRY[cid].method != "llm"
+)
+
+# Fail-CLOSED guard at module load: if the trigger set is somehow empty (structural breakage),
+# raise immediately so the misconfiguration is surfaced at import time, not at inference time.
+if not _REWARD_SEC_TRIGGERS:
+    raise RuntimeError(
+        "reward_pipeline: _REWARD_SEC_TRIGGERS is empty — cannot derive the D2_security "
+        "deterministic trigger set from CRITICAL_FLOOR_RULES + CHECK_REGISTRY. "
+        "This is a structural misconfiguration; refusing to start with an empty gate "
+        "(empty gate = fail-open = HIGH severity T-08-SEC)."
+    )
+
+
+def _security_fail(rubric: RubricScore) -> bool:
+    """Return True iff the rubric contains a D2_security CRITICAL_FLOOR_RULE trigger.
+
+    GATE SEMANTICS (D-08-05 Option C / GRPO-02):
+      - Reads triggered_checks ONLY — the dict of dim -> [check_ids that fired].
+        The apply_floor_rules() side-effect list is intentionally NOT consulted:
+        it is only appended to when the current score exceeds the floor cap,
+        so an already-below-cap D2 dimension yields an empty list even when a
+        trigger has fired. Gate uses triggered_checks for reliable membership.
+      - Intersects ALL fired check ids (across all dimensions) against
+        _REWARD_SEC_TRIGGERS (the DETERMINISTIC D2_security trigger subset).
+      - Returns True iff the intersection is non-empty.
+
+    FAIL-CLOSED contract:
+      - Raises RuntimeError if _REWARD_SEC_TRIGGERS is empty (config breakage).
+        Returning False on an empty gate would let insecure code earn reward (T-08-SEC HIGH).
+
+    Args:
+        rubric: RubricScore from score_code(); must have .triggered_checks dict.
+
+    Returns:
+        bool: True if a deterministic D2_security trigger fired; False otherwise.
+    """
+    if not _REWARD_SEC_TRIGGERS:
+        raise RuntimeError(
+            "_security_fail: _REWARD_SEC_TRIGGERS is empty — gate cannot operate. "
+            "This indicates structural breakage in CRITICAL_FLOOR_RULES / CHECK_REGISTRY. "
+            "Raising (not returning False) to prevent fail-open (T-08-SEC HIGH severity)."
+        )
+    # Flatten all triggered check ids across all dimensions into a single set
+    all_fired: set[str] = {
+        cid
+        for ids in rubric.triggered_checks.values()
+        for cid in ids
+    }
+    return bool(all_fired & _REWARD_SEC_TRIGGERS)
+
 
 # ---------------------------------------------------------------------------
 # MO-GRPO within-group normalization (GRPO-03)
@@ -329,3 +405,208 @@ def _verpo_group(
         per_sample_verpo.append(float(verpo_i))
 
     return per_sample_verpo, check_pass_rates, check_difficulties
+
+
+# ---------------------------------------------------------------------------
+# Composite reward assembly — public API (GRPO-01 / D-08-04 / D-08-07)
+# ---------------------------------------------------------------------------
+
+# Weight constants (35 / 35 / 30 split — locked default per D-08)
+_W_PHPCS: float = 0.35
+_W_VERPO: float = 0.35
+_W_JUDGE: float = 0.30
+
+# Warning threshold: if more than 10% of batch has None judge score, emit a warning (D-08-07)
+_JUDGE_IMPUTE_WARN_RATE: float = 0.10
+
+
+def compute_group_rewards(
+    php_codes: list[str],
+    judge_client: object,
+    judge_model: str,
+) -> list[RewardResult]:
+    """Compute composite GRPO rewards for a rollout group (two-pass, group-normalized).
+
+    Two-pass algorithm:
+      Pass 1 — collect signals:
+        For each code in the group:
+          a. Run _extract_verifiable_signals(code) -> RubricScore
+          b. Call judge_score_single(code, judge_client, judge_model) -> Optional[float]
+          c. Track judge parse failures (None returns)
+      Impute None judge scores from the group mean of valid scores (D-08-07).
+      If >10% of the group has None judge scores, emit a warning.
+
+      Pass 2 — normalize + compose + gate:
+        a. Apply _apply_offset_clip to each judge score (offset then clip [0, 100])
+        b. Compute VeRPO group scores via _verpo_group
+        c. MO-GRPO normalize phpcs_raw, verpo, and offset-clipped judge independently
+        d. Per-sample composite_pre_gate = 0.35*phpcs_norm + 0.35*verpo_norm + 0.30*judge_norm
+        e. Terminal override: scalar = 0.0 if _security_fail(rubric) else composite_pre_gate
+
+    Security override is TERMINAL (applied AFTER normalize+combine). The failing member's
+    composite_pre_gate retains its real composite value; only scalar is zeroed.
+    This preserves the group statistics (the fail member's pre-override signals remain in
+    the normalization denominator) per Pitfall 1 / GRPO-02.
+
+    Args:
+        php_codes: List of PHP source code strings for this rollout group.
+        judge_client: Judge client object passed to judge_score_single.
+        judge_model: Model identifier string passed to judge_score_single.
+
+    Returns:
+        list[RewardResult]: One result per input, each with (scalar, breakdown).
+    """
+    import logging
+    import warnings
+    G = len(php_codes)
+    if G == 0:
+        return []
+
+    # -----------------------------------------------------------------------
+    # Pass 1: collect rubric scores and raw judge scores
+    # -----------------------------------------------------------------------
+    rubrics: list[RubricScore] = []
+    raw_judge_scores: list[Optional[float]] = []
+
+    for code in php_codes:
+        rubric = _extract_verifiable_signals(code)
+        rubrics.append(rubric)
+        judge_raw = judge_score_single(code, judge_client, judge_model)
+        raw_judge_scores.append(judge_raw)
+
+    # -----------------------------------------------------------------------
+    # Judge parse-failure imputation (D-08-07)
+    # -----------------------------------------------------------------------
+    judge_parse_failures: list[bool] = [score is None for score in raw_judge_scores]
+    judge_imputed_flags: list[bool] = [False] * G
+
+    fail_count = sum(judge_parse_failures)
+    if fail_count > 0:
+        # Compute mean of valid scores for imputation
+        valid_scores = [s for s in raw_judge_scores if s is not None]
+        if valid_scores:
+            group_judge_mean_raw = float(np.mean(valid_scores))
+        else:
+            # All scores are None — impute with 0.0 (conservative fallback)
+            group_judge_mean_raw = 0.0
+
+        for i, is_failure in enumerate(judge_parse_failures):
+            if is_failure:
+                raw_judge_scores[i] = group_judge_mean_raw
+                judge_imputed_flags[i] = True
+
+        fail_rate = fail_count / G
+        if fail_rate > _JUDGE_IMPUTE_WARN_RATE:
+            warnings.warn(
+                f"compute_group_rewards: judge parse failure rate {fail_rate:.1%} "
+                f"({fail_count}/{G}) exceeds {_JUDGE_IMPUTE_WARN_RATE:.0%} threshold. "
+                "Imputing from group mean — check judge endpoint health (D-08-07).",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+
+    # -----------------------------------------------------------------------
+    # Pass 2: normalize + compose + gate
+    # -----------------------------------------------------------------------
+
+    # Apply offset+clip to judge scores
+    judge_offset_scores: list[float] = [
+        _apply_offset_clip(float(s)) for s in raw_judge_scores  # type: ignore[arg-type]
+    ]
+
+    # phpcs raw scores (rubric.overall is the 0-100 rubric overall)
+    phpcs_raws: list[float] = [float(r.overall) for r in rubrics]
+
+    # VeRPO scores for the group
+    verpo_scores, check_pass_rates, check_difficulties = _verpo_group(rubrics)
+
+    # MO-GRPO normalize each signal independently
+    phpcs_arr = np.array(phpcs_raws, dtype=float)
+    verpo_arr = np.array(verpo_scores, dtype=float)
+    judge_arr = np.array(judge_offset_scores, dtype=float)
+
+    phpcs_norm_arr = _mo_grpo_norm(phpcs_arr)
+    verpo_norm_arr = _mo_grpo_norm(verpo_arr)
+    judge_norm_arr = _mo_grpo_norm(judge_arr)
+
+    # Group stats (using population std, ddof=0 — consistent with _mo_grpo_norm)
+    group_phpcs_mean = float(phpcs_arr.mean())
+    group_phpcs_std = float(phpcs_arr.std(ddof=0))
+    group_judge_mean = float(judge_arr.mean())
+    group_judge_std = float(judge_arr.std(ddof=0))
+
+    # -----------------------------------------------------------------------
+    # Per-sample composite + terminal security override
+    # -----------------------------------------------------------------------
+    results: list[RewardResult] = []
+    for i, rubric in enumerate(rubrics):
+        phpcs_norm = float(phpcs_norm_arr[i])
+        verpo_norm = float(verpo_norm_arr[i])
+        judge_norm = float(judge_norm_arr[i])
+
+        composite_pre_gate = (
+            _W_PHPCS * phpcs_norm
+            + _W_VERPO * verpo_norm
+            + _W_JUDGE * judge_norm
+        )
+
+        # Evaluate security gate (reads triggered_checks, NOT a dimension score cut)
+        sec_fail = _security_fail(rubric)
+
+        # Terminal override: applied AFTER normalize+combine (Pitfall 1 / GRPO-02)
+        final_scalar = 0.0 if sec_fail else composite_pre_gate
+
+        breakdown = RewardBreakdown(
+            # Pre-normalization
+            phpcs_raw=phpcs_raws[i],
+            verpo_raw=verpo_scores[i],
+            judge_raw=raw_judge_scores[i],  # type: ignore[arg-type]
+            judge_offset_applied=judge_offset_scores[i],
+            security_fail=sec_fail,
+            # Post-normalization
+            phpcs_norm=phpcs_norm,
+            verpo_norm=verpo_norm,
+            judge_norm=judge_norm,
+            # Composite pre-gate (real composite, not zeroed — gate only zeroes scalar)
+            composite_pre_gate=float(composite_pre_gate),
+            # VeRPO per-check data
+            check_pass_rates=check_pass_rates,
+            check_difficulties=check_difficulties,
+            # Group stats
+            group_size=G,
+            group_phpcs_mean=group_phpcs_mean,
+            group_phpcs_std=group_phpcs_std,
+            group_judge_mean=group_judge_mean,
+            group_judge_std=group_judge_std,
+            # Parse-failure metadata (D-08-07)
+            judge_parse_failure=judge_parse_failures[i],
+            judge_imputed_from_group=judge_imputed_flags[i],
+        )
+
+        results.append(RewardResult(scalar=float(final_scalar), breakdown=breakdown))
+
+    return results
+
+
+def compute_reward(
+    php_code: str,
+    judge_client: object,
+    judge_model: str,
+) -> RewardResult:
+    """Compute reward for a single PHP generation using a size-1 group.
+
+    Convenience wrapper around compute_group_rewards for the single-sample case.
+    Note: with a single sample, MO-GRPO normalization yields 0.0 for all signals
+    (the sample IS the group mean). This is expected behavior for inference-time
+    scoring; GRPO training always uses compute_group_rewards with G > 1.
+
+    Args:
+        php_code: PHP source code string.
+        judge_client: Judge client object.
+        judge_model: Model identifier string.
+
+    Returns:
+        RewardResult: (scalar, breakdown) for the single sample.
+    """
+    results = compute_group_rewards([php_code], judge_client, judge_model)
+    return results[0]
