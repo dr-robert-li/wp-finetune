@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
-status: verifying
-stopped_at: Phase 8 planned (4 plans, checker 0 blockers) — ready for execution
-last_updated: "2026-06-19T15:55:09.060Z"
+status: milestone_complete
+stopped_at: Milestone complete (Phase 8 was final phase)
+last_updated: 2026-06-19T21:45:33.672Z
 progress:
   total_phases: 11
   completed_phases: 10
@@ -20,12 +20,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 08 — reward-infrastructure (Phase 07 closed 2026-06-19)
+**Current focus:** Milestone complete
 
 ## Current Position
 
-Phase: 07 (router-profiling-protected-expert-set) — ✅ COMPLETE (human sign-off APPROVED 2026-06-19)
-Plan: 2 of 2 (both complete)
+Phase: 8
+Plan: Not started
 Next: Phase 08 (Reward Infrastructure)
 
 **Phase 7 closure (07-HUMAN-REVIEW §5, council-reviewed):** Profiling run of canonical v1.2 merged model on
@@ -144,7 +144,7 @@ Progress: [██████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 9
+- Total plans completed: 13
 - Average duration: 9 min
 - Total execution time: 0.62 hours
 
@@ -156,6 +156,7 @@ Progress: [██████████] 100%
 | 02-dataset-production | 2 | ~10 min | ~5 min |
 | 03-model-prep-and-training | 2 | 34 min | 17 min |
 | 04.4 | 5 | - | - |
+| 8 | 4 | - | - |
 
 **Recent Trend:**
 
@@ -400,7 +401,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Phase complete — ready for verification
+**Status:** Milestone complete
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)
