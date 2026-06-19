@@ -4,12 +4,12 @@ milestone: v1.0
 milestone_name: MVP
 status: verifying
 stopped_at: Phase 8 planned (4 plans, checker 0 blockers) — ready for execution
-last_updated: "2026-06-19T15:00:52.317Z"
+last_updated: "2026-06-19T15:12:50.837Z"
 progress:
   total_phases: 11
   completed_phases: 9
   total_plans: 39
-  completed_plans: 36
+  completed_plans: 37
   percent: 82
 ---
 
@@ -138,7 +138,7 @@ data: `scripts/build_reasoning_negatives.py` + `build_augmented_train.py`; gates
 Status: Ready to execute
 Note: Local artifacts `models/qwen3-30b-wp-30_70-merged-v2` + `...-reasoning-merged` + `adapters/.../checkpoint-72` are READ-ONLY references/fallback only (NOT promoted). The GB10 memory wall is documented in `output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md`. `04.3-REOPEN-PLAN.md` remains a 0-task brief — do not execute.
 
-Progress: [█████████░] 92%
+Progress: [██████████] 95%
 
 ## Performance Metrics
 
@@ -188,6 +188,7 @@ Progress: [█████████░] 92%
 | Phase 04.4-reasoning-eval-adapter-merge-inserted P03 | 15m | 3 tasks | 11 files |
 | Phase 07-router-profiling-protected-expert-set P01 | 20 | 3 tasks | 10 files |
 | Phase 08-reward-infrastructure P01 | 312 | 3 tasks | 6 files |
+| Phase 08-reward-infrastructure P02 | 281 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -274,7 +275,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-19T15:00:52.308Z
+Last session: 2026-06-19T15:12:50.827Z
 Stopped at: Phase 8 planned (4 plans, checker 0 blockers) — ready for execution
 
 Prior session: 2026-06-02T21:31:00.000Z
