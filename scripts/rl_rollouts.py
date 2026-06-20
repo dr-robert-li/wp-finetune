@@ -234,6 +234,11 @@ def build_trajectory_groups(
             - "completion": str
             - "reward": float  (the scalar reward)
             - "breakdown": the RewardBreakdown object for logging
+            - "group_id": the prompt-group id threaded from collect_rollouts
+              (read from rollout.group_id when present). This is what makes the
+              per-prompt constant filter and per-prompt advantage centering in
+              compute_rollout_advantages operate on TRUE GRPO groups (G
+              completions per prompt) rather than singletons.
     """
     if len(rollouts) != len(rewards):
         raise ValueError(
@@ -258,13 +263,19 @@ def build_trajectory_groups(
             continue
 
         completion = getattr(rollout, "completion", str(rollout))
-        groups.append(
-            {
-                "completion": completion,
-                "reward": float(reward.scalar),
-                "breakdown": breakdown,
-            }
-        )
+        entry = {
+            "completion": completion,
+            "reward": float(reward.scalar),
+            "breakdown": breakdown,
+        }
+        # Thread the true prompt-group id when the rollout carries one so that
+        # G completions of the same prompt land in one GRPO group downstream.
+        # Falls back to leaving group_id unset (compute_rollout_advantages then
+        # treats the entry as its own singleton group).
+        group_id = getattr(rollout, "group_id", None)
+        if group_id is not None:
+            entry["group_id"] = group_id
+        groups.append(entry)
 
     if n_sec_dropped > 0:
         logger.info(
@@ -494,6 +505,15 @@ def collect_rollouts(
     gen_rollouts = [item for item in batch if item.get("_origin") == "gen"]
     judge_rollouts = [item for item in batch if item.get("_origin") == "judge"]
 
+    # Stamp a unique per-prompt group id on every batch item BEFORE sampling so
+    # the G completions of one prompt share a group_id (true GRPO group). The id
+    # is globally unique across gen and judge so the two pathways never collide
+    # in compute_rollout_advantages' per-group constant filter / centering.
+    for gid, item in enumerate(gen_rollouts):
+        item["_group_id"] = f"gen-{gid}"
+    for gid, item in enumerate(judge_rollouts):
+        item["_group_id"] = f"judge-{gid}"
+
     all_rollouts = []
     all_rewards = []
 
@@ -520,13 +540,20 @@ def collect_rollouts(
             fix_score = float(rubric.overall) / 100.0
             fix_correctness_scores.append(fix_score)
 
-        # Capped Claude-consistency via 09-03 dispatcher
+        # Capped Claude-consistency via 09-03 dispatcher. Each judge completion
+        # carries .group_id ("judge-<k>") identifying its source prompt; map
+        # that back to the originating judge_rollouts item for its critique_text
+        # (the flat completion index no longer aligns with the prompt list now
+        # that we draw group_size completions per prompt).
+        judge_by_gid = {item["_group_id"]: item for item in judge_rollouts}
         consistency_samples = [
             {
                 "php_code": c.completion,
-                "critique_text": judge_rollouts[i].get("critique_text", ""),
+                "critique_text": judge_by_gid.get(
+                    getattr(c, "group_id", None), {}
+                ).get("critique_text", ""),
             }
-            for i, c in enumerate(judge_completions)
+            for c in judge_completions
         ]
         consistency_scores = asyncio.run(
             score_judge_consistency_batch(
@@ -566,25 +593,130 @@ def collect_rollouts(
 # ---------------------------------------------------------------------------
 
 
-def _generate_completions(sampling_client: Any, prompt_items: list, args: Any) -> list:
-    """Generate completions for a list of prompt dicts using the sampling client.
+class _Completion:
+    """Lightweight completion carrier with the attributes downstream expects.
+
+    `.completion` is the decoded text consumed by compute_group_rewards and
+    _extract_verifiable_signals; `.group_id` is the prompt-group id threaded
+    through build_trajectory_groups so G samples of one prompt form one GRPO
+    group (true per-prompt constant filter + advantage centering, CR-06).
+    """
+
+    __slots__ = ("completion", "group_id")
+
+    def __init__(self, completion: str, group_id: Any):
+        self.completion = completion
+        self.group_id = group_id
+
+
+def build_rl_renderer() -> tuple[Any, Any]:
+    """Return (renderer, tokenizer) for turning {"messages": [...]} into ModelInput.
+
+    Module-level seam (mirrors rl_train.create_lora_training_client) so the
+    integration test can patch it and avoid downloading a real tokenizer/model.
+    Uses the SHARED constants from tinker_rl_data (BASE_MODEL / RENDERER_NAME),
+    not a sibling training script, so production has a single source of truth.
+    """
+    from tinker_cookbook import renderers  # noqa: PLC0415
+    from tinker_cookbook.tokenizer_utils import get_tokenizer  # noqa: PLC0415
+
+    from scripts.tinker_rl_data import BASE_MODEL, RENDERER_NAME  # noqa: PLC0415
+
+    tok = get_tokenizer(BASE_MODEL)
+    renderer = renderers.get_renderer(RENDERER_NAME, tokenizer=tok)
+    return renderer, tok
+
+
+def _prompt_user_messages(item: dict) -> list:
+    """Extract the user-turn messages from a prompt-pool item.
+
+    Pool items have shape {"messages": [{"role": "user", "content": "..."}]}
+    (load_rl_prompts strips the assistant turn). _stamp_origin adds "_origin"
+    and the synthetic unit tests add "prompt"/"tag" — none of which are message
+    turns, so we filter on role. Falls back to a single user turn built from a
+    bare "prompt" field for the synthetic test format.
+    """
+    messages = item.get("messages")
+    if messages:
+        user_msgs = [m for m in messages if m.get("role") == "user"]
+        if user_msgs:
+            return user_msgs
+    # Synthetic/test fallback: {"prompt": "..."} with no messages list.
+    prompt_text = item.get("prompt", "")
+    return [{"role": "user", "content": str(prompt_text)}]
+
+
+def _decode_samples(resp: Any, tok: Any) -> list[str]:
+    """Decode every sampled sequence from one .sample() response to text.
+
+    Mirrors tinker_reasoning_sft._all_sample_texts: resolve the future, read
+    .sequences/.samples, decode tokens with the tokenizer.
+    """
+    r = resp.result() if hasattr(resp, "result") else resp
+    seqs = getattr(r, "sequences", None) or getattr(r, "samples", None) or []
+    out = []
+    for seq in seqs:
+        toks = (
+            getattr(seq, "tokens", None)
+            or getattr(seq, "token_ids", None)
+            or getattr(seq, "output_tokens", None)
+        )
+        out.append(tok.decode(toks))
+    return out
+
+
+def _generate_completions(
+    sampling_client: Any,
+    prompt_items: list,
+    args: Any,
+    renderer: Any = None,
+    tok: Any = None,
+) -> list:
+    """Generate G completions per prompt via the real Tinker sampling API.
+
+    Uses SamplingClient.sample(prompt: ModelInput, num_samples, sampling_params)
+    — there is NO .generate() on the real client (CR-01 root cause #2). Each
+    prompt is rendered to a generation ModelInput via the renderer, sampled
+    num_samples=group_size times, and each decoded completion is tagged with a
+    per-prompt group_id so downstream advantage centering forms true GRPO groups.
+
+    renderer/tok are injectable (built via build_rl_renderer when omitted) so the
+    integration test can drive the seam without a real tokenizer download.
 
     Args:
-        sampling_client: Tinker sampling client with a generate() method.
-        prompt_items: List of prompt dicts with "prompt" key.
-        args: Namespace with generation arguments (max_new_tokens, etc.)
+        sampling_client: Tinker SamplingClient (.sample(...)).
+        prompt_items: List of prompt dicts ({"messages": [...]} or {"prompt": ...}).
+        args: Namespace with max_new_tokens, group_size, temperature.
+        renderer, tok: Optional injected renderer/tokenizer.
 
     Returns:
-        list: Completion objects with a .completion attribute.
+        list[_Completion]: group_size completions per prompt, each carrying
+        .completion (decoded text) and .group_id (prompt index).
     """
-    completions = []
-    for item in prompt_items:
-        prompt_text = item.get("prompt", "")
-        result = sampling_client.generate(
-            prompt=prompt_text,
-            max_new_tokens=getattr(args, "max_new_tokens", 512),
+    import tinker  # noqa: PLC0415
+
+    if renderer is None or tok is None:
+        renderer, tok = build_rl_renderer()
+
+    group_size = int(getattr(args, "group_size", 4))
+    sp = tinker.SamplingParams(
+        max_tokens=getattr(args, "max_new_tokens", 512),
+        temperature=getattr(args, "temperature", 1.0),
+        stop=renderer.get_stop_sequences(),
+    )
+
+    completions: list = []
+    for prompt_idx, item in enumerate(prompt_items):
+        user_msgs = _prompt_user_messages(item)
+        prompt = renderer.build_generation_prompt(user_msgs)
+        resp = sampling_client.sample(
+            prompt=prompt,
+            num_samples=group_size,
+            sampling_params=sp,
         )
-        completions.append(result)
+        group_id = item.get("_group_id", prompt_idx)
+        for text in _decode_samples(resp, tok):
+            completions.append(_Completion(completion=text, group_id=group_id))
     return completions
 
 
