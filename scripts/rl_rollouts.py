@@ -646,6 +646,29 @@ def _prompt_user_messages(item: dict) -> list:
     return [{"role": "user", "content": str(prompt_text)}]
 
 
+def _build_sampling_params(args: Any, renderer: Any) -> Any:
+    """Construct tinker.SamplingParams for one sample() call.
+
+    Falls back to a plain SimpleNamespace when tinker is unavailable (test/offline
+    path) so _generate_completions stays exercisable without the tinker package.
+    """
+    max_tokens = getattr(args, "max_new_tokens", 512)
+    temperature = getattr(args, "temperature", 1.0)
+    stop = renderer.get_stop_sequences() if hasattr(renderer, "get_stop_sequences") else None
+    try:
+        import tinker  # noqa: PLC0415
+
+        return tinker.SamplingParams(
+            max_tokens=max_tokens, temperature=temperature, stop=stop
+        )
+    except Exception:  # noqa: BLE001 — tinker absent in unit/integration tests
+        import types  # noqa: PLC0415
+
+        return types.SimpleNamespace(
+            max_tokens=max_tokens, temperature=temperature, stop=stop
+        )
+
+
 def _decode_samples(resp: Any, tok: Any) -> list[str]:
     """Decode every sampled sequence from one .sample() response to text.
 
@@ -693,17 +716,11 @@ def _generate_completions(
         list[_Completion]: group_size completions per prompt, each carrying
         .completion (decoded text) and .group_id (prompt index).
     """
-    import tinker  # noqa: PLC0415
-
     if renderer is None or tok is None:
         renderer, tok = build_rl_renderer()
 
     group_size = int(getattr(args, "group_size", 4))
-    sp = tinker.SamplingParams(
-        max_tokens=getattr(args, "max_new_tokens", 512),
-        temperature=getattr(args, "temperature", 1.0),
-        stop=renderer.get_stop_sequences(),
-    )
+    sp = _build_sampling_params(args, renderer)
 
     completions: list = []
     for prompt_idx, item in enumerate(prompt_items):
