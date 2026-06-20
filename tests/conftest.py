@@ -76,3 +76,35 @@ def sample_rollout_group():
         "<?php\nfunction wp_greet( $name ) {\n    return 'hi ' . esc_html( $name );\n}\n",
         "<?php\nfunction wp_noop() {}\n",
     ]
+
+
+@pytest.fixture
+def mock_tinker_client():
+    """Mock Tinker training client for GSPO/GRPO unit tests (GRPO-05/06/07/08).
+
+    Mocks BOTH forward_backward (GRPO token-level fallback) AND forward_backward_custom
+    (GSPO sequence-level default path — D-09-03 locked). Both return the same
+    ForwardBackwardOutput mock so tests can assert which path was selected.
+
+    MoE routing keys are set to below-threshold values (e_frac_with_tokens:mean=0.6)
+    so routing-autohalt tests can exercise the halt branch without needing live infra.
+    """
+    from unittest.mock import MagicMock
+
+    tc = MagicMock()
+    fb_out = MagicMock()
+    fb_out.metrics = {
+        "e_frac_with_tokens:mean": 0.6,
+        "e_max_violation:mean": 0.002,
+        "e_max_violation:max": 0.008,
+    }
+    fb_out.training_logprobs = []
+    # GRPO token-level fallback path (--grpo-fallback / --no-gspo flag)
+    tc.forward_backward.return_value = fb_out
+    # GSPO sequence-level default path via forward_backward_custom (D-09-03).
+    # Explicit mock required — auto-mock returns a new MagicMock, not fb_out,
+    # so .metrics / .training_logprobs would be inaccessible.
+    tc.forward_backward_custom.return_value = fb_out
+    tc.optim_step.return_value = None
+    tc.save_weights_for_sampler.return_value.path = "/fake/sampler"
+    return tc
