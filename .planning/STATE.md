@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: executing
-stopped_at: Completed 09-02-PLAN.md
-last_updated: "2026-06-20T07:59:44.944Z"
+stopped_at: Completed 09-03-PLAN.md
+last_updated: "2026-06-20T08:09:39.955Z"
 progress:
   total_phases: 12
   completed_phases: 10
   total_plans: 45
-  completed_plans: 41
+  completed_plans: 42
   percent: 83
 ---
 
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 ## Current Position
 
 Phase: 09 (gspo-training) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 Next: Phase 08 (Reward Infrastructure)
 
 **Phase 7 closure (07-HUMAN-REVIEW §5, council-reviewed):** Profiling run of canonical v1.2 merged model on
@@ -138,7 +138,7 @@ data: `scripts/build_reasoning_negatives.py` + `build_augmented_train.py`; gates
 Status: Ready to execute
 Note: Local artifacts `models/qwen3-30b-wp-30_70-merged-v2` + `...-reasoning-merged` + `adapters/.../checkpoint-72` are READ-ONLY references/fallback only (NOT promoted). The GB10 memory wall is documented in `output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md`. `04.3-REOPEN-PLAN.md` remains a 0-task brief — do not execute.
 
-Progress: [█████████░] 91%
+Progress: [█████████░] 93%
 
 ## Performance Metrics
 
@@ -194,6 +194,7 @@ Progress: [█████████░] 91%
 | Phase 08-reward-infrastructure P04 | 357 | 2 tasks | 2 files |
 | Phase 09-gspo-training P01 | 2 | 2 tasks | 5 files |
 | Phase 09 P02 | 25 minutes | 3 tasks | 3 files |
+| Phase 09-gspo-training P03 | 18 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -246,6 +247,7 @@ Recent decisions affecting current work:
 - [Phase ?]: Wave-0 fixture: mock_tinker_client mocks both forward_backward and forward_backward_custom (D-09-03 GSPO primary)
 - [Phase ?]: Wave-0 stubs use importorskip: SKIP while scripts absent, RED on wrong symbol when 09-03/04/05 land
 - [Phase ?]: ROADMAP Phase 9 corrected: DGX refs removed, Tinker-native GSPO-primary detail per D-09-01/02/03
+- [Phase ?]: [Phase 09-03]: Async-over-blocking dispatch; score clamped [0,1]; None not cached
 
 ### Pending Todos
 
@@ -287,8 +289,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-20T07:59:44.935Z
-Stopped at: Completed 09-02-PLAN.md
+Last session: 2026-06-20T08:09:39.946Z
+Stopped at: Completed 09-03-PLAN.md
 
 Prior session: 2026-06-02T21:31:00.000Z
 Stopped at: Phase 4.4 CLOSED **REJECTED** at REVL-05 (human). All automated gates run; merge NOT promoted; D-05 disposition pending (recommend Phase 4.3 format-stability re-train). See `04.4-GATE-LEDGER.md` + `04.4-D05-DIAGNOSIS.md`. Resume = decide D-05.
