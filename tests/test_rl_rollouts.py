@@ -286,6 +286,51 @@ class TestComputeRolloutAdvantages:
                 f"group-centered advantages must sum to ~0, got {total}"
             )
 
+    def test_per_group_constant_filter_keeps_mixed_drops_constant(self):
+        """CR-06: per-prompt filtering — a constant group is dropped while a sibling
+        mixed group survives, even though both are in the same batch."""
+        rr = pytest.importorskip("scripts.rl_rollouts")
+        mixed_group = {
+            "prompt": "p_mixed",
+            "completions": ["A", "B", "C"],
+            "rewards": [1.0, 0.5, 0.0],
+        }
+        const_group = {
+            "prompt": "p_const",
+            "completions": ["X", "Y", "Z"],
+            "rewards": [0.5, 0.5, 0.5],
+        }
+        data, meta = rr.compute_rollout_advantages([mixed_group, const_group])
+        # Only the mixed group's 3 completions survive; constant group dropped whole.
+        assert len(data) == 3, (
+            f"expected 3 surviving completions (mixed group only), got {len(data)}"
+        )
+        assert meta["n_dropped_constant"] == 3, (
+            f"expected 3 dropped (the constant group), got {meta['n_dropped_constant']}"
+        )
+        # Survivors must all come from the mixed group.
+        assert all(d["prompt"] == "p_mixed" for d in data)
+
+    def test_per_group_advantage_centers_within_own_group(self):
+        """CR-06: advantages center on each group's OWN mean, not the batch mean.
+
+        Group A rewards [1.0, 0.0] -> mean 0.5 -> advantages [+0.5, -0.5].
+        Group B rewards [0.2, 0.4] -> mean 0.3 -> advantages [-0.1, +0.1].
+        A global (batch) mean of 0.4 would give different, wrong advantages.
+        """
+        rr = pytest.importorskip("scripts.rl_rollouts")
+        group_a = {"prompt": "A", "completions": ["a1", "a2"], "rewards": [1.0, 0.0]}
+        group_b = {"prompt": "B", "completions": ["b1", "b2"], "rewards": [0.2, 0.4]}
+        data, _meta = rr.compute_rollout_advantages([group_a, group_b])
+        adv = {(d["prompt"], d["completion"]): d["advantage"] for d in data}
+        assert adv[("A", "a1")] == pytest.approx(0.5, abs=1e-6)
+        assert adv[("A", "a2")] == pytest.approx(-0.5, abs=1e-6)
+        assert adv[("B", "b1")] == pytest.approx(-0.1, abs=1e-6)
+        assert adv[("B", "b2")] == pytest.approx(0.1, abs=1e-6)
+        # Each group's advantages sum to ~0 independently.
+        assert adv[("A", "a1")] + adv[("A", "a2")] == pytest.approx(0.0, abs=1e-6)
+        assert adv[("B", "b1")] + adv[("B", "b2")] == pytest.approx(0.0, abs=1e-6)
+
     def test_module_imports_without_tinker(self):
         """scripts.rl_rollouts imports cleanly even when tinker_cookbook is absent."""
         # If we got here via importorskip, it already imported — test passes trivially
