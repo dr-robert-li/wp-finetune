@@ -59,18 +59,21 @@ def _res(f: Any) -> Any:
     """Resolve APIFuture or already-resolved value.
 
     Only calls .result() on genuine Tinker APIFuture objects. Uses isinstance
-    check when tinker is available; falls back to type-name heuristic to avoid
-    calling .result() on MagicMock objects (which auto-create every attribute).
+    check when tinker is available; falls back gracefully when tinker is absent
+    (test/offline path) so MagicMock objects are never called with .result().
+
+    Raises:
+        Any exception raised by f.result() (e.g. tinker.TinkerError) so callers
+        receive the real error instead of silently getting back an unresolved Future.
     """
     try:
         import tinker as _tinker  # noqa: PLC0415
-        if isinstance(f, _tinker.APIFuture):
-            return f.result()
-        # If tinker is available and f is NOT an APIFuture, return as-is
+    except ImportError:
+        # Tinker not available (test/offline path): return as-is, never call .result()
         return f
-    except Exception:
-        pass
-    # Tinker not available (test/offline path): never call .result()
+    if isinstance(f, _tinker.APIFuture):
+        return f.result()  # let TinkerError propagate — do NOT swallow
+    # Not an APIFuture (includes MagicMock, already-resolved values, etc.)
     return f
 
 
