@@ -177,6 +177,15 @@ def build_pools(
     stats["gen_out"]   = len(gen_rows)
     stats["judge_out"] = len(judge_rows)
 
+    # Warn when val-leakage guard actually drops rows so the PROVENANCE.md
+    # "Assertion: NO val-set sha256" claim is not silently misleading.
+    if stats["val_leak_dropped"] > 0:
+        logger.warning(
+            "Val-leakage guard dropped %d rows. PROVENANCE 'Assertion' may mislead — "
+            "consider assert val_leak_dropped == 0 if zero leakage is required.",
+            stats["val_leak_dropped"],
+        )
+
     # ------------------------------------------------------------------
     # 3. Validate non-empty pools
     # ------------------------------------------------------------------
