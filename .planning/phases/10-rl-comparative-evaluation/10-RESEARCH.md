@@ -31,7 +31,8 @@ Sign-off to v3.0 (gating MoE-Sieve) requires ALL of:
 A human review checkpoint presents the full v1.2-SFT-vs-RL comparison table before the v3.0 gate is declared pass/fail.
 
 ### Claude's Discretion
-- Exact bootstrap method, N resamples, and CI level (reuse project's existing `bootstrap_ci` in `scripts/compute_concentration.py`, N=1000, alpha=0.05 — do not invent new)
+- Exact bootstrap method, N resamples, and CI level (reuse the project's existing CI-aware gate implementation in `eval/eval_gate.py` — do not invent a new one)
+  > **Research annotation:** `eval/eval_gate.py` is a point-threshold comparator (no bootstrap). The actual `bootstrap_ci` function lives in `scripts/compute_concentration.py` (N=1000, alpha=0.05). The discretion is to reuse that function — not `eval_gate.py`'s threshold logic — for D-10-01/03 bounds. See Eval Infra Inventory.
 - Concrete numeric value of per-task "catastrophic regression" floor (D-10-03) — derived below
 - Eval-harness wiring, serving venue plumbing, report layout/format, telemetry embedding
 - Whether the judge-recalibration +3.58 offset (D-V4-09) applies identically to the RL judge component — confirmed below
@@ -131,7 +132,7 @@ ACTUAL PIPELINE:
   └── export tinker:// → HF archive  →  output/rl_checkpoints/{best,final}/
 
 [DGX host — orchestrator runs from host]
-  └── scripts/merge_tinker_lora.py  →  output/rl_merged_{best,final}/
+  └── scripts/merge_tinker_v3.py  →  output/rl_merged_{best,final}/
   └── docker run vllm --model output/rl_merged_{best}/  →  localhost:8020
   └── eval/eval_gen.py  →  output/rl_eval/{best}/eval_gen_results.json
   └── eval/eval_judge.py (gt_mode=calibrated_canonical)  →  eval_judge_results.json
@@ -143,7 +144,7 @@ ACTUAL PIPELINE:
   └── scripts/rlev02_report.py  →  rlev02_report.json + human sign-off table
 ```
 
-**Critical correction — serving:** The RL model is a Tinker LoRA (rank 32, not bf16-merged in the same pipeline as v1.2). vLLM cannot serve a raw LoRA for this model. The RL checkpoint must be merged (LoRA → full weights) before vLLM can serve it. Reuse the `merge_tinker_v3.py` MoE-only path (confirmed to exist from Phase 4.3/4.4 work). This merge step is MANDATORY and must be Wave 1 Task 1 before any eval can run. [VERIFIED: on-disk — `scripts/merge_tinker_v3.py` referenced in Phase 4.3 skill]
+**Critical correction — serving:** The RL model is a Tinker LoRA (rank 32, not bf16-merged in the same pipeline as v1.2). vLLM cannot serve a raw LoRA for this model. The RL checkpoint must be merged (LoRA → full weights) before vLLM can serve it. Reuse `scripts/merge_tinker_v3.py` MoE-only path. This merge step is MANDATORY and must be Wave 1 Task 1 before any eval can run. [VERIFIED: on-disk — `ls scripts/merge*` confirmed `scripts/merge_tinker_v3.py` exists; docstring confirms Tinker MoE LoRA tensor convention from `checkpoint.tar` format]
 
 ### Recommended Output Structure
 ```
@@ -192,6 +193,58 @@ def check_dim_regression(
 ```
 
 [VERIFIED: on-disk — `bootstrap_ci` signature confirmed in `scripts/compute_concentration.py` lines 42-68: `bootstrap_ci(values: np.ndarray, n_boot: int = 1000, alpha: float = 0.05) -> tuple[float, float]`]
+### Pattern 1b: bootstrap_gate.py — Judge Spearman Improvement (DISTINCT from mean-bootstrap)
+
+**Critical:** `bootstrap_ci(values)` computes the CI of the **mean of a 1-D array**. You cannot feed it a Spearman correlation directly. The judge-Spearman gate (D-10-01 judge improvement, D-10-04 #1) requires resampling `(pred, GT)` score *pairs* and recomputing `spearmanr` on each resample.
+
+```python
+# Source: Pattern derived from scipy.stats.spearmanr + bootstrap pairing
+# DIFFERENT from bootstrap_ci — handles correlation, not mean
+from scipy.stats import spearmanr
+import numpy as np
+
+def bootstrap_spearman_improvement(
+    baseline_pairs: list[tuple[float, float]],   # (model_score, gt_score) for v1.2 SFT
+    candidate_pairs: list[tuple[float, float]],  # (model_score, gt_score) for RL model
+    n_boot: int = 1000,
+    alpha: float = 0.05,
+) -> dict:
+    """
+    Compute bootstrap CI of Spearman correlation difference (rho_RL - rho_v12).
+    Both models must be scored on the same val set (shared GT pairs).
+    Improvement is beyond noise when CI lower bound of difference > 0.
+    """
+    assert len(baseline_pairs) == len(candidate_pairs), "Must score same examples"
+    n = len(baseline_pairs)
+    rng = np.random.default_rng()
+    diffs = np.empty(n_boot, dtype=float)
+    for i in range(n_boot):
+        idx = rng.integers(0, n, size=n)
+        bl_pred = [baseline_pairs[j][0] for j in idx]
+        bl_gt   = [baseline_pairs[j][1] for j in idx]
+        cand_pred = [candidate_pairs[j][0] for j in idx]
+        cand_gt   = [candidate_pairs[j][1] for j in idx]
+        rho_bl   = spearmanr(bl_pred, bl_gt).correlation
+        rho_cand = spearmanr(cand_pred, cand_gt).correlation
+        diffs[i] = rho_cand - rho_bl
+    lo = float(np.percentile(diffs, 100 * alpha / 2))
+    hi = float(np.percentile(diffs, 100 * (1 - alpha / 2)))
+    rho_bl_point   = spearmanr([p[0] for p in baseline_pairs], [p[1] for p in baseline_pairs]).correlation
+    rho_cand_point = spearmanr([p[0] for p in candidate_pairs], [p[1] for p in candidate_pairs]).correlation
+    return {
+        "rho_baseline": rho_bl_point,
+        "rho_candidate": rho_cand_point,
+        "diff_point": rho_cand_point - rho_bl_point,
+        "diff_ci_lower": lo,
+        "diff_ci_upper": hi,
+        "improved_beyond_noise": lo > 0,
+    }
+```
+
+**Per-dimension Spearman check:** Same pattern per dim, but with smaller `n_pairs` -> wider CIs. A per-dim judge correlation that is flat or within noise is a soft fail (surface to user); a statistically real *regression* in judge dim correlation hard-fails.
+
+**Input sourcing:** Both baseline_pairs and candidate_pairs come from paired `(judge_output_score, gt_score)` records from `eval_judge.py` run on the SAME val set. The val set, GT mode, and grading prompt must be identical across both runs.
+
 
 ### Pattern 2: eval_judge.py — Two-GT Modes
 
@@ -391,7 +444,7 @@ output: {path: output/wp-bench-results.json, jsonl_path: output/wp-bench-results
 - `knowledge` (320 tasks): `{test_id, type, prompt_hash, answer, correct, score}` — score is 0.0 or 1.0
 - `execution` (24 tasks): `{test_id, type, prompt_hash, code, result, stdout, stderr, correctness, quality}` — no `score` field; correctness is bool
 
-**Aggregate scoring formula:** wp-bench computes `knowledge=0.4906`, `correctness=0.4375`, `overall=0.4603` using its own weighted formula (not a simple mean of per-task scores). The D-10-03 baseline is the **aggregate `overall` field** from `output/04.4_wp_bench_results.json` = 0.4616 (reasoning_score).
+**Aggregate scoring formula:** wp-bench computes `knowledge=0.4906`, `correctness=0.4375`, `overall=0.4603` (per detailed re-bench metadata) using its own weighted formula (not a simple mean of per-task scores). The D-10-03 baseline is the **aggregate `overall` field** from `output/04.4_wp_bench_results.json` = **0.4616** (reasoning_score) — use this value per CONTEXT.md, noting the 0.0013 discrepancy vs re-bench metadata.
 
 ---
 
@@ -410,6 +463,8 @@ output: {path: output/wp-bench-results.json, jsonl_path: output/wp-bench-results
 ```
 
 **D-10-03 baseline value = `reasoning_score` = 0.4616** (the v1.2 SFT score). `baseline_score` = 0.4286 is the pre-SFT baseline — do NOT use this as the comparison target.
+
+**Source discrepancy note:** `output/04.4_wp_bench_results.json` reports `reasoning_score=0.4616`. The detailed summary at `output/eval_reasoning_v4_winner/revl04_rebench/summary.json` and the re-bench result metadata both report `overall=0.4603`. Difference = 0.0013. CONTEXT.md explicitly names `output/04.4_wp_bench_results.json` as the D-10-03 reference — use **0.4616**. Planner should note this discrepancy; the 0.0013 gap may reflect rounding or a version difference in the wp-bench grader.
 
 The matching detailed file is `output/eval_reasoning_v4_winner/revl04_rebench/reasoning_merged/wp_bench_results_20260613_214919.json` which contains all 344 per-task results used to derive the catastrophic-regression floor.
 
@@ -497,9 +552,10 @@ jaccard_protected, halt_reason, use_gspo, model_id, ts
 ### Phase 7 Protected-Expert Baseline
 [VERIFIED: on-disk]
 - **Mask:** `output/profiling/reasoning-merged-v4/protected_expert_mask.npy` — [48, 128] bool, 1,480 experts
-- **Stability gate:** `output/profiling/reasoning-merged-v4/jaccard_stability.json` — `jaccard_ci_lower=0.9426 >= 0.94` (PROF-03 gate passed)
-- **Per-step monitor:** `jaccard_protected` in `rl_metrics.jsonl` — Jaccard of active experts vs this mask
-- **D-10-04 #4:** RL model's time-averaged `jaccard_protected` CI lower bound must be >= 0.9426 (the Phase 7 baseline jaccard_ci_lower)
+- **Stability gate:** `output/profiling/reasoning-merged-v4/concentration_report.json` — `jaccard_ci_lower=0.9426` (bootstrap CI lower bound of per-layer Jaccard mean across 48 layers; PROF-03 gate; from `jaccard_stability.json` + `compute_concentration.py`)
+- **Per-step monitor:** `jaccard_protected` in `rl_metrics.jsonl` — Jaccard of active experts vs this mask at each RL step
+
+**D-10-04 #4 referent mismatch — see Open Questions:** `jaccard_ci_lower=0.9426` is the CI lower bound of *cross-run per-layer Jaccard stability* from Phase 7 SFT profiling (48-layer Jaccards resampled). The RL signal `jaccard_protected` is *per-step fraction of protected experts that are active during RL training*. These are different quantities. No pre-existing "RL retention" bar exists. See Open Questions #4 for the recommended approach.
 
 ---
 
@@ -513,6 +569,7 @@ jaccard_protected, halt_reason, use_gspo, model_id, ts
 | LoRA merge for vLLM | Ad-hoc weight addition | `scripts/merge_tinker_v3.py` MoE-only path | Handles MoE architecture correctly; Phase 4.3 proved it |
 | LLM judge dispatch | Anthropic API calls | `scripts/claude_agent.py` subprocess | Uses Claude subscription quota; RC-A enable_thinking fix already in place |
 | Per-example Spearman | Manual rank computation | `eval/eval_judge.py::run_eval` with `gt_mode="calibrated_canonical"` | Two-GT logic, parse strategies, and retry already implemented |
+| Spearman improvement CI | Applying `bootstrap_ci(corr_array)` | Pattern 1b: resample `(pred, GT)` pairs, recompute `spearmanr` per resample | Correlations not additive means; pair-level bootstrap is the correct approach |
 
 **Key insight:** All custom CI / gate / serving / merge / dispatch infrastructure already exists and has been battle-tested through Phases 4–9. Phase 10 extends, never rebuilds.
 
@@ -623,15 +680,49 @@ Wave 0 tasks must use dry-run fixture data and synthetic baselines for all integ
 **Why it happens:** The recalibration offset is documented and visible.
 **How to avoid:** `rank_invariant: true` — the offset does not affect Spearman. Apply it only if comparing absolute judge scores on a percentage scale, and only after confirming the RL model needs the same offset.
 
-### Pitfall 6: Jaccard Dry-Run Value as Baseline
-**What goes wrong:** Using `jaccard_protected=0.002` from the dry-run step-0 as the D-10-04 #4 retention baseline.
-**Why it happens:** It's the only value currently in rl_metrics.jsonl.
-**How to avoid:** The Phase 7 baseline is `jaccard_ci_lower=0.9426` from `jaccard_stability.json`. The RL model's live-run jaccard values are the thing being measured; they must beat 0.9426.
+### Pitfall 6: Jaccard Dry-Run Value as Retention Baseline
+**What goes wrong:** Using `jaccard_protected=0.002` from the dry-run step-0 as the D-10-04 #4 retention baseline, or mechanically applying 0.9426 (cross-run SFT stability) as the RL retention bar.
+**Why it happens:** It's the only value in rl_metrics.jsonl; the 0.9426 number appears in docs.
+**How to avoid:** `jaccard_protected=0.002` is a fixture artifact. `jaccard_ci_lower=0.9426` measures SFT profiling stability, not RL retention. D-10-04 #4 needs a separately-defined retention threshold — see Open Questions #4. Do not assert 0.9426 is the bar until the user confirms.
 
 ### Pitfall 7: LLM_BACKEND Not Set for rubric_scorer LLM Checks
 **What goes wrong:** rubric_scorer's LLM sub-checks default to `claude` backend (slow, serial) when running at full eval scale.
 **Why it happens:** Default is `claude` for safety on small smoke runs.
 **How to avoid:** Set `LLM_BACKEND=vllm` + `LLM_VLLM_BASE_URL=http://localhost:8000/v1` when running batch eval. This requires a second vLLM instance serving the rubric-scoring model (Qwen3.6-35B-A3B-FP8 or equivalent), separate from the model-under-eval endpoint at :8020.
+
+---
+
+## D-10-04 #5 — "No Routing Collapse" Operational Definition
+
+From `checkpoint_manifest.json` -> `run_args`, hard-halt thresholds are: `kl_hard=0.3`, `efrac_hard=0.5`.
+
+**Gate passes when ALL THREE are clean across the entire run:**
+
+| Signal | Collapse condition | Source field |
+|--------|-------------------|--------------|
+| Training halt | Any `halt_reason` is set (non-null) on any step | `rl_metrics.jsonl[*].halt_reason` |
+| KL divergence breach | Any step has `kl_sample_train_v1 >= 0.3` | `rl_metrics.jsonl[*].kl_sample_train_v1` |
+| Expert utilization collapse | Any step has `e_frac_with_tokens_mean < 0.5` | `rl_metrics.jsonl[*].e_frac_with_tokens_mean` |
+
+Soft thresholds (`kl >= 0.1`, `efrac < 0.7`) are advisory signals for the RLEV-02 report but do NOT fail the hard gate.
+
+**Report format for gate #5:**
+```json
+{
+  "gate": "no_routing_collapse",
+  "n_steps": int,
+  "any_halt": bool,
+  "max_kl": float,
+  "min_efrac": float,
+  "kl_breach_steps": [],
+  "efrac_breach_steps": [],
+  "soft_kl_steps": [],
+  "soft_efrac_steps": [],
+  "passed": bool
+}
+```
+
+[VERIFIED: thresholds from `output/rl_checkpoints/checkpoint_manifest.json` -> `run_args.kl_hard=0.3`, `run_args.efrac_hard=0.5`, `run_args.kl_soft=0.1`, `run_args.efrac_soft=0.7`]
 
 ---
 
@@ -744,7 +835,7 @@ security_enforcement not set to false in config.json — included.
 |---|-------|---------|---------------|
 | A1 | `reward_breakdown.<wp_gen>/<wp_judge>` sub-fields exist in live rl_metrics.jsonl (Phase 9 UAT test #3 pending) | Artifact Schemas | RLEV-02 report section 1 (reward convergence by mode) fails to parse; fallback to `reward_mean` only |
 | A2 | +3.58 offset differs for RL model (Tinker LoRA merge path) vs v1.2 (bf16 merge path) | +3.58 Offset section | If offset is identical, no harm; if not assumed, might incorrectly apply it |
-| A3 | `merge_tinker_v3.py` MoE-only path works for Tinker LoRA rank-32 (confirmed to exist, not confirmed for Tinker export format) | Architecture Patterns | LoRA merge fails; need to investigate Tinker export format before Wave 1 |
+| A3 | `merge_tinker_v3.py` docstring states Tinker MoE tensor convention verified via `checkpoint.tar` inspection (2026-06-07). Assumes Phase 9 Tinker LoRA export uses the same format. | Architecture Patterns | LOW risk — same tool, same Tinker convention. Verify checkpoint format before merge in Wave 1. |
 | A4 | `LLM_BACKEND=vllm` + separate vLLM instance at :8000 is available for rubric_scorer LLM checks (Pitfall 7) | Pitfalls | If only one GPU slot available, must use slower `claude` backend for rubric LLM checks |
 | A5 | Phase 9 live run will produce checkpoints at every 50 steps as configured in `run_args.checkpoint_every` | D-10-02 checkpoint selection | If run is shorter than 50 steps or Tinker export truncates, only dry-run checkpoint available |
 
@@ -763,6 +854,11 @@ security_enforcement not set to false in config.json — included.
    - What we know: `output/antihack_validation/acceptance_report.json` is fixture-backed. Phase 8 "Known Follow-Up" says live scoring is needed.
    - What's unclear: Whether the v1.2 SFT anti-hack live scoring was ever done (not on disk).
    - Recommendation: Wave 1 must run v1.2 SFT through the anti-hack JSONLs (using `output/merge_v4_winner`) to establish the real baseline CI bounds before comparing RL model bounds.
+
+4. **D-10-04 #4 — RL retention bar: what is the correct threshold?**
+   - What we know: CONTEXT.md says "Protected-expert retention >= the Phase 7 baseline (CI-aware vs protected_expert_mask)". Phase 7 `jaccard_ci_lower=0.9426` (from `concentration_report.json`) is a cross-run SFT stability measure (per-layer Jaccards across profiling runs), not an RL retention bar.
+   - What is unclear: Whether D-10-04 #4 intends (a) RL per-step `jaccard_protected` mean CI lower bound >= 0.9426, or (b) a new threshold, or (c) a monitoring-only signal for human review.
+   - Recommendation: Provisional bar for planning = mean `jaccard_protected` across all live-run steps CI lower bound >= 0.85 (lower than the SFT stability bar; frozen router makes routing collapse unlikely; exact value needs user confirmation). The RLEV-02 report should present the full `jaccard_protected` trace regardless of gate disposition.
 
 3. **Two vLLM instances: eval model (:8020) + rubric LLM checks (:8000)**
    - What we know: rubric_scorer's LLM checks can use local vLLM at :8000. The model-under-eval is served at :8020.
