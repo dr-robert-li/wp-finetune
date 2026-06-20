@@ -137,7 +137,7 @@ class TestScoreWithCache:
             [sys.executable, "-c",
              "import ast, pathlib; "
              "tree = ast.parse(pathlib.Path('scripts/rl_judge_dispatch.py').read_text()); "
-             "names = [n.name for n in ast.walk(tree) if isinstance(n, ast.Import)]; "
+             "names = [a.name for n in ast.walk(tree) if isinstance(n, ast.Import) for a in n.names]; "
              "aliases = [a.name for n in ast.walk(tree) if isinstance(n, ast.ImportFrom) "
              "for a in n.names]; "
              "all_names = names + aliases; "
@@ -179,17 +179,25 @@ class TestScoreJudgeConsistencyBatch:
     """Batch dispatch tests for timeout imputation and cache behavior."""
 
     def test_timeout_imputes_from_group_mean(self, monkeypatch):
-        """Batch where one sample raises TimeoutError is imputed from the group mean."""
+        """Batch where one sample raises TimeoutError is imputed from the group mean.
+
+        Uses sample-specific identification (php_code content) to ensure the
+        correct slot is always the failing one, regardless of asyncio scheduling order.
+        """
         rl_judge_dispatch = pytest.importorskip("scripts.rl_judge_dispatch")
 
-        call_count = {"n": 0}
+        # Score map: key by php_code content; "timeout" entry simulates timeout
+        score_map = {
+            "<?php echo 1;": 0.8,
+            "<?php echo 2;": 0.6,
+            "<?php echo 3;": "TIMEOUT",  # this sample will timeout
+        }
 
         def fake_scorer(php_code, critique_text, model="sonnet", n_votes=1):
-            call_count["n"] += 1
-            # Third call raises to simulate timeout
-            if call_count["n"] == 3:
+            val = score_map[php_code.strip()]
+            if val == "TIMEOUT":
                 raise asyncio.TimeoutError("simulated timeout")
-            return 0.8 if call_count["n"] == 1 else 0.6  # valid mean = 0.7
+            return val
 
         monkeypatch.setattr(rl_judge_dispatch, "score_judge_consistency", fake_scorer)
 
@@ -210,16 +218,25 @@ class TestScoreJudgeConsistencyBatch:
         )
 
     def test_exception_imputes_from_group_mean(self, monkeypatch):
-        """Batch where one sample raises RuntimeError is imputed from the group mean."""
+        """Batch where one sample raises RuntimeError is imputed from the group mean.
+
+        Uses sample-specific identification (php_code content) to ensure the
+        correct slot is always the failing one, regardless of asyncio scheduling order.
+        """
         rl_judge_dispatch = pytest.importorskip("scripts.rl_judge_dispatch")
 
-        call_count = {"n": 0}
+        # Score map keyed by php_code content; "FAIL" entry raises
+        score_map = {
+            "<?php echo 'a';": 0.9,
+            "<?php echo 'b';": "FAIL",  # this sample will raise
+            "<?php echo 'c';": 0.9,
+        }
 
         def fake_scorer(php_code, critique_text, model="sonnet", n_votes=1):
-            call_count["n"] += 1
-            if call_count["n"] == 2:
+            val = score_map[php_code.strip()]
+            if val == "FAIL":
                 raise RuntimeError("simulated subprocess failure")
-            return 0.9
+            return val
 
         monkeypatch.setattr(rl_judge_dispatch, "score_judge_consistency", fake_scorer)
 
