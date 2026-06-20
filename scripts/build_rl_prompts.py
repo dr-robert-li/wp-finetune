@@ -31,8 +31,11 @@ Threat: T-09-LEAK (val-set leakage) — mitigated by sha256 guard against openai
 import argparse
 import hashlib
 import json
+import logging
 import os
 import sys
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Defaults
@@ -97,7 +100,10 @@ def build_pools(
             if not line:
                 continue
             row = json.loads(line)
-            user_content = row["messages"][0]["content"]
+            user_content = (row.get("messages") or [{}])[0].get("content", "")
+            if not user_content:
+                logger.warning("Skipping val row with missing content: %s", row.get("id", "?"))
+                continue
             val_hashes.add(_sha256(user_content))
             val_rows_read += 1
 
@@ -131,7 +137,11 @@ def build_pools(
                 continue
             row = json.loads(line)
             stats["train_rows_read"] += 1
-            user_content = row["messages"][0]["content"].lstrip()
+            user_content = (row.get("messages") or [{}])[0].get("content", "")
+            if not user_content:
+                logger.warning("Skipping train row with missing content: %s", row.get("id", "?"))
+                continue
+            user_content = user_content.lstrip()
 
             # Tag-based split
             if user_content.startswith("<wp_gen>"):
