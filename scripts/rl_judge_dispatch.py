@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import json
 import logging
 import statistics
 import warnings
@@ -71,8 +72,12 @@ Respond with ONLY valid JSON, no prose, no markdown fences:
 # ---------------------------------------------------------------------------
 
 def _cache_key(php_code: str, critique_text: str) -> str:
-    """SHA-256 hash over first 512 chars of each input (D-09-05 spec)."""
-    raw = (php_code[:512] + critique_text[:512]).encode("utf-8")
+    """SHA-256 hash over first 512 chars of each input (D-09-05 spec).
+
+    Uses json.dumps on the list to avoid concatenation-collision:
+    key("ab","cd") != key("a","bcd") because the JSON encoding is unambiguous.
+    """
+    raw = json.dumps([php_code[:512], critique_text[:512]]).encode("utf-8")
     return hashlib.sha256(raw).hexdigest()
 
 
