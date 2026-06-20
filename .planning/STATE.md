@@ -4,12 +4,12 @@ milestone: v1.0
 milestone_name: MVP
 status: executing
 stopped_at: Phase 9 context gathered
-last_updated: "2026-06-20T01:32:46.818Z"
+last_updated: "2026-06-20T07:46:36.639Z"
 progress:
   total_phases: 12
   completed_phases: 10
   total_plans: 45
-  completed_plans: 39
+  completed_plans: 40
   percent: 83
 ---
 
@@ -20,12 +20,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Milestone complete
+**Current focus:** Phase 09 — gspo-training
 
 ## Current Position
 
-Phase: 8
-Plan: Not started
+Phase: 09 (gspo-training) — EXECUTING
+Plan: 2 of 6
 Next: Phase 08 (Reward Infrastructure)
 
 **Phase 7 closure (07-HUMAN-REVIEW §5, council-reviewed):** Profiling run of canonical v1.2 merged model on
@@ -138,7 +138,7 @@ data: `scripts/build_reasoning_negatives.py` + `build_augmented_train.py`; gates
 Status: Ready to execute
 Note: Local artifacts `models/qwen3-30b-wp-30_70-merged-v2` + `...-reasoning-merged` + `adapters/.../checkpoint-72` are READ-ONLY references/fallback only (NOT promoted). The GB10 memory wall is documented in `output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md`. `04.3-REOPEN-PLAN.md` remains a 0-task brief — do not execute.
 
-Progress: [██████████] 100%
+Progress: [█████████░] 89%
 
 ## Performance Metrics
 
@@ -192,6 +192,7 @@ Progress: [██████████] 100%
 | Phase 08-reward-infrastructure P02 | 281 | 2 tasks | 2 files |
 | Phase 08-reward-infrastructure P03 | 2018 | 3 tasks | 8 files |
 | Phase 08-reward-infrastructure P04 | 357 | 2 tasks | 2 files |
+| Phase 09-gspo-training P01 | 2 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -282,7 +283,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-19T23:33:11.305Z
+Last session: 2026-06-20T07:46:36.631Z
 Stopped at: Phase 9 context gathered
 
 Prior session: 2026-06-02T21:31:00.000Z
@@ -328,7 +329,7 @@ Stopped at: W1-W6 cascade BLOCKED on eval-harness prose compat (2 layers). Findi
   - **CERTIFIED VERDICT (c246a20)**: smoke_pass=True exit=0 distinctness=0.879. judge 5/5 (prose 9/9 dims + 1 CtF json), gen 5/5 php_lint, baseline-sim 0.02-0.42 (<0.85 canary → reasoning diverges). Artifact: merge-artifacts/w0_03_smoke_PASS_verdict.json.
   - Data finding flagged: reasoning judge output is dimensional PROSE (CoT) or JSON (CtF), NOT <REASONING>-tagged. parse_judge_response(JSON-only) would have false-failed all CoT — coherence redesigned prose-aware + json-aware.
 
-Resume file: .planning/phases/09-gspo-training/09-CONTEXT.md
+Resume file: None
 Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertions + smoke-gate hardening), THEN W0-03 smoke gate against models/qwen3-30b-wp-30_70-reasoning-merged/ vs models/qwen3-30b-wp-30_70-merged-v2/ baseline, THEN REVL-01..08 eval gates
 
 ### Session 2026-05-29 reasoning MERGE COMPLETE + PROMOTED
