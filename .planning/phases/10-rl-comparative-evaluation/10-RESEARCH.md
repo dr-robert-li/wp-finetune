@@ -757,7 +757,7 @@ nyquist_validation: true (from `.planning/config.json`)
 | RLEV-02 | rlev02_report.py reads rl_metrics.jsonl correctly (reward_breakdown parsing) | unit | `pytest tests/test_rlev02_report.py -x` | Wave 0 gap |
 | RLEV-02 | rlev02_report.py five-part conjunctive gate aggregates correct pass/fail | unit | `pytest tests/test_rlev02_report.py::test_conjunctive_gate -x` | Wave 0 gap |
 | RLEV-02 | Anti-hack gate CI comparison: hi_perturbed_rl < lo_clean_v12 | unit | `pytest tests/test_rlev02_report.py::test_antihack_gate -x` | Wave 0 gap |
-| RLEV-02 | Jaccard retention: rl_jaccard_ci_lower >= 0.9426 (Phase 7 baseline) | unit | `pytest tests/test_rlev02_report.py::test_jaccard_retention -x` | Wave 0 gap |
+| RLEV-02 | Jaccard retention: rl_jaccard_ci_lower >= configurable bar (default 0.85) — NOT 0.9426 (Phase 7 SFT cross-run stability is a different quantity; bar confirmed at D-10-04 human checkpoint, see Open-Q #4) | unit | `pytest tests/test_rlev02_report.py::test_jaccard_retention -x` | Wave 0 gap |
 
 ### Sampling Rate
 - **Per task commit:** `pytest tests/test_bootstrap_gate.py tests/test_rlev02_report.py -x -q`
@@ -843,9 +843,11 @@ security_enforcement not set to false in config.json — included.
 
 ---
 
-## Open Questions
+## Open Questions (all RESOLVED at planning — dispositions noted inline)
 
-1. **Tinker LoRA checkpoint format vs merge_tinker_v3.py input format**
+> Q1→Wave-0 Task 0 (merge-compat verify); Q2→Wave-1 Task 5 (live v1.2 anti-hack baseline); Q3→Tasks 2/4 (`LLM_BACKEND=claude`, single-vLLM sequencing); Q4→configurable bar 0.85 + D-10-04 human checkpoint (Task 7).
+
+1. **Tinker LoRA checkpoint format vs merge_tinker_v3.py input format** — RESOLVED: Wave-0 Task 0 verifies.
    - What we know: `merge_tinker_v3.py` exists and handles MoE-only merges (Phase 4.3). Tinker exports via `tinker://` → HF archive.
    - What's unclear: Whether `merge_tinker_v3.py` expects HF-format LoRA weights or a different format.
    - Recommendation: Wave 0 Task 0 should read `merge_tinker_v3.py` and confirm input format. If incompatible, Wave 1 needs a format adapter.
