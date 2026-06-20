@@ -426,6 +426,7 @@ Plans:
   - Fix-test-validate loop: if any eval dimension regresses, present specific failure to user with suggested fix (re-train with adjusted regularizer, adjust reward weights) before declaring gate pass/fail
   - Human review checkpoint: present full comparison table (v1.2 SFT vs RL) before gating v3.0
 **Plans**: 1 plan
+  - [ ] 10-01-PLAN.md — RL-vs-v1.2 comparative eval: CI-aware bootstrap_gate + RLEV-02 five-part conjunctive gate (W0 build/test) → merge+serve+eval both checkpoints + live v1.2 anti-hack baseline (W1) → winner select + human v3.0 gate (W2) (RLEV-01, RLEV-02)
 
 ---
 
