@@ -47,7 +47,10 @@ created: 2026-06-21
 | 10-01-W0f | 01 | 0 | RLEV-02 | — | N/A | unit | `pytest tests/test_rlev02_report.py::test_conjunctive_gate -x` | ❌ W0 | ⬜ pending |
 | 10-01-W0g | 01 | 0 | RLEV-02 | T-10-01 | anti-hack hi_perturbed_rl < lo_clean_v12 (no reward-hack) | unit | `pytest tests/test_rlev02_report.py::test_antihack_gate -x` | ❌ W0 | ⬜ pending |
 | 10-01-W0h | 01 | 0 | RLEV-02 | — | N/A | unit | `pytest tests/test_rlev02_report.py::test_jaccard_retention -x` | ❌ W0 | ⬜ pending |
-| 10-01-Wre | 01 | 1 | RLEV-01 | — | N/A | integration | `pytest tests/test_eval_integration.py -x` | ✅ (Phase 4.4) | ⬜ pending |
+| 10-01-Wre | 01 | 1 | RLEV-01 | — | N/A | integration | `pytest tests/test_eval_integration.py -x` | ❓ confirm W0 | ⬜ pending |
+
+> **OPEN DECISION — protected-expert retention bar (D-10-04 #4):** `test_jaccard_retention` validates the *mechanism*, not a settled threshold. The Phase 7 `jaccard_ci_lower=0.9426` is SFT cross-run profiling stability — a **different quantity** from RL per-step `jaccard_protected` (open-Q #4 in RESEARCH). Do NOT hard-code 0.9426 as the RL bar. Provisional planning bar = **0.85**; the RLEV-02 report presents the full `jaccard_protected` trace, and the final threshold is **confirmed at the D-10-04 human-review checkpoint**. The test asserts against the provisional/configurable bar, not 0.9426.
+> **CONFIRM W0:** `tests/test_eval_integration.py` is *expected* from Phase 4.4 but unconfirmed — Wave 0 verifies; if absent it is a Wave 0 gap, not a pre-existing test.
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
