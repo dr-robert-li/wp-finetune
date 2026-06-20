@@ -4,12 +4,12 @@ milestone: v1.0
 milestone_name: MVP
 status: executing
 stopped_at: Completed 09-03-PLAN.md
-last_updated: "2026-06-20T08:09:39.955Z"
+last_updated: "2026-06-20T08:18:31.532Z"
 progress:
   total_phases: 12
   completed_phases: 10
   total_plans: 45
-  completed_plans: 42
+  completed_plans: 43
   percent: 83
 ---
 
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 ## Current Position
 
 Phase: 09 (gspo-training) — EXECUTING
-Plan: 4 of 6
+Plan: 5 of 6
 Next: Phase 08 (Reward Infrastructure)
 
 **Phase 7 closure (07-HUMAN-REVIEW §5, council-reviewed):** Profiling run of canonical v1.2 merged model on
@@ -138,7 +138,7 @@ data: `scripts/build_reasoning_negatives.py` + `build_augmented_train.py`; gates
 Status: Ready to execute
 Note: Local artifacts `models/qwen3-30b-wp-30_70-merged-v2` + `...-reasoning-merged` + `adapters/.../checkpoint-72` are READ-ONLY references/fallback only (NOT promoted). The GB10 memory wall is documented in `output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md`. `04.3-REOPEN-PLAN.md` remains a 0-task brief — do not execute.
 
-Progress: [█████████░] 93%
+Progress: [██████████] 96%
 
 ## Performance Metrics
 
@@ -289,7 +289,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-20T08:09:39.946Z
+Last session: 2026-06-20T08:18:31.521Z
 Stopped at: Completed 09-03-PLAN.md
 
 Prior session: 2026-06-02T21:31:00.000Z
