@@ -24,9 +24,10 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 
 ## Current Position
 
-Phase: 09
-Plan: Not started
-Next: Phase 08 (Reward Infrastructure)
+Phase: 09 (gspo-training) — COMPLETE 2026-06-20 (final phase of milestone v1.0)
+Plan: 6/6 executed
+Milestone: v1.0 (MVP) — milestone_complete
+Next: (a) live Tinker RL run — credential-gated, tracked in 09-HUMAN-UAT.md, gates downstream comparative eval; (b) Phase 10 (RL-vs-SFT comparative eval) exists in ROADMAP prose only — needs to be added/planned as a structured phase before execution
 
 **Phase 7 closure (07-HUMAN-REVIEW §5, council-reviewed):** Profiling run of canonical v1.2 merged model on
 matched 30/70 training stimulus (34,855 examples, 785.8M tokens, GB10 6h30m, rc=0). All automated gates green —
