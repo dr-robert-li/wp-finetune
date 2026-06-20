@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 status: executing
-stopped_at: Phase 9 context gathered
-last_updated: "2026-06-20T07:46:36.639Z"
+stopped_at: Completed 09-02-PLAN.md
+last_updated: "2026-06-20T07:59:44.944Z"
 progress:
   total_phases: 12
   completed_phases: 10
   total_plans: 45
-  completed_plans: 40
+  completed_plans: 41
   percent: 83
 ---
 
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 ## Current Position
 
 Phase: 09 (gspo-training) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 Next: Phase 08 (Reward Infrastructure)
 
 **Phase 7 closure (07-HUMAN-REVIEW §5, council-reviewed):** Profiling run of canonical v1.2 merged model on
@@ -138,7 +138,7 @@ data: `scripts/build_reasoning_negatives.py` + `build_augmented_train.py`; gates
 Status: Ready to execute
 Note: Local artifacts `models/qwen3-30b-wp-30_70-merged-v2` + `...-reasoning-merged` + `adapters/.../checkpoint-72` are READ-ONLY references/fallback only (NOT promoted). The GB10 memory wall is documented in `output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md`. `04.3-REOPEN-PLAN.md` remains a 0-task brief — do not execute.
 
-Progress: [█████████░] 89%
+Progress: [█████████░] 91%
 
 ## Performance Metrics
 
@@ -193,6 +193,7 @@ Progress: [█████████░] 89%
 | Phase 08-reward-infrastructure P03 | 2018 | 3 tasks | 8 files |
 | Phase 08-reward-infrastructure P04 | 357 | 2 tasks | 2 files |
 | Phase 09-gspo-training P01 | 2 | 2 tasks | 5 files |
+| Phase 09 P02 | 25 minutes | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -242,6 +243,9 @@ Recent decisions affecting current work:
 - [Phase ?]: _REWARD_SEC_TRIGGERS derived programmatically: D2_security ids where method!=llm; SEC-N04 excluded by design
 - [Phase ?]: Gate fails CLOSED: RuntimeError on empty trigger set — prevents T-08-SEC fail-open
 - [Phase ?]: Composite weights 35/35/30 (phpcs/verpo/judge) locked per D-08; terminal override post-combine
+- [Phase ?]: Wave-0 fixture: mock_tinker_client mocks both forward_backward and forward_backward_custom (D-09-03 GSPO primary)
+- [Phase ?]: Wave-0 stubs use importorskip: SKIP while scripts absent, RED on wrong symbol when 09-03/04/05 land
+- [Phase ?]: ROADMAP Phase 9 corrected: DGX refs removed, Tinker-native GSPO-primary detail per D-09-01/02/03
 
 ### Pending Todos
 
@@ -283,8 +287,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-20T07:46:36.631Z
-Stopped at: Phase 9 context gathered
+Last session: 2026-06-20T07:59:44.935Z
+Stopped at: Completed 09-02-PLAN.md
 
 Prior session: 2026-06-02T21:31:00.000Z
 Stopped at: Phase 4.4 CLOSED **REJECTED** at REVL-05 (human). All automated gates run; merge NOT promoted; D-05 disposition pending (recommend Phase 4.3 format-stability re-train). See `04.4-GATE-LEDGER.md` + `04.4-D05-DIAGNOSIS.md`. Resume = decide D-05.
