@@ -99,8 +99,12 @@ def sample_interleaved_prompts(
     and n_gen = batch_size - n_judge from gen_pool, ensuring n_judge >= n_gen for
     all batch_size >= 2.
 
-    Items are dicts (or any objects) — they are returned as-is to preserve
-    tag/metadata for downstream routing.
+    Each returned item is a SHALLOW COPY of the source dict with an added
+    "_origin" key ("judge" or "gen") recording which pool it came from. This is
+    the authoritative gen-vs-judge routing signal for collect_rollouts — prompt
+    pool items (shape {"messages": [...]}) carry no intrinsic "tag" field, so
+    routing must be by pool origin, not by a field that does not exist (CR-03).
+    The copy avoids mutating the caller's pool dicts.
 
     Args:
         gen_pool: Pool of gen-mode prompt dicts (wp_gen).
@@ -139,7 +143,22 @@ def sample_interleaved_prompts(
     while len(gen_samples) < n_gen:
         gen_samples.append(random.choice(gen_pool))
 
-    return judge_samples + gen_samples
+    # Stamp pool origin on shallow copies so collect_rollouts can route gen vs
+    # judge without depending on a "tag" field the pool items do not carry (CR-03).
+    judge_items = [_stamp_origin(item, "judge") for item in judge_samples]
+    gen_items = [_stamp_origin(item, "gen") for item in gen_samples]
+
+    return judge_items + gen_items
+
+
+def _stamp_origin(item: Any, origin: str) -> dict:
+    """Return a shallow copy of `item` with an added "_origin" routing tag.
+
+    Falls back to wrapping non-dict items so origin is always recoverable.
+    """
+    if isinstance(item, dict):
+        return {**item, "_origin": origin}
+    return {"item": item, "_origin": origin}
 
 
 # ---------------------------------------------------------------------------
@@ -469,8 +488,11 @@ def collect_rollouts(
     # Step 1: Interleaved sampling
     batch = sample_interleaved_prompts(gen_pool, judge_pool, batch_size=args.batch_size)
 
-    gen_rollouts = [item for item in batch if item.get("tag") == "gen"]
-    judge_rollouts = [item for item in batch if item.get("tag") == "judge"]
+    # Route by pool origin stamped at sample time (CR-03). Pool items are
+    # {"messages": [...]} and carry no intrinsic "tag" — sample_interleaved_prompts
+    # adds "_origin" so both lists are correctly populated.
+    gen_rollouts = [item for item in batch if item.get("_origin") == "gen"]
+    judge_rollouts = [item for item in batch if item.get("_origin") == "judge"]
 
     all_rollouts = []
     all_rewards = []
