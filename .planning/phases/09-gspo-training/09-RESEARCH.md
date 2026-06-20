@@ -18,7 +18,7 @@
 
 ### Claude's Discretion
 - D-09-02: Router-training scope — research-gated, resolved by this research (see below).
-- D-09-03: GSPO expressibility on Tinker — research-gated, resolved by this research (see below).
+- D-09-03: GSPO **expressibility/feasibility** on Tinker — research-gated, resolved FEASIBLE by this research (see below). NOTE: only feasibility was discretionary; the "GSPO is primary" disposition itself is LOCKED in CONTEXT.md D-09-03 (GRPO is fallback only if GSPO proves infeasible/unstable — which it did not).
 - D-09-05 R1-R3: Panickssery check procedure, reward noise budget, latency mitigation — resolved by this research.
 - Precise group sizes (G_gen, G_judge), LR schedule, batch sizes, epoch count.
 - KL penalty coefficient and halt thresholds for GRPO-07/08.
@@ -51,11 +51,11 @@
 
 Phase 9 trains Qwen3-30B-A3B on the RL objective using Tinker cloud as the exclusive execution venue. The training loop is dual-mode: every batch interleaves `<wp_gen>` samples (code generation) and `<wp_judge>` samples (code critique/fix), with the judge pathway weighted at approximately 60% of total samples. Reward signals come from Phase 8's `reward_pipeline.py` without modification.
 
-The three research-gated decisions are now closed by primary-source SDK evidence. Router gates are architecturally frozen (no `train_router` in LoraConfig); this is a justified deviation from GRPO-06's literal text, with protected-expert monitoring running offline using native `ForwardBackwardOutput.metrics`. GSPO is expressible on Tinker via `importance_sampling` loss for GRPO-style token-level IS (the primary path) and `forward_backward_custom` for true sequence-level IS ratio (the optional upgrade). Policy-shift monitoring for GRPO-07/08 is achievable using `compute_kl_sample_train` (per step, no extra inference) and `e_frac_with_tokens:mean` / `e_max_violation` (native MoE metrics from every forward pass).
+The three research-gated decisions are now closed by primary-source SDK evidence. Router gates are architecturally frozen (no `train_router` in LoraConfig); this is a justified deviation from GRPO-06's literal text, with protected-expert monitoring running offline using native `ForwardBackwardOutput.metrics`. GSPO is expressible on Tinker via `forward_backward_custom` for the true sequence-level IS ratio + RSPO floor (the PRIMARY path, per locked D-09-03), with `importance_sampling` (GRPO-style token-level IS) available as the instability fallback. Policy-shift monitoring for GRPO-07/08 is achievable using `compute_kl_sample_train` (per step, no extra inference) and `e_frac_with_tokens:mean` / `e_max_violation` (native MoE metrics from every forward pass).
 
 The critical operational risk is judge-agent latency on the critical path. Claude Code agents spawn between `sampling_client.sample()` and `forward_backward()` — agent wall-clock time directly stalls the training client. Batch-parallel dispatch (all samples in one async gather before any `forward_backward`) and content-hash caching are the standard mitigations. This is the primary architectural decision Phase 9 planning must address.
 
-**Primary recommendation:** Use `importance_sampling` (GRPO token-level IS) as the primary RL loss, `forward_backward_custom` as the optional GSPO upgrade, cook from `tinker_cookbook/rl/train.py` as the structural scaffold, and treat `ForwardBackwardOutput.metrics` MoE keys as the native per-step router monitor.
+**Primary recommendation:** Use **GSPO** (`forward_backward_custom`, sequence-level IS + RSPO stop-gradient floor) as the PRIMARY RL loss per locked decision D-09-03 (research confirms it FEASIBLE on Tinker); `importance_sampling` (GRPO token-level IS) is the documented **instability fallback** reachable via `--grpo-fallback`/`--no-gspo`. Cook from `tinker_cookbook/rl/train.py` as the structural scaffold, and treat `ForwardBackwardOutput.metrics` MoE keys as the native per-step router monitor.
 
 ---
 
@@ -197,7 +197,7 @@ training_client.forward_backward_custom(
 ```
 This allows computing a sequence-level IS ratio `exp(sum(log π_θ(aₜ|sₜ)) - sum(log π_β(aₜ|sₜ)))` client-side and returning it as gradients. True GSPO (sequence-level importance sampling) is implementable here. The RSPO stop-gradient floor is also implementable: clip ratio from below at `max(1, r) = 1` (floor) before multiplying by advantage.
 
-**Decision:** Primary path = `importance_sampling` (GRPO token-level IS, full cookbook infrastructure). GSPO upgrade = `forward_backward_custom` with sequence-level IS aggregation. The planner should structure this as a flag `use_gspo: bool` that switches between paths, with GRPO as stable fallback.
+**Decision:** PRIMARY path = **GSPO** = `forward_backward_custom` with sequence-level IS aggregation + RSPO stop-gradient floor (honors locked D-09-03; GSPO confirmed FEASIBLE). FALLBACK = `importance_sampling` (GRPO token-level IS, full cookbook infrastructure), used ONLY if GSPO proves unstable. The planner structures this as `use_gspo: bool` defaulting **True**, with `--grpo-fallback`/`--no-gspo` selecting the GRPO fallback path. Single run, NOT a side-by-side comparison.
 
 **Pro-GRPO is infeasible on Tinker:** Pro-GRPO (expand-then-prune expert capacity) requires structural MoE surgery (changing gate routing or expert count). No Tinker API surface supports this. Remove from plan scope — was already deferred, but confirm explicitly.
 
@@ -269,8 +269,8 @@ PROMPT DATASET (wp_gen + wp_judge items, 60/40 ratio)
         │
         ▼
 [TINKER TRAINING CLIENT]
-  forward_backward(data, loss_fn="importance_sampling")   ← GRPO path
-  OR forward_backward_custom(data, gspo_loss_fn)           ← GSPO upgrade
+  forward_backward_custom(data, gspo_loss_fn)             ← GSPO path (PRIMARY, default)
+  OR forward_backward(data, loss_fn="importance_sampling") ← GRPO fallback (--grpo-fallback)
   Returns: ForwardBackwardOutput
    ├── .metrics["e_frac_with_tokens:mean"]  ← MoE routing health
    ├── .metrics["e_max_violation:mean"]     ← Routing concentration
@@ -378,17 +378,17 @@ async def score_judge_consistency_batch(samples: list[dict]) -> list[float]:
     return [s if s is not None else group_mean for s in scores]
 ```
 
-### Pattern 3: GRPO → GSPO Switchable Loss
+### Pattern 3: GSPO Primary + GRPO Fallback Loss
 
 ```python
-# GRPO path (primary, battle-tested)
+# GRPO path (FALLBACK ONLY — selected via --grpo-fallback/--no-gspo if GSPO proves unstable)
 fb_output = training_client.forward_backward(
     data=batch_data,
     loss_fn="importance_sampling",
     loss_fn_config={},
 ).result()
 
-# GSPO upgrade (sequence-level IS, optional)
+# GSPO path (PRIMARY — default, sequence-level IS + RSPO floor, locked D-09-03)
 def gspo_loss_fn(logprobs_list):
     """Custom sequence-level IS loss with RSPO stop-gradient floor."""
     results = []
@@ -647,7 +647,7 @@ training_client.save_weights_for_sampler(name=f"phase9-step-{step}")
 4. **GSPO vs GRPO as primary**
    - What we know: Both feasible. `importance_sampling` (GRPO) is cookbook-native. `forward_backward_custom` (GSPO) requires custom implementation.
    - What's unclear: Whether the complexity of sequence-level IS ratio is warranted given frozen router.
-   - RESOLVED: Plan 09-05 uses GRPO `importance_sampling` as primary loss with a `use_gspo` flag (sequence-level IS + RSPO floor) gated ~200 steps — documented explicitly as the "GSPO-PRIMARY DEVIATION" (D-09-03 is under Claude's Discretion). NOT a side-by-side comparison.
+   - RESOLVED: Plan 09-05 uses **GSPO** `forward_backward_custom` (sequence-level IS + RSPO floor) as the PRIMARY loss, `use_gspo` defaulting **True**, honoring locked D-09-03 (research confirmed GSPO FEASIBLE). GRPO `importance_sampling` is the documented instability FALLBACK via `--grpo-fallback`/`--no-gspo`. D-09-03's "GSPO primary" disposition is LOCKED — NOT Claude's Discretion (CONTEXT.md's Discretion list contains only the interleave ratio and numeric thresholds). NOT a side-by-side comparison.
 
 ---
 
