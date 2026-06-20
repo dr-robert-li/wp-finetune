@@ -18,7 +18,7 @@ No dimension regression = no statistically real regression under the project CI-
 Export and evaluate two RL checkpoints — the best-by-reward-convergence checkpoint AND the final-step checkpoint — run both through the full eval, pick the winner against the baseline. The selected winner is the canonical RL model handed to Phase 11.
 
 **D-10-03 — wp-bench hard gate: aggregate CI-aware + per-task floor**
-The wp-bench HARD GATE passes when the RL model's aggregate wp-bench bootstrap lower bound >= the v1.2 baseline aggregate point estimate (0.4616 from `output/04.4_wp_bench_results.json`), AND no individual wp-bench task catastrophically regresses (a hard per-task floor). Concrete floor value is Claude's Discretion — derived below.
+The wp-bench HARD GATE passes when the RL model's aggregate wp-bench bootstrap lower bound >= the v1.2 baseline aggregate point estimate (0.4616 from `output/04.4_wp_bench_results.json`), AND no individual wp-bench task catastrophically regresses (a hard per-task floor). Concrete floor value is Claude's Discretion — derived below. [CORRECTED per plan-checker D-10-03 BLOCKER fix: 0.4616 is wp-bench's DETERMINISTIC WEIGHTED overall (metadata.scores.overall), not a per-task mean, so the gate is a DIRECT point comparison candidate_overall >= 0.4616 — NOT a flat-array bootstrap. A simple-mean bootstrap vs a weighted baseline is apples-to-oranges. Per-dim + jaccard gates keep bootstrap_ci; sub-type floors unchanged.]
 
 **D-10-04 — RLEV-02 five-part conjunctive gate + human sign-off**
 Sign-off to v3.0 (gating MoE-Sieve) requires ALL of:
@@ -140,7 +140,7 @@ ACTUAL PIPELINE:
            (claude --print --no-session-persistence --tools "" --model <model>)
   └── scripts/bootstrap_gate.py  →  dim regression check vs v1.2 baseline
   └── wp-bench run (Docker grader)  →  wp_bench_results.json + per-task JSONL
-  └── bootstrap lower bound check vs 0.4616 baseline point estimate
+  └── bootstrap lower bound check vs 0.4616 baseline point estimate  # CORRECTED: direct weighted-overall point comparison (metadata.scores.overall >= 0.4616), not a per-task bootstrap
   └── scripts/rlev02_report.py  →  rlev02_report.json + human sign-off table
 ```
 
@@ -224,13 +224,13 @@ def bootstrap_spearman_improvement(
         bl_gt   = [baseline_pairs[j][1] for j in idx]
         cand_pred = [candidate_pairs[j][0] for j in idx]
         cand_gt   = [candidate_pairs[j][1] for j in idx]
-        rho_bl   = spearmanr(bl_pred, bl_gt).correlation
-        rho_cand = spearmanr(cand_pred, cand_gt).correlation
+        rho_bl   = spearmanr(bl_pred, bl_gt).statistic  # .statistic per project convention (eval_judge.py::_safe_spearman); .correlation is deprecated in modern scipy
+        rho_cand = spearmanr(cand_pred, cand_gt).statistic  # .statistic per project convention (eval_judge.py::_safe_spearman); .correlation is deprecated in modern scipy
         diffs[i] = rho_cand - rho_bl
     lo = float(np.percentile(diffs, 100 * alpha / 2))
     hi = float(np.percentile(diffs, 100 * (1 - alpha / 2)))
-    rho_bl_point   = spearmanr([p[0] for p in baseline_pairs], [p[1] for p in baseline_pairs]).correlation
-    rho_cand_point = spearmanr([p[0] for p in candidate_pairs], [p[1] for p in candidate_pairs]).correlation
+    rho_bl_point   = spearmanr([p[0] for p in baseline_pairs], [p[1] for p in baseline_pairs]).statistic  # .statistic per project convention (eval_judge.py::_safe_spearman); .correlation is deprecated in modern scipy
+    rho_cand_point = spearmanr([p[0] for p in candidate_pairs], [p[1] for p in candidate_pairs]).statistic  # .statistic per project convention (eval_judge.py::_safe_spearman); .correlation is deprecated in modern scipy
     return {
         "rho_baseline": rho_bl_point,
         "rho_candidate": rho_cand_point,
@@ -610,13 +610,13 @@ Given binary task scores, "catastrophic regression" must be defined at the aggre
 
 - **Knowledge sub-score floor:** RL knowledge sub-score >= 0.45 (vs v1.2 knowledge = 0.4906, floor = ~0.04 below, 1 sigma buffer)
 - **Execution sub-score floor:** RL execution sub-score >= 0.375 (vs v1.2 execution = 0.4375, floor = 0.0625 below — only 24 tasks so variance is higher)
-- **Overall aggregate bootstrap lower bound >= 0.4616** (D-10-03 primary CI gate, already locked)
+- **Overall aggregate WEIGHTED overall (metadata.scores.overall) >= 0.4616 [CORRECTED: direct point comparison, not a per-task bootstrap — see D-10-03 BLOCKER note above]** (D-10-03 primary CI gate, already locked)
 
 These floors serve as catastrophe protection against a model that somehow collapses on a whole sub-type. A model that passes the aggregate CI gate but scores 0.0 on all execution tasks would be caught by the execution floor.
 
 **Alternative (simpler):** Set per-task floor as "RL correct on any task where v1.2 was correct" = RL must not regress to 0.0 on any task where v1.2 scored 1.0. This is verifiable via set-diff of `correct=true` tasks between baseline and candidate. Recommend this as a secondary check (flag for human review but not a hard gate — single-task binary noise is high).
 
-**Final recommendation:** Planner should define D-10-03 per-task floor as: aggregate bootstrap lower bound >= 0.4616 (HARD), plus sub-type floors (knowledge >= 0.45, execution >= 0.375) as HARD, plus flag-for-human-review if any task regresses from correct to incorrect. This is the most defensible derivation given binary scoring.
+**Final recommendation:** Planner should define D-10-03 per-task floor as: aggregate WEIGHTED overall (metadata.scores.overall) >= 0.4616 (HARD, direct point comparison — NOT a per-task bootstrap; D-10-03 BLOCKER fix), plus sub-type floors (knowledge >= 0.45, execution >= 0.375) as HARD, plus flag-for-human-review if any task regresses from correct to incorrect. This is the most defensible derivation given binary scoring.
 
 ---
 
@@ -752,7 +752,7 @@ nyquist_validation: true (from `.planning/config.json`)
 | RLEV-01 | bootstrap_gate.py dim regression logic correct (CI lower bound vs baseline mean) | unit | `pytest tests/test_bootstrap_gate.py -x` | Wave 0 gap |
 | RLEV-01 | bootstrap_gate.py Spearman improvement check correct (beyond noise) | unit | `pytest tests/test_bootstrap_gate.py::test_spearman_improvement -x` | Wave 0 gap |
 | RLEV-01 | eval_gen.py + eval_judge.py produce correct output format against dry-run fixture | integration | `pytest tests/test_eval_integration.py -x` | Likely exists from Phase 4.4 |
-| RLEV-01 | wp-bench D-10-03 gate: aggregate CI lower bound >= 0.4616 with fixture data | unit | `pytest tests/test_bootstrap_gate.py::test_wpbench_gate -x` | Wave 0 gap |
+| RLEV-01 | wp-bench D-10-03 gate: weighted overall (metadata.scores.overall) >= 0.4616 with fixture data (direct point comparison; includes discriminating case where simple-mean would falsely pass) | unit | `pytest tests/test_bootstrap_gate.py::test_wpbench_gate -x` | Wave 0 gap |
 | RLEV-01 | D-10-03 per-task floor: knowledge >= 0.45, execution >= 0.375 sub-type check | unit | `pytest tests/test_bootstrap_gate.py::test_pertask_floor -x` | Wave 0 gap |
 | RLEV-02 | rlev02_report.py reads rl_metrics.jsonl correctly (reward_breakdown parsing) | unit | `pytest tests/test_rlev02_report.py -x` | Wave 0 gap |
 | RLEV-02 | rlev02_report.py five-part conjunctive gate aggregates correct pass/fail | unit | `pytest tests/test_rlev02_report.py::test_conjunctive_gate -x` | Wave 0 gap |
