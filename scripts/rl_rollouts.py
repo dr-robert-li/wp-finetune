@@ -354,40 +354,34 @@ def compute_rollout_advantages(
 
     n_input = len(flat_groups)
 
-    # Try cookbook first (lazy import — module must import without tinker)
-    try:
-        from tinker_cookbook.rl.data_processing import (  # noqa: PLC0415
-            compute_advantages,
-            remove_constant_reward_groups,
-            assemble_training_data,
-        )
-        # Cookbook expects its own trajectory_group type, not plain dicts.
-        # Fall through to inline path since we cannot construct cookbook types
-        # without tinker — the cookbook delegation is present for the training
-        # loop in 09-05 which constructs proper cookbook objects.
-        raise ImportError("tinker absent or cookbook types unavailable — use inline path")
-    except (ImportError, Exception):
-        # Inline fallback: identical semantics to the cookbook
-        filtered = _inline_remove_constant_reward_groups(flat_groups)
-        n_dropped = n_input - len(filtered)
+    # Inline group-centred advantage assembly is the real implementation here.
+    # We operate on plain dicts (the format produced by build_trajectory_groups
+    # and the synthetic test format); the cookbook's data_processing helpers
+    # require its own trajectory_group types which we do not construct in this
+    # module. The inline functions below mirror the cookbook semantics exactly:
+    #   _inline_remove_constant_reward_groups  -> remove_constant_reward_groups
+    #   _inline_compute_advantages             -> compute_advantages
+    #   _inline_assemble_training_data         -> assemble_training_data
+    filtered = _inline_remove_constant_reward_groups(flat_groups)
+    n_dropped = n_input - len(filtered)
 
-        if not filtered:
-            meta = {
-                "n_groups_input": n_input,
-                "n_dropped_constant": n_dropped,
-                "n_groups_output": 0,
-            }
-            return [], meta
-
-        data_with_adv = _inline_compute_advantages(filtered)
-        assembled = _inline_assemble_training_data(data_with_adv)
-
+    if not filtered:
         meta = {
             "n_groups_input": n_input,
             "n_dropped_constant": n_dropped,
-            "n_groups_output": len(assembled),
+            "n_groups_output": 0,
         }
-        return assembled, meta
+        return [], meta
+
+    data_with_adv = _inline_compute_advantages(filtered)
+    assembled = _inline_assemble_training_data(data_with_adv)
+
+    meta = {
+        "n_groups_input": n_input,
+        "n_dropped_constant": n_dropped,
+        "n_groups_output": len(assembled),
+    }
+    return assembled, meta
 
 
 # ---------------------------------------------------------------------------
