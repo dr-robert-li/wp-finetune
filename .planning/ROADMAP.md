@@ -406,7 +406,7 @@ Plans:
   - Anti-hack regression: run anti-hack eval set after training completes; if regression detected, flag for human review before proceeding
   - Invokes `wp-finetune:review-telemetry` after training completes for consolidated summary
 **Plans**: 6 plans
-  - [ ] 09-01-PLAN.md — RL prompt corpus assembly (audited, val-clean) + Tinker prompt-only data adapter (GRPO-05)
+  - [x] 09-01-PLAN.md — RL prompt corpus assembly (audited, val-clean) + Tinker prompt-only data adapter (GRPO-05)
   - [ ] 09-02-PLAN.md — RL test contract (8 named stubs) + mock_tinker_client fixture + ROADMAP DGX→Tinker skill-text correction (GRPO-05/06/07/08)
   - [ ] 09-03-PLAN.md — Claude score-reasoning consistency scorer: async batch dispatch + content-hash cache + 120s timeout/impute (GRPO-05)
   - [ ] 09-04-PLAN.md — Interleaved rollouts + dual rewards (Phase 8 pipeline unmodified) + capped judge combination + cookbook advantages (GRPO-05)
@@ -571,7 +571,7 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 6. Adaptive Training Planner | v1.1 | 6/6 | Complete | 2026-04-01 |
 | 7. Router Profiling & Protected Expert Set | v2.0 | 1/2 | In Progress|  |
 | 8. Reward Infrastructure | v2.0 | 4/4 | Complete    | 2026-06-19 |
-| 9. GSPO Training | v2.0 | 0/? | Not started | - |
+| 9. GSPO Training | v2.0 | 1/6 | In Progress|  |
 | 10. RL Comparative Evaluation | v2.0 | 0/? | Not started | - |
 | 11. Post-RL MoE-Sieve | v3.0 | 0/? | Not started | - |
 | 12. MoE-Sieve Comparative Evaluation | v3.0 | 0/? | Not started | - |
