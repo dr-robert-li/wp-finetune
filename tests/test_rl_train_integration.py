@@ -368,6 +368,82 @@ def test_metrics_jsonl_contains_rlev_fields(monkeypatch, tmp_path):
     assert isinstance(record["reward_breakdown"], dict)
 
 
+def test_main_wires_sampling_client_and_loads_pools(monkeypatch, tmp_path):
+    """Root-cause closure: drive main() itself so CR-01/CR-02 cannot regress unseen.
+
+    The other tests call run_training_step directly — but CR-01 (wrong sampling
+    object) and CR-02 (hardcoded empty pools) live in main(), not run_training_step.
+    This test drives the FULL main() live path over patched seams and asserts:
+      - main obtains the client via save_weights_and_get_sampling_client() (CR-01)
+        — if main reverts to save_weights_for_sampler()'s bare ref, .sample()
+        AttributeErrors and this test goes red;
+      - load_rl_prompts is called for BOTH "gen" and "judge" (CR-02) — if main
+        reverts to gen_pool=[]/judge_pool=[], sample_interleaved_prompts raises
+        ValueError and this test goes red.
+    """
+    rl_train, tc, fake_sc, metrics_path = _wire(monkeypatch, tmp_path, kl_v1=0.02)
+
+    # build_training_client -> our mock tc (patch the module-level seam).
+    monkeypatch.setattr(
+        rl_train, "create_lora_training_client", lambda **kw: tc
+    )
+
+    # main() builds args via _parse_args, which does not (and cannot, without
+    # credentials) construct the live judge clients consumed by collect_rollouts.
+    # Inject them onto the parsed namespace so the live path runs offline; the
+    # CR-01/CR-02 assertions below are unaffected by this.
+    real_parse = rl_train._parse_args
+
+    def parse_with_judge(argv=None):
+        ns = real_parse(argv)
+        # Plain string (not a MagicMock) so vars(args) stays JSON-serializable
+        # for the manifest write; the patched compute_group_rewards ignores it.
+        ns.judge_client = "fake-judge-client"
+        ns.judge_model = "fake-judge"
+        ns.consistency_model = "sonnet"
+        ns.n_votes = 1
+        return ns
+
+    monkeypatch.setattr(rl_train, "_parse_args", parse_with_judge)
+
+    # Keep manifest writes off the real output/ tree.
+    monkeypatch.setattr(rl_train, "MANIFEST_PATH", str(tmp_path / "manifest.json"))
+
+    # Patch load_rl_prompts at its SOURCE module (main imports it locally) and
+    # record the pool names requested.
+    import scripts.tinker_rl_data as tinker_rl_data
+
+    requested = []
+
+    def fake_load(pool):
+        requested.append(pool)
+        return _gen_pool() if pool == "gen" else _judge_pool()
+
+    monkeypatch.setattr(tinker_rl_data, "load_rl_prompts", fake_load)
+
+    # Avoid touching output/rl_checkpoints in _save_checkpoint.
+    monkeypatch.setattr(
+        rl_train, "_save_checkpoint", lambda tc_, name, manifest: "/fake/ckpt"
+    )
+
+    rl_train.main(["--total-steps", "1", "--batch-size", "4", "--group-size", "2"])
+
+    # CR-01: the correct sampling-client accessor was used and .sample() ran.
+    assert tc.save_weights_and_get_sampling_client.called, (
+        "main() must obtain the sampling client via "
+        "save_weights_and_get_sampling_client() (CR-01)"
+    )
+    assert fake_sc.sample_calls, "main() must drive .sample() on the sampling client"
+
+    # CR-02: both pools were loaded (not hardcoded empty).
+    assert "gen" in requested and "judge" in requested, (
+        "main() must load_rl_prompts for both 'gen' and 'judge' pools (CR-02)"
+    )
+
+    # A metrics row was written for the single step.
+    assert metrics_path.exists() and metrics_path.read_text().strip()
+
+
 def test_kl_compute_failure_is_halt_worthy(monkeypatch, tmp_path):
     """CR-04 guard: a KL compute FAILURE must not read as kl=0.0 (silent no-halt).
 
