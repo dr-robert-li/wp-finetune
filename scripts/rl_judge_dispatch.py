@@ -133,7 +133,8 @@ def score_judge_consistency(
 
     scores: list[float] = []
     for _ in range(max(1, n_votes)):
-        result = generate_json(prompt, system=JUDGE_SYSTEM, model=model)
+        result = generate_json(prompt, system=JUDGE_SYSTEM, model=model,
+                               timeout=_SUBPROCESS_TIMEOUT_S)
         if result is None:
             continue
         raw = result.get("consistency_score")
@@ -196,7 +197,10 @@ def score_with_cache(
 # Async batch dispatch (Task 2)
 # ---------------------------------------------------------------------------
 
-_BATCH_TIMEOUT_S = 120.0   # per D-09-05 R3
+_BATCH_TIMEOUT_S = 120.0      # asyncio per-sample timeout (D-09-05 R3)
+_SUBPROCESS_TIMEOUT_S = 110   # subprocess timeout — 10s below asyncio deadline
+                               # so the worker thread terminates before asyncio
+                               # cancels it, preventing thread-pool slot leaks.
 _NEUTRAL_FALLBACK = 0.5    # fallback when all samples in batch fail
 _IMPUTE_WARN_THRESHOLD = 0.10  # warn if >10% of batch is imputed
 
