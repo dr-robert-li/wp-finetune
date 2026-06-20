@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
-status: verifying
-stopped_at: Completed 09-03-PLAN.md
-last_updated: "2026-06-20T08:44:39.577Z"
+status: milestone_complete
+stopped_at: Milestone complete (Phase 09 was final phase)
+last_updated: 2026-06-20T21:20:42.835Z
 progress:
   total_phases: 12
   completed_phases: 11
@@ -20,12 +20,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 09 — gspo-training
+**Current focus:** Milestone complete
 
 ## Current Position
 
-Phase: 09 (gspo-training) — EXECUTING
-Plan: 6 of 6
+Phase: 09
+Plan: Not started
 Next: Phase 08 (Reward Infrastructure)
 
 **Phase 7 closure (07-HUMAN-REVIEW §5, council-reviewed):** Profiling run of canonical v1.2 merged model on
@@ -144,7 +144,7 @@ Progress: [██████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 13
+- Total plans completed: 19
 - Average duration: 9 min
 - Total execution time: 0.62 hours
 
@@ -157,6 +157,7 @@ Progress: [██████████] 100%
 | 03-model-prep-and-training | 2 | 34 min | 17 min |
 | 04.4 | 5 | - | - |
 | 8 | 4 | - | - |
+| 09 | 6 | - | - |
 
 **Recent Trend:**
 
@@ -413,7 +414,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Phase complete — ready for verification
+**Status:** Milestone complete
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)
