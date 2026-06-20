@@ -261,30 +261,56 @@ def build_trajectory_groups(
 # Inline group-centred advantage fallback (used when tinker_cookbook absent)
 # ---------------------------------------------------------------------------
 
+def _group_by_id(groups: list[dict]) -> dict[Any, list[dict]]:
+    """Partition flat per-completion dicts into per-prompt groups.
+
+    Groups are keyed on the "group_id" stamped during the flatten step in
+    compute_rollout_advantages. Insertion order of both groups and members is
+    preserved so downstream output ordering is deterministic.
+    """
+    by_id: dict[Any, list[dict]] = {}
+    for g in groups:
+        by_id.setdefault(g.get("group_id"), []).append(g)
+    return by_id
+
+
 def _inline_remove_constant_reward_groups(groups: list[dict]) -> list[dict]:
-    """Drop groups where all rewards are identical (zero gradient, cookbook mirror).
+    """Drop PROMPT GROUPS whose own completions all share one reward (zero gradient).
 
     Mirrors the semantics of tinker_cookbook.rl.data_processing.remove_constant_reward_groups.
-    A group is constant when std(rewards) < epsilon across all completions.
+    The decision is made PER PROMPT GROUP (keyed on "group_id"): a group is constant
+    when std(rewards) < epsilon across *that group's* completions only. Completions
+    from other prompts must not rescue or doom a group (CR-06). A surviving group
+    contributes all its members; a constant group contributes none.
     """
-    rewards = np.array([g["reward"] for g in groups], dtype=float)
-    if rewards.std(ddof=0) < _EPSILON:
-        return []  # constant group — drop all members
-    return groups
+    result: list[dict] = []
+    for members in _group_by_id(groups).values():
+        rewards = np.array([m["reward"] for m in members], dtype=float)
+        if rewards.std(ddof=0) < _EPSILON:
+            continue  # constant within this prompt group — drop all its members
+        result.extend(members)
+    return result
 
 
 def _inline_compute_advantages(groups: list[dict]) -> list[dict]:
-    """Group-centred advantages: A_i = r_i - mean(r).
+    """Group-centred advantages: A_i = r_i - mean(r) computed PER PROMPT GROUP.
 
     Mirrors the semantics of tinker_cookbook.rl.data_processing.compute_advantages.
-    Returns a list of dicts with an added 'advantage' key.
+    Centering uses each prompt group's own mean (keyed on "group_id"), so a
+    completion's advantage is relative to its sibling completions only, not the
+    whole batch (CR-06). Returns dicts with an added 'advantage' key, preserving
+    input order.
     """
-    rewards = np.array([g["reward"] for g in groups], dtype=float)
-    mean_r = rewards.mean()
+    # Precompute each group's mean once.
+    group_means: dict[Any, float] = {}
+    for gid, members in _group_by_id(groups).items():
+        rewards = np.array([m["reward"] for m in members], dtype=float)
+        group_means[gid] = float(rewards.mean())
+
     result = []
-    for g, r in zip(groups, rewards):
+    for g in groups:
         entry = dict(g)
-        entry["advantage"] = float(r - mean_r)
+        entry["advantage"] = float(g["reward"] - group_means[g.get("group_id")])
         result.append(entry)
     return result
 
@@ -334,18 +360,31 @@ def compute_rollout_advantages(
     # Normalise test-format groups {"prompt":..., "completions":[...], "rewards":[...]}
     # into the flat per-sample format expected by the advantage pipeline.
     flat_groups: list[dict] = []
-    for g in groups:
+    for src_idx, g in enumerate(groups):
         if "rewards" in g and "completions" in g:
-            # Synthetic test format: expand into per-completion entries
+            # Synthetic test format: expand into per-completion entries. All
+            # completions of one source group share a group_id so the per-prompt
+            # constant-filter and per-prompt advantage centering (CR-06) treat
+            # them as a single GRPO group.
+            group_id = g.get("prompt_id", g.get("prompt") or src_idx)
             for completion, reward in zip(g["completions"], g["rewards"]):
                 flat_groups.append({
+                    "group_id": group_id,
                     "prompt": g.get("prompt", ""),
                     "completion": completion,
                     "reward": float(reward),
                     "breakdown": None,
                 })
         elif "reward" in g:
-            flat_groups.append(dict(g))
+            entry = dict(g)
+            # Carry an explicit group id when present; otherwise each per-rollout
+            # dict from build_trajectory_groups is its own singleton group. (See
+            # the production limitation noted in the module docstring / review.)
+            entry.setdefault(
+                "group_id",
+                g.get("prompt_id", g.get("prompt") or src_idx),
+            )
+            flat_groups.append(entry)
         else:
             logger.warning(
                 "compute_rollout_advantages: skipping group with unexpected format: %s",
