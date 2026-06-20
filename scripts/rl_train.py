@@ -260,6 +260,57 @@ def build_loss_step(
 
 
 # ---------------------------------------------------------------------------
+# KL computation seam (patchable; CR-04)
+# ---------------------------------------------------------------------------
+
+#: Sentinel KL value used when KL computation fails. It is set ABOVE any sane
+#: kl_hard threshold so a compute failure trips a HARD halt rather than reading
+#: as "perfect KL, never halt" (the CR-04 silent-0.0 swallow). check_halt then
+#: stops training before optim_step commits a potentially divergent update.
+_KL_COMPUTE_FAILED_SENTINEL: float = 1e9
+
+
+def _compute_kl_metrics(fb_out: Any, data: list) -> dict[str, float]:
+    """Compute kl_sample_train metrics from a ForwardBackwardOutput + data.
+
+    Module-level seam (patchable by the integration test, mirroring
+    create_lora_training_client) so a synthetic divergent KL can be injected
+    without real Datum/logprob tensors.
+
+    CR-04 contract: a KL COMPUTE FAILURE must NOT read as kl_v1=0.0 (which would
+    disable the autohalt guard). On failure this returns the
+    _KL_COMPUTE_FAILED_SENTINEL for kl_sample_train_v1, which is above any sane
+    kl_hard and therefore forces a HARD halt in check_halt.
+
+    The genuinely-empty case (no training logprobs available yet, e.g. a mock
+    ForwardBackwardOutput) returns 0.0 — that is a structural absence of data,
+    not a computation that errored.
+    """
+    training_lps = getattr(fb_out, "training_logprobs", []) or []
+    if not data or not training_lps:
+        return {
+            "optim/kl_sample_train_v1": 0.0,
+            "optim/kl_sample_train_v2": 0.0,
+            "optim/entropy": 0.0,
+        }
+    try:
+        from tinker_cookbook.rl.metrics import compute_kl_sample_train  # noqa: PLC0415
+
+        return compute_kl_sample_train(data, training_lps)
+    except Exception as exc:  # noqa: BLE001
+        logger.error(
+            "KL metric computation FAILED (%s) — treating as HARD halt "
+            "(CR-04: a compute failure must not read as perfect KL)",
+            exc,
+        )
+        return {
+            "optim/kl_sample_train_v1": _KL_COMPUTE_FAILED_SENTINEL,
+            "optim/kl_sample_train_v2": _KL_COMPUTE_FAILED_SENTINEL,
+            "optim/entropy": 0.0,
+        }
+
+
+# ---------------------------------------------------------------------------
 # GRPO-08: Per-step autohalt guards
 # ---------------------------------------------------------------------------
 
@@ -444,11 +495,17 @@ def _panickssery_spot_check(data: list[dict], step: int) -> None:
     """
     divergent = []
     for item in data:
-        bd = item.get("breakdown") or {}
-        if not isinstance(bd, dict):
+        bd = item.get("breakdown")
+        if bd is None:
             continue
-        fix_corr = bd.get("fix_correctness", bd.get("fix_score", None))
-        consistency = bd.get("judge_consistency", bd.get("consistency", None))
+        # breakdown is a _JudgeBreakdown / SimpleNamespace object (NOT a dict),
+        # so attribute access — not item lookup — is required (WR-04). The old
+        # `isinstance(bd, dict)` guard skipped every item, making this monitor
+        # permanently inert.
+        fix_corr = getattr(bd, "fix_correctness", getattr(bd, "fix_score", None))
+        consistency = getattr(
+            bd, "judge_consistency", getattr(bd, "consistency", None)
+        )
         if fix_corr is not None and consistency is not None:
             if abs(float(fix_corr) - float(consistency)) > 0.3:
                 divergent.append(
@@ -465,6 +522,120 @@ def _panickssery_spot_check(data: list[dict], step: int) -> None:
             len(divergent),
             divergent[:3],
         )
+
+
+# ---------------------------------------------------------------------------
+# Single training step seam (CR-04 ordering; testable without main())
+# ---------------------------------------------------------------------------
+
+
+def run_training_step(
+    step: int,
+    tc: Any,
+    sampling_client: Any,
+    gen_pool: list,
+    judge_pool: list,
+    args: Any,
+    manifest: dict,
+) -> bool:
+    """Run ONE RL step: rollouts -> advantages -> loss -> KL/halt -> optim/ckpt.
+
+    Extracted as a seam so the real loop body is exercisable by an integration
+    test driving the mock client over NON-EMPTY pools (the unit tests bypass
+    this wiring entirely, which is how CR-01/CR-02/CR-04 stayed green).
+
+    CR-04 ordering is the load-bearing invariant: forward_backward -> compute KL
+    -> check_halt; on a HARD breach we save an emergency checkpoint and return
+    True (halt) WITHOUT calling tc.optim_step(), so the divergent update is never
+    committed. tc.optim_step() runs ONLY on the safe path.
+
+    Returns:
+        bool: True if a HARD halt fired this step (caller stops), else False.
+    """
+    from scripts.rl_rollouts import (  # noqa: PLC0415
+        collect_rollouts,
+        compute_rollout_advantages,
+    )
+
+    rollouts = collect_rollouts(
+        sampling_client=sampling_client,
+        gen_pool=gen_pool,
+        judge_pool=judge_pool,
+        args=args,
+    )
+
+    data, _meta = compute_rollout_advantages(rollouts)
+
+    if not data:
+        logger.warning("Step %d: no training data after advantage filter", step)
+        return False
+
+    rewards = [float(d.get("reward", 0.0)) for d in data]
+    advantages = [float(d.get("advantage", 0.0)) for d in data]
+
+    # Panickssery divergence spot-check every ~50 steps (D-09-05 R1)
+    if step % 50 == 0:
+        _panickssery_spot_check(data, step)
+
+    # Forward-backward (GSPO primary or GRPO fallback). NOTE: NO optim_step yet —
+    # the gradient is computed but NOT applied until after the halt check (CR-04).
+    fb_out = build_loss_step(tc, data, use_gspo=args.use_gspo, advantages=advantages)
+
+    # KL metrics BEFORE committing the update. A compute failure returns a
+    # halt-worthy sentinel (never a silent 0.0) so the guard cannot be disabled.
+    kl_metrics = _compute_kl_metrics(fb_out, data)
+    moe_metrics = getattr(fb_out, "metrics", {}) or {}
+
+    # Autohalt guard (GRPO-08) — evaluated BEFORE optim_step.
+    halt_reason = check_halt(
+        kl_v1=kl_metrics.get("optim/kl_sample_train_v1", 0.0),
+        e_frac=moe_metrics.get("e_frac_with_tokens:mean", 1.0),
+        kl_soft=args.kl_soft,
+        kl_hard=args.kl_hard,
+        efrac_soft=args.efrac_soft,
+        efrac_hard=args.efrac_hard,
+    )
+
+    # Protected-expert Jaccard monitor (every N steps, logging only)
+    jaccard: float | None = None
+    if step % args.jaccard_every == 0:
+        active = np.zeros((48, 128), dtype=bool)
+        jaccard = protected_mask_jaccard(active, mask_path=args.mask_path)
+        logger.info("Step %d: protected-expert Jaccard=%.4f", step, jaccard)
+
+    # Metrics sink (written for every step, including the halting step)
+    _log_step(
+        step=step,
+        rewards=rewards,
+        kl_metrics=kl_metrics,
+        moe_metrics=moe_metrics,
+        args=args,
+        jaccard=jaccard,
+        halt_reason=halt_reason,
+    )
+
+    # CR-04: HARD halt -> save emergency checkpoint of the PRE-update weights and
+    # stop WITHOUT committing the divergent gradient. optim_step is NOT called.
+    if halt_reason is not None:
+        logger.error("HALT at step %d: %s", step, halt_reason)
+        _save_checkpoint(tc, name=f"emergency-halt-step-{step}", manifest=manifest)
+        return True
+
+    # Safe path only: commit the gradient update.
+    tc.optim_step()
+
+    # Scheduled checkpoint
+    if (step + 1) % args.checkpoint_every == 0:
+        _save_checkpoint(tc, name=f"step-{step + 1}", manifest=manifest)
+
+    logger.info(
+        "Step %d/%d: reward_mean=%.4f, kl_v1=%.4f",
+        step + 1,
+        args.total_steps,
+        float(np.mean(rewards)) if rewards else 0.0,
+        kl_metrics.get("optim/kl_sample_train_v1", 0.0),
+    )
+    return False
 
 
 # ---------------------------------------------------------------------------
@@ -488,6 +659,18 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--batch-size", type=int, default=8, help="Rollout batch size"
+    )
+    parser.add_argument(
+        "--group-size",
+        type=int,
+        default=4,
+        help="Completions sampled per prompt (GRPO group size G)",
+    )
+    parser.add_argument(
+        "--max-pool",
+        type=int,
+        default=None,
+        help="Cap each prompt pool to this many items (dry-run / smoke test)",
     )
     parser.add_argument(
         "--checkpoint-every", type=int, default=50, help="Save checkpoint every N steps"
@@ -648,114 +831,41 @@ def main(argv: list[str] | None = None) -> None:
     os.makedirs("output/rl_checkpoints", exist_ok=True)
     _write_manifest(MANIFEST_PATH, manifest)
 
-    # Lazy imports for live path
-    from scripts.rl_rollouts import (  # noqa: PLC0415
-        collect_rollouts,
-        compute_rollout_advantages,
+    # CR-02: load the real prompt pools (load_rl_prompts returns {"messages":[...]}
+    # items). They were previously hardcoded empty, so every step produced no
+    # rollouts. BASE_MODEL pulled from the shared data module for logging parity.
+    from scripts.tinker_rl_data import load_rl_prompts  # noqa: PLC0415
+
+    gen_pool = load_rl_prompts("gen")
+    judge_pool = load_rl_prompts("judge")
+    if getattr(args, "max_pool", None):
+        gen_pool = gen_pool[: args.max_pool]
+        judge_pool = judge_pool[: args.max_pool]
+    logger.info(
+        "Loaded prompt pools: gen=%d, judge=%d (group_size=%d)",
+        len(gen_pool),
+        len(judge_pool),
+        getattr(args, "group_size", 4),
     )
 
-    sampling_client = _res(
-        tc.save_weights_for_sampler(name="init", ttl_seconds=None)
-    )
+    # CR-01: obtain a SAMPLING CLIENT (supports .sample(...)), not a checkpoint
+    # ref. save_weights_and_get_sampling_client() returns a SamplingClient with
+    # the current weights. The persistent-checkpoint save_weights_for_sampler is
+    # a separate concern, handled inside _save_checkpoint.
+    sampling_client = _res(tc.save_weights_and_get_sampling_client())
 
     for step in range(args.total_steps):
-        # Collect rollouts
-        rollouts = collect_rollouts(
-            sampling_client=sampling_client,
-            gen_pool=[],
-            judge_pool=[],
-            args=args,
-        )
-
-        # Compute advantages
-        data, _meta = compute_rollout_advantages(rollouts)
-
-        rewards = [float(d.get("reward", 0.0)) for d in data]
-        advantages = [float(d.get("advantage", 0.0)) for d in data]
-
-        if not data:
-            logger.warning("Step %d: no training data after advantage filter", step)
-            continue
-
-        # Panickssery divergence spot-check every ~50 steps (D-09-05 R1)
-        if step % 50 == 0:
-            _panickssery_spot_check(data, step)
-
-        # Forward-backward (GSPO primary or GRPO fallback)
-        fb_out = build_loss_step(tc, data, use_gspo=args.use_gspo, advantages=advantages)
-        tc.optim_step()
-
-        # KL metrics (compute_kl_sample_train requires real Datum with logprobs)
-        try:
-            from tinker_cookbook.rl.metrics import compute_kl_sample_train  # noqa: PLC0415
-
-            training_lps = getattr(fb_out, "training_logprobs", [])
-            if data and training_lps:
-                kl_metrics = compute_kl_sample_train(data, training_lps)
-            else:
-                kl_metrics = {
-                    "optim/kl_sample_train_v1": 0.0,
-                    "optim/kl_sample_train_v2": 0.0,
-                    "optim/entropy": 0.0,
-                }
-        except Exception as exc:
-            logger.warning("KL metric computation failed: %s", exc)
-            kl_metrics = {
-                "optim/kl_sample_train_v1": 0.0,
-                "optim/kl_sample_train_v2": 0.0,
-                "optim/entropy": 0.0,
-            }
-
-        moe_metrics = getattr(fb_out, "metrics", {}) or {}
-
-        # Autohalt guard (GRPO-08)
-        halt_reason = check_halt(
-            kl_v1=kl_metrics.get("optim/kl_sample_train_v1", 0.0),
-            e_frac=moe_metrics.get("e_frac_with_tokens:mean", 1.0),
-            kl_soft=args.kl_soft,
-            kl_hard=args.kl_hard,
-            efrac_soft=args.efrac_soft,
-            efrac_hard=args.efrac_hard,
-        )
-
-        # Protected-expert Jaccard monitor (every N steps, logging only)
-        jaccard: float | None = None
-        if step % args.jaccard_every == 0:
-            # Build active-experts from MoE metrics if available; else zeros
-            active = np.zeros((48, 128), dtype=bool)
-            jaccard = protected_mask_jaccard(active, mask_path=args.mask_path)
-            logger.info("Step %d: protected-expert Jaccard=%.4f", step, jaccard)
-
-        # Metrics sink
-        _log_step(
+        halted = run_training_step(
             step=step,
-            rewards=rewards,
-            kl_metrics=kl_metrics,
-            moe_metrics=moe_metrics,
+            tc=tc,
+            sampling_client=sampling_client,
+            gen_pool=gen_pool,
+            judge_pool=judge_pool,
             args=args,
-            jaccard=jaccard,
-            halt_reason=halt_reason,
+            manifest=manifest,
         )
-
-        # Emergency checkpoint on halt — then stop
-        if halt_reason is not None:
-            logger.error("HALT at step %d: %s", step, halt_reason)
-            _save_checkpoint(tc, name=f"emergency-halt-step-{step}", manifest=manifest)
-            raise RuntimeError(f"Training halted at step {step}: {halt_reason}")
-
-        # Scheduled checkpoint
-        if (step + 1) % args.checkpoint_every == 0:
-            _save_checkpoint(
-                tc, name=f"step-{step + 1}", manifest=manifest
-            )
-
-        logger.info(
-            "Step %d/%d: reward_mean=%.4f, kl_v1=%.4f",
-            step + 1,
-            args.total_steps,
-            float(np.mean(rewards)) if rewards else 0.0,
-            kl_metrics.get("optim/kl_sample_train_v1", 0.0),
-        )
+        if halted:
+            raise RuntimeError(f"Training halted at step {step}")
 
     # Final checkpoint
     _save_checkpoint(tc, name=f"final-step-{args.total_steps}", manifest=manifest)
