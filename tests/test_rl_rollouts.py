@@ -93,6 +93,28 @@ class TestInterleaving:
             assert "gen" in tags, f"batch_size={bs}: missing gen items"
             assert "judge" in tags, f"batch_size={bs}: missing judge items"
 
+    def test_origin_stamped_for_pool_routing(self):
+        """CR-03: every sampled item carries an "_origin" tag ("gen"/"judge") so
+        collect_rollouts can route by pool origin (pool items have no "tag" field).
+        Judge-origin count must equal n_judge and gen-origin count n_gen."""
+        rr = pytest.importorskip("scripts.rl_rollouts")
+        # Pool items shaped like real prompts: {"messages": [...]}, NO "tag" key.
+        gen_pool = [{"messages": [{"role": "user", "content": f"g{i}"}]} for i in range(10)]
+        judge_pool = [{"messages": [{"role": "user", "content": f"j{i}"}]} for i in range(10)]
+        batch = rr.sample_interleaved_prompts(gen_pool, judge_pool, batch_size=10)
+        origins = [item.get("_origin") for item in batch]
+        assert all(o in ("gen", "judge") for o in origins), (
+            f"every item must carry a gen/judge _origin tag, got {origins}"
+        )
+        n_judge = sum(1 for o in origins if o == "judge")
+        n_gen = sum(1 for o in origins if o == "gen")
+        assert n_judge == round(10 * rr.JUDGE_RATIO), f"n_judge={n_judge}"
+        assert n_gen == 10 - round(10 * rr.JUDGE_RATIO), f"n_gen={n_gen}"
+        # Source pool dicts must not be mutated (origin lives only on the copies).
+        assert all("_origin" not in p for p in gen_pool + judge_pool), (
+            "sample_interleaved_prompts must not mutate caller pool dicts"
+        )
+
     def test_judge_ratio_constant(self):
         """JUDGE_RATIO constant exists and equals 0.6."""
         rr = pytest.importorskip("scripts.rl_rollouts")
