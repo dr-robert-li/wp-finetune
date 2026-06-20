@@ -627,27 +627,27 @@ training_client.save_weights_for_sampler(name=f"phase9-step-{step}")
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED at planning)
 
 1. **KL halt threshold (GRPO-07/08)**
    - What we know: `compute_kl_sample_train` returns `kl_sample_train_v1` (mean logprob diff). Increasing values = increasing policy shift.
    - What's unclear: Appropriate numeric halt threshold for Qwen3-30B-A3B at rank-32 LoRA. Typical GRPO papers use 0.1-0.3 for token-level KL.
-   - Recommendation: Start with soft alert at 0.1, hard halt at 0.3. Tune based on first 50 steps.
+   - RESOLVED: Plan 09-05 finalizes soft alert at 0.1, hard halt at 0.3 on `kl_sample_train_v1`; tune from first 50 steps.
 
 2. **RL prompt dataset assembly**
    - What we know: `data/rl_prompts/` does not exist. Must be assembled from Phase 4 seeds and existing data.
    - What's unclear: Which specific files to draw from; how to split gen vs judge prompts.
-   - Recommendation: Wave 0 task should audit `data/seeds/` + Phase 4 extraction outputs and define assembly script.
+   - RESOLVED: Plan 09-01 builds the audited, val-clean RL prompt corpus (`scripts/build_rl_prompts.py` → `data/rl_prompts/wp_gen_train.jsonl` + `wp_judge_train.jsonl`).
 
 3. **Metrics sink (wandb vs local JSONL)**
    - What we know: Cookbook supports both; `ForwardBackwardOutput.metrics` returns dict.
    - What's unclear: Project preference — wandb was not mentioned in CONTEXT.md.
-   - Recommendation: Default to local JSONL (`output/rl_checkpoints/metrics/rl_metrics.jsonl`); add wandb as optional flag if user confirms access.
+   - RESOLVED: Plan 09-05 uses local JSONL (`output/rl_checkpoints/metrics/rl_metrics.jsonl`); wandb left as optional future flag.
 
 4. **GSPO vs GRPO as primary**
    - What we know: Both feasible. `importance_sampling` (GRPO) is cookbook-native. `forward_backward_custom` (GSPO) requires custom implementation.
    - What's unclear: Whether the complexity of sequence-level IS ratio is warranted given frozen router.
-   - Recommendation: Plan GRPO as primary (Wave 1), GSPO as Phase 9b upgrade gate. Only switch if GRPO shows policy plateaus after 200 steps.
+   - RESOLVED: Plan 09-05 uses GRPO `importance_sampling` as primary loss with a `use_gspo` flag (sequence-level IS + RSPO floor) gated ~200 steps — documented explicitly as the "GSPO-PRIMARY DEVIATION" (D-09-03 is under Claude's Discretion). NOT a side-by-side comparison.
 
 ---
 
