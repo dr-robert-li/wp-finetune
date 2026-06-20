@@ -472,3 +472,77 @@ def test_kl_compute_failure_is_halt_worthy(monkeypatch, tmp_path):
     assert rl_train.check_halt(
         kl_v1=kl["optim/kl_sample_train_v1"], e_frac=0.9
     ) is not None, "compute-failure KL must trip the hard halt"
+
+
+# ---------------------------------------------------------------------------
+# Judge args: _parse_args defaults + live-path judge_client guard (fix 09)
+# ---------------------------------------------------------------------------
+
+
+def test_parse_args_judge_defaults():
+    """_parse_args([]) exposes judge_model, consistency_model, n_votes with correct defaults.
+
+    These args are required by rl_rollouts.collect_rollouts on the live path
+    (args.judge_model / args.consistency_model / args.n_votes). Without them,
+    a live run would AttributeError before step 0.
+    """
+    rl_train = pytest.importorskip("scripts.rl_train")
+
+    args = rl_train._parse_args([])
+
+    assert hasattr(args, "judge_model"), "_parse_args must define args.judge_model"
+    assert args.judge_model == "wp_judge", (
+        f"judge_model default must be 'wp_judge' (vLLM served-model convention), "
+        f"got {args.judge_model!r}"
+    )
+
+    assert hasattr(args, "consistency_model"), "_parse_args must define args.consistency_model"
+    assert args.consistency_model == "sonnet", (
+        f"consistency_model default must be 'sonnet', got {args.consistency_model!r}"
+    )
+
+    assert hasattr(args, "n_votes"), "_parse_args must define args.n_votes"
+    assert args.n_votes == 1, (
+        f"n_votes default must be 1, got {args.n_votes!r}"
+    )
+
+
+def test_parse_args_judge_model_override():
+    """--judge-model CLI flag correctly overrides the default."""
+    rl_train = pytest.importorskip("scripts.rl_train")
+
+    args = rl_train._parse_args(["--judge-model", "openai/qwen3-wp-finetuned"])
+    assert args.judge_model == "openai/qwen3-wp-finetuned"
+
+
+def test_live_run_no_judge_client_raises_systemexit():
+    """main() on a live (non-dry-run) path without judge_client raises SystemExit.
+
+    Without this guard, the failure would manifest as an AttributeError deep
+    inside rl_rollouts.collect_rollouts -> compute_group_rewards (args.judge_client
+    is a hard attribute access, not guarded by getattr). The guard ensures the
+    operator gets a clear, actionable error at startup rather than a traceback
+    from inside the rollout loop.
+
+    The dry-run path must remain unaffected (still exits without SystemExit here).
+    """
+    rl_train = pytest.importorskip("scripts.rl_train")
+
+    # Simulate invoking main() without --dry-run and without a judge_client attached.
+    # _parse_args([]) returns a fresh Namespace with NO judge_client attribute —
+    # exactly what a CLI invocation without the arg would produce.
+    args = rl_train._parse_args(["--total-steps", "1"])
+    assert not hasattr(args, "judge_client"), (
+        "Precondition: _parse_args must not set judge_client "
+        "(it is a runtime object, not a CLI string)"
+    )
+    assert not args.dry_run, "Precondition: --dry-run must not be set for this test"
+
+    with pytest.raises(SystemExit) as exc_info:
+        rl_train.main(["--total-steps", "1"])
+
+    # Confirm the exit is from OUR guard, not an unrelated SystemExit.
+    msg = str(exc_info.value)
+    assert "judge" in msg.lower(), (
+        f"SystemExit message must mention 'judge' (guard message), got: {msg!r}"
+    )

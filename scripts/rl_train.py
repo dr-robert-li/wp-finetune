@@ -716,6 +716,40 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Run one synthetic step with mock client; write metrics; exit 0",
     )
+    # Judge args: required by rl_rollouts.collect_rollouts on the live path.
+    # --judge-model: served model name passed to judge_score_single / compute_group_rewards.
+    # Default "wp_judge" matches the vLLM endpoint convention used in build_antihack_set.py
+    # and eval_judge.judge_score_single (which accepts a served-model name, not an HF id).
+    parser.add_argument(
+        "--judge-model",
+        default="wp_judge",
+        help=(
+            "Served model name for the vLLM judge endpoint "
+            "(passed to compute_group_rewards / judge_score_single). "
+            "Default: 'wp_judge'."
+        ),
+    )
+    # --consistency-model: Claude model for score_judge_consistency_batch (09-03).
+    # getattr(args, 'consistency_model', 'sonnet') guards already exist in rl_rollouts,
+    # but adding the arg here makes the default explicit and discoverable via --help.
+    parser.add_argument(
+        "--consistency-model",
+        default="sonnet",
+        help=(
+            "Claude model slug for score_judge_consistency_batch (09-03 judge path). "
+            "Default: 'sonnet'."
+        ),
+    )
+    # --n-votes: N-vote median for the consistency scorer (default 1 = single call).
+    parser.add_argument(
+        "--n-votes",
+        type=int,
+        default=1,
+        help=(
+            "Number of votes for score_judge_consistency_batch median (09-03). "
+            "Default: 1."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -816,6 +850,23 @@ def main(argv: list[str] | None = None) -> None:
         return
 
     # --- Live training path ---
+
+    # Ensure judge_client is present before entering the live loop.
+    # rl_rollouts.collect_rollouts reads args.judge_client directly (hard attribute
+    # access); if the caller has not attached a constructed judge client, fail here
+    # with a clear message rather than an AttributeError deep inside the rollout loop.
+    if not hasattr(args, "judge_client"):
+        args.judge_client = None
+    if args.judge_client is None:
+        raise SystemExit(
+            "rl_train: live run requires a judge client attached to args before "
+            "calling main(). Construct an openai.OpenAI instance pointed at your "
+            "vLLM judge endpoint and set args.judge_client before calling main(), "
+            "or pass it via run_training_step(). "
+            "See rl_rollouts.collect_rollouts -> compute_group_rewards for the "
+            "judge_client interface."
+        )
+
     logger.info(
         "Starting GSPO RL training: model=%s, steps=%d, use_gspo=%s",
         args.model_id,
