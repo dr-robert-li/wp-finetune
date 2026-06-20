@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
-status: milestone_complete
-stopped_at: Milestone complete (Phase 09 was final phase)
+status: planning
+stopped_at: Phase 09 complete; advanced to Phase 10 (RL Comparative Evaluation) — ready to plan
 last_updated: 2026-06-20T21:20:42.835Z
 progress:
   total_phases: 12
@@ -24,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 
 ## Current Position
 
-Phase: 09 (gspo-training) — COMPLETE 2026-06-20 (final phase of milestone v1.0)
-Plan: 6/6 executed
-Milestone: v1.0 (MVP) — milestone_complete
-Next: (a) live Tinker RL run — credential-gated, tracked in 09-HUMAN-UAT.md, gates downstream comparative eval; (b) Phase 10 (RL-vs-SFT comparative eval) exists in ROADMAP prose only — needs to be added/planned as a structured phase before execution
+Phase: 10 (RL Comparative Evaluation) — Pending, ready to plan (`/gsd:plan-phase 10`)
+Prev: Phase 09 (gspo-training) — COMPLETE 2026-06-20, 6/6 plans
+Requirements: RLEV-01 (RL vs v1.2 SFT baseline on wp-bench + 9 dims, no regression), RLEV-02 (reward-convergence + router-shift + protected-expert retention + anti-hack report)
+Next: plan Phase 10. NOTE: Phase 10 execution consumes the metrics from Phase 9's live Tinker RL run — that run is credential-gated and still tracked partial in 09-HUMAN-UAT.md, so it must complete before Phase 10 can produce real comparison results.
 
 **Phase 7 closure (07-HUMAN-REVIEW §5, council-reviewed):** Profiling run of canonical v1.2 merged model on
 matched 30/70 training stimulus (34,855 examples, 785.8M tokens, GB10 6h30m, rc=0). All automated gates green —
