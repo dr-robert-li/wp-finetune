@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
-status: executing
+status: verifying
 stopped_at: Completed 09-03-PLAN.md
-last_updated: "2026-06-20T08:35:13.676Z"
+last_updated: "2026-06-20T08:44:39.577Z"
 progress:
   total_phases: 12
-  completed_phases: 10
+  completed_phases: 11
   total_plans: 45
-  completed_plans: 44
-  percent: 83
+  completed_plans: 45
+  percent: 92
 ---
 
 # Project State
@@ -138,7 +138,7 @@ data: `scripts/build_reasoning_negatives.py` + `build_augmented_train.py`; gates
 Status: Ready to execute
 Note: Local artifacts `models/qwen3-30b-wp-30_70-merged-v2` + `...-reasoning-merged` + `adapters/.../checkpoint-72` are READ-ONLY references/fallback only (NOT promoted). The GB10 memory wall is documented in `output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md`. `04.3-REOPEN-PLAN.md` remains a 0-task brief — do not execute.
 
-Progress: [██████████] 98%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -196,6 +196,7 @@ Progress: [██████████] 98%
 | Phase 09 P02 | 25 minutes | 3 tasks | 3 files |
 | Phase 09-gspo-training P03 | 18 | 2 tasks | 2 files |
 | Phase 09-gspo-training P05 | 35m | 2 tasks | 3 files |
+| Phase 09-gspo-training P06 | 15m | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -249,6 +250,8 @@ Recent decisions affecting current work:
 - [Phase ?]: Wave-0 stubs use importorskip: SKIP while scripts absent, RED on wrong symbol when 09-03/04/05 land
 - [Phase ?]: ROADMAP Phase 9 corrected: DGX refs removed, Tinker-native GSPO-primary detail per D-09-01/02/03
 - [Phase ?]: [Phase 09-03]: Async-over-blocking dispatch; score clamped [0,1]; None not cached
+- [Phase ?]: GSPO primary locked D-09-03; GRPO fallback only via --grpo-fallback
+- [Phase ?]: Dispatch boundary: Agent=telemetry monitor only; judge scoring=claude_agent subprocess
 
 ### Pending Todos
 
@@ -290,7 +293,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-20T08:35:13.669Z
+Last session: 2026-06-20T08:44:32.532Z
 Stopped at: Completed 09-03-PLAN.md
 
 Prior session: 2026-06-02T21:31:00.000Z
@@ -410,7 +413,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Ready to execute
+**Status:** Phase complete — ready for verification
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)

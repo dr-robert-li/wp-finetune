@@ -409,7 +409,7 @@ Plans:
   - [x] 09-03-PLAN.md — Claude score-reasoning consistency scorer: async batch dispatch + content-hash cache + 120s timeout/impute (GRPO-05)
   - [x] 09-04-PLAN.md — Interleaved rollouts + dual rewards (Phase 8 pipeline unmodified) + capped judge combination + cookbook advantages (GRPO-05)
   - [x] 09-05-PLAN.md — Tinker RL loop: frozen-router LoRA, GRPO/GSPO switchable loss + RSPO floor, per-step KL/MoE auto-halt, monitor-only Jaccard, persistent checkpoints (GRPO-06/07/08)
-  - [ ] 09-06-PLAN.md — New Tinker-native wp-finetune:run-rl-training skill (zero DGX; deviations documented; anti-hack regression gate) (GRPO-05/06/07/08)
+  - [x] 09-06-PLAN.md — New Tinker-native wp-finetune:run-rl-training skill (zero DGX; deviations documented; anti-hack regression gate) (GRPO-05/06/07/08)
 
 ### Phase 10: RL Comparative Evaluation
 **Goal**: The RL model is compared against the v1.2 SFT baseline on all quality dimensions, confirming RL improved judge reasoning (the primary target) without regressing generation quality — gates v3.0 MoE-Sieve
@@ -569,7 +569,7 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 6. Adaptive Training Planner | v1.1 | 6/6 | Complete | 2026-04-01 |
 | 7. Router Profiling & Protected Expert Set | v2.0 | 1/2 | In Progress|  |
 | 8. Reward Infrastructure | v2.0 | 4/4 | Complete    | 2026-06-19 |
-| 9. GSPO Training | v2.0 | 5/6 | In Progress|  |
+| 9. GSPO Training | v2.0 | 6/6 | Complete   | 2026-06-20 |
 | 10. RL Comparative Evaluation | v2.0 | 0/? | Not started | - |
 | 11. Post-RL MoE-Sieve | v3.0 | 0/? | Not started | - |
 | 12. MoE-Sieve Comparative Evaluation | v3.0 | 0/? | Not started | - |
