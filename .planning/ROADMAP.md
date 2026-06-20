@@ -56,7 +56,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 7: Router Profiling & Protected Expert Set** - Gradient-free profiling pass tagging expert routing counts by task token affinity, identify dual-purpose experts that must not be pruned (D-10), with stability verification and concentration report (COMPLETE 2026-06-19 — all automated gates green under D-09 CI-aware; 1,480-expert protected mask exported; human sign-off APPROVED, council-unanimous on both judgment items)
 - [ ] **Phase 8: Reward Infrastructure** - Build composite reward pipeline (70% verifiable / 30% judge) with security hard gate, MO-GRPO normalization, VeRPO partial credit, and anti-hack eval set (D-11)
-- [ ] **Phase 9: GSPO Training** - Dual-mode RL (gen + judge reasoning) on FULL MoE with router-shift stabilization and collapse monitoring; GSPO (sequence-level) is the primary objective for MoE stability (D-08); GRPO is an optional fallback decided at Phase 9 planning time; protected experts from Phase 7 monitored
+- [x] **Phase 9: GSPO Training** - Dual-mode RL (gen + judge reasoning) on FULL MoE with router-shift stabilization and collapse monitoring; GSPO (sequence-level) is the primary objective for MoE stability (D-08); GRPO is an optional fallback decided at Phase 9 planning time; protected experts from Phase 7 monitored — Complete 2026-06-20 (live Tinker run tracked in 09-HUMAN-UAT.md)
 - [ ] **Phase 10: RL Comparative Evaluation** - Compare RL model against v1.2 SFT baseline on wp-bench and all 9 eval dimensions; gates v3.0
 
 </details>
