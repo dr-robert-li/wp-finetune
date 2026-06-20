@@ -405,7 +405,13 @@ Plans:
   - Fix-test-validate loop: dry-run first (`--dry-run`), then real training; if training fails (OOM/HANG/THERMAL per failure classifier), `adaptive-planner` adjusts config and loop retries
   - Anti-hack regression: run anti-hack eval set after training completes; if regression detected, flag for human review before proceeding
   - Invokes `wp-finetune:review-telemetry` after training completes for consolidated summary
-**Plans**: 1 plan
+**Plans**: 6 plans
+  - [ ] 09-01-PLAN.md — RL prompt corpus assembly (audited, val-clean) + Tinker prompt-only data adapter (GRPO-05)
+  - [ ] 09-02-PLAN.md — RL test contract (8 named stubs) + mock_tinker_client fixture + ROADMAP DGX→Tinker skill-text correction (GRPO-05/06/07/08)
+  - [ ] 09-03-PLAN.md — Claude score-reasoning consistency scorer: async batch dispatch + content-hash cache + 120s timeout/impute (GRPO-05)
+  - [ ] 09-04-PLAN.md — Interleaved rollouts + dual rewards (Phase 8 pipeline unmodified) + capped judge combination + cookbook advantages (GRPO-05)
+  - [ ] 09-05-PLAN.md — Tinker RL loop: frozen-router LoRA, GRPO/GSPO switchable loss + RSPO floor, per-step KL/MoE auto-halt, monitor-only Jaccard, persistent checkpoints (GRPO-06/07/08)
+  - [ ] 09-06-PLAN.md — New Tinker-native wp-finetune:run-rl-training skill (zero DGX; deviations documented; anti-hack regression gate) (GRPO-05/06/07/08)
 
 ### Phase 10: RL Comparative Evaluation
 **Goal**: The RL model is compared against the v1.2 SFT baseline on all quality dimensions, confirming RL improved judge reasoning (the primary target) without regressing generation quality — gates v3.0 MoE-Sieve
