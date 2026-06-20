@@ -459,13 +459,6 @@ def collect_rollouts(
             fix_score = float(rubric.overall) / 100.0
             fix_correctness_scores.append(fix_score)
 
-        # MO-GRPO normalize fix_correctness scores within the group
-        if len(fix_correctness_scores) > 1:
-            fix_arr = np.array(fix_correctness_scores, dtype=float)
-            fix_norm = _mo_grpo_norm(fix_arr).tolist()
-        else:
-            fix_norm = fix_correctness_scores
-
         # Capped Claude-consistency via 09-03 dispatcher
         consistency_samples = [
             {
@@ -482,10 +475,15 @@ def collect_rollouts(
             )
         )
 
-        # Combine: deterministic anchor + capped consistency
+        # Combine on the RAW [0, 1] scale (D-09-05 guard 1). fix_correctness and
+        # consistency are both in [0, 1], so (1-w)*fc + w*cons stays in [0, 1] and
+        # non-negative for valid positive inputs. The MO-GRPO group normalization
+        # (advantage centering, A_i = r_i - mean(r)) is applied DOWNSTREAM in
+        # compute_rollout_advantages — applying it here as well would re-introduce
+        # z-scores and drive valid positive judge rewards negative (CR-05).
         for i, completion_obj in enumerate(judge_completions):
             combined_scalar = combine_judge_reward(
-                fix_correctness=fix_norm[i],
+                fix_correctness=fix_correctness_scores[i],
                 consistency=consistency_scores[i],
             )
 
