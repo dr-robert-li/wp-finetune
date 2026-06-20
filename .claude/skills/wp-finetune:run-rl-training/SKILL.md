@@ -197,7 +197,7 @@ echo "Final metric row: $LAST_METRIC"
 Emergency checkpoint is written before KL/e_frac hard halt. Confirm in manifest:
 
 ```bash
-rtk python -c "import json; m=json.load(open('output/rl_checkpoints/checkpoint_manifest.json')); print(list(m.keys())[-3:])"
+rtk python -c "import json; m=json.load(open('output/rl_checkpoints/checkpoint_manifest.json')); [print(ck.get('name'), '->', ck.get('sampler_path', 'n/a')) for ck in m.get('checkpoints', [])[-3:]]"
 ```
 
 ---
@@ -238,9 +238,10 @@ Confirm checkpoint manifest has a final entry:
 rtk python -c "
 import json
 m = json.load(open('output/rl_checkpoints/checkpoint_manifest.json'))
-keys = list(m.keys())
-print('Checkpoint entries:', len(keys))
-print('Latest:', keys[-1], '->', m[keys[-1]].get('sampler_path', 'NO sampler_path'))
+checkpoints = m.get('checkpoints', [])
+print('Checkpoint entries:', len(checkpoints))
+for ck in checkpoints[-3:]:
+    print(ck.get('name'), '->', ck.get('sampler_path', 'NO sampler_path'))
 "
 ```
 
