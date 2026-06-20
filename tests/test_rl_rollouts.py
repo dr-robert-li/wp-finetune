@@ -206,27 +206,20 @@ class TestBuildTrajectoryGroups:
             self._make_reward(scalar=0.4, sec_fail=False),
         ]
         groups = rr.build_trajectory_groups(rollouts, rewards)
-        # Security-failed members must NOT appear in groups
-        all_scalars = [g.get("reward", g.get("scalar", None)) for g in groups]
-        # 0.0 from security-fail should not be in the group scalars
-        for g in groups:
-            sec_fail_in_group = any(
-                getattr(r, "breakdown", None) and r.breakdown.security_fail
-                for r in [rewards[1]]
-            )
-            # We just verify the group list does not include the security-fail item
-        # After dropping the security-fail member, we should have 3 valid groups
-        total_completions = sum(
-            len(g.get("completions", [g.get("completion", None) and [1] or []]) )
-            for g in groups
+        # T-09-SECDROP: exactly one of four rollouts had security_fail=True, so it
+        # must be DROPPED (not zeroed) -> 3 surviving groups.
+        assert len(groups) == 3, (
+            f"Expected 3 groups after dropping 1 security-fail rollout, got {len(groups)}"
         )
-        # At a minimum: security-fail item not in output; simplified check:
-        for g in groups:
-            g_scalar = g.get("reward", None)
-            if g_scalar is None:
-                g_scalar = g.get("scalar", None)
-            # The security-fail item had scalar=0.0 with sec_fail flag; should be absent
-            # (genuine 0.0 from normalization is acceptable but security_fail=True is the filter)
+        # The dropped member carried scalar=0.0 with security_fail=True; the three
+        # survivors carry the non-security rewards. Verify the surviving rewards are
+        # exactly {0.7, 0.6, 0.4} (the non-security scalars) — the security-fail
+        # member is absent.
+        surviving_rewards = sorted(g["reward"] for g in groups)
+        assert surviving_rewards == pytest.approx([0.4, 0.6, 0.7]), (
+            f"Surviving group rewards should be the non-security scalars "
+            f"[0.4, 0.6, 0.7], got {surviving_rewards}"
+        )
 
     def test_security_group_dropped_by_flag(self):
         """Security-fail member (breakdown.security_fail=True) excluded from groups."""
