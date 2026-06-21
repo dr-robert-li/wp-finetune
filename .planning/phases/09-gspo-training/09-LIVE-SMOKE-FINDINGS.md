@@ -42,12 +42,24 @@ a list of **`tinker.types.Datum`** objects, each with tokenized inputs and
 `loss_fn_inputs` (`target_tokens`, and — for a real GSPO IS ratio — sampling `logprobs`).
 
 Two coupled gaps:
-- **No Datum construction.** Completions are never rendered to token ids / `Datum`. The module
-  docstring claims delegation to `tinker_cookbook.rl.data_processing`, but **that module does
-  not exist** in the installed cookbook (only `rl/{rollouts,types,train,...}.py`). The "inline
-  fallback" path is the only path, and it emits dicts.
+- **No Datum construction.** Completions are never rendered to token ids / `Datum`. The
+  "inline fallback" in `rl_rollouts.compute_rollout_advantages` is the only path actually taken
+  and it emits plain dicts.
+  **CORRECTION (2026-06-21):** an earlier draft of this note claimed
+  `tinker_cookbook.rl.data_processing` does not exist — that is WRONG. It DOES exist
+  (`.venv-tinker/.../tinker_cookbook/rl/data_processing.py`) and provides the canonical
+  assembly: `compute_advantages(trajectory_groups)` and
+  `trajectory_to_data(traj, traj_advantage) -> list[tinker.Datum]`, which builds
+  `tinker.Datum(model_input=..., loss_fn_inputs={"target_tokens", "logprobs", "advantages"})`
+  from cookbook `Trajectory`/`Transition` objects (rl/types.py) whose action `ac` carries the
+  sampled tokens + logprobs. The real defect is that `rl_rollouts` rolled its OWN dict-based
+  pipeline and never produced cookbook `Trajectory` objects, so it could not call
+  `trajectory_to_data`. The likely fix is to adopt the cookbook trajectory types + delegate to
+  `data_processing.trajectory_to_data`, rather than hand-roll Datum.
 - **Sampling logprobs discarded.** `rl_rollouts._generate_completions` decodes `sample()` to
-  text and drops token ids + sampling logprobs. So `_make_gspo_loss_fn` hits its
+  text and drops token ids + sampling logprobs. The cookbook path needs them
+  (`ac.tokens` + `ac.logprobs`) — `sample()` must be called requesting logprobs and the result
+  threaded into the Trajectory. Without them `_make_gspo_loss_fn` hits its
   `except (AttributeError, KeyError)` branch and sets `seq_ratio = 1.0` — i.e. even with a
   Datum, GSPO degrades to plain advantage-weighted REINFORCE with **no importance-sampling
   correction** (the whole point of GSPO/RSPO).
