@@ -31,14 +31,41 @@ _DIM_MAP = load_dim_map()
 PROSE_LABEL_TO_DIM = {k: v for k, v in _DIM_MAP["clean_mapped_dims"].items()
                       if not k.startswith("_")}
 
-# Also accept the JSON field names eval_judge already knows (model JSON output).
+# Accept BOTH the *_score field names the eval harness historically expected AND
+# the SHORT names the served v1.2 <judge_output> block actually emits
+# ("security", "performance", "i18n", "accessibility"). code_quality /
+# dependency_integrity stay UNMAPPED (no clean eval equivalent per dim_map.json).
 _JSON_FIELD_TO_DIM = {
-    "wpcs_compliance": "D1_wpcs", "security_score": "D2_security",
-    "sql_safety": "D3_sql", "performance_score": "D4_perf",
-    "wp_api_usage": "D5_wp_api", "i18n_score": "D6_i18n",
-    "accessibility_score": "D7_a11y", "error_handling": "D8_errors",
+    "wpcs_compliance": "D1_wpcs",
+    "security": "D2_security", "security_score": "D2_security",
+    "sql_safety": "D3_sql",
+    "performance": "D4_perf", "performance_score": "D4_perf",
+    "wp_api_usage": "D5_wp_api",
+    "i18n": "D6_i18n", "i18n_score": "D6_i18n", "i18n_l10n": "D6_i18n",
+    "accessibility": "D7_a11y", "accessibility_score": "D7_a11y",
+    "error_handling": "D8_errors",
     "code_structure": "D9_structure",
 }
+
+# Canonical Section-D weights for deriving overall when the judge omits it
+# (dim_map.json single source — same table eval.rubric_definitions exposes).
+_DIM_WEIGHTS = _DIM_MAP["dimension_weights"]
+_PASS_THRESHOLD = 70.0  # PASS iff overall >= 70 (04.3 VERDICT-POLICY)
+
+
+def _derive_overall_0_100(dim_scores_0_10: dict, verdict: object) -> Optional[float]:
+    """Weighted-mean overall (0-100) from mapped 0-10 dim scores; weights
+    renormalized over present dims. FAIL verdict caps below the PASS threshold.
+    Returns None if no mapped dims. (See eval_judge._derive_overall_from_dims —
+    kept in sync; this module stores dim_scores on the 0-10 raw scale.)"""
+    present = {d: s for d, s in dim_scores_0_10.items() if d in _DIM_WEIGHTS}
+    if not present:
+        return None
+    total_w = sum(_DIM_WEIGHTS[d] for d in present)
+    overall = (sum(present[d] * _DIM_WEIGHTS[d] for d in present) / total_w) * 10.0
+    if isinstance(verdict, str) and verdict.strip().upper() == "FAIL":
+        overall = min(overall, _PASS_THRESHOLD - 1.0)
+    return max(0.0, min(100.0, overall))
 
 _THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
 # "WPCS Compliance: score 9/10 — ..." / "Security: score None/10 - ..."
@@ -65,7 +92,15 @@ def _parse_json_scores(text: str) -> Optional[dict]:
         except json.JSONDecodeError:
             pass
     if obj is None:
-        for pat in (r"```json\s*\n(.*?)```", r"```\s*\n(.*?)```", r"(\{.*\})"):
+        # <judge_output>...</judge_output> FIRST: its tags bound the JSON exactly,
+        # so it beats the greedy (\{.*\}) which the [REASONING] prose (quoting code
+        # with literal braces) would otherwise poison.
+        for pat in (
+            r"<judge_output>\s*(\{.*\})\s*</judge_output>",
+            r"```json\s*\n(.*?)```",
+            r"```\s*\n(.*?)```",
+            r"(\{.*\})",
+        ):
             m = re.search(pat, s, re.DOTALL)
             if m:
                 try:
@@ -77,12 +112,20 @@ def _parse_json_scores(text: str) -> Optional[dict]:
         return None
     scores = {}
     for field, dim in _JSON_FIELD_TO_DIM.items():
-        if isinstance(obj.get(field), (int, float)):
-            scores[dim] = float(obj[field])
+        val = obj.get(field)
+        if isinstance(val, (int, float)) and not isinstance(val, bool):
+            scores[dim] = float(val)
     overall = obj.get("overall_score")
     out = {"dimension_scores": scores}
-    if isinstance(overall, (int, float)):
+    if isinstance(overall, (int, float)) and not isinstance(overall, bool):
         out["overall"] = float(overall)
+    else:
+        # Bimodal judge omits overall_score — derive from emitted dims so the RL
+        # reward path doesn't fall back to group-mean imputation (directional bias).
+        derived = _derive_overall_0_100(scores, obj.get("verdict"))
+        if derived is not None:
+            out["overall"] = derived
+            out["_overall_derived"] = True
     return out if scores or "overall" in out else None
 
 

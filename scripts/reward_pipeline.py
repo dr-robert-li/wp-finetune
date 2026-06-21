@@ -492,7 +492,18 @@ def compute_group_rewards(
         rubric = _extract_verifiable_signals(code)
         rubrics.append(rubric)
         try:
-            judge_raw = judge_score_single(code, judge_client, judge_model)
+            # max_tokens=2048 (not the 1024 default): the v1.2 reasoning judge
+            # emits [REASONING] prose BEFORE the <judge_output> JSON, and
+            # overall_score is the LAST key. On rough/verbose RL-policy
+            # generations the reasoning alone can exceed 1024 → finish_reason
+            # "length" truncates the JSON before overall_score → silent None →
+            # D-08-07 group-mean imputation. Imputation here is DIRECTIONAL bias
+            # (it erases the low score the verbose output earned), so give the
+            # judge headroom to actually emit the score. 2048 covers the ≤512-tok
+            # gen cap with margin; never truncates a well-formed judge response.
+            judge_raw = judge_score_single(
+                code, judge_client, judge_model, max_tokens=2048
+            )
         except Exception:  # noqa: BLE001
             # D-08-07: exceptions from judge → None so group-mean imputation runs.
             # Do not propagate — a single judge error must not abort the entire group.
