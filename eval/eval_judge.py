@@ -17,6 +17,7 @@ Usage:
 """
 import argparse
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -173,6 +174,43 @@ _JUDGE_FIELD_TO_DIM = {
 # PASS threshold (verdict POLICY, 04.3 VERDICT-POLICY): PASS iff overall >= 70.
 # A FAIL verdict must therefore never derive an overall >= 70.
 _PASS_THRESHOLD = 70.0
+
+
+def _dump_judge_failure(php_code: str, raw_text: str, resp: object) -> None:
+    """Diagnostic: when judge_score_single is about to return None, append the
+    code-under-judgement + the raw judge output + finish_reason to the JSONL at
+    $WP_JUDGE_DEBUG_DUMP. No-op unless that env var is set (zero prod overhead).
+    Lets us SEE the real live parse-failure population instead of theorizing it."""
+    path = os.environ.get("WP_JUDGE_DEBUG_DUMP")
+    if not path:
+        return
+    try:
+        finish = None
+        usage_completion = None
+        try:
+            finish = resp.choices[0].finish_reason  # type: ignore[attr-defined]
+            usage_completion = getattr(getattr(resp, "usage", None), "completion_tokens", None)
+        except Exception:  # noqa: BLE001
+            pass
+        rec = {
+            "finish_reason": finish,
+            "completion_tokens": usage_completion,
+            "raw_len": len(raw_text),
+            "code_len": len(php_code),
+            "has_judge_output_tag": "<judge_output>" in raw_text,
+            "has_prose_score": bool(re.search(r"score\s+\d+\s*/\s*10", raw_text)),
+            # Residual triage: was the judged code already extracted clean PHP, or
+            # did a fence survive (extract miss) / is there no code at all (not-code
+            # generation -> correct reward is low, not impute)?
+            "code_has_fence": "```" in php_code,
+            "code_starts_phpish": php_code.lstrip()[:6].lower().startswith(("<?php", "functi", "class ", "add_ac", "regist")),
+            "code": php_code[:6000],
+            "raw_text": raw_text[:6000],
+        }
+        with open(path, "a") as f:
+            f.write(json.dumps(rec) + "\n")
+    except Exception:  # noqa: BLE001 — diagnostics must never break scoring
+        pass
 
 
 def _derive_overall_from_dims(obj: dict) -> "Optional[float]":
@@ -342,18 +380,22 @@ def judge_score_single(
     )
     raw_text = resp.choices[0].message.content or ""
     parsed = parse_judge_response(raw_text)
-    if parsed is None:
-        return None
-    overall = parsed.get("overall_score")
-    if isinstance(overall, (int, float)) and not isinstance(overall, bool):
-        return float(overall)
-    # Bimodal judge: per-dim block + verdict present but overall_score OMITTED.
-    # Derive it (served-judge dims are 0-10) rather than returning None — a None
-    # here triggers group-mean imputation (D-08-07) that erases the low score the
-    # output earned, biasing the RL reward toward verbose/rough generations.
-    # Derivation lives HERE (reward boundary), NOT in parse_judge_response, so
-    # teacher-GT extraction stays pure (overall absent -> None, canonical GT only).
-    return _derive_overall_from_dims(parsed)
+    score: Optional[float] = None
+    if parsed is not None:
+        overall = parsed.get("overall_score")
+        if isinstance(overall, (int, float)) and not isinstance(overall, bool):
+            score = float(overall)
+        else:
+            # Bimodal judge: per-dim block + verdict present but overall_score
+            # OMITTED. Derive it (served-judge dims are 0-10) rather than None — a
+            # None here triggers group-mean imputation (D-08-07) that erases the
+            # low score the output earned, biasing reward toward verbose/rough
+            # generations. Derivation lives HERE (reward boundary), NOT in
+            # parse_judge_response, so teacher-GT extraction stays pure.
+            score = _derive_overall_from_dims(parsed)
+    if score is None:
+        _dump_judge_failure(php_code, raw_text, resp)
+    return score
 
 
 def _extract_code_from_judge_prompt(user_message: str) -> str:

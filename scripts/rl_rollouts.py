@@ -452,6 +452,7 @@ def collect_rollouts(
     # Lazy imports to avoid import errors when modules are absent (unit tests)
     from scripts.reward_pipeline import compute_group_rewards, _extract_verifiable_signals  # noqa: PLC0415
     from scripts.rl_judge_dispatch import score_judge_consistency_batch  # noqa: PLC0415
+    from eval.output_parsers import extract_php_code  # noqa: PLC0415
 
     # Step 1: Interleaved sampling
     batch = sample_interleaved_prompts(gen_pool, judge_pool, batch_size=args.batch_size)
@@ -477,8 +478,17 @@ def collect_rollouts(
     # Step 2: wp_gen rewards via Phase 8 pipeline (unmodified)
     if gen_rollouts:
         gen_completions = _generate_completions(sampling_client, gen_rollouts, args)
+        # Extract clean PHP from each completion BEFORE scoring — the base policy
+        # (instruct-tuned Qwen3) often emits a chatty markdown explanation with the
+        # code in a ```php fence. Scoring the raw completion (a) confuses the judge
+        # into CONTINUING the document instead of emitting a verdict (parse-failure
+        # -> D-08-07 group-mean imputation, a directional bias) and (b) makes
+        # php -l / PHPCS fail on fenced prose. eval_gen already grades extracted
+        # PHP, so extracting here keeps the RL reward consistent with the eval the
+        # model is measured against (gate/reward consistency). compute_group_rewards
+        # stays UNMODIFIED (D-09-05) — extraction happens at the RL boundary only.
         gen_reward_results = compute_group_rewards(
-            php_codes=[c.completion for c in gen_completions],
+            php_codes=[extract_php_code(c.completion) for c in gen_completions],
             judge_client=args.judge_client,
             judge_model=args.judge_model,
         )
