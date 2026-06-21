@@ -282,7 +282,7 @@ def test_gspo_loss_fn_masks_training_logprobs_to_action_tokens():
             train_lps[j] = float(sampling[j]) + 0.3
             train_action_vals.append(float(train_lps[j]))
 
-    loss_fn = rl_train._make_gspo_loss_fn()
+    loss_fn = rl_train._make_gspo_loss_fn([datum])  # closes over the FULL datum
     total_loss, metrics = loss_fn([datum], [train_lps])
 
     # Expected: ratio over ACTION tokens only.
@@ -324,7 +324,63 @@ def test_gspo_loss_fn_empty_mask_datum_is_safe():
     datum = trajectory_to_data(traj, 0.4)[0]
     train_lps = torch.zeros_like(datum.loss_fn_inputs["mask"].to_torch())
 
-    loss_fn = rl_train._make_gspo_loss_fn()
+    loss_fn = rl_train._make_gspo_loss_fn([datum])
     total_loss, _metrics = loss_fn([datum], [train_lps])
     assert torch.isfinite(total_loss)
     assert float(total_loss) == pytest.approx(0.0, abs=1e-6)
+
+
+def test_strip_to_target_tokens_satisfies_fbc_validator():
+    """_strip_to_target_tokens output obeys forward_backward_custom's key constraint.
+
+    The SDK forward validator rejects any loss_fn_inputs key outside
+    {target_tokens, weights}. This pins the exact ValueError the live smoke hit
+    (unexpected keys ['advantages','logprobs','mask']) at unit speed.
+    """
+    rl_train = pytest.importorskip("scripts.rl_train")
+    pytest.importorskip("tinker")
+    from tinker_cookbook.rl.data_processing import trajectory_to_data
+
+    from tests._rl_fixtures import make_trajectory_group
+
+    tg = make_trajectory_group([1.0, 0.0], group_id="gen-0")
+    full = trajectory_to_data(tg.trajectories_G[0], 0.5)[0]
+    # Precondition: the cookbook datum carries the rejected keys.
+    assert {"advantages", "logprobs", "mask"} & set(full.loss_fn_inputs)
+    stripped = rl_train._strip_to_target_tokens(full)
+    assert set(stripped.loss_fn_inputs) <= {"target_tokens", "weights"}
+    assert "target_tokens" in stripped.loss_fn_inputs
+
+
+def test_gspo_loss_fn_gradient_flows_to_action_positions():
+    """loss.backward() puts gradient on action-token logprobs only (obs = 0).
+
+    forward_backward_custom backprops the client loss w.r.t. the forward logprobs,
+    so the loss must be differentiable in train_lps with grad confined to action
+    positions (mask > 0). This is the offline proof the live gradient step will flow.
+    """
+    rl_train = pytest.importorskip("scripts.rl_train")
+    pytest.importorskip("tinker")
+    import torch
+    from tinker_cookbook.rl.data_processing import compute_advantages, trajectory_to_data
+
+    from tests._rl_fixtures import make_trajectory_group
+
+    tg = make_trajectory_group([1.0, 0.0], group_id="gen-0")
+    adv_P = compute_advantages([tg])
+    datum = trajectory_to_data(tg.trajectories_G[0], float(adv_P[0][0]))[0]  # advantage +0.5
+    mask = datum.loss_fn_inputs["mask"].to_torch()
+    action_mask = mask > 0
+
+    train_lps = torch.zeros_like(mask).requires_grad_(True)
+    loss_fn = rl_train._make_gspo_loss_fn([datum])
+    total_loss, _ = loss_fn([datum], [train_lps])
+    assert total_loss.requires_grad, "loss must be differentiable w.r.t. train_lps"
+    total_loss.backward()
+
+    grad = train_lps.grad
+    assert grad is not None, "no gradient computed for train_lps"
+    assert grad[action_mask].abs().sum().item() > 0.0, "no gradient on action positions"
+    assert grad[~action_mask].abs().sum().item() == pytest.approx(0.0, abs=1e-9), (
+        "gradient leaked onto obs (non-action) positions"
+    )
