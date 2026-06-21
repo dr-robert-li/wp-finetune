@@ -202,3 +202,106 @@ def test_safe_spearman_edge_cases():
     assert result_valid["n_pairs"] == 5
     # Perfect positive correlation
     assert abs(result_valid["corr"] - 1.0) < 1e-6
+
+
+# ---------------------------------------------------------------------------
+# RL reward-path judge parse fixes (live Phase 9 GSPO run, 2026-06-22):
+#  Bug A — <judge_output> tags + [REASONING] prose with literal braces poisoned
+#          the greedy {.*} scan -> None -> group-mean imputation.
+#  Bug B — bimodal judge omits overall_score -> .get(...) None -> imputation.
+# These are the EXACT shapes captured live from the served wp_judge endpoint.
+# ---------------------------------------------------------------------------
+
+# Real shape: [REASONING] prose quoting code with `{$wpdb->prefix}` braces, then a
+# <judge_output> block WITHOUT overall_score, verdict FAIL. Was 66.7% of failures.
+_REAL_JUDGE_NO_OVERALL = (
+    "myplugin_handle_form concatenates $_GET into SQL via "
+    "\"UPDATE {$wpdb->prefix}users SET x=\".$id and echoes $_POST unescaped.\n\n"
+    "[/REASONING]\n\n"
+    "<judge_output>\n"
+    "{\n"
+    '  "wpcs_compliance": 6,\n  "sql_safety": 2,\n  "security": 2,\n'
+    '  "performance": 6,\n  "wp_api_usage": 6,\n  "code_quality": 6,\n'
+    '  "dependency_integrity": 8,\n  "i18n": 8,\n  "accessibility": 8,\n'
+    '  "verdict": "FAIL"\n'
+    "}\n"
+    "</judge_output>"
+)
+
+# Real shape: judge emitted its OWN overall_score — must be used verbatim.
+_REAL_JUDGE_WITH_OVERALL = (
+    "[REASONING] uses {$wpdb} unsafely [/REASONING]\n"
+    "<judge_output>\n"
+    '{ "wpcs_compliance": 4, "sql_safety": 1, "security": 1, "overall_score": 19, '
+    '"verdict": "FAIL" }\n'
+    "</judge_output>"
+)
+
+
+def _fake_judge_client(content: str):
+    """Minimal stand-in for openai.OpenAI whose chat.completions.create returns
+    `content`. judge_score_single routes through _judge_create -> this."""
+    from types import SimpleNamespace
+
+    def _create(*_a, **_k):
+        msg = SimpleNamespace(content=content)
+        return SimpleNamespace(choices=[SimpleNamespace(message=msg)])
+
+    return SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=_create)))
+
+
+def test_parse_judge_response_judge_output_tag_brace_poison():
+    """Bug A: <judge_output> block is recovered despite brace-laden [REASONING]
+    prose that poisons the greedy {.*} fallback. Pre-fix this returned None."""
+    parsed = parse_judge_response(_REAL_JUDGE_NO_OVERALL)
+    assert parsed is not None, "tag-bounded JSON must parse despite prose braces"
+    assert parsed["verdict"] == "FAIL"
+    assert parsed["security"] == 2
+
+
+def test_parse_judge_response_stays_pure_no_overall_injection():
+    """GT-purity: the PARSER must never synthesize overall_score (teacher-GT
+    extraction relies on its absence -> canonical rubric_scorer, not a proxy)."""
+    parsed = parse_judge_response(_REAL_JUDGE_NO_OVERALL)
+    assert "overall_score" not in parsed
+    assert "_overall_derived" not in parsed
+
+
+def test_judge_score_single_derives_missing_overall_fail_capped():
+    """Bug B: missing overall_score -> derived (not None), weighted over canonical
+    DIMENSION_WEIGHTS, FAIL-capped below the PASS threshold (70)."""
+    from eval.eval_judge import judge_score_single
+
+    score = judge_score_single(
+        "<?php bad();", _fake_judge_client(_REAL_JUDGE_NO_OVERALL), "wp_judge"
+    )
+    assert score is not None, "must derive, not impute"
+    assert 0.0 < score < 70.0, f"FAIL verdict must derive sub-PASS score, got {score}"
+
+
+def test_judge_score_single_prefers_judge_own_overall():
+    """When the judge emits overall_score, use it verbatim — never derive over it."""
+    from eval.eval_judge import judge_score_single
+
+    score = judge_score_single(
+        "<?php x();", _fake_judge_client(_REAL_JUDGE_WITH_OVERALL), "wp_judge"
+    )
+    assert score == 19.0
+
+
+def test_derive_overall_weighting_and_fallback():
+    """_derive_overall_from_dims: weighted mean x10 over mapped dims; FAIL cap;
+    plain-mean fallback when nothing maps; None when no numeric dims."""
+    from eval.eval_judge import _derive_overall_from_dims
+
+    # All dims = 8/10, no verdict -> 80.0 (weights renormalize to 1.0).
+    alleight = {k: 8 for k in (
+        "wpcs_compliance", "sql_safety", "security", "performance",
+        "wp_api_usage", "i18n", "accessibility")}
+    assert abs(_derive_overall_from_dims(alleight) - 80.0) < 1e-6
+    # Same scores but FAIL -> capped below 70.
+    assert _derive_overall_from_dims({**alleight, "verdict": "FAIL"}) < 70.0
+    # No mapped dims, but a numeric field present -> plain mean x10 fallback.
+    assert _derive_overall_from_dims({"made_up_dim": 5}) == 50.0
+    # No numeric dims at all -> None.
+    assert _derive_overall_from_dims({"verdict": "FAIL"}) is None

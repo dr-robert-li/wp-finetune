@@ -151,12 +151,89 @@ _GT_FIELD_TO_DIM: dict[str, str] = {
 # ---------------------------------------------------------------------------
 
 
+# v1.2 reasoning-judge <judge_output> field name -> internal rubric dim key.
+# The served judge emits SHORT field names ("security", "performance", "i18n",
+# "accessibility") AND the [/REASONING]-block sometimes uses the *_score variants
+# the eval harness historically expected — accept both so derivation never
+# silently drops a present dimension. "code_quality" / "dependency_integrity" are
+# intentionally UNMAPPED: dim_map.json rules them "no clean eval equivalent", so
+# they are excluded from the weighted overall (not silently folded into D9).
+_JUDGE_FIELD_TO_DIM = {
+    "wpcs_compliance": "D1_wpcs",
+    "security": "D2_security", "security_score": "D2_security",
+    "sql_safety": "D3_sql",
+    "performance": "D4_perf", "performance_score": "D4_perf",
+    "wp_api_usage": "D5_wp_api",
+    "i18n": "D6_i18n", "i18n_score": "D6_i18n", "i18n_l10n": "D6_i18n",
+    "accessibility": "D7_a11y", "accessibility_score": "D7_a11y",
+    "error_handling": "D8_errors",
+    "code_structure": "D9_structure",
+}
+
+# PASS threshold (verdict POLICY, 04.3 VERDICT-POLICY): PASS iff overall >= 70.
+# A FAIL verdict must therefore never derive an overall >= 70.
+_PASS_THRESHOLD = 70.0
+
+
+def _derive_overall_from_dims(obj: dict) -> "Optional[float]":
+    """Derive overall_score (0-100) from per-dimension 0-10 scores.
+
+    The v1.2 reasoning judge is bimodal: it frequently emits the per-dimension
+    block + verdict but OMITS overall_score. Imputing those to the group mean
+    (D-08-07) erases the (usually low) score the output earned — a directional
+    reward bias. Instead derive a proxy overall:
+
+      - weighted mean over the dims the judge actually emitted+mapped, weights =
+        canonical DIMENSION_WEIGHTS renormalized over present dims (symmetric
+        with rubric aggregation; dim_map.json is the single source so Phase 7/10
+        reward shaping does not drift);
+      - fallback to plain mean x10 if NO emitted field maps to a weighted dim;
+      - cap below the PASS threshold when verdict == FAIL (a FAIL must not
+        derive a passing overall).
+
+    Returns None if no numeric dimension scores are present at all.
+    """
+    dim_scores: dict[str, float] = {}   # internal dim -> 0-10
+    numeric_fallback: list[float] = []   # any numeric dim-like field, 0-10
+    for field, val in obj.items():
+        if isinstance(val, bool) or not isinstance(val, (int, float)):
+            continue
+        if field == "overall_score":
+            continue
+        numeric_fallback.append(float(val))
+        dim = _JUDGE_FIELD_TO_DIM.get(field)
+        if dim is not None:
+            dim_scores[dim] = float(val)
+
+    if dim_scores:
+        total_w = sum(DIMENSION_WEIGHTS[d] for d in dim_scores)
+        overall10 = sum(dim_scores[d] * DIMENSION_WEIGHTS[d] for d in dim_scores) / total_w
+        overall = overall10 * 10.0
+    elif numeric_fallback:
+        overall = (sum(numeric_fallback) / len(numeric_fallback)) * 10.0
+    else:
+        return None
+
+    verdict = obj.get("verdict")
+    if isinstance(verdict, str) and verdict.strip().upper() == "FAIL":
+        overall = min(overall, _PASS_THRESHOLD - 1.0)
+    return max(0.0, min(100.0, overall))
+
+
 def parse_judge_response(response: str) -> Optional[dict]:
     """Parse model judge response and extract score fields.
 
+    PURE parser — returns exactly what the model emitted (no derived fields), so
+    it is safe for BOTH the served-judge reward path AND teacher-GT extraction
+    (_extract_gt_from_assistant), which requires overall_score to be ABSENT when
+    the target omits it (canonical GT = rubric_scorer, never a derived proxy).
+    overall_score derivation for the reward path lives in judge_score_single.
+
     Handles:
+      - <judge_output>...</judge_output> tag block (v1.2 reasoning judge)
       - Raw JSON string
       - JSON in markdown code fences (```json ... ``` or ``` ... ```)
+      - Embedded {...} object
       - Missing keys -> returns dict without those keys
 
     Args:
@@ -170,8 +247,20 @@ def parse_judge_response(response: str) -> Optional[dict]:
 
     # Strip <think>...</think> blocks (Qwen3 reasoning mode).
     # Must happen before JSON extraction — thinking content may contain
-    # curly braces that confuse the greedy {.*} regex in Strategy 4.
+    # curly braces that confuse the greedy {.*} regex below.
     text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+
+    # Strategy 0: <judge_output>...</judge_output> tag block. MUST precede the
+    # greedy {.*} scan: the v1.2 judge prefixes a [REASONING] prose block that
+    # quotes the code under review (e.g. `{$wpdb->prefix}`), so a greedy first-{
+    # to last-} match spans prose+JSON and fails. The tags bound the JSON exactly.
+    # (Teacher-GT targets carry no such tags, so this strategy never alters them.)
+    match = re.search(r"<judge_output>\s*(\{.*\})\s*</judge_output>", text, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group(1))
+        except json.JSONDecodeError:
+            pass
 
     # Strategy 1: raw JSON
     try:
@@ -256,7 +345,15 @@ def judge_score_single(
     if parsed is None:
         return None
     overall = parsed.get("overall_score")
-    return float(overall) if isinstance(overall, (int, float)) else None
+    if isinstance(overall, (int, float)) and not isinstance(overall, bool):
+        return float(overall)
+    # Bimodal judge: per-dim block + verdict present but overall_score OMITTED.
+    # Derive it (served-judge dims are 0-10) rather than returning None — a None
+    # here triggers group-mean imputation (D-08-07) that erases the low score the
+    # output earned, biasing the RL reward toward verbose/rough generations.
+    # Derivation lives HERE (reward boundary), NOT in parse_judge_response, so
+    # teacher-GT extraction stays pure (overall absent -> None, canonical GT only).
+    return _derive_overall_from_dims(parsed)
 
 
 def _extract_code_from_judge_prompt(user_message: str) -> str:
