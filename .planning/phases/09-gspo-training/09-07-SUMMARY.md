@@ -17,9 +17,11 @@ requirements: [GRPO-05, GRPO-06, GRPO-07, GRPO-08]
   checkpoint saved (`tinker://…/sampler_weights/final-step-1`); a step-0 `rl_metrics.jsonl`
   row written (e_frac 0.892, halt_reason null, use_gspo true).
 - (c) ✅ The GSPO loss body ran on REAL tensors — `sampling_sum` ∈ {-205.9, -134.6, -321.5,
-  -280.7} (real, non-zero), `used_fallback=False` (except-branch NOT entered). `seq_ratio`
-  clamped to 1.0 — EXPECTED on step 1 (sampling client = same weights; per plan Task 5c the
-  necessary-and-sufficient proof is a real non-zero `sampling_sum` with the fallback not taken).
+  -280.7} (real, non-zero, large → the action-mask is selecting real action-token logprobs, not
+  zeroed obs positions), `used_fallback=False` (except-branch NOT entered). `seq_ratio` was a MIX
+  of clamped-1.0 and unclamped (e.g. train -133.4 > sampling -134.6 → exp(+1.2)≈3.3) — both fine:
+  per plan Task 5c the necessary-and-sufficient proof is a real non-zero `sampling_sum` with the
+  fallback not taken (step-1 ratios near 1.0 are expected precision drift on identical weights).
 - (d) ✅ Canonical `output/rl_checkpoints/checkpoint_manifest.json` untouched (mtime 06-20);
   smoke wrote only `output/_smoke/`.
 - Reward path live: Panickssery fired on REAL scores (fix_correctness 1.0, judge_consistency 0.0).
@@ -125,5 +127,9 @@ export TINKER_API_KEY=...                    # from .env
 ```
 Acceptance: no `loss_fn_inputs` AttributeError; optim_step reached + a `"step": 1` row written;
 a REAL non-zero `sampling_sum` with the except-fallback NOT taken (temporarily log sampling_sum/
-train_sum per plan Task 5, then remove); canonical `output/rl_checkpoints/` untouched. On success,
-this unblocks Phase 10 Wave 1 (Task 3 GATE) and clears the 4 pending `09-HUMAN-UAT.md` items.
+train_sum per plan Task 5, then remove); canonical `output/rl_checkpoints/` untouched.
+
+SCOPE: this 1-step smoke proves the GSPO gradient MECHANISM (datum/logprob assembly + a real IS
+ratio reaching optim_step). It does NOT by itself clear the 4 `09-HUMAN-UAT.md` items or unblock
+Phase 10 — those require the FULL multi-step live RL run (reward convergence, KL stability,
+Jaccard on real routing, real trained checkpoints). `09-HUMAN-UAT.md` stays `status: partial`.
