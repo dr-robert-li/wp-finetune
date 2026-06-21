@@ -460,3 +460,179 @@ Each major step writes a completion marker (`.complete` file):
 - `output/.triage_complete` — triage done
 
 Re-running the skill resumes from the last incomplete step. Use `--force` to re-run everything.
+
+---
+
+## RL Comparative Evaluation (Phase 10 — RLEV-02)
+
+Extended for Phase 10 RL evaluation pipeline. Invoked after the Phase 9 Tinker live RL run
+completes and `output/rl_checkpoints/<step>.tar` is available.
+
+### Architecture
+
+```
+merge_tinker_v3.py            (fuse RL LoRA into base model — MANDATORY before vLLM)
+  → merged_rl_checkpoint/     (HF-format full weights)
+  → vLLM :8020                (serve for eval_gen / eval_judge)
+  → eval_gen (gt_mode=calibrated_canonical)
+  → eval_judge (gt_mode=calibrated_canonical)
+  → bootstrap_gate.py         (CI-aware pass/fail gates — Gates 1,2,4)
+  → wp-bench                  (Gate 2 aggregate + sub-type floors)
+  → rlev02_report.py          (assemble five-part conjunctive gate + final report)
+  → D-10-04 human checkpoint  (present report; reviewer confirms or surfaces regression)
+```
+
+**LLM backend:** `LLM_BACKEND=claude` for all rubric LLM checks. Avoids spinning up a second
+vLLM instance at Phase 10 scale. Judge dispatch uses `claude_agent.py` subprocess — NOT
+`Agent(run_in_background=true)` (stale pattern) and NOT direct Anthropic API calls.
+
+### Step RL-0: Pre-flight Checks
+
+```bash
+# Confirm live RL checkpoint exists
+ls output/rl_checkpoints/*.tar | tail -5
+cat output/rl_checkpoints/checkpoint_manifest.json | python3 -m json.tool
+
+# Select best-reward step (highest reward_mean before any KL halt)
+python3 scripts/bootstrap_gate.py --rl-metrics output/rl_checkpoints/rl_metrics.jsonl \
+    --out /tmp/routing_check.json
+cat /tmp/routing_check.json | python3 -m json.tool
+```
+
+Gate: `check_no_routing_collapse` must pass on the selected checkpoint's step metrics
+before proceeding to merge. If it fails (KL >= 0.3 or efrac < 0.5 or halt_reason set),
+select an earlier step from the manifest.
+
+### Step RL-1: Merge RL Checkpoint (MANDATORY)
+
+vLLM **cannot serve raw LoRA** from `checkpoint.tar`. Merge is always required.
+
+```bash
+# Select step from checkpoint_manifest.json (highest reward_mean, no KL violation)
+STEP=200  # replace with selected step
+
+python3 scripts/merge_tinker_v3.py \
+    --checkpoint output/rl_checkpoints/step_${STEP}.tar \
+    --base models/Qwen3-30B-A3B/ \
+    --out merged_rl_checkpoint/
+
+# Verify merge output
+ls -lh merged_rl_checkpoint/
+python3 -c "from transformers import AutoConfig; AutoConfig.from_pretrained('merged_rl_checkpoint/')"
+```
+
+Format: third Tinker MoE LoRA convention (`checkpoint.tar`, keys `moe.layers.<N>.mlp.experts.w{1,2,3}.lora_{A,B}`
++ `unembed.lora_{A,B}`). See `.planning/phases/10-rl-comparative-evaluation/10-merge-compat-note.md`
+for full layout spec.
+
+### Step RL-2: Serve and Evaluate
+
+```bash
+# Start vLLM (same container as Phase 4 eval — resolved from dgx_toolbox.yaml)
+# Health check timeout 900s for 30B MoE
+python3 scripts/run_eval_triage.py --skip-profiling --skip-triage \
+    --model-path merged_rl_checkpoint/ --limit 2000 \
+    --output-dir output/rl_eval/ \
+    --health-timeout 900
+
+# OR run eval_gen / eval_judge directly:
+LLM_BACKEND=claude python3 -m eval.eval_gen \
+    --dataset data/final_dataset/openai_test.jsonl \
+    --output output/rl_eval/eval_gen_results.json \
+    --model merged_rl_checkpoint \
+    --gt-mode calibrated_canonical
+
+LLM_BACKEND=claude python3 -m eval.eval_judge \
+    --dataset data/final_dataset/openai_test.jsonl \
+    --output output/rl_eval/eval_judge_results.json \
+    --model merged_rl_checkpoint \
+    --gt-mode calibrated_canonical
+```
+
+Per-example JSONL sidecar: `output/rl_eval/eval_gen_results.jsonl` (has `dimension_scores`).
+Gates **must read the `.jsonl` sidecar**, NOT the aggregate `.json` — bootstrap resampling
+requires per-example scores.
+
+### Step RL-3: Bootstrap Gates
+
+```bash
+# Baseline: v1.2 SFT eval_gen sidecar (already on disk from Phase 4.4)
+BASELINE_JSONL=output/eval_triage/ratio_60_40/eval_gen_results.jsonl  # or best-ratio SFT
+
+# Run all four bootstrap gates
+python3 scripts/bootstrap_gate.py \
+    --eval-gen output/rl_eval/eval_gen_results.jsonl \
+    --baseline ${BASELINE_JSONL} \
+    --wp-bench output/rl_eval/wp_bench_results.json \
+    --rl-metrics output/rl_checkpoints/rl_metrics.jsonl \
+    --dim reasoning_score \
+    --out output/rl_eval/gate_result.json
+
+cat output/rl_eval/gate_result.json | python3 -m json.tool
+```
+
+**Gate 1 (dim regression):** `check_dim_regression` — bootstrap CI lower bound of RL
+`reasoning_score` >= mean(baseline SFT `reasoning_score`). Reads `.jsonl` sidecar.
+
+**Gate 2 (Spearman improvement):** `bootstrap_spearman_improvement` — pair-level resampling
+of `(pred_rl, gt, pred_baseline)` tuples. CI of delta rho; `improved_beyond_noise = lo > 0`.
+Note: NOT `bootstrap_ci(corr_array)` — that is mathematically wrong for Spearman CI.
+
+**Gate 3 (wp-bench):** `check_wpbench_gate` — **direct point comparison** (no bootstrap):
+`metadata.scores.overall >= 0.4616` AND `metadata.scores.knowledge >= 0.45`
+AND `metadata.scores.correctness >= 0.375`. Field is `correctness` (not "execution").
+Baseline 0.4616 = v1.2 SFT weighted overall from `output/04.4_wp_bench_results.json`.
+
+**Gate 4 (routing collapse):** `check_no_routing_collapse` — per-step scan of `rl_metrics.jsonl`
+for `halt_reason`, `kl_sample_train_v1 >= 0.3`, `e_frac_with_tokens_mean < 0.5`.
+
+### Step RL-4: RLEV-02 Report
+
+```bash
+# Anti-hack axis: perturbed RL vs clean v1.2 SFT rewards
+# (antihack-perturbed/clean must be collected during RL training — see Phase 8 reward infra)
+python3 scripts/rlev02_report.py \
+    --eval-gen output/rl_eval/eval_gen_results.jsonl \
+    --baseline ${BASELINE_JSONL} \
+    --wp-bench output/rl_eval/wp_bench_results.json \
+    --rl-metrics output/rl_checkpoints/rl_metrics.jsonl \
+    --antihack-perturbed output/rl_eval/antihack_perturbed_rl.jsonl \
+    --antihack-clean output/antihack_clean_v12.jsonl \
+    --checkpoint-step ${STEP} \
+    --run-id rl-v3.0-candidate \
+    --out output/rl_eval/rlev02_report.json
+
+cat output/rl_eval/rlev02_report.json | python3 -m json.tool
+```
+
+Five-part conjunctive gate (`all_gates_passed`):
+1. `judge_spearman_improvement` — `improved_beyond_noise = True`
+2. `wpbench_hard_gate` — weighted overall + sub-type floors
+3. `antihack_no_reward_hack` — `hi_perturbed_rl < lo_clean_v12` (reuses `compute_axis_gate`)
+4. `protected_expert_retention` — mean `jaccard_protected >= 0.85` (provisional bar, confirmed at D-10-04)
+5. `no_routing_collapse` — no halt/KL/efrac violation
+
+**Single failure = all_gates_passed=False.** Present report to human reviewer at D-10-04 checkpoint.
+Do not declare v3.0 without human sign-off.
+
+### Step RL-5: Human Checkpoint (D-10-04)
+
+Present `rlev02_report.json` at the GSD checkpoint. Human reviewer:
+1. Confirms all five gates pass (or surfaces regression + suggested fix)
+2. Reviews jaccard_protected trace (bar 0.85 is provisional — confirmed here)
+3. Signs off on v3.0 declaration or requests further investigation
+
+If `all_gates_passed=False`:
+- Failing gate(s) listed in `report.conjunctive_gate.failing_gates`
+- Recommendation: "BLOCKED — do not promote to v3.0"
+
+### RL Error Handling
+
+| Error | Recovery |
+|-------|----------|
+| No `checkpoint.tar` in `output/rl_checkpoints/` | Phase 9 live run not yet complete — Wave 0 only |
+| `check_no_routing_collapse` fails on best-step | Select earlier step from `checkpoint_manifest.json` |
+| Merge fails (key mismatch) | Verify `checkpoint.tar` uses Tinker-native MoE LoRA format (see `10-merge-compat-note.md`) |
+| vLLM startup fails | Confirm `merged_rl_checkpoint/config.json` present; increase `--health-timeout` |
+| Anti-hack gate missing data | Collect `antihack_perturbed_rl.jsonl` during RL training (Phase 8 reward infra) |
+| Jaccard bar controversy | Bar=0.85 is provisional; reviewer adjusts at D-10-04 checkpoint |
