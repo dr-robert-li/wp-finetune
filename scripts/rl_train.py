@@ -652,8 +652,12 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--model-id",
-        default="Qwen/Qwen3-30B",
-        help="Base model ID for Tinker LoRA client",
+        default="Qwen/Qwen3-30B-A3B",
+        help=(
+            "Base model ID for Tinker LoRA client. MUST be a Tinker-supported model "
+            "name — the MoE 'Qwen/Qwen3-30B-A3B' (NOT 'Qwen/Qwen3-30B', which Tinker "
+            "rejects with a 400 'not supported')."
+        ),
     )
     parser.add_argument("--lora-rank", type=int, default=32)
     parser.add_argument("--lora-seed", type=int, default=42)
@@ -750,6 +754,38 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "Default: 1."
         ),
     )
+    # Judge endpoint: on the live path the reward uses an openai.OpenAI client
+    # pointed at a vLLM judge endpoint (eval_judge.judge_score_single). When
+    # --judge-base-url is given, main() constructs the client itself so the
+    # documented `python scripts/rl_train.py ...` command runs end-to-end
+    # without a hand-built wrapper. A caller may still pre-attach
+    # args.judge_client (decoupled/test path); that takes precedence.
+    parser.add_argument(
+        "--judge-base-url",
+        default=None,
+        help=(
+            "Base URL of the vLLM judge endpoint (e.g. http://localhost:8000/v1). "
+            "When set, main() builds args.judge_client from it on the live path. "
+            "If omitted, a caller must pre-attach args.judge_client before main()."
+        ),
+    )
+    parser.add_argument(
+        "--judge-api-key",
+        default="EMPTY",
+        help="API key for the vLLM judge endpoint (vLLM ignores it; default 'EMPTY').",
+    )
+    # Output-path overrides — let a smoke/test run isolate its outputs from the
+    # canonical (git-tracked) manifest/metrics that Phase 10 D-10-02 reads.
+    parser.add_argument(
+        "--manifest-path",
+        default=None,
+        help=f"Override checkpoint manifest path (default: {MANIFEST_PATH}).",
+    )
+    parser.add_argument(
+        "--metrics-path",
+        default=None,
+        help=f"Override rl_metrics.jsonl path (default: {METRICS_PATH}).",
+    )
     return parser.parse_args(argv)
 
 
@@ -837,36 +873,40 @@ def _dry_run(args: argparse.Namespace) -> None:
     )
 
 
-def main(argv: list[str] | None = None) -> None:
-    """Main RL training entry point."""
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-    )
-    args = _parse_args(argv)
+def _apply_path_overrides(args: argparse.Namespace) -> None:
+    """Reassign the module-global manifest/metrics paths from CLI overrides.
 
-    if args.dry_run:
-        _dry_run(args)
-        return
+    _save_checkpoint and _log_step read MANIFEST_PATH / METRICS_PATH at call time,
+    so reassigning the globals here (before the loop) is sufficient to redirect a
+    smoke/test run's outputs away from the canonical, git-tracked artifacts.
+    """
+    global MANIFEST_PATH, METRICS_PATH  # noqa: PLW0603
+    if getattr(args, "manifest_path", None):
+        MANIFEST_PATH = args.manifest_path
+    if getattr(args, "metrics_path", None):
+        METRICS_PATH = args.metrics_path
 
-    # --- Live training path ---
 
-    # Ensure judge_client is present before entering the live loop.
-    # rl_rollouts.collect_rollouts reads args.judge_client directly (hard attribute
-    # access); if the caller has not attached a constructed judge client, fail here
-    # with a clear message rather than an AttributeError deep inside the rollout loop.
-    if not hasattr(args, "judge_client"):
-        args.judge_client = None
-    if args.judge_client is None:
-        raise SystemExit(
-            "rl_train: live run requires a judge client attached to args before "
-            "calling main(). Construct an openai.OpenAI instance pointed at your "
-            "vLLM judge endpoint and set args.judge_client before calling main(), "
-            "or pass it via run_training_step(). "
-            "See rl_rollouts.collect_rollouts -> compute_group_rewards for the "
-            "judge_client interface."
-        )
+def _build_judge_client(base_url: str, api_key: str = "EMPTY") -> Any:
+    """Construct an openai.OpenAI judge client pointed at a vLLM endpoint.
 
+    This is the client compute_group_rewards / judge_score_single expect. Lazy
+    import so the module stays importable (and dry-run/unit tests run) without
+    the openai package installed.
+    """
+    import openai  # noqa: PLC0415
+
+    return openai.OpenAI(base_url=base_url, api_key=api_key)
+
+
+def run_training(args: argparse.Namespace) -> None:
+    """Run the live GSPO RL loop. Assumes args.judge_client is already attached.
+
+    Extracted from main() so the live orchestration (manifest init, sampling
+    client, per-step loop, final checkpoint) is a single code path shared by the
+    CLI entrypoint and any programmatic caller — a smoke run exercises exactly
+    what a full run does, with no drift.
+    """
     logger.info(
         "Starting GSPO RL training: model=%s, steps=%d, use_gspo=%s",
         args.model_id,
@@ -876,13 +916,14 @@ def main(argv: list[str] | None = None) -> None:
 
     tc = build_training_client(args)
 
-    # Initialise checkpoint manifest
+    # Initialise checkpoint manifest. Exclude judge_client — it is a live
+    # openai.OpenAI object and is not JSON-serializable.
     manifest: dict = {
         "checkpoints": [],
-        "run_args": vars(args),
+        "run_args": {k: v for k, v in vars(args).items() if k != "judge_client"},
         "started_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
-    os.makedirs("output/rl_checkpoints", exist_ok=True)
+    os.makedirs(os.path.dirname(MANIFEST_PATH) or ".", exist_ok=True)
     _write_manifest(MANIFEST_PATH, manifest)
 
     # CR-02: load the real prompt pools (load_rl_prompts returns {"messages":[...]}
@@ -924,6 +965,51 @@ def main(argv: list[str] | None = None) -> None:
     # Final checkpoint
     _save_checkpoint(tc, name=f"final-step-{args.total_steps}", manifest=manifest)
     logger.info("Training complete. %d steps. Manifest: %s", args.total_steps, MANIFEST_PATH)
+
+
+def main(argv: list[str] | None = None) -> None:
+    """Main RL training entry point."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+    args = _parse_args(argv)
+    _apply_path_overrides(args)
+
+    if args.dry_run:
+        _dry_run(args)
+        return
+
+    # --- Live training path ---
+
+    # Ensure a judge client is attached before entering the live loop.
+    # rl_rollouts.collect_rollouts reads args.judge_client directly (hard attribute
+    # access). Precedence: a caller-attached args.judge_client wins (decoupled/test
+    # path); otherwise build one from --judge-base-url; otherwise fail fast with a
+    # clear message rather than an AttributeError deep inside the rollout loop.
+    if getattr(args, "judge_client", None) is None:
+        if getattr(args, "judge_base_url", None):
+            args.judge_client = _build_judge_client(
+                args.judge_base_url, getattr(args, "judge_api_key", "EMPTY")
+            )
+            logger.info(
+                "Built judge client -> %s (judge_model=%s)",
+                args.judge_base_url,
+                args.judge_model,
+            )
+        else:
+            args.judge_client = None
+    if args.judge_client is None:
+        raise SystemExit(
+            "rl_train: live run requires a judge client. Either pass "
+            "--judge-base-url http://<host>:<port>/v1 (main() builds the client), "
+            "or pre-attach an openai.OpenAI instance to args.judge_client before "
+            "calling run_training(args). "
+            "See rl_rollouts.collect_rollouts -> compute_group_rewards for the "
+            "judge_client interface."
+        )
+
+    run_training(args)
 
 
 if __name__ == "__main__":
