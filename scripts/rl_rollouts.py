@@ -5,24 +5,26 @@ This module is the data-transform seam between sampling and gradient. It:
   - Collects gen rewards from the Phase 8 pipeline (reward_pipeline.py, unmodified)
   - Combines the deterministic fix-correctness anchor with the capped Claude-consistency
     signal from rl_judge_dispatch.py (09-03) for judge rewards (D-09-05 guard 1)
-  - Builds cookbook-shaped trajectory groups and delegates advantage computation
-    to tinker_cookbook.rl.data_processing (or inline fallback when tinker is absent)
+  - Builds cookbook Trajectory/TrajectoryGroup objects (carrying sampled tokens +
+    logprobs) and delegates Datum assembly + advantage computation to
+    tinker_cookbook.rl.data_processing (09-07: real GSPO IS ratio, not the
+    seq_ratio=1.0 fallback)
 
 Design constraints (D-09-04, D-09-05, GRPO-05):
   - JUDGE_RATIO = 0.6: n_judge = round(batch_size * 0.6), n_gen = batch_size - n_judge
   - judge_consistency_weight <= 0.5 HARD CAP (T-09-RWD-CAP): asserted at import
   - reward_pipeline.py consumed UNMODIFIED (D-09-05 / PATTERNS line 259)
   - Security-zero groups DROPPED (not zeroed) per T-09-SECDROP
-  - Advantage math DELEGATED to cookbook (RESEARCH "Don't Hand-Roll")
+  - Advantage + Datum assembly DELEGATED to cookbook (RESEARCH "Don't Hand-Roll")
 
 Exports:
   JUDGE_RATIO                        constant (0.6)
   judge_consistency_weight           constant (<= 0.5)
   sample_interleaved_prompts(gen_pool, judge_pool, batch_size) -> list
   combine_judge_reward(fix_correctness, consistency, weight) -> float
-  build_trajectory_groups(rollouts, rewards) -> list[dict]
-  compute_rollout_advantages(groups) -> (list[dict], dict)
-  collect_rollouts(sampling_client, gen_pool, judge_pool, args) -> list[dict]
+  build_trajectory_groups(rollouts, rewards) -> list[TrajectoryGroup]
+  compute_rollout_advantages(groups) -> (list[tinker.Datum], list[float], dict)
+  collect_rollouts(sampling_client, gen_pool, judge_pool, args) -> list[TrajectoryGroup]
 """
 from __future__ import annotations
 
@@ -209,51 +211,61 @@ def combine_judge_reward(
 def build_trajectory_groups(
     rollouts: list,
     rewards: list,
-) -> list[dict]:
-    """Build cookbook-shaped trajectory groups from rollouts and their RewardResults.
+) -> list:
+    """Build cookbook TrajectoryGroups from rollouts and their RewardResults.
 
-    Maps each rollout + its RewardResult.scalar into a per-sample dict carrying
-    the completion text and scalar reward. Security-gated members (breakdown.security_fail=True)
-    are DROPPED from the group (T-09-SECDROP): they must not contribute a
-    zero-advantage signal. The remaining group entries are passed to
-    compute_rollout_advantages for constant-group filtering and advantage assembly.
+    Each surviving rollout becomes one single-turn Trajectory (one Transition:
+    ob = the prompt ModelInput, ac = TokensWithLogprobs(sampled tokens + sampling
+    logprobs), reward = RewardResult.scalar, episode_done=True). Rollouts sharing
+    a group_id (the G completions of one prompt) are wrapped in one TrajectoryGroup
+    so the cookbook centers advantages PER PROMPT (CR-06).
 
-    Note: This function builds single-sample "groups" (one dict per rollout) because
-    the GRPO group structure (G completions per prompt) is assembled by the caller
-    (collect_rollouts). For synthetic tensor tests, this function accepts plain
-    rollout objects with a .completion attribute.
+    T-09-SECDROP: security-gated members (breakdown.security_fail=True) are filtered
+    BEFORE any Trajectory is constructed, so a security-failed completion produces
+    no Transition and therefore no gradient. A prompt group whose survivor set is
+    EMPTY after the filter is skipped entirely (no empty TrajectoryGroup — an empty
+    group would feed all_same([]) and add a zero-trajectory group to the batch).
+
+    Observability (monitor-only): each Transition.logs carries group_id, origin
+    (gen/judge), and fix_correctness/consistency when the breakdown provides them,
+    so the Panickssery spot-check and gen-vs-judge survival checks can read them back
+    off the trajectory groups (Transition no longer carries the reward breakdown).
 
     Args:
-        rollouts: List of rollout objects with at least a .completion attribute.
-        rewards: List of RewardResult objects from compute_group_rewards or
-                 combine_judge_reward. Each must have .scalar (float) and
+        rollouts: List of rollout objects (_Completion) with .completion, .group_id,
+                  .model_input, .tokens, .logprobs.
+        rewards: List of RewardResult objects, each with .scalar (float) and
                  .breakdown.security_fail (bool).
 
     Returns:
-        list[dict]: One dict per non-security-failed rollout, each with keys:
-            - "completion": str
-            - "reward": float  (the scalar reward)
-            - "breakdown": the RewardBreakdown object for logging
-            - "group_id": the prompt-group id threaded from collect_rollouts
-              (read from rollout.group_id when present). This is what makes the
-              per-prompt constant filter and per-prompt advantage centering in
-              compute_rollout_advantages operate on TRUE GRPO groups (G
-              completions per prompt) rather than singletons.
+        list[TrajectoryGroup]: one group per surviving prompt-group, ready for
+        compute_rollout_advantages.
     """
+    from collections import OrderedDict  # noqa: PLC0415
+
+    import tinker  # noqa: PLC0415
+    from tinker_cookbook.completers import TokensWithLogprobs  # noqa: PLC0415
+    from tinker_cookbook.rl.types import (  # noqa: PLC0415
+        Trajectory,
+        Transition,
+        TrajectoryGroup,
+    )
+
     if len(rollouts) != len(rewards):
         raise ValueError(
             f"build_trajectory_groups: len(rollouts)={len(rollouts)} != "
             f"len(rewards)={len(rewards)}"
         )
 
-    groups: list[dict] = []
+    # Partition surviving (rollout, reward) pairs by prompt group_id, preserving
+    # insertion order. T-09-SECDROP is applied HERE, before any Trajectory exists.
+    survivors_by_gid: "OrderedDict[Any, list]" = OrderedDict()
     n_sec_dropped = 0
-
     for rollout, reward in zip(rollouts, rewards):
-        # T-09-SECDROP: drop security-gated members entirely (do not zero advantage)
         breakdown = getattr(reward, "breakdown", None)
-        sec_fail = getattr(breakdown, "security_fail", False) if breakdown is not None else False
-
+        sec_fail = (
+            getattr(breakdown, "security_fail", False) if breakdown is not None else False
+        )
         if sec_fail:
             n_sec_dropped += 1
             logger.debug(
@@ -261,21 +273,8 @@ def build_trajectory_groups(
                 "(breakdown.security_fail=True)"
             )
             continue
-
-        completion = getattr(rollout, "completion", str(rollout))
-        entry = {
-            "completion": completion,
-            "reward": float(reward.scalar),
-            "breakdown": breakdown,
-        }
-        # Thread the true prompt-group id when the rollout carries one so that
-        # G completions of the same prompt land in one GRPO group downstream.
-        # Falls back to leaving group_id unset (compute_rollout_advantages then
-        # treats the entry as its own singleton group).
-        group_id = getattr(rollout, "group_id", None)
-        if group_id is not None:
-            entry["group_id"] = group_id
-        groups.append(entry)
+        gid = getattr(rollout, "group_id", None)
+        survivors_by_gid.setdefault(gid, []).append((rollout, reward))
 
     if n_sec_dropped > 0:
         logger.info(
@@ -284,173 +283,131 @@ def build_trajectory_groups(
             n_sec_dropped,
         )
 
+    groups: list = []
+    for gid, members in survivors_by_gid.items():
+        if not members:  # all-security-dropped group: skip (no empty TrajectoryGroup)
+            continue
+        trajectories: list = []
+        for rollout, reward in members:
+            tokens = list(getattr(rollout, "tokens", None) or [])
+            logprobs = list(getattr(rollout, "logprobs", None) or [])
+            # trajectory_to_data requires len(ac.logprobs) == len(ac.tokens); real
+            # Tinker returns matched lengths, but align defensively so a malformed
+            # sequence cannot crash the whole batch.
+            if len(logprobs) != len(tokens):
+                logprobs = (logprobs + [0.0] * len(tokens))[: len(tokens)]
+            ob = getattr(rollout, "model_input", None)
+            if ob is None:
+                ob = tinker.ModelInput.from_ints([])
+
+            breakdown = getattr(reward, "breakdown", None)
+            logs: dict = {"group_id": str(gid), "origin": str(gid).split("-")[0]}
+            fix_corr = getattr(breakdown, "fix_correctness", None)
+            consistency = getattr(
+                breakdown, "consistency", getattr(breakdown, "judge_consistency", None)
+            )
+            if fix_corr is not None:
+                logs["fix_correctness"] = float(fix_corr)
+            if consistency is not None:
+                logs["consistency"] = float(consistency)
+
+            transition = Transition(
+                ob=ob,
+                ac=TokensWithLogprobs(tokens=tokens, maybe_logprobs=logprobs),
+                reward=float(reward.scalar),
+                episode_done=True,
+                logs=logs,
+            )
+            trajectories.append(
+                Trajectory(
+                    transitions=[transition],
+                    final_ob=tinker.ModelInput.from_ints([]),
+                )
+            )
+        n_traj = len(trajectories)
+        groups.append(
+            TrajectoryGroup(
+                trajectories_G=trajectories,
+                final_rewards_G=[0.0] * n_traj,
+                metrics_G=[{} for _ in range(n_traj)],
+            )
+        )
+
     return groups
 
 
 # ---------------------------------------------------------------------------
-# Inline group-centred advantage fallback (used when tinker_cookbook absent)
-# ---------------------------------------------------------------------------
-
-def _group_by_id(groups: list[dict]) -> dict[Any, list[dict]]:
-    """Partition flat per-completion dicts into per-prompt groups.
-
-    Groups are keyed on the "group_id" stamped during the flatten step in
-    compute_rollout_advantages. Insertion order of both groups and members is
-    preserved so downstream output ordering is deterministic.
-    """
-    by_id: dict[Any, list[dict]] = {}
-    for g in groups:
-        by_id.setdefault(g.get("group_id"), []).append(g)
-    return by_id
-
-
-def _inline_remove_constant_reward_groups(groups: list[dict]) -> list[dict]:
-    """Drop PROMPT GROUPS whose own completions all share one reward (zero gradient).
-
-    Mirrors the semantics of tinker_cookbook.rl.data_processing.remove_constant_reward_groups.
-    The decision is made PER PROMPT GROUP (keyed on "group_id"): a group is constant
-    when std(rewards) < epsilon across *that group's* completions only. Completions
-    from other prompts must not rescue or doom a group (CR-06). A surviving group
-    contributes all its members; a constant group contributes none.
-    """
-    result: list[dict] = []
-    for members in _group_by_id(groups).values():
-        rewards = np.array([m["reward"] for m in members], dtype=float)
-        if rewards.std(ddof=0) < _EPSILON:
-            continue  # constant within this prompt group — drop all its members
-        result.extend(members)
-    return result
-
-
-def _inline_compute_advantages(groups: list[dict]) -> list[dict]:
-    """Group-centred advantages: A_i = r_i - mean(r) computed PER PROMPT GROUP.
-
-    Mirrors the semantics of tinker_cookbook.rl.data_processing.compute_advantages.
-    Centering uses each prompt group's own mean (keyed on "group_id"), so a
-    completion's advantage is relative to its sibling completions only, not the
-    whole batch (CR-06). Returns dicts with an added 'advantage' key, preserving
-    input order.
-    """
-    # Precompute each group's mean once.
-    group_means: dict[Any, float] = {}
-    for gid, members in _group_by_id(groups).items():
-        rewards = np.array([m["reward"] for m in members], dtype=float)
-        group_means[gid] = float(rewards.mean())
-
-    result = []
-    for g in groups:
-        entry = dict(g)
-        entry["advantage"] = float(g["reward"] - group_means[g.get("group_id")])
-        result.append(entry)
-    return result
-
-
-def _inline_assemble_training_data(groups_with_advantages: list[dict]) -> list[dict]:
-    """Flatten to a list of Datum-like dicts for forward_backward.
-
-    Mirrors the semantics of tinker_cookbook.rl.data_processing.assemble_training_data.
-    Each dict carries: "completion", "reward", "advantage", and group/traj metadata.
-    """
-    return [dict(g) for g in groups_with_advantages]
-
-
-# ---------------------------------------------------------------------------
-# Cookbook-delegating advantage assembly
+# Cookbook-delegating Datum + advantage assembly
 # ---------------------------------------------------------------------------
 
 
 def compute_rollout_advantages(
-    groups: list[dict],
-) -> tuple[list[dict], dict]:
-    """Compute advantages for rollout groups, delegating to the cookbook.
+    groups: list,
+) -> tuple[list, list[float], dict]:
+    """Assemble real tinker.Datum objects + per-datum advantages from TrajectoryGroups.
 
-    Accepts groups in the simple dict format produced by build_trajectory_groups
-    or as plain test dicts with {"prompt":..., "completions":[...], "rewards":[...]}.
-    Delegates to tinker_cookbook.rl.data_processing when available; falls back to
-    inline group-centering when tinker is absent (unit test / no-tinker path).
+    Delegates the whole pipeline to tinker_cookbook.rl.data_processing (09-07 — the
+    cookbook builds Datums whose loss_fn_inputs carry target_tokens, sampled
+    logprobs, advantages, and a mask, so forward_backward_custom runs a real GSPO
+    IS ratio instead of the seq_ratio=1.0 fallback):
 
-    Cookbook delegation path:
-      1. remove_constant_reward_groups(groups)   — drop zero-gradient groups
-      2. compute_advantages(groups)              — A_G = r_G - mean(r_G)
-      3. assemble_training_data(groups, adv)     — flat Datum list with metadata
+      1. remove_constant_reward_groups(groups)        — drop zero-gradient groups
+      2. compute_advantages(groups)                   — A_G = r_G - mean(r_G), per group
+      3. assemble_training_data(groups, advantages)   — (list[Datum], metadata)
 
-    Inline fallback (tinker absent):
-      Same semantics implemented locally: std < epsilon → drop; A_i = r_i - mean(r).
+    The flat per-datum advantages list is reconstructed from `metadata_D`
+    (group_idx, traj_idx) so it stays aligned with `data_D` even if a trajectory
+    ever expands to multiple datums (single-turn WP = one datum per trajectory).
+
+    IMPORTANT — empty vs singleton semantics: remove_constant_reward_groups returns
+    groups[0:1] (a SINGLETON with all-zero advantages) when ALL groups are constant,
+    NOT []. So a non-empty `data` with all-zero advantages is the "no usable gradient
+    this step" case — do NOT mistake the singleton for "no data". The genuine
+    no-data case is an empty input `groups` (e.g. every rollout security-dropped).
 
     Args:
-        groups: List of group dicts. Each must have either:
-            - "reward" key (from build_trajectory_groups), or
-            - "rewards" list (synthetic test format from test_rl_train.py)
+        groups: list[TrajectoryGroup] from build_trajectory_groups.
 
     Returns:
-        Tuple of:
-          - data: list[dict], each with "advantage" key (and completion/reward)
-          - meta: dict with group stats (n_groups, n_dropped, etc.)
+        (data, advantages, meta):
+          - data: list[tinker.Datum] for forward_backward_custom
+          - advantages: list[float], one per datum, aligned with `data`
+          - meta: {n_groups_input, n_dropped_constant, n_groups_output, n_datums}
     """
-    # Normalise test-format groups {"prompt":..., "completions":[...], "rewards":[...]}
-    # into the flat per-sample format expected by the advantage pipeline.
-    flat_groups: list[dict] = []
-    for src_idx, g in enumerate(groups):
-        if "rewards" in g and "completions" in g:
-            # Synthetic test format: expand into per-completion entries. All
-            # completions of one source group share a group_id so the per-prompt
-            # constant-filter and per-prompt advantage centering (CR-06) treat
-            # them as a single GRPO group.
-            group_id = g.get("prompt_id", g.get("prompt") or src_idx)
-            for completion, reward in zip(g["completions"], g["rewards"]):
-                flat_groups.append({
-                    "group_id": group_id,
-                    "prompt": g.get("prompt", ""),
-                    "completion": completion,
-                    "reward": float(reward),
-                    "breakdown": None,
-                })
-        elif "reward" in g:
-            entry = dict(g)
-            # Carry an explicit group id when present; otherwise each per-rollout
-            # dict from build_trajectory_groups is its own singleton group. (See
-            # the production limitation noted in the module docstring / review.)
-            entry.setdefault(
-                "group_id",
-                g.get("prompt_id", g.get("prompt") or src_idx),
-            )
-            flat_groups.append(entry)
-        else:
-            logger.warning(
-                "compute_rollout_advantages: skipping group with unexpected format: %s",
-                list(g.keys()),
-            )
+    from tinker_cookbook.rl.data_processing import (  # noqa: PLC0415
+        assemble_training_data,
+        compute_advantages,
+        remove_constant_reward_groups,
+    )
 
-    n_input = len(flat_groups)
-
-    # Inline group-centred advantage assembly is the real implementation here.
-    # We operate on plain dicts (the format produced by build_trajectory_groups
-    # and the synthetic test format); the cookbook's data_processing helpers
-    # require its own trajectory_group types which we do not construct in this
-    # module. The inline functions below mirror the cookbook semantics exactly:
-    #   _inline_remove_constant_reward_groups  -> remove_constant_reward_groups
-    #   _inline_compute_advantages             -> compute_advantages
-    #   _inline_assemble_training_data         -> assemble_training_data
-    filtered = _inline_remove_constant_reward_groups(flat_groups)
-    n_dropped = n_input - len(filtered)
-
-    if not filtered:
-        meta = {
-            "n_groups_input": n_input,
-            "n_dropped_constant": n_dropped,
+    n_input = len(groups)
+    if n_input == 0:
+        return [], [], {
+            "n_groups_input": 0,
+            "n_dropped_constant": 0,
             "n_groups_output": 0,
+            "n_datums": 0,
         }
-        return [], meta
 
-    data_with_adv = _inline_compute_advantages(filtered)
-    assembled = _inline_assemble_training_data(data_with_adv)
+    filtered = remove_constant_reward_groups(groups)
+    n_output = len(filtered)
+    advantages_P = compute_advantages(filtered)
+    data_D, metadata_D = assemble_training_data(filtered, advantages_P)
+
+    # Reconstruct a flat per-datum advantages list aligned with data_D via the
+    # (group_idx, traj_idx) metadata the cookbook returns. This is the GRPO-07
+    # test's consumer; the GSPO loss itself reads advantages from each Datum.
+    advantages: list[float] = [
+        float(advantages_P[m["group_idx"]][m["traj_idx"]]) for m in metadata_D
+    ]
 
     meta = {
         "n_groups_input": n_input,
-        "n_dropped_constant": n_dropped,
-        "n_groups_output": len(assembled),
+        "n_dropped_constant": n_input - n_output,
+        "n_groups_output": n_output,
+        "n_datums": len(data_D),
     }
-    return assembled, meta
+    return data_D, advantages, meta
 
 
 # ---------------------------------------------------------------------------
@@ -600,13 +557,29 @@ class _Completion:
     _extract_verifiable_signals; `.group_id` is the prompt-group id threaded
     through build_trajectory_groups so G samples of one prompt form one GRPO
     group (true per-prompt constant filter + advantage centering, CR-06).
+
+    `.tokens`, `.logprobs`, and `.model_input` carry the SAMPLED token ids, their
+    sampling-policy logprobs, and the prompt ModelInput (09-07). These are what
+    let build_trajectory_groups assemble a real cookbook Transition whose action
+    carries logprobs — so trajectory_to_data bakes a `logprobs` tensor into the
+    Datum and GSPO computes a real IS ratio instead of the seq_ratio=1.0 fallback.
     """
 
-    __slots__ = ("completion", "group_id")
+    __slots__ = ("completion", "group_id", "model_input", "tokens", "logprobs")
 
-    def __init__(self, completion: str, group_id: Any):
+    def __init__(
+        self,
+        completion: str,
+        group_id: Any,
+        model_input: Any = None,
+        tokens: list | None = None,
+        logprobs: list | None = None,
+    ):
         self.completion = completion
         self.group_id = group_id
+        self.model_input = model_input
+        self.tokens = tokens if tokens is not None else []
+        self.logprobs = logprobs if logprobs is not None else []
 
 
 def build_rl_renderer() -> tuple[Any, Any]:
@@ -669,23 +642,14 @@ def _build_sampling_params(args: Any, renderer: Any) -> Any:
         )
 
 
-def _decode_samples(resp: Any, tok: Any) -> list[str]:
-    """Decode every sampled sequence from one .sample() response to text.
-
-    Mirrors tinker_reasoning_sft._all_sample_texts: resolve the future, read
-    .sequences/.samples, decode tokens with the tokenizer.
-    """
-    r = resp.result() if hasattr(resp, "result") else resp
-    seqs = getattr(r, "sequences", None) or getattr(r, "samples", None) or []
-    out = []
-    for seq in seqs:
-        toks = (
-            getattr(seq, "tokens", None)
-            or getattr(seq, "token_ids", None)
-            or getattr(seq, "output_tokens", None)
-        )
-        out.append(tok.decode(toks))
-    return out
+def _seq_tokens(seq: Any) -> list:
+    """Read the sampled token ids off one SampledSequence (multiple attr names)."""
+    toks = (
+        getattr(seq, "tokens", None)
+        or getattr(seq, "token_ids", None)
+        or getattr(seq, "output_tokens", None)
+    )
+    return list(toks) if toks else []
 
 
 def _generate_completions(
@@ -700,8 +664,14 @@ def _generate_completions(
     Uses SamplingClient.sample(prompt: ModelInput, num_samples, sampling_params)
     — there is NO .generate() on the real client (CR-01 root cause #2). Each
     prompt is rendered to a generation ModelInput via the renderer, sampled
-    num_samples=group_size times, and each decoded completion is tagged with a
-    per-prompt group_id so downstream advantage centering forms true GRPO groups.
+    num_samples=group_size times, and each completion is tagged with a per-prompt
+    group_id so downstream advantage centering forms true GRPO groups.
+
+    09-07: each _Completion now carries the SAMPLED tokens, their sampling
+    logprobs (read off seq.logprobs — returned BY DEFAULT by sample()), and the
+    prompt ModelInput, so build_trajectory_groups can assemble a real cookbook
+    Transition (the logprobs are what make the GSPO IS ratio real, not the 1.0
+    fallback). The logprobs are NOT discarded.
 
     renderer/tok are injectable (built via build_rl_renderer when omitted) so the
     integration test can drive the seam without a real tokenizer download.
@@ -714,7 +684,7 @@ def _generate_completions(
 
     Returns:
         list[_Completion]: group_size completions per prompt, each carrying
-        .completion (decoded text) and .group_id (prompt index).
+        .completion (decoded text), .group_id, .model_input, .tokens, .logprobs.
     """
     if renderer is None or tok is None:
         renderer, tok = build_rl_renderer()
@@ -732,8 +702,21 @@ def _generate_completions(
             sampling_params=sp,
         )
         group_id = item.get("_group_id", prompt_idx)
-        for text in _decode_samples(resp, tok):
-            completions.append(_Completion(completion=text, group_id=group_id))
+        r = resp.result() if hasattr(resp, "result") else resp
+        seqs = getattr(r, "sequences", None) or getattr(r, "samples", None) or []
+        for seq in seqs:
+            tokens = _seq_tokens(seq)
+            logprobs = getattr(seq, "logprobs", None)
+            logprobs = list(logprobs) if logprobs is not None else [0.0] * len(tokens)
+            completions.append(
+                _Completion(
+                    completion=tok.decode(tokens),
+                    group_id=group_id,
+                    model_input=prompt,
+                    tokens=tokens,
+                    logprobs=logprobs,
+                )
+            )
     return completions
 
 
