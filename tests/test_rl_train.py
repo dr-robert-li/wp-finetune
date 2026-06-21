@@ -228,3 +228,103 @@ class TestRLTrainUnit:
             )
         except RuntimeError:
             pass  # RuntimeError halt signal is also acceptable
+
+
+# ---------------------------------------------------------------------------
+# Direct GSPO loss-fn execution (09-07): the one path mocks bypass — exercises
+# the loss BODY on a real Datum and pins the action-token masking of the IS ratio.
+# ---------------------------------------------------------------------------
+
+
+def test_gspo_loss_fn_masks_training_logprobs_to_action_tokens():
+    """gspo_loss_fn must mask train_lps to action tokens before the IS ratio.
+
+    train_lps (the SDK's forward logprobs) is FULL-length (obs + action). The loss
+    must sum only action-token logprobs (mask > 0), matching sampling_lps (whose obs
+    positions are 0). A large distinctive value planted on the obs position must NOT
+    leak into the ratio — if it does, exp(train_sum - sampling_sum) underflows to the
+    RSPO floor (1.0) and the loss collapses to -(1.0 * adv), failing this assertion.
+    """
+    import math
+
+    rl_train = pytest.importorskip("scripts.rl_train")
+    pytest.importorskip("tinker")
+    import torch
+    from tinker_cookbook.rl.data_processing import trajectory_to_data
+
+    from tests._rl_fixtures import make_trajectory_group
+
+    # One trajectory: obs 2 tokens, action 2 tokens (group of 1 -> advantage 0 would
+    # be uninformative), so build a 2-member group and take the high-reward datum.
+    tg = make_trajectory_group([1.0, 0.0], group_id="gen-0")
+    # Datum for the first trajectory (reward 1.0 in a [1.0,0.0] group -> advantage +0.5).
+    from tinker_cookbook.rl.data_processing import compute_advantages
+
+    adv_P = compute_advantages([tg])
+    datum = trajectory_to_data(tg.trajectories_G[0], float(adv_P[0][0]))[0]
+
+    mask = datum.loss_fn_inputs["mask"].to_torch()
+    sampling = datum.loss_fn_inputs["logprobs"].to_torch()
+    adv_weights = datum.loss_fn_inputs["advantages"].to_torch()
+    action_mask = mask > 0
+    expected_adv = float(adv_weights[action_mask][0])  # +0.5
+
+    # Synthesize FULL-length training logprobs: a huge distinctive value on the FIRST
+    # (obs) position that must be masked out. On action positions set train ABOVE
+    # sampling (+0.3 each) so the IS ratio exp(train_sum - sampling_sum) is > 1 (NOT
+    # floored to 1.0) — only then do the masked and unmasked sums give different
+    # losses, making this test actually discriminate the obs-leak bug.
+    train_lps = torch.zeros_like(sampling)
+    train_lps[0] = -99.0  # obs position — MUST be excluded by the mask
+    train_action_vals = []
+    for j in range(len(train_lps)):
+        if action_mask[j]:
+            train_lps[j] = float(sampling[j]) + 0.3
+            train_action_vals.append(float(train_lps[j]))
+
+    loss_fn = rl_train._make_gspo_loss_fn()
+    total_loss, metrics = loss_fn([datum], [train_lps])
+
+    # Expected: ratio over ACTION tokens only.
+    train_sum = sum(train_action_vals)
+    sampling_sum = float(sampling[action_mask].sum())
+    expected_ratio = max(1.0, math.exp(train_sum - sampling_sum))
+    expected_loss = -(expected_ratio * expected_adv)
+
+    assert torch.isfinite(total_loss), "loss must be finite"
+    assert float(total_loss) == pytest.approx(expected_loss, abs=1e-5), (
+        f"loss {float(total_loss)} != masked-IS expected {expected_loss} — "
+        f"obs-token logprob (-99.0) likely leaked into train_sum"
+    )
+    assert metrics["gspo/n_sequences"] == 1.0
+
+
+def test_gspo_loss_fn_empty_mask_datum_is_safe():
+    """A Datum whose mask has no action position contributes 0, not a crash."""
+    rl_train = pytest.importorskip("scripts.rl_train")
+    pytest.importorskip("tinker")
+    import torch
+    from tinker_cookbook.completers import TokensWithLogprobs
+    from tinker_cookbook.rl.data_processing import trajectory_to_data
+    from tinker_cookbook.rl.types import Trajectory, Transition
+    import tinker
+
+    # Immediate-EOS completion: action tokens = [] -> mask has no 1.0 position.
+    traj = Trajectory(
+        transitions=[
+            Transition(
+                ob=tinker.ModelInput.from_ints([10, 11, 12]),
+                ac=TokensWithLogprobs(tokens=[], maybe_logprobs=[]),
+                reward=0.5,
+                episode_done=True,
+            )
+        ],
+        final_ob=tinker.ModelInput.from_ints([]),
+    )
+    datum = trajectory_to_data(traj, 0.4)[0]
+    train_lps = torch.zeros_like(datum.loss_fn_inputs["mask"].to_torch())
+
+    loss_fn = rl_train._make_gspo_loss_fn()
+    total_loss, _metrics = loss_fn([datum], [train_lps])
+    assert torch.isfinite(total_loss)
+    assert float(total_loss) == pytest.approx(0.0, abs=1e-6)

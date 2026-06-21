@@ -43,8 +43,8 @@ plain dicts and discarded sampled logprobs, so even past the crash GSPO fell int
 ## Verification
 - `.venv-tinker/bin/python -m pytest tests/test_rl_datum_assembly.py tests/test_rl_rollouts.py
   tests/test_rl_train.py tests/test_rl_train_integration.py tests/test_reward_pipeline.py -q`
-  → **84 passed**. (Scoped to the rl-touching files; `.venv-tinker` is a minimal env — `pytest`
-  was installed into it for this run.)
+  → **86 passed** (includes the 2 direct `gspo_loss_fn` tests below). (Scoped to the rl-touching
+  files; `.venv-tinker` is a minimal env — `pytest` was installed into it for this run.)
 - Both modules import with AND without tinker (lazy cookbook imports).
 
 ## Environment notes
@@ -55,6 +55,26 @@ plain dicts and discarded sampled logprobs, so even past the crash GSPO fell int
 ## Deviations
 - `compute_rollout_advantages` `meta["n_dropped_constant"]` now counts GROUPS (cookbook semantics),
   not completions; the CR-06 filter test was updated accordingly (2 in → 1 constant group dropped).
+- **IS-ratio masking correction (plan Task 3 spec was wrong).** The plan/RESEARCH §3 specified
+  `train_sum = train_lps.sum()`. But `train_lps` (the SDK's `forward_backward_custom` logprobs) is
+  FULL-length — one logprob per target token, obs + action — which is exactly why `loss_fn_inputs`
+  carries a `mask`. Summing it unmasked leaks obs-token logprobs into `exp(train_sum - sampling_sum)`
+  (sampling_lps zeroes obs positions), corrupting the IS ratio. Fixed to mask BOTH sums to action
+  tokens (`mask > 0`), matching the canonical convention in
+  `tinker_cookbook/rl/metrics.compute_kl_sample_train` (lines 46–49). Neither the offline assembly
+  tests nor Task 5's stated acceptance would have caught this (a masking mismatch still yields a
+  non-zero `sampling_sum` with the fallback not taken).
+- **Direct loss-fn coverage added.** `gspo_loss_fn`'s body is bypassed by every mock-based test
+  (they stop at assembly or mock `forward_backward_custom`). Added two direct tests in
+  `test_rl_train.py`: one plants a distinctive `-99.0` logprob on an obs position and asserts it does
+  NOT leak into the masked IS ratio (verified discriminating: correct ratio 1.82 vs buggy 1.00); one
+  asserts an empty-mask (immediate-EOS) datum contributes 0 without crashing.
+
+## Task 5 acceptance — ADD a masking check
+Beyond the plan's a–d: while the temporary `sampling_sum`/`train_sum` logger is in place, confirm the
+IS ratio is computed over ACTION tokens only (the per-step `gspo/n_sequences` is sane and `seq_ratio`
+is not dominated by obs-token logprobs). The offline `test_gspo_loss_fn_masks_*` already pins this,
+but spot-check it on live tensors.
 
 ## Task 5 — REMAINING, human/credential/GPU-gated (NOT run here)
 The 1-step live RL re-smoke (DATUM-03) requires Tinker cloud credentials + a served vLLM judge —
