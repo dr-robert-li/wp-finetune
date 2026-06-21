@@ -31,6 +31,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import random
+import subprocess
 from typing import Any, Optional
 
 import numpy as np
@@ -201,6 +202,45 @@ def combine_judge_reward(
             f"fix_correctness must remain the anchor signal."
         )
     return (1.0 - weight) * fix_correctness + weight * consistency
+
+
+# ---------------------------------------------------------------------------
+# Non-code reward guard (unified, both reward pathways)
+# ---------------------------------------------------------------------------
+
+
+def _is_parseable_php(code: str) -> bool:
+    """True iff `code` is syntactically valid PHP.
+
+    Why this exists: score_code() / _extract_verifiable_signals() return a
+    VACUOUS perfect score on non-code (no PHP -> no detectable violations ->
+    overall 100), and the served judge CONTINUES non-code instead of grading it.
+    So an instruct-policy completion that is prose, a refusal, or a "could you
+    clarify" non-answer earns either a vacuous fix_correctness=1.0 (judge path)
+    or group-mean imputation (gen path) — a reward-hacking surface that pays for
+    non-answers. This gate denies it: a completion that is not parseable PHP is a
+    FAILED generation, scored low, not perfect.
+
+    Note bare `php -l` treats tag-less input as literal HTML and vacuously passes,
+    so we prepend `<?php` when no open tag is present (mirrors eval_gen, which
+    grades extracted code the same way). Fails OPEN (returns True) if the `php`
+    binary is unavailable — better to under-penalize than to zero every reward in
+    an environment without PHP.
+    """
+    s = (code or "").strip()
+    if not s:
+        return False
+    if "<?" not in s:
+        s = "<?php\n" + s
+    try:
+        proc = subprocess.run(
+            ["php", "-l"], input=s, capture_output=True, text=True, timeout=10
+        )
+        return proc.returncode == 0
+    except FileNotFoundError:
+        return True  # php not installed -> do not penalize (fail-open)
+    except Exception:  # noqa: BLE001 — a lint hiccup must not zero a real reward
+        return True
 
 
 # ---------------------------------------------------------------------------
@@ -487,11 +527,21 @@ def collect_rollouts(
         # PHP, so extracting here keeps the RL reward consistent with the eval the
         # model is measured against (gate/reward consistency). compute_group_rewards
         # stays UNMODIFIED (D-09-05) — extraction happens at the RL boundary only.
+        gen_php = [extract_php_code(c.completion) for c in gen_completions]
         gen_reward_results = compute_group_rewards(
-            php_codes=[extract_php_code(c.completion) for c in gen_completions],
+            php_codes=gen_php,
             judge_client=args.judge_client,
             judge_model=args.judge_model,
         )
+        # Deny the vacuous reward on non-code. score_code passes non-PHP at 100
+        # and the judge can't grade it (-> group-mean impute), so a prose/refusal
+        # completion would otherwise earn a real composite. A completion that is
+        # not parseable PHP is a FAILED generation: zero its scalar, mirroring the
+        # existing security-gate terminal zero (RewardResult.scalar). breakdown is
+        # left intact for provenance.
+        for i, php in enumerate(gen_php):
+            if not _is_parseable_php(php):
+                gen_reward_results[i].scalar = 0.0
         all_rollouts.extend(gen_completions)
         all_rewards.extend(gen_reward_results)
 
@@ -499,12 +549,22 @@ def collect_rollouts(
     if judge_rollouts:
         judge_completions = _generate_completions(sampling_client, judge_rollouts, args)
 
-        # Deterministic fix-correctness from verifiable signals on corrected code
+        # Deterministic fix-correctness from verifiable signals on corrected code.
+        # Extract the corrected PHP first (the judge task emits critique prose +
+        # a ```php fix), then GATE on parseability: a non-code judge answer (e.g.
+        # "could you clarify...") otherwise scores a vacuous fix_correctness=1.0
+        # (score_code finds no violations in non-code), which the 0.7 anchor
+        # weight then turns into a 0.70 reward for a non-answer. No parseable PHP
+        # -> 0.0, so the fix_correctness=1.0/consistency=0.0 divergence that
+        # Panickssery flags can no longer pay out.
         fix_correctness_scores = []
         for completion_obj in judge_completions:
-            rubric = _extract_verifiable_signals(completion_obj.completion)
-            # Normalize to [0, 1] from [0, 100]
-            fix_score = float(rubric.overall) / 100.0
+            corrected = extract_php_code(completion_obj.completion)
+            if _is_parseable_php(corrected):
+                rubric = _extract_verifiable_signals(corrected)
+                fix_score = float(rubric.overall) / 100.0  # [0,100] -> [0,1]
+            else:
+                fix_score = 0.0
             fix_correctness_scores.append(fix_score)
 
         # Capped Claude-consistency via 09-03 dispatcher. Each judge completion
