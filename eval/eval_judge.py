@@ -211,7 +211,7 @@ def judge_score_single(
     php_code: str,
     client: "openai.OpenAI",
     model: str,
-    max_tokens: int = 512,
+    max_tokens: int = 1024,
 ) -> "Optional[float]":
     """Invoke wp_judge on a single PHP code string.
 
@@ -222,11 +222,17 @@ def judge_score_single(
     merged Qwen3 model emits unclosed <think> blocks that parse_judge_response
     cannot rescue — causing 19-25% parse failures (see RC-A fix, Phase 04.4).
 
+    The v1.2 reasoning judge emits a [REASONING] prose block followed by a
+    <judge_output> JSON block (~750+ tokens total). The default MUST cover that —
+    512 truncates before the JSON, yielding a silent None (then group-mean
+    imputation in the RL reward path). 1024 matches _judge_create and the eval
+    path (run_eval) and is the validated budget; raise it for very long inputs.
+
     Args:
         php_code:   The PHP source string to evaluate.
         client:     An openai.OpenAI instance pointed at the vLLM judge endpoint.
         model:      The served model name (e.g. "openai/qwen3-wp").
-        max_tokens: Max tokens for the judge response (default 512).
+        max_tokens: Max tokens for the judge response (default 1024).
 
     Returns:
         float: raw overall_score from the parsed judge response.

@@ -16,13 +16,14 @@ Judge-consistency scoring runs INSIDE `rl_train.py` → `rl_judge_dispatch.py` �
 
 ## Step 0a: Confirm base model
 
-Check which model to train. Default: `Qwen/Qwen3-30B`.
+Check which model to train. Default: `Qwen/Qwen3-30B-A3B` (Tinker-supported MoE id).
 
 ```bash
 rtk cat output/rl_checkpoints/checkpoint_manifest.json 2>/dev/null || echo "No manifest yet — fresh run."
 ```
 
-Set `MODEL_ID` (default `Qwen/Qwen3-30B`) and `MODEL_SHORT` (e.g. `qwen3-30b`).
+Set `MODEL_ID` (default `Qwen/Qwen3-30B-A3B` — the Tinker-supported MoE id; plain
+`Qwen/Qwen3-30B` is rejected with a 400 "not supported") and `MODEL_SHORT` (e.g. `qwen3-30b`).
 
 ---
 
@@ -82,6 +83,7 @@ Confirm with user before proceeding.
 Build the base command. Start with GSPO defaults — add `--grpo-fallback` only if user explicitly requests GRPO fallback mode:
 
 ```bash
+JUDGE_BASE_URL="${JUDGE_BASE_URL:-http://localhost:8000/v1}"
 BASE_CMD="python scripts/rl_train.py \
   --model-id $MODEL_ID \
   --lora-rank 32 \
@@ -93,11 +95,21 @@ BASE_CMD="python scripts/rl_train.py \
   --kl-soft 0.1 \
   --kl-hard 0.3 \
   --efrac-soft 0.7 \
-  --efrac-hard 0.5"
+  --efrac-hard 0.5 \
+  --judge-base-url $JUDGE_BASE_URL \
+  --judge-model wp_judge"
 # Add --grpo-fallback here ONLY if user explicitly requests it.
 ```
 
 Flag reference:
+- `--judge-base-url URL`: vLLM judge endpoint (e.g. `http://localhost:8000/v1`). The live
+  reward path REQUIRES a judge client; when this flag is set, `rl_train.main()` builds the
+  `openai.OpenAI` client itself, so the command runs end-to-end with no hand-built wrapper.
+  Omitting it (and not pre-attaching `args.judge_client`) makes the live run exit immediately
+  with a clear message. The judge model is served as `wp_judge` (Step 2 brings it up).
+- `--judge-model NAME`: served model name passed to the judge endpoint (default `wp_judge`).
+- `--manifest-path` / `--metrics-path`: override the canonical output paths — use these for a
+  smoke run so it does not clobber `output/rl_checkpoints/checkpoint_manifest.json`.
 - `--grpo-fallback` / `--no-gspo`: sets use_gspo=False → token-level IS via `forward_backward`. Use only when GSPO causes training instability and user authorizes fallback.
 - `--protected-expert-mask PATH`: override default mask path if profiling artifacts moved.
 - `--kl-soft`, `--kl-hard`: WARNING / HALT thresholds on kl_sample_train_v1.
@@ -107,19 +119,35 @@ Flag reference:
 
 ## Step 2: Validate preflight
 
-Check Tinker credentials and protected-expert mask:
+Check Tinker credentials, the protected-expert mask, and bring up the judge endpoint:
 
 ```bash
-# Confirm Tinker credentials file exists (ServiceClient reads from ~/.tinker or env)
-rtk ls ~/.tinker 2>/dev/null || echo "Check TINKER env vars"
+# Tinker credentials: ServiceClient reads TINKER_API_KEY from env (or ~/.tinker).
+# .env is NOT auto-loaded — export it into the process env first.
+export TINKER_API_KEY="$(grep '^TINKER_API_KEY=' .env | cut -d= -f2-)"
+[ -n "$TINKER_API_KEY" ] && echo "Tinker key loaded" || echo "Check TINKER_API_KEY"
+
+# Live runs use .venv-tinker (has tinker + openai + scipy). Confirm tinker imports:
+.venv-tinker/bin/python -c "import tinker, openai, scipy; print('tinker venv OK')"
 
 # Confirm mask exists
 test -f output/profiling/reasoning-merged-v4/protected_expert_mask.npy \
   && echo "Mask OK" \
   || echo "WARNING: mask missing — Jaccard monitor disabled"
+
+# Bring up the judge endpoint (v1.2 winner served as wp_judge) — REQUIRED for the
+# reward path. Idempotent; skip if already serving on $JUDGE_BASE_URL.
+bash scripts/serve_v4_judge_vllm.sh
+until curl -sf http://localhost:8000/v1/models >/dev/null 2>&1 \
+  || ! docker ps --format '{{.Names}}' | grep -q '^wp-v4-judge-vllm$'; do sleep 5; done
+curl -s http://localhost:8000/v1/models && echo "Judge endpoint ready"
 ```
 
-If credentials are absent, surface auth gate (do not proceed).
+If credentials are absent, surface auth gate (do not proceed). If the judge endpoint
+never becomes ready, inspect `docker logs wp-v4-judge-vllm` before proceeding.
+
+**Run the training with the tinker venv** (Step 5 `python` = `.venv-tinker/bin/python`):
+the base interpreter lacks the `tinker` package.
 
 ---
 
@@ -156,8 +184,12 @@ rtk python scripts/rl_train.py $BASE_CMD --dry-run
 
 ## Step 5: Run RL training
 
+Run with the tinker venv (the base interpreter has no `tinker`); `BASE_CMD` begins with
+`python scripts/rl_train.py`, so substitute the venv interpreter:
+
 ```bash
-rtk $BASE_CMD 2>&1 | tee logs/rl_train_${EXPERIMENT}.log
+TINKER_PY=.venv-tinker/bin/python
+${BASE_CMD/python/$TINKER_PY} 2>&1 | tee logs/rl_train_${EXPERIMENT}.log
 TRAIN_EXIT=$?
 ```
 
