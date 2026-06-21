@@ -191,20 +191,29 @@ def _make_gspo_loss_fn():
         for datum, train_lps in zip(data, logprobs_list):
             try:
                 lfi = datum.loss_fn_inputs
-                mask = lfi["mask"].to_torch()
+                # mask > 0 selects ACTION token positions (obs positions are 0).
+                # This is the cookbook convention (rl/metrics.compute_kl_sample_train
+                # masks both sampling and training logprobs by mask>0 before use).
+                action_mask = lfi["mask"].to_torch() > 0
                 adv_weights = lfi["advantages"].to_torch()
-                # Select the action-token advantage via mask==1, NOT via
+                # Select the action-token advantage via the mask, NOT via
                 # adv_weights != 0: a legitimately-centered 0.0 advantage on a kept
                 # non-constant group would make the nonzero filter empty -> .mean()
                 # NaN. An EMPTY mask (immediate-EOS completion, no action tokens)
                 # makes the selection empty too — the numel() guard zeroes that
                 # datum's contribution instead of IndexError-ing the whole batch.
-                sel = adv_weights[mask == 1]
+                sel = adv_weights[action_mask]
                 adv = sel[0] if sel.numel() else torch.tensor(0.0)
 
+                # Mask BOTH logprob sums to action tokens BEFORE the IS ratio.
+                # train_lps is the SDK's FULL-length per-target-token logprob (obs +
+                # action); summing it unmasked would leak obs-token logprobs into the
+                # ratio (they are absent from sampling_lps, whose obs positions are 0)
+                # and corrupt exp(train_sum - sampling_sum). sampling_lps obs are
+                # already 0, but masking it too keeps the two sums symmetric.
                 sampling_lps = lfi["logprobs"].to_torch()
-                train_sum = train_lps.sum()
-                sampling_sum = sampling_lps.sum()
+                train_sum = train_lps[action_mask].sum()
+                sampling_sum = sampling_lps[action_mask].sum()
                 seq_ratio = rspo_floored_ratio(train_sum, sampling_sum)
             except (AttributeError, KeyError):
                 # Dry-run / mock path: no real Datum structure. NOT reachable on
