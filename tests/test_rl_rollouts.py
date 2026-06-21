@@ -372,3 +372,31 @@ class TestComputeRolloutAdvantages:
         assert count >= 1, (
             f"scripts/rl_rollouts.py must reference compute_group_rewards, found {count}"
         )
+
+
+class TestNonCodeRewardGuard:
+    """_is_parseable_php gates the vacuous 'no violations -> perfect' reward that
+    score_code/the judge assign to non-code completions (judge fix_correctness=1.0
+    and gen group-mean impute). See Panickssery divergence diagnosis 2026-06-22."""
+
+    def test_prose_and_empty_are_not_parseable(self):
+        from scripts.rl_rollouts import _is_parseable_php
+        assert _is_parseable_php("Could you please clarify which class?") is False
+        assert _is_parseable_php("") is False
+        assert _is_parseable_php("   \n  ") is False
+
+    def test_real_php_is_parseable_with_or_without_tag(self):
+        from scripts.rl_rollouts import _is_parseable_php
+        # no <?php tag -> helper prepends it (bare php -l would vacuously pass prose)
+        assert _is_parseable_php("function f(){ return esc_html($x); }") is True
+        assert _is_parseable_php("<?php function f(){ global $wpdb; $wpdb->query($q); }") is True
+
+    def test_prose_plus_fence_passes_only_after_extraction(self):
+        """A legitimate critique (prose + ```php fix) must NOT be falsely zeroed:
+        raw is non-parseable, but the extracted code is valid — the reward path
+        extracts THEN gates, so the real fix is scored, not penalized."""
+        from scripts.rl_rollouts import _is_parseable_php
+        from eval.output_parsers import extract_php_code
+        completion = "Here is the corrected code:\n\n```php\nfunction g(){ return 1; }\n```\nDone."
+        assert _is_parseable_php(completion) is False          # raw prose+fence
+        assert _is_parseable_php(extract_php_code(completion)) is True  # extracted code
