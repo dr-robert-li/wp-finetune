@@ -190,168 +190,152 @@ class TestCombineJudgeReward:
 class TestBuildTrajectoryGroups:
     """build_trajectory_groups produces cookbook-shaped trajectory groups."""
 
-    def _make_rollout(self, completion="<?php echo 1; ?>", tag="gen"):
-        m = MagicMock()
-        m.completion = completion
-        m.tag = tag
-        return m
-
-    def _make_reward(self, scalar=0.5, sec_fail=False):
-        from unittest.mock import MagicMock
-        bd = MagicMock()
-        bd.security_fail = sec_fail
-        r = MagicMock()
-        r.scalar = scalar
-        r.breakdown = bd
-        return r
-
     def test_build_trajectory_groups_structure(self):
-        """build_trajectory_groups returns list of group dicts with expected keys."""
+        """build_trajectory_groups returns a list of cookbook TrajectoryGroup objects."""
         rr = pytest.importorskip("scripts.rl_rollouts")
-        rollouts = [self._make_rollout(f"<?php echo {i}; ?>") for i in range(4)]
-        rewards = [self._make_reward(scalar=float(i) * 0.2) for i in range(4)]
+        pytest.importorskip("tinker")
+        from tinker_cookbook.rl.types import TrajectoryGroup
+
+        from tests._rl_fixtures import make_reward, make_rollout
+
+        rollouts = [make_rollout(f"<?php echo {i}; ?>", group_id=f"gen-{i}") for i in range(4)]
+        rewards = [make_reward(scalar=float(i) * 0.2) for i in range(4)]
         groups = rr.build_trajectory_groups(rollouts, rewards)
         assert isinstance(groups, list), "build_trajectory_groups must return a list"
-        # Each group entry should have at minimum "rewards" or "scalar" data
+        assert groups, "expected at least one group"
         for g in groups:
-            assert isinstance(g, dict), "each trajectory group must be a dict"
+            assert isinstance(g, TrajectoryGroup), "each group must be a cookbook TrajectoryGroup"
 
     def test_security_zero_group_dropped(self):
-        """T-09-SECDROP: group with security_fail=True is excluded from trajectories."""
+        """T-09-SECDROP: a security_fail=True rollout produces no trajectory."""
         rr = pytest.importorskip("scripts.rl_rollouts")
-        rollouts = [self._make_rollout(f"<?php echo {i}; ?>") for i in range(4)]
-        # Second rollout has security failure
+        pytest.importorskip("tinker")
+        from tests._rl_fixtures import make_reward, make_rollout
+
+        # Distinct group_ids -> each surviving rollout is its own single-traj group.
+        rollouts = [make_rollout(f"<?php echo {i}; ?>", group_id=f"gen-{i}") for i in range(4)]
         rewards = [
-            self._make_reward(scalar=0.7, sec_fail=False),
-            self._make_reward(scalar=0.0, sec_fail=True),
-            self._make_reward(scalar=0.6, sec_fail=False),
-            self._make_reward(scalar=0.4, sec_fail=False),
+            make_reward(scalar=0.7, sec_fail=False),
+            make_reward(scalar=0.0, sec_fail=True),   # dropped
+            make_reward(scalar=0.6, sec_fail=False),
+            make_reward(scalar=0.4, sec_fail=False),
         ]
         groups = rr.build_trajectory_groups(rollouts, rewards)
-        # T-09-SECDROP: exactly one of four rollouts had security_fail=True, so it
-        # must be DROPPED (not zeroed) -> 3 surviving groups.
         assert len(groups) == 3, (
             f"Expected 3 groups after dropping 1 security-fail rollout, got {len(groups)}"
         )
-        # The dropped member carried scalar=0.0 with security_fail=True; the three
-        # survivors carry the non-security rewards. Verify the surviving rewards are
-        # exactly {0.7, 0.6, 0.4} (the non-security scalars) — the security-fail
-        # member is absent.
-        surviving_rewards = sorted(g["reward"] for g in groups)
-        assert surviving_rewards == pytest.approx([0.4, 0.6, 0.7]), (
-            f"Surviving group rewards should be the non-security scalars "
-            f"[0.4, 0.6, 0.7], got {surviving_rewards}"
+        # Surviving rewards (read via the cookbook API) are the non-security scalars.
+        surviving = sorted(r for g in groups for r in g.get_total_rewards())
+        assert surviving == pytest.approx([0.4, 0.6, 0.7]), (
+            f"Surviving rewards should be [0.4, 0.6, 0.7], got {surviving}"
         )
 
     def test_security_group_dropped_by_flag(self):
         """Security-fail member (breakdown.security_fail=True) excluded from groups."""
         rr = pytest.importorskip("scripts.rl_rollouts")
-        rollouts = [MagicMock() for _ in range(3)]
-        for i, r in enumerate(rollouts):
-            r.completion = f"<?php $x={i}; ?>"
-        rewards_sec = [
-            self._make_reward(scalar=0.8, sec_fail=False),
-            self._make_reward(scalar=0.0, sec_fail=True),   # security gate
-            self._make_reward(scalar=0.6, sec_fail=False),
+        pytest.importorskip("tinker")
+        from tests._rl_fixtures import make_reward, make_rollout
+
+        rollouts = [make_rollout(f"<?php $x={i}; ?>", group_id=f"gen-{i}") for i in range(3)]
+        rewards = [
+            make_reward(scalar=0.8, sec_fail=False),
+            make_reward(scalar=0.0, sec_fail=True),   # security gate
+            make_reward(scalar=0.6, sec_fail=False),
         ]
-        groups = rr.build_trajectory_groups(rollouts, rewards_sec)
-        # Security-fail member excluded: should not have all 3 rollouts in output
-        # groups with sec_fail should be absent
+        groups = rr.build_trajectory_groups(rollouts, rewards)
         assert len(groups) <= 2, (
             f"expected <= 2 groups after security-fail drop, got {len(groups)}"
         )
+        survivors = sorted(r for g in groups for r in g.get_total_rewards())
+        assert survivors == pytest.approx([0.6, 0.8])
 
 
 class TestComputeRolloutAdvantages:
-    """compute_rollout_advantages delegates to cookbook (or inline fallback without tinker)."""
+    """compute_rollout_advantages assembles real tinker.Datum objects via the cookbook."""
 
     def test_mixed_reward_group_nonzero_advantages(self):
-        """Mixed-reward group produces at least one non-zero advantage."""
+        """Mixed-reward group -> real Datums + at least one non-zero advantage."""
         rr = pytest.importorskip("scripts.rl_rollouts")
-        mixed_group = {
-            "prompt": "test",
-            "completions": ["A", "B", "C", "D"],
-            "rewards": [1.0, 0.5, 0.0, 0.8],
-        }
-        data, meta = rr.compute_rollout_advantages([mixed_group])
-        advantages = [item["advantage"] for item in data]
+        tinker = pytest.importorskip("tinker")
+        from tests._rl_fixtures import make_trajectory_group
+
+        tg = make_trajectory_group([1.0, 0.5, 0.0, 0.8], group_id="gen-0")
+        data, advantages, meta = rr.compute_rollout_advantages([tg])
         assert any(a != 0.0 for a in advantages), (
             "mixed-reward group must produce at least one non-zero advantage"
         )
+        # Wrapper-level regression guard for the ORIGINAL bug (dicts -> Datum):
+        # the wrapper must return real tinker.Datum objects carrying sampled logprobs.
+        assert isinstance(data[0], tinker.Datum)
+        assert "logprobs" in data[0].loss_fn_inputs
 
-    def test_constant_reward_group_dropped(self):
-        """Constant-reward group is dropped before advantage assembly."""
+    def test_constant_reward_group_singleton_zero_advantage(self):
+        """Constant-reward group -> cookbook returns a singleton with zero advantages."""
         rr = pytest.importorskip("scripts.rl_rollouts")
-        const_group = {
-            "prompt": "const",
-            "completions": ["X", "Y", "Z"],
-            "rewards": [0.5, 0.5, 0.5],
-        }
-        data, meta = rr.compute_rollout_advantages([const_group])
-        # Constant group must be dropped (len==0) or all advantages zero
-        assert len(data) == 0 or all(
-            item["advantage"] == 0.0 for item in data
-        ), "constant-reward group must be dropped or have zero advantages"
+        pytest.importorskip("tinker")
+        from tests._rl_fixtures import make_trajectory_group
+
+        tg = make_trajectory_group([0.5, 0.5, 0.5], group_id="gen-0")
+        data, advantages, meta = rr.compute_rollout_advantages([tg])
+        # remove_constant_reward_groups returns groups[0:1] when ALL are constant,
+        # so data is non-empty but every advantage is zero (no gradient this step).
+        assert all(abs(a) < 1e-9 for a in advantages), (
+            "constant-reward group must yield all-zero advantages"
+        )
 
     def test_mixed_group_advantage_sums_near_zero(self):
         """Advantages in a mixed group sum to approximately zero (group-centering)."""
         rr = pytest.importorskip("scripts.rl_rollouts")
-        mixed_group = {
-            "prompt": "test",
-            "completions": ["A", "B", "C"],
-            "rewards": [1.0, 0.5, 0.0],
-        }
-        data, meta = rr.compute_rollout_advantages([mixed_group])
-        if len(data) > 0:
-            total = sum(item["advantage"] for item in data)
-            assert abs(total) < 1e-6, (
-                f"group-centered advantages must sum to ~0, got {total}"
-            )
+        pytest.importorskip("tinker")
+        from tests._rl_fixtures import make_trajectory_group
+
+        tg = make_trajectory_group([1.0, 0.5, 0.0], group_id="gen-0")
+        data, advantages, meta = rr.compute_rollout_advantages([tg])
+        assert abs(sum(advantages)) < 1e-6, (
+            f"group-centered advantages must sum to ~0, got {sum(advantages)}"
+        )
 
     def test_per_group_constant_filter_keeps_mixed_drops_constant(self):
-        """CR-06: per-prompt filtering — a constant group is dropped while a sibling
-        mixed group survives, even though both are in the same batch."""
+        """CR-06: a constant group is dropped while a sibling mixed group survives."""
         rr = pytest.importorskip("scripts.rl_rollouts")
-        mixed_group = {
-            "prompt": "p_mixed",
-            "completions": ["A", "B", "C"],
-            "rewards": [1.0, 0.5, 0.0],
-        }
-        const_group = {
-            "prompt": "p_const",
-            "completions": ["X", "Y", "Z"],
-            "rewards": [0.5, 0.5, 0.5],
-        }
-        data, meta = rr.compute_rollout_advantages([mixed_group, const_group])
-        # Only the mixed group's 3 completions survive; constant group dropped whole.
+        pytest.importorskip("tinker")
+        from tests._rl_fixtures import make_trajectory_group
+
+        mixed = make_trajectory_group([1.0, 0.5, 0.0], group_id="gen-mixed")
+        const = make_trajectory_group([0.5, 0.5, 0.5], group_id="gen-const")
+        data, advantages, meta = rr.compute_rollout_advantages([mixed, const])
+        # Only the mixed group's 3 trajectories survive -> 3 datums.
         assert len(data) == 3, (
-            f"expected 3 surviving completions (mixed group only), got {len(data)}"
+            f"expected 3 surviving datums (mixed group only), got {len(data)}"
         )
-        assert meta["n_dropped_constant"] == 3, (
-            f"expected 3 dropped (the constant group), got {meta['n_dropped_constant']}"
+        # meta now counts GROUPS: 2 in, 1 constant dropped.
+        assert meta["n_dropped_constant"] == 1, (
+            f"expected 1 dropped group (the constant one), got {meta['n_dropped_constant']}"
         )
-        # Survivors must all come from the mixed group.
-        assert all(d["prompt"] == "p_mixed" for d in data)
+        assert any(a != 0.0 for a in advantages)
 
     def test_per_group_advantage_centers_within_own_group(self):
         """CR-06: advantages center on each group's OWN mean, not the batch mean.
 
-        Group A rewards [1.0, 0.0] -> mean 0.5 -> advantages [+0.5, -0.5].
-        Group B rewards [0.2, 0.4] -> mean 0.3 -> advantages [-0.1, +0.1].
-        A global (batch) mean of 0.4 would give different, wrong advantages.
+        Group A rewards [1.0, 0.0] -> advantages [+0.5, -0.5].
+        Group B rewards [0.2, 0.4] -> advantages [-0.1, +0.1].
+        assemble_training_data emits group A's datums then group B's, so the flat
+        per-datum advantages list is [0.5, -0.5, -0.1, 0.1].
         """
         rr = pytest.importorskip("scripts.rl_rollouts")
-        group_a = {"prompt": "A", "completions": ["a1", "a2"], "rewards": [1.0, 0.0]}
-        group_b = {"prompt": "B", "completions": ["b1", "b2"], "rewards": [0.2, 0.4]}
-        data, _meta = rr.compute_rollout_advantages([group_a, group_b])
-        adv = {(d["prompt"], d["completion"]): d["advantage"] for d in data}
-        assert adv[("A", "a1")] == pytest.approx(0.5, abs=1e-6)
-        assert adv[("A", "a2")] == pytest.approx(-0.5, abs=1e-6)
-        assert adv[("B", "b1")] == pytest.approx(-0.1, abs=1e-6)
-        assert adv[("B", "b2")] == pytest.approx(0.1, abs=1e-6)
+        pytest.importorskip("tinker")
+        from tests._rl_fixtures import make_trajectory_group
+
+        group_a = make_trajectory_group([1.0, 0.0], group_id="gen-A")
+        group_b = make_trajectory_group([0.2, 0.4], group_id="gen-B")
+        data, advantages, _meta = rr.compute_rollout_advantages([group_a, group_b])
+        assert advantages[0] == pytest.approx(0.5, abs=1e-6)
+        assert advantages[1] == pytest.approx(-0.5, abs=1e-6)
+        assert advantages[2] == pytest.approx(-0.1, abs=1e-6)
+        assert advantages[3] == pytest.approx(0.1, abs=1e-6)
         # Each group's advantages sum to ~0 independently.
-        assert adv[("A", "a1")] + adv[("A", "a2")] == pytest.approx(0.0, abs=1e-6)
-        assert adv[("B", "b1")] + adv[("B", "b2")] == pytest.approx(0.0, abs=1e-6)
+        assert advantages[0] + advantages[1] == pytest.approx(0.0, abs=1e-6)
+        assert advantages[2] + advantages[3] == pytest.approx(0.0, abs=1e-6)
 
     def test_module_imports_without_tinker(self):
         """scripts.rl_rollouts imports cleanly even when tinker_cookbook is absent."""

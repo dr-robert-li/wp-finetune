@@ -158,29 +158,26 @@ class TestRLTrainUnit:
         advantages. Constant-reward groups must be dropped (zero advantage / filtered out).
         """
         rl_rollouts = pytest.importorskip("scripts.rl_rollouts")
+        tinker = pytest.importorskip("tinker")
+        from tests._rl_fixtures import make_trajectory_group
 
-        # Mixed-reward group: diverse rewards → non-zero advantages
-        mixed_group = {
-            "prompt": "test",
-            "completions": ["A", "B", "C", "D"],
-            "rewards": [1.0, 0.5, 0.0, 0.8],
-        }
-        data, meta = rl_rollouts.compute_rollout_advantages([mixed_group])
-        advantages = [item["advantage"] for item in data]
+        # Mixed-reward group: diverse rewards → non-zero advantages, real Datums.
+        mixed = make_trajectory_group([1.0, 0.5, 0.0, 0.8], group_id="gen-0")
+        data, advantages, meta = rl_rollouts.compute_rollout_advantages([mixed])
         assert any(a != 0.0 for a in advantages), (
             "mixed-reward group must produce at least one non-zero advantage"
         )
+        # The wrapper must emit real tinker.Datum objects carrying sampled logprobs
+        # (regression guard for the original dict→forward_backward_custom AttributeError).
+        assert isinstance(data[0], tinker.Datum)
+        assert "logprobs" in data[0].loss_fn_inputs
 
-        # Constant-reward group: all same reward → dropped from data
-        const_group = {
-            "prompt": "const",
-            "completions": ["X", "Y", "Z"],
-            "rewards": [0.5, 0.5, 0.5],
-        }
-        data_const, meta_const = rl_rollouts.compute_rollout_advantages([const_group])
-        assert len(data_const) == 0 or all(
-            item["advantage"] == 0.0 for item in data_const
-        ), "constant-reward group must be dropped (zero or absent advantages)"
+        # Constant-reward group: cookbook returns a singleton with zero advantages.
+        const = make_trajectory_group([0.5, 0.5, 0.5], group_id="gen-1")
+        _data_c, advantages_c, _meta_c = rl_rollouts.compute_rollout_advantages([const])
+        assert all(abs(a) < 1e-9 for a in advantages_c), (
+            "constant-reward group must yield all-zero advantages"
+        )
 
     # -------------------------------------------------------------------------
     # GRPO-08: KL and routing autohalt guards

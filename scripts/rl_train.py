@@ -170,17 +170,15 @@ def rspo_floored_ratio(train_lp: Any, sampling_lp: Any) -> Any:
 # ---------------------------------------------------------------------------
 
 
-def _make_gspo_loss_fn(advantages_by_idx: dict[int, float]):
+def _make_gspo_loss_fn():
     """Return a CustomLossFnV1-compatible loss function for GSPO.
 
     The SDK calls: loss, metrics = loss_fn(data, logprobs_list)
-    where logprobs_list[i] is a per-token logprobs tensor for datum i.
+    where logprobs_list[i] is the per-token TRAINING logprobs tensor for datum i.
 
-    advantages_by_idx maps datum index (in the current batch) to advantage value.
-    These are captured via closure so the SDK's two-arg interface is satisfied.
-
-    Args:
-        advantages_by_idx: {datum_index -> advantage_scalar}
+    09-07: advantages are baked into each Datum's loss_fn_inputs by the cookbook
+    (trajectory_to_data), so there is NO advantages_by_idx closure — the loss reads
+    the action-token advantage and the SAMPLED logprobs straight off the Datum.
 
     Returns:
         Callable: gspo_loss_fn(data, logprobs_list) -> (loss_tensor, metrics_dict)
@@ -190,19 +188,29 @@ def _make_gspo_loss_fn(advantages_by_idx: dict[int, float]):
         import torch  # noqa: PLC0415
 
         losses = []
-        for i, (datum, train_lps) in enumerate(zip(data, logprobs_list)):
-            adv = float(advantages_by_idx.get(i, 0.0))
-
-            # Sequence-level log-prob: sum over action tokens
-            # Sampling log-prob comes from datum.loss_fn_inputs["logprobs"] if available
+        for datum, train_lps in zip(data, logprobs_list):
             try:
-                sampling_lps = datum.loss_fn_inputs["logprobs"].to_torch()
+                lfi = datum.loss_fn_inputs
+                mask = lfi["mask"].to_torch()
+                adv_weights = lfi["advantages"].to_torch()
+                # Select the action-token advantage via mask==1, NOT via
+                # adv_weights != 0: a legitimately-centered 0.0 advantage on a kept
+                # non-constant group would make the nonzero filter empty -> .mean()
+                # NaN. An EMPTY mask (immediate-EOS completion, no action tokens)
+                # makes the selection empty too — the numel() guard zeroes that
+                # datum's contribution instead of IndexError-ing the whole batch.
+                sel = adv_weights[mask == 1]
+                adv = sel[0] if sel.numel() else torch.tensor(0.0)
+
+                sampling_lps = lfi["logprobs"].to_torch()
                 train_sum = train_lps.sum()
                 sampling_sum = sampling_lps.sum()
                 seq_ratio = rspo_floored_ratio(train_sum, sampling_sum)
             except (AttributeError, KeyError):
-                # Dry-run / mock path: no real Datum structure
+                # Dry-run / mock path: no real Datum structure. NOT reachable on
+                # the real datum path (where loss_fn_inputs carries real logprobs).
                 seq_ratio = torch.tensor(1.0)
+                adv = torch.tensor(0.0)
 
             # GSPO objective: -ratio * advantage (minimise negative reward)
             seq_loss = -(seq_ratio * adv)
@@ -230,22 +238,21 @@ def build_loss_step(
     tc: Any,
     data: Any,
     use_gspo: bool = True,
-    advantages: list[float] | None = None,
 ) -> Any:
     """Execute one forward-backward pass using GSPO (default) or GRPO fallback.
 
     GSPO (use_gspo=True, D-09-03 locked default):
         Calls tc.forward_backward_custom(data, loss_fn) with RSPO-floored
-        sequence-level IS ratios. Loss function built as closure over advantages.
+        sequence-level IS ratios. 09-07: advantages are baked into the Datums by
+        the cookbook, so the loss fn needs no advantages closure.
 
     GRPO (use_gspo=False, --grpo-fallback):
         Calls tc.forward_backward(data, loss_fn="importance_sampling").
 
     Args:
         tc: Tinker training client (or mock).
-        data: List of Datum objects (or mock).
+        data: List of tinker.Datum objects (or mock).
         use_gspo: True = GSPO primary path; False = GRPO token-level fallback.
-        advantages: Per-datum advantage values. Defaults to zeros.
 
     Returns:
         ForwardBackwardOutput (or mock equivalent).
@@ -255,10 +262,7 @@ def build_loss_step(
         return _res(tc.forward_backward(data, loss_fn="importance_sampling"))
 
     # GSPO sequence-level IS (primary path, D-09-03)
-    batch_size = len(data) if hasattr(data, "__len__") else 1
-    adv_map = {i: float(advantages[i]) if advantages and i < len(advantages) else 0.0
-               for i in range(batch_size)}
-    loss_fn = _make_gspo_loss_fn(adv_map)
+    loss_fn = _make_gspo_loss_fn()
     return _res(tc.forward_backward_custom(data, loss_fn))
 
 
@@ -491,33 +495,32 @@ def _log_step(
 # ---------------------------------------------------------------------------
 
 
-def _panickssery_spot_check(data: list[dict], step: int) -> None:
+def _panickssery_spot_check(trajectory_groups: list, step: int) -> None:
     """Log rollouts where judge_consistency diverges from fix_correctness by >0.3.
 
     Called every ~50 steps. Monitor-only per D-09-05 R1.
+
+    09-07: the reward breakdown no longer rides on a Datum dict — it is stashed in
+    each Transition.logs (group_id, origin, fix_correctness, consistency) by
+    build_trajectory_groups, so this reads the pre-Datum trajectory groups.
     """
     divergent = []
-    for item in data:
-        bd = item.get("breakdown")
-        if bd is None:
-            continue
-        # breakdown is a _JudgeBreakdown / SimpleNamespace object (NOT a dict),
-        # so attribute access — not item lookup — is required (WR-04). The old
-        # `isinstance(bd, dict)` guard skipped every item, making this monitor
-        # permanently inert.
-        fix_corr = getattr(bd, "fix_correctness", getattr(bd, "fix_score", None))
-        consistency = getattr(
-            bd, "judge_consistency", getattr(bd, "consistency", None)
-        )
-        if fix_corr is not None and consistency is not None:
-            if abs(float(fix_corr) - float(consistency)) > 0.3:
-                divergent.append(
-                    {
-                        "prompt": str(item.get("prompt", ""))[:60],
-                        "fix_correctness": fix_corr,
-                        "judge_consistency": consistency,
-                    }
-                )
+    for tg in trajectory_groups:
+        for traj in getattr(tg, "trajectories_G", []):
+            for transition in getattr(traj, "transitions", []):
+                logs = getattr(transition, "logs", {}) or {}
+                fix_corr = logs.get("fix_correctness")
+                consistency = logs.get("consistency")
+                if fix_corr is None or consistency is None:
+                    continue
+                if abs(float(fix_corr) - float(consistency)) > 0.3:
+                    divergent.append(
+                        {
+                            "group_id": logs.get("group_id", ""),
+                            "fix_correctness": fix_corr,
+                            "judge_consistency": consistency,
+                        }
+                    )
     if divergent:
         logger.warning(
             "Panickssery step %d: %d rollouts with |fix_corr - consistency| > 0.3: %s",
@@ -567,22 +570,25 @@ def run_training_step(
         args=args,
     )
 
-    data, _meta = compute_rollout_advantages(rollouts)
+    data, _advantages, _meta = compute_rollout_advantages(rollouts)
 
     if not data:
         logger.warning("Step %d: no training data after advantage filter", step)
         return False
 
-    rewards = [float(d.get("reward", 0.0)) for d in data]
-    advantages = [float(d.get("advantage", 0.0)) for d in data]
+    # Rewards for the metrics sink come from the trajectory groups' get_total_rewards
+    # (real Datums carry baked advantages, not raw rewards). Pre-filter rollouts are
+    # fine for a monitoring mean/min/max.
+    rewards = [r for tg in rollouts for r in tg.get_total_rewards()]
 
-    # Panickssery divergence spot-check every ~50 steps (D-09-05 R1)
+    # Panickssery divergence spot-check every ~50 steps (D-09-05 R1) — reads the
+    # pre-Datum trajectory groups (fix_correctness/consistency live in Transition.logs).
     if step % 50 == 0:
-        _panickssery_spot_check(data, step)
+        _panickssery_spot_check(rollouts, step)
 
     # Forward-backward (GSPO primary or GRPO fallback). NOTE: NO optim_step yet —
     # the gradient is computed but NOT applied until after the halt check (CR-04).
-    fb_out = build_loss_step(tc, data, use_gspo=args.use_gspo, advantages=advantages)
+    fb_out = build_loss_step(tc, data, use_gspo=args.use_gspo)
 
     # KL metrics BEFORE committing the update. A compute failure returns a
     # halt-worthy sentinel (never a silent 0.0) so the guard cannot be disabled.
@@ -819,10 +825,11 @@ def _dry_run(args: argparse.Namespace) -> None:
             {"prompt": "dry", "completion": "ok", "reward": 0.8, "advantage": -0.5}]
 
     rewards = [float(d.get("reward", 0.0)) for d in data]
-    advantages = [float(d.get("advantage", 0.0)) for d in data]
 
-    # GSPO forward-backward (primary path)
-    fb_result = build_loss_step(tc, data, use_gspo=True, advantages=advantages)
+    # GSPO forward-backward (primary path). dry-run data is plain dicts -> the loss
+    # fn's AttributeError fallback path is taken (forward_backward_custom is mocked
+    # here anyway, so the loss fn is never actually invoked).
+    fb_result = build_loss_step(tc, data, use_gspo=True)
     tc.optim_step()
 
     # KL metrics (synthetic in dry-run — no real Datum objects)

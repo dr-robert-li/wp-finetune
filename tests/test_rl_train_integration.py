@@ -31,6 +31,10 @@ from unittest.mock import MagicMock
 
 import pytest
 
+# 09-07: the step loop now assembles real cookbook Datums (tinker + tinker_cookbook),
+# so the whole integration module requires tinker. Base conda has no tinker -> skip.
+pytest.importorskip("tinker")
+
 
 # ---------------------------------------------------------------------------
 # Fakes modelling the CORRECT Tinker sampling contract
@@ -38,10 +42,15 @@ import pytest
 
 
 class _FakeSeq:
-    """One sampled sequence: carries token ids the fake tokenizer decodes."""
+    """One sampled sequence: token ids + their sampling logprobs (09-07).
 
-    def __init__(self, tokens):
+    The logprobs are what build_trajectory_groups bakes into the cookbook
+    Transition -> Datum, so they must be present and length-matched to tokens.
+    """
+
+    def __init__(self, tokens, logprobs=None):
         self.tokens = tokens
+        self.logprobs = logprobs if logprobs is not None else [-0.3] * len(tokens)
 
 
 class _FakeSampleResponse:
@@ -76,9 +85,13 @@ class _FakeSamplingClient:
         self.sample_calls.append(
             {"prompt": prompt, "num_samples": num_samples}
         )
-        # Distinct token ids per sample so decoded completions differ.
+        # Distinct token ids per sample so decoded completions differ; each carries
+        # a matching-length sampling logprob (09-07 — Datum assembly reads it).
         base = len(self.sample_calls) * 100
-        seqs = [_FakeSeq(tokens=[base + i]) for i in range(num_samples)]
+        seqs = [
+            _FakeSeq(tokens=[base + i], logprobs=[-0.3 - 0.01 * i])
+            for i in range(num_samples)
+        ]
         return _FakeFuture(_FakeSampleResponse(seqs))
 
 
@@ -92,8 +105,12 @@ class _FakeTokenizer:
 
 class _FakeRenderer:
     def build_generation_prompt(self, user_msgs):
-        # Return the message content as the "prompt" — the fake client ignores it.
-        return {"rendered": user_msgs}
+        # 09-07: must be a REAL tinker.ModelInput — it becomes the Transition.ob that
+        # trajectory_to_data flattens (._flatten_chunks needs .chunks). >=1 obs token
+        # so the action-token mask survives the cookbook's right-shift [1:] slice.
+        import tinker
+
+        return tinker.ModelInput.from_ints([1, 2, 3])
 
     def get_stop_sequences(self):
         return []
@@ -287,7 +304,10 @@ def test_both_gen_and_judge_rollouts_reach_advantages(monkeypatch, tmp_path):
     constant filter (i.e. true GRPO groups, not singletons dropped as constant).
     """
     _wire(monkeypatch, tmp_path, kl_v1=0.0)
+    import tinker
+
     import scripts.rl_rollouts as rl_rollouts
+    from tinker_cookbook.rl.types import TrajectoryGroup
 
     args = _make_args(batch_size=4, group_size=3)
     rollouts = rl_rollouts.collect_rollouts(
@@ -296,18 +316,26 @@ def test_both_gen_and_judge_rollouts_reach_advantages(monkeypatch, tmp_path):
         judge_pool=_judge_pool(),
         args=args,
     )
-    # Every trajectory dict must carry a threaded group_id (gen-* / judge-*).
-    gids = {r.get("group_id") for r in rollouts}
-    assert any(str(g).startswith("gen-") for g in gids), "gen group_ids must be present"
-    assert any(str(g).startswith("judge-") for g in gids), "judge group_ids must be present"
+    # collect_rollouts now returns real cookbook TrajectoryGroups.
+    assert rollouts and all(isinstance(g, TrajectoryGroup) for g in rollouts)
+    # Origin (gen/judge) is recoverable from each Transition.logs (stamped in
+    # build_trajectory_groups), so both pathways are proven present.
+    origins = {
+        t.logs.get("origin")
+        for g in rollouts
+        for traj in g.trajectories_G
+        for t in traj.transitions
+    }
+    assert "gen" in origins, "gen rollouts must be present"
+    assert "judge" in origins, "judge rollouts must be present"
 
-    data, meta = rl_rollouts.compute_rollout_advantages(rollouts)
+    data, advantages, meta = rl_rollouts.compute_rollout_advantages(rollouts)
     assert data, "rollouts must survive to advantages (not all dropped as constant)"
-    surviving = {str(d.get("group_id")) for d in data}
-    assert any(g.startswith("gen-") for g in surviving), "gen group must survive"
-    assert any(g.startswith("judge-") for g in surviving), "judge group must survive"
+    # Regression guard: real Datums carrying sampled logprobs (not plain dicts).
+    assert all(isinstance(d, tinker.Datum) for d in data)
+    assert "logprobs" in data[0].loss_fn_inputs
     # Surviving groups must have at least one non-zero advantage.
-    assert any(d["advantage"] != 0.0 for d in data)
+    assert any(a != 0.0 for a in advantages)
 
 
 def test_hard_kl_halts_before_optim_step(monkeypatch, tmp_path):
