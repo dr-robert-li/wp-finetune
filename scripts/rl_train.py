@@ -170,15 +170,22 @@ def rspo_floored_ratio(train_lp: Any, sampling_lp: Any) -> Any:
 # ---------------------------------------------------------------------------
 
 
-def _make_gspo_loss_fn():
+def _make_gspo_loss_fn(full_data):
     """Return a CustomLossFnV1-compatible loss function for GSPO.
 
     The SDK calls: loss, metrics = loss_fn(data, logprobs_list)
     where logprobs_list[i] is the per-token TRAINING logprobs tensor for datum i.
 
-    09-07: advantages are baked into each Datum's loss_fn_inputs by the cookbook
-    (trajectory_to_data), so there is NO advantages_by_idx closure — the loss reads
-    the action-token advantage and the SAMPLED logprobs straight off the Datum.
+    09-07 (corrective): `forward_backward_custom` only accepts datums whose
+    loss_fn_inputs keys are a subset of {target_tokens, weights}, so the RL fields
+    (mask/advantages/logprobs) CANNOT ride on the datum passed to it. They are read
+    from `full_data` (the un-stripped cookbook datums) closed over here, indexed
+    position-wise with logprobs_list (build_loss_step strips the datums for the SDK
+    but preserves order). `data` (the stripped arg) is intentionally unused.
+
+    Args:
+        full_data: list[tinker.Datum] — the FULL cookbook datums (with mask /
+            advantages / logprobs), aligned 1:1 with the stripped datums + logprobs_list.
 
     Returns:
         Callable: gspo_loss_fn(data, logprobs_list) -> (loss_tensor, metrics_dict)
@@ -188,9 +195,9 @@ def _make_gspo_loss_fn():
         import torch  # noqa: PLC0415
 
         losses = []
-        for datum, train_lps in zip(data, logprobs_list):
+        for full_datum, train_lps in zip(full_data, logprobs_list):
             try:
-                lfi = datum.loss_fn_inputs
+                lfi = full_datum.loss_fn_inputs
                 # mask > 0 selects ACTION token positions (obs positions are 0).
                 # This is the cookbook convention (rl/metrics.compute_kl_sample_train
                 # masks both sampling and training logprobs by mask>0 before use).
@@ -243,6 +250,42 @@ def _make_gspo_loss_fn():
 # ---------------------------------------------------------------------------
 
 
+def _strip_to_target_tokens(datum: Any) -> Any:
+    """Return a Datum carrying ONLY target_tokens (for forward_backward_custom).
+
+    forward_backward_custom's forward validator rejects any loss_fn_inputs key
+    outside {target_tokens, weights}; the cookbook datum carries mask/advantages/
+    logprobs which the GSPO loss reads via closure instead. Non-Datum inputs
+    (dry-run dicts / mocks) are passed through unchanged.
+    """
+    lfi = getattr(datum, "loss_fn_inputs", None)
+    if lfi is None or "target_tokens" not in lfi:
+        return datum  # dry-run/mock path — leave as-is
+    import tinker  # noqa: PLC0415
+
+    return tinker.Datum(
+        model_input=datum.model_input,
+        loss_fn_inputs={"target_tokens": lfi["target_tokens"]},
+    )
+
+
+def _strip_mask(datum: Any) -> Any:
+    """Return a Datum without the 'mask' key (for backend forward_backward).
+
+    The backend importance_sampling loss rejects 'mask' (the cookbook applies the
+    same strip via _remove_mask). Non-Datum inputs pass through unchanged.
+    """
+    lfi = getattr(datum, "loss_fn_inputs", None)
+    if lfi is None:
+        return datum
+    import tinker  # noqa: PLC0415
+
+    return tinker.Datum(
+        model_input=datum.model_input,
+        loss_fn_inputs={k: v for k, v in lfi.items() if k != "mask"},
+    )
+
+
 def build_loss_step(
     tc: Any,
     data: Any,
@@ -251,16 +294,18 @@ def build_loss_step(
     """Execute one forward-backward pass using GSPO (default) or GRPO fallback.
 
     GSPO (use_gspo=True, D-09-03 locked default):
-        Calls tc.forward_backward_custom(data, loss_fn) with RSPO-floored
-        sequence-level IS ratios. 09-07: advantages are baked into the Datums by
-        the cookbook, so the loss fn needs no advantages closure.
+        Strips each datum to {target_tokens} (forward_backward_custom's accepted
+        input) and calls tc.forward_backward_custom(stripped, loss_fn). The GSPO
+        loss closes over the FULL datums to read mask/advantages/sampling-logprobs
+        and computes the RSPO-floored sequence-level IS ratio client-side.
 
     GRPO (use_gspo=False, --grpo-fallback):
-        Calls tc.forward_backward(data, loss_fn="importance_sampling").
+        Strips 'mask' and calls tc.forward_backward(stripped, loss_fn="importance_sampling")
+        (backend token-level loss; rejects the mask key).
 
     Args:
         tc: Tinker training client (or mock).
-        data: List of tinker.Datum objects (or mock).
+        data: List of full cookbook tinker.Datum objects (or mock).
         use_gspo: True = GSPO primary path; False = GRPO token-level fallback.
 
     Returns:
@@ -268,11 +313,17 @@ def build_loss_step(
     """
     if not use_gspo:
         # GRPO token-level IS fallback (--grpo-fallback / --no-gspo)
-        return _res(tc.forward_backward(data, loss_fn="importance_sampling"))
+        return _res(
+            tc.forward_backward(
+                [_strip_mask(d) for d in data], loss_fn="importance_sampling"
+            )
+        )
 
-    # GSPO sequence-level IS (primary path, D-09-03)
-    loss_fn = _make_gspo_loss_fn()
-    return _res(tc.forward_backward_custom(data, loss_fn))
+    # GSPO sequence-level IS (primary path, D-09-03): client-side loss over the FULL
+    # datums; forward pass gets target-tokens-only datums (validator constraint).
+    loss_fn = _make_gspo_loss_fn(data)
+    fwd_data = [_strip_to_target_tokens(d) for d in data]
+    return _res(tc.forward_backward_custom(fwd_data, loss_fn))
 
 
 # ---------------------------------------------------------------------------
@@ -544,6 +595,14 @@ def _panickssery_spot_check(trajectory_groups: list, step: int) -> None:
 # ---------------------------------------------------------------------------
 
 
+def _adam_params(args: Any) -> Any:
+    """Build tinker.AdamParams from args (TrainingClient.optim_step requires it)."""
+    import tinker  # noqa: PLC0415
+
+    lr = float(getattr(args, "learning_rate", 1e-5))
+    return tinker.AdamParams(learning_rate=lr, beta1=0.9, beta2=0.95, eps=1e-8)
+
+
 def run_training_step(
     step: int,
     tc: Any,
@@ -639,8 +698,9 @@ def run_training_step(
         _save_checkpoint(tc, name=f"emergency-halt-step-{step}", manifest=manifest)
         return True
 
-    # Safe path only: commit the gradient update.
-    tc.optim_step()
+    # Safe path only: commit the gradient update. The real TrainingClient.optim_step
+    # requires AdamParams (no-arg crashes); construct from args.learning_rate.
+    tc.optim_step(_adam_params(args))
 
     # Scheduled checkpoint
     if (step + 1) % args.checkpoint_every == 0:
@@ -676,6 +736,10 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--lora-rank", type=int, default=32)
     parser.add_argument("--lora-seed", type=int, default=42)
+    parser.add_argument(
+        "--learning-rate", type=float, default=1e-5,
+        help="Adam learning rate for optim_step (TrainingClient.optim_step AdamParams).",
+    )
     parser.add_argument(
         "--total-steps", type=int, default=500, help="Total RL gradient steps"
     )
