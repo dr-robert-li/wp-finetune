@@ -176,5 +176,14 @@ def _agent_env() -> dict:
     Inherits the current environment. Does NOT set CLAUDE_CODE_SIMPLE
     because that disables OAuth/keychain auth which is required for
     subscription-based authentication.
+
+    Scrubs ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN: when either is present the
+    `claude` CLI bills the Anthropic API instead of using the OAuth/keychain
+    SUBSCRIPTION. This pipeline's whole point is $0 subscription LLM work, so a
+    leaked key (e.g. a launch that `set -a; . ./.env`'d a key into the env) must
+    never silently turn every spawned subagent into paid API spend. Defense-in-depth.
     """
-    return os.environ.copy()
+    env = os.environ.copy()
+    env.pop("ANTHROPIC_API_KEY", None)
+    env.pop("ANTHROPIC_AUTH_TOKEN", None)
+    return env
