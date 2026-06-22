@@ -244,6 +244,64 @@ def _is_parseable_php(code: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Judge rollout output-contract (Phase 09 zero-reward fix, Mechanism 1)
+# ---------------------------------------------------------------------------
+
+# Judge-mode rollouts need a HIGHER generation cap than gen: critique-then-fix is
+# per-dimension critique + a full corrected-code block. 512 (gen default) truncates
+# the fix -> fix_correctness=0. Calibrate against the SFT judge target length
+# (~3.2k chars ≈ 1k tokens) plus the fix.
+JUDGE_MAX_NEW_TOKENS: int = 1536
+
+# The judge reward is fix_correctness on the CORRECTED code (GRPO-05). The judge
+# pool prompt ("<wp_judge> Evaluate this WordPress code") only elicits a prose
+# score from the v4 policy — no corrected code -> extract_php_code finds nothing ->
+# fix_correctness=0. Append an explicit output contract so the policy emits a
+# corrected-code block the reward can verify. ```php + <?php so extract_php_code
+# (fence-first) succeeds; <corrected_code> is also accepted (the SFT delimiter).
+_JUDGE_FIX_INSTRUCTION = (
+    "\n\nThen FIX the code: after your critique, output the fully corrected "
+    "WordPress code in a single ```php fenced block beginning with <?php. "
+    "The corrected code must resolve every issue you identified."
+)
+
+
+def _augment_judge_prompt(item: dict) -> dict:
+    """Append the critique-then-fix output contract to a judge prompt's user turn.
+
+    Idempotent (no double-append). Mutates and returns the item. Only the judge
+    pathway calls this — gen prompts are untouched.
+    """
+    msgs = item.get("messages") or []
+    for m in reversed(msgs):
+        if m.get("role") == "user":
+            if "```php fenced block" not in (m.get("content") or ""):
+                m["content"] = (m.get("content") or "") + _JUDGE_FIX_INSTRUCTION
+            break
+    return item
+
+
+def _extract_corrected_php(text: str) -> str:
+    """Extract the corrected PHP from a judge completion.
+
+    Tries the SFT critique-then-fix delimiter <corrected_code>...</corrected_code>
+    first, then falls back to extract_php_code (```php fence, else think-stripped
+    remainder). Keeps the eval-shared extract_php_code unchanged (no blast radius).
+    """
+    import re as _re  # noqa: PLC0415
+
+    m = _re.search(r"<corrected_code>\s*(.*?)\s*</corrected_code>", text or "", _re.DOTALL)
+    if m:
+        inner = m.group(1).strip()
+        # Inner may itself be fence-wrapped; let extract_php_code unwrap it.
+        from eval.output_parsers import extract_php_code  # noqa: PLC0415
+        unfenced = extract_php_code(inner)
+        return unfenced if unfenced.strip() else inner
+    from eval.output_parsers import extract_php_code  # noqa: PLC0415
+    return extract_php_code(text)
+
+
+# ---------------------------------------------------------------------------
 # Trajectory group construction
 # ---------------------------------------------------------------------------
 
@@ -511,6 +569,9 @@ def collect_rollouts(
         item["_group_id"] = f"gen-{gid}"
     for gid, item in enumerate(judge_rollouts):
         item["_group_id"] = f"judge-{gid}"
+        # Mechanism-1 fix: make the judge prompt require a corrected-code block so
+        # the fix_correctness reward has code to verify (else prose -> 0.0 reward).
+        _augment_judge_prompt(item)
 
     all_rollouts = []
     all_rewards = []
@@ -547,7 +608,10 @@ def collect_rollouts(
 
     # Step 3: wp_judge rewards (fix-correctness + capped consistency)
     if judge_rollouts:
-        judge_completions = _generate_completions(sampling_client, judge_rollouts, args)
+        judge_completions = _generate_completions(
+            sampling_client, judge_rollouts, args,
+            max_tokens_override=getattr(args, "judge_max_new_tokens", JUDGE_MAX_NEW_TOKENS),
+        )
 
         # Deterministic fix-correctness from verifiable signals on corrected code.
         # Extract the corrected PHP first (the judge task emits critique prose +
@@ -559,7 +623,7 @@ def collect_rollouts(
         # Panickssery flags can no longer pay out.
         fix_correctness_scores = []
         for completion_obj in judge_completions:
-            corrected = extract_php_code(completion_obj.completion)
+            corrected = _extract_corrected_php(completion_obj.completion)
             if _is_parseable_php(corrected):
                 rubric = _extract_verifiable_signals(corrected)
                 fix_score = float(rubric.overall) / 100.0  # [0,100] -> [0,1]
@@ -689,13 +753,18 @@ def _prompt_user_messages(item: dict) -> list:
     return [{"role": "user", "content": str(prompt_text)}]
 
 
-def _build_sampling_params(args: Any, renderer: Any) -> Any:
+def _build_sampling_params(args: Any, renderer: Any, max_tokens_override: int = None) -> Any:
     """Construct tinker.SamplingParams for one sample() call.
 
     Falls back to a plain SimpleNamespace when tinker is unavailable (test/offline
     path) so _generate_completions stays exercisable without the tinker package.
+
+    max_tokens_override lets the judge pathway request a larger generation budget
+    than gen: a critique-then-fix completion (per-dimension critique + a fenced
+    corrected-code block) needs far more than the 512-token gen cap, and a
+    truncated completion drops the ```php fix -> fix_correctness=0 (Phase 09 bug).
     """
-    max_tokens = getattr(args, "max_new_tokens", 512)
+    max_tokens = max_tokens_override if max_tokens_override else getattr(args, "max_new_tokens", 512)
     temperature = getattr(args, "temperature", 1.0)
     stop = renderer.get_stop_sequences() if hasattr(renderer, "get_stop_sequences") else None
     try:
@@ -728,6 +797,7 @@ def _generate_completions(
     args: Any,
     renderer: Any = None,
     tok: Any = None,
+    max_tokens_override: int = None,
 ) -> list:
     """Generate G completions per prompt via the real Tinker sampling API.
 
@@ -760,7 +830,7 @@ def _generate_completions(
         renderer, tok = build_rl_renderer()
 
     group_size = int(getattr(args, "group_size", 4))
-    sp = _build_sampling_params(args, renderer)
+    sp = _build_sampling_params(args, renderer, max_tokens_override=max_tokens_override)
 
     completions: list = []
     for prompt_idx, item in enumerate(prompt_items):

@@ -171,6 +171,55 @@ _JUDGE_FIELD_TO_DIM = {
     "code_structure": "D9_structure",
 }
 
+# v4 SFT judge PROSE format: "WPCS Compliance: score 9/10 — ...". The served v4
+# (and the warm-started RL policy) emit per-dimension prose scores, NOT a
+# <judge_output> JSON block. Map the prose dimension LABELS onto the same field
+# keys as _JUDGE_FIELD_TO_DIM so _derive_overall_from_dims can score them. Labels
+# are matched case-insensitively. "code quality"/"dependency integrity" stay
+# UNMAPPED (no clean eval equivalent — same exclusion as the JSON path).
+_PROSE_LABEL_TO_FIELD = {
+    "wpcs compliance": "wpcs_compliance",
+    "wpcs": "wpcs_compliance",
+    "security": "security",
+    "sql safety": "sql_safety",
+    "sql injection safety": "sql_safety",
+    "performance": "performance",
+    "wp api usage": "wp_api_usage",
+    "wordpress api usage": "wp_api_usage",
+    "internationalization": "i18n",
+    "i18n": "i18n",
+    "i18n/l10n": "i18n",
+    "internationalization (i18n)": "i18n",
+    "accessibility": "accessibility",
+    "error handling": "error_handling",
+    "code structure": "code_structure",
+}
+
+# "<Label>: score <N>/10" — N in 0-10, optional decimal. Anchored on the colon +
+# "score" keyword so prose body mentions of "score X/10" inside a sentence don't
+# false-match a dimension header.
+_PROSE_SCORE_RE = re.compile(
+    r"([A-Za-z][A-Za-z0-9 ()/&+.-]{1,40}?)\s*:\s*score\s+(\d+(?:\.\d+)?)\s*/\s*10",
+    re.IGNORECASE,
+)
+
+
+def _parse_prose_dim_scores(text: str) -> dict:
+    """Parse v4's prose per-dimension scores into a {field: 0-10} dict.
+
+    Reward-path ONLY (mirrors the _derive_overall_from_dims placement rationale):
+    parse_judge_response stays pure for teacher-GT extraction. Returns {} when no
+    recognised dimension prose-score is present (caller then falls to imputation).
+    """
+    out: dict = {}
+    for m in _PROSE_SCORE_RE.finditer(text or ""):
+        label = re.sub(r"\s+", " ", m.group(1).strip()).lower()
+        field = _PROSE_LABEL_TO_FIELD.get(label)
+        if field is not None and field not in out:
+            out[field] = float(m.group(2))
+    return out
+
+
 # PASS threshold (verdict POLICY, 04.3 VERDICT-POLICY): PASS iff overall >= 70.
 # A FAIL verdict must therefore never derive an overall >= 70.
 _PASS_THRESHOLD = 70.0
@@ -393,6 +442,17 @@ def judge_score_single(
             # generations. Derivation lives HERE (reward boundary), NOT in
             # parse_judge_response, so teacher-GT extraction stays pure.
             score = _derive_overall_from_dims(parsed)
+    if score is None:
+        # Prose fallback: the served v4 judge emits per-dimension PROSE scores
+        # ("WPCS Compliance: score 9/10 — ...") rather than a <judge_output> JSON
+        # block, so parse_judge_response returns None. Parse those prose scores and
+        # derive overall via the same dimension weights. Reward boundary ONLY —
+        # parse_judge_response stays pure for teacher-GT extraction. Without this,
+        # every prose judge response imputes to the group mean (D-08-07), starving
+        # the gen judge-component of real signal (Phase 09 zero-reward bug).
+        prose_dims = _parse_prose_dim_scores(raw_text)
+        if prose_dims:
+            score = _derive_overall_from_dims(prose_dims)
     if score is None:
         _dump_judge_failure(php_code, raw_text, resp)
     return score
