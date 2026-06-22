@@ -1,8 +1,17 @@
-"""Claude Code agent wrapper — replaces direct Anthropic API calls.
+"""Claude Code agent wrapper — invokes the `claude` CLI via subprocess.
 
-All LLM work in this pipeline runs through Claude Code agents (subscription-covered)
-instead of the Anthropic API. This module provides a generate() function that invokes
-the `claude` CLI in non-interactive mode via subprocess.
+This module provides a generate() function that invokes the `claude` CLI
+(`claude --print`) in non-interactive mode via subprocess.
+
+⚠️ BILLING (post training-cutoff Anthropic policy change, confirmed 2026-06-22):
+`claude -p` / the Agent SDK / managed agents ALWAYS incur DIRECT Anthropic API
+spend — they do NOT use the Pro/Max subscription. The original premise of this
+module ("subscription-covered, replaces direct API calls") is OBSOLETE: every
+generate() call here is paid API. A high-volume caller (e.g. the RL judge-
+consistency scorer, ~32 calls/step) racks up real cost — ~$90 in one Phase-09
+run on 2026-06-22. Scrubbing ANTHROPIC_API_KEY from the env (see _agent_env)
+does NOT make it free. For $0 work use a LOCAL model, drop the LLM component,
+or explicitly budget + minimize (cheap model, fewer/sampled calls, caching).
 
 Usage:
     from scripts.claude_agent import generate
@@ -177,11 +186,13 @@ def _agent_env() -> dict:
     because that disables OAuth/keychain auth which is required for
     subscription-based authentication.
 
-    Scrubs ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN: when either is present the
-    `claude` CLI bills the Anthropic API instead of using the OAuth/keychain
-    SUBSCRIPTION. This pipeline's whole point is $0 subscription LLM work, so a
-    leaked key (e.g. a launch that `set -a; . ./.env`'d a key into the env) must
-    never silently turn every spawned subagent into paid API spend. Defense-in-depth.
+    Scrubs ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN from the subprocess env.
+    NOTE (post-cutoff policy): this does NOT make calls free — `claude -p` ALWAYS
+    bills the Anthropic API now (no subscription path). The scrub is kept only so
+    billing goes to the account's OAuth-linked usage rather than an arbitrary
+    leaked key, and to avoid surprising key-precedence behaviour. It is NOT a cost
+    control. To actually avoid spend, do not call this module at volume — use a
+    local model or drop the LLM component. See module docstring.
     """
     env = os.environ.copy()
     env.pop("ANTHROPIC_API_KEY", None)

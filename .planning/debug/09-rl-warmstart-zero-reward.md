@@ -123,3 +123,37 @@ actually EMITS a fix block under the augmented prompt. Real-rollout gate = a 50-
 require reward_min != reward_max AND reward_mean trending up before committing to the full 500-step
 (~2-day) run. If judge rollouts still show fix=0 live, the model isn't honoring the contract -> iterate
 on the instruction wording (or accept score-only judge reward, a product decision).
+
+---
+
+## COST INCIDENT + POLICY CHANGE (2026-06-22) — claude -p ALWAYS bills API now
+
+**~$90 direct Anthropic API spend** in the Phase-09 signal run. Root cause is a
+recent Anthropic policy change (AFTER model training cutoff), confirmed by Dr.
+Robert Li:
+
+- **`claude -p` / `claude --print` / Agent SDK / managed agents ALWAYS incur DIRECT
+  API spend now.** They no longer bill the Pro/Max subscription. Only the
+  interactive Claude Code session (human-driven) uses the subscription.
+- scripts/claude_agent.py shells out to `claude -p` for the judge-consistency
+  reward (GRPO-05). At ~32 calls/step it billed real API → ~$90.
+- The whole "Claude Code agents ONLY => $0 subscription" premise (GRPO-05 / earlier
+  D-decisions / CLAUDE.md) is **OBSOLETE**. Env-key scrubbing (commit bdcd5bd) does
+  NOT make it free — claude -p bills regardless.
+
+**Committed to durable memory:** ~/.claude/CLAUDE.md "Billing — UNIVERSAL policy"
+block; scripts/claude_agent.py module docstring + _agent_env note.
+
+### Required design change before ANY further RL run (judge-consistency = paid)
+Pick one (consistency is only the 0.3-weight, capped component; fix_correctness 0.7
++ gen rewards are deterministic/local/$0):
+1. **DROP the Claude-consistency reward** — run RL on fix_correctness + gen rewards
+   only. Fully $0, deterministic. Simplest; recommended for the first real run.
+2. **Replace consistency with a LOCAL model** (reuse the vLLM judge or another local
+   LLM) — keeps the signal at $0 but needs wiring + a local consistency prompt.
+3. **Budget + minimize API** — only if Claude-consistency is deemed essential:
+   cheapest model (haiku), sample a FRACTION of rollouts (not all 32/step), cache,
+   and set an explicit $ cap. Surface expected cost before launch.
+
+Until one of these is chosen + wired, do NOT relaunch RL with the consistency
+scorer active — it bills API per call.
