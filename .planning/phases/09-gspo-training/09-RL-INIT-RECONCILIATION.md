@@ -1,6 +1,6 @@
-# Phase 09 — RL Init & Train-Flag Reconciliation (DECISION DOC, awaiting sign-off)
+# Phase 09 — RL Init & Train-Flag Reconciliation (DECISION DOC, SIGNED OFF)
 
-**Status:** 🔴 BLOCKING — needs Dr. Robert Li sign-off before the Phase 9 RL run can be relaunched validly.
+**Status:** 🟢 SIGNED OFF — Option A (RL MoE-only, supersedes D-09-02) approved by Dr. Robert Li 2026-06-22T16:47:00+10:00. D-09-08 recorded (ROADMAP/PROJECT/STATE). Execution plan (v4 `save_state` regen → warm-start relaunch) is now unblocked and awaits a go signal — no compute burning yet.
 **Date:** 2026-06-22
 **Author:** Claude (live-run monitoring loop)
 **Trigger:** Live Phase 9 GSPO run found mis-initialized; root-caused to two upstream design issues.
@@ -186,9 +186,9 @@ No code change needed for Option A beyond the already-written `--init-from` (the
 
 ## Sign-off
 
-- [ ] **Train-flag option:** A (MoE-only, supersede D-09-02) ☐ / B (MLP+attn+unembed) ☐ / C (MoE-only now, attn later) ☐
-- [ ] Approve v4 `save_state` regeneration (compute cost: one r32-rp30 SFT, 3 epochs)
-- [ ] If a decision supersedes D-09-02, record as a new decision ID (e.g. D-09-08) in PROJECT.md / ROADMAP
-- [ ] Approver: Dr. Robert Li — date:
+- [x] **Train-flag option:** A (MoE-only, supersede D-09-02) ☑ / B (MLP+attn+unembed) ☐ / C (MoE-only now, attn later) ☐
+- [x] Approve v4 `save_state` regeneration (compute cost: one r32-rp30 SFT, 3 epochs)
+- [x] If a decision supersedes D-09-02, record as a new decision ID (**D-09-08**) in PROJECT.md / ROADMAP / STATE.md
+- [x] Approver: Dr. Robert Li — date: 2026-06-22T16:47:00+10:00
 
 _Until signed off, the Phase 9 RL run stays down. No compute is burning._

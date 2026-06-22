@@ -2,14 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
+current_phase: 10
+current_phase_name: RL Comparative Evaluation
 status: completed
-stopped_at: Phase 10 context gathered
-last_updated: "2026-06-20T21:35:10.680Z"
+stopped_at: context exhaustion at 75% (2026-06-21)
+last_updated: "2026-06-21T15:24:40.296Z"
 progress:
   total_phases: 13
   completed_phases: 11
-  total_plans: 45
-  completed_plans: 45
+  total_plans: 47
+  completed_plans: 46
   percent: 85
 ---
 
@@ -254,6 +256,7 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 09-03]: Async-over-blocking dispatch; score clamped [0,1]; None not cached
 - [Phase ?]: GSPO primary locked D-09-03; GRPO fallback only via --grpo-fallback
 - [Phase ?]: Dispatch boundary: Agent=telemetry monitor only; judge scoring=claude_agent subprocess
+- [Phase 09]: D-09-08 — RL trains MoE-only (train_attn=False, train_unembed=False), warm-started from v1.2 SFT v4 `save_state` via create_training_client_from_state; supersedes D-09-02 attn/unembed=True (attn deltas net-harmful per D-IT 04.4; judge skill MoE-borne; cold-start raw-base fails RLEV-01). Signed off Dr. Robert Li 2026-06-22; see 09-RL-INIT-RECONCILIATION.md
 
 ### Pending Todos
 
@@ -295,8 +298,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-20T21:35:10.671Z
-Stopped at: Phase 10 context gathered
+Last session: 2026-06-21T15:24:40.291Z
+Stopped at: context exhaustion at 75% (2026-06-21)
 
 Prior session: 2026-06-02T21:31:00.000Z
 Stopped at: Phase 4.4 CLOSED **REJECTED** at REVL-05 (human). All automated gates run; merge NOT promoted; D-05 disposition pending (recommend Phase 4.3 format-stability re-train). See `04.4-GATE-LEDGER.md` + `04.4-D05-DIAGNOSIS.md`. Resume = decide D-05.

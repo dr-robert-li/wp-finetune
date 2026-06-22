@@ -93,6 +93,7 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 | Phase 4 triage: 30/70 wins, NO_SURVIVORS | Only 30/70 produces parseable judge output (497 pairs, Spearman 0.57). Other 3 ratios: all judge examples skipped (unparseable). Gen is solved (97-100% PHPCS). Judge is the bottleneck. | ✓ Good |
 | Dual-mode GRPO (gen + judge) | Gen is 0.99+ at SFT — GRPO budget wasted on it. Judge at 0.57 Spearman needs the most RL investment. Phase 11 targets both modes with judge receiving equal or greater budget. | — Pending |
 | 0.85 Spearman gate lowered to 0.50 | 0.85 is aspirational. 0.57 is a meaningful positive correlation (p=0.000). Gate lowered to allow triage to proceed; v1.2 + v3.0 GRPO will improve judge quality toward 0.85. | ✓ Good |
+| D-09-08: RL trains MoE-only (attn/unembed frozen), warm-started from v1.2 SFT v4 `save_state` | Supersedes D-09-02's `train_attn/unembed=True` (D-09-02 predates the 04.4 D-IT finding that attn deltas are net-harmful to codegen; judge skill is MoE-borne). Cold-start raw-base RL fails RLEV-01 by construction. Signed off Dr. Robert Li 2026-06-22. See 09-RL-INIT-RECONCILIATION.md | — Pending |
 
 ## Current Milestone: v1.2 Judge Reasoning Fine-Tune
 
