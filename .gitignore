@@ -57,6 +57,9 @@ output/
 !output/triage_decision.md
 !output/tinker/
 !output/tinker/**
+!output/rl_checkpoints/checkpoint_manifest.json
+!output/rl_checkpoints/metrics/
+!output/rl_checkpoints/metrics/.gitkeep
 
 # Telemetry output (ephemeral run data)
 telemetry/

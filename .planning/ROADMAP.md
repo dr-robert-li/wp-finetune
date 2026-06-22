@@ -56,7 +56,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 7: Router Profiling & Protected Expert Set** - Gradient-free profiling pass tagging expert routing counts by task token affinity, identify dual-purpose experts that must not be pruned (D-10), with stability verification and concentration report (COMPLETE 2026-06-19 — all automated gates green under D-09 CI-aware; 1,480-expert protected mask exported; human sign-off APPROVED, council-unanimous on both judgment items)
 - [ ] **Phase 8: Reward Infrastructure** - Build composite reward pipeline (70% verifiable / 30% judge) with security hard gate, MO-GRPO normalization, VeRPO partial credit, and anti-hack eval set (D-11)
-- [ ] **Phase 9: GSPO Training** - Dual-mode RL (gen + judge reasoning) on FULL MoE with router-shift stabilization and collapse monitoring; GSPO (sequence-level) is the primary objective for MoE stability (D-08); GRPO is an optional fallback decided at Phase 9 planning time; protected experts from Phase 7 monitored
+- [x] **Phase 9: GSPO Training** - Dual-mode RL (gen + judge reasoning) on FULL MoE with router-shift stabilization and collapse monitoring; GSPO (sequence-level) is the primary objective for MoE stability (D-08); GRPO is an optional fallback decided at Phase 9 planning time; protected experts from Phase 7 monitored — Complete 2026-06-20 (live Tinker run tracked in 09-HUMAN-UAT.md)
 - [ ] **Phase 10: RL Comparative Evaluation** - Compare RL model against v1.2 SFT baseline on wp-bench and all 9 eval dimensions; gates v3.0
 
 </details>
@@ -386,26 +386,30 @@ Plans:
 - [x] 08-04-PLAN.md — Anti-hack set: 3-axis perturb-real + background-agent scoring + CI-aware gate (hi_perturbed < lo_clean) + acceptance report (D-11)
 
 ### Phase 9: GSPO Training
-**Goal**: Dual-mode RL refines both generation quality and judge reasoning quality on the FULL MoE (not sieve-constrained), with router-shift stabilization. GSPO (sequence-level) is the primary RL objective for MoE stability (D-08). Whether to also evaluate GRPO (with larger group size + Pro-GRPO expand-then-prune) as a fallback is an implementation decision made at Phase 9 planning time based on GSPO availability and feasibility. Judge is the primary bottleneck (Spearman 0.57 vs gen 0.99+ at SFT stage) and receives equal or greater RL budget. Gen rewards use PHPCS + security + VeRPO. Judge rewards use score-reasoning consistency (separately spawned Claude evaluator agent) and fix correctness (PHPCS/security scanner on critique-then-fix corrected code). Protected experts from Phase 7 monitored via routing regularizer.
+**Goal**: Dual-mode RL refines both generation quality and judge reasoning quality on the FULL MoE (not sieve-constrained), with router-shift stabilization. GSPO (sequence-level importance sampling via `tc.forward_backward_custom`) is the PRIMARY RL objective per locked D-09-03; GRPO (token-level, `tc.forward_backward`) is a documented fallback only if GSPO proves unstable (select via `--grpo-fallback` / `--no-gspo`). Judge is the primary bottleneck (Spearman 0.57 vs gen 0.99+ at SFT stage) and receives equal or greater RL budget. Gen rewards use PHPCS + security + VeRPO. Judge rewards use score-reasoning consistency (separately spawned Claude evaluator agent) and fix correctness (PHPCS/security scanner on critique-then-fix corrected code). Protected experts from Phase 7 monitored per step via native `ForwardBackwardOutput.metrics` MoE routing keys (monitor-only per D-09-02; no active regularizer injection).
 **Depends on**: Phase 8
 **Requirements**: GRPO-05, GRPO-06, GRPO-07, GRPO-08
 **Success Criteria** (what must be TRUE):
   1. RL training applies gradients to both `<wp_gen>` and `<wp_judge>` task pathways — gen uses verifiable code quality rewards, judge uses reasoning consistency + fix correctness rewards
-  2. RL gradients flow to all routed experts, attention layers, router gates, and shared experts — full-MoE RL, not hot-only (sieve comes after RL). Protected expert set from Phase 7 monitored via routing regularizer (KL divergence penalty if protected experts deactivate below baseline frequency)
+  2. RL gradients flow to all routed experts, attention layers, and shared experts — full-MoE RL, not hot-only (sieve comes after RL). Router gates are FROZEN (D-09-02: no `train_router` in LoraConfig). Protected expert set from Phase 7 monitored via per-step `e_frac_with_tokens:mean` and `e_max_violation` from `ForwardBackwardOutput.metrics` (monitor-only; no active regularizer injection)
   3. Router-shift ratio is computed between rollout and training phases, applied as stop-gradient floor multiplied into the clipped importance ratio before aggregation, and logged per step
   4. Training halts automatically if router-shift ratio exceeds the stability threshold — the halt is triggered by per-step monitoring, not a post-hoc check
 **Skill**: `wp-finetune:run-rl-training` (NEW — create during phase planning)
-  - **LLM execution**: Claude Code agents ONLY (`Agent(run_in_background=true)` per `wp-finetune:run-data-pipeline` SKILL.md pattern) — NO Anthropic API direct calls. GRPO-05 judge rewards use "score-reasoning consistency (separately spawned Claude evaluator agent)" during rollout scoring — these MUST be Claude Code agents. Gen rewards use deterministic PHPCS + security + VeRPO (no LLM). The training loop itself runs on DGX with the policy model; external judge-consistency scoring dispatches to Claude Code agents in parallel batches between rollout and gradient steps.
-  - Extends `run-training` pattern: per-epoch loop with `dgx.execute("unsloth_studio", ...)` for DGX Spark execution
-  - DGX validation: `dgx.validate(["toolbox", "config", "memory:70"])` pre-flight + `dgx.ensure_ready("unsloth_studio")` container check
-  - Embeds `observe-training` telemetry agents inline (6-agent team: gpu-metrics, thermal-throttling, training-metrics, disk-io, checkpoint-integrity, container-monitor)
-  - Calls `wp-finetune:adaptive-planner` between epochs (Step 8.5 pattern) for thermal/power-based config adjustment
-  - Router-shift monitoring loop: after each epoch, check shift ratio against threshold → if exceeded, halt and present to user; if stable, continue
-  - Protected expert retention check: after each epoch, compare current routing distribution against Phase 7 baseline → if protected experts deactivate below threshold, inject routing regularizer and re-run epoch
-  - Fix-test-validate loop: dry-run first (`--dry-run`), then real training; if training fails (OOM/HANG/THERMAL per failure classifier), `adaptive-planner` adjusts config and loop retries
+  - **LLM execution**: Claude Code agents ONLY (`Agent(run_in_background=true)` per `wp-finetune:run-data-pipeline` SKILL.md pattern) — NO Anthropic API direct calls. GRPO-05 judge rewards use "score-reasoning consistency (separately spawned Claude evaluator agent)" during rollout scoring — these MUST be Claude Code agents. Gen rewards use deterministic PHPCS + security + VeRPO (no LLM). The training loop runs on **Tinker cloud** (D-09-01 locked; GB10 cannot host Qwen3-30B-A3B bf16 for RL); external judge-consistency scoring dispatches to Claude Code agents in parallel batches between rollout and gradient steps.
+  - **Execution venue**: Tinker cloud exclusively — `tc = create_lora_training_client(...)` with frozen-router LoraConfig (`train_mlp=True`, `train_attn=True`, `train_unembed=True`; NO `train_router` per D-09-02)
+  - **GSPO primary**: per-step loop calls `tc.forward_backward_custom(data, gspo_loss_fn, loss_type_input="logprobs")` with RSPO stop-gradient floor (`seq_ratio.clamp(min=1.0)`) — GRPO fallback via `tc.forward_backward(data, loss_fn="importance_sampling")` selected only with `--grpo-fallback` (D-09-03)
+  - **Per-step autohalt guards**: KL `kl_sample_train_v1` soft alert ≥ 0.1 / hard halt ≥ 0.3; MoE routing `e_frac_with_tokens:mean` soft alert < 0.7 / hard halt < 0.5 — halt signals raised synchronously from `check_halt()` before next gradient step
+  - **Protected expert monitoring**: per-step Jaccard score logged from `ForwardBackwardOutput.metrics` (`e_frac_with_tokens:mean`, `e_max_violation:mean/max`) against Phase 7 mask at `output/profiling/reasoning-merged-v4/protected_expert_mask.npy` — monitor-only, no regularizer injection (D-09-02)
+  - Fix-test-validate loop: dry-run first (`--dry-run`), then real training; autohalt guards detect instability and surface halt reason to user before rollback
   - Anti-hack regression: run anti-hack eval set after training completes; if regression detected, flag for human review before proceeding
   - Invokes `wp-finetune:review-telemetry` after training completes for consolidated summary
-**Plans**: 1 plan
+**Plans**: 6 plans
+  - [x] 09-01-PLAN.md — RL prompt corpus assembly (audited, val-clean) + Tinker prompt-only data adapter (GRPO-05)
+  - [x] 09-02-PLAN.md — RL test contract (8 named stubs) + mock_tinker_client fixture + ROADMAP DGX→Tinker skill-text correction (GRPO-05/06/07/08)
+  - [x] 09-03-PLAN.md — Claude score-reasoning consistency scorer: async batch dispatch + content-hash cache + 120s timeout/impute (GRPO-05)
+  - [x] 09-04-PLAN.md — Interleaved rollouts + dual rewards (Phase 8 pipeline unmodified) + capped judge combination + cookbook advantages (GRPO-05)
+  - [x] 09-05-PLAN.md — Tinker RL loop: frozen-router LoRA, GRPO/GSPO switchable loss + RSPO floor, per-step KL/MoE auto-halt, monitor-only Jaccard, persistent checkpoints (GRPO-06/07/08)
+  - [x] 09-06-PLAN.md — New Tinker-native wp-finetune:run-rl-training skill (zero DGX; deviations documented; anti-hack regression gate) (GRPO-05/06/07/08)
 
 ### Phase 10: RL Comparative Evaluation
 **Goal**: The RL model is compared against the v1.2 SFT baseline on all quality dimensions, confirming RL improved judge reasoning (the primary target) without regressing generation quality — gates v3.0 MoE-Sieve
@@ -422,6 +426,7 @@ Plans:
   - Fix-test-validate loop: if any eval dimension regresses, present specific failure to user with suggested fix (re-train with adjusted regularizer, adjust reward weights) before declaring gate pass/fail
   - Human review checkpoint: present full comparison table (v1.2 SFT vs RL) before gating v3.0
 **Plans**: 1 plan
+  - [ ] 10-01-PLAN.md — RL-vs-v1.2 comparative eval: CI-aware bootstrap_gate + RLEV-02 five-part conjunctive gate (W0 build/test) → merge+serve+eval both checkpoints + live v1.2 anti-hack baseline (W1) → winner select + human v3.0 gate (W2) (RLEV-01, RLEV-02)
 
 ---
 
@@ -565,7 +570,7 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 6. Adaptive Training Planner | v1.1 | 6/6 | Complete | 2026-04-01 |
 | 7. Router Profiling & Protected Expert Set | v2.0 | 1/2 | In Progress|  |
 | 8. Reward Infrastructure | v2.0 | 4/4 | Complete    | 2026-06-19 |
-| 9. GSPO Training | v2.0 | 0/? | Not started | - |
+| 9. GSPO Training | v2.0 | 6/6 | Complete   | 2026-06-20 |
 | 10. RL Comparative Evaluation | v2.0 | 0/? | Not started | - |
 | 11. Post-RL MoE-Sieve | v3.0 | 0/? | Not started | - |
 | 12. MoE-Sieve Comparative Evaluation | v3.0 | 0/? | Not started | - |

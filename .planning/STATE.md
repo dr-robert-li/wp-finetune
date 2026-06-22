@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
-status: milestone_complete
-stopped_at: Milestone complete (Phase 8 was final phase)
-last_updated: 2026-06-19T22:34:07.058Z
+status: completed
+stopped_at: Phase 10 context gathered
+last_updated: "2026-06-20T21:35:10.680Z"
 progress:
-  total_phases: 11
-  completed_phases: 10
-  total_plans: 39
-  completed_plans: 39
-  percent: 91
+  total_phases: 13
+  completed_phases: 11
+  total_plans: 45
+  completed_plans: 45
+  percent: 85
 ---
 
 # Project State
@@ -24,9 +24,10 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 
 ## Current Position
 
-Phase: 8
-Plan: Not started
-Next: Phase 08 (Reward Infrastructure)
+Phase: 10 (RL Comparative Evaluation) — Pending, ready to plan (`/gsd:plan-phase 10`)
+Prev: Phase 09 (gspo-training) — COMPLETE 2026-06-20, 6/6 plans
+Requirements: RLEV-01 (RL vs v1.2 SFT baseline on wp-bench + 9 dims, no regression), RLEV-02 (reward-convergence + router-shift + protected-expert retention + anti-hack report)
+Next: plan Phase 10. NOTE: Phase 10 execution consumes the metrics from Phase 9's live Tinker RL run — that run is credential-gated and still tracked partial in 09-HUMAN-UAT.md, so it must complete before Phase 10 can produce real comparison results.
 
 **Phase 7 closure (07-HUMAN-REVIEW §5, council-reviewed):** Profiling run of canonical v1.2 merged model on
 matched 30/70 training stimulus (34,855 examples, 785.8M tokens, GB10 6h30m, rc=0). All automated gates green —
@@ -144,7 +145,7 @@ Progress: [██████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 13
+- Total plans completed: 19
 - Average duration: 9 min
 - Total execution time: 0.62 hours
 
@@ -157,6 +158,7 @@ Progress: [██████████] 100%
 | 03-model-prep-and-training | 2 | 34 min | 17 min |
 | 04.4 | 5 | - | - |
 | 8 | 4 | - | - |
+| 09 | 6 | - | - |
 
 **Recent Trend:**
 
@@ -192,6 +194,11 @@ Progress: [██████████] 100%
 | Phase 08-reward-infrastructure P02 | 281 | 2 tasks | 2 files |
 | Phase 08-reward-infrastructure P03 | 2018 | 3 tasks | 8 files |
 | Phase 08-reward-infrastructure P04 | 357 | 2 tasks | 2 files |
+| Phase 09-gspo-training P01 | 2 | 2 tasks | 5 files |
+| Phase 09 P02 | 25 minutes | 3 tasks | 3 files |
+| Phase 09-gspo-training P03 | 18 | 2 tasks | 2 files |
+| Phase 09-gspo-training P05 | 35m | 2 tasks | 3 files |
+| Phase 09-gspo-training P06 | 15m | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -241,6 +248,12 @@ Recent decisions affecting current work:
 - [Phase ?]: _REWARD_SEC_TRIGGERS derived programmatically: D2_security ids where method!=llm; SEC-N04 excluded by design
 - [Phase ?]: Gate fails CLOSED: RuntimeError on empty trigger set — prevents T-08-SEC fail-open
 - [Phase ?]: Composite weights 35/35/30 (phpcs/verpo/judge) locked per D-08; terminal override post-combine
+- [Phase ?]: Wave-0 fixture: mock_tinker_client mocks both forward_backward and forward_backward_custom (D-09-03 GSPO primary)
+- [Phase ?]: Wave-0 stubs use importorskip: SKIP while scripts absent, RED on wrong symbol when 09-03/04/05 land
+- [Phase ?]: ROADMAP Phase 9 corrected: DGX refs removed, Tinker-native GSPO-primary detail per D-09-01/02/03
+- [Phase ?]: [Phase 09-03]: Async-over-blocking dispatch; score clamped [0,1]; None not cached
+- [Phase ?]: GSPO primary locked D-09-03; GRPO fallback only via --grpo-fallback
+- [Phase ?]: Dispatch boundary: Agent=telemetry monitor only; judge scoring=claude_agent subprocess
 
 ### Pending Todos
 
@@ -282,8 +295,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-19T15:55:09.052Z
-Stopped at: Phase 8 planned (4 plans, checker 0 blockers) — ready for execution
+Last session: 2026-06-20T21:35:10.671Z
+Stopped at: Phase 10 context gathered
 
 Prior session: 2026-06-02T21:31:00.000Z
 Stopped at: Phase 4.4 CLOSED **REJECTED** at REVL-05 (human). All automated gates run; merge NOT promoted; D-05 disposition pending (recommend Phase 4.3 format-stability re-train). See `04.4-GATE-LEDGER.md` + `04.4-D05-DIAGNOSIS.md`. Resume = decide D-05.
@@ -328,7 +341,7 @@ Stopped at: W1-W6 cascade BLOCKED on eval-harness prose compat (2 layers). Findi
   - **CERTIFIED VERDICT (c246a20)**: smoke_pass=True exit=0 distinctness=0.879. judge 5/5 (prose 9/9 dims + 1 CtF json), gen 5/5 php_lint, baseline-sim 0.02-0.42 (<0.85 canary → reasoning diverges). Artifact: merge-artifacts/w0_03_smoke_PASS_verdict.json.
   - Data finding flagged: reasoning judge output is dimensional PROSE (CoT) or JSON (CtF), NOT <REASONING>-tagged. parse_judge_response(JSON-only) would have false-failed all CoT — coherence redesigned prose-aware + json-aware.
 
-Resume file: None
+Resume file: .planning/phases/10-rl-comparative-evaluation/10-CONTEXT.md
 Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertions + smoke-gate hardening), THEN W0-03 smoke gate against models/qwen3-30b-wp-30_70-reasoning-merged/ vs models/qwen3-30b-wp-30_70-merged-v2/ baseline, THEN REVL-01..08 eval gates
 
 ### Session 2026-05-29 reasoning MERGE COMPLETE + PROMOTED

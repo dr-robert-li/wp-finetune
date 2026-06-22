@@ -1,0 +1,68 @@
+{"messages": [{"role": "user", "content": "<wp_gen> Render icon widget output in the editor. Written as a Backbone JavaScript template and used to generate the live preview."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Write a WordPress function that is free plan"}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Init query vars by loading options."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Write a WordPress function that test adapter, in the ClientTest class"}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Fire an action for this direct update so it can be detected by other code."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Displaying the name in custom field settings page."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Write a WordPress function that construct, registering WordPress action hooks, in the Module class"}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Builds an output filename based on current file, and adding proper suffix"}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Get the next batch of items to process. An item will be an associative array of 'order_id' and 'meta_value'."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Write a WordPress function that fetch token, in the CdekApi class"}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Utility method that returns time string offset by timezone"}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Add the WooCommerce Payments address autocomplete provider, but only if a WCPay gateway is enabled."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Save the order to persist changes"}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Appends meta queries to an array."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Write a WordPress function that check captcha, in the CaptchaHandler class"}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Will return an array with everything that we need to render the action info"}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Write a WordPress function that process blik sale, in the Blik class"}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Get the groups schema, conforming to JSON Schema."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Fires when trashing a field group."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Write a WordPress function that hash deleted notice, with esc_html for security, in the WP_SRI_Plugin class"}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Get a numeric user ID from either an email address or a login. A numeric string is considered to be an existing user ID and is simply returned as such."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Output some CSS directly in the head of the document. Should there ever be more than ~25 lines of CSS, this should become a separate file."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Write a WordPress function: "}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Add contextual help text for a page. Creates an 'Overview' help tab."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Handle the woocommerce_update_order hook."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Matches provided URL with the current proxy URL in the settings."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Whether the user has the required capability to validate. Checks for permissions before validating."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Register the Container's shape dividers controls. TODO: Copied from `section.php`."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Redirects WCPay admin pages to the Connect page for stores that don't have a working Jetpack connection or a valid connected Stripe account. Please note that the overview page is handled separately in the `WC_Payments_Account::maybe_redirect_from_overview_page` method, before this method is called (priority 15 vs 16). IMPORTANT: The logic should be kept in sync with the one in maybe_redirect_from_connect_page to avoid loops."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> mb_ord() wrapper"}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Filter sold individually quantity for add to cart requests."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> This filter is documented in wp-admin/includes/file.php */"}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Handle updating a plugin's status."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Filters the Tiled Gallery partial path"}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Set the user mapping."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Check if the current user has a Constant Contact API key."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Check if we can load the module."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Define the CC/BCC/TO (with names and emails)."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Returns a PaymentPreferences object based off a PayPal response."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> This renders the content of the block within the wrapper."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Extra Sidebar Widgets description."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Specify the columns we wish to hide by default."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Fetches the checkout session object from the order meta and retrieves the session details from Stripe."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Gets columns to show in the list table."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Initialize the class"}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Write a WordPress function that call plugin api, in the Epsilon_Section_Recommended_Actions class"}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Query links from Free tables."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Send the email."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Page Title function."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Builds HTML elements. Wraps $content in HTML tag specified in $tag. If $close is false the closing tag is omitted (useful when $content is null and we only want to open the tag). $properties is an associative array with HTML properties. Tag can be passed unescaped, all other parameters are expected to be safe."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Write a WordPress function that get query type"}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Enqueues all module-specific assets."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Write a WordPress function that posts where paged, using prepared SQL queries, JOIN queries"}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Makes sure all 'date_query' columns are correctly prefixed and their respective tables are being JOIN'ed."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Function to add the contextual help in the settings page."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Constructs the class."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Prints the JavaScript templates for update admin notices."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Adds a note with the fee breakdown for the order."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Stream a single file to the browser without zipping it first."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Maps query arguments from the REST request."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Write a WordPress function that handle, in the LP_Handle_Steps class"}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Write a WordPress function that add value option, in the WooCommerceBrands class"}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Write a WordPress function that edit view fields for api geo position, in the EstateViewFieldModifierTypeEstateGeoBase class"}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Write a WordPress function that crypto box publickey from secretkey"}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Check the Google Search Console request."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Builds the `meta_query` arguments based on the current request."}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Write a WordPress function that instance, in the FS_Admin_Notice_Manager class"}, {"role": "assistant", "content": ""}]}
+{"messages": [{"role": "user", "content": "<wp_gen> Search for everything rules."}, {"role": "assistant", "content": ""}]}

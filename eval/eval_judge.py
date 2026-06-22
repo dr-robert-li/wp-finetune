@@ -17,6 +17,7 @@ Usage:
 """
 import argparse
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -151,12 +152,126 @@ _GT_FIELD_TO_DIM: dict[str, str] = {
 # ---------------------------------------------------------------------------
 
 
+# v1.2 reasoning-judge <judge_output> field name -> internal rubric dim key.
+# The served judge emits SHORT field names ("security", "performance", "i18n",
+# "accessibility") AND the [/REASONING]-block sometimes uses the *_score variants
+# the eval harness historically expected — accept both so derivation never
+# silently drops a present dimension. "code_quality" / "dependency_integrity" are
+# intentionally UNMAPPED: dim_map.json rules them "no clean eval equivalent", so
+# they are excluded from the weighted overall (not silently folded into D9).
+_JUDGE_FIELD_TO_DIM = {
+    "wpcs_compliance": "D1_wpcs",
+    "security": "D2_security", "security_score": "D2_security",
+    "sql_safety": "D3_sql",
+    "performance": "D4_perf", "performance_score": "D4_perf",
+    "wp_api_usage": "D5_wp_api",
+    "i18n": "D6_i18n", "i18n_score": "D6_i18n", "i18n_l10n": "D6_i18n",
+    "accessibility": "D7_a11y", "accessibility_score": "D7_a11y",
+    "error_handling": "D8_errors",
+    "code_structure": "D9_structure",
+}
+
+# PASS threshold (verdict POLICY, 04.3 VERDICT-POLICY): PASS iff overall >= 70.
+# A FAIL verdict must therefore never derive an overall >= 70.
+_PASS_THRESHOLD = 70.0
+
+
+def _dump_judge_failure(php_code: str, raw_text: str, resp: object) -> None:
+    """Diagnostic: when judge_score_single is about to return None, append the
+    code-under-judgement + the raw judge output + finish_reason to the JSONL at
+    $WP_JUDGE_DEBUG_DUMP. No-op unless that env var is set (zero prod overhead).
+    Lets us SEE the real live parse-failure population instead of theorizing it."""
+    path = os.environ.get("WP_JUDGE_DEBUG_DUMP")
+    if not path:
+        return
+    try:
+        finish = None
+        usage_completion = None
+        try:
+            finish = resp.choices[0].finish_reason  # type: ignore[attr-defined]
+            usage_completion = getattr(getattr(resp, "usage", None), "completion_tokens", None)
+        except Exception:  # noqa: BLE001
+            pass
+        rec = {
+            "finish_reason": finish,
+            "completion_tokens": usage_completion,
+            "raw_len": len(raw_text),
+            "code_len": len(php_code),
+            "has_judge_output_tag": "<judge_output>" in raw_text,
+            "has_prose_score": bool(re.search(r"score\s+\d+\s*/\s*10", raw_text)),
+            # Residual triage: was the judged code already extracted clean PHP, or
+            # did a fence survive (extract miss) / is there no code at all (not-code
+            # generation -> correct reward is low, not impute)?
+            "code_has_fence": "```" in php_code,
+            "code_starts_phpish": php_code.lstrip()[:6].lower().startswith(("<?php", "functi", "class ", "add_ac", "regist")),
+            "code": php_code[:6000],
+            "raw_text": raw_text[:6000],
+        }
+        with open(path, "a") as f:
+            f.write(json.dumps(rec) + "\n")
+    except Exception:  # noqa: BLE001 — diagnostics must never break scoring
+        pass
+
+
+def _derive_overall_from_dims(obj: dict) -> "Optional[float]":
+    """Derive overall_score (0-100) from per-dimension 0-10 scores.
+
+    The v1.2 reasoning judge is bimodal: it frequently emits the per-dimension
+    block + verdict but OMITS overall_score. Imputing those to the group mean
+    (D-08-07) erases the (usually low) score the output earned — a directional
+    reward bias. Instead derive a proxy overall:
+
+      - weighted mean over the dims the judge actually emitted+mapped, weights =
+        canonical DIMENSION_WEIGHTS renormalized over present dims (symmetric
+        with rubric aggregation; dim_map.json is the single source so Phase 7/10
+        reward shaping does not drift);
+      - fallback to plain mean x10 if NO emitted field maps to a weighted dim;
+      - cap below the PASS threshold when verdict == FAIL (a FAIL must not
+        derive a passing overall).
+
+    Returns None if no numeric dimension scores are present at all.
+    """
+    dim_scores: dict[str, float] = {}   # internal dim -> 0-10
+    numeric_fallback: list[float] = []   # any numeric dim-like field, 0-10
+    for field, val in obj.items():
+        if isinstance(val, bool) or not isinstance(val, (int, float)):
+            continue
+        if field == "overall_score":
+            continue
+        numeric_fallback.append(float(val))
+        dim = _JUDGE_FIELD_TO_DIM.get(field)
+        if dim is not None:
+            dim_scores[dim] = float(val)
+
+    if dim_scores:
+        total_w = sum(DIMENSION_WEIGHTS[d] for d in dim_scores)
+        overall10 = sum(dim_scores[d] * DIMENSION_WEIGHTS[d] for d in dim_scores) / total_w
+        overall = overall10 * 10.0
+    elif numeric_fallback:
+        overall = (sum(numeric_fallback) / len(numeric_fallback)) * 10.0
+    else:
+        return None
+
+    verdict = obj.get("verdict")
+    if isinstance(verdict, str) and verdict.strip().upper() == "FAIL":
+        overall = min(overall, _PASS_THRESHOLD - 1.0)
+    return max(0.0, min(100.0, overall))
+
+
 def parse_judge_response(response: str) -> Optional[dict]:
     """Parse model judge response and extract score fields.
 
+    PURE parser — returns exactly what the model emitted (no derived fields), so
+    it is safe for BOTH the served-judge reward path AND teacher-GT extraction
+    (_extract_gt_from_assistant), which requires overall_score to be ABSENT when
+    the target omits it (canonical GT = rubric_scorer, never a derived proxy).
+    overall_score derivation for the reward path lives in judge_score_single.
+
     Handles:
+      - <judge_output>...</judge_output> tag block (v1.2 reasoning judge)
       - Raw JSON string
       - JSON in markdown code fences (```json ... ``` or ``` ... ```)
+      - Embedded {...} object
       - Missing keys -> returns dict without those keys
 
     Args:
@@ -170,8 +285,20 @@ def parse_judge_response(response: str) -> Optional[dict]:
 
     # Strip <think>...</think> blocks (Qwen3 reasoning mode).
     # Must happen before JSON extraction — thinking content may contain
-    # curly braces that confuse the greedy {.*} regex in Strategy 4.
+    # curly braces that confuse the greedy {.*} regex below.
     text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+
+    # Strategy 0: <judge_output>...</judge_output> tag block. MUST precede the
+    # greedy {.*} scan: the v1.2 judge prefixes a [REASONING] prose block that
+    # quotes the code under review (e.g. `{$wpdb->prefix}`), so a greedy first-{
+    # to last-} match spans prose+JSON and fails. The tags bound the JSON exactly.
+    # (Teacher-GT targets carry no such tags, so this strategy never alters them.)
+    match = re.search(r"<judge_output>\s*(\{.*\})\s*</judge_output>", text, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group(1))
+        except json.JSONDecodeError:
+            pass
 
     # Strategy 1: raw JSON
     try:
@@ -211,7 +338,7 @@ def judge_score_single(
     php_code: str,
     client: "openai.OpenAI",
     model: str,
-    max_tokens: int = 512,
+    max_tokens: int = 1024,
 ) -> "Optional[float]":
     """Invoke wp_judge on a single PHP code string.
 
@@ -222,11 +349,17 @@ def judge_score_single(
     merged Qwen3 model emits unclosed <think> blocks that parse_judge_response
     cannot rescue — causing 19-25% parse failures (see RC-A fix, Phase 04.4).
 
+    The v1.2 reasoning judge emits a [REASONING] prose block followed by a
+    <judge_output> JSON block (~750+ tokens total). The default MUST cover that —
+    512 truncates before the JSON, yielding a silent None (then group-mean
+    imputation in the RL reward path). 1024 matches _judge_create and the eval
+    path (run_eval) and is the validated budget; raise it for very long inputs.
+
     Args:
         php_code:   The PHP source string to evaluate.
         client:     An openai.OpenAI instance pointed at the vLLM judge endpoint.
         model:      The served model name (e.g. "openai/qwen3-wp").
-        max_tokens: Max tokens for the judge response (default 512).
+        max_tokens: Max tokens for the judge response (default 1024).
 
     Returns:
         float: raw overall_score from the parsed judge response.
@@ -247,10 +380,22 @@ def judge_score_single(
     )
     raw_text = resp.choices[0].message.content or ""
     parsed = parse_judge_response(raw_text)
-    if parsed is None:
-        return None
-    overall = parsed.get("overall_score")
-    return float(overall) if isinstance(overall, (int, float)) else None
+    score: Optional[float] = None
+    if parsed is not None:
+        overall = parsed.get("overall_score")
+        if isinstance(overall, (int, float)) and not isinstance(overall, bool):
+            score = float(overall)
+        else:
+            # Bimodal judge: per-dim block + verdict present but overall_score
+            # OMITTED. Derive it (served-judge dims are 0-10) rather than None — a
+            # None here triggers group-mean imputation (D-08-07) that erases the
+            # low score the output earned, biasing reward toward verbose/rough
+            # generations. Derivation lives HERE (reward boundary), NOT in
+            # parse_judge_response, so teacher-GT extraction stays pure.
+            score = _derive_overall_from_dims(parsed)
+    if score is None:
+        _dump_judge_failure(php_code, raw_text, resp)
+    return score
 
 
 def _extract_code_from_judge_prompt(user_message: str) -> str:
