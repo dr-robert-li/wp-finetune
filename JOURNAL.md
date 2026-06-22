@@ -4,6 +4,24 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-06-22 (later) — The RL run was learning nothing, because it started from nothing
+
+I armed a monitoring loop on the live GSPO run and it earned its keep within a few hours. The process was healthy, no crashes, steps ticking over every seven minutes. But the reward sat flat near 0.25 for forty steps and the sample-train KL read exactly 0.0000 every single step. The easy move was to file the flat reward under "RL is noisy, give it time." Two things stopped me.
+
+The first was that the reward fixes I shipped earlier in the day had finally made the signal honest. A parser fix taught the scorer to read the judge's tag-wrapped output. An extraction fix fed the judge clean PHP instead of the base model's chatty markdown. A non-code guard zeroed completions that were prose rather than code. With the reward no longer paying out for garbage, a flat trajectory meant something real instead of measurement noise hiding progress underneath.
+
+The second was that I made myself read the actual rollouts instead of reasoning about them from a distance. The failure dumps were full of the policy saying "I can't assist with that request" and "Could you clarify what you mean." That is the phrasing of a raw instruction-tuned assistant, not a WordPress judge. SFT trains that refusal reflex out of the model, so its presence at all was the tell.
+
+The code confirmed it in one line. The RL training client was built with create_lora_training_client on the raw Qwen3-30B-A3B base, a fresh rank-32 LoRA seeded at 42, with no load_state anywhere. The run had no v1.2 weights in it. I had been watching a model relearn WordPress from scratch under a reward signal, at a learning rate of 1e-5, and calling its failure to improve "slow convergence." It was not converging because it was starting from nothing.
+
+Confirming the fix took the rest of the afternoon. Tinker does support warm-starting through create_training_client_from_state, which loads a saved checkpoint and inherits its base model, rank, and train flags. The catch came in two parts. The v4-winner, which is the exact baseline Phase 10 compares against, only ever saved sampler weights, and Tinker refuses to load those as training state. Only the older v3 checkpoint is loadable, and v3 is the model whose codegen regression is the entire reason v4 exists. The second catch runs deeper: a contradiction between two locked decisions. The v4 SFT was MoE-only, with attention and unembed frozen, because the grid measured attention deltas as net-harmful to codegen. The RL design D-09-02 mandates training attention and unembed. Both cannot hold.
+
+I stopped the run rather than burn another fifty hours on a mis-initialized policy, and wrote the reconciliation up as a sign-off document so the decision sits with the human who owns it.
+
+The lesson is one I keep relearning from a new angle. A clean reward is the prerequisite for trusting anything the reward tells you. The morning's fixes were not housekeeping. They are what made this init bug visible at all, because a vacuous reward would have hidden the flat trajectory and let me keep blaming slow convergence. And when a metric goes flat, read the population before you theorize about the cause. The dump that settled this took fifteen minutes to write and one restart to fill, and it pointed straight at an init bug that no amount of staring at reward curves would have named.
+
+---
+
 ## 2026-06-22 — The judge couldn't read its own verdicts, and I kept fixing the wrong thing
 
 The full Phase 9 GSPO run went live overnight — 500 steps, Qwen3-30B-A3B, the v4 judge served as `wp_judge` on vLLM, reward flowing to experts and attention with the router frozen. By morning it was a handful of steps in and healthy, except for one warning repeating every step: `judge parse failure rate 16.7%... 25.0%... 66.7%`, the gen-reward path's judge scorer failing to parse a large and wildly variable fraction of its own judge calls, then imputing those rewards from the group mean under the D-08-07 fallback. Group-mean imputation is not neutral — it erases whatever score the failed sample earned and replaces it with the average, which on a *bad* generation hands back a reward it didn't deserve. A quarter to two-thirds of the judge signal on the gen path was being silently laundered. That is not a thing you let run for sixty hours.
