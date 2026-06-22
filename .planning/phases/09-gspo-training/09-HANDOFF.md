@@ -87,6 +87,43 @@ Replace the `claude_agent` dispatch in consistency scoring with a LOCAL vLLM cal
   Parse a 0–1 score. Consistency prompt = new, small.
 - Effort: moderate. Best robustness/throughput.
 
+#### Recommended local model (GB10 / DGX Spark): `nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-NVFP4`
+Clear pick: it's the only model with **explicit DGX Spark (aarch64) recipe guidance**, ships a validated NVFP4
+variant, same 3B-active MoE footprint as the training model, and has `--reasoning-parser nemotron_v3` (CoT
+`<think>` blocks work out of the box). Serve it on a **separate port (8001)** so it coexists with the
+`wp_judge` fix-scoring server on :8000.
+
+```bash
+vllm serve nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-NVFP4 \
+  --port 8001 \
+  --kv-cache-dtype fp8 \
+  --tensor-parallel-size 1 \
+  --gpu-memory-utilization 0.70 \       # DGX Spark-specific per recipe
+  --max-model-len 32768 \               # reduced from 256K per recipe OOM guidance
+  --max-num-seqs 8 \                    # DGX Spark-specific per recipe
+  --moe-backend flashinfer_cutlass \    # required for NVFP4 at TP>=1 on Blackwell
+  --reasoning-parser nemotron_v3 \
+  --trust-remote-code
+```
+
+Model comparison for the consistency-judge role:
+
+| Model | NVFP4 | GB10 explicit support | Active params | Judge quality |
+|---|---|---|---|---|
+| **Nemotron-3-Nano-Omni NVFP4** | ✅ | ✅ documented | 3B | High (reasoning + CoT) |
+| Llama-4-Scout NVFP4 | ✅ | ⚠️ B200 only in recipe | 17B | Good |
+| Nemotron-3-Super NVFP4 | ✅ | ⚠️ 120B total, tight | 12B | Very high, memory-risky |
+| Qwen3.6-35B-A3B NVFP4 | ✅ | ❌ not in recipe hw list | 3B | Good |
+| gemma-4-31B dense | ❌ BF16 only | ❌ | 31B | High but too heavy |
+
+**Caveat — disable thinking for the consistency call.** Want a pure JSON score, not a reasoning chain: pass
+`enable_thinking: false` (chat_template_kwargs), `temperature=0.2`, `max_tokens=256`. Maps to the recipe's
+"Instruct" sampling row; keeps latency <1s/call at batch 8. Wire this in the consistency prompt builder when
+repointing `score_judge_consistency_batch` at `http://localhost:8001/v1`.
+
+**Memory note:** check :8001 (0.70 util) + the :8000 `wp_judge` server + Tinker client fit GB10 together; if
+tight, lower one server's `--gpu-memory-utilization`, or serve the consistency model only during RL rollouts.
+
 ### Option 2 — Drop Claude-consistency (SIMPLEST, $0)
 Run RL on `fix_correctness` (0.7, deterministic) + gen rewards only. Set consistency weight 0 / skip the
 dispatch (add `--no-consistency` or force `consistency=neutral` so `combine_judge_reward` = fix only).
