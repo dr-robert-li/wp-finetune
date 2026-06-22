@@ -213,3 +213,31 @@ the queue each tick and writes results.
 Wire **Option 1 (local-model consistency)** or **Option 2 (drop consistency)** → run a 100-step signal-check
 → then the full 500. Option 2 is the fastest route to a fully-$0 valid run; Option 1 keeps the consistency
 signal at $0.
+
+---
+
+## ✅ RESOLVED — 2026-06-23: Option 1 wired ($0 local consistency)
+
+The cost blocker is closed. Option 1 is implemented, smoke-tested, and validated live.
+
+- **Backend swap:** `scripts/rl_judge_dispatch.py` `score_judge_consistency_batch` now takes a
+  `base_url`; when set it routes to a LOCAL vLLM OpenAI endpoint (`_score_via_vllm` +
+  `_parse_consistency_score`, enable_thinking=False, temp 0.2, max_tokens 256). Legacy `claude -p`
+  path preserved at `base_url=None`. Flag: `rl_train.py --consistency-base-url`; threaded through
+  `rl_rollouts.collect_rollouts`.
+- **Model (deviation from above):** the recipe named the **Omni (vision) NVFP4** — that is a
+  multimodal model, wrong for a text 0–1 score and heavier on the shared GB10 pool. Used the
+  **text-only sibling `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-NVFP4`** instead (NemotronHForCausalLM,
+  19.4GB, no vision). User-confirmed. Serve: `scripts/serve_consistency_vllm.sh` (:8001,
+  served `wp_consistency`, gpu-util 0.22, max-model-len 12288, moe-backend flashinfer_cutlass).
+  `--reasoning-parser` omitted (thinking disabled at call time).
+- **DGX Spark safety:** GB10 is one unified pool with NO OOM protection. `scripts/_oom_guard.sh`
+  pauses the run + stops containers if MemAvailable < 2048MB. Both 30B servers + remote trainer
+  fit at judge 0.55 + consistency 0.22.
+- **Validated:** smoke test (quality good 0.8–1.0 vs wrong 0.0; throughput warm 0.345s/call, batch-8
+  0.9s; no truncation at 12288). Live signal run: warm-start MoE-only gate green, step-0 reward
+  non-uniform, consistency endpoint hit (+20 req/step), $0, memory flat.
+- **Live status feed:** `.planning/phases/09-gspo-training/09-LOCAL-RL-STATUS-UPDATES.md`
+  (monitoring loop appends here; `scripts/_rl_status_tick.py` is the per-tick writer).
+- **Full-run launch:** same runbook as above PLUS
+  `--consistency-base-url http://localhost:8001/v1 --consistency-model wp_consistency`.

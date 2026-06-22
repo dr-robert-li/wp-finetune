@@ -120,9 +120,43 @@ def create_lora_training_client(
 def build_training_client(args: Any) -> Any:
     """Create LoRA training client from parsed args.
 
-    Uses literal True for all three train_* flags (D-09-02: MLP, attn, unembed
-    all trained; router gates FROZEN, no router arg passed).
+    Two init modes:
+      * --init-from <tinker_path> (WARM START, D-09-04): continue RL from the v1.2
+        SFT LoRA. Phase 10/RLEV-01 compares the RL model against the v1.2 SFT
+        baseline and requires judge-Spearman improvement with NO regression — only
+        coherent if RL *starts from* v1.2. A fresh LoRA on the raw base has zero
+        WordPress/judge capability (empirically: instruct-style refusals on
+        <wp_gen> prompts) and regresses vs v1.2 by construction. ServiceClient
+        .create_training_client_from_state derives base_model/rank/train_* from the
+        checkpoint (train_* default True = D-09-02; no router arg = router FROZEN)
+        and load_state()s the weights.
+      * default (no --init-from): fresh LoRA on args.model_id base. Retained for
+        smoke/dry-run only; NOT valid for a real RLEV-01 run.
     """
+    if getattr(args, "init_from", None):
+        import tinker  # noqa: PLC0415
+
+        sc = tinker.ServiceClient()
+        tc = sc.create_training_client_from_state(args.init_from)
+        # Surface the loaded geometry so a rank/base mismatch is loud, not silent.
+        try:
+            info = sc._get_rest_client_for_weights(None).get_weights_info_by_tinker_path(
+                args.init_from
+            ).result()
+            logger.info(
+                "WARM START from %s: base_model=%s rank=%s (train_mlp=%s attn=%s unembed=%s)",
+                args.init_from, info.base_model, info.lora_rank,
+                info.train_mlp, info.train_attn, info.train_unembed,
+            )
+        except Exception:  # noqa: BLE001 — logging must not abort a good client
+            logger.info("WARM START from %s (weights-info probe unavailable)", args.init_from)
+        return tc
+
+    logger.warning(
+        "COLD START: fresh LoRA on %s with NO v1.2 init. Valid for smoke/dry-run "
+        "only — a real RLEV-01 run MUST pass --init-from <v1.2 tinker path>.",
+        args.model_id,
+    )
     return create_lora_training_client(
         base_model=args.model_id,
         rank=args.lora_rank,
@@ -737,6 +771,18 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--lora-rank", type=int, default=32)
     parser.add_argument("--lora-seed", type=int, default=42)
     parser.add_argument(
+        "--init-from",
+        type=str,
+        default=None,
+        help=(
+            "Tinker path to v1.2 SFT LoRA weights to WARM START RL from "
+            "(D-09-04, e.g. 'tinker://<run>:train:0/sampler_weights/wp-reasoning-v4-r32-rp30-ep3'). "
+            "create_training_client_from_state derives base/rank/train_* from it. "
+            "REQUIRED for a real RLEV-01 run — without it RL cold-starts on the raw "
+            "base (no WordPress/judge capability) and regresses vs the v1.2 baseline."
+        ),
+    )
+    parser.add_argument(
         "--learning-rate", type=float, default=1e-5,
         help="Adam learning rate for optim_step (TrainingClient.optim_step AdamParams).",
     )
@@ -831,6 +877,20 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help=(
             "Number of votes for score_judge_consistency_batch median (09-03). "
             "Default: 1."
+        ),
+    )
+    # --consistency-base-url: route the consistency scorer to a LOCAL vLLM endpoint
+    # ($0, Phase 09 Option 1) instead of the paid `claude -p` subprocess path.
+    # When set, --consistency-model is the served model name at this endpoint
+    # (e.g. the Nemotron-3-Nano text NVFP4 served name on :8001, or 'wp_judge'
+    # reused on :8000). When omitted, the legacy claude path is used (bills API).
+    parser.add_argument(
+        "--consistency-base-url",
+        default=None,
+        help=(
+            "Local vLLM OpenAI endpoint for the consistency scorer "
+            "(e.g. http://localhost:8001/v1). $0 unattended path (09 Option 1). "
+            "If omitted, falls back to the paid claude -p subprocess path."
         ),
     )
     # Judge endpoint: on the live path the reward uses an openai.OpenAI client

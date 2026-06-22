@@ -651,6 +651,7 @@ def collect_rollouts(
                 consistency_samples,
                 model=getattr(args, "consistency_model", "sonnet"),
                 n_votes=getattr(args, "n_votes", 1),
+                base_url=getattr(args, "consistency_base_url", None),
             )
         )
 
