@@ -61,6 +61,27 @@ assert judge_consistency_weight <= 0.5, (
 )
 
 # ---------------------------------------------------------------------------
+# Lever 2 (08.1-03 / D-81-02): increased consistency weight as backstop.
+#
+# Measurement (08.1-MEASUREMENT.md) shows the consistency term already has
+# frac_mid~0.73 (graded), while the old 0.7 fix_correctness anchor was
+# effectively binary (frac_mid=0.011).  Shifting more weight onto the graded
+# consistency term amplifies the discriminating signal as a backstop after
+# Lever 1 Form A de-saturates the parse cliff.
+#
+# Chosen value: 0.45 — well within the D-09-05 cap (<=0.5), gives consistency
+# a meaningful boost without violating the "fix_correctness as anchor" invariant.
+# Rationale: T-81.3-03 (repudiation guard) requires this be recorded in code.
+# The guard at combine_judge_reward(weight=0.6) still raises ValueError; we
+# do NOT relax the cap, only move the call-site default closer to it.
+# ---------------------------------------------------------------------------
+judge_consistency_weight_lever2: float = 0.45
+assert judge_consistency_weight_lever2 <= 0.5, (
+    f"D-09-05 guard 1 violated by Lever 2 weight: {judge_consistency_weight_lever2} "
+    f"must be <= 0.5."
+)
+
+# ---------------------------------------------------------------------------
 # MO-GRPO within-group normalization (mirrors reward_pipeline._mo_grpo_norm)
 # Applied per-signal before scalar combination in judge reward path.
 # ---------------------------------------------------------------------------
@@ -202,6 +223,61 @@ def combine_judge_reward(
             f"fix_correctness must remain the anchor signal."
         )
     return (1.0 - weight) * fix_correctness + weight * consistency
+
+
+# ---------------------------------------------------------------------------
+# Lever 1 Form A: graded fix_correctness (08.1-03 / D-81-02 selected lever)
+# ---------------------------------------------------------------------------
+
+# Partial-credit score for non-empty but unparseable corrected blocks.
+# Chosen at 0.25 — within the frac_mid window (0.1, 0.9) that SC1 requires,
+# well below the parseable-high cluster (~0.99) to preserve the high extreme,
+# and above 0.1 to ensure a measurable contribution to frac_mid.
+# Rationale (from 08.1-MEASUREMENT.md): 68% of judge completions did not
+# produce a parseable PHP block. The prior `else: 0.0` hard gate assigned
+# these to the same bin as genuinely empty/non-answer completions, creating
+# an artificial 0-mode. Partial credit recognises that a non-empty-but-
+# unparseable output represents a FAILED FIX attempt (genuine signal), not
+# the same as producing no answer at all.
+_PARSE_CLIFF_PARTIAL_CREDIT: float = 0.25
+
+
+def _fix_score_from_completion(completion_text: str) -> float:
+    """Compute a graded fix_correctness score from a judge completion (Lever 1 Form A).
+
+    Replaces the binary parse-gate with three tiers (08.1-03 / D-81-02):
+      1. Empty / no corrected block     -> 0.0   (preserved low extreme)
+      2. Non-empty but unparseable PHP  -> _PARSE_CLIFF_PARTIAL_CREDIT (0.25)
+      3. Parseable PHP                  -> rubric.overall / 100.0 (preserved high extreme)
+
+    This gives at least 3 distinct values, ensuring frac_mid > 0 (SC1 gate).
+    The extremes (empty=0.0, parseable~0.99) are NOT flattened — the partial
+    credit only grades the previously-collapsed middle tier.
+
+    Security note: non-parseable completions do NOT pass through
+    _extract_verifiable_signals because that function returns a vacuous score (~100)
+    on non-code input. Routing unparseable blocks there would re-introduce the
+    reward-hacking surface this gate was designed to close (T-81.3-02).
+    The graded lever assigns a FIXED partial credit — no LLM grader added.
+
+    Args:
+        completion_text: Raw judge completion (may contain prose, fences, or a
+                         <corrected_code> block — handled by _extract_corrected_php).
+
+    Returns:
+        float: Graded fix_correctness score in [0, 1].
+    """
+    corrected = _extract_corrected_php(completion_text)
+    if _is_parseable_php(corrected):
+        from scripts.reward_pipeline import _extract_verifiable_signals  # noqa: PLC0415
+        rubric = _extract_verifiable_signals(corrected)
+        return float(rubric.overall) / 100.0
+    if corrected and corrected.strip():
+        # Non-empty block that failed to parse: genuine fix attempt that produced
+        # syntactically invalid PHP. Assign partial credit.
+        return _PARSE_CLIFF_PARTIAL_CREDIT
+    # Truly empty / no corrected block at all: not a fix attempt.
+    return 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -706,21 +782,18 @@ def collect_rollouts(
         )
 
         # Deterministic fix-correctness from verifiable signals on corrected code.
-        # Extract the corrected PHP first (the judge task emits critique prose +
-        # a ```php fix), then GATE on parseability: a non-code judge answer (e.g.
-        # "could you clarify...") otherwise scores a vacuous fix_correctness=1.0
-        # (score_code finds no violations in non-code), which the 0.7 anchor
-        # weight then turns into a 0.70 reward for a non-answer. No parseable PHP
-        # -> 0.0, so the fix_correctness=1.0/consistency=0.0 divergence that
-        # Panickssery flags can no longer pay out.
+        # Lever 1 Form A (08.1-03 / D-81-02): _fix_score_from_completion replaces
+        # the old binary parse gate with a three-tier graded score:
+        #   empty/no-block       -> 0.0  (preserved low extreme)
+        #   non-empty-unparseable -> _PARSE_CLIFF_PARTIAL_CREDIT (0.25)
+        #   parseable PHP         -> rubric.overall/100 (preserved high extreme)
+        # This breaks the bimodal 0/1 structure that caused frac_mid=0.011 on the
+        # judge path (08.1-MEASUREMENT.md). Security note: non-parseable completions
+        # receive a FIXED constant — _extract_verifiable_signals is NOT called on
+        # non-code (that path returns vacuous ~100 and is a reward-hacking surface).
         fix_correctness_scores = []
         for completion_obj in judge_completions:
-            corrected = _extract_corrected_php(completion_obj.completion)
-            if _is_parseable_php(corrected):
-                rubric = _extract_verifiable_signals(corrected)
-                fix_score = float(rubric.overall) / 100.0  # [0,100] -> [0,1]
-            else:
-                fix_score = 0.0
+            fix_score = _fix_score_from_completion(completion_obj.completion)
             fix_correctness_scores.append(fix_score)
 
         # Capped Claude-consistency via 09-03 dispatcher. Each judge completion
@@ -753,10 +826,16 @@ def collect_rollouts(
         # (advantage centering, A_i = r_i - mean(r)) is applied DOWNSTREAM in
         # compute_rollout_advantages — applying it here as well would re-introduce
         # z-scores and drive valid positive judge rewards negative (CR-05).
+        #
+        # Lever 2 (08.1-03): use judge_consistency_weight_lever2 (0.45) instead of
+        # the module default (0.3) to amplify the already-graded consistency signal
+        # as a backstop against the >90 saturation cluster on parseable outputs.
+        # Guard (weight>0.5 -> ValueError) is NOT relaxed — 0.45 <= 0.5 (D-09-05).
         for i, completion_obj in enumerate(judge_completions):
             combined_scalar = combine_judge_reward(
                 fix_correctness=fix_correctness_scores[i],
                 consistency=consistency_scores[i],
+                weight=judge_consistency_weight_lever2,
             )
 
             # Wrap in a RewardResult-like object for build_trajectory_groups
