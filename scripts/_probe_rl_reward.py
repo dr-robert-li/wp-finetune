@@ -49,6 +49,7 @@ from scripts.rl_rollouts import (  # noqa: E402
     combine_judge_reward,
     _extract_corrected_php,
     _augment_judge_prompt,
+    _fix_score_from_completion,  # Lever 1 Form A (08.1-03): 3-tier graded score
 )
 from scripts import reward_pipeline  # noqa: E402
 from scripts.reward_pipeline import (  # noqa: E402
@@ -296,14 +297,18 @@ def probe_histogram(
         total += 1
         corrected = _extract_corrected_php(comp)
         ok = _is_parseable_php(corrected)
+        # Lever 1 Form A (08.1-03): route through the redesigned 3-tier graded scorer
+        # instead of the old binary gate. _fix_score_from_completion returns:
+        #   0.0  (empty / no block)      — preserved low extreme
+        #   0.25 (non-empty unparseable) — partial credit (was collapsed to 0 pre-redesign)
+        #   rubric.overall/100 (parseable PHP) — preserved high extreme
+        fix = _fix_score_from_completion(comp)  # uses comp not corrected (wrapper handles extraction)
+        fix_scores.append(fix)
         if ok:
             rubric = _extract_verifiable_signals(corrected)
             overall = float(rubric.overall)   # [0, 100]
-            fix = overall / 100.0
             parseable_scores.append(overall)
-            fix_scores.append(fix)
         else:
-            fix_scores.append(0.0)
             parse_fail_count += 1
 
     parse_fail_rate = parse_fail_count / total if total > 0 else float("nan")
@@ -447,6 +452,98 @@ def main() -> None:
           "reward_mean trending up) as the real-rollout gate.")
     all_pass = g1 and g2 and g3
     print(f"\n  >>> OFFLINE GATE: {'ALL PASS' if all_pass else 'NOT ALL PASS'}")
+
+    # --------------------------------------------------------------------- #
+    # OFFLINE GATE (corpus thresholds) — Phase 8.1 gate for Phase 9 entry   #
+    # Distinct from the HARD GATE above (which checks offline code shapes).  #
+    # This gate evaluates population-level per-group stats on >=100 parseable#
+    # completions. PROVISIONAL when N<100; PASS/FAIL when N>=100.            #
+    # Thresholds from 08.1-RESEARCH.md Q4 / D-81-01.                        #
+    # --------------------------------------------------------------------- #
+    _hr("OFFLINE GATE (corpus thresholds — Phase 8.1 / D-81-01)")
+
+    # Pre-redesign baseline from 08.1-MEASUREMENT.md (Plan 01 before numbers)
+    BASELINE_FRAC_GROUPS_ALL_ZERO = 0.312
+    BASELINE_FRAC_GROUPS_NONUNIFORM = 0.677
+    BASELINE_GROUP_REWARD_STD_MEAN = 0.2989
+    BASELINE_FRAC_MID = 0.011
+
+    # Effective N = number of completions feeding per-group stats.
+    # Use parseable count (rows that produced a rubric score), NOT raw count.
+    # The N<100 floor uses this — simulated groups below 100 parseable samples
+    # are statistically unreliable for population-level threshold evaluation.
+    # hist_result is always assigned above (both branches of if/else)
+    # n_parseable = rows that went through rubric scoring (not raw count, not group count)
+    n_parseable = len(hist_result["parseable_scores"])
+    corpus_stats = hist_result["group_stats"]
+    corpus_label = args.completions if args.completions else "built-in synthetic"
+
+    print(f"\n  Corpus               : {corpus_label}")
+    print(f"  N parseable (rubric) : {n_parseable}  (floor=100; gate evaluates iff N>=100)")
+
+    if n_parseable < 100:
+        # PROVISIONAL: insufficient corpus for population-level threshold evaluation.
+        # The on-disk fallback (judge_failures.prefixfix-diag.jsonl, ~10 parseable)
+        # would land here — frac_groups_all_zero<0.35 on ~2 simulated groups is noise.
+        n_groups_est = max(1, n_parseable // 4)
+        print(
+            f"\n  OFFLINE GATE: PROVISIONAL "
+            f"(insufficient corpus N={n_parseable}<100; "
+            f"population-level thresholds unreliable on ~{n_groups_est} simulated groups; "
+            f"recommend a fresh >=100-completion corpus before Phase 9)"
+        )
+        print("  Phase 9 is BLOCKED until a PASS verdict on N>=100 corpus.")
+    else:
+        # Evaluate gate thresholds (all must pass for PASS)
+        fgaz  = corpus_stats.get("frac_groups_all_zero")
+        fgnu  = corpus_stats.get("frac_groups_nonuniform")
+        gstd  = corpus_stats.get("group_reward_std_mean")
+        fmid  = corpus_stats.get("frac_mid")
+
+        # Threshold conditions (from RESEARCH Q4)
+        # Condition 1: frac_groups_all_zero < 0.35 AND measurably below 0.312 baseline
+        c1 = (fgaz is not None) and (fgaz < 0.35) and (fgaz < BASELINE_FRAC_GROUPS_ALL_ZERO)
+        # Condition 2: frac_groups_nonuniform > 0.20
+        c2 = (fgnu is not None) and (fgnu > 0.20)
+        # Condition 3: group_reward_std_mean > 0.05
+        c3 = (gstd is not None) and (gstd > 0.05)
+        # Condition 4: frac_mid > 0 (reward no longer bimodal; 3-tier lever creates mid values)
+        c4 = (fmid is not None) and (fmid > 0)
+
+        def _fmt(v: "float | None", w: int = 10, p: int = 3) -> str:
+            return f"{v:{w}.{p}f}" if v is not None else f"{'N/A':>{w}}"
+
+        print(f"\n  Before/after comparison (08.1-MEASUREMENT.md baseline vs post-redesign):")
+        print(f"  {'Metric':<30} {'Before':>10} {'After':>10}  {'Threshold':>16}  Result")
+        print(f"  {'-'*30} {'-'*10} {'-'*10}  {'-'*16}  ------")
+        print(f"  {'frac_groups_all_zero':<30} {BASELINE_FRAC_GROUPS_ALL_ZERO:>10.3f} "
+              f"{_fmt(fgaz)}  "
+              f"{'< 0.35 & < baseline':>16}  {'PASS' if c1 else 'FAIL'}")
+        print(f"  {'frac_groups_nonuniform':<30} {BASELINE_FRAC_GROUPS_NONUNIFORM:>10.3f} "
+              f"{_fmt(fgnu)}  "
+              f"{'> 0.20':>16}  {'PASS' if c2 else 'FAIL'}")
+        print(f"  {'group_reward_std_mean':<30} {BASELINE_GROUP_REWARD_STD_MEAN:>10.4f} "
+              f"{_fmt(gstd, p=4)}  "
+              f"{'> 0.05':>16}  {'PASS' if c3 else 'FAIL'}")
+        print(f"  {'frac_mid':<30} {BASELINE_FRAC_MID:>10.3f} "
+              f"{_fmt(fmid)}  "
+              f"{'> 0':>16}  {'PASS' if c4 else 'FAIL'}")
+
+        gate_pass = c1 and c2 and c3 and c4
+        verdict = "PASS" if gate_pass else "FAIL"
+        print(f"\n  OFFLINE GATE: {verdict}")
+        if gate_pass:
+            print("  Phase 9 may proceed to the 50-step GPU signal-check.")
+        else:
+            failed = [name for name, ok in [
+                ("frac_groups_all_zero < 0.35 & < baseline", c1),
+                ("frac_groups_nonuniform > 0.20", c2),
+                ("group_reward_std_mean > 0.05", c3),
+                ("frac_mid > 0", c4),
+            ] if not ok]
+            print(f"  Phase 9 is BLOCKED. Failed conditions: {failed}")
+            print("  Revise Plan 03 reward edit before Phase 9.")
+
     print("\nDone. See .planning/debug/09-rl-warmstart-zero-reward.md for the writeup.")
 
 
