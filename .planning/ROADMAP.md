@@ -55,7 +55,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 <summary>v2.0 RL Alignment (Phases 7-10) — Planned</summary>
 
 - [x] **Phase 7: Router Profiling & Protected Expert Set** - Gradient-free profiling pass tagging expert routing counts by task token affinity, identify dual-purpose experts that must not be pruned (D-10), with stability verification and concentration report (COMPLETE 2026-06-19 — all automated gates green under D-09 CI-aware; 1,480-expert protected mask exported; human sign-off APPROVED, council-unanimous on both judgment items)
-- [ ] **Phase 8: Reward Infrastructure** - Build composite reward pipeline (70% verifiable / 30% judge) with security hard gate, MO-GRPO normalization, VeRPO partial credit, and anti-hack eval set (D-11)
+- [x] **Phase 8: Reward Infrastructure** - Build composite reward pipeline (70% verifiable / 30% judge) with security hard gate, MO-GRPO normalization, VeRPO partial credit, and anti-hack eval set (D-11) (COMPLETE 2026-06-20 — verified + HUMAN-UAT; consumed by Phase 9)
+- [ ] **Phase 8.1: Reward Redesign** - INSERTED 2026-06-24. Replace the effectively-binary 0.7 fix_correctness verifiable term with graded partial credit (fraction of PHPCS/security/syntax sub-checks) + rebalance/per-group diversity shaping so GSPO groups carry non-zero advantage, and add diagnostic logging (component means, frac_groups_all_zero, entropy). Triggered by Phase 9's flat-reward finding (binary reward → uniform groups → advantage collapse → vanishing gradient; RLEV-01 verdict FLAT). Gates a targeted Phase 9 rerun.
 - [x] **Phase 9: GSPO Training** - Dual-mode RL (gen + judge reasoning) on FULL MoE with router-shift stabilization and collapse monitoring; GSPO (sequence-level) is the primary objective for MoE stability (D-08); GRPO is an optional fallback decided at Phase 9 planning time; protected experts from Phase 7 monitored — Complete 2026-06-20 (live Tinker run tracked in 09-HUMAN-UAT.md)
 - [ ] **Phase 10: RL Comparative Evaluation** - Compare RL model against v1.2 SFT baseline on wp-bench and all 9 eval dimensions; gates v3.0
 
@@ -384,6 +385,20 @@ Plans:
 - [x] 08-02-PLAN.md — Reward math core: dataclasses + MO-GRPO within-group normalization + VeRPO difficulty weighting on WP-standards subset (GRPO-03, GRPO-04)
 - [x] 08-03-PLAN.md — Composite 70/30 assembly + security TERMINAL hard gate (fail-closed) + judge-imputation + 50-case integration incl. SC2 (GRPO-01, GRPO-02)
 - [x] 08-04-PLAN.md — Anti-hack set: 3-axis perturb-real + background-agent scoring + CI-aware gate (hi_perturbed < lo_clean) + acceptance report (D-11)
+
+### Phase 8.1: Reward Redesign — INSERTED
+**Goal**: The composite reward produces a graded, per-group-discriminating signal so a GSPO rerun gets a non-zero advantage and an actual learning gradient — replacing the effectively-binary 0.7 `fix_correctness` term that collapsed Phase 9's optimization.
+**Depends on**: Phase 8 (reward pipeline built + verified), Phase 9 first run (flat-reward evidence: training reward flat ~0.27 over 250 steps; RLEV-01 teacher-Spearman FLAT, no checkpoint beyond noise vs warmstart).
+**Trigger / root cause**: `fix_correctness` (0.7 weight) is effectively binary (Panickssery divergent-rollout frac<0.1=0.53, frac>0.9=0.47, **frac_mid=0.00** — a step function). 4 samples of a "fixable" prompt all ~1, "unfixable" all ~0 → uniform GSPO groups → normalized advantage ~0 → vanishing gradient. Graded consistency (0.3) too small to drive learning. Temperature=1.0/group_size=4 → exploration fine (low-temp hypothesis refuted).
+**Success Criteria** (what must be TRUE):
+  1. `fix_correctness` returns graded partial credit (fraction of weighted PHPCS/security/syntax sub-checks passed), not pass/fail — verified by a probe showing frac_mid > 0 on the divergent-rollout set.
+  2. On a held-out rollout-group probe, within-group reward variance is non-zero for a meaningful fraction of groups (groups no longer collapse to uniform) — i.e. `frac_groups_all_zero`/`frac_groups_uniform` measurably below the pre-redesign baseline.
+  3. Diagnostic logging added per `09-RL-LOGGING-REQS.md`: per-component reward means, `frac_groups_all_zero`, and group-reward entropy emitted every step to the metrics JSONL.
+  4. Reward weights rebalanced and/or per-group diversity/advantage-floor shaping applied so the saturated term no longer sets a prompt-mix-determined flat mean (validated against the new per-group logging).
+  5. Offline reward-pipeline tests still pass (security hard gate, MO-GRPO normalization, anti-hack set thresholds) — the redesign does not regress Phase 8's verified guarantees.
+**Skill**: No new skill — edits to `scripts/reward_pipeline.py` / `scripts/rl_judge_dispatch.py` + pytest; consumes `09-RL-LOGGING-REQS.md` (logging spec) and `09-LOCAL-RL-HANDOFF.md` §5/§7 + status doc Section H (evidence).
+**Gates**: a targeted Phase 9 RERUN (fresh warm-start from v4, NO resume) only after the new per-group logging confirms a restored gradient on a short signal-check run.
+**Plans**: TBD (discuss → research → plan)
 
 ### Phase 9: GSPO Training
 **Goal**: Dual-mode RL refines both generation quality and judge reasoning quality on the FULL MoE (not sieve-constrained), with router-shift stabilization. GSPO (sequence-level importance sampling via `tc.forward_backward_custom`) is the PRIMARY RL objective per locked D-09-03; GRPO (token-level, `tc.forward_backward`) is a documented fallback only if GSPO proves unstable (select via `--grpo-fallback` / `--no-gspo`). Judge is the primary bottleneck (Spearman 0.57 vs gen 0.99+ at SFT stage) and receives equal or greater RL budget. Gen rewards use PHPCS + security + VeRPO. Judge rewards use score-reasoning consistency (separately spawned Claude evaluator agent) and fix correctness (PHPCS/security scanner on critique-then-fix corrected code). Protected experts from Phase 7 monitored per step via native `ForwardBackwardOutput.metrics` MoE routing keys (monitor-only per D-09-02; no active regularizer injection).
