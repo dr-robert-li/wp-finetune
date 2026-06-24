@@ -193,3 +193,42 @@ The binary 0.7 fix_correctness term is the prime suspect. Candidate fixes (valid
 - `.env` contains `ANTHROPIC_API_KEY` — Option 1/2 don't call claude, but don't source it into any `claude -p` path.
 - Each RL launch restarts from warm-start (NO resume) — a rerun is a fresh run, not a continuation.
 - DGX OOM is unrecoverable; never run >2 30B vLLM; always keep the OOM guard armed during any RL/eval run.
+
+---
+
+## 11. Step-250 protocol RESULTS (2026-06-24)
+
+**Run:** stopped cleanly at step 251 (kill -TERM, exit 0) after the step-250 checkpoint was confirmed in
+`checkpoint_manifest.json`. 5 checkpoints saved: step-50/100/150/200/250 (Tinker sampler_weights under
+run 03c69b7b).
+
+**Training reward (window means):** [0-50]=0.266 [51-100]=0.278 [101-150]=0.274 [151-200]=0.247 [201-250]=0.271
+→ FLAT over 250 steps, decisive 151-200 window below baseline. No learning.
+
+**RLEV-01 fixed-set eval** (pipeline-consistent: warmstart=v4 ep3 sampler + all 5 RL checkpoints, ALL via
+capture_judge_responses_tinker temp 0.0 → offline teacher-Spearman; calibrated_canonical was unusable this
+env — rubric calibrated_overall unavailable excluded all rows — so the baseline-comparable TEACHER-GT
+Spearman was used via scripts/_rlev01_score.py, reusing eval_judge's exact parsers; fixed teacher GT on the
+86 GT-bearing rows, 85 common-aligned across all checkpoints). Metric: spearman(model_overall, teacher_overall).
+
+| Checkpoint | teacher-Spearman (aligned, n=85) | Δ vs warmstart | bootstrap 95% CI | improved_beyond_noise |
+|---|---|---|---|---|
+| warmstart  | 0.585 | —      | —                | — |
+| step-50    | 0.551 | -0.035 | [-0.146, +0.075] | NO |
+| step-100   | 0.594 | +0.009 | [-0.104, +0.111] | NO |
+| step-150   | 0.608 | +0.023 | [-0.072, +0.114] | NO |
+| step-200   | 0.633 | +0.047 | [-0.066, +0.164] | NO |
+| step-250   | 0.575 | -0.010 | [-0.113, +0.091] | NO |
+
+**VERDICT: FLAT.** No checkpoint improves judge-Spearman beyond noise vs warmstart (every bootstrap CI
+includes 0). Point estimates are a noisy walk ~0.55-0.63 that peaks at step-200 then falls back to ≈warmstart
+by step-250 — non-monotonic, not significant. Consistent with the flat training reward and the
+binary-fix_correctness → advantage-collapse mechanism (Section H of status doc).
+
+**NEXT ACTION: REWARD REDESIGN before any further RL compute.** No signal to justify a targeted rerun.
+Fix the binary 0.7 fix_correctness term FIRST (graded partial credit / reweight / per-group diversity shaping;
+see §7), AND add the diagnostic logging in 09-RL-LOGGING-REQS.md (component means + frac_groups_all_zero +
+entropy) so the NEXT run can confirm whether the redesign restores a per-group gradient before spending days.
+- Best-by-metric checkpoint = step-200 (0.633), but not significantly above warmstart — do NOT promote it.
+- Eval artifacts: output/rl_eval/{warmstart,step-*}/judge_responses.jsonl + output/rl_eval/rlev01_teacher_summary.json.
+- Scorer: scripts/_rlev01_score.py. Captures: scripts/capture_judge_responses_tinker.py.

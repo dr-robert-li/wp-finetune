@@ -1267,3 +1267,124 @@ can't quantify per-group collapse directly; the binary fix term is the strong ci
    the 09-RL-LOGGING-REQS diagnostics. Flat Spearman → REWARD REDESIGN before more RL compute (fix the
    binary 0.7 fix_correctness term per the evidence above — e.g. graded partial-credit, rebalance weights,
    or per-group diversity shaping).
+
+### D · 2026-06-23 20:35 UTC — RL status tick
+- containers: wp_judge=`Up 31 hours` | wp_consistency=`Up 31 hours`
+- metrics: step=232 reward_mean=0.3215851153092406 min=0.0 max=1.0 non_uniform=True kl_v1=0.0 halt=None trend 0.258→0.322 over 6 rows
+- warm_start: 2026-06-23 00:29:50,190 INFO __main__: WARM START from tinker://80c93d7c-2044-5dae-8e45-12dc1574d8f3:train:0/weights/wp-reasoning-v4-r32-rp30-savestate-final-state: base_model=Qwen/Qwen3-30B-A3B rank=
+- recent_error: none
+
+### E · 2026-06-23 20:35 UTC — Judge-quality spot-check (local consistency endpoint)
+- good=1.0 wrong=0.0 good>=wrong=True
+- verdict: OK — local judge discriminates good vs wrong critique
+
+### D · 2026-06-23 20:55 UTC — RL status tick
+- containers: wp_judge=`Up 32 hours` | wp_consistency=`Up 31 hours`
+- metrics: step=235 reward_mean=0.4075129032258064 min=0.0 max=1.0 non_uniform=True kl_v1=0.0 halt=None trend 0.257→0.408 over 6 rows
+- warm_start: 2026-06-23 00:29:50,190 INFO __main__: WARM START from tinker://80c93d7c-2044-5dae-8e45-12dc1574d8f3:train:0/weights/wp-reasoning-v4-r32-rp30-savestate-final-state: base_model=Qwen/Qwen3-30B-A3B rank=
+- recent_error: none
+
+### E · 2026-06-23 20:55 UTC — Judge-quality spot-check (local consistency endpoint)
+- good=1.0 wrong=0.0 good>=wrong=True
+- verdict: OK — local judge discriminates good vs wrong critique
+
+### D · 2026-06-23 21:15 UTC — RL status tick
+- containers: wp_judge=`Up 32 hours` | wp_consistency=`Up 31 hours`
+- metrics: step=237 reward_mean=0.2513174342105263 min=0.0 max=0.9379 non_uniform=True kl_v1=0.0 halt=None trend 0.322→0.251 over 6 rows
+- warm_start: 2026-06-23 00:29:50,190 INFO __main__: WARM START from tinker://80c93d7c-2044-5dae-8e45-12dc1574d8f3:train:0/weights/wp-reasoning-v4-r32-rp30-savestate-final-state: base_model=Qwen/Qwen3-30B-A3B rank=
+- recent_error: none
+
+### E · 2026-06-23 21:15 UTC — Judge-quality spot-check (local consistency endpoint)
+- good=1.0 wrong=0.0 good>=wrong=True
+- verdict: OK — local judge discriminates good vs wrong critique
+
+### D · 2026-06-24 07:33 — self-check (step 240, pre-250 hop)
+- reward flat: [151-200]=0.247 [201-240]=0.271 (~0.27 plateau). kl_v1=0. e_frac 0.951. 0 errors. Mem 10.8GB.
+  10 steps to step-250 decision. Run healthy, not collapsing.
+
+### D · 2026-06-23 21:35 UTC — RL status tick
+- containers: wp_judge=`Up 32 hours` | wp_consistency=`Up 32 hours`
+- metrics: step=240 reward_mean=0.303378125 min=0.0 max=1.0 non_uniform=True kl_v1=0.0 halt=None trend 0.408→0.303 over 6 rows
+- warm_start: 2026-06-23 00:29:50,190 INFO __main__: WARM START from tinker://80c93d7c-2044-5dae-8e45-12dc1574d8f3:train:0/weights/wp-reasoning-v4-r32-rp30-savestate-final-state: base_model=Qwen/Qwen3-30B-A3B rank=
+- recent_error: none
+
+### E · 2026-06-23 21:35 UTC — Judge-quality spot-check (local consistency endpoint)
+- good=1.0 wrong=0.0 good>=wrong=True
+- verdict: OK — local judge discriminates good vs wrong critique
+
+### D · 2026-06-23 21:55 UTC — RL status tick
+- containers: wp_judge=`Up 33 hours` | wp_consistency=`Up 32 hours`
+- metrics: step=243 reward_mean=0.269403125 min=0.0 max=0.94 non_uniform=True kl_v1=0.0 halt=None trend 0.318→0.269 over 6 rows
+- warm_start: 2026-06-23 00:29:50,190 INFO __main__: WARM START from tinker://80c93d7c-2044-5dae-8e45-12dc1574d8f3:train:0/weights/wp-reasoning-v4-r32-rp30-savestate-final-state: base_model=Qwen/Qwen3-30B-A3B rank=
+- recent_error: none
+
+### E · 2026-06-23 21:55 UTC — Judge-quality spot-check (local consistency endpoint)
+- good=1.0 wrong=0.0 good>=wrong=True
+- verdict: OK — local judge discriminates good vs wrong critique
+
+### D · 2026-06-23 22:15 UTC — RL status tick
+- containers: wp_judge=`Up 33 hours` | wp_consistency=`Up 32 hours`
+- metrics: step=245 reward_mean=0.263125 min=0.0 max=1.0 non_uniform=True kl_v1=0.0 halt=None trend 0.303→0.263 over 6 rows
+- warm_start: 2026-06-23 00:29:50,190 INFO __main__: WARM START from tinker://80c93d7c-2044-5dae-8e45-12dc1574d8f3:train:0/weights/wp-reasoning-v4-r32-rp30-savestate-final-state: base_model=Qwen/Qwen3-30B-A3B rank=
+- recent_error: none
+
+### E · 2026-06-23 22:15 UTC — Judge-quality spot-check (local consistency endpoint)
+- good=1.0 wrong=0.0 good>=wrong=True
+- verdict: OK — local judge discriminates good vs wrong critique
+
+### D · 2026-06-24 08:34 — step 248, short hop to catch step-250 ckpt
+- [151-200]=0.247 [201-248]=0.269 — flat, verdict effectively decided. Waiting ~16min for step-250 checkpoint
+  to write (directive: save step-250 before stop). kl_v1=0, e_frac 0.955, 0 errors, mem 10.5GB.
+
+### D · 2026-06-23 22:35 UTC — RL status tick
+- containers: wp_judge=`Up 33 hours` | wp_consistency=`Up 33 hours`
+- metrics: step=248 reward_mean=0.19462812499999999 min=0.0 max=0.94 non_uniform=True kl_v1=0.0 halt=None trend 0.269→0.195 over 6 rows
+- warm_start: 2026-06-23 00:29:50,190 INFO __main__: WARM START from tinker://80c93d7c-2044-5dae-8e45-12dc1574d8f3:train:0/weights/wp-reasoning-v4-r32-rp30-savestate-final-state: base_model=Qwen/Qwen3-30B-A3B rank=
+- recent_error: none
+
+### E · 2026-06-23 22:35 UTC — Judge-quality spot-check (local consistency endpoint)
+- good=1.0 wrong=0.0 good>=wrong=True
+- verdict: OK — local judge discriminates good vs wrong critique
+
+### I · 2026-06-24 08:54 — RUN STOPPED at step 251 (flat-reward verdict)
+- VERDICT FLAT: window means [0-50]=0.266 [51-100]=0.278 [101-150]=0.274 [151-200]=0.247 [201-250]=0.271.
+  No learning over 250 steps; decisive 151-200 below baseline.
+- step-250 checkpoint CONFIRMED in manifest BEFORE stop (5 saved: 50/100/150/200/250).
+- Trainer stopped cleanly: kill -TERM pid 1540083 → exited ~6s, exit 0. Checkpoints preserved.
+- NEXT: RLEV-01 fixed-set judge-Spearman eval across warmstart + 5 checkpoints → signal-vs-flat decision.
+- vLLM servers (wp_judge:8000, wp_consistency:8001) still UP; OOM guard still armed.
+
+### D · 2026-06-23 22:55 UTC — RL status tick
+- containers: wp_judge=`Up 34 hours` | wp_consistency=`Up 33 hours`
+- metrics: step=251 reward_mean=0.26837812499999997 min=0.0 max=1.0 non_uniform=True kl_v1=0.0 halt=None trend 0.286→0.268 over 6 rows
+- warm_start: 2026-06-23 00:29:50,190 INFO __main__: WARM START from tinker://80c93d7c-2044-5dae-8e45-12dc1574d8f3:train:0/weights/wp-reasoning-v4-r32-rp30-savestate-final-state: base_model=Qwen/Qwen3-30B-A3B rank=
+- recent_error: none
+
+### E · 2026-06-23 22:55 UTC — Judge-quality spot-check (local consistency endpoint)
+- good=1.0 wrong=0.0 good>=wrong=True
+- verdict: OK — local judge discriminates good vs wrong critique
+
+### I · 2026-06-24 09:10 — RLEV-01 batch LAUNCHED
+- Pipeline-consistent eval (advisor-mandated): warmstart(v4 ep3 sampler) + step-50/100/150/200/250, ALL via
+  capture_judge_responses_tinker (temp 0.0, filter wp_judge_startswith) → eval_judge offline calibrated_canonical.
+- Verdict keys off 50→250 TREND + bootstrap_spearman_improvement CI (improved_beyond_noise = CI_lo>0), NOT the
+  stale 0.1534 merged-vLLM point. Inner-join pairs on common index for equal-length bootstrap.
+- ~13s/greedy-sample → ~2-3h total. Servers idle (eval needs no local GPU). Summary → output/rl_eval/rlev01_summary.json.
+
+### I · 2026-06-24 10:10 — RLEV-01 eval-config FIX + early signal
+- calibrated_canonical path excluded ALL 121 rows (rubric calibrated_overall unavailable this env →
+  `no_calibrated_gt`, which also zeroed teacher pairing via early-continue). Switched to a direct
+  TEACHER-Spearman scorer (scripts/_rlev01_score.py) reusing eval_judge's exact parsers
+  (parse_judge_scores/_derive_prose_overall/_extract_gt_from_assistant) minus the canonical gate.
+  Fixed teacher GT (86/121 rows) across all checkpoints → clean cross-checkpoint comparison.
+- Validated: warmstart teacher-Spearman=0.580 (n=86) — sane healthy correlation (the old 0.1534 was the
+  harder calibrated metric; absolute value differs, but the TREND under one consistent metric is the signal).
+- EARLY SIGNAL: warmstart=0.580, step-50=0.539 → step-50 already BELOW warmstart (RL slightly degrading judge,
+  consistent with flat/declining reward). Capturing step-100/150/200/250 to confirm the full trend + bootstrap CI.
+
+### I · 2026-06-24 10:40 — RLEV-01 VERDICT: FLAT (no learning) → REWARD REDESIGN
+- Aligned teacher-Spearman (n=85): warmstart 0.585 | s50 0.551 | s100 0.594 | s150 0.608 | s200 0.633 | s250 0.575.
+- Bootstrap vs warmstart: NONE improved_beyond_noise (all CIs include 0). Peak s200 (+0.047) not significant;
+  non-monotonic, drops back to ~warmstart by s250.
+- VERDICT FLAT → reward redesign before further RL compute (fix binary 0.7 fix_correctness term + add
+  09-RL-LOGGING-REQS diagnostics). No targeted rerun. Full results in 09-LOCAL-RL-HANDOFF.md §11.
