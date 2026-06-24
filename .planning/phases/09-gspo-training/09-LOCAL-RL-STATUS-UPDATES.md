@@ -1388,3 +1388,34 @@ can't quantify per-group collapse directly; the binary fix term is the strong ci
   non-monotonic, drops back to ~warmstart by s250.
 - VERDICT FLAT → reward redesign before further RL compute (fix binary 0.7 fix_correctness term + add
   09-RL-LOGGING-REQS diagnostics). No targeted rerun. Full results in 09-LOCAL-RL-HANDOFF.md §11.
+
+### J · 2026-06-25 ~07:45 — Post-8.1 RERUN: LAUNCH-READY (dry-run validated, supervised launch pending)
+
+**8.1 reward redesign is COMPLETE + offline-gated PASS** (judge frac_mid 0.011→0.691,
+frac_groups_all_zero 0.312→0.000, Phase-8 regression 62/62). Redesigned reward is LIVE in the
+training path (rl_rollouts.py: `_fix_score_from_completion` 0/0.25/rubric÷100 + `judge_consistency_weight_lever2=0.45`).
+
+**Dry-run validated (free, mock Tinker client, exit 0):** full rl_train→rollouts→reward→GSPO plumbing
+works; checkpoint write + jaccard + metrics row OK. Live JSONL schema now carries the diagnostic keys:
+`frac_groups_all_zero/all_one/nonuniform`, `fix_correctness_mean/std`, `consistency_mean/std`,
+`group_reward_std_mean`, `entropy`, `frac_reward_gt_0.9`, `frac_reward_lt_0.1`, `reward_breakdown{reward_min,reward_max,n_samples}`, `reward_mean`.
+- **frac_mid watch-key** = `1 − frac_reward_gt_0.9 − frac_reward_lt_0.1` (derive at read-time; no code change).
+
+**Infra ready:** no active trainer; wp_judge:8000 + wp_consistency:8001 UP ($0 local); `.venv-tinker` + TINKER key present;
+prior checkpoints under run 03c69b7b (FLAT, superseded).
+
+**LAUNCH PLAN (supervised, fresh context — DO NOT launch unsupervised):**
+1. Arm OOM guard (`scripts/_oom_guard.sh`, Monitor persistent) — DGX has NO OOM protection; mandatory.
+2. Start status-tick loop (`scripts/_rl_status_tick.py` every ~20min) + telemetry monitor on the metrics JSONL.
+3. Launch **two seeds** (NOT two mechanisms — skill and launcher are the same rl_train.py), separate paths so they don't clobber:
+   - Seed A `--lora-seed 42`, `--metrics-path output/rl_checkpoints/metrics/rl_metrics.seedA.jsonl`, `--manifest-path .../manifest.seedA.json`, log `.../full_run.seedA.log`, `WP_JUDGE_DEBUG_DUMP=.../judge_failures.seedA.jsonl`, pid `.../rl_run.seedA.pid`.
+   - Seed B `--lora-seed 7` (distinct), `.seedB.*` paths.
+   - Both warm-start: `tinker://80c93d7c-2044-5dae-8e45-12dc1574d8f3:train:0/weights/wp-reasoning-v4-r32-rp30-savestate-final-state`, `--model-id Qwen/Qwen3-30B-A3B --lora-rank 32 --total-steps 500 --batch-size 8 --checkpoint-every 50 --jaccard-every 20 --kl-soft 0.1 --kl-hard 0.3 --efrac-soft 0.7 --efrac-hard 0.5 --judge-base-url http://localhost:8000/v1 --judge-model wp_judge --consistency-base-url http://localhost:8001/v1 --consistency-model wp_consistency`. Run with `.venv-tinker/bin/python`; `set -a; . ./.env; set +a; unset ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN`.
+   - Expect ~2× slower steps from shared-judge contention — fine for a shape check.
+4. **EARLY WIRING GATE (step 1–3, before burning 50):** offline predicts `frac_groups_all_zero → ~0.000` + varied per-sample fix scores (0/0.25/~1). If step-1 still shows old ~0.31 / uniform groups → the new reward is NOT live → KILL immediately + debug wiring (do not burn 50 steps).
+5. **50-step kill/continue gate:** at least one seed must show `reward_min≠reward_max` + `reward_mean` trending up + frac_groups_all_zero low + frac_mid(derived)>0 + entropy stable. Continue the winner toward 500; kill the loser. **Both flat → STOP both.**
+6. **Flat-branch framing (carry into analysis):** offline-PASS / live-FLAT ⇒ suspect the SEAM first — reward path not actually live in this Tinker run? warm-start savestate baking old behavior? judge contention zeroing scores? — NOT "Plan 03 wrong" (offline strongly validated the design). The step-1–3 check is what catches this.
+
+**Cost:** only Tinker training compute (~8min/step; judges $0). Spend gate at 50 steps, not launch (checkpoint-every 50). ~7h/seed to the gate.
+
+**STATUS: LAUNCH-READY. Paused for supervised launch in a fresh context (context budget exhausted this session; the step-1–3 gate needs live eyes).**
