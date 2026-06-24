@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
-current_phase: 10
-current_phase_name: RL Comparative Evaluation
-status: completed
+current_phase: 08.1
+current_phase_name: reward-redesign
+status: executing
 stopped_at: Phase 8.1 context gathered
-last_updated: "2026-06-24T05:22:56.955Z"
+last_updated: "2026-06-24T10:25:57.226Z"
 progress:
   total_phases: 14
   completed_phases: 11
-  total_plans: 47
-  completed_plans: 46
+  total_plans: 51
+  completed_plans: 47
   percent: 79
 ---
 
@@ -22,11 +22,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Milestone complete
+**Current focus:** Phase 08.1 — reward-redesign
 
 ## Current Position
 
-Phase: 10 (RL Comparative Evaluation) — Pending, ready to plan (`/gsd:plan-phase 10`)
+Phase: 08.1 (reward-redesign) — EXECUTING
 Prev: Phase 09 (gspo-training) — COMPLETE 2026-06-20, 6/6 plans
 Requirements: RLEV-01 (RL vs v1.2 SFT baseline on wp-bench + 9 dims, no regression), RLEV-02 (reward-convergence + router-shift + protected-expert retention + anti-hack report)
 Next: plan Phase 10. NOTE: Phase 10 execution consumes the metrics from Phase 9's live Tinker RL run — that run is credential-gated and still tracked partial in 09-HUMAN-UAT.md, so it must complete before Phase 10 can produce real comparison results.
@@ -201,6 +201,7 @@ Progress: [██████████] 100%
 | Phase 09-gspo-training P03 | 18 | 2 tasks | 2 files |
 | Phase 09-gspo-training P05 | 35m | 2 tasks | 3 files |
 | Phase 09-gspo-training P06 | 15m | 1 tasks | 1 files |
+| Phase 08.1 P02 | 10 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -257,6 +258,7 @@ Recent decisions affecting current work:
 - [Phase ?]: GSPO primary locked D-09-03; GRPO fallback only via --grpo-fallback
 - [Phase ?]: Dispatch boundary: Agent=telemetry monitor only; judge scoring=claude_agent subprocess
 - [Phase 09]: D-09-08 — RL trains MoE-only (train_attn=False, train_unembed=False), warm-started from v1.2 SFT v4 `save_state` via create_training_client_from_state; supersedes D-09-02 attn/unembed=True (attn deltas net-harmful per D-IT 04.4; judge skill MoE-borne; cold-start raw-base fails RLEV-01). Signed off Dr. Robert Li 2026-06-22; see 09-RL-INIT-RECONCILIATION.md
+- [Phase ?]: entropy source is kl_metrics['optim/entropy'] not fb_out.metrics
 
 ### Pending Todos
 
@@ -298,7 +300,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-24T05:22:56.949Z
+Last session: 2026-06-24T10:25:53.068Z
 Stopped at: Phase 8.1 context gathered
 
 Prior session: 2026-06-02T21:31:00.000Z
@@ -418,7 +420,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Milestone complete
+**Status:** Executing Phase 08.1
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)
