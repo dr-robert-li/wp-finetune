@@ -5,14 +5,14 @@ milestone_name: MVP
 current_phase: 10
 current_phase_name: RL Comparative Evaluation
 status: completed
-stopped_at: context exhaustion at 75% (2026-06-21)
-last_updated: "2026-06-21T15:24:40.296Z"
+stopped_at: Phase 8.1 context gathered
+last_updated: "2026-06-24T05:22:56.955Z"
 progress:
-  total_phases: 13
+  total_phases: 14
   completed_phases: 11
   total_plans: 47
   completed_plans: 46
-  percent: 85
+  percent: 79
 ---
 
 # Project State
@@ -298,8 +298,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-21T15:24:40.291Z
-Stopped at: context exhaustion at 75% (2026-06-21)
+Last session: 2026-06-24T05:22:56.949Z
+Stopped at: Phase 8.1 context gathered
 
 Prior session: 2026-06-02T21:31:00.000Z
 Stopped at: Phase 4.4 CLOSED **REJECTED** at REVL-05 (human). All automated gates run; merge NOT promoted; D-05 disposition pending (recommend Phase 4.3 format-stability re-train). See `04.4-GATE-LEDGER.md` + `04.4-D05-DIAGNOSIS.md`. Resume = decide D-05.
@@ -344,7 +344,7 @@ Stopped at: W1-W6 cascade BLOCKED on eval-harness prose compat (2 layers). Findi
   - **CERTIFIED VERDICT (c246a20)**: smoke_pass=True exit=0 distinctness=0.879. judge 5/5 (prose 9/9 dims + 1 CtF json), gen 5/5 php_lint, baseline-sim 0.02-0.42 (<0.85 canary → reasoning diverges). Artifact: merge-artifacts/w0_03_smoke_PASS_verdict.json.
   - Data finding flagged: reasoning judge output is dimensional PROSE (CoT) or JSON (CtF), NOT <REASONING>-tagged. parse_judge_response(JSON-only) would have false-failed all CoT — coherence redesigned prose-aware + json-aware.
 
-Resume file: .planning/phases/10-rl-comparative-evaluation/10-CONTEXT.md
+Resume file: .planning/phases/08.1-reward-redesign/08.1-CONTEXT.md
 Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertions + smoke-gate hardening), THEN W0-03 smoke gate against models/qwen3-30b-wp-30_70-reasoning-merged/ vs models/qwen3-30b-wp-30_70-merged-v2/ baseline, THEN REVL-01..08 eval gates
 
 ### Session 2026-05-29 reasoning MERGE COMPLETE + PROMOTED
