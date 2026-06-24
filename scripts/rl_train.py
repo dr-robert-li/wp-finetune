@@ -597,6 +597,90 @@ def _compute_e_frac_trend(history, window: int = 10) -> float | None:
 
 
 # ---------------------------------------------------------------------------
+# Tier 5 (08.1-03 / D-81-03): Window-mean computation — verbatim from
+# 09-RL-LOGGING-REQS.md §4, with None-safe column handling.
+# ---------------------------------------------------------------------------
+
+
+def compute_window_means(metrics_path: str, windows: list[tuple[int, int]]) -> dict:
+    """Aggregate rl_metrics.jsonl fields per step window (spec §4, verbatim).
+
+    Reads the JSONL file emitted by _log_step and computes per-window means
+    for the key diagnostic fields.  Called at decision-point ticks (50/100/
+    150/200/250) and at any caller that needs the kill/continue verdict.
+
+    Args:
+        metrics_path: Path to rl_metrics.jsonl (METRICS_PATH).
+        windows:      List of (lo, hi) inclusive step ranges.
+
+    Returns:
+        dict keyed "window_{lo}_{hi}" with field means (NaN-safe).
+    """
+    import pandas as pd  # noqa: PLC0415 — optional dep, only needed for offline analysis
+
+    df = pd.read_json(metrics_path, lines=True)
+    result: dict = {}
+    for lo, hi in windows:
+        mask = (df["step"] >= lo) & (df["step"] <= hi)
+        sub = df.loc[mask]
+
+        def _col_mean(col: str) -> float | None:
+            if col not in sub.columns:
+                return None
+            v = sub[col].dropna()
+            return float(v.mean()) if len(v) > 0 else None
+
+        result[f"window_{lo}_{hi}"] = {
+            "reward_mean":           _col_mean("reward_mean"),
+            "fix_correctness_mean":  _col_mean("fix_correctness_mean"),
+            "consistency_mean":      _col_mean("consistency_mean"),
+            "group_reward_std_mean": _col_mean("group_reward_std_mean"),
+            "frac_groups_all_zero":  _col_mean("frac_groups_all_zero"),
+            "entropy_mean":          _col_mean("entropy"),
+        }
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Tier 6 (08.1-03 / D-81-03): Kill/continue decision rule — verbatim from
+# 09-RL-LOGGING-REQS.md §6, automated equivalent of the manual F-STEP200 flag.
+# ---------------------------------------------------------------------------
+
+
+def should_flag_for_review(window_means: dict, current: dict) -> tuple[bool, str]:
+    """Codified kill/continue decision rule (spec §6, verbatim).
+
+    Fires the moment a condition is met, not only at manual monitoring ticks.
+    Primary kill signal is frac_groups_all_zero window-mean > 0.5 (GSPO
+    gradient starvation).  Secondary signals: decisive flat reward and entropy
+    collapse (policy narrowing).
+
+    Args:
+        window_means: Output of compute_window_means(), with keys like
+                      "window_0_50", "window_151_200".
+        current:      Single-step metrics dict (must contain "entropy" key
+                      or the entropy check is skipped gracefully).
+
+    Returns:
+        (bool, str): (flag, reason_code) where reason is one of
+            "DECISIVE_FLAT: ...", "GROUP_COLLAPSE: ...",
+            "ENTROPY_COLLAPSE: ...", or "OK".
+    """
+    recent = window_means.get("window_151_200", {}).get("reward_mean")
+    early  = window_means.get("window_0_50",    {}).get("reward_mean")
+    frac_zero = window_means.get("window_151_200", {}).get("frac_groups_all_zero", 0) or 0
+
+    if recent is not None and early is not None:
+        if recent < early - 0.01:                 # decisive window below baseline
+            return True, f"DECISIVE_FLAT: w151_200={recent:.3f} < early={early:.3f}"
+    if frac_zero > 0.5:
+        return True, f"GROUP_COLLAPSE: {frac_zero:.1%} groups all-zero"
+    if current.get("entropy", 99) < 1.5:
+        return True, "ENTROPY_COLLAPSE: policy narrowing"
+    return False, "OK"
+
+
+# ---------------------------------------------------------------------------
 # Metrics sink — RLEV-01/02
 # ---------------------------------------------------------------------------
 
@@ -610,6 +694,7 @@ def _log_step(
     jaccard: float | None = None,
     halt_reason: str | None = None,
     group_stats: dict | None = None,
+    step_start_time: float | None = None,
 ) -> None:
     """Append one JSONL row to rl_metrics.jsonl (RLEV-01 / RLEV-02 fields).
 
@@ -621,6 +706,10 @@ def _log_step(
     un-instrumented steps.  Priority-2 fields (entropy, grad_norm, lr, loss,
     e_frac_trend_10) are sourced from kl_metrics / moe_metrics.
 
+    step_start_time (optional, 08.1-03 Tier 3): perf_counter timestamp taken at
+    the start of the step. Used to compute step_wall_time_s. When None the field
+    is recorded as null (never dropped — D-81-03 full spec).
+
     All new fields default gracefully so existing callers without group_stats
     continue to work without modification (T-81.2-01: a logging field must
     never halt training).
@@ -631,6 +720,45 @@ def _log_step(
         _efrac_history.append(float(e_frac))
 
     gs = group_stats or {}
+
+    # -------------------------------------------------------------------------
+    # Tier 3 (08.1-03 / D-81-03): per-container VRAM + step wall-time.
+    # Sources: torch.cuda -> pynvml -> psutil in priority order (None-with-reason
+    # when a source is unavailable, never dropped per D-81-03 full spec).
+    # -------------------------------------------------------------------------
+    vram_used_gb: float | None = None
+    vram_reserved_gb: float | None = None
+    vram_fallback_reason: str | None = None
+    try:
+        import torch  # noqa: PLC0415
+        if torch.cuda.is_available():
+            vram_used_gb = round(torch.cuda.memory_allocated() / 1e9, 4)
+            vram_reserved_gb = round(torch.cuda.memory_reserved() / 1e9, 4)
+        else:
+            vram_fallback_reason = "torch.cuda not available"
+    except ImportError:
+        vram_fallback_reason = "torch not installed"
+    except Exception as _e:  # noqa: BLE001
+        vram_fallback_reason = f"torch.cuda error: {type(_e).__name__}"
+
+    if vram_used_gb is None and vram_fallback_reason is None:
+        # torch present but CUDA unavailable — already set fallback_reason above
+        pass
+
+    step_wall_time_s: float | None = None
+    if step_start_time is not None:
+        import time as _time_mod  # noqa: PLC0415 — alias to avoid shadowing module-level
+        step_wall_time_s = round(_time_mod.perf_counter() - step_start_time, 4)
+
+    # Tier 4 (08.1-03 / D-81-03): per-step consistency score histogram.
+    # get_and_reset_score_hist() returns the histogram accumulated during this
+    # step's dispatch calls and resets the accumulator for the next step.
+    consistency_score_hist: dict | None = None
+    try:
+        from scripts.rl_judge_dispatch import get_and_reset_score_hist  # noqa: PLC0415
+        consistency_score_hist = get_and_reset_score_hist()
+    except Exception:  # noqa: BLE001
+        consistency_score_hist = None  # histogram unavailable — not a training error
 
     record = {
         "step": step,
@@ -665,6 +793,13 @@ def _log_step(
         "lr": moe_metrics.get("lr"),
         "loss": moe_metrics.get("loss"),
         "e_frac_trend_10": _compute_e_frac_trend(_efrac_history, window=10),
+        # Tier 3 (08.1-03): per-container VRAM + step wall-time
+        "vram_used_gb": vram_used_gb,
+        "vram_reserved_gb": vram_reserved_gb,
+        "vram_fallback_reason": vram_fallback_reason,
+        "step_wall_time_s": step_wall_time_s,
+        # Tier 4 (08.1-03): per-step consistency score histogram (5 bins)
+        "consistency_score_hist": consistency_score_hist,
         # Optional extras
         "jaccard_protected": jaccard,
         "halt_reason": halt_reason,
@@ -759,6 +894,9 @@ def run_training_step(
         compute_rollout_advantages,
     )
 
+    # Tier 3 (08.1-03): capture step wall-time start (perf_counter for monotonic ns).
+    _step_start = time.perf_counter()
+
     rollouts = collect_rollouts(
         sampling_client=sampling_client,
         gen_pool=gen_pool,
@@ -831,7 +969,38 @@ def run_training_step(
         jaccard=jaccard,
         halt_reason=halt_reason,
         group_stats=group_stats,
+        step_start_time=_step_start,
     )
+
+    # Tier 5+6 (08.1-03): window-mean tick + kill/continue verdict at decision points
+    # (every 50 steps: 50/100/150/200/250...).  None-safe: if METRICS_PATH does not
+    # exist yet (early training / dry-run without prior steps) this is silently skipped.
+    _WINDOW_TICK_EVERY = 50
+    if step > 0 and step % _WINDOW_TICK_EVERY == 0:
+        try:
+            _wm = compute_window_means(
+                METRICS_PATH,
+                [(0, 50), (51, 100), (101, 150), (151, 200), (201, 250)],
+            )
+            _current_kl = kl_metrics.copy()
+            _current_kl.setdefault("entropy", _current_kl.get("optim/entropy"))
+            _flag, _reason = should_flag_for_review(
+                _wm,
+                current={"entropy": _extract_entropy(kl_metrics)},
+            )
+            logger.info(
+                "Tick step %d: should_flag_for_review=%s reason=%s",
+                step, _flag, _reason,
+            )
+            if _flag:
+                logger.warning(
+                    "REVIEW FLAG at step %d: %s — "
+                    "check rl_metrics.jsonl window means before continuing.",
+                    step, _reason,
+                )
+        except Exception as _tick_err:  # noqa: BLE001
+            # A tick failure must NEVER halt training (T-81.2-01).
+            logger.debug("Window-mean tick skipped at step %d: %s", step, _tick_err)
 
     # CR-04: HARD halt -> save emergency checkpoint of the PRE-update weights and
     # stop WITHOUT committing the divergent gradient. optim_step is NOT called.

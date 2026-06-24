@@ -59,6 +59,61 @@ _vllm_clients: dict[str, Any] = {}
 # flipped off once on first rejection (mirrors eval_judge._thinking_kwarg_supported).
 _vllm_thinking_supported = True
 
+# ---------------------------------------------------------------------------
+# Tier 4 (08.1-03 / D-81-03): Inline consistency score-distribution histogram
+#
+# Accumulates per-dispatch scores into 5 bins so each training step can report
+# the consistency score distribution to rl_metrics.jsonl.  This is the earliest
+# positive-learning signal (histogram peak shift precedes reward_mean movement).
+#
+# Design: module-level dict (resets per step via get_and_reset_score_hist()).
+# Mirrors the _efrac_history / _reset_efrac_history pattern in rl_train.py.
+# ---------------------------------------------------------------------------
+
+# 5-bin histogram: [0,0.2), [0.2,0.4), [0.4,0.6), [0.6,0.8), [0.8,1.0]
+_score_hist: dict[str, int] = {
+    "0_0.2":   0,
+    "0.2_0.4": 0,
+    "0.4_0.6": 0,
+    "0.6_0.8": 0,
+    "0.8_1.0": 0,
+}
+
+
+def _bin_score(s: float) -> str:
+    """Map a score in [0,1] to a 5-bin label (Tier 4 histogram key).
+
+    Args:
+        s: consistency score in [0, 1].
+
+    Returns:
+        str: bin label like "0_0.2".
+    """
+    if s < 0.2:
+        return "0_0.2"
+    if s < 0.4:
+        return "0.2_0.4"
+    if s < 0.6:
+        return "0.4_0.6"
+    if s < 0.8:
+        return "0.6_0.8"
+    return "0.8_1.0"  # catches s >= 0.8, including s == 1.0
+
+
+def get_and_reset_score_hist() -> dict[str, int]:
+    """Return the current per-step score histogram and reset it to zeros.
+
+    Called by rl_train._log_step once per step to capture the consistency
+    score distribution accumulated during that step's dispatch calls.
+
+    Returns:
+        dict[str, int]: A COPY of the histogram with bin counts, then resets.
+    """
+    global _score_hist
+    snapshot = dict(_score_hist)
+    _score_hist = {k: 0 for k in _score_hist}
+    return snapshot
+
 
 def _get_vllm_client(base_url: str) -> Any:
     """Return a cached openai.OpenAI client pointed at the local vLLM endpoint."""
@@ -448,5 +503,11 @@ async def score_judge_consistency_batch(
             n_imputed,
             len(samples),
         )
+
+    # Tier 4 (08.1-03): accumulate final scores into per-step histogram.
+    # Called after imputation so imputed scores also land in the histogram
+    # (their contribution is noted in the imputation-warn log above).
+    for score in final:
+        _score_hist[_bin_score(score)] += 1
 
     return final
