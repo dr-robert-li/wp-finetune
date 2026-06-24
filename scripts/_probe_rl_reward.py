@@ -189,6 +189,184 @@ def probe_frozen_judge_parse() -> "float | None":
     return prose_score
 
 
+# --------------------------------------------------------------------------- #
+# Phase 8.1: Histogram + per-group stats (measurement support)
+# --------------------------------------------------------------------------- #
+
+def _compute_group_stats(scores: list[float], group_size: int = 4) -> dict:
+    """Compute per-group reward statistics on a flat list of fix_correctness scores.
+
+    Simulates G=group_size groups by chunking the scores list.  Groups shorter
+    than 2 samples are skipped for std (can't compute std of 1 element meaningfully).
+
+    Returns a dict with:
+        group_reward_std_mean    – mean of per-group np.std
+        frac_groups_all_zero     – fraction of groups where ALL scores == 0
+        frac_groups_all_one      – fraction of groups where ALL scores > 0.9
+        frac_groups_nonuniform   – fraction of groups where np.std > 0
+        frac_mid                 – fraction of all scores in the open interval (0.1, 0.9)
+    """
+    if not scores:
+        return {
+            "group_reward_std_mean": None,
+            "frac_groups_all_zero": None,
+            "frac_groups_all_one": None,
+            "frac_groups_nonuniform": None,
+            "frac_mid": None,
+            "n_samples": 0,
+            "n_groups": 0,
+        }
+
+    # Chunk into simulated G=group_size groups
+    groups = [
+        scores[i: i + group_size]
+        for i in range(0, len(scores), group_size)
+        if scores[i: i + group_size]  # exclude empty tail
+    ]
+
+    n_groups = len(groups)
+    group_stds = [float(np.std(g)) for g in groups if len(g) >= 2]
+    group_reward_std_mean = float(np.mean(group_stds)) if group_stds else 0.0
+    frac_groups_all_zero = (
+        sum(1 for g in groups if all(x == 0.0 for x in g)) / n_groups
+    )
+    frac_groups_all_one = (
+        sum(1 for g in groups if all(x > 0.9 for x in g)) / n_groups
+    )
+    frac_groups_nonuniform = (
+        sum(1 for g in groups if float(np.std(g)) > 0.0) / n_groups
+    )
+    n = len(scores)
+    frac_mid = sum(1 for x in scores if 0.1 < x < 0.9) / n
+
+    return {
+        "group_reward_std_mean": group_reward_std_mean,
+        "frac_groups_all_zero": frac_groups_all_zero,
+        "frac_groups_all_one": frac_groups_all_one,
+        "frac_groups_nonuniform": frac_groups_nonuniform,
+        "frac_mid": frac_mid,
+        "n_samples": n,
+        "n_groups": n_groups,
+    }
+
+
+def _print_group_stats(stats: dict, label: str) -> None:
+    """Pretty-print group stats dict from _compute_group_stats."""
+    print(f"\n  [{label}] per-group stats (simulated G=4):")
+    if stats["n_samples"] == 0:
+        print("    (no samples)")
+        return
+    gstd = stats["group_reward_std_mean"]
+    print(f"    n_samples            : {stats['n_samples']}")
+    print(f"    n_groups             : {stats['n_groups']}")
+    print(f"    group_reward_std_mean: {gstd:.4f}" if gstd is not None else "    group_reward_std_mean: N/A")
+    print(f"    frac_groups_all_zero : {stats['frac_groups_all_zero']:.3f}")
+    print(f"    frac_groups_all_one  : {stats['frac_groups_all_one']:.3f}  (>0.9 threshold)")
+    print(f"    frac_groups_nonuniform:{stats['frac_groups_nonuniform']:.3f}")
+    print(f"    frac_mid             : {stats['frac_mid']:.3f}  (scores in (0.1, 0.9))")
+
+
+def probe_histogram(
+    completions: list[str],
+    label: str = "corpus",
+    biased_warning: bool = False,
+) -> dict:
+    """Histogram rubric.overall over the PARSEABLE judge-completion subset.
+
+    Also computes and prints:
+      - parse-failure rate (ALWAYS beside the histogram — Pitfall 4)
+      - per-group stats (simulated G=4) on fix_correctness scores
+
+    Args:
+        completions: Raw completion strings (raw_text per row).
+        label:       Printed label to identify this corpus.
+        biased_warning: If True, print a FAILURE-BIASED caveat.
+
+    Returns:
+        dict with keys: parseable_scores, fix_scores, parse_fail_rate, group_stats
+    """
+    _hr(f"HISTOGRAM  [{label}]" + ("  [WARNING: FAILURE-BIASED corpus]" if biased_warning else ""))
+
+    parseable_scores: list[float] = []   # rubric.overall [0,100]
+    fix_scores: list[float] = []         # fix_correctness [0,1], all samples
+    parse_fail_count = 0
+    total = 0
+
+    for comp in completions:
+        total += 1
+        corrected = _extract_corrected_php(comp)
+        ok = _is_parseable_php(corrected)
+        if ok:
+            rubric = _extract_verifiable_signals(corrected)
+            overall = float(rubric.overall)   # [0, 100]
+            fix = overall / 100.0
+            parseable_scores.append(overall)
+            fix_scores.append(fix)
+        else:
+            fix_scores.append(0.0)
+            parse_fail_count += 1
+
+    parse_fail_rate = parse_fail_count / total if total > 0 else float("nan")
+
+    # Always print parse-failure rate alongside histogram (Pitfall 4)
+    print(f"\n  Total completions   : {total}")
+    print(f"  Parseable PHP       : {total - parse_fail_count}")
+    print(f"  Parse failures      : {parse_fail_count}")
+    print(f"  Parse-failure rate  : {parse_fail_rate:.2%}  <-- read with histogram below")
+
+    # Histogram over parseable rubric.overall [0,100] in deciles
+    bins = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+    if parseable_scores:
+        hist, edges = np.histogram(parseable_scores, bins=bins)
+        n_parseable = len(parseable_scores)
+        print(f"\n  rubric.overall histogram  (parseable subset, N={n_parseable}):")
+        for i, count in enumerate(hist):
+            pct = count / n_parseable if n_parseable else 0.0
+            bar = "#" * int(pct * 40)
+            print(f"    [{int(edges[i]):3d}-{int(edges[i+1]):3d}]: {count:4d}  ({pct:5.1%})  {bar}")
+        parseable_mean = float(np.mean(parseable_scores)) if parseable_scores else 0.0
+        parseable_std = float(np.std(parseable_scores)) if parseable_scores else 0.0
+        print(f"\n  parseable mean={parseable_mean:.1f}  std={parseable_std:.1f}")
+    else:
+        print("\n  rubric.overall histogram: (no parseable completions)")
+
+    # Per-group stats on fix_correctness (judge-path)
+    judge_stats = _compute_group_stats(fix_scores, group_size=4)
+    _print_group_stats(judge_stats, "JUDGE-PATH fix_correctness")
+
+    return {
+        "parseable_scores": parseable_scores,
+        "fix_scores": fix_scores,
+        "parse_fail_rate": parse_fail_rate,
+        "group_stats": judge_stats,
+    }
+
+
+def _probe_gen_group_stats(completions: list[str], frozen_judge_score: float) -> dict:
+    """Compute per-group stats on the GEN-PATH composite scalars (D-81-04).
+
+    Runs compute_group_rewards on the completions with a frozen judge score,
+    applies the parseability gate, and returns _compute_group_stats on the
+    resulting scalar list.
+    """
+    _hr("GEN-PATH GROUP STATS  (simulated G=4, frozen-judge mock)")
+    reward_pipeline.judge_score_single = lambda *a, **k: frozen_judge_score  # type: ignore
+    gen_php = [extract_php_code(c) for c in completions]
+    results = compute_group_rewards(
+        php_codes=gen_php,
+        judge_client=object(),
+        judge_model="probe-mock",
+    )
+    for i, php in enumerate(gen_php):
+        if not _is_parseable_php(php):
+            results[i].scalar = 0.0
+    scalars = [r.scalar for r in results]
+    gen_stats = _compute_group_stats(scalars, group_size=4)
+    _print_group_stats(gen_stats, "GEN-PATH composite scalar")
+    print(f"\n  raw scalars (first 16): {[round(x, 4) for x in scalars[:16]]}")
+    return gen_stats
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--completions", default=None,
@@ -201,11 +379,32 @@ def main() -> None:
 
     if args.completions:
         real = _load_real(args.completions)
-        print(f"Loaded {len(real)} real completions from {args.completions}")
+        print(f"Loaded {len(real)} real completions from {args.completions!r}  "
+              f"[CROSS-CHECK: failure-biased corpus — NOT primary measurement]")
         group = real[:4] if len(real) >= 2 else [BARE_CODE_A, BARE_CODE_B]
+        # Run histogram + group stats on the on-disk corpus (cross-check only)
+        hist_result = probe_histogram(
+            real,
+            label=f"on-disk cross-check ({args.completions})",
+            biased_warning=True,
+        )
+        gen_stats = _probe_gen_group_stats(real, args.frozen_judge_score)
     else:
         # Two near-identical strong gen outputs (the zero-variance scenario)
         group = [BARE_CODE_A, BARE_CODE_A, BARE_CODE_B, BARE_CODE_B]
+        # Run histogram on the built-in synthetic samples (offline smoke only)
+        synth_completions = [
+            PROSE_JUDGE + "\n\nThen FIX the code:\n```php\n<?php\n" + BARE_CODE_A + "\n```",
+            PROSE_JUDGE + "\n\n<corrected_code>\n<?php\n" + BARE_CODE_B + "\n</corrected_code>",
+            BARE_CODE_A,
+            PROSE_JUDGE,
+        ]
+        hist_result = probe_histogram(
+            synth_completions,
+            label="built-in synthetic (offline smoke)",
+            biased_warning=False,
+        )
+        gen_stats = _probe_gen_group_stats(group, args.frozen_judge_score)
 
     gen_scalars = _probe_gen_return(group, args.frozen_judge_score)
 
