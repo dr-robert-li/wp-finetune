@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
-current_phase: 08.1
-current_phase_name: reward-redesign
-status: executing
+current_phase: 09
+current_phase_name: GSPO Training
+status: planning
 stopped_at: Phase 8.1 context gathered
-last_updated: "2026-06-24T16:03:13.763Z"
+last_updated: "2026-06-24T16:36:19.599Z"
 progress:
   total_phases: 14
   completed_phases: 12
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 
 ## Current Position
 
-Phase: 08.1 (reward-redesign) — EXECUTING
+Phase: 09 — GSPO Training
 Prev: Phase 09 (gspo-training) — COMPLETE 2026-06-20, 6/6 plans
 Requirements: RLEV-01 (RL vs v1.2 SFT baseline on wp-bench + 9 dims, no regression), RLEV-02 (reward-convergence + router-shift + protected-expert retention + anti-hack report)
 Next: plan Phase 10. NOTE: Phase 10 execution consumes the metrics from Phase 9's live Tinker RL run — that run is credential-gated and still tracked partial in 09-HUMAN-UAT.md, so it must complete before Phase 10 can produce real comparison results.
@@ -147,7 +147,7 @@ Progress: [██████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 19
+- Total plans completed: 23
 - Average duration: 9 min
 - Total execution time: 0.62 hours
 
@@ -161,6 +161,7 @@ Progress: [██████████] 100%
 | 04.4 | 5 | - | - |
 | 8 | 4 | - | - |
 | 09 | 6 | - | - |
+| 08.1 | 4 | - | - |
 
 **Recent Trend:**
 
@@ -422,7 +423,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Executing Phase 08.1
+**Status:** Ready to plan
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)
