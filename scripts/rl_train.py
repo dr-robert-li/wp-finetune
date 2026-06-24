@@ -16,6 +16,7 @@ Router gates FROZEN (no router arg), D-09-02.
 from __future__ import annotations
 
 import argparse
+import collections
 import json
 import logging
 import math
@@ -539,6 +540,63 @@ def _save_checkpoint(tc: Any, name: str, manifest: dict) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Metrics helpers — 08.1-02 Priority-2 additions
+# ---------------------------------------------------------------------------
+
+# Per-run e_frac history for rolling trend (module-level deque; reset via
+# _reset_efrac_history() in tests to avoid cross-test leakage).
+_efrac_history: collections.deque = collections.deque(maxlen=200)
+
+
+def _reset_efrac_history() -> None:
+    """Clear the e_frac history (used by tests to prevent cross-test leakage)."""
+    _efrac_history.clear()
+
+
+def _extract_entropy(kl_metrics: dict) -> float | None:
+    """Extract entropy from the kl_metrics dict returned by _compute_kl_metrics.
+
+    The canonical source is kl_metrics['optim/entropy'] — that is where
+    _compute_kl_metrics (rl_train.py:380-411) stores it after compute_kl_sample_train.
+
+    Returns None when the key is absent or the value is None, so a missing
+    entropy never crashes the training loop (T-81.2-01).
+    """
+    val = kl_metrics.get("optim/entropy") if isinstance(kl_metrics, dict) else None
+    if val is None:
+        return None
+    return float(val)
+
+
+def _compute_e_frac_trend(history, window: int = 10) -> float | None:
+    """Compute the per-step slope of e_frac_with_tokens_mean over the last `window` steps.
+
+    Uses a simple ordinary-least-squares slope over the most recent `window`
+    values.  A negative slope signals routing collapse (downward trend in the
+    fraction of tokens that activate any expert).
+
+    Args:
+        history: list or deque of e_frac float values (most-recent last).
+        window:  number of trailing steps to regress over.
+
+    Returns:
+        float slope, or None when fewer than 2 data points are available.
+    """
+    vals = list(history)[-window:]
+    if len(vals) < 2:
+        return None
+    n = len(vals)
+    xs = np.arange(float(n))
+    x_mean = xs.mean()
+    y_mean = float(np.mean(vals))
+    num = float(np.sum((xs - x_mean) * (np.array(vals, dtype=float) - y_mean)))
+    den = float(np.sum((xs - x_mean) ** 2))
+    if den == 0.0:
+        return 0.0
+    return num / den
+
+
+# ---------------------------------------------------------------------------
 # Metrics sink — RLEV-01/02
 # ---------------------------------------------------------------------------
 
@@ -551,11 +609,29 @@ def _log_step(
     args: Any,
     jaccard: float | None = None,
     halt_reason: str | None = None,
+    group_stats: dict | None = None,
 ) -> None:
     """Append one JSONL row to rl_metrics.jsonl (RLEV-01 / RLEV-02 fields).
 
     Written even in dry-run mode so Phase 10 consumer can be tested.
+
+    group_stats (optional, 08.1-02 / D-81-03): dict of Priority-1 group/component
+    metrics from compute_rollout_advantages (computed pre-drop). When None, all
+    Priority-1 fields are recorded as null so downstream consumers can detect
+    un-instrumented steps.  Priority-2 fields (entropy, grad_norm, lr, loss,
+    e_frac_trend_10) are sourced from kl_metrics / moe_metrics.
+
+    All new fields default gracefully so existing callers without group_stats
+    continue to work without modification (T-81.2-01: a logging field must
+    never halt training).
     """
+    # Update module-level e_frac history for trend computation
+    e_frac = moe_metrics.get("e_frac_with_tokens:mean")
+    if e_frac is not None:
+        _efrac_history.append(float(e_frac))
+
+    gs = group_stats or {}
+
     record = {
         "step": step,
         "reward_mean": float(np.mean(rewards)) if rewards else 0.0,
@@ -571,6 +647,24 @@ def _log_step(
         "e_frac_with_tokens_mean": moe_metrics.get("e_frac_with_tokens:mean", 0.0),
         "e_max_violation_mean": moe_metrics.get("e_max_violation:mean", 0.0),
         "e_max_violation_max": moe_metrics.get("e_max_violation:max", 0.0),
+        # Priority-1 group/component metrics (08.1-02 / D-81-03) — pre-drop
+        "fix_correctness_mean": gs.get("fix_correctness_mean"),
+        "fix_correctness_std": gs.get("fix_correctness_std"),
+        "consistency_mean": gs.get("consistency_mean"),
+        "consistency_std": gs.get("consistency_std"),
+        "group_reward_std_mean": gs.get("group_reward_std_mean"),
+        "frac_groups_all_zero": gs.get("frac_groups_all_zero"),
+        "frac_groups_all_one": gs.get("frac_groups_all_one"),
+        "frac_groups_nonuniform": gs.get("frac_groups_nonuniform"),
+        "frac_reward_gt_0.9": gs.get("frac_reward_gt_0.9"),
+        "frac_reward_lt_0.1": gs.get("frac_reward_lt_0.1"),
+        # Priority-2 policy/optimizer health (08.1-02)
+        "entropy": _extract_entropy(kl_metrics),
+        "grad_norm": moe_metrics.get("grad_norm"),
+        "grad_norm_clipped": moe_metrics.get("grad_norm_clipped"),
+        "lr": moe_metrics.get("lr"),
+        "loss": moe_metrics.get("loss"),
+        "e_frac_trend_10": _compute_e_frac_trend(_efrac_history, window=10),
         # Optional extras
         "jaccard_protected": jaccard,
         "halt_reason": halt_reason,
@@ -673,6 +767,19 @@ def run_training_step(
     )
 
     data, _advantages, _meta = compute_rollout_advantages(rollouts)
+    # Capture pre-drop group stats from meta for Priority-1 logging (08.1-02).
+    # The meta dict carries all group/component keys (frac_groups_all_zero etc.)
+    # computed on the unfiltered groups list before remove_constant_reward_groups.
+    group_stats = {
+        k: _meta.get(k)
+        for k in (
+            "fix_correctness_mean", "fix_correctness_std",
+            "consistency_mean", "consistency_std",
+            "group_reward_std_mean",
+            "frac_groups_all_zero", "frac_groups_all_one", "frac_groups_nonuniform",
+            "frac_reward_gt_0.9", "frac_reward_lt_0.1",
+        )
+    }
 
     if not data:
         logger.warning("Step %d: no training data after advantage filter", step)
@@ -723,6 +830,7 @@ def run_training_step(
         args=args,
         jaccard=jaccard,
         halt_reason=halt_reason,
+        group_stats=group_stats,
     )
 
     # CR-04: HARD halt -> save emergency checkpoint of the PRE-update weights and
