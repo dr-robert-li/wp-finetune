@@ -472,12 +472,6 @@ def compute_rollout_advantages(
           - advantages: list[float], one per datum, aligned with `data`
           - meta: {n_groups_input, n_dropped_constant, n_groups_output, n_datums}
     """
-    from tinker_cookbook.rl.data_processing import (  # noqa: PLC0415
-        assemble_training_data,
-        compute_advantages,
-        remove_constant_reward_groups,
-    )
-
     n_input = len(groups)
     if n_input == 0:
         return [], [], {
@@ -485,7 +479,103 @@ def compute_rollout_advantages(
             "n_dropped_constant": 0,
             "n_groups_output": 0,
             "n_datums": 0,
+            # Priority-1 group/component stats (None on empty input — no data to aggregate)
+            "fix_correctness_mean": None,
+            "fix_correctness_std": None,
+            "consistency_mean": None,
+            "consistency_std": None,
+            "group_reward_std_mean": None,
+            "frac_groups_all_zero": None,
+            "frac_groups_all_one": None,
+            "frac_groups_nonuniform": None,
+            "frac_reward_gt_0.9": None,
+            "frac_reward_lt_0.1": None,
         }
+
+    from tinker_cookbook.rl.data_processing import (  # noqa: PLC0415
+        assemble_training_data,
+        compute_advantages,
+        remove_constant_reward_groups,
+    )
+
+    # -------------------------------------------------------------------------
+    # Pre-drop per-group stats aggregation (08.1-02 / D-81-03 Priority 1).
+    # MUST run on the UNFILTERED `groups` list BEFORE remove_constant_reward_groups
+    # (line below). Computing these stats post-drop silently reports 0.0 during
+    # reward collapse because all-zero groups are the ones being dropped
+    # (Pitfall 1 in 08.1-RESEARCH.md). See also plan prohibition #1.
+    # -------------------------------------------------------------------------
+    import numpy as _np  # noqa: PLC0415  (local alias to avoid shadowing module-level np)
+
+    # Per-group scalar reward arrays (one float per trajectory in the group)
+    group_reward_stds: list[float] = []
+    n_all_zero = 0
+    n_all_one = 0        # all rewards > 0.9
+    n_nonuniform = 0     # reward std > 0 across group
+
+    # Per-sample counters across ALL groups
+    total_rewards_flat: list[float] = []
+
+    # Per-transition component score lists (None entries filtered out)
+    fix_scores: list[float] = []
+    consistency_scores: list[float] = []
+
+    for tg in groups:
+        # get_total_rewards() returns a flat list of per-trajectory reward scalars
+        group_rewards = list(tg.get_total_rewards())
+        total_rewards_flat.extend(group_rewards)
+
+        if group_rewards:
+            rew_arr = _np.array(group_rewards, dtype=float)
+            std = float(_np.std(rew_arr))
+            group_reward_stds.append(std)
+            if bool(_np.all(rew_arr == 0.0)):
+                n_all_zero += 1
+            if bool(_np.all(rew_arr > 0.9)):
+                n_all_one += 1
+            if std > 0:
+                n_nonuniform += 1
+
+        # Collect component scores from Transition.logs
+        for traj in getattr(tg, "trajectories_G", []):
+            for transition in getattr(traj, "transitions", []):
+                logs = getattr(transition, "logs", {}) or {}
+                fc = logs.get("fix_correctness")
+                cons = logs.get("consistency")
+                if fc is not None:
+                    fix_scores.append(float(fc))
+                if cons is not None:
+                    consistency_scores.append(float(cons))
+
+    n_groups = float(n_input)  # denominator for fractions (always >= 1 here)
+
+    def _safe_mean(lst: list[float]):
+        return float(_np.mean(lst)) if lst else None
+
+    def _safe_std(lst: list[float]):
+        return float(_np.std(lst)) if lst else None
+
+    rew_flat = _np.array(total_rewards_flat, dtype=float) if total_rewards_flat else None
+
+    group_stats: dict = {
+        "fix_correctness_mean": _safe_mean(fix_scores),
+        "fix_correctness_std": _safe_std(fix_scores),
+        "consistency_mean": _safe_mean(consistency_scores),
+        "consistency_std": _safe_std(consistency_scores),
+        "group_reward_std_mean": _safe_mean(group_reward_stds),
+        "frac_groups_all_zero": float(n_all_zero) / n_groups,
+        "frac_groups_all_one": float(n_all_one) / n_groups,
+        "frac_groups_nonuniform": float(n_nonuniform) / n_groups,
+        "frac_reward_gt_0.9": (
+            float(_np.mean(rew_flat > 0.9)) if rew_flat is not None else None
+        ),
+        "frac_reward_lt_0.1": (
+            float(_np.mean(rew_flat < 0.1)) if rew_flat is not None else None
+        ),
+    }
+    # -------------------------------------------------------------------------
+    # End pre-drop aggregation block — now drop constant groups
+    # -------------------------------------------------------------------------
 
     filtered = remove_constant_reward_groups(groups)
     n_output = len(filtered)
@@ -504,6 +594,8 @@ def compute_rollout_advantages(
         "n_dropped_constant": n_input - n_output,
         "n_groups_output": n_output,
         "n_datums": len(data_D),
+        # Merge pre-drop group/component stats (computed above before the drop)
+        **group_stats,
     }
     return data_D, advantages, meta
 
