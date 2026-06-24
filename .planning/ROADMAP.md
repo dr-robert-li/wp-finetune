@@ -464,10 +464,10 @@ Plans:
 
 **Skill**: No new skill — edits to `scripts/reward_pipeline.py` / `scripts/rl_judge_dispatch.py` + pytest; consumes `09-RL-LOGGING-REQS.md` (logging spec) and `09-LOCAL-RL-HANDOFF.md` §5/§7 + status doc Section H (evidence).
 **Gates**: a targeted Phase 9 RERUN (fresh warm-start from v4, NO resume) only after the new per-group logging confirms a restored gradient on a short signal-check run.
-**Plans**: 4 plans (3 waves)
+**Plans**: 2/4 plans executed
 
-- [ ] 08.1-01-PLAN.md — Wave 1: MEASURE-FIRST (D-81-01). Extend `_probe_rl_reward.py` to histogram `rubric.overall` on the parseable subset + parse-fail rate + per-group stats (frac_groups_all_zero) for BOTH gen + judge paths (D-81-04); emit `08.1-MEASUREMENT.md` selecting the lever from the measured distribution (D-81-02). [SC1, SC2]
-- [ ] 08.1-02-PLAN.md — Wave 1: Logging core (D-81-03 P1-3). Pre-drop per-group stats into `compute_rollout_advantages` meta (before `remove_constant_reward_groups`) + extend `_log_step` with component means / frac_groups_all_zero / entropy. [SC3]
+- [x] 08.1-01-PLAN.md — Wave 1: MEASURE-FIRST (D-81-01). Extend `_probe_rl_reward.py` to histogram `rubric.overall` on the parseable subset + parse-fail rate + per-group stats (frac_groups_all_zero) for BOTH gen + judge paths (D-81-04); emit `08.1-MEASUREMENT.md` selecting the lever from the measured distribution (D-81-02). [SC1, SC2]
+- [x] 08.1-02-PLAN.md — Wave 1: Logging core (D-81-03 P1-3). Pre-drop per-group stats into `compute_rollout_advantages` meta (before `remove_constant_reward_groups`) + extend `_log_step` with component means / frac_groups_all_zero / entropy. [SC3]
 - [ ] 08.1-03-PLAN.md — Wave 2: Reward-shape fix on the saturated path (selected lever, D-81-02/04) + full logging spec tiers 4-6 (histograms, window means, `should_flag_for_review`). Security gate untouched. [SC1, SC2, SC4, SC3]
 - [x] 08.1-04-PLAN.md — Wave 3: OFFLINE signal-check gate (frac_groups_all_zero < baseline, frac_mid > 0 on 100+ completions, BEFORE any GPU) + Phase 8 regression suite (no regress). GPU 50-step signal-check stays Phase 9. [SC1, SC2, SC4, SC5] (completed 2026-06-24)
 

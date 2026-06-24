@@ -6,12 +6,12 @@ current_phase: 08.1
 current_phase_name: reward-redesign
 status: executing
 stopped_at: Phase 8.1 context gathered
-last_updated: "2026-06-24T10:25:57.226Z"
+last_updated: "2026-06-24T15:14:03.774Z"
 progress:
   total_phases: 14
   completed_phases: 11
   total_plans: 51
-  completed_plans: 47
+  completed_plans: 48
   percent: 79
 ---
 
@@ -202,6 +202,7 @@ Progress: [██████████] 100%
 | Phase 09-gspo-training P05 | 35m | 2 tasks | 3 files |
 | Phase 09-gspo-training P06 | 15m | 1 tasks | 1 files |
 | Phase 08.1 P02 | 10 | 2 tasks | 3 files |
+| Phase 08.1-reward-redesign P01 | 30 | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -259,6 +260,7 @@ Recent decisions affecting current work:
 - [Phase ?]: Dispatch boundary: Agent=telemetry monitor only; judge scoring=claude_agent subprocess
 - [Phase 09]: D-09-08 — RL trains MoE-only (train_attn=False, train_unembed=False), warm-started from v1.2 SFT v4 `save_state` via create_training_client_from_state; supersedes D-09-02 attn/unembed=True (attn deltas net-harmful per D-IT 04.4; judge skill MoE-borne; cold-start raw-base fails RLEV-01). Signed off Dr. Robert Li 2026-06-22; see 09-RL-INIT-RECONCILIATION.md
 - [Phase ?]: entropy source is kl_metrics['optim/entropy'] not fb_out.metrics
+- [Phase ?]: BOTH judge-path pathologies confirmed: parse-cliff 0-mode (68% fail) + lax-checks >90 cluster (mean=98.9) — judge frac_mid=0.011 vs gen 0.202; selected Lever 1 Form A + Lever 2 for Plan 03
 
 ### Pending Todos
 
@@ -300,7 +302,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-24T10:25:53.068Z
+Last session: 2026-06-24T15:14:03.768Z
 Stopped at: Phase 8.1 context gathered
 
 Prior session: 2026-06-02T21:31:00.000Z
