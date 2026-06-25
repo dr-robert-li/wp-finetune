@@ -205,6 +205,44 @@ def rspo_floored_ratio(train_lp: Any, sampling_lp: Any) -> Any:
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# GSPO training-logprobs side-channel (CR-04 KL guard fix, 2026-06-25)
+# ---------------------------------------------------------------------------
+#: tinker.ForwardBackwardOutput carries NO `training_logprobs` field (only
+#: loss_fn_output_type / loss_fn_outputs / metrics), so _compute_kl_metrics could
+#: never read the per-token training logprobs off fb_out — it silently took the
+#: "structural absence -> 0.0" branch every real step, disabling the KL autohalt
+#: guard (kl_v1==v2==0.0 < kl_hard forever). The GSPO custom loss closure DOES
+#: receive those logprobs (logprobs_list) and runs in-process, so we stash them
+#: here for _compute_kl_metrics to consume via the canonical compute_kl_sample_train.
+#: Reset to None at the top of every build_loss_step so a step that never invokes
+#: gspo_loss_fn (GRPO fallback / mock) reads None and falls to the genuine-empty 0.0
+#: branch rather than reusing a previous step's logprobs.
+_GSPO_TRAIN_LOGPROBS: dict[str, Any] = {"logprobs": None}
+
+
+def _reset_gspo_logprobs() -> None:
+    """Clear the captured GSPO training logprobs (called once per step)."""
+    _GSPO_TRAIN_LOGPROBS["logprobs"] = None
+
+
+def _is_real_fb_out(fb_out: Any) -> bool:
+    """True only for a genuine tinker.ForwardBackwardOutput (not a mock/dry-run stub).
+
+    The empty-side-channel HARD-halt hardening must fire ONLY on the real SDK path:
+    a real forward_backward_custom calls the loss closure in-process (so the side
+    channel WILL be populated), hence an empty side-channel there is a true regression.
+    The offline test/dry-run seams return MagicMock/SimpleNamespace fb_outs that never
+    invoke the closure — an empty side-channel is expected there and must NOT halt.
+    """
+    try:
+        import tinker  # noqa: PLC0415
+
+        return isinstance(fb_out, tinker.types.ForwardBackwardOutput)
+    except Exception:  # noqa: BLE001 — tinker absent (pure-offline test) => not real
+        return False
+
+
 def _make_gspo_loss_fn(full_data):
     """Return a CustomLossFnV1-compatible loss function for GSPO.
 
@@ -228,6 +266,11 @@ def _make_gspo_loss_fn(full_data):
 
     def gspo_loss_fn(data, logprobs_list):
         import torch  # noqa: PLC0415
+
+        # Capture the SDK-provided training logprobs FIRST (before any per-datum math
+        # that could raise) so the KL/entropy guard always sees real logprobs on a
+        # real step. fb_out exposes no training_logprobs field; this is the only seam.
+        _GSPO_TRAIN_LOGPROBS["logprobs"] = list(logprobs_list)
 
         losses = []
         for full_datum, train_lps in zip(full_data, logprobs_list):
@@ -346,8 +389,16 @@ def build_loss_step(
     Returns:
         ForwardBackwardOutput (or mock equivalent).
     """
+    # Clear last step's captured training logprobs. The GSPO loss closure repopulates
+    # this; the GRPO/mock paths leave it None so _compute_kl_metrics reads a genuine
+    # absence (0.0) rather than reusing stale logprobs from a prior step.
+    _reset_gspo_logprobs()
+
     if not use_gspo:
-        # GRPO token-level IS fallback (--grpo-fallback / --no-gspo)
+        # GRPO token-level IS fallback (--grpo-fallback / --no-gspo). NOTE: this path
+        # does not yet populate the KL-guard side-channel (fb_out carries no logprobs
+        # either) -> kl_v1=0.0 on the fallback. GSPO is the locked default (D-09-03);
+        # the KL guard is live there. Fallback KL instrumentation is a known gap.
         return _res(
             tc.forward_backward(
                 [_strip_mask(d) for d in data], loss_fn="importance_sampling"
@@ -387,8 +438,18 @@ def _compute_kl_metrics(fb_out: Any, data: list) -> dict[str, float]:
     The genuinely-empty case (no training logprobs available yet, e.g. a mock
     ForwardBackwardOutput) returns 0.0 — that is a structural absence of data,
     not a computation that errored.
+
+    SOURCE OF training_logprobs (2026-06-25): tinker.ForwardBackwardOutput has NO
+    `training_logprobs` attribute (fields: loss_fn_output_type / loss_fn_outputs /
+    metrics), so the getattr below is always empty on a real run. The real per-token
+    training logprobs are handed to the GSPO custom loss closure as `logprobs_list`
+    and stashed in the _GSPO_TRAIN_LOGPROBS side-channel by build_loss_step. We prefer
+    a real fb_out.training_logprobs if a future SDK ever exposes one, else fall back
+    to the side-channel. Only when BOTH are empty is it a genuine structural absence.
     """
     training_lps = getattr(fb_out, "training_logprobs", []) or []
+    if not training_lps:
+        training_lps = _GSPO_TRAIN_LOGPROBS.get("logprobs") or []
     if not data or not training_lps:
         return {
             "optim/kl_sample_train_v1": 0.0,
@@ -937,9 +998,32 @@ def run_training_step(
     # the gradient is computed but NOT applied until after the halt check (CR-04).
     fb_out = build_loss_step(tc, data, use_gspo=args.use_gspo)
 
-    # KL metrics BEFORE committing the update. A compute failure returns a
-    # halt-worthy sentinel (never a silent 0.0) so the guard cannot be disabled.
-    kl_metrics = _compute_kl_metrics(fb_out, data)
+    # CR-04 hardening (2026-06-25): on the GSPO path the training-logprobs side-channel
+    # MUST be populated — forward_backward_custom calls the loss closure in-process
+    # (training_client.py:473) before returning. An empty side-channel here means the
+    # closure never ran, i.e. a silent regression of the very KL-guard-disable bug just
+    # fixed. Treat it as a KL COMPUTE FAILURE (HARD halt), never a silent kl=0.0.
+    if (
+        args.use_gspo
+        and data
+        and _is_real_fb_out(fb_out)
+        and not _GSPO_TRAIN_LOGPROBS.get("logprobs")
+    ):
+        logger.error(
+            "GSPO step %d: training-logprobs side-channel EMPTY after "
+            "forward_backward_custom — the KL guard would silently disable. "
+            "Forcing HARD halt (CR-04).",
+            step,
+        )
+        kl_metrics = {
+            "optim/kl_sample_train_v1": _KL_COMPUTE_FAILED_SENTINEL,
+            "optim/kl_sample_train_v2": _KL_COMPUTE_FAILED_SENTINEL,
+            "optim/entropy": 0.0,
+        }
+    else:
+        # KL metrics BEFORE committing the update. A compute failure returns a
+        # halt-worthy sentinel (never a silent 0.0) so the guard cannot be disabled.
+        kl_metrics = _compute_kl_metrics(fb_out, data)
     moe_metrics = getattr(fb_out, "metrics", {}) or {}
 
     # Autohalt guard (GRPO-08) — evaluated BEFORE optim_step.
@@ -1378,6 +1462,25 @@ def run_training(args: argparse.Namespace) -> None:
         )
         if halted:
             raise RuntimeError(f"Training halted at step {step}")
+
+        # ON-POLICY SAMPLER REFRESH (2026-06-25, the J.4 stale-sampler fix). The
+        # canonical cookbook loop (tinker_cookbook/rl/train.py do_train_step_*_and_
+        # get_sampling_client) refreshes the sampler from the just-updated weights
+        # EVERY step: sample(t) -> train -> sample(t+1). Without this the sampler was
+        # pinned at the initial weights for all N steps, so every step's rollouts came
+        # from the FROZEN warm-start policy — the policy could never escape warm-start
+        # and reward was constant-by-construction (50-step run read FLAT). run_training_
+        # step already committed optim_step on the non-halted path (CR-04), so the new
+        # sampler reflects this step's update. Logged so the plumbing is verifiable
+        # live (sampler id MUST change each step).
+        sampling_client = _res(tc.save_weights_and_get_sampling_client())
+        logger.info(
+            "Step %d: refreshed on-policy sampler -> %s",
+            step + 1,
+            getattr(sampling_client, "model_path", None)
+            or getattr(sampling_client, "_model_path", None)
+            or id(sampling_client),
+        )
 
     # Final checkpoint
     _save_checkpoint(tc, name=f"final-step-{args.total_steps}", manifest=manifest)

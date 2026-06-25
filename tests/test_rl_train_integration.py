@@ -213,8 +213,9 @@ def _wire(monkeypatch, tmp_path, *, kl_v1=0.0):
         reward_pipeline, "_extract_verifiable_signals", fake_extract
     )
 
-    async def fake_consistency_batch(samples, model="sonnet", n_votes=1):
+    async def fake_consistency_batch(samples, model="sonnet", n_votes=1, base_url=None):
         # Vary consistency too so combined judge rewards differ within a group.
+        # base_url accepted (Phase 8.1 routes consistency to a local vLLM endpoint).
         return [0.3 + 0.15 * (i % 4) for i in range(len(samples))]
 
     monkeypatch.setattr(
@@ -470,6 +471,53 @@ def test_main_wires_sampling_client_and_loads_pools(monkeypatch, tmp_path):
 
     # A metrics row was written for the single step.
     assert metrics_path.exists() and metrics_path.read_text().strip()
+
+
+def test_sampler_refreshed_every_step_not_once(monkeypatch, tmp_path):
+    """The on-policy sampler MUST refresh every step (J.4 stale-sampler regression).
+
+    Root cause of the 50-step FLAT run: main() created the sampling client ONCE before
+    the loop and reused it for all N steps, so every step sampled from the FROZEN
+    warm-start policy and reward was constant-by-construction. The canonical cookbook
+    loop refreshes the sampler from the just-updated weights every step. This asserts
+    save_weights_and_get_sampling_client is called once before the loop PLUS once per
+    step (== total_steps + 1). The pre-fix code called it exactly once → this is RED.
+    """
+    rl_train, tc, fake_sc, _ = _wire(monkeypatch, tmp_path, kl_v1=0.02)
+    monkeypatch.setattr(rl_train, "create_lora_training_client", lambda **kw: tc)
+
+    real_parse = rl_train._parse_args
+
+    def parse_with_judge(argv=None):
+        ns = real_parse(argv)
+        ns.judge_client = "fake-judge-client"
+        ns.judge_model = "fake-judge"
+        ns.consistency_model = "sonnet"
+        ns.n_votes = 1
+        return ns
+
+    monkeypatch.setattr(rl_train, "_parse_args", parse_with_judge)
+    monkeypatch.setattr(rl_train, "MANIFEST_PATH", str(tmp_path / "manifest.json"))
+
+    import scripts.tinker_rl_data as tinker_rl_data
+    monkeypatch.setattr(
+        tinker_rl_data, "load_rl_prompts",
+        lambda pool: _gen_pool() if pool == "gen" else _judge_pool(),
+    )
+    monkeypatch.setattr(
+        rl_train, "_save_checkpoint", lambda tc_, name, manifest: "/fake/ckpt"
+    )
+
+    n_steps = 3
+    rl_train.main(["--total-steps", str(n_steps), "--batch-size", "4", "--group-size", "2"])
+
+    # 1 initial (before loop) + n_steps per-step refreshes.
+    assert tc.save_weights_and_get_sampling_client.call_count == n_steps + 1, (
+        f"sampler must refresh every step: expected {n_steps + 1} calls "
+        f"(1 initial + {n_steps} per-step), got "
+        f"{tc.save_weights_and_get_sampling_client.call_count} — the stale-sampler "
+        "bug (created once, never refreshed) is back."
+    )
 
 
 def test_kl_compute_failure_is_halt_worthy(monkeypatch, tmp_path):

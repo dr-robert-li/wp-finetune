@@ -299,6 +299,87 @@ def test_gspo_loss_fn_masks_training_logprobs_to_action_tokens():
     assert metrics["gspo/n_sequences"] == 1.0
 
 
+def test_kl_metrics_read_gspo_logprobs_side_channel():
+    """_compute_kl_metrics must read training logprobs from the GSPO side-channel.
+
+    Regression for the silent KL-guard disable (2026-06-25): tinker.ForwardBackwardOutput
+    has NO `training_logprobs` field (only loss_fn_output_type / loss_fn_outputs /
+    metrics), so _compute_kl_metrics took the structural-absence 0.0 branch every real
+    step -> kl_v1==v2==0.0 < kl_hard -> the autohalt KL guard never fired. The GSPO loss
+    closure receives the per-token training logprobs and stashes them in
+    _GSPO_TRAIN_LOGPROBS; _compute_kl_metrics must consume them and return REAL KL +
+    entropy (the canonical compute_kl_sample_train). A MagicMock fb_out cannot catch
+    this — the loss_fn must actually run, which a mocked forward_backward_custom skips.
+    """
+    import types as _types
+
+    rl_train = pytest.importorskip("scripts.rl_train")
+    pytest.importorskip("tinker")
+    import torch
+    from tinker_cookbook.rl.data_processing import compute_advantages, trajectory_to_data
+    from tinker_cookbook.rl.metrics import compute_kl_sample_train
+
+    from tests._rl_fixtures import make_trajectory_group
+
+    tg = make_trajectory_group([1.0, 0.0], group_id="gen-0")
+    adv_P = compute_advantages([tg])
+    datum = trajectory_to_data(tg.trajectories_G[0], float(adv_P[0][0]))[0]
+
+    sampling = datum.loss_fn_inputs["logprobs"].to_torch()
+    action_mask = datum.loss_fn_inputs["mask"].to_torch() > 0
+    # Shift training logprobs off sampling on the action tokens so KL is nonzero —
+    # i.e. a policy that has genuinely drifted, exactly what the guard must detect.
+    train_lps = torch.zeros_like(sampling)
+    for j in range(len(train_lps)):
+        if action_mask[j]:
+            train_lps[j] = float(sampling[j]) - 0.5
+
+    # fb_out shaped like the real SDK output: NO training_logprobs attribute.
+    fb_out = _types.SimpleNamespace(metrics={})
+    assert not getattr(fb_out, "training_logprobs", [])
+
+    # With the side-channel empty it is a GENUINE absence -> 0.0 (CR-04 contract: a
+    # structural absence reads 0.0; only a compute *failure* trips the halt sentinel).
+    rl_train._reset_gspo_logprobs()
+    empty = rl_train._compute_kl_metrics(fb_out, [datum])
+    assert empty["optim/kl_sample_train_v1"] == 0.0
+    assert empty["optim/entropy"] == 0.0
+
+    # After the GSPO loss runs (captures logprobs), KL/entropy must be REAL + match
+    # the canonical estimator, and be nonzero so the guard can actually fire.
+    loss_fn = rl_train._make_gspo_loss_fn([datum])
+    loss_fn([datum], [train_lps])
+    got = rl_train._compute_kl_metrics(fb_out, [datum])
+    want = compute_kl_sample_train([datum], [train_lps])
+    assert got["optim/kl_sample_train_v1"] == pytest.approx(want["optim/kl_sample_train_v1"])
+    assert got["optim/kl_sample_train_v2"] == pytest.approx(want["optim/kl_sample_train_v2"])
+    assert got["optim/entropy"] == pytest.approx(want["optim/entropy"])
+    assert got["optim/kl_sample_train_v1"] != 0.0, "drifted policy must yield nonzero KL"
+
+
+def test_is_real_fb_out_discriminates_mock_from_sdk_output():
+    """The empty-side-channel HARD-halt hardening must fire ONLY on real SDK output.
+
+    _is_real_fb_out gates it: a MagicMock / SimpleNamespace fb_out (offline test &
+    dry-run seams, which never invoke the loss closure) must read False so the
+    hardening stays dormant; a genuine tinker.ForwardBackwardOutput reads True.
+    """
+    import types as _types
+    from unittest.mock import MagicMock
+
+    rl_train = pytest.importorskip("scripts.rl_train")
+    assert rl_train._is_real_fb_out(MagicMock()) is False
+    assert rl_train._is_real_fb_out(_types.SimpleNamespace(metrics={})) is False
+    assert rl_train._is_real_fb_out(None) is False
+
+    tinker = pytest.importorskip("tinker")
+    # A genuine (minimal) ForwardBackwardOutput reads True.
+    real = tinker.types.ForwardBackwardOutput(
+        loss_fn_output_type="scalar", loss_fn_outputs=[], metrics={}
+    )
+    assert rl_train._is_real_fb_out(real) is True
+
+
 def test_gspo_loss_fn_empty_mask_datum_is_safe():
     """A Datum whose mask has no action position contributes 0, not a crash."""
     rl_train = pytest.importorskip("scripts.rl_train")

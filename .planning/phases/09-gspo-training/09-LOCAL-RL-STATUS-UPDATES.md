@@ -1419,3 +1419,69 @@ prior checkpoints under run 03c69b7b (FLAT, superseded).
 **Cost:** only Tinker training compute (~8min/step; judges $0). Spend gate at 50 steps, not launch (checkpoint-every 50). ~7h/seed to the gate.
 
 **STATUS: LAUNCH-READY. Paused for supervised launch in a fresh context (context budget exhausted this session; the step-1–3 gate needs live eyes).**
+
+---
+
+### J.1 · 2026-06-25 07:54 — POST-8.1 RERUN LAUNCHED (supervised, both seeds)
+
+User authorized both-seed launch. OOM guard armed FIRST (pid 1048661, `scripts/_oom_guard.sh`, trips <2GB MemAvailable). Launcher `scripts/_launch_post81_rerun.sh` (env-hygiene: sources `.env` then `unset ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN` so $0 local-judge path can't leak to paid API).
+
+- **Seed A** `--lora-seed 42` → pid 1050174, `metrics/rl_metrics.seedA.jsonl`, `manifest.seedA.json`, `logs/phase09_rerun/full_run.seedA.log`, `WP_JUDGE_DEBUG_DUMP=judge_failures.seedA.jsonl`.
+- **Seed B** `--lora-seed 7` → pid 1050266, `.seedB.*`.
+- Both warm-start `tinker://80c93d7c…:train:0/weights/wp-reasoning-v4-r32-rp30-savestate-final-state`, 500 steps, batch 8, ckpt-every 50, jaccard-every 20, kl 0.1/0.3, efrac 0.7/0.5, judges localhost:8000(wp_judge)/8001(wp_consistency).
+
+**WARM-START WIRING GATE ✅ PASSED LIVE (both seeds):** `base_model=Qwen/Qwen3-30B-A3B rank=32 train_mlp=True attn=False unembed=False` — exact D-09-08 MoE-only geometry; savestate loaded clean (the one path the mock dry-run never exercised). Prompt pools gen=68 / judge=482. No errors.
+
+**NEXT GATE (live, attached):** step-1–3 reward wiring — expect `frac_groups_all_zero → ~0.000` + per-sample fix-score spread 0/0.25/~1. Old ~0.31 / uniform groups ⇒ reward NOT live ⇒ KILL BOTH + debug seam (do not burn 50 steps). Then 50-step kill/continue.
+
+### J.2 · 2026-06-25 08:34 — STEP 0–3 LIVE: reward path HEALTHY, but a GUARD SEAM found
+
+**Reward wiring gate ✅ PASS both seeds** (steps 0–3): groups `nonuniform 0.625–0.71`, reward spans `0.0→1.0`, `frac_mid 0.41–0.63` (vs old 0.011), `group_reward_std 0.09–0.21` (nonzero GSPO advantage), `fix_corr 0.29–0.66`. NOT the old flat/uniform signature. `optim_step` confirmed running every step (post-update "Step N/500" log line fires, no Adam errors) ⇒ **training is genuinely happening — H2 disguised-flat REJECTED.** rmean: seedA 0.27→0.26→0.32→**0.41** (nudging up), seedB 0.32→0.32→0.36→0.24 (noisy; 4 steps too few to trend — that's the 50-step gate's job).
+
+**⚠️ SEAM FOUND — both CR-04 divergence guards are non-functional this run:**
+- `kl_sample_train_v1=v2=0.0` EVERY step both seeds. GSPO `forward_backward_custom` (D-09-03 primary) does NOT populate `fb_out.training_logprobs` → `_compute_kl_metrics` (rl_train.py:391–397) takes the empty-data branch → KL=0.0 → `check_halt` KL arm never fires. **The KL autohalt guard is OFF.**
+- `fb_out.metrics` empty → `e_frac` defaults to 1.0 (safe) → MoE routing-collapse guard never trips. `e_frac=None` in rows.
+- Consequence telemetry: `entropy=0.0`, `loss/grad_norm/lr=None` → the "entropy stable" arm of the 50-step gate is UNEVALUABLE (other arms — reward spread, rmean trend, frac_groups_all_zero, frac_mid, jaccard, Panickssery — remain evaluable).
+- **Root cause:** CR-04 guards were built against `forward_backward` output shape; GSPO uses `forward_backward_custom`, which exposes neither `training_logprobs` nor `metrics` the same way. The free dry-run could NOT catch this — its MagicMock fb_out set `training_logprobs=[]` (rl_train.py:1227), i.e. the SAME empty branch → same kl=0.0. This is the live-vs-mock seam.
+- **Mitigants:** `checkpoint-every-50` bounds blast radius to ~8h; `_panickssery_spot_check` (rl_train.py:933, step%50) is an INDEPENDENT divergence read that still fires at step 50.
+
+**DECISION PENDING (user):** proceed to 50-step gate with guards blind (checkpoints + Panickssery as net) while KL/e_frac wiring is fixed for the 50→500 continuation, vs kill now + fix guards + relaunch (~40min sunk). Training is confirmed real either way.
+
+### J.3 · 2026-06-25 08:52 — KL GUARD FIXED + RELAUNCHED (user: kill+fix+relaunch)
+
+**Correction to J.2:** the MoE **e_frac guard was NOT blind** — `e_frac_with_tokens_mean ≈ 0.95–0.98` every step (healthy; routing not collapsed), passed to `check_halt` via the colon-key `e_frac_with_tokens:mean`. Earlier "e_frac=None" was a wrong-key grep. So **only the KL autohalt guard + entropy telemetry were dead**, not e_frac.
+
+**Root cause (verified vs SDK source):** `tinker.ForwardBackwardOutput` has fields `{loss_fn_output_type, loss_fn_outputs, metrics}` — **no `training_logprobs`**. So `_compute_kl_metrics`'s `getattr(fb_out,"training_logprobs",[])` was empty EVERY real step → structural-absence 0.0 branch → `kl_v1=v2=0.0 < kl_hard` → KL autohalt never fired. Not GSPO-specific; guaranteed for any real run. The free dry-run could not catch it (MagicMock fb_out, `training_logprobs=[]` → same branch).
+
+**Fix (scripts/rl_train.py):** the real per-token training logprobs ARE handed to the GSPO loss closure as `logprobs_list` (`forward_backward_custom` calls `loss_fn(data, logprobs_list)` in-process, training_client.py:473, confirmed). Capture them into a module side-channel `_GSPO_TRAIN_LOGPROBS` at the top of `gspo_loss_fn`; `build_loss_step` resets it per step; `_compute_kl_metrics` consumes it when `fb_out.training_logprobs` absent → canonical `compute_kl_sample_train` → real kl_v1/v2 + entropy.
+- **CR-04 hardening:** if a REAL `tinker.ForwardBackwardOutput` (gated by `_is_real_fb_out`, so mocks/dry-run are transparent) yields an empty side-channel on a GSPO step → force the KL-compute-failure sentinel (HARD halt), never silent 0.0. Prevents a future silent regression of this exact bug.
+- **KNOWN CAVEAT (not changed — locked design):** `check_halt` thresholds `kl_v1` (mean diff, can be negative) not `kl_v2` (≥0). HARD halt fires only on large POSITIVE drift. Retuning the halt estimator on a paid run risks a spurious halt (kl_hard=0.3 was set against v1); deferred. Backstops: checkpoint-every-50, Panickssery spot-check, live KL telemetry now visible at the 50-step gate.
+
+**Tests:** new `test_kl_metrics_read_gspo_logprobs_side_channel` (real loss closure → real KL, matches canonical; a mock can't catch this) + `test_is_real_fb_out_discriminates_mock_from_sdk_output`; fixed stale `fake_consistency_batch` (missing `base_url` kwarg, Phase-8.1). Full rl_train suite 21 passed (1 pre-existing `test_lora_config` MagicMock-JSON failure, unrelated).
+
+**RELAUNCHED 08:52** both seeds (seedA pid 1130331 / seedB pid 1130433), old kl=0 artifacts rotated `*.preKLfix`. Warm-start clean (D-09-08 geometry). **LIVE GATE (advisor): `entropy ≠ 0.0` at step 0 = side-channel live (definitive); `kl_v1` going nonzero by step 1–2 = drift detection working** (kl_v1≈0 at step 0 is legitimate — policy not yet updated). Then the 50-step kill/continue gate (now with real KL/entropy arms evaluable).
+
+**STEP-0 GATE ✅ PASSED BOTH SEEDS (08:5x):** seedA `entropy=0.468 kl_v1=0.0087 kl_v2=0.012 e_frac=0.957`; seedB `entropy=0.499 kl_v1=0.0102 kl_v2=0.0099 e_frac=0.961`. Entropy NONZERO (was hard-0.0 pre-fix) ⇒ side-channel live, KL/entropy telemetry restored on the real path. kl_v1 small-positive at step 0 (legitimate — policy not yet updated; will grow with drift). Run proceeding to the 50-step spend gate (~8h). Next decision: 50-step kill/continue (reward trend + frac_mid + frac_groups_all_zero + now-live KL/entropy/e_frac).
+
+### J.4 · 2026-06-25 17:0x — 50-STEP GATE: BOTH FLAT → STOP BOTH; STALE-SAMPLER SEAM FOUND
+
+Both seeds ran 50 steps, step-50 checkpoints saved (seedA `tinker://a99724f2…:train:0/sampler_weights/step-50`, seedB `tinker://56c4f145…/step-50`), no HARD halts. **Verdict: BOTH FLAT (§J #5 "both flat → STOP both").** Stopped both (pids 1130331/1130433).
+- rmean by 10-step band — seedA: 0.326/0.308/0.334/0.363/0.310 (slope +0.0002); seedB: 0.353/0.335/0.350/0.330/0.329 (slope −0.00002). NO upward trend either seed.
+- `frac_groups_all_zero` pinned at EXACTLY 0.375 all 50 steps both seeds (never dropped). fix_correctness flat→down (A 0.56→0.52, B 0.61→0.54). kl_v1 frozen ~0.01 (policy barely moved from warm-start).
+- seedB step-50 "ENTROPY_COLLAPSE" review flag = the PREDICTED spurious `entropy<1.5` artifact (entropy flat ~0.4, NOT narrowing) — non-halting, ignore.
+
+**ROOT CAUSE (§J #6 seam, confirmed vs canonical cookbook):** `rl_train.py:1451` creates `sampling_client = tc.save_weights_and_get_sampling_client()` ONCE, before the `for step` loop (1453), and NEVER refreshes it. Every step's rollouts are drawn from the FROZEN warm-start policy; `optim_step` updates `tc` but those weights never feed back into sampling → the policy cannot escape warm-start → non-learning BY CONSTRUCTION. Pins `all_zero` at exactly 0.375 (identical sampler ⇒ identical reward distribution every step) and freezes reward/kl. The canonical `tinker_cookbook/rl/train.py` refreshes the sampler EVERY step via `do_train_step_*_and_get_sampling_client` (lines 758/1153) — sample(t)→train→sample(t+1). NOT a reward-design fault; offline reward gate remains valid.
+
+**FIX (pending):** refresh `sampling_client` from `tc` after each `optim_step` (cookbook per-step pattern). The IS-ratio + RSPO floor exist to tolerate SMALL sampler staleness, not 500 steps of it. STOPPED + investigating before re-spend.
+
+### J.5 · 2026-06-25 18:45 — ARTIFACT-FREE PROBES: weights DID move; "flat" was largely a gen-reward measurement artifact
+
+Two $0 probes (`scripts/_probe_weights_moved.py`) before any re-spend (advisor: read ground truth, don't infer on inference):
+
+**PROBE 1 — did weights move? (compute_logprobs, no generation, no sampling noise):** warm-start sampler vs step-50 seedA sampler on a fixed rendered prompt → **DIFFERENT both axes** (gen `max|Δlogprob|=1.96 mean=0.22`; judge `max=1.90 mean=0.10`). **Weights MOVED — `optim_step` applies, LoRA trains. The "frozen weights / optim no-op" bug class is RULED OUT.**
+
+**PROBE 2 — raw completions (the parseable=0 ground truth):** NOT prose, NOT truncated-`<think>` (no think tags, clean `<|im_end|>`):
+- GEN completions are *code* — Elementor `content_template()` JS/Underscore templates (`<# #>`, `<%- %>`) interleaved with `<?php ?>`. Legit WP code but NOT standalone-parseable PHP → `php -l` fails → `_is_parseable_php`=False → scalar zeroed. The gen-axis `parseable=0` is an EXTRACTION/reward-strictness artifact + prompt-type (Elementor template tasks), NOT "model emits prose."
+- JUDGE completions are CLEAN + high quality both policies: dimensional prose + well-formed `<judge_output>{9-dim JSON + verdict}</judge_output>`. No truncation.
+
+**REVISED ROOT-CAUSE PICTURE:** the 50-step "both flat" was largely a MEASUREMENT artifact, not non-learning. Gen groups score uniformly 0 (template code isn't parseable PHP) → constant all-zero groups → pins `frac_groups_all_zero` at exactly 0.375 (= the gen fraction), drags rmean, and contributes ZERO gen gradient (constant groups dropped). The JUDGE path carried the real signal and is healthy; weights moved. The stale-sampler bug (J.4) is still real and still must be fixed (caps on-policy improvement), but it is NOT a frozen-weights situation. **Implication for the relaunch gate: "expect all_zero to DROP" is INVALID if gen stays structurally zero — judge the relaunch on JUDGE-axis reward/fix_correctness trend, not all_zero.** Two candidate work items before/with relaunch: (1) fix the stale sampler [confirmed]; (2) decide whether the gen-reward should credit valid-but-non-standalone-PHP template code (else ~half the batch is permanent dead weight). Consulting before re-spend.
