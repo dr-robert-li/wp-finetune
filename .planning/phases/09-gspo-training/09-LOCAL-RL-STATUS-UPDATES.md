@@ -1485,3 +1485,37 @@ Two $0 probes (`scripts/_probe_weights_moved.py`) before any re-spend (advisor: 
 - JUDGE completions are CLEAN + high quality both policies: dimensional prose + well-formed `<judge_output>{9-dim JSON + verdict}</judge_output>`. No truncation.
 
 **REVISED ROOT-CAUSE PICTURE:** the 50-step "both flat" was largely a MEASUREMENT artifact, not non-learning. Gen groups score uniformly 0 (template code isn't parseable PHP) → constant all-zero groups → pins `frac_groups_all_zero` at exactly 0.375 (= the gen fraction), drags rmean, and contributes ZERO gen gradient (constant groups dropped). The JUDGE path carried the real signal and is healthy; weights moved. The stale-sampler bug (J.4) is still real and still must be fixed (caps on-policy improvement), but it is NOT a frozen-weights situation. **Implication for the relaunch gate: "expect all_zero to DROP" is INVALID if gen stays structurally zero — judge the relaunch on JUDGE-axis reward/fix_correctness trend, not all_zero.** Two candidate work items before/with relaunch: (1) fix the stale sampler [confirmed]; (2) decide whether the gen-reward should credit valid-but-non-standalone-PHP template code (else ~half the batch is permanent dead weight). Consulting before re-spend.
+
+### J.6 · 2026-06-25 19:0x — SAMPLER FIX COMMITTED (ff0872e) + 1-SEED RELAUNCH: weak-positive at step 30
+
+Committed both seam fixes + tests (KL side-channel + per-step on-policy sampler refresh + `test_sampler_refreshed_every_step_not_once`). Relaunched ONE seed (42), stale-sampler artifacts rotated `.stalesampler`.
+- **Plumbing gate ✅:** `Step N: refreshed on-policy sampler -> <id>` fires every step with a changing id — the fix is live.
+- **Step-30 learning gate (JUDGE-axis, per advisor):** fix_correctness_mean bands [0-9/10-19/20-29] = 0.593/0.524/**0.628** (slope +0.0009); rmean 0.349/0.316/0.375; consistency 0.512/0.479/0.556. All U-shaped, recover above start in 20-29 — slightly POSITIVE (vs stale-run + step-15 both flat-to-negative). BEST signal of the 3 runs but marginal: +0.026 fix_corr over 30 steps, inside the ±0.15 noise. No hacking (cons not outrunning fix_corr). **Verdict: inconclusive, leaning slightly positive — likely real-but-slow (adv ~±0.1 × lr=1e-5).** Deciding branch: run further to clear noise / bump LR for a faster signal / scale to seed 2.
+
+### J.7 · 2026-06-26 02:2x — CONTROLLED EVAL → REWARD IS HACKABLE (the real root cause)
+
+Step-30 was a NULL not a positive (advisor): the stale-sampler run (negative control, "can't learn") had the SAME fix_corr U-shape + same peak (0.626≈0.628); slope +0.0009 < its SE ±0.0014. Live per-step metric can't resolve a ~0.001/step signal under ±0.15 prompt+sampling noise. Built a low-variance controlled eval (`scripts/_check_judge_fixcorr.py`): 20 FIXED judge prompts, temp 0.2, deterministic `_fix_score_from_completion`, 3 policies incl. stale-step-50 as negative control. Ran on the step-50 checkpoint (`tinker://3207bc66…step-50`).
+
+**RESULT — CONFOUNDED:** warm-start `mean_fixcorr=0.437` (tiers 0/30/10) ; fixed-step50 `0.606` (+0.169, tiers 0/21/19) ; **stale-step50 (ctrl) `0.656` (+0.219, tiers 0/18/22)**. The "can't-learn" control beat warm-start MORE than the fixed run.
+
+**ROOT CAUSE = REWARD HACK (verified directly, not inferred):** `_fix_score_from_completion` returns `_extract_verifiable_signals(corrected).overall/100` for ANY parseable PHP, and that rubric scores the corrected code IN ISOLATION (no reference to the original bug/critique). Trivial unrelated PHP scores 1.0:
+```
+<?php echo 'hi';      -> fix_score 1.0    (rubric.overall=100)
+<?php return true;    -> fix_score 1.0
+function x(){return 1;} -> fix_score 1.0
+prose only            -> fix_score 0.25
+```
+So the dominant RL gradient is "emit ANY parseable PHP block" (prose 0.25 → code ~1.0), NOT "produce a correct fix." BOTH runs (fixed + stale) found the same hack → equal "improvement" → the negative control tie. **This overturns the prior framing:** the stale-sampler bug only BLINDED the live metric (it measured the frozen S0 sampler, not the improving tc — off-policy learning still moved tc); it was never "non-learning by construction." The actual blocker is a hackable reward (Phase-8.1 Lever-1 Form-A high tier). Training to 500 amplifies the hack — no pressure toward correct fixes. **RLEV-02 anti-hack failure.**
+
+**TRAINER STOPPED at step 52** (no value continuing on a reward with no correctness pressure). The sampler fix (committed ff0872e) remains correct + necessary (on-policy + valid monitoring) but is NOT sufficient.
+
+### J.8 · 2026-06-26 02:5x — READ THE ACTUAL BLOCKS: format-learning, NOT crude hacking (correction to J.7)
+
+Advisor caught that J.7 verified the reward CAN be hacked (synthetic trivial snippets) but not that the MODEL hacks it. Dumped `_extract_corrected_php` for 6 fixed augmented judge prompts × {warm-start, fixed-step50, stale-step50} (`scripts/_dump_corrected_blocks.py`). **The fix_score=1.0 completions emit REAL WordPress functions** — `get_rest_routes()` (REST route + permission_callback), `get_quiz_questions()` (`$wpdb->prepare`+`esc_sql`), `get_terms()` (`esc_html`), Yoast permalink desc (`\sprintf`/`\__()`). NOT `<?php echo 'hi';` echoes. Same prompt → near-identical real code across all three policies. The 0.25 completions are pure prose (no code block).
+
+**CORRECTED FRAMING (milder than J.7, this is what goes to Dr. Li):**
+- The model is **format-learning** — migrating prose (0.25) → emitting a plausible corrected-code block (~1.0), satisfying `_augment_judge_prompt`'s "emit a corrected-code block" requirement. NOT active crude reward-hacking. The step-52 checkpoint emits real WP code, is not garbage — but was trained on a reward with no correctness signal, so not trustworthy for scale-up.
+- The **reward-design flaw is real and stands on its own**: `_fix_score_from_completion` scores the corrected code IN ISOLATION (no original code, no critique), so a faithful reproduction, an unrelated clean function, AND a trivial echo ALL score ~1.0. There is ZERO gradient distinguishing a fix that resolves the flagged bug from one that doesn't. It is LATENTLY hackable and has no correctness pressure → will be exploited as step count rises (cheaper 1.0 outputs dominate). Must be hardened before any scale-up, independent of current behavior.
+- "Both runs found the same hack / all prior learning is fake" (J.7) is **too strong** — withdrawn. Accurate: both runs format-learned similarly; the stale-sampler bug only blinded the LIVE metric (measured frozen S0), never the learning.
+
+**RECOMMENDATION (for Dr. Li):** reopen Phase 8.1 reward — make `_fix_score` require the corrected code to ADDRESS the original critique, not merely parse+score-in-isolation. Candidate: re-judge the corrected code AGAINST the original (delta on the flagged dimension must improve) and/or condition the rubric call on the original function + critique. This is a reward redesign, not a hyperparam tweak. Sampler + KL fixes (ff0872e) are correct and should stay. Gen-reward Elementor-template dead-weight is a separate pre-existing ticket. Diagnostic harnesses committed for reuse: `_check_judge_fixcorr.py`, `_dump_corrected_blocks.py`, `_probe_weights_moved.py`.
