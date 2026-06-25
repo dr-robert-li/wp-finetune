@@ -40,16 +40,24 @@ STALE_50 = "tinker://a99724f2-36d3-577b-b51f-94af9198e7d8:train:0/sampler_weight
 
 
 def _score(name, sampler, prompts, args, renderer, tok):
-    from scripts.rl_rollouts import _generate_completions, _fix_score_from_completion
+    from scripts.rl_rollouts import (_generate_completions, _fix_score_from_completion,
+                                     _judge_original_code)
     comps = _generate_completions(sampler, prompts, args, renderer=renderer, tok=tok,
                                   max_tokens_override=args.judge_max_new_tokens)
-    scores = [_fix_score_from_completion(c.completion) for c in comps]
+    gsz = int(getattr(args, "group_size", 2))
+    # comps come group_size-per-prompt IN ORDER: completion i belongs to prompts[i // gsz].
+    assert len(comps) == len(prompts) * gsz, \
+        f"pairing assumption broken: {len(comps)} comps != {len(prompts)} prompts * {gsz}"
+    scores = []
+    for i, c in enumerate(comps):
+        orig = _judge_original_code(prompts[i // gsz])  # NEW reward: correctness pressure vs original
+        scores.append(_fix_score_from_completion(c.completion, orig))
     mean = stats.mean(scores) if scores else 0.0
-    # tier histogram: 0.0 / 0.25 / >0.25 (parseable-fix, scaled rubric)
+    # tier histogram: 0.0 / 0.25(identity-fail or unparseable) / 0.5(repro) / >0.5(real fix)
     z = sum(1 for s in scores if s == 0.0); q = sum(1 for s in scores if s == 0.25)
-    hi = sum(1 for s in scores if s > 0.25)
-    logger.info("[%s] n=%d mean_fixcorr=%.4f median=%.4f | tiers 0.0=%d 0.25=%d hi=%d",
-                name, len(scores), mean, stats.median(scores) if scores else 0.0, z, q, hi)
+    repro = sum(1 for s in scores if 0.25 < s <= 0.5); hi = sum(1 for s in scores if s > 0.5)
+    logger.info("[%s] n=%d mean_fixcorr=%.4f median=%.4f | tiers 0.0=%d 0.25=%d 0.5=%d hi=%d",
+                name, len(scores), mean, stats.median(scores) if scores else 0.0, z, q, repro, hi)
     return {"name": name, "n": len(scores), "mean": mean, "scores": scores}
 
 
@@ -88,6 +96,19 @@ def main():
     s_fixed = sc.create_sampling_client(model_path=cli.fixed_50)
     logger.info("stale-step-50 (negative control) sampler... %s", STALE_50)
     s_stale = sc.create_sampling_client(model_path=STALE_50)
+
+    from scripts.rl_rollouts import _fix_score_from_completion, _judge_original_code
+    # --- one-real-pair sanity (advisor #1): confirm orig is the function the completion fixes ---
+    _p0 = prompts[0]
+    _orig0 = _judge_original_code(_p0)
+    logger.info("PAIR-CHECK prompts[0] _group_id=%s | _judge_original_code len=%d",
+                _p0.get("_group_id"), len(_orig0 or ""))
+    logger.info("PAIR-CHECK orig0[:200]=%r", (_orig0 or "")[:200])
+    # --- ECHO-ADVERSARY (deterministic, no sampling): isolation-hack must score <= 0.30 ---
+    echo = "analysis...\n```php\n<?php echo 'hi';\n```"
+    adv = [_fix_score_from_completion(echo, _judge_original_code(p)) for p in prompts]
+    adv_mean = sum(adv) / len(adv) if adv else 0.0
+    print(f"ECHO-ADVERSARY mean_fixcorr = {adv_mean:.4f}  (gate: <= 0.30)")
 
     rows = [
         _score("warm-start", s_ws, prompts, args, renderer, tok),

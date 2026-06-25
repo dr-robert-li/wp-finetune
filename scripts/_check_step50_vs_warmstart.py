@@ -47,7 +47,7 @@ def _score_policy(name, sampler, prompts, args, renderer, tok):
     compute_group_rewards -> zero non-parseable) so the number is the same reward
     the training loop optimises.
     """
-    from scripts.rl_rollouts import _generate_completions, _is_parseable_php
+    from scripts.rl_rollouts import _generate_completions, _is_valid_wp_php
     from scripts.reward_pipeline import compute_group_rewards
     from eval.output_parsers import extract_php_code
 
@@ -57,7 +57,7 @@ def _score_policy(name, sampler, prompts, args, renderer, tok):
     scalars = []
     parseable = 0
     for i, p in enumerate(php):
-        if not _is_parseable_php(p):
+        if not _is_valid_wp_php(p):   # FIX 2: template-aware validity (was _is_parseable_php)
             results[i].scalar = 0.0
         else:
             parseable += 1

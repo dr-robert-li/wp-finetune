@@ -158,3 +158,84 @@ def test_gen_reward_nonzero_on_template(monkeypatch):
     from scripts.rl_rollouts import _is_parseable_php
 
     assert _is_parseable_php(_ELEMENTOR_TEMPLATE) is False
+
+
+# A bare, brace-balanced WordPress method body (no ```php fence) — the dominant
+# shape of warm-start gen completions. This is what rides through extract_php_code
+# unfenced, so any trailing decode artifact lands inside the scored PHP.
+_BARE_FN = (
+    "function is_free_plan() {\n"
+    "\tif ( ! $this->is_paid_plan() ) {\n"
+    "\t\treturn true;\n"
+    "\t}\n"
+    "\treturn $this->get_plan_name() === Plan::FREE_PLAN_NAME;\n"
+    "}"
+)
+
+
+def test_gen_completion_im_end_marker_leak_is_fatal_when_unstripped():
+    """Regression (V3, 2026-06-26): the chat EOS marker leaking into decoded gen
+    TEXT zeroes the gen reward. _generate_completions now decodes with
+    skip_special_tokens=True (rl_rollouts.py:1220); this pins WHY that is load-bearing.
+
+    Unit tests fed clean strings, so V1 could not catch a decode-layer leak — this
+    test feeds the exact leaked shape (bare fn + literal `<|im_end|>`).
+    """
+    from scripts.rl_rollouts import _is_valid_wp_php
+    from eval.output_parsers import extract_php_code
+
+    leaked = _BARE_FN + "<|im_end|>"          # decode without skip_special_tokens
+    stripped = _BARE_FN                        # decode WITH skip_special_tokens (the fix)
+
+    # The marker rides through unfenced extraction and breaks `php -l`:
+    assert _is_valid_wp_php(extract_php_code(leaked)) is False
+    # Once stripped at decode, the identical function is credited:
+    assert _is_valid_wp_php(extract_php_code(stripped)) is True
+
+
+def test_generate_completions_strips_special_tokens_from_text():
+    """The live seam must hand reward scoring marker-free TEXT while keeping the
+    EOS token in .tokens/.logprobs (GSPO IS ratio). Drives _generate_completions
+    with a faithful fake tokenizer that leaks `<|im_end|>` unless skip_special_tokens.
+    """
+    from types import SimpleNamespace
+    from scripts.rl_rollouts import _generate_completions
+
+    class _Seq:
+        def __init__(self, toks):
+            self.tokens = toks
+            self.logprobs = [0.0] * len(toks)
+
+    class _Resp:
+        def __init__(self, n):
+            self.sequences = [_Seq([7, 8, 9]) for _ in range(n)]
+
+        def result(self):
+            return self
+
+    class _Sampler:
+        def sample(self, prompt, num_samples, sampling_params):
+            return _Resp(num_samples)
+
+    class _Tok:
+        def decode(self, toks, skip_special_tokens=False):
+            body = "function f() { return 1; }"
+            return body if skip_special_tokens else body + "<|im_end|>"
+
+    class _Renderer:
+        def build_generation_prompt(self, user_msgs):
+            return SimpleNamespace(chunks=[1])
+
+        def get_stop_sequences(self):
+            return None
+
+    args = SimpleNamespace(group_size=2, temperature=0.7, max_new_tokens=64)
+    comps = _generate_completions(
+        _Sampler(), [{"messages": [{"role": "user", "content": "x"}]}],
+        args, renderer=_Renderer(), tok=_Tok(),
+    )
+    assert comps, "expected completions"
+    for c in comps:
+        assert "<|im_end|>" not in c.completion          # text is marker-free (the fix)
+        assert c.tokens == [7, 8, 9]                      # EOS token retained for GSPO
+        assert len(c.logprobs) == 3

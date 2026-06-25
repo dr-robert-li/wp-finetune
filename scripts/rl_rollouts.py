@@ -1217,7 +1217,15 @@ def _generate_completions(
             logprobs = list(logprobs) if logprobs is not None else [0.0] * len(tokens)
             completions.append(
                 _Completion(
-                    completion=tok.decode(tokens),
+                    # skip_special_tokens: the chat EOS marker (`<|im_end|>`) is part of
+                    # the sampled token list (and MUST stay in .tokens/.logprobs for GSPO),
+                    # but it leaks into the decoded TEXT as a literal `<|im_end|>`. For
+                    # BARE-code gen completions (no ```php fence) that trailing marker
+                    # rides into the extracted PHP -> `php -l` errors "unexpected token '<'"
+                    # -> _is_valid_wp_php False -> gen reward zeroed (a confirmed cause of
+                    # dead gen gradient; the judge path was spared only because fenced
+                    # extraction drops anything after the closing ```). Strip from text only.
+                    completion=tok.decode(tokens, skip_special_tokens=True),
                     group_id=group_id,
                     model_input=prompt,
                     tokens=tokens,

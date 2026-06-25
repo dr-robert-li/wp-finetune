@@ -98,9 +98,13 @@ class _FakeSamplingClient:
 class _FakeTokenizer:
     """Decodes a token-id list to a deterministic-but-distinct PHP string."""
 
-    def decode(self, toks):
+    def decode(self, toks, skip_special_tokens=False):
         tid = toks[0] if toks else 0
-        return f"<?php function wp_fix_{tid}() {{ return {tid}; }}"
+        text = f"<?php function wp_fix_{tid}() {{ return {tid}; }}"
+        # Mirror the real Qwen2Tokenizer: the chat EOS marker rides in the decoded
+        # text unless skip_special_tokens is set (the live gen-reward bug fixed at
+        # rl_rollouts.py:1220). Faithful double so the seam exercises the strip.
+        return text if skip_special_tokens else text + "<|im_end|>"
 
 
 class _FakeRenderer:
