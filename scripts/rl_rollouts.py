@@ -242,27 +242,117 @@ def combine_judge_reward(
 _PARSE_CLIFF_PARTIAL_CREDIT: float = 0.25
 
 
-def _fix_score_from_completion(completion_text: str) -> float:
+# FIX 1 (09-REWARD-FIX-DESIGN): improvement-delta normalizer. A >= +30-pt rubric
+# overall gain (corrected vs original) earns full correctness credit. Range of the
+# correctness-pressured tier is [0.5, 1.0]: a faithful reproduction (delta 0) -> 0.5,
+# a genuine fix that lifts the rubric by 30 pts -> 1.0.
+_IMPROVE_NORM: float = 0.30
+#: FIX 1 identity gate: minimum fraction of the original function's identifier tokens
+#: that a "corrected" block must retain to count as an edit of that function (vs a
+#: gut-to-trivial-body hack). 0.6 passes reproductions/real fixes, fails gutting.
+_MIN_TOKEN_RETENTION: float = 0.6
+
+
+def _primary_php_function_name(code: str) -> str | None:
+    """Return the name of the FIRST function/method defined in `code`, else None.
+
+    Handles visibility/modifier prefixes (public/protected/private/static/final/
+    abstract), reference-returns (`function &name`), and method declarations.
+    Used by the FIX 1 identity gate to require that a "corrected" block edits the
+    SAME function under review rather than substituting an unrelated function.
+    """
+    import re as _re  # noqa: PLC0415
+
+    # `function` keyword, optional whitespace, optional `&` (reference return),
+    # optional whitespace, then the identifier. Visibility/static modifiers sit
+    # BEFORE `function` so we do not need to capture them — matching on the
+    # `function` keyword already skips them.
+    m = _re.search(r"\bfunction\s*&?\s*([A-Za-z_\x80-\xff][A-Za-z0-9_\x80-\xff]*)\s*\(", code or "")
+    return m.group(1) if m else None
+
+
+def _token_retention(original: str, corrected: str) -> float:
+    """Fraction of the ORIGINAL's distinctive identifier tokens retained in `corrected`.
+
+    FIX 1 anti-gutting (stronger than a length ratio): a genuine fix KEEPS the
+    original's logic and adds guards/escaping; gutting DELETES the body (e.g.
+    `function render($x){ return 1; }`). A length floor misses short functions —
+    token retention does not. Tokens are identifiers + `$vars` + function/method
+    calls; the original's set is the denominator so re-writing toward a trivial
+    clean body (which drops the original's `$_GET`/`echo`/var tokens) scores low,
+    while a fix that wraps them (`echo esc_html($q)`) retains ~all of them.
+
+    Returns 1.0 for a faithful reproduction, ~0 for a gut-to-`return 1`.
+    """
+    import re as _re  # noqa: PLC0415
+
+    pat = r"[A-Za-z_\x80-\xff$][A-Za-z0-9_\x80-\xff$]*"
+    orig_toks = set(_re.findall(pat, original or ""))
+    if not orig_toks:
+        return 0.0
+    corr_toks = set(_re.findall(pat, corrected or ""))
+    return len(orig_toks & corr_toks) / len(orig_toks)
+
+
+def _judge_original_code(item: dict) -> str:
+    """Extract the ORIGINAL PHP under review from a judge pool item's user turn.
+
+    The original function is the ```php block in the user message. If the
+    fix-instruction contract (_JUDGE_FIX_INSTRUCTION) has been appended by
+    _augment_judge_prompt, strip it first so extract_php_code grabs the real
+    original block and not the instruction prose. Returns "" if no user turn /
+    no extractable PHP (caller treats "" as None -> legacy back-compat path).
+    """
+    from eval.output_parsers import extract_php_code  # noqa: PLC0415
+
+    msgs = (item or {}).get("messages") or []
+    user_content = ""
+    for m in reversed(msgs):
+        if m.get("role") == "user":
+            user_content = m.get("content") or ""
+            break
+    if not user_content:
+        return ""
+    # Strip the appended fix-instruction (pre-augmentation view) so the extractor
+    # sees only the original code-under-review.
+    idx = user_content.find(_JUDGE_FIX_INSTRUCTION)
+    if idx != -1:
+        user_content = user_content[:idx]
+    return extract_php_code(user_content)
+
+
+def _fix_score_from_completion(
+    completion_text: str, original_code: str | None = None
+) -> float:
     """Compute a graded fix_correctness score from a judge completion (Lever 1 Form A).
 
-    Replaces the binary parse-gate with three tiers (08.1-03 / D-81-02):
-      1. Empty / no corrected block     -> 0.0   (preserved low extreme)
-      2. Non-empty but unparseable PHP  -> _PARSE_CLIFF_PARTIAL_CREDIT (0.25)
-      3. Parseable PHP                  -> rubric.overall / 100.0 (preserved high extreme)
+    Tiers (08.1-03 / D-81-02, extended by FIX 1 / 09-REWARD-FIX-DESIGN):
+      1. Empty / no corrected block          -> 0.0   (preserved low extreme)
+      2. Non-empty but unparseable PHP       -> _PARSE_CLIFF_PARTIAL_CREDIT (0.25)
+      3. Parseable PHP, `original_code` None -> rubric.overall / 100.0 (BACK-COMPAT)
+      4. Parseable PHP, `original_code` given -> correctness-pressured:
+           a. Identity gate (FAIL -> 0.25): the corrected block must edit the SAME
+              function (same primary function name) AND keep at least half the
+              original length (anti-gutting floor). This kills the trivial-echo,
+              unrelated-clean-code, and gut-the-body hacks.
+           b. Improvement delta: improvement = max(0, corr.overall - orig.overall)/100.
+              Faithful reproduction (bug intact) -> ~0; genuine fix -> > 0.
+           c. Score = 0.5 + 0.5 * min(1.0, improvement / _IMPROVE_NORM).
+              Range [0.5, 1.0]: reproduction -> 0.5; >=30-pt gain -> 1.0.
 
-    This gives at least 3 distinct values, ensuring frac_mid > 0 (SC1 gate).
-    The extremes (empty=0.0, parseable~0.99) are NOT flattened — the partial
-    credit only grades the previously-collapsed middle tier.
+    Tiers 1-3 keep every existing call site green (original_code defaults to None).
+    Tier 4 closes the isolation hack (J.7/J.8): scoring the corrected code in
+    isolation gave clean/unrelated/reproduced PHP ~1.0 with zero correctness
+    gradient. The identity gate + improvement delta restore that gradient.
 
     Security note: non-parseable completions do NOT pass through
     _extract_verifiable_signals because that function returns a vacuous score (~100)
-    on non-code input. Routing unparseable blocks there would re-introduce the
-    reward-hacking surface this gate was designed to close (T-81.3-02).
-    The graded lever assigns a FIXED partial credit — no LLM grader added.
+    on non-code input (T-81.3-02). The graded lever assigns a FIXED partial credit.
 
     Args:
-        completion_text: Raw judge completion (may contain prose, fences, or a
-                         <corrected_code> block — handled by _extract_corrected_php).
+        completion_text: Raw judge completion (prose, fences, or <corrected_code>).
+        original_code: The original PHP under review (from _judge_original_code).
+                       When None / empty, uses the legacy back-compat path (tier 3).
 
     Returns:
         float: Graded fix_correctness score in [0, 1].
@@ -270,8 +360,35 @@ def _fix_score_from_completion(completion_text: str) -> float:
     corrected = _extract_corrected_php(completion_text)
     if _is_parseable_php(corrected):
         from scripts.reward_pipeline import _extract_verifiable_signals  # noqa: PLC0415
-        rubric = _extract_verifiable_signals(corrected)
-        return float(rubric.overall) / 100.0
+
+        # Tier 3 (back-compat): no original -> legacy isolation rubric.
+        orig = (original_code or "").strip()
+        if not orig:
+            rubric = _extract_verifiable_signals(corrected)
+            return float(rubric.overall) / 100.0
+
+        # Tier 4 (correctness-pressured).
+        corr_stripped = corrected.strip()
+        # (a) Identity gate.
+        orig_name = _primary_php_function_name(orig)
+        corr_name = _primary_php_function_name(corr_stripped)
+        same_function = (
+            orig_name is not None and corr_name is not None and corr_name == orig_name
+        )
+        # Anti-gutting via TOKEN RETENTION, not a length ratio: a gut-to-`return 1`
+        # body can stay above a 0.5 length floor for a SHORT original yet drops the
+        # original's distinctive tokens. Require >=60% of the original's identifiers
+        # to survive — a faithful reproduction retains 1.0, a real fix retains ~all
+        # (it wraps the logic), a gutted body retains only the signature.
+        retained = _token_retention(orig, corr_stripped)
+        if not (same_function and retained >= _MIN_TOKEN_RETENTION):
+            return _PARSE_CLIFF_PARTIAL_CREDIT
+        # (b) Improvement delta.
+        rubric_corr = _extract_verifiable_signals(corr_stripped)
+        rubric_orig = _extract_verifiable_signals(orig)
+        improvement = max(0.0, float(rubric_corr.overall) - float(rubric_orig.overall)) / 100.0
+        # (c) Score.
+        return 0.5 + 0.5 * min(1.0, improvement / _IMPROVE_NORM)
     if corrected and corrected.strip():
         # Non-empty block that failed to parse: genuine fix attempt that produced
         # syntactically invalid PHP. Assign partial credit.
@@ -317,6 +434,74 @@ def _is_parseable_php(code: str) -> bool:
         return True  # php not installed -> do not penalize (fail-open)
     except Exception:  # noqa: BLE001 — a lint hiccup must not zero a real reward
         return True
+
+
+# Template markers that signal Elementor / Underscore.js template output mixed
+# into a `content_template()` PHP method (FIX 2 / 09-REWARD-FIX-DESIGN).
+_TEMPLATE_MARKERS: tuple[str, ...] = ("<#", "<%", "{{")
+
+
+def _is_valid_wp_php(code: str) -> bool:
+    """True iff `code` is valid standalone PHP OR a well-formed WP template scaffold.
+
+    FIX 2 (09-REWARD-FIX-DESIGN): Elementor `content_template()` completions mix
+    `<?php ?>` PHP with Underscore/JS markup (`<# #>`, `<%- %>`, `<%= %>`, `<%  %>`,
+    `{{ }}`, `{{{ }}}`). `php -l` rejects the raw mix, zeroing an otherwise valid
+    completion -> dead gen gradient. This helper neutralizes the template directives
+    (they live in the HTML-output context between `?>` and `<?php`, so replacing
+    them with empty string leaves a lint-clean PHP scaffold) and re-lints.
+
+    Logic:
+      1. Fast path: plain `_is_parseable_php(code)` -> True (no regression).
+      2. Else, if `code` has a template marker AND a `<?php`: neutralize the
+         directives and lint the result. True iff the neutralized scaffold lints.
+      3. Else -> False.
+
+    The fix is ADDITIVE: broken PHP scaffolds (template markers but a malformed
+    `<?php` block) still fail because the neutralized result fails `php -l`.
+    """
+    if _is_parseable_php(code):
+        return True
+    s = code or ""
+    if not any(marker in s for marker in _TEMPLATE_MARKERS):
+        return False
+    # Real completions are BARE method bodies — `function content_template() { ?>
+    # ...markup... <?php }` with NO leading `<?php` (the model emits the body of a
+    # method already inside a PHP/class context). They have a `?>`/`<?php` toggle but
+    # never open PHP at the top, so `php -l` reads the whole head as HTML and chokes
+    # on the trailing `}`. Require a php<->template toggle (`<?php` or `?>` present),
+    # prepend a `<?php` opener if the scaffold does not already start in PHP, then
+    # neutralize the directives and lint. The neutralized, properly-opened scaffold
+    # lints iff the PHP structure is sound — broken PHP still fails (additive).
+    if "<?php" not in s and "?>" not in s:
+        return False
+    scaffold = s if s.lstrip().startswith("<?php") else "<?php\n" + s
+    return _is_parseable_php(_neutralize_template_directives(scaffold))
+
+
+def _neutralize_template_directives(code: str) -> str:
+    """Replace Underscore/Elementor template directives with PHP-safe placeholders.
+
+    Directives in HTML-output context (the common Elementor `content_template`
+    case: between `?>` and the next `<?php`) are removed entirely -> the
+    surrounding markup is inert text to `php -l`. Directives that would otherwise
+    sit inside a PHP expression context are replaced by a string literal so the
+    scaffold still lints. The fixtures exercise the HTML-output (removal) case;
+    the placeholder keeps the helper safe if a directive lands in PHP context.
+
+    Order matters: triple braces before double, and the three `<%` forms
+    (`<%- %>`, `<%= %>`, `<% %>`) are covered by a single `<%[-=]?...%>` pattern.
+    """
+    import re as _re  # noqa: PLC0415
+
+    # `<# ... #>` (Underscore conditional/loop control blocks) -> remove.
+    s = _re.sub(r"<#.*?#>", "", code, flags=_re.DOTALL)
+    # `<%- ... %>`, `<%= ... %>`, `<% ... %>` (Underscore interpolation/eval) -> remove.
+    s = _re.sub(r"<%[-=]?.*?%>", "", s, flags=_re.DOTALL)
+    # `{{{ ... }}}` (unescaped) then `{{ ... }}` (escaped) -> remove.
+    s = _re.sub(r"\{\{\{.*?\}\}\}", "", s, flags=_re.DOTALL)
+    s = _re.sub(r"\{\{.*?\}\}", "", s, flags=_re.DOTALL)
+    return s
 
 
 # ---------------------------------------------------------------------------
@@ -769,7 +954,7 @@ def collect_rollouts(
         # existing security-gate terminal zero (RewardResult.scalar). breakdown is
         # left intact for provenance.
         for i, php in enumerate(gen_php):
-            if not _is_parseable_php(php):
+            if not _is_valid_wp_php(php):
                 gen_reward_results[i].scalar = 0.0
         all_rollouts.extend(gen_completions)
         all_rewards.extend(gen_reward_results)
@@ -791,17 +976,27 @@ def collect_rollouts(
         # judge path (08.1-MEASUREMENT.md). Security note: non-parseable completions
         # receive a FIXED constant — _extract_verifiable_signals is NOT called on
         # non-code (that path returns vacuous ~100 and is a reward-hacking surface).
+        # Map each completion's group id ("judge-<k>") back to its originating
+        # judge_rollouts item (the flat completion index no longer aligns with the
+        # prompt list now that we draw group_size completions per prompt). Needed
+        # for BOTH the FIX 1 original-code lookup and the consistency critique_text.
+        judge_by_gid = {item["_group_id"]: item for item in judge_rollouts}
+
+        # FIX 1 (09-REWARD-FIX-DESIGN): pass the ORIGINAL code under review so the
+        # graded score applies the identity + improvement gates (correctness
+        # pressure) instead of the isolation rubric. _judge_original_code returns ""
+        # if the original block is missing -> _fix_score_from_completion treats ""
+        # as None (legacy back-compat path), so this stays robust.
         fix_correctness_scores = []
         for completion_obj in judge_completions:
-            fix_score = _fix_score_from_completion(completion_obj.completion)
+            item = judge_by_gid.get(getattr(completion_obj, "group_id", None), {})
+            orig = _judge_original_code(item)
+            fix_score = _fix_score_from_completion(completion_obj.completion, orig)
             fix_correctness_scores.append(fix_score)
 
         # Capped Claude-consistency via 09-03 dispatcher. Each judge completion
         # carries .group_id ("judge-<k>") identifying its source prompt; map
-        # that back to the originating judge_rollouts item for its critique_text
-        # (the flat completion index no longer aligns with the prompt list now
-        # that we draw group_size completions per prompt).
-        judge_by_gid = {item["_group_id"]: item for item in judge_rollouts}
+        # that back to the originating judge_rollouts item for its critique_text.
         consistency_samples = [
             {
                 "php_code": c.completion,
