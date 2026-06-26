@@ -5,6 +5,17 @@
 cleared context. V1 (unit + hack-probe) is already DONE and green. This doc is everything needed to run
 V2–V6 without prior conversation context.
 
+> **STATUS — EXECUTED 2026-06-26 (this runbook is DONE).** V2 PASS · V3 PASS · V4 PASS · V5 PASS (caveat) ·
+> V6a PASS · V6b deferred to RLEV-01. Full results: **`09-V2-V6-RESULTS.md`**. What to run next (pre-spend
+> truncation probe → 500-step Dr. Li gate): **`09-POST-V6-HANDOVER.md`**.
+> **One material addendum to this runbook (read before any RE-RUN):** executing §5 V3 surfaced a THIRD
+> reward defect beyond the two below — the chat EOS marker `<|im_end|>` leaked into the DECODED gen text
+> (`tok.decode` lacked `skip_special_tokens`), so every bare-code gen completion failed `php -l` → gen
+> reward zeroed. FIX 2 alone could not fix this. Fixed (`scripts/rl_rollouts.py:1220`,
+> `tok.decode(tokens, skip_special_tokens=True)`, committed `8cf35c1`); validated LIVE in V4 —
+> `frac_groups_all_zero` 0.375→0.0. See the §5 V3 "EXECUTION ADDENDUM" below and the regression baseline
+> is now **120 pass** (was 118).
+
 ---
 
 ## 0. TL;DR — what you are verifying and why
@@ -217,6 +228,22 @@ grep -E "mean_reward|parseable|VERDICT" logs/phase09_rerun/V3_gen_liveness.log
   (`_probe_weights_moved.py` PROBE 2 already shows them) and widen `_neutralize_template_directives` /
   the bare-body prepend. Re-run V1 `tests/test_reward_fix2_gen.py` after any change.
 - Pass → V3 PASS, continue to V4.
+
+> **EXECUTION ADDENDUM (2026-06-26 — what actually happened, fold into any re-run):**
+> 1. The committed harness `_check_step50_vs_warmstart.py` **hangs HARD** (`STAT=Sl`, ~0 CPU, wchan
+>    `poll_schedule_timeout`) — `_generate_completions` loops per-prompt with a blocking `sample().result()`
+>    and no timeout, so one pathological prompt freezes the whole run. Use **`scripts/_v3_liveness.py`**
+>    (robust per-prompt timeout, skips hangs) instead of the §V3 harness edit.
+> 2. First liveness run = **0/24 parseable by BOTH gates** → the V3-fail branch above (template-widening)
+>    was the WRONG lead. Per caveat #2, dumping raw completions (`scripts/_v3_dump.py`) showed every gen
+>    completion ends with literal `<|im_end|>`; `php -l` errors "unexpected token '<'". Root cause = the
+>    decode special-token leak, NOT templates. **Fix = `rl_rollouts.py:1220` `skip_special_tokens=True`**
+>    (TEXT only; `.tokens`/`.logprobs` keep the EOS token for the GSPO IS ratio). Grep first for any
+>    `.completion` consumer that keys on the marker (none found — single `tok.decode` site).
+> 3. Re-run after fix: **parseable 0→16/24, gen mean_reward 0→0.0416 → V3 PASS.** FIX 2's template credit
+>    did not fire in that draw (no Elementor templates sampled) — the live win was the decode fix.
+> 4. Added 2 regression tests + a faithful `_FakeTokenizer` double (leaks the marker unless
+>    `skip_special_tokens`) so V1 catches this next time. Suite 118→120.
 
 ---
 
