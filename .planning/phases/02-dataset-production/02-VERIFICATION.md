@@ -1,227 +1,148 @@
 ---
 phase: 02-dataset-production
-verified: 2026-03-26T00:00:00Z
-status: gaps_found
-score: 2/5 success criteria verified
-re_verification: false
+verified: 2026-06-26T00:00:00Z
+status: passed
+score: 5/5 (4 verified + C5 accepted via override 2026-06-26)
+override_accepted: true
+overrides:
+  - must_have: "The wp_gen and wp_judge example counts follow approximately 40/60 gen/judge split"
+    reason: >-
+      Static 40/60 export target (a Phase-2 user decision) superseded by the
+      ratio_30_70..ratio_70_30 export sweep; the 30/70 ratio adapter was selected
+      as the Phase 4 triage winner (ROADMAP line 41) and is the basis for all
+      downstream work (Phases 4.3, 7-10). Downstream training consumes the
+      per-ratio split dirs (data/final_dataset/ratio_30_70/openai_train.jsonl),
+      NOT the top-level blend whose ratio is therefore moot. This also resolves
+      the REQUIREMENTS DATA-11 (~50/50) vs ROADMAP C5 (40/60) target conflict —
+      both static targets are superseded by the empirical 30/70 selection.
+    accepted_by: "Dr. Robert Li"
+    accepted_at: "2026-06-26T12:31:27Z"
+re_verification: true
+re_verification_note: >-
+  The prior 02-VERIFICATION.md (dated 2026-03-26, status gaps_found, score 0/5)
+  PREDATED pipeline execution. The pipeline actually ran 2026-03-29 via the
+  /run-data-pipeline skill (ROADMAP line 36) and outputs were produced/refreshed
+  through 2026-04-23. The prior "nothing ran / dirs empty" finding is obsolete.
+  Outputs also moved from repo-root (phase1_extraction/, final_dataset/) to
+  under data/. This report verifies against current disk state.
+re_verification_data:
+  previous_status: gaps_found
+  previous_score: 0/5
+  gaps_closed:
+    - "C1: repos cloned + PHP functions extracted with metadata (was 'dirs empty')"
+    - "C2: PHPCS pre-filter + Claude judging with passed/failed separated (82165 passed / 12349 failed)"
+    - "C3: gap analysis + synthetic generation executed"
+    - "C4: data/final_dataset/ produced with OpenAI/Alpaca/raw formats, 80/10/10, task tokens"
+  gaps_remaining: []
+  gaps_accepted_via_override:
+    - "C5: gen/judge split ~92/8 vs 40/60 target — ACCEPTED 2026-06-26 (Dr. Robert Li). Static target superseded by the ratio_30_70..70_30 sweep + 30/70 Phase-4 winner; see overrides block."
+  regressions: []
 gaps:
-  - truth: "All repositories in repos.yaml are shallow-cloned and PHP functions are extracted with metadata"
-    status: failed
-    reason: "Pipeline has not executed. phase1_extraction/repos/ and phase1_extraction/output/ are empty. Scripts are hardened and ready but no actual execution has occurred."
-    artifacts:
-      - path: "phase1_extraction/repos/"
-        issue: "Empty — no repos cloned"
-      - path: "phase1_extraction/output/passed/"
-        issue: "Empty — no functions extracted or judged"
-    missing:
-      - "Run scripts/phase1_clone.py against repos.yaml to clone repositories"
-      - "Run scripts/phase1_extract.py to extract PHP functions with metadata"
-      - "Run scripts/phase1_judge.py to assess and separate passed/failed functions"
-
-  - truth: "Gap analysis identifies which taxonomy categories are underrepresented and synthetic generation fills those gaps"
-    status: failed
-    reason: "No pipeline outputs exist. phase2_synthetic/output/ is empty. Scripts are ready (phase2_gap_analysis.py, phase2_generate.py, phase2_judge.py, phase2_judge_dataset.py) but no execution has occurred."
-    artifacts:
-      - path: "phase2_synthetic/output/"
-        issue: "Empty — no gap reports, synthetic examples, or judge outputs"
-    missing:
-      - "Run scripts/phase2_gap_analysis.py to identify taxonomy gaps from extracted functions"
-      - "Run scripts/phase2_mutate.py to generate contrastive mutation pairs"
-      - "Run scripts/phase2_generate.py to fill gaps with synthetic examples"
-      - "Run scripts/phase2_judge.py to assess synthetic examples"
-      - "Run scripts/phase2_judge_dataset.py to generate rubric-scored judge training data"
-
-  - truth: "final_dataset/ contains at least 10,000 examples in OpenAI JSONL, Alpaca JSON, and raw JSONL formats with 80/10/10 split and task tokens"
-    status: failed
-    reason: "final_dataset/ directory is empty. export_dataset.py is fully implemented and ready but cannot run until upstream pipeline stages have produced input data."
-    artifacts:
-      - path: "final_dataset/"
-        issue: "Empty — no JSONL/JSON output files, no metadata.json"
-      - path: "final_dataset/metadata.json"
-        issue: "Missing — not yet generated (runtime artifact)"
-    missing:
-      - "Execute the full pipeline end-to-end: phase1 -> phase2 -> phase3_cot -> export_dataset.py"
-      - "Verify final_dataset/ contains openai_train.jsonl, openai_val.jsonl, openai_test.jsonl, alpaca_train.json, alpaca_val.json, alpaca_test.json, wordpress_finetune.jsonl"
-      - "Verify metadata.json shows total_examples >= 10,000"
-
   - truth: "The wp_gen and wp_judge example counts follow approximately 40/60 gen/judge split"
-    status: failed
-    reason: "No dataset has been produced. enforce_ratio() is implemented in export_dataset.py and tested, but there are no actual examples to verify against."
+    status: accepted_override
+    reason: >-
+      Canonical dataset (data/final_dataset/wordpress_finetune.jsonl) contains
+      72033 <wp_gen> vs 5996 <wp_judge> tokens = 92.3% gen / 7.7% judge —
+      strongly gen-skewed, missing the 40/60 target (and also missing the
+      ~50/50 target that REQUIREMENTS.md DATA-11 states — the two source docs
+      disagree on the target). Separately, metadata.json's reported ratio is a
+      REPORTING BUG: gen_ratio_actual=1.0 / judge_ratio_actual=0.0 is impossible
+      given gen_count=72033 / judge_count=11219 (which would compute to ~86/14).
+      Neither the buggy field NOR the recomputed count matches target. The
+      ratio_30_70 .. ratio_70_30/ subdirs (Mar 29) show the 40/60 single-target
+      was superseded by a downstream ratio SWEEP; ROADMAP line 41 records the
+      30/70 ratio adapter as the eventual Phase 4 winner. This may be an
+      intentional, accepted deviation — needs human confirmation (override path
+      below).
     artifacts:
-      - path: "final_dataset/metadata.json"
-        issue: "Missing — pipeline has not executed to produce this file"
+      - path: "data/final_dataset/wordpress_finetune.jsonl"
+        issue: "92.3/7.7 gen/judge token split vs ~40/60 target"
+      - path: "data/final_dataset/metadata.json"
+        issue: "gen_ratio_actual=1.0 / judge_ratio_actual=0.0 is a contradictory reporting bug; gen_count/judge_count compute to ~86/14, still off-target"
     missing:
-      - "Run full pipeline to produce dataset"
-      - "Verify metadata.json gen_ratio_actual is approximately 0.40 and judge_ratio_actual approximately 0.60"
-
+      - "Either rebalance gen/judge toward 40/60 (or the 50/50 DATA-11 target), OR record an override confirming the single 40/60 target was intentionally replaced by the ratio_* sweep + 30/70 winner"
+      - "Fix the *_ratio_actual computation in export_dataset.generate_metadata() so the field is internally consistent with the counts"
+      - "Reconcile the REQUIREMENTS.md DATA-11 (~50/50) vs ROADMAP C5 (40/60) target disagreement"
 human_verification:
-  - test: "Spot-check 20 random examples from final_dataset/"
-    expected: "Examples contain realistic WordPress PHP code, task tokens present, security examples proactively add nonce/capability checks"
-    why_human: "Content quality requires human judgment; automated tests only verify structure"
-  - test: "Verify Batch API completes within 24h expiry window on large judge batches"
-    expected: "Batch results saved to disk before 24h expiry; checkpoint preserves batch_id for crash recovery"
-    why_human: "Requires live Anthropic API and time-dependent behavior"
-  - test: "Taxonomy coverage: verify gap_report.json shows all 12 categories represented after Phase 2 generate"
-    expected: "All taxonomy categories have >= 20 examples after synthetic generation"
-    why_human: "Requires actual pipeline run to generate gap_report.json"
+  # [RESOLVED 2026-06-26 — Dr. Robert Li] "Was the static 40/60 gen/judge target formally
+  # abandoned in favor of the ratio sweep + 30/70 Phase-4 winner?" YES — confirmed via the C5
+  # override (see overrides block). No longer a pending item.
+  - test: "Resolve the cross-format vintage patchwork in data/final_dataset/"
+    expected: >-
+      openai_*/wordpress_finetune (86542, Apr 23) vs alpaca_*/raw_* (19198, Apr 11)
+      are NOT the same dataset snapshot. Confirm which is canonical for training
+      and whether alpaca/raw should be regenerated from the 86542-example set.
+    why_human: "Which snapshot is authoritative is a project decision, not derivable from disk"
+  - test: "Spot-check 20 random examples from data/final_dataset/openai_train.jsonl"
+    expected: "Realistic WordPress PHP, task tokens present, rejection/security examples proactively add nonce/capability/escaping"
+    why_human: "Content quality requires human judgment"
 ---
 
 # Phase 2: Dataset Production Verification Report
 
 **Phase Goal:** The full three-phase data pipeline executes against real repositories and produces a clean, split, multi-format training dataset
-**Verified:** 2026-03-26
-**Status:** gaps_found
-**Re-verification:** No — initial verification
+**Verified:** 2026-06-26
+**Status:** passed (C5 accepted via override — see frontmatter `overrides:`; accepted by Dr. Robert Li 2026-06-26)
+**Re-verification:** Yes — replaces stale 2026-03-26 report that PREDATED execution
 
-## Goal Achievement
+## Re-Verification Context
 
-### Observable Truths (from ROADMAP.md Success Criteria)
+The prior `02-VERIFICATION.md` was dated **2026-03-26** and concluded `gaps_found` / 0-of-5 / "pipeline never ran, output dirs empty." That report **predates the actual pipeline execution on 2026-03-29** (`/run-data-pipeline` skill, ROADMAP line 36), with outputs refreshed through 2026-04-23. Outputs also relocated from repo root to under `data/`. Its script-readiness assessment (17/17 plan must_haves) remains valid and is not re-litigated here. This report verifies the **execution outputs** that the old report could not see.
+
+## Goal Achievement — Observable Truths (ROADMAP Success Criteria)
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | All repositories in repos.yaml are shallow-cloned and PHP functions are extracted with metadata | FAILED | `phase1_extraction/repos/` and `phase1_extraction/output/` are empty directories |
-| 2 | Functions pass PHPCS pre-filter before Claude judging, passed/failed examples stored in separate files | FAILED | `phase1_extraction/output/passed/` and `phase1_extraction/output/failed/` both empty — no judging has run |
-| 3 | Gap analysis identifies under-represented taxonomy categories and synthetic generation fills those gaps | FAILED | `phase2_synthetic/output/` is empty — no execution has occurred |
-| 4 | final_dataset/ contains >= 10,000 examples in OpenAI JSONL, Alpaca JSON, and raw JSONL with 80/10/10 split and task tokens | FAILED | `final_dataset/` is empty — no dataset has been produced |
-| 5 | wp_gen/wp_judge counts follow approximately 40/60 gen/judge split | FAILED | No dataset exists to verify against |
+| 1 | Repos shallow-cloned + PHP functions extracted with metadata | ✓ VERIFIED | `data/phase1_extraction/output/extracted/` has 204 per-repo files; passed records carry full metadata (`function_name, class_context, docblock, body, start_line, dependencies, sql_patterns, hooks_used, line_count, source_repo, source_file, quality_tier, assessment, training_tags`) |
+| 2 | PHPCS pre-filter before Claude judging; passed/failed in separate files | ✓ VERIFIED | `passed/` = 82165 functions across 204 files; `failed/` = 12349 functions across 204 files; separate directories; records carry `quality_tier` + `assessment` (judge verdict). `php_lint_failures: 0` in metadata |
+| 3 | Gap analysis identifies under-represented categories + synthetic generation fills gaps | ✓ VERIFIED (residual noted) | `data/phase2_synthetic/gap_report.json` (15517 passed functions analyzed, per-tag deficits w/ have/need/deficit/fill_pct); synthetic output present (`generated/` 18, `judged/` 6, `mutated/` 1, `judge_training/` 23). Major gaps filled in final coverage (e.g. prepared-statements 494). **Residual:** `taxonomy_gaps_remaining` lists ~40 long-tail categories (walkers, save_post, list-table = 1–6 each). Passes "identify + fill"; would fail a strict "every category ≥20" bar |
+| 4 | `data/final_dataset/` ≥10,000 in OpenAI JSONL + Alpaca JSON + raw JSONL, 80/10/10 split, task tokens | ✓ VERIFIED (cross-format patchwork — WARNING) | OpenAI: train 69233 / val 8654 / test 8655 = **86542**, exact **80.00/10.00/10.00** split, `<wp_gen>`/`<wp_judge>` tokens present. All three formats exist, each >10k. **WARNING:** vintage mismatch — openai_*/wordpress_finetune are Apr-23 (86542); alpaca_*/raw_* are Apr-11 (**19198** = 15358+1919+1921). The three formats are NOT the same snapshot. Literal criterion met (3 formats, each ≥10k, each 80/10/10, tokens present); cross-format incoherence is a non-blocking flag |
+| 5 | wp_gen/wp_judge counts follow ~40/60 gen/judge split | ✗ FAILED | Canonical `wordpress_finetune.jsonl`: **72033 `<wp_gen>` / 5996 `<wp_judge>` = 92.3% / 7.7%** — strongly gen-skewed, misses 40/60. metadata `*_ratio_actual` (1.0/0.0) is a contradictory reporting bug; even its raw counts recompute to ~86/14. Off-target by every measure. See dedicated analysis below |
 
-**Score:** 0/5 success criteria met (execution outputs)
+**Score:** 4/5 success criteria verified; C5 accepted via override (30/70 sweep superseded the static 40/60 target) → phase closed as **passed**
 
-### Script Readiness Assessment (what WAS built by the 3 plans)
+## Criterion 5 Deep Analysis (the requested honest verdict)
 
-All plans addressed script hardening, not pipeline execution. The following are VERIFIED as implemented and tested:
+Three candidate explanations were posed; the evidence supports **all three simultaneously**:
 
-| # | Truth from PLAN must_haves | Status | Evidence |
-|---|---------------------------|--------|----------|
-| 1 | judge_system.md requires ALL dimensions >= 8 for PASS | VERIFIED | `config/judge_system.md` line 17 contains ">= 8" |
-| 2 | judge_system.md has security dimension < 5 = automatic FAIL rule | VERIFIED | "SECURITY AUTO-FAIL" present in config |
-| 3 | judge_system.md scores N/A dimensions as 7 (not 10) | VERIFIED | "Score N/A (7)" appears 2 times, "Score N/A (10)" appears 0 times |
-| 4 | synthetic_prompts.yaml has rejection_templates with proactive_nonce, proactive_capability, proactive_escaping | VERIFIED | All 3 sub-keys present |
-| 5 | phase1_clone.py uses load_checkpoint/save_checkpoint | VERIFIED | Import at line 10, used in main() at lines 51, 68, 77 |
-| 6 | phase1_extract.py uses load_checkpoint/save_checkpoint | VERIFIED | Import at line 17, used in main() |
-| 7 | phase1_judge.py uses call_with_backoff instead of time.sleep | VERIFIED | call_with_backoff used, no REQUEST_INTERVAL or time.sleep found |
-| 8 | phase1_judge.py uses extract_json | VERIFIED | extract_json at line 220, from scripts.utils import at line 22 |
-| 9 | phase1_judge.py uses load_checkpoint/save_checkpoint per repo | VERIFIED | load_checkpoint("phase1_judge") at line 303, save_checkpoint at line 420 |
-| 10 | phase1_judge.py uses batch_or_direct routing for >= 50 functions | VERIFIED | batch_or_direct imported and used |
-| 11 | phase2_mutate.py exits with error if PHPCS unavailable | VERIFIED | _require_phpcs() defined and called in main(); sys.exit(1) on FileNotFoundError; no `return True` silent fallback |
-| 12 | phase2_generate.py uses call_with_backoff, checkpoints, batch routing, rejection templates | VERIFIED | All 4 patterns present in script |
-| 13 | phase2_judge.py uses extract_json, call_with_backoff, batch API, security auto-FAIL | VERIFIED | All present; no REQUEST_INTERVAL/time.sleep |
-| 14 | phase2_judge_dataset.py uses call_with_backoff, extract_json, checkpoints, batch routing | VERIFIED | All present; no REQUEST_INTERVAL/time.sleep |
-| 15 | phase3_cot.py uses call_with_backoff, utils.py checkpoints as authoritative resume | VERIFIED | call_with_backoff at lines 132, 143, 257; load_checkpoint("phase3_cot") at line 226 |
-| 16 | export_dataset.py enforces 40/60 ratio (GEN_TARGET_RATIO = 0.40) | VERIFIED | GEN_TARGET_RATIO = 0.40 at line 27; enforce_ratio(), deduplicate(), validate_php_sample(), generate_metadata(), add_sample_weight() all defined |
-| 17 | export_dataset.py writes final_dataset/metadata.json with gen_ratio_actual | VERIFIED | json.dump at line 304-305; gen_ratio_actual at line 237 in generate_metadata() |
+- **(c) Reporting bug — CONFIRMED.** `metadata.json` reports `gen_ratio_actual: 1.0` and `judge_ratio_actual: 0.0`. This is impossible: `judge_count: 11219` is non-zero, so judge ratio cannot be 0.0. The `*_ratio_actual` fields are computed incorrectly in `export_dataset.generate_metadata()`.
+- **(a) Real unmet gap — CONFIRMED.** Independent of the buggy field, the actual data is gen-skewed. Authoritative token count on the canonical file: **gen 92.3% / judge 7.7%** (72033 / 5996; the remaining ~8513 of 86542 records carry neither token — rejection/other). Even the metadata `gen_count`/`judge_count` recompute to ~86.5/13.5. No reading lands near 40/60 (or the ~50/50 DATA-11 target).
+- **(b) Superseded target — LIKELY, needs human confirmation.** `data/final_dataset/ratio_30_70/ … ratio_70_30/` subdirs (Mar 29) contain full re-exported datasets at five different gen/judge ratios — i.e. the single 40/60 export target was replaced by a downstream ratio SWEEP. ROADMAP line 41 records the **30/70 ratio adapter** as the Phase 4 triage winner. This strongly suggests intentional supersession, but intent cannot be confirmed from disk — routed to human verification + override path.
 
-**Script readiness score:** 17/17 plan must-haves verified
+**Plain verdict:** Criterion 5 is genuinely unmet by the canonical dataset (≈92/8 gen-skewed). It is *not* merely a reporting bug — the bug is real but secondary. The likely intended resolution is an accepted target change (sweep + 30/70 winner), which a human should confirm via override.
 
-### Required Artifacts
+## Requirements Coverage (DATA-01 … DATA-11)
 
-| Artifact | Status | Details |
-|----------|--------|---------|
-| `config/judge_system.md` | VERIFIED | >= 8 threshold, SECURITY AUTO-FAIL, N/A scoring deflated to 7 |
-| `config/synthetic_prompts.yaml` | VERIFIED | rejection_templates with all 3 sub-keys present |
-| `scripts/phase1_clone.py` | VERIFIED | Checkpoint-integrated; from scripts.utils import present |
-| `scripts/phase1_extract.py` | VERIFIED | Checkpoint-integrated; from scripts.utils import present |
-| `scripts/phase1_judge.py` | VERIFIED | Full utils.py integration: extract_json, call_with_backoff, checkpoints, batch API, security auto-FAIL |
-| `scripts/phase2_mutate.py` | VERIFIED | _require_phpcs() guard; sys.exit(1) on FileNotFoundError; no silent fallback |
-| `scripts/phase2_generate.py` | VERIFIED | call_with_backoff, checkpoints, batch routing, rejection_templates |
-| `scripts/phase2_judge.py` | VERIFIED | extract_json, call_with_backoff, security auto-FAIL, checkpoints, batch routing |
-| `scripts/phase2_judge_dataset.py` | VERIFIED | call_with_backoff, extract_json, load_checkpoint, batch routing |
-| `scripts/phase3_cot.py` | VERIFIED | call_with_backoff, load_checkpoint("phase3_cot"), save_checkpoint |
-| `scripts/export_dataset.py` | VERIFIED | GEN_TARGET_RATIO, enforce_ratio, deduplicate, validate_php_sample, generate_metadata, add_sample_weight, metadata.json write |
-| `tests/test_config.py` | VERIFIED | 4 tests — all passing |
-| `tests/test_pipeline_integration.py` | VERIFIED | 2 tests — all passing |
-| `tests/test_phase2_mutate.py` | VERIFIED | 3 tests — all passing |
-| `tests/test_phase2_judge_dataset.py` | VERIFIED | 4 tests — all passing |
-| `tests/test_export.py` | VERIFIED | 7 tests — all passing |
-| `final_dataset/metadata.json` | MISSING | Runtime artifact — pipeline has not executed |
-| `phase1_extraction/output/` | MISSING | No functions extracted or judged |
-| `phase2_synthetic/output/` | MISSING | No synthetic examples or gap analysis |
-| `final_dataset/*.jsonl` | MISSING | No training dataset produced |
+| Req | Description | Status | Evidence |
+|-----|-------------|--------|----------|
+| DATA-01 | Repos shallow-cloned | ✓ SATISFIED | 204 repos represented across extracted/passed/failed |
+| DATA-02 | PHP functions extracted with metadata | ✓ SATISFIED | extracted/ 204 files; 14-field metadata records |
+| DATA-03 | Judge: PHPCS pre-filter + Claude, passed/failed separated | ✓ SATISFIED | passed 82165 / failed 12349, separate dirs, `assessment`+`quality_tier` |
+| DATA-04 | Gap analysis vs taxonomy | ✓ SATISFIED | gap_report.json with per-tag deficits |
+| DATA-05 | Mutation: contrastive bad→good pairs | ✓ SATISFIED | phase2 `mutated/` output present |
+| DATA-06 | Generate: synthetic fills gaps | ✓ SATISFIED | phase2 `generated/` (18); coverage shows filled categories |
+| DATA-07 | Judge synthetics, failed revised | ✓ SATISFIED | phase2 `judged/` output present |
+| DATA-08 | Rubric-scored judge training data | ✓ SATISFIED | phase2 `judge_training/` (23) |
+| DATA-09 | Phase 3 CoT reasoning chains | ✓ SATISFIED | data/phase3_cot/output/ 7 CoT artifacts (gen/judge/security/contrastive/rubric) |
+| DATA-10 | Export OpenAI+Alpaca+Raw, tokens, 80/10/10 | ✓ SATISFIED (w/ C4 cross-format WARNING) | OpenAI 86542 @ 80/10/10 w/ tokens; alpaca/raw exist but are a 19198 vintage snapshot |
+| DATA-11 | ≥10,000 examples with ~50/50 wp_gen/wp_judge | ⚠️ PARTIAL — split NOT satisfied | ≥10,000 ✓ (86542). Split ✗: actual ≈92/8. **Note:** REQUIREMENTS.md says ~50/50 here while ROADMAP C5 says 40/60 — the two contracts disagree; actual misses BOTH. Marked [x] Complete in REQUIREMENTS.md but the split sub-clause is not met |
 
-### Key Link Verification
+## Anti-Patterns / Notes
 
-| From | To | Via | Status | Details |
-|------|-----|-----|--------|---------|
-| `scripts/phase1_judge.py` | `scripts/utils.py` | import | WIRED | `from scripts.utils import extract_json, call_with_backoff` at lines 22-23 |
-| `scripts/phase1_judge.py` | `config/judge_system.md` | load_judge_system() | WIRED | JUDGE_SYSTEM_PATH defined line 37; load_judge_system() called line 293 |
-| `scripts/phase1_clone.py` | `scripts/utils.py` | import | WIRED | `from scripts.utils import load_checkpoint, save_checkpoint` line 10 |
-| `scripts/phase2_generate.py` | `config/synthetic_prompts.yaml` | yaml.safe_load | WIRED | rejection_templates loaded at line 288 |
-| `scripts/phase2_judge.py` | `scripts/utils.py` | import | WIRED | `from scripts.utils import extract_json, call_with_backoff` lines 15-16 |
-| `scripts/phase2_judge_dataset.py` | `scripts/utils.py` | import | WIRED | `from scripts.utils import ... call_with_backoff` lines 22-23 |
-| `scripts/phase3_cot.py` | `scripts/utils.py` | import | WIRED | `from scripts.utils import call_with_backoff, load_checkpoint, save_checkpoint` line 18 |
-| `scripts/export_dataset.py` | `final_dataset/metadata.json` | json.dump | WIRED | json.dump at line 304-305 |
-| `scripts/export_dataset.py` | `final_dataset/wordpress_finetune.jsonl` | SOURCE_PATH | WIRED | SOURCE_PATH = FINAL_DIR / "wordpress_finetune.jsonl" line 20 |
-
-### Requirements Coverage
-
-| Requirement | Description | Status | Evidence |
-|-------------|-------------|--------|----------|
-| DATA-01 | Phase 1 clone completes — all repos shallow-cloned | BLOCKED | phase1_extraction/repos/ is empty; pipeline has not run |
-| DATA-02 | Phase 1 extract completes — PHP functions extracted with metadata | BLOCKED | phase1_extraction/output/ is empty |
-| DATA-03 | Phase 1 judge completes — passed/failed separated | BLOCKED | phase1_extraction/output/passed/ and output/failed/ are empty |
-| DATA-04 | Phase 2 gap analysis completes — coverage gaps identified | BLOCKED | phase2_synthetic/output/ is empty |
-| DATA-05 | Phase 2 mutation completes — contrastive pairs generated | BLOCKED | phase2_synthetic/output/ is empty |
-| DATA-06 | Phase 2 generate completes — synthetic examples fill gaps | BLOCKED | phase2_synthetic/output/ is empty |
-| DATA-07 | Phase 2 judge completes — synthetic examples assessed | BLOCKED | phase2_synthetic/output/ is empty |
-| DATA-08 | Phase 2 judge_dataset completes — rubric-scored judge training data | BLOCKED | phase2_synthetic/output/ is empty |
-| DATA-09 | Phase 3 CoT completes — instruction synthesis + reasoning chains | BLOCKED | phase3_cot/output/ is empty |
-| DATA-10 | Phase 3 export completes — OpenAI, Alpaca, Raw JSONL with task tokens, 80/10/10 split | BLOCKED | final_dataset/ is empty |
-| DATA-11 | Final dataset contains >= 10,000 examples with ~50/50 (40/60) gen/judge split | BLOCKED | No dataset exists |
-
-**Note on REQUIREMENTS.md discrepancy:** REQUIREMENTS.md marks DATA-01, DATA-02, DATA-03, DATA-09, DATA-10, DATA-11 as complete `[x]` but this is incorrect — the pipeline has not executed and no output files exist. DATA-04 through DATA-08 are correctly marked as pending `[ ]`. The ROADMAP marks Phase 2 as "Complete" which is also premature.
-
-### Anti-Patterns Found
-
-No code anti-patterns found in modified scripts. All 9 pipeline scripts pass Python syntax check. No TODO/placeholder/empty implementation patterns detected in scripts.
-
-| File | Pattern | Severity | Impact |
-|------|---------|----------|--------|
-| `.planning/REQUIREMENTS.md` | DATA-01, DATA-02, DATA-03, DATA-09, DATA-10, DATA-11 incorrectly marked `[x]` | WARNING | Traceability mismatch — execution did not occur |
-| `.planning/ROADMAP.md` | Phase 2 marked "Complete (2026-03-26)" | WARNING | Phase goal (execution + dataset production) has not been achieved |
-| `02-VALIDATION.md` | `nyquist_compliant: false`, `wave_0_complete: false` | INFO | Validation document not finalized |
-
-### Human Verification Required
-
-#### 1. Spot-Check Training Examples
-
-**Test:** After pipeline executes, randomly sample 20 examples from final_dataset/
-**Expected:** Examples contain realistic WordPress PHP code; security examples proactively add nonce/capability/escaping checks unprompted; task token present in every user message
-**Why human:** Content quality, teaching value, and proactive security behavior require human judgment
-
-#### 2. Batch API 24-Hour Expiry Compliance
-
-**Test:** Submit a large batch job (>= 50 examples) and verify results are saved before 24h expiry
-**Expected:** phase2_judge_dataset._score_batch saves results to disk immediately after parse_batch_results() returns; checkpoint preserves batch_id
-**Why human:** Requires live Anthropic API and real-time monitoring over hours
-
-#### 3. Taxonomy Coverage After Generation
-
-**Test:** After Phase 2 generate runs, check gap_report.json for all 12 taxonomy categories
-**Expected:** All categories have >= 20 examples; rejection examples tagged with "rejection:proactive_*" appear in counts
-**Why human:** Requires actual pipeline run to generate gap_report.json
+- `// TODO:` markers appear inside generated PHP **training content** (e.g. the Elementor `process_element_export_import_content` example) — these are properties of the source/synthetic code being learned, NOT phase debt markers in pipeline code. Not a blocker.
+- `*_backup_20260411` and `{output`/`{output}` sibling directories exist under data/phase1/2/3 — stale backup/scratch artifacts, not part of the canonical pipeline output. Cosmetic.
 
 ## Gaps Summary
 
-The root gap is a single root cause: **the pipeline was never executed**. All three plans (02-01, 02-02, 02-03) correctly hardened the pipeline scripts and created test scaffolds — this work is complete and high quality. However, the phase GOAL requires the full three-phase data pipeline to **execute against real repositories** and **produce a training dataset**. That execution step was not performed.
+The pipeline executed end-to-end and the goal is substantially achieved: real repos extracted, PHPCS+Claude judged with clean passed/failed separation, gaps analyzed and filled, and a clean 86542-example dataset split exactly 80/10/10 with task tokens. **One criterion (C5) genuinely fails:** the gen/judge balance is ~92/8, far from the 40/60 target, compounded by a contradictory `*_ratio_actual` reporting bug. Evidence (the `ratio_*` sweep + the 30/70 Phase-4 winner) suggests the static 40/60 target was intentionally superseded — but that is a human decision, not a disk fact, so C5 is reported as a gap with an override path rather than rubber-stamped. A secondary non-blocking warning: the three export formats are not the same vintage (openai/wordpress = 86542 Apr-23; alpaca/raw = 19198 Apr-11).
 
-The script readiness work (17/17 plan must-haves verified, 46/46 tests passing, all 9 scripts syntactically valid) is the prerequisite for execution. The execution itself is missing.
+**Resolution — OVERRIDE ACCEPTED (2026-06-26, Dr. Robert Li).** The C5 deviation is confirmed intentional: the static 40/60 export target (a Phase-2 user decision) was superseded by the `ratio_30_70..ratio_70_30` sweep, and the **30/70** ratio adapter was selected as the Phase 4 triage winner (ROADMAP line 41) — the basis for all downstream work (Phases 4.3, 7–10). Downstream training consumes `data/final_dataset/ratio_30_70/`, not the top-level blend, so the blend's ≈92/8 ratio is moot. This also resolves the REQUIREMENTS DATA-11 (~50/50) vs ROADMAP C5 (40/60) conflict — both static targets are superseded by the empirical 30/70 selection. See the `overrides:` block in this file's frontmatter. **Phase 2 status → passed.**
 
-**What's needed to close the gaps:**
-
-1. Run `python scripts/phase1_clone.py` to clone repos from repos.yaml
-2. Run `python scripts/phase1_extract.py` to extract PHP functions
-3. Run `python scripts/phase1_judge.py` to judge and separate passed/failed
-4. Run `python scripts/phase2_gap_analysis.py` to identify taxonomy gaps
-5. Run `python scripts/phase2_mutate.py` to generate contrastive pairs
-6. Run `python scripts/phase2_generate.py` to generate synthetic examples
-7. Run `python scripts/phase2_judge.py` to assess synthetic examples
-8. Run `python scripts/phase2_judge_dataset.py` to generate judge training data
-9. Run `python scripts/phase3_cot.py` to generate CoT reasoning chains
-10. Run `python scripts/export_dataset.py` to produce the final dataset
-
-REQUIREMENTS.md and ROADMAP.md incorrectly reflect completion for DATA-01 through DATA-03 and DATA-09 through DATA-11. These should remain unchecked until the pipeline actually runs.
+Two non-blocking items remain documented (intentionally NOT fixed during closeout — track separately if desired):
+1. The `*_ratio_actual` reporting bug in `export_dataset.generate_metadata()` (`gen_ratio_actual: 1.0 / judge_ratio_actual: 0.0` is impossible given non-zero `judge_count`).
+2. The alpaca/raw vs openai cross-format vintage mismatch (alpaca/raw are a 19,198-example Apr-11 snapshot vs the 86,542 Apr-23 openai set). No consumers of alpaca/raw were found in `scripts/`/`config/`, so it is cosmetic for current training.
 
 ---
 
-_Verified: 2026-03-26_
-_Verifier: Claude (gsd-verifier)_
+_Verified: 2026-06-26_
+_Verifier: Claude (gsd-verifier) — re-verification against current disk state_

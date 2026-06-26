@@ -110,7 +110,7 @@ Plans:
   2. Functions pass the PHPCS pre-filter before any Claude API judging occurs, and passed/failed examples are stored in separate files
   3. Gap analysis identifies which taxonomy categories are underrepresented and synthetic generation fills those gaps
   4. final_dataset/ contains at least 10,000 examples in OpenAI JSONL, Alpaca JSON, and raw JSONL formats with an 80/10/10 train/val/test split and task tokens present
-  5. The wp_gen and wp_judge example counts follow approximately 40/60 gen/judge split (per user decision)
+  5. The wp_gen and wp_judge example counts follow approximately 40/60 gen/judge split (per user decision) — **SUPERSEDED 2026-06-26:** static 40/60 target replaced by the ratio_30_70..70_30 export sweep; 30/70 chosen as Phase 4 triage winner (line 41). Accepted via 02-VERIFICATION override.
 
 **Plans**: 7 plans
 
@@ -119,10 +119,11 @@ Plans:
 - [x] 02-01-PLAN.md — Config updates (judge threshold >= 8, security auto-FAIL, N/A deflation, rejection templates) + Phase 1 script hardening (clone, extract, judge with utils.py)
 - [x] 02-02-PLAN.md — Phase 2 script hardening (mutate PHPCS guard, generate with rejection examples + batch API, judge + judge_dataset with utils.py)
 - [x] 02-03-PLAN.md — Phase 3 CoT hardening + export dataset update (40/60 ratio, metadata.json, dedup, PHP lint, sample_weight)
-- [ ] 02-04-PLAN.md — [GAP CLOSURE] Judge remaining 23 repos via Claude Code agents (auto-pass wordpress-develop core, judge 22 assessed repos with 5 parallel agents)
-- [ ] 02-05-PLAN.md — [GAP CLOSURE] Gap analysis + mutations (Python, no LLM) then synthetic generation via Claude Code agents (~500 rejection examples)
-- [ ] 02-06-PLAN.md — [GAP CLOSURE] Judge synthetics + generate judge training data via Claude Code agents (rubric-scored 0-100 examples)
-- [ ] 02-07-PLAN.md — [GAP CLOSURE] CoT reasoning via Claude Code agents + export dataset (Python) + human validation checkpoint
+- [x] 02-04-PLAN.md — [GAP CLOSURE] Judge remaining 23 repos via Claude Code agents (auto-pass wordpress-develop core, judge 22 assessed repos with 5 parallel agents)
+- [x] 02-05-PLAN.md — [GAP CLOSURE] Gap analysis + mutations (Python, no LLM) then synthetic generation via Claude Code agents (~500 rejection examples)
+- [x] 02-06-PLAN.md — [GAP CLOSURE] Judge synthetics + generate judge training data via Claude Code agents (rubric-scored 0-100 examples)
+- [x] 02-07-PLAN.md — [GAP CLOSURE] CoT reasoning via Claude Code agents + export dataset (Python) + human validation checkpoint
+<!-- 02-04..07 executed 2026-03-29 via /run-data-pipeline; checkboxes ticked + re-verified 2026-06-26 (02-VERIFICATION.md status: passed). -->
 
 ### Phase 3: Model Prep and Training
 
@@ -684,7 +685,7 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1. Pipeline Ready | v1.0 | 2/2 | Complete | 2026-03-26 |
-| 2. Dataset Production | v1.0 | 6/7 | Complete | 2026-03-29 |
+| 2. Dataset Production | v1.0 | 7/7 | Complete | 2026-03-29 |
 | 3. Model Prep and Training | v1.0 | 3/3 | Complete | 2026-03-27 |
 | 4. Evaluation | v1.0 | 3/3 | Complete   | 2026-06-07 |
 | 4.1. Reasoning Data Generation | v1.2 | 3/3 | Complete | 2026-04-23 |

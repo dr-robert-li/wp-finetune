@@ -36,7 +36,7 @@ Source data already exists at `/home/robert_li/Desktop/data/wp-finetune-data/`: 
 - [x] **DATA-08**: Phase 2 judge_dataset completes — rubric-scored judge training data generated
 - [x] **DATA-09**: Phase 3 CoT completes — instruction synthesis + reasoning chains generated
 - [x] **DATA-10**: Phase 3 export completes — OpenAI, Alpaca, Raw JSONL with task tokens, 80/10/10 split
-- [x] **DATA-11**: Final dataset contains ≥10,000 examples with ~50/50 wp_gen/wp_judge split
+- [x] **DATA-11**: Final dataset contains ≥10,000 examples with ~50/50 wp_gen/wp_judge split _(≥10,000 met: 86,542. Split target SUPERSEDED — the static ~50/50 (here) / 40/60 (ROADMAP C5) targets were replaced by the ratio_30_70..70_30 sweep; 30/70 selected as Phase 4 triage winner. Accepted via 02-VERIFICATION override 2026-06-26.)_
 
 ### Model Preparation
 
