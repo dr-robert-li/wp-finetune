@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
-current_phase: 09
-current_phase_name: GSPO Training
-status: planning
-stopped_at: Phase 8.1 context gathered
-last_updated: "2026-06-24T16:36:19.599Z"
+current_phase: 10
+current_phase_name: RL Comparative Evaluation
+status: blocked
+stopped_at: "Phase 10 Wave 0 (Tasks 0-2: bootstrap_gate.py + rlev02_report.py + tests + skill ext) COMPLETE + committed. Plan 10-01 paused at Task-3 human gate (blocking) — pending the corrected post-decode-fix live Tinker RL run. On disk: rl_metrics.jsonl is the dead-gradient run (KL=0, 2026-06-22/23); checkpoint_manifest has only emergency-halt-step-0 -> /fake/checkpoint. No real best/final checkpoints yet, so Tasks 3-7 (merge/serve/eval/gates/winner/human-review) cannot run."
+last_updated: "2026-06-26T12:55:00Z"
 progress:
   total_phases: 14
-  completed_phases: 12
+  completed_phases: 13
   total_plans: 51
-  completed_plans: 50
-  percent: 86
+  completed_plans: 51
+  percent: 93
 ---
 
 # Project State
@@ -22,11 +22,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 08.1 — reward-redesign
+**Current focus:** Phase 10 — RL Comparative Evaluation (Wave 0 done + committed; BLOCKED at Task-3 human gate — live RL run not landed)
 
 ## Current Position
 
-Phase: 09 — GSPO Training
+Phase: 10 — RL Comparative Evaluation (Wave 0 complete; BLOCKED at Task-3 human gate — live RL run not landed)
 Prev: Phase 09 (gspo-training) — COMPLETE 2026-06-20, 6/6 plans
 Requirements: RLEV-01 (RL vs v1.2 SFT baseline on wp-bench + 9 dims, no regression), RLEV-02 (reward-convergence + router-shift + protected-expert retention + anti-hack report)
 Next: plan Phase 10. NOTE: Phase 10 execution consumes the metrics from Phase 9's live Tinker RL run — that run is credential-gated and still tracked partial in 09-HUMAN-UAT.md, so it must complete before Phase 10 can produce real comparison results.
@@ -303,8 +303,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-24T16:03:13.757Z
-Stopped at: Phase 8.1 context gathered
+Last session: 2026-06-24T21:45:11.215Z
+Stopped at: context exhaustion at 76% (2026-06-24)
 
 Prior session: 2026-06-02T21:31:00.000Z
 Stopped at: Phase 4.4 CLOSED **REJECTED** at REVL-05 (human). All automated gates run; merge NOT promoted; D-05 disposition pending (recommend Phase 4.3 format-stability re-train). See `04.4-GATE-LEDGER.md` + `04.4-D05-DIAGNOSIS.md`. Resume = decide D-05.
