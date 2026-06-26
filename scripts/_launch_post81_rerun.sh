@@ -32,6 +32,7 @@ nohup .venv-tinker/bin/python scripts/rl_train.py \
   --kl-soft 0.1 --kl-hard 0.3 \
   --efrac-soft 0.7 --efrac-hard 0.5 \
   --judge-base-url http://localhost:8000/v1 --judge-model wp_judge \
+  --judge-max-new-tokens 4096 \
   --consistency-base-url http://localhost:8001/v1 --consistency-model wp_consistency \
   --metrics-path "$MDIR/rl_metrics.$SUF.jsonl" \
   --manifest-path "$MDIR/manifest.$SUF.json" \

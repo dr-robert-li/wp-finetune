@@ -1274,6 +1274,17 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="EMPTY",
         help="API key for the vLLM judge endpoint (vLLM ignores it; default 'EMPTY').",
     )
+    parser.add_argument(
+        "--judge-max-new-tokens",
+        type=int,
+        default=1536,
+        help=(
+            "Max new tokens for judge-axis (critique-then-fix) completions. Read by "
+            "rl_rollouts.collect_rollouts via args.judge_max_new_tokens. Default 1536 "
+            "matches the module constant; raise (e.g. 4096) to reduce fix-block "
+            "truncation (STEP A probe: mean fix_score +0.10-0.13 from 1536->4096)."
+        ),
+    )
     # Output-path overrides — let a smoke/test run isolate its outputs from the
     # canonical (git-tracked) manifest/metrics that Phase 10 D-10-02 reads.
     parser.add_argument(
