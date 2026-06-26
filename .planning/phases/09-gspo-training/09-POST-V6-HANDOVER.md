@@ -233,3 +233,29 @@ grep -n "skip_special_tokens" scripts/rl_rollouts.py     # -> line ~1220
 # stop an RL run
 kill $(cat output/rl_checkpoints/metrics/rl_run.<suffix>.pid)
 ```
+
+---
+
+## 9. LOCKED GATE PLAN — live RL rerun (Dr. Li, 2026-06-27)
+
+**Decision (LOCKED).** Run the controlled judge-axis eval (`_check_judge_fixcorr.py` — fixed
+held-out prompts + low temp + deterministic reward; NOT the noisy live `fix_correctness_mean`
+slope) at EVERY step-50 checkpoint: 50, 100, 150, 200, 250, … through 500.
+
+- **Binding flat-gate at step 250.** If `fixed-N` is STILL flat vs warm-start (`fixed ≈ warm`,
+  no clear improvement) by **step 250** → **STOP** the run (sampler necessary-but-not-sufficient →
+  gradient-strength `adv × lr` issue; revisit before re-spending). Bounded exposure ≤250 steps
+  (~50% of run), within the approved 500-step spend.
+- **Otherwise** (a clear `fixed > warm` shows up at any read ≤250) → **push to 500**, continuing
+  the every-50 reads (300/350/400/450/500) as monitoring.
+- **Early-kill (any checkpoint, overrides the above).** Clear breakage: KL/efrac auto-halt,
+  `reward_mean` collapse, regression (`fixed << warm`), or hack (echo-adversary > 0.30).
+- **Per-read PASS shape:** `fixed-N` meaningfully > warm-start **AND** `stale-ctrl ≈ warm-start`
+  (the negative control is load-bearing — a fixed win with stale ALSO > warm = confounded, means
+  nothing).
+- **Seeds:** seedA runs first to the gate; **seedB launches only on a clear pass** (avoids
+  saturating the shared local judges :8000/:8001 with two concurrent runs).
+- **Per-checkpoint eval cmd:**
+  `_check_judge_fixcorr --fixed-50 <stepN ckpt sampler_path> --n-prompts 20 --group-size 2 --temperature 0.2`
+- **Run config:** `judge_max_new_tokens=4096` wired in (commit 9ff2a94); warm-start = v4
+  r32-rp30 MoE-only savestate; `_launch_post81_rerun.sh 42 seedA`.
