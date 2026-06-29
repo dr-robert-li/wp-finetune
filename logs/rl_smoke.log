@@ -1,0 +1,43 @@
+2026-06-21 17:35:29,702 INFO __main__: Built judge client -> http://localhost:8000/v1 (judge_model=wp_judge)
+2026-06-21 17:35:29,702 INFO __main__: Starting GSPO RL training: model=Qwen/Qwen3-30B-A3B, steps=1, use_gspo=True
+2026-06-21 17:35:31,420 INFO tinker.lib.public_interfaces.service_client: ServiceClient initialized for session 1cfcc7b8-660a-5910-9879-4ebd2b6d5a55
+2026-06-21 17:35:32,504 INFO tinker.lib.public_interfaces.service_client: TrainingClient initialized for model 1cfcc7b8-660a-5910-9879-4ebd2b6d5a55:train:0
+2026-06-21 17:35:32,521 INFO __main__: Loaded prompt pools: gen=2, judge=2 (group_size=2)
+2026-06-21 17:37:20,274 WARNING __main__: Panickssery step 0: 2 rollouts with |fix_corr - consistency| > 0.3: [{'prompt': '', 'fix_correctness': 1.0, 'judge_consistency': 0.7}, {'prompt': '', 'fix_correctness': 1.0, 'judge_consistency': 0.4}]
+Traceback (most recent call last):
+  File "/home/robert_li/Desktop/projects/wp-finetune/scripts/rl_train.py", line 1016, in <module>
+    main()
+    ~~~~^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/scripts/rl_train.py", line 1012, in main
+    run_training(args)
+    ~~~~~~~~~~~~^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/scripts/rl_train.py", line 953, in run_training
+    halted = run_training_step(
+        step=step,
+    ...<5 lines>...
+        manifest=manifest,
+    )
+  File "/home/robert_li/Desktop/projects/wp-finetune/scripts/rl_train.py", line 585, in run_training_step
+    fb_out = build_loss_step(tc, data, use_gspo=args.use_gspo, advantages=advantages)
+  File "/home/robert_li/Desktop/projects/wp-finetune/scripts/rl_train.py", line 262, in build_loss_step
+    return _res(tc.forward_backward_custom(data, loss_fn))
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/lib/sync_only.py", line 75, in wrapper
+    return func(*args, **kwargs)
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/lib/public_interfaces/training_client.py", line 433, in forward_backward_custom
+    ).result()
+      ~~~~~~^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/lib/public_interfaces/api_future.py", line 127, in result
+    return self._future.result(timeout)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/robert_li/miniconda3/lib/python3.13/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/home/robert_li/miniconda3/lib/python3.13/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/lib/public_interfaces/training_client.py", line 455, in forward_backward_custom_async
+    forward_data = self._get_custom_loss_forward_data(data, surrogate_loss_fn)
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/lib/public_interfaces/training_client.py", line 526, in _get_custom_loss_forward_data
+    target_tokens = datum.loss_fn_inputs.get("target_tokens")
+                    ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'dict' object has no attribute 'loss_fn_inputs'

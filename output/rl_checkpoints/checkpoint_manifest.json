@@ -1,25 +1,9 @@
 {
   "checkpoints": [
     {
-      "name": "dry-run-step-0",
-      "sampler_path": "/dry-run/sampler",
-      "saved_at": "2026-06-20T08:31:43Z"
+      "name": "emergency-halt-step-0",
+      "sampler_path": "/fake/checkpoint",
+      "saved_at": "2026-06-24T22:49:09Z"
     }
-  ],
-  "run_args": {
-    "model_id": "Qwen/Qwen3-30B",
-    "lora_rank": 32,
-    "lora_seed": 42,
-    "total_steps": 1,
-    "batch_size": 8,
-    "checkpoint_every": 50,
-    "jaccard_every": 20,
-    "mask_path": "output/profiling/reasoning-merged-v4/protected_expert_mask.npy",
-    "kl_soft": 0.1,
-    "kl_hard": 0.3,
-    "efrac_soft": 0.7,
-    "efrac_hard": 0.5,
-    "use_gspo": true,
-    "dry_run": true
-  }
+  ]
 }

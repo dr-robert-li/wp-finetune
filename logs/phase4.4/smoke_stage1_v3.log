@@ -1,0 +1,7 @@
+[stage1] model=models/qwen3-30b-wp-30_70-reasoning-merged n=3 max_tokens=128 timeout=180s
+[stage1] loading models/qwen3-30b-wp-30_70-reasoning-merged on CPU bf16 ...
+`torch_dtype` is deprecated! Use `dtype` instead!
+  idx 0 [judge]: degenerate=False (ok)
+  idx 1 [judge]: degenerate=False (ok)
+  idx 2 [judge]: degenerate=False (ok)
+[stage1] no gross collapse in 98s -> proceed to Stage 2 (exit 0)

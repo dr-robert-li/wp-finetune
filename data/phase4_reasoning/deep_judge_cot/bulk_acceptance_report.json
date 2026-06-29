@@ -1,21 +1,22 @@
 {
   "stream": "cot",
-  "generated_at": "2026-04-08T12:27:10.310237Z",
-  "accepted_count": 270,
+  "generated_at": "2026-04-10T05:01:50.963742Z",
+  "accepted_count": 196,
   "total_attempted": 280,
   "parse_failures": 0,
   "parse_failure_rate": 0.0,
-  "duplicate_rate": 0.017857142857142856,
-  "dup_prompt": 3,
-  "dup_output": 2,
+  "duplicate_rate": 0.007142857142857143,
+  "dup_prompt": 2,
+  "dup_output": 0,
   "rejection_reasons": {
-    "dup_output": 2,
-    "dup_prompt": 3,
+    "dup_prompt": 2,
+    "too_many_na:3": 67,
+    "citation_hallucination:1.00": 1,
     "citation_hallucination:0.50": 3,
-    "citation_hallucination:1.00": 2
+    "too_many_na:4": 11
   },
   "citation_validity_rate": 1.0,
-  "aggregate_hallucination_ratio": 0.0,
+  "aggregate_hallucination_ratio": 0.015625,
   "thresholds": {
     "parse_failure_rate_max": 0.02,
     "citation_validity_rate_min": 0.7,

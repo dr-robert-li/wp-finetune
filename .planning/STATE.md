@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 current_phase: 10
-current_phase_name: RL Comparative Evaluation
+current_phase_name: Wave 0 complete; BLOCKED at Task-3 human gate — live RL run not landed
 status: blocked
-stopped_at: "Phase 10 Wave 0 (Tasks 0-2: bootstrap_gate.py + rlev02_report.py + tests + skill ext) COMPLETE + committed. Plan 10-01 paused at Task-3 human gate (blocking) — pending the corrected post-decode-fix live Tinker RL run. On disk: rl_metrics.jsonl is the dead-gradient run (KL=0, 2026-06-22/23); checkpoint_manifest has only emergency-halt-step-0 -> /fake/checkpoint. No real best/final checkpoints yet, so Tasks 3-7 (merge/serve/eval/gates/winner/human-review) cannot run."
-last_updated: "2026-06-26T12:55:00Z"
+stopped_at: context exhaustion at 100% (2026-06-28)
+last_updated: "2026-06-28T07:22:06.614Z"
 progress:
   total_phases: 14
   completed_phases: 13
@@ -303,8 +303,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-24T21:45:11.215Z
-Stopped at: context exhaustion at 76% (2026-06-24)
+Last session: 2026-06-28T07:22:06.605Z
+Stopped at: context exhaustion at 100% (2026-06-28)
 
 Prior session: 2026-06-02T21:31:00.000Z
 Stopped at: Phase 4.4 CLOSED **REJECTED** at REVL-05 (human). All automated gates run; merge NOT promoted; D-05 disposition pending (recommend Phase 4.3 format-stability re-train). See `04.4-GATE-LEDGER.md` + `04.4-D05-DIAGNOSIS.md`. Resume = decide D-05.

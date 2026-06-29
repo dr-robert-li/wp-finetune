@@ -1,0 +1,6 @@
+[11:47:10] START trip=9920MiB poll=1s initial_avail=117394MiB
+[11:47:10] load launched host_pid=970624
+[11:52:28] !!! WATCHDOG TRIP avail=9912MiB < 9920MiB — KILLING LOAD
+[11:52:31] post-kill avail=54644MiB
+[11:52:31] DONE tripped=1 rc=137 min_avail=9912MiB (peak_used=111088MiB approx)
+RESULT tripped=1 rc=137 min_avail_mib=9912

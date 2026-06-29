@@ -1,0 +1,48 @@
+[wiring] booting vLLM on models/qwen3-30b-wp-30_70-reasoning-merged ...
+[wiring] vLLM healthy, served=wp-30_70; wp-bench --limit 2 ...
+--- wp-bench stdout (tail) ---
+                                                      ┃
+┃        ...<2 lines>...                                                       ┃
+┃            api_key=api_key,                                                  ┃
+┃            ^^^^^^^^^^^^^^^^                                                  ┃
+┃        )                                                                     ┃
+┃        ^                                                                     ┃
+┃      File                                                                    ┃
+┃  "/home/robert_li/miniconda3/lib/python3.13/site-packages/litellm/litellm_c  ┃
+┃  ore_utils/get_llm_provider_logic.py", line 529, in get_llm_provider         ┃
+┃        raise e                                                               ┃
+┃      File                                                                    ┃
+┃  "/home/robert_li/miniconda3/lib/python3.13/site-packages/litellm/litellm_c  ┃
+┃  ore_utils/get_llm_provider_logic.py", line 510, in get_llm_provider         ┃
+┃        raise litellm.exceptions.BadRequestError(  # type: ignore             ┃
+┃        ...<4 lines>...                                                       ┃
+┃        )                                                                     ┃
+┃    litellm.exceptions.BadRequestError: litellm.BadRequestError: LLM          ┃
+┃  Provider NOT provided. Pass in the LLM provider you are trying to call.     ┃
+┃  You passed model=wp-30_70                                                   ┃
+┃     Pass model as E.g. For 'Huggingface' inference endpoints pass in         ┃
+┃  `completion(model='huggingface/starcoder',..)` Learn more:                  ┃
+┃  https://docs.litellm.ai/docs/providers                                      ┃
+┃                                                                              ┃
+┃                                                                              ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━ Fix the error and re-run ━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+--- wp-bench stderr (tail) ---
+⚠ Warning: wp-env starts both development and tests environments by default.
+This behavior is deprecated and will be removed in a future version.
+To avoid this warning, add "testsEnvironment": false to your .wp-env.json.
+The "env", "testsPort", and "testsEnvironment" options are also deprecated.
+Use the --config option with a separate config file for test environments instead.
+
+- Reading configuration.
+WordPress development site started at http://localhost:8888
+MySQL is listening on port 32771
+WordPress test site started at http://localhost:8889
+MySQL for automated testing is listening on port 32770
+
+ ✔ Done! (in 3s 670ms)
+
+[wiring] FAIL: wp-bench exit 1
+[vllm] booting wp-revl04-wiring-vllm on :8021 model=models/qwen3-30b-wp-30_70-reasoning-merged gpu_mem_util=0.55
+[vllm] healthy after 454s; served model=wp-30_70
+[vllm] stopped wp-revl04-wiring-vllm

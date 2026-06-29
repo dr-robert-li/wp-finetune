@@ -1,0 +1,25 @@
+`torch_dtype` is deprecated! Use `dtype` instead!
+r=32 alpha=64 scale=2.0  layers=[0, 23, 47] seeds=[42, 137, 999]
+
+[REF] Loading base v3 (CPU) ...
+[REF] captured + freed
+[CAND] Loading merged candidate (CPU) ...
+[CAND] captured + freed
+
+[COMPARE]
+  L0_seed42: router=OK mean=7.85e-04 max=6.25e-02 rel_l2=5.80e-03 cos=0.99996394 [FAIL]
+  L0_seed137: router=OK mean=7.83e-04 max=3.12e-02 rel_l2=5.90e-03 cos=0.99996358 [FAIL]
+  L0_seed999: router=OK mean=7.53e-04 max=3.12e-02 rel_l2=5.81e-03 cos=0.99996239 [FAIL]
+  L23_seed42: router=OK mean=9.30e-04 max=1.56e-02 rel_l2=6.98e-03 cos=0.99995446 [FAIL]
+  L23_seed137: router=OK mean=8.95e-04 max=1.17e-02 rel_l2=7.08e-03 cos=0.99995548 [FAIL]
+  L23_seed999: router=OK mean=9.29e-04 max=1.17e-02 rel_l2=7.11e-03 cos=0.99995559 [FAIL]
+  L47_seed42: router=OK mean=1.23e-03 max=4.69e-02 rel_l2=6.60e-03 cos=0.99996805 [FAIL]
+  L47_seed137: router=OK mean=1.26e-03 max=6.25e-02 rel_l2=6.70e-03 cos=0.99996537 [FAIL]
+  L47_seed999: router=OK mean=1.24e-03 max=6.25e-02 rel_l2=6.62e-03 cos=0.99996066 [FAIL]
+
+============================================================
+FORWARD ANCHOR (rank-path vs weight-path): FAIL
+  Tests: 9  Pass: 0  Router-invariant: True
+============================================================
+  DO NOT PROMOTE — weight bake does not match activation-space LoRA
+  Report updated: models/qwen3-30b-wp-30_70-reasoning-merged-unsloth-static-candidate/merge_report.json

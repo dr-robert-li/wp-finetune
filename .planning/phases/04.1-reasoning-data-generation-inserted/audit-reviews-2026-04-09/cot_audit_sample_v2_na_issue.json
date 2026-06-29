@@ -1,0 +1,1530 @@
+{
+  "phase": "04.1",
+  "stream": "cot",
+  "sample_size": 20,
+  "source_bulk": "deep_judge_cot_bulk.json",
+  "seed": 20260410,
+  "rubric": "R1-R6 from 04.1-REVIEWS.md",
+  "examples": [
+    {
+      "code": "/**\n\t * Validate frontend fields.\n\t *\n\t * Validate payment fields on the frontend.\n\t *\n\t * @return bool\n\t */\nfunction validate_fields() {\n\t\treturn true;\n\t}",
+      "source_file": "woocommerce.json",
+      "source_dir": "passed",
+      "function_name": "sanitize::validate_fields",
+      "reasoning": {
+        "verdict": "PASS",
+        "dimension_analysis": {
+          "wpcs_compliance": {
+            "score": 8,
+            "analysis": "Snake_case function name, correct tab indentation, PHPDoc with description and `@return bool`. This is a WooCommerce payment gateway method override in a class context. The style is fully WPCS-compliant. The docblock accurately reflects the return type."
+          },
+          "sql_safety": {
+            "score": null,
+            "analysis": "This function contains only `return true` with no database operations or SQL construction of any kind. SQL safety evaluation is not applicable to this trivial boolean override."
+          },
+          "security": {
+            "score": 6,
+            "analysis": "The function unconditionally returns `true`, bypassing frontend field validation for this WooCommerce payment gateway. In the WooCommerce gateway API, `validate_fields()` is called before order processing to check payment field correctness. Returning `true` without inspecting any fields means this gateway performs no PHP-level frontend validation. If the gateway has no frontend form fields (e.g., it redirects to an external payment page), this is intentional. However, there is no comment confirming this intent, leaving the bypass unexplained."
+          },
+          "performance": {
+            "score": 10,
+            "analysis": "A single `return true` statement with zero computation. The function is as lightweight as possible \u2014 a constant-time, allocation-free operation."
+          },
+          "wp_api_usage": {
+            "score": 8,
+            "analysis": "This method overrides a WooCommerce payment gateway interface method. The `validate_fields()` signature and boolean return type are dictated by the `WC_Payment_Gateway` base class. Returning `true` without calling `parent::validate_fields()` is a valid WooCommerce override pattern when a subclass gateway requires no additional validation."
+          },
+          "code_quality": {
+            "score": 6,
+            "analysis": "Structurally minimal and correct as a WooCommerce gateway override. The key quality gap is the absence of an inline comment explaining why validation is bypassed \u2014 a future developer or code reviewer cannot determine whether `return true` is deliberate (no form fields needed) or an accidental omission of validation logic."
+          },
+          "dependency_integrity": {
+            "score": 9,
+            "analysis": "This function has zero external dependencies beyond the PHP runtime. It overrides a parent class method in WooCommerce's gateway hierarchy but makes no calls to any external functions or classes."
+          },
+          "i18n": {
+            "score": 7,
+            "analysis": "This function returns a boolean with no user-facing strings. WooCommerce gateway validation failures typically generate translatable error notices, but since this function returns `true` unconditionally, no i18n-requiring error output path is triggered."
+          },
+          "accessibility": {
+            "score": null,
+            "analysis": "This function is a server-side boolean validation override with no HTML output or rendering surface. Accessibility evaluation does not apply to this return-only method."
+          }
+        },
+        "overall_score": 77,
+        "key_observation": "The unconditional `return true` bypasses all frontend payment field validation with no explanatory comment, leaving future developers unable to determine whether this is a deliberate design choice or missing validation logic."
+      },
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_real",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": [],
+        "hallucination_ratio": 0.0
+      },
+      "_audit_index": 12,
+      "_rubric_pending": {
+        "R1": null,
+        "R2": null,
+        "R3": null,
+        "R4": null,
+        "R5": null,
+        "R6": null
+      }
+    },
+    {
+      "code": "/**\n\t * Apply the 'after_submit' action when changing the status from 'draft' to 'unread'.\n\t *\n\t * @param WP_Post $post The post.\n\t */\nfunction apply_hooks_on_draft_transition( $post ) {\n\t\tif ( self::FORM_RECORD_TYPE !== $post->post_type ) {\n\t\t\treturn;\n\t\t}\n\n\t\t$meta = get_post_meta( $post->ID, self::FORM_RECORD_META_KEY, true );\n\n\t\tif ( ! isset( $meta['dump'] ) || empty( $meta['dump']['value'] ) ) {\n\t\t\treturn;\n\t\t}\n\n\t\t$form_data = Form_Data_Request::create_from_dump( $meta['dump']['value'] );\n\t\t$form_data->mark_as_duplicate();\n\t\t$form_options = Form_Settings_Data::get_form_setting_from_wordpress_options( $form_data->get_data_from_payload( 'formOption' ) );\n\t\t$form_data->set_form_options( $form_options );\n\t\t$form_data = Form_Server::pull_fields_options_for_form( $form_data );\n\n\t\tdo_action( 'otter_form_on_submission_confirmed', $form_data );\n\n\t\tif (\n\t\t\t! isset( $form_data ) ||\n\t\t\t( ! class_exists( 'ThemeIsle\\GutenbergBlocks\\Integration\\Form_Data_Request' ) ) ||\n\t\t\t! ( $form_data instanceof \\ThemeIsle\\GutenbergBlocks\\Integration\\Form_Data_Request )\n\t\t) {\n\t\t\treturn;\n\t\t}\n\n\t\tdo_action( 'otter_form_after_submit', $form_data );\n\t}",
+      "source_file": "blocks-animation.json",
+      "source_dir": "failed",
+      "function_name": "Form_Emails_Storing::apply_hooks_on_draft_transition",
+      "reasoning": {
+        "verdict": "FAIL",
+        "dimension_analysis": {
+          "wpcs_compliance": {
+            "score": 7,
+            "analysis": "Indentation uses tabs consistently and spacing around operators looks correct. The docblock is well-formed. Minor issue: `@param WP_Post $post` is typed but the function signature uses untyped `$post`, which WPCS `WordPress.NamingConventions.ValidVariableName` may flag. Overall compliance is reasonable."
+          },
+          "sql_safety": {
+            "score": null,
+            "analysis": "This function performs no direct database queries. It reads post meta via get_post_meta (a core API) and delegates all data access to Form_Data_Request, Form_Settings_Data, and Form_Server. SQL safety is not applicable to this function's code."
+          },
+          "security": {
+            "score": 5,
+            "analysis": "The function reads `$meta['dump']['value']` from post meta and passes it directly to `Form_Data_Request::create_from_dump()` without any sanitization or type validation of the dump value. If the stored meta was written from user-supplied form submission data, a malicious payload could influence downstream processing inside `create_from_dump`. Additionally, `get_data_from_payload('formOption')` extracts from the same dump, expanding the attack surface. No nonce or capability check protects this transition hook."
+          },
+          "performance": {
+            "score": 7,
+            "analysis": "The function is called on post status transition, executes one `get_post_meta` call, then delegates to class methods. The guard clauses exit early on type mismatch and missing meta. No loops or repeated queries are present. The `class_exists` check after `do_action` is wasteful\u2014it fires a hook then immediately checks if the class exists, doing the heavy work before the guard. A minor ordering inefficiency."
+          },
+          "wp_api_usage": {
+            "score": 7,
+            "analysis": "Uses `get_post_meta` and `do_action` correctly. Fires two custom actions (`otter_form_on_submission_confirmed`, `otter_form_after_submit`) which is idiomatic hook-based WordPress design. The post type guard using a class constant is correct practice."
+          },
+          "code_quality": {
+            "score": 4,
+            "analysis": "There is a logic order bug: `$form_data` is used in `do_action('otter_form_on_submission_confirmed', $form_data)` before the guard that checks `isset($form_data)` and `$form_data instanceof Form_Data_Request`. The guard should precede the first do_action. This means the 'confirmed' hook fires even for invalid/missing form data objects. The `!isset($form_data)` check is also always false at that point since PHP local variables cannot be unset by assignment."
+          },
+          "dependency_integrity": {
+            "score": 5,
+            "analysis": "Depends on `Form_Data_Request`, `Form_Settings_Data`, and `Form_Server` classes that are not validated to exist before calling static methods on them. Only `Form_Data_Request` gets a `class_exists` check, and even that is done after the class is already used. A missing class would produce a fatal error rather than a graceful failure."
+          },
+          "i18n": {
+            "score": null,
+            "analysis": "No translatable strings appear in this function. It handles post status transition logic and fires hooks but outputs no user-facing text, making i18n scoring not applicable."
+          },
+          "accessibility": {
+            "score": 6,
+            "analysis": "The function fires `otter_form_after_submit` which downstream listeners may use to generate email notifications or form responses. The function itself produces no HTML, but its hook output may affect form submission UX. Since the function indirectly triggers submission confirmation flows that could render user-facing content, accessibility is worth a nominal review: no direct HTML is emitted here."
+          }
+        },
+        "overall_score": 57,
+        "key_observation": "A critical code logic bug fires `otter_form_on_submission_confirmed` before validating that `$form_data` is a valid `Form_Data_Request` instance, and the guard's `!isset($form_data)` check is unreachable because the variable is always set by that point."
+      },
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_real",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": [],
+        "hallucination_ratio": 0.0
+      },
+      "_audit_index": 19,
+      "_rubric_pending": {
+        "R1": null,
+        "R2": null,
+        "R3": null,
+        "R4": null,
+        "R5": null,
+        "R6": null
+      }
+    },
+    {
+      "code": "/**\n\t * Adds a store to the processor.\n\t *\n\t * @since 6.1.0\n\t *\n\t * @param WP_Style_Engine_CSS_Rules_Store $store The store to add.\n\t * @return WP_Style_Engine_Processor Returns the object to allow chaining methods.\n\t */\nfunction add_store( $store ) {\n\t\tif ( ! $store instanceof WP_Style_Engine_CSS_Rules_Store ) {\n\t\t\t_doing_it_wrong(\n\t\t\t\t__METHOD__,\n\t\t\t\t__( '$store must be an instance of WP_Style_Engine_CSS_Rules_Store' ),\n\t\t\t\t'6.1.0'\n\t\t\t);\n\t\t\treturn $this;\n\t\t}\n\n\t\t$this->stores[ $store->get_name() ] = $store;\n\n\t\treturn $this;\n\t}",
+      "source_file": "wordpress-develop.json",
+      "source_dir": "passed",
+      "function_name": "WP_Style_Engine_Processor::add_store",
+      "reasoning": {
+        "verdict": "PASS",
+        "dimension_analysis": {
+          "wpcs_compliance": {
+            "score": 9,
+            "analysis": "Exemplary WPCS compliance: tabs for indentation, `_doing_it_wrong()` with `__METHOD__` for developer feedback, `__()` for the error string, correct `@since` / `@param` / `@return` docblock structure. The parameter `$store` is untyped in the signature (PHP 7 style) which is consistent with core WP patterns for backward compatibility."
+          },
+          "sql_safety": {
+            "score": null,
+            "analysis": "No database operations in this method. It stores an object in a PHP array property. SQL safety is not applicable."
+          },
+          "security": {
+            "score": 9,
+            "analysis": "Type-checks the `$store` argument via `instanceof WP_Style_Engine_CSS_Rules_Store` before trusting it. Uses `_doing_it_wrong()` to alert developers of misuse rather than silently accepting invalid input. No external data enters the function; the store object comes from PHP method callers, not user input."
+          },
+          "performance": {
+            "score": 10,
+            "analysis": "O(1) array assignment. Calls `$store->get_name()` once for the array key. Returns `$this` for chaining with zero heap overhead. No redundant operations."
+          },
+          "wp_api_usage": {
+            "score": 10,
+            "analysis": "Uses `_doing_it_wrong()` correctly with `__METHOD__` as the function name and a version string, exactly as WordPress core expects. Uses `__()` for the translatable developer message. This is textbook WordPress core coding style."
+          },
+          "code_quality": {
+            "score": 9,
+            "analysis": "Implements fluent interface pattern (returns `$this`) as documented in `@return`. Guard clause with early return on type mismatch. Single-responsibility: only adds valid stores to the internal array. Clean and readable."
+          },
+          "dependency_integrity": {
+            "score": 10,
+            "analysis": "Depends only on `WP_Style_Engine_CSS_Rules_Store`, which is a WordPress core class. No third-party dependencies. This is a core WordPress file, so dependency integrity is guaranteed."
+          },
+          "i18n": {
+            "score": 9,
+            "analysis": "The developer-facing error message is wrapped in `__()` making it translatable. This is correct practice even for developer debugging messages in WordPress core."
+          },
+          "accessibility": {
+            "score": null,
+            "analysis": "This method manages an internal PHP object registry and produces no HTML output. Accessibility is not applicable."
+          }
+        },
+        "overall_score": 96,
+        "key_observation": "This WordPress core method exemplifies best practices: `instanceof` type guard, `_doing_it_wrong()` with proper arguments, and fluent interface return\u2014all consistent with WordPress core coding standards."
+      },
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_real",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": [],
+        "hallucination_ratio": 0.0
+      },
+      "_audit_index": 25,
+      "_rubric_pending": {
+        "R1": null,
+        "R2": null,
+        "R3": null,
+        "R4": null,
+        "R5": null,
+        "R6": null
+      }
+    },
+    {
+      "code": "/**\n\t * Process a single cron tick.\n\t *\n\t * @param mixed[] ...$args Unused callback arguments.\n\t * @return void\n\t */\nfunction process( ...$args ) { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable\n\t\tAMP_Validated_URL_Post_Type::delete_stylesheets_postmeta_batch( 100, '1 week ago' );\n\t}",
+      "source_file": "amp.json",
+      "source_dir": "passed",
+      "function_name": "ValidatedUrlStylesheetDataGarbageCollection::process",
+      "reasoning": {
+        "verdict": "PASS",
+        "dimension_analysis": {
+          "wpcs_compliance": {
+            "score": 9,
+            "analysis": "Tabs for indentation, snake_case method name, docblock with @param and @return void tags. phpcs:ignore comment is scoped to the specific VariableAnalysis rule for the intentionally unused variadic $args, which is best practice for cron callback signatures that must accept arguments they don't use."
+          },
+          "sql_safety": {
+            "score": 7,
+            "analysis": "Delegates to AMP_Validated_URL_Post_Type::delete_stylesheets_postmeta_batch(100, '1 week ago'). The '1 week ago' string is passed as a date boundary \u2014 safety depends on how delete_stylesheets_postmeta_batch() constructs its query internally. The hardcoded batch size of 100 and the relative date string are literals, not user input, so no injection risk at this call site."
+          },
+          "security": {
+            "score": 9,
+            "analysis": "Cron callback with no user input. Hardcoded batch size and date string passed to a static method. No user-controlled data enters this function. Appropriate phpcs:ignore scope limits the suppression to the specific rule."
+          },
+          "performance": {
+            "score": 8,
+            "analysis": "Batch-deletes at most 100 postmeta rows per cron tick, which is a deliberate throttle to prevent long-running cron jobs. Single static method call with fixed batch limit \u2014 good garbage collection pattern."
+          },
+          "wp_api_usage": {
+            "score": 8,
+            "analysis": "Uses the AMP plugin's own static method AMP_Validated_URL_Post_Type::delete_stylesheets_postmeta_batch() within a cron processing context. The variadic ...$args signature is the correct pattern for WP cron callbacks registered via wp_schedule_event()."
+          },
+          "code_quality": {
+            "score": 9,
+            "analysis": "Extremely focused function: one responsibility, one call, clear intent. Scoped phpcs:ignore with specific rule name is exemplary. Magic number 100 could benefit from a named constant, and '1 week ago' could be a class constant, but these are minor readability issues."
+          },
+          "dependency_integrity": {
+            "score": 8,
+            "analysis": "Depends solely on AMP_Validated_URL_Post_Type::delete_stylesheets_postmeta_batch() \u2014 a static method from the same AMP plugin. Well-contained within the plugin's own class hierarchy."
+          },
+          "i18n": {
+            "score": null,
+            "analysis": "Cron processing function with no user-visible string output; i18n is entirely inapplicable."
+          },
+          "accessibility": {
+            "score": null,
+            "analysis": "Background cron task with no HTML output or user interface rendering; accessibility analysis does not apply."
+          }
+        },
+        "overall_score": 83,
+        "key_observation": "The scoped phpcs:ignore for VariableAnalysis on the variadic $args is exemplary practice, and the batch size of 100 per cron tick is a well-designed throttle for garbage collection."
+      },
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_real",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": [],
+        "hallucination_ratio": 0.0
+      },
+      "_audit_index": 44,
+      "_rubric_pending": {
+        "R1": null,
+        "R2": null,
+        "R3": null,
+        "R4": null,
+        "R5": null,
+        "R6": null
+      }
+    },
+    {
+      "code": "/**\n\t\t * Constructor\n\t\t *\n\t\t * @since    1.0\n\t\t * @author   Andrea Grillo <andrea.grillo@yithemes.com>\n\t\t */\nfunction __construct(){\r\n            \r\n            if( defined( 'YIT_LICENCE_DEBUG' ) && YIT_LICENCE_DEBUG ){\r\n                $this->_api_uri = 'http://dev.yithemes.com';                \r\n            }\r\n        }",
+      "source_file": "yith-woocommerce-ajax-search.json",
+      "source_dir": "passed",
+      "function_name": "YIT_Licence::__construct",
+      "reasoning": {
+        "verdict": "PASS",
+        "dimension_analysis": {
+          "wpcs_compliance": {
+            "score": 4,
+            "analysis": "Mixed CRLF `\\r\\n` line endings in body vs LF in docblock. `if(` missing space before parenthesis. `){` missing space before brace. Trailing whitespace after the URI assignment. Spaces used for indentation instead of tabs. Multiple WPCS formatting violations."
+          },
+          "sql_safety": {
+            "score": 10,
+            "analysis": "Constructor only conditionally sets an instance property to a URL string; no database interaction of any kind is present."
+          },
+          "security": {
+            "score": 6,
+            "analysis": "Debug mode sets `$this->_api_uri` to `http://dev.yithemes.com` using plain HTTP without TLS. If this URI is subsequently used for licence server API calls, transmitted data would be unencrypted. No enforcement or warning prevents enabling `YIT_LICENCE_DEBUG` in production."
+          },
+          "performance": {
+            "score": 9,
+            "analysis": "Single `defined()` check with short-circuit evaluation before any property assignment; effectively zero overhead on every instantiation."
+          },
+          "wp_api_usage": {
+            "score": 9,
+            "analysis": "Uses `defined()` correctly to check for a constant before accessing it, which is the proper WordPress pattern for debug and configuration flags."
+          },
+          "code_quality": {
+            "score": 5,
+            "analysis": "Mixed CRLF/LF line endings indicate the file was edited on Windows without normalization. Property `$this->_api_uri` uses a leading underscore pseudo-private convention without a visibility declaration. No `@param` or `@return` needed for a constructor, but `@author` email is a privacy concern in public repos."
+          },
+          "dependency_integrity": {
+            "score": 8,
+            "analysis": "Only relies on `YIT_LICENCE_DEBUG` constant; if undefined, `defined()` guards against fatal error. Self-contained conditional property assignment with no external dependencies."
+          },
+          "i18n": {
+            "score": 10,
+            "analysis": "Constructor sets a URI property only; no user-visible translatable strings are produced, so no i18n violations are possible."
+          },
+          "accessibility": {
+            "score": null,
+            "analysis": "Backend class constructor with no UI output; accessibility is not applicable to this function."
+          }
+        },
+        "overall_score": 76,
+        "key_observation": "The debug API URI uses plain `http://` without TLS, meaning licence server communication in debug mode would be unencrypted; mixed CRLF line endings also indicate cross-OS editing without normalization."
+      },
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_real",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": [],
+        "hallucination_ratio": 0.0
+      },
+      "_audit_index": 63,
+      "_rubric_pending": {
+        "R1": null,
+        "R2": null,
+        "R3": null,
+        "R4": null,
+        "R5": null,
+        "R6": null
+      }
+    },
+    {
+      "code": "/**\n\t * Process pending orders in batch.\n\t *\n\t * This method queries for orders updated since the last cursor position\n\t * (compound cursor: date + ID) and imports them into the analytics tables.\n\t *\n\t * @internal\n\t * @param string|null $cursor_date Cursor date in 'Y-m-d H:i:s' format. Orders after this date will be processed.\n\t * @param int|null    $cursor_id   Cursor order ID. Combined with $cursor_date to form compound cursor.\n\t * @return void\n\t */\nfunction process_pending_batch( $cursor_date = null, $cursor_id = null ) {\n\t\t$logger  = wc_get_logger();\n\t\t$context = array( 'source' => 'wc-analytics-order-import' );\n\n\t\tif ( self::is_importing() ) {\n\t\t\t// No need to process if an import is already in progress.\n\t\t\t$logger->info( 'Import is already in progress, skipping batch import.', $context );\n\t\t\treturn;\n\t\t}\n\n\t\t// Load cursor position from options if not provided.\n\t\t// If the cursor date is not provided, use the last 24 hours as the default since `action_scheduler_ensure_recurring_actions` runs daily so 24 hours is enough.\n\t\t$default_cursor_date = gmdate( 'Y-m-d H:i:s', strtotime( '-24 hours' ) );\n\t\t$cursor_date         = $cursor_date ?? get_option( self::LAST_PROCESSED_ORDER_DATE_OPTION, $default_cursor_date );\n\t\t$cursor_id           = $cursor_id ?? (int) get_option( self::LAST_PROCESSED_ORDER_ID_OPTION, 0 );\n\n\t\t// Validate cursor date.\n\t\tif ( ! $cursor_date || ! strtotime( $cursor_date ) ) {\n\t\t\t$logger->error( 'Invalid cursor date: ' . $cursor_date, $context );\n\t\t\t$cursor_date = $default_cursor_date;\n\t\t}\n\n\t\t$batch_size = self::get_batch_size( self::PROCESS_PENDING_ORDERS_BATCH_ACTION );\n\n\t\t$logger->info(\n\t\t\tsprintf( 'Starting batch import. Cursor: %s (ID: %d), batch size: %d', $cursor_date, $cursor_id, $batch_size ),\n\t\t\t$context\n\t\t);\n\n\t\t$start_time = microtime( true );\n\n\t\t// Get orders updated since the cursor position.\n\t\t$orders = self::get_orders_since( $cursor_date, $cursor_id, $batch_size );\n\n\t\tif ( empty( $orders ) ) {\n\t\t\t$logger->info( 'No orders to process', $context );\n\t\t\t// Update the cursor position to the start time of the batch so that the next batch will start from that point.\n\t\t\tupdate_option( self::LAST_PROCESSED_ORDER_DATE_OPTION, gmdate( 'Y-m-d H:i:s', (int) $start_time ), false );\n\t\t\tupdate_option( self::LAST_PROCESSED_ORDER_ID_OPTION, 0, false );\n\t\t\treturn;\n\t\t}\n\n\t\t$processed_count = 0;\n\t\tforeach ( $orders as $order ) {\n\t\t\ttry {\n\t\t\t\tself::import( $order->id );\n\t\t\t\t++$processed_count;\n\n\t\t\t\t// Advance cursor after each successful import. Since orders are sorted by\n\t\t\t\t// date ASC, id ASC, we can simply overwrite with the current order's values.\n\t\t\t\t// If an error occurs, we break and save the last successful position.\n\t\t\t\t$cursor_date = $order->date_updated_gmt;\n\t\t\t\t$cursor_id   = $order->id;\n\t\t\t} catch ( \\Exception $e ) {\n\t\t\t\t$logger->error(\n\t\t\t\t\tsprintf( 'Failed to import order %d: %s', $order->id, $e->getMessage() ),\n\t\t\t\t\t$context\n\t\t\t\t);\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\n\t\t// Save the updated cursor position.\n\t\tupdate_option( self::LAST_PROCESSED_ORDER_DATE_OPTION, $cursor_date, false );\n\t\tupdate_option( self::LAST_PROCESSED_ORDER_ID_OPTION, $cursor_id, false );\n\n\t\t$elapsed_time = microtime( true ) - $start_time;\n\t\t$logger->info(\n\t\t\tsprintf(\n\t\t\t\t'Batch import completed. Processed: %d orders in %.2f seconds. Cursor: %s (ID: %d)',\n\t\t\t\t$processed_count,\n\t\t\t\t$elapsed_time,\n\t\t\t\t$cursor_date,\n\t\t\t\t$cursor_id\n\t\t\t),\n\t\t\t$context\n\t\t);\n\n\t\t// If we got a full batch, there might be more orders to process.\n\t\t// Schedule immediate next batch.\n\t\tif ( $processed_count === $batch_size ) {\n\t\t\t$logger->info( 'Full batch processed, scheduling next batch', $context );\n\t\t\tself::schedule_action(\n\t\t\t\t'process_pending_batch',\n\t\t\t\tarray( $cursor_date, $cursor_id )\n\t\t\t);\n\t\t}\n\t}",
+      "source_file": "woocommerce.json",
+      "source_dir": "passed",
+      "function_name": "process_pending_batch",
+      "reasoning": {
+        "verdict": "PASS",
+        "dimension_analysis": {
+          "wpcs_compliance": {
+            "score": 9,
+            "analysis": "Comprehensive docblock with `@internal`, typed nullable params, `@return void`. Tabs throughout, Yoda `! $cursor_date`, proper `===` strict comparison, aligned array operators. `$logger` and `$context` two-space alignment is valid WPCS style."
+          },
+          "sql_safety": {
+            "score": 8,
+            "analysis": "Uses `get_option`, `update_option`, and delegates to `self::get_orders_since()` and `self::import()` \u2014 no raw SQL constructed here. Database write operations use WP Options API with autoload disabled (false third arg on `update_option`)."
+          },
+          "security": {
+            "score": 8,
+            "analysis": "Cursor date validated via `strtotime()` before use. `(int)` cast on cursor ID from `get_option`. `$cursor_date` passed to logger could log option-tampered values, but this is internal background processing not public-facing input."
+          },
+          "performance": {
+            "score": 8,
+            "analysis": "Uses compound cursor pattern (date + ID) to avoid full-table re-scans across runs. Batch size is configurable. Correctly uses `autoload=false` on `update_option` for frequently-updated cursor state. Reschedules immediately on full batch to chain processing without cron delay."
+          },
+          "wp_api_usage": {
+            "score": 9,
+            "analysis": "Correct use of `wc_get_logger()`, `get_option`, `update_option`, `gmdate`, `microtime`, and `self::schedule_action()` (Action Scheduler wrapper). Logger context array with `source` key follows WooCommerce logging conventions."
+          },
+          "code_quality": {
+            "score": 9,
+            "analysis": "Well-structured batch processing with early-return guard, cursor validation, per-item exception handling with `break` on failure to preserve partial progress, and comprehensive logging at each stage. Inline comments explain the compound cursor reasoning."
+          },
+          "dependency_integrity": {
+            "score": 8,
+            "analysis": "Relies on internal static methods `is_importing`, `get_batch_size`, `get_orders_since`, `import`, `schedule_action` and class constants for option keys \u2014 all expected internal contracts within this WooCommerce analytics class."
+          },
+          "i18n": {
+            "score": 10,
+            "analysis": "All strings are internal log messages passed to WooCommerce logger, not user-visible UI text. No missed translation opportunities exist in this function."
+          },
+          "accessibility": {
+            "score": null,
+            "analysis": "Background batch processing function with no HTML output; accessibility is not applicable."
+          }
+        },
+        "overall_score": 88,
+        "key_observation": "Compound date+ID cursor with per-item exception handling and partial progress preservation on failure demonstrates production-grade batch import resilience."
+      },
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_real",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": [],
+        "hallucination_ratio": 0.0
+      },
+      "_audit_index": 66,
+      "_rubric_pending": {
+        "R1": null,
+        "R2": null,
+        "R3": null,
+        "R4": null,
+        "R5": null,
+        "R6": null
+      }
+    },
+    {
+      "code": "/**\n\t * Return or initialize $valid_query_vars.\n\t *\n\t * @return array\n\t */\nfunction get_valid_query_vars() {\n\t\tif ( ! empty( $this->valid_query_vars ) ) {\n\t\t\treturn $this->valid_query_vars;\n\t\t}\n\n\t\t$valid_query_vars       = array_keys( ( new WP_Query() )->fill_query_vars( array() ) );\n\t\t$this->valid_query_vars = array_merge(\n\t\t\t$valid_query_vars,\n\t\t\t// fill_query_vars doesn't include these vars so we need to add them manually.\n\t\t\tarray(\n\t\t\t\t'date_query',\n\t\t\t\t'exact',\n\t\t\t\t'ignore_sticky_posts',\n\t\t\t\t'lazy_load_term_meta',\n\t\t\t\t'meta_compare_key',\n\t\t\t\t'meta_compare',\n\t\t\t\t'meta_query',\n\t\t\t\t'meta_type_key',\n\t\t\t\t'meta_type',\n\t\t\t\t'nopaging',\n\t\t\t\t'offset',\n\t\t\t\t'order',\n\t\t\t\t'orderby',\n\t\t\t\t'page',\n\t\t\t\t'post_type',\n\t\t\t\t'posts_per_page',\n\t\t\t\t'suppress_filters',\n\t\t\t\t'tax_query',\n\t\t\t)\n\t\t);\n\n\t\treturn $this->valid_query_vars;\n\t}",
+      "source_file": "woocommerce.json",
+      "source_dir": "passed",
+      "function_name": "ProductQuery::get_valid_query_vars",
+      "reasoning": {
+        "verdict": "PASS",
+        "dimension_analysis": {
+          "wpcs_compliance": {
+            "score": 9,
+            "analysis": "Tab indentation, proper WPCS spacing inside function calls, DocBlock with @return array. Array alignment is consistent. The inline comment explaining fill_query_vars limitation is properly formatted. No WPCS violations found."
+          },
+          "sql_safety": {
+            "score": 9,
+            "analysis": "Uses WP_Query::fill_query_vars() which is a WP core utility method that does not execute any SQL queries \u2014 it only fills default query variable values. No database query risk present."
+          },
+          "security": {
+            "score": 8,
+            "analysis": "Constructs an allowlist of valid query variables from WP_Query::fill_query_vars() combined with a hardcoded supplemental list. This pattern produces a whitelist of known-safe WP_Query arguments \u2014 it does not process user input directly."
+          },
+          "performance": {
+            "score": 7,
+            "analysis": "Instantiates a new WP_Query() object solely to call fill_query_vars() on the first call \u2014 this has non-trivial overhead. The lazy-initialization pattern (early return if already populated) correctly caches the result in $this->valid_query_vars, so the overhead is paid at most once per object lifecycle."
+          },
+          "wp_api_usage": {
+            "score": 9,
+            "analysis": "Uses WP_Query::fill_query_vars() correctly to derive the canonical list of supported query variables. The supplemental array covers documented WP_Query vars that fill_query_vars doesn't return, demonstrating deep knowledge of WP_Query internals."
+          },
+          "code_quality": {
+            "score": 8,
+            "analysis": "Lazy-initialization memoization pattern is well-implemented. Inline comment explains the non-obvious reason for the supplemental array. The temporary local $valid_query_vars then immediate reassignment to $this->valid_query_vars is slightly redundant but improves readability."
+          },
+          "dependency_integrity": {
+            "score": 9,
+            "analysis": "Depends only on WP_Query which is always available in WordPress. fill_query_vars() has been a stable core method since WP 3.7 and is safe to depend on."
+          },
+          "i18n": {
+            "score": 9,
+            "analysis": "No user-visible strings output \u2014 returns an array of query variable names for internal use. The function is correctly i18n-neutral."
+          },
+          "accessibility": {
+            "score": null,
+            "analysis": "No HTML rendering; this is a data utility method returning a string array."
+          }
+        },
+        "overall_score": 86,
+        "key_observation": "Excellent lazy-initialization pattern combining WP_Query::fill_query_vars() with a documented supplemental allowlist, though instantiating a full WP_Query object just for fill_query_vars() is a minor avoidable overhead."
+      },
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_real",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": [],
+        "hallucination_ratio": 0.0
+      },
+      "_audit_index": 82,
+      "_rubric_pending": {
+        "R1": null,
+        "R2": null,
+        "R3": null,
+        "R4": null,
+        "R5": null,
+        "R6": null
+      }
+    },
+    {
+      "code": "/**\n\t * Constructor.\n\t */\nfunction __construct() {\n\t\t$this->widget_cssclass    = 'woocommerce widget_recent_reviews';\n\t\t$this->widget_description = __( 'Display a list of recent reviews from your store.', 'woocommerce' );\n\t\t$this->widget_id          = 'woocommerce_recent_reviews';\n\t\t$this->widget_name        = __( 'Recent Product Reviews', 'woocommerce' );\n\t\t$this->settings           = array(\n\t\t\t'title'  => array(\n\t\t\t\t'type'  => 'text',\n\t\t\t\t'std'   => __( 'Recent reviews', 'woocommerce' ),\n\t\t\t\t'label' => __( 'Title', 'woocommerce' ),\n\t\t\t),\n\t\t\t'number' => array(\n\t\t\t\t'type'  => 'number',\n\t\t\t\t'step'  => 1,\n\t\t\t\t'min'   => 1,\n\t\t\t\t'max'   => '',\n\t\t\t\t'std'   => 10,\n\t\t\t\t'label' => __( 'Number of reviews to show', 'woocommerce' ),\n\t\t\t),\n\t\t);\n\n\t\tparent::__construct();\n\t}",
+      "source_file": "woocommerce.json",
+      "source_dir": "failed",
+      "function_name": "WC_Widget_Recent_Reviews::__construct",
+      "reasoning": {
+        "verdict": "FAIL",
+        "dimension_analysis": {
+          "wpcs_compliance": {
+            "score": 7,
+            "analysis": "Tab indentation, proper WPCS spacing, correct use of __() with 'woocommerce' text domain. DocBlock is minimal (only 'Constructor.' with no @since tag) which is acceptable. Array alignment is consistent. No significant WPCS violations."
+          },
+          "sql_safety": {
+            "score": 9,
+            "analysis": "No database queries executed in this constructor \u2014 only property assignments and parent::__construct() call. SQL safety fully satisfied."
+          },
+          "security": {
+            "score": 8,
+            "analysis": "Hardcoded string assignments only; no user input processed in this constructor. Widget CSS class and IDs are developer-defined constants. No security concerns present."
+          },
+          "performance": {
+            "score": 8,
+            "analysis": "Property assignments and parent::__construct() call \u2014 all O(1). The 'max' => '' empty string for the number field may cause client-side validation issues but is not a performance concern."
+          },
+          "wp_api_usage": {
+            "score": 5,
+            "analysis": "Uses __() with 'woocommerce' text domain for all translatable strings and calls parent::__construct() to trigger WC_Widget initialization. However, the 'std' key in settings arrays is a deprecated WooCommerce widget convention \u2014 modern WC widgets use 'default' instead of 'std', making this API usage outdated."
+          },
+          "code_quality": {
+            "score": 5,
+            "analysis": "Uses the deprecated 'std' key in both settings arrays instead of the current 'default' key \u2014 a WooCommerce widget API regression. The 'max' => '' (empty string) for the number field is ambiguous; should be null or a concrete integer. The @since tag is absent from the DocBlock."
+          },
+          "dependency_integrity": {
+            "score": 7,
+            "analysis": "Calls parent::__construct() requiring the class extends WC_Widget or WP_Widget. The deprecated 'std' key may silently fail to apply defaults in newer WC versions that have removed 'std' support."
+          },
+          "i18n": {
+            "score": 8,
+            "analysis": "All four user-visible strings use __() with 'woocommerce' text domain: widget description, widget name, title default, and number label. Complete i18n coverage with correct text domain usage."
+          },
+          "accessibility": {
+            "score": 8,
+            "analysis": "Constructor only sets configuration properties \u2014 no HTML rendering at this stage. The widget settings structure will produce standard WP widget admin fields when rendered, which follow WP core accessibility patterns."
+          }
+        },
+        "overall_score": 72,
+        "key_observation": "Uses deprecated 'std' key in widget settings arrays instead of the current 'default' key \u2014 an outdated WooCommerce widget API pattern that drives wp_api_usage and code_quality to 5, causing FAIL for a failed-source entry."
+      },
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_real",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": [],
+        "hallucination_ratio": 0.0
+      },
+      "_audit_index": 84,
+      "_rubric_pending": {
+        "R1": null,
+        "R2": null,
+        "R3": null,
+        "R4": null,
+        "R5": null,
+        "R6": null
+      }
+    },
+    {
+      "code": "/**\n\t * Add form fields for PostNL.\n\t *\n\t * @param Array $form_fields List of instance form fields.\n\t *\n\t * @return Array\n\t */\nfunction instance_form_fields( $form_fields ) {\n\t\t// Change title default value.\n\t\t$form_fields['title']['default'] = $this->method_title;\n\n\t\t// Minimum for free shipping.\n\t\t$currency_symbol = get_woocommerce_currency_symbol();\n\n\t\t$form_fields['minimum_for_free_shipping'] = array(\n\t\t\t// Translators: %s is the currency symbol.\n\t\t\t'title'    => sprintf( esc_html__( 'Free shipping from %s', 'postnl-for-woocommerce' ), $currency_symbol ),\n\t\t\t'type'     => 'number',\n\t\t\t'desc_tip' => esc_html__( 'Keep empty if you don\u2019t want to use Free shipping', 'postnl-for-woocommerce' ),\n\t\t\t'default'  => 0,\n\t\t);\n\n\t\treturn $form_fields;\n\t}",
+      "source_file": "woo-postnl.json",
+      "source_dir": "passed",
+      "function_name": "PostNL::instance_form_fields",
+      "reasoning": {
+        "verdict": "PASS",
+        "dimension_analysis": {
+          "wpcs_compliance": {
+            "score": 8,
+            "analysis": "Tab indentation, WPCS spacing, DocBlock with @param and @return. Uses 'Array' (capitalized) in DocBlock type hints \u2014 non-standard (should be 'array' lowercase per WPCS). Translator comment '// Translators:' follows WP i18n convention. Minor docblock type capitalization issue only."
+          },
+          "sql_safety": {
+            "score": 9,
+            "analysis": "No database queries executed \u2014 modifies and returns a form fields configuration array. get_woocommerce_currency_symbol() uses WooCommerce's internal option cache, not a direct SQL query in this context."
+          },
+          "security": {
+            "score": 8,
+            "analysis": "Uses esc_html__() for both the title and desc_tip strings, properly escaping before reaching the admin form field renderer. The currency symbol from get_woocommerce_currency_symbol() is passed via sprintf() into an esc_html__()-wrapped string \u2014 the escape applies to the template string and the symbol is trusted WC data."
+          },
+          "performance": {
+            "score": 8,
+            "analysis": "Single get_woocommerce_currency_symbol() call (WooCommerce caches this internally via get_option) and array manipulation. No loops or heavy operations involved."
+          },
+          "wp_api_usage": {
+            "score": 9,
+            "analysis": "Correctly uses get_woocommerce_currency_symbol() and esc_html__() with plugin text domain 'postnl-for-woocommerce'. Follows WooCommerce shipping method instance_form_fields filter pattern by modifying and returning $form_fields."
+          },
+          "code_quality": {
+            "score": 8,
+            "analysis": "Clean filter pattern \u2014 receives $form_fields, adds a field, returns modified array. Translator comment correctly documents the %s placeholder. The Unicode right single quotation mark in the desc_tip string is slightly unusual in source code \u2014 ASCII apostrophe would be more portable."
+          },
+          "dependency_integrity": {
+            "score": 8,
+            "analysis": "Depends on get_woocommerce_currency_symbol() (WooCommerce core, always available when WooCommerce active) and $this->method_title (WC_Shipping_Method property). Both are reliable in context."
+          },
+          "i18n": {
+            "score": 9,
+            "analysis": "Uses esc_html__() with 'postnl-for-woocommerce' text domain for both user-visible strings. Translator comment with %s documentation is present. All translatable strings are wrapped."
+          },
+          "accessibility": {
+            "score": null,
+            "analysis": "Generates admin form field configuration arrays; HTML rendering is delegated entirely to the WooCommerce admin form renderer."
+          }
+        },
+        "overall_score": 86,
+        "key_observation": "Proper use of esc_html__() with the plugin text domain and translator comment for the currency-symbol sprintf, combined with correct WooCommerce instance_form_fields filter pattern."
+      },
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_real",
+      "citation_accuracy": {
+        "total_citations": 1,
+        "grounded_citations": 1,
+        "hallucinated_citations": [],
+        "hallucination_ratio": 0.0
+      },
+      "_audit_index": 86,
+      "_rubric_pending": {
+        "R1": null,
+        "R2": null,
+        "R3": null,
+        "R4": null,
+        "R5": null,
+        "R6": null
+      }
+    },
+    {
+      "code": "/**\n\t\t * html\n\t\t *\n\t\t * This function will output the metabox HTML\n\t\t *\n\t\t * @date    10/10/17\n\t\t * @since   5.6.3\n\t\t *\n\t\t * @param   n/a\n\t\t * @return  n/a\n\t\t */\nfunction html() {\n\n\t\t\t?>\n\t\t<div class=\"acf-postbox-header\">\n\t\t\t<h2 class=\"acf-postbox-title\"><?php esc_html_e( 'Import', 'acf' ); ?></h2>\n\t\t\t<div class=\"acf-tip\"><i tabindex=\"0\" class=\"acf-icon acf-icon-help acf-js-tooltip\" title=\"<?php esc_attr_e( 'Choose an ACF JSON file to import. Use only files from trusted sources, then click Import.', 'acf' ); ?>\">?</i></div>\n\t\t</div>\n\t\t<div class=\"acf-postbox-inner\">\n\t\t\t<div class=\"acf-fields\">\n\t\t\t\t<?php\n\n\t\t\t\tacf_render_field_wrap(\n\t\t\t\t\tarray(\n\t\t\t\t\t\t'label'        => __( 'Select JSON File', 'acf' ),\n\t\t\t\t\t\t'type'         => 'file',\n\t\t\t\t\t\t'name'         => 'acf_import_file',\n\t\t\t\t\t\t'value'        => false,\n\t\t\t\t\t\t'uploader'     => 'basic',\n\t\t\t\t\t\t'mime_types'   => 'application/json,application/x-json,application/x-javascript,text/javascript,text/x-javascript,text/json',\n\t\t\t\t\t\t'instructions' => __( 'Import JSON containing field groups, post types, or taxonomies (trusted sources only)', 'acf' ),\n\t\t\t\t\t)\n\t\t\t\t);\n\n\t\t\t\t?>\n\t\t\t</div>\n\t\t\t<p class=\"acf-submit\">\n\t\t\t\t<button type=\"submit\" class=\"acf-btn\" name=\"import_type\" value=\"json\">\n\t\t\t\t\t<?php esc_html_e( 'Import JSON', 'acf' ); ?>\n\t\t\t\t</button>\n\t\t\t</p>\n\n\t\t\t<?php\n\t\t\tif ( is_plugin_active( 'custom-post-type-ui/custom-post-type-ui.php' ) && acf_get_setting( 'enable_post_types' ) ) {\n\t\t\t\t$cptui_post_types  = get_option( 'cptui_post_types' );\n\t\t\t\t$cptui_taxonomies  = get_option( 'cptui_taxonomies' );\n\t\t\t\t$choices           = array();\n\t\t\t\t$overwrite_warning = false;\n\n\t\t\t\tif ( $cptui_post_types ) {\n\t\t\t\t\t$choices['post_types'] = __( 'Post Types', 'acf' );\n\t\t\t\t\t$existing_post_types   = acf_get_acf_post_types();\n\n\t\t\t\t\tforeach ( $existing_post_types as $existing_post_type ) {\n\t\t\t\t\t\tif ( isset( $cptui_post_types[ $existing_post_type['post_type'] ] ) ) {\n\t\t\t\t\t\t\t$overwrite_warning = true;\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\tif ( $cptui_taxonomies ) {\n\t\t\t\t\t$choices['taxonomies'] = __( 'Taxonomies', 'acf' );\n\n\t\t\t\t\tif ( ! $overwrite_warning ) {\n\t\t\t\t\t\t$existing_taxonomies = acf_get_acf_taxonomies();\n\t\t\t\t\t\tforeach ( $existing_taxonomies as $existing_taxonomy ) {\n\t\t\t\t\t\t\tif ( isset( $cptui_taxonomies[ $existing_taxonomy['taxonomy'] ] ) ) {\n\t\t\t\t\t\t\t\t$overwrite_warning = true;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\tif ( ! empty( $choices ) ) :\n\t\t\t\t\t?>\n\t\t\t\t\t<div class=\"acf-fields import-cptui\">\n\t\t\t\t\t\t<?php\n\t\t\t\t\t\tacf_render_field_wrap(\n\t\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t\t'label'   => __( 'Import from Custom Post Type UI', 'acf' ),\n\t\t\t\t\t\t\t\t'type'    => 'checkbox',\n\t\t\t\t\t\t\t\t'name'    => 'acf_import_cptui',\n\t\t\t\t\t\t\t\t'choices' => $choices,\n\t\t\t\t\t\t\t\t'toggle'  => true,\n\t\t\t\t\t\t\t)\n\t\t\t\t\t\t);\n\t\t\t\t\t\t?>\n\t\t\t\t\t</div>\n\t\t\t\t\t<?php\n\t\t\t\t\tif ( $overwrite_warning ) {\n\t\t\t\t\t\techo '<p class=\"acf-inline-notice notice notice-info\">' . esc_html__( 'Importing a Post Type or Taxonomy with the same key as one that already exists will overwrite the settings for the existing Post Type or Taxonomy with those of the import.', 'acf' ) . '</p>';\n\t\t\t\t\t}\n\t\t\t\t\t?>\n\t\t\t\t\t<p class=\"acf-submit\">\n\t\t\t\t\t\t<button type=\"submit\" class=\"acf-btn\" name=\"import_type\" value=\"cptui\">\n\t\t\t\t\t\t\t<?php esc_html_e( 'Import from Custom Post Type UI', 'acf' ); ?>\n\t\t\t\t\t\t</button>\n\t\t\t\t\t</p>\n\t\t\t\t\t<?php\n\t\t\t\tendif;\n\t\t\t}\n\t\t\t?>\n\t\t</div>\n\t\t\t<?php\n\t\t}",
+      "source_file": "advanced-custom-fields.json",
+      "source_dir": "passed",
+      "function_name": "ACF_Admin_Tool_Import::html",
+      "reasoning": {
+        "verdict": "PASS",
+        "dimension_analysis": {
+          "wpcs_compliance": {
+            "score": 7,
+            "analysis": "Generally follows WPCS: uses `esc_html_e()`, `esc_attr_e()`, `__()`, `esc_html__()` consistently. PHP/HTML interleaving indentation is slightly inconsistent (opening `?>` on wrong indent level). Variable names like `$cptui_post_types` are snake_case. The `echo` with concatenated `esc_html__()` is acceptable WPCS pattern."
+          },
+          "sql_safety": {
+            "score": null,
+            "analysis": "No direct database queries; uses `get_option()` and ACF internal APIs. SQL safety is not applicable here."
+          },
+          "security": {
+            "score": 8,
+            "analysis": "All user-visible strings are escaped with `esc_html_e()`, `esc_attr_e()`, and `esc_html__()`. The `echo` statement concatenates a static string with `esc_html__()` for the translated content \u2014 the surrounding HTML tags are hard-coded literals, not user-supplied. File upload relies on `acf_render_field_wrap()` which handles nonce/capability checks upstream."
+          },
+          "performance": {
+            "score": 7,
+            "analysis": "Calls `get_option('cptui_post_types')` and `get_option('cptui_taxonomies')` which are cached by WordPress object cache after first load. `acf_get_acf_post_types()` and `acf_get_acf_taxonomies()` are ACF internal calls \u2014 performance depends on ACF's own caching, which is generally adequate for admin-only pages."
+          },
+          "wp_api_usage": {
+            "score": 8,
+            "analysis": "Uses `is_plugin_active()`, `get_option()`, `acf_get_setting()`, `acf_render_field_wrap()`, `acf_get_acf_post_types()`, `acf_get_acf_taxonomies()` \u2014 all appropriate APIs for an admin metabox. `is_plugin_active()` requires `plugin.php` to be loaded, which is expected in admin context."
+          },
+          "code_quality": {
+            "score": 7,
+            "analysis": "Function is long but logically organized: header, main file upload field, conditional CPTUI section. The overwrite-warning loop optimization (skipping taxonomy check if already true) shows care. Mixing alternative `if():` / `endif;` syntax with braces is inconsistent but minor."
+          },
+          "dependency_integrity": {
+            "score": 7,
+            "analysis": "Depends on ACF internal functions (`acf_render_field_wrap`, `acf_get_setting`, `acf_get_acf_post_types`, `acf_get_acf_taxonomies`) that are appropriate within the ACF plugin. `is_plugin_active()` availability is guarded implicitly by admin context."
+          },
+          "i18n": {
+            "score": 9,
+            "analysis": "All user-facing strings use `esc_html_e()`, `esc_attr_e()`, `__()`, and `esc_html__()` with the `'acf'` text domain consistently. No hardcoded untranslated strings are present in output."
+          },
+          "accessibility": {
+            "score": 7,
+            "analysis": "The tooltip `<i>` element uses `tabindex=\"0\"` making it keyboard-focusable, and the `title` attribute provides a description via `esc_attr_e()`. However, using `<i>` as an interactive element is semantically weak \u2014 a `<button>` with `aria-label` would be more accessible. The `?` text content provides minimal screen reader context."
+          }
+        },
+        "overall_score": 77,
+        "key_observation": "All user-facing strings are properly escaped and translated using `esc_html_e()` and `esc_attr_e()` throughout, with the only accessibility concern being the non-semantic `<i tabindex=\"0\">` tooltip element."
+      },
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_real",
+      "citation_accuracy": {
+        "total_citations": 2,
+        "grounded_citations": 2,
+        "hallucinated_citations": [],
+        "hallucination_ratio": 0.0
+      },
+      "_audit_index": 94,
+      "_rubric_pending": {
+        "R1": null,
+        "R2": null,
+        "R3": null,
+        "R4": null,
+        "R5": null,
+        "R6": null
+      }
+    },
+    {
+      "code": "/** @var _WP_Dependency $dependency */\nfunction amend_twentytwentyone_styles() {\n\t\tadd_action(\n\t\t\t'wp_enqueue_scripts',\n\t\t\tstatic function () {\n\t\t\t\t$style_handle = 'twenty-twenty-one-style';\n\n\t\t\t\t// Bail if the stylesheet is not enqueued.\n\t\t\t\tif ( ! wp_style_is( $style_handle ) ) {\n\t\t\t\t\treturn; // @codeCoverageIgnore\n\t\t\t\t}\n\n\t\t\t\t$css_file = get_theme_file_path(\n\t\t\t\t\tsprintf( 'style%s.css', is_rtl() ? '-rtl' : '' )\n\t\t\t\t);\n\n\t\t\t\tif ( ! file_exists( $css_file ) ) {\n\t\t\t\t\treturn; // @codeCoverageIgnore\n\t\t\t\t}\n\n\t\t\t\t\n\t\t\t\t$dependency = wp_styles()->registered[ $style_handle ];\n\n\t\t\t\t// Set the registered handle as an alias for other stylesheets to depend on.\n\t\t\t\t$dependency->src = false;\n\n\t\t\t\t$styles = file_get_contents( $css_file ); //phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents\n\n\t\t\t\t// AMP provides a global API \"AMP.toggleTheme()\" to support dark theme by toggling a BODY element class.\n\t\t\t\t// However, for dark mode in the Twenty Twenty-One theme, the class needs to be toggled on HTML and BODY elements because the CSS variables are set at the root level.\n\t\t\t\t// In AMP we cannot toggle HTML classes. So here we are changing the location where CSS variables are defined from `:root` to the BODY element.\n\t\t\t\tif ( get_theme_mod( 'respect_user_color_preference', false ) ) {\n\t\t\t\t\t$styles = str_replace( ':root {', 'body {', $styles );\n\t\t\t\t}\n\n\t\t\t\t// Append extra rules needed for nav menus according to changes made to the document during sanitization.\n\t\t\t\t$styles .= '\n\t\t\t\t\t/* Trap keyboard navigation within mobile menu when it\\'s open */\n\t\t\t\t\t@media only screen and (max-width: 481px) {\n\t\t\t\t\t\t.primary-navigation-open #page {\n\t\t\t\t\t\t\tvisibility: hidden;\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\t.primary-navigation-open .menu-button-container {\n\t\t\t\t\t\t\tvisibility: visible;\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\n\t\t\t\t\t@media (min-width: 482px) {\n\t\t\t\t\t\t/* Show the sub-menu on hover of menu item */\n\t\t\t\t\t\t.primary-menu-container > .menu-wrapper > .menu-item-has-children:hover > .sub-menu {\n\t\t\t\t\t\t\tdisplay: block;\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\t/* Show the minus icon on hover of menu item */\n\t\t\t\t\t\t.primary-menu-container > .menu-wrapper > .menu-item-has-children:hover > .sub-menu-toggle > .icon-minus {\n\t\t\t\t\t\t\tdisplay: flex;\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t';\n\n\t\t\t\t$styles .= '\n\t\t\t\t\tbutton[overflow]:hover {\n\t\t\t\t\t\tbackground-color: var(--global--color-background);\n\t\t\t\t\t}\n\t\t\t\t';\n\n\t\t\t\tif ( ! isset( $dependency->extra['after'] ) ) {\n\t\t\t\t\t$dependency->extra['after'] = [];\n\t\t\t\t}\n\t\t\t\tarray_unshift( $dependency->extra['after'], $styles );\n\t\t\t},\n\t\t\t11\n\t\t);\n\t}",
+      "source_file": "amp.json",
+      "source_dir": "passed",
+      "function_name": "amend_twentytwentyone_styles",
+      "reasoning": {
+        "verdict": "PASS",
+        "dimension_analysis": {
+          "wpcs_compliance": {
+            "score": 6,
+            "analysis": "The outer function `amend_twentytwentyone_styles` has only a `/** @var _WP_Dependency $dependency */` comment as its docblock, which is a type annotation for the inner closure variable \u2014 not a proper function docblock. Missing `@since`, description, and `@return`. The `phpcs:ignore` comment for `file_get_contents` is correctly scoped. The function is registering an action hook with priority 11, which is documented only via inline comment."
+          },
+          "sql_safety": {
+            "score": null,
+            "analysis": "No database queries or SQL operations are present in this stylesheet amendment function."
+          },
+          "security": {
+            "score": 7,
+            "analysis": "`file_get_contents( $css_file )` reads a server-side theme CSS file resolved via `get_theme_file_path()` \u2014 a WP core function. The path is not user-controlled. The `phpcs:ignore` annotation acknowledges this intentional use. `str_replace( ':root {', 'body {', $styles )` manipulates CSS string content from a file, not user input. `array_unshift` on `$dependency->extra['after']` injects the CSS into the style output \u2014 the CSS is sourced from theme files, not untrusted input."
+          },
+          "performance": {
+            "score": 6,
+            "analysis": "`file_get_contents( $css_file )` reads the entire theme CSS file from disk on every `wp_enqueue_scripts` hook invocation \u2014 i.e., every page load. This is done without caching (no transient or static variable). For large theme CSS files, this disk I/O on every request is a meaningful performance concern. The `wp_style_is()` guard limits execution to pages using the Twenty Twenty-One stylesheet."
+          },
+          "wp_api_usage": {
+            "score": 8,
+            "analysis": "`add_action()`, `wp_style_is()`, `get_theme_file_path()`, `is_rtl()`, `wp_styles()`, `get_theme_mod()`, and `array_unshift` on `$dependency->extra['after']` are all standard WordPress APIs. Directly mutating `$dependency->src = false` and `$dependency->extra['after']` via the `wp_styles()->registered` array is an internal WP_Dependency manipulation \u2014 documented as a workaround for the lack of `wp_add_inline_style()` `before` position support."
+          },
+          "code_quality": {
+            "score": 7,
+            "analysis": "The outer docblock is misused (it annotates `$dependency` inside the closure, not the outer function). The comment explaining the AMP dark mode workaround and the `wp_add_inline_style` limitation is excellent \u2014 it provides the rationale for the non-obvious `$dependency->extra['after']` manipulation. The `// @codeCoverageIgnore` annotations on early returns are appropriate. Overall the logic is justified and well-commented despite the docblock issue."
+          },
+          "dependency_integrity": {
+            "score": 7,
+            "analysis": "Depends on `wp_styles()->registered[ $style_handle ]` existing (guarded by `wp_style_is()`), `get_theme_file_path()` returning a valid path (guarded by `file_exists()`), and WP internals `_WP_Dependency->extra['after']` array structure being stable. The direct internal property mutation is the most fragile dependency \u2014 a WordPress core change to `_WP_Dependency` internals could break this."
+          },
+          "i18n": {
+            "score": null,
+            "analysis": "No translatable strings are output; the function manipulates CSS stylesheets with no user-facing text."
+          },
+          "accessibility": {
+            "score": 8,
+            "analysis": "The appended CSS includes `/* Trap keyboard navigation within mobile menu when it's open */` \u2014 `visibility: hidden` on `#page` with `visibility: visible` on `.menu-button-container` correctly traps keyboard focus within the open mobile menu. The sub-menu hover CSS enhances keyboard/pointer navigation. These additions demonstrate accessibility-aware CSS design for the mobile menu."
+          }
+        },
+        "overall_score": 72,
+        "key_observation": "`file_get_contents()` reads the full theme CSS on every page load without caching, and the outer docblock is structurally misplaced as a closure variable annotation rather than a function description."
+      },
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_real",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": [],
+        "hallucination_ratio": 0.0
+      },
+      "_audit_index": 138,
+      "_rubric_pending": {
+        "R1": null,
+        "R2": null,
+        "R3": null,
+        "R4": null,
+        "R5": null,
+        "R6": null
+      }
+    },
+    {
+      "code": "/**\n\t * Retrieve a Database instance by table name.\n\t *\n\t * @param string $table_name A Database instance id.\n\t *\n\t * @return Database Database object instance.\n\t */\nfunction table( $table_name ) {\n\t\tglobal $wpdb;\n\n\t\tif ( empty( self::$instances ) || empty( self::$instances[ $table_name ] ) ) {\n\t\t\tself::$instances[ $table_name ] = new Query_Builder( $wpdb->prefix . $table_name );\n\t\t}\n\n\t\treturn self::$instances[ $table_name ];\n\t}",
+      "source_file": "seo-by-rank-math.json",
+      "source_dir": "passed",
+      "function_name": "Database::table",
+      "reasoning": {
+        "verdict": "PASS",
+        "dimension_analysis": {
+          "wpcs_compliance": {
+            "score": 8,
+            "analysis": "Doc block is complete with @param and @return tags. Tab indentation is consistent throughout. The `global $wpdb` declaration is on its own line per WPCS standards. Minor: the @param doc says 'A Database instance id' but the parameter is a table name\u2014documentation mismatch."
+          },
+          "sql_safety": {
+            "score": 7,
+            "analysis": "The table name is used only for object instantiation as `$wpdb->prefix . $table_name`, which is then passed to `Query_Builder`. The concatenation itself is not a query, but if `Query_Builder` uses this value in raw SQL without further escaping, there is a potential injection path. No direct query is executed here; safety depends on the downstream `Query_Builder` implementation."
+          },
+          "security": {
+            "score": 6,
+            "analysis": "`$table_name` is accepted as a string parameter with no validation or whitelisting. If callers pass user-influenced table names, and `Query_Builder` interpolates them into SQL, this creates a SQL injection risk. The function should validate `$table_name` against an allowlist of known tables."
+          },
+          "performance": {
+            "score": 9,
+            "analysis": "Static instance cache via `self::$instances` implements a flyweight/singleton pattern per table, avoiding redundant object creation. The double `empty()` check guards against both an uninitialized array and a missing key."
+          },
+          "wp_api_usage": {
+            "score": 9,
+            "analysis": "Correctly accesses `$wpdb->prefix` via the global `$wpdb` object to construct table names, which is the canonical WP pattern for plugin table prefixing."
+          },
+          "code_quality": {
+            "score": 8,
+            "analysis": "Clean, readable factory pattern with instance caching. The conditional could use `isset` instead of `empty` for the key check since an empty string table name would be semantically invalid, but this is a minor concern."
+          },
+          "dependency_integrity": {
+            "score": 8,
+            "analysis": "Depends on global `$wpdb` (core WP) and `Query_Builder` (internal Rank Math class). Both are appropriate dependencies for a database abstraction layer within the same plugin."
+          },
+          "i18n": {
+            "score": null,
+            "analysis": "No user-facing strings are output; function returns an object instance only."
+          },
+          "accessibility": {
+            "score": null,
+            "analysis": "Database factory method with no UI output; accessibility is not applicable."
+          }
+        },
+        "overall_score": 76,
+        "key_observation": "The `$table_name` parameter is passed directly to `Query_Builder` without allowlist validation, creating a potential injection risk that depends entirely on how `Query_Builder` handles the value."
+      },
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_real",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": [],
+        "hallucination_ratio": 0.0
+      },
+      "_audit_index": 150,
+      "_rubric_pending": {
+        "R1": null,
+        "R2": null,
+        "R3": null,
+        "R4": null,
+        "R5": null,
+        "R6": null
+      }
+    },
+    {
+      "code": "/**\n     * Generated from protobuf field <code>optional string name = 6;</code>\n     * @param string $var\n     * @return $this\n     */\nfunction setName($var)\n    {\n        GPBUtil::checkString($var, True);\n        $this->name = $var;\n\n        return $this;\n    }",
+      "source_file": "plugnmeet.json",
+      "source_dir": "passed",
+      "function_name": "allowed_numbers::setName",
+      "reasoning": {
+        "verdict": "PASS",
+        "dimension_analysis": {
+          "wpcs_compliance": {
+            "score": 4,
+            "analysis": "This is auto-generated protobuf code using PSR-2 brace style (opening brace on new line) rather than WPCS which requires same-line braces. The doc block uses `<code>` HTML tags inline, which is non-standard WPCS PHPDoc. Indentation uses 4 spaces rather than tabs. These are all WPCS violations, though expected given the protobuf generator origin."
+          },
+          "sql_safety": {
+            "score": 10,
+            "analysis": "No direct SQL queries are constructed or executed in this function. All data access is fully delegated to higher-level abstractions, eliminating any SQL injection surface at this layer."
+          },
+          "security": {
+            "score": 7,
+            "analysis": "`GPBUtil::checkString($var, True)` validates that `$var` is a string type before assignment, providing type safety. No user input is directly processed here; this is a data-layer setter called by deserialized protobuf. The `True` literal (capitalized boolean) is a PHP style quirk but functionally equivalent."
+          },
+          "performance": {
+            "score": 9,
+            "analysis": "Single type check followed by direct property assignment and fluent return. No loops, queries, or expensive operations. Appropriate for a high-throughput message setter."
+          },
+          "wp_api_usage": {
+            "score": 5,
+            "analysis": "No WordPress APIs are used. `GPBUtil::checkString` is from the google/protobuf library. This is not inherently wrong for a plugin that processes protobuf messages, but no WP-native sanitization functions are applied."
+          },
+          "code_quality": {
+            "score": 7,
+            "analysis": "Standard generated protobuf setter with fluent interface. The `True` capitalization is a minor style inconsistency (should be `true` per PHP conventions). Code is clear and follows the generated protobuf pattern correctly."
+          },
+          "dependency_integrity": {
+            "score": 8,
+            "analysis": "Depends on `GPBUtil` from the google/protobuf PHP runtime, which is a standard dependency for protobuf-based plugins. The dependency is clearly scoped to the data-layer serialization purpose."
+          },
+          "i18n": {
+            "score": null,
+            "analysis": "No user-facing strings; method sets an internal protobuf field value."
+          },
+          "accessibility": {
+            "score": null,
+            "analysis": "Data-layer protobuf setter with no UI output; accessibility is not applicable."
+          }
+        },
+        "overall_score": 65,
+        "key_observation": "Auto-generated protobuf setter code uses PSR-2 style throughout (4-space indent, new-line braces), which conflicts with WPCS standards, though this is an unavoidable consequence of protobuf code generation."
+      },
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_real",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": [],
+        "hallucination_ratio": 0.0
+      },
+      "_audit_index": 151,
+      "_rubric_pending": {
+        "R1": null,
+        "R2": null,
+        "R3": null,
+        "R4": null,
+        "R5": null,
+        "R6": null
+      }
+    },
+    {
+      "code": "/**\n     * Fires a request to the API\n     * @param  string   $method HTTP Verb\n     * @param  string   $url    Relative URL for the request\n     * @param  array $data Data to be passed along the request\n     * @param  array $additionHeader headers to be passed along the request\n     * @param  string $apiVersion version to be passed along the request\n     * @return array Response data in array format. Not meant\n     * to be used directly\n     */\nfunction request($method, $url, $data = array(), $apiVersion = \"v1\")\n    { \n        $url = Api::getFullUrl($url, $apiVersion);\n\n        $hooks = new Requests_Hooks();\n\n        $hooks->register('curl.before_send', array($this, 'setCurlSslOpts'));\n\n        $options = array(\n            'auth' => array(Api::getKey(), Api::getSecret()),\n            'hook' => $hooks,\n            'timeout' => 60\n        );\n        \n        $headers = $this->getRequestHeaders();\n\n        $response = Requests::request($url, $headers, $data, $method, $options);  \n        $this->checkErrors($response);\n\n        return json_decode($response->body, true);\n    }",
+      "source_file": "razorpay-quick-payments.json",
+      "source_dir": "passed",
+      "function_name": "Request::request",
+      "reasoning": {
+        "verdict": "FAIL",
+        "dimension_analysis": {
+          "wpcs_compliance": {
+            "score": 3,
+            "analysis": "PSR-2 brace style (opening brace on new line after function signature), 4-space indentation instead of tabs, no spaces inside control structure parentheses. The doc block lists `$additionHeader` (a typo for 'additional') and documents 5 parameters but the function signature only has 4 (`$additionHeader` is missing). This is a documentation integrity failure."
+          },
+          "sql_safety": {
+            "score": 10,
+            "analysis": "No direct SQL queries are constructed or executed in this function. All data access is fully delegated to higher-level abstractions, eliminating any SQL injection surface at this layer."
+          },
+          "security": {
+            "score": 3,
+            "analysis": "SSL options are set via `setCurlSslOpts` through a curl hook\u2014this pattern is used to customize TLS, and if `setCurlSslOpts` disables certificate verification (a common but insecure pattern in payment plugins), this is a critical security vulnerability. API credentials are retrieved via `Api::getKey()` and `Api::getSecret()` and passed in the `auth` array; the security of this depends on how credentials are stored. The `$url` parameter is not validated or sanitized before use in the HTTP request. No escaping of `$data` before transmission."
+          },
+          "performance": {
+            "score": 6,
+            "analysis": "60-second timeout is reasonable for a payment API. No connection pooling or retry logic is visible. `Requests_Hooks` object is instantiated per call rather than cached, adding minor overhead."
+          },
+          "wp_api_usage": {
+            "score": 3,
+            "analysis": "`Requests::request()` is the old WordPress Requests library (deprecated in WP 6.2 in favor of `WpOrg\\Requests\\Requests`). The correct WP API for HTTP requests is `wp_remote_request()` which handles SSL, timeouts, and error handling through WP's unified HTTP API. Using the raw `Requests` class directly bypasses WP HTTP API filters and may break in WP 6.2+."
+          },
+          "code_quality": {
+            "score": 4,
+            "analysis": "The `$additionHeader` parameter is documented but not present in the function signature\u2014this is either dead documentation or a missing parameter. The function name collides with the class name `Request::request`, which is confusing. Trailing spaces after `Requests::request(...)` on line end."
+          },
+          "dependency_integrity": {
+            "score": 4,
+            "analysis": "`Requests_Hooks` and `Requests::request()` are from the deprecated WordPress Requests library class names (pre-WP 6.2 interface). These class names are deprecated since WP 6.2 and will generate deprecation notices in current WordPress. The correct classes are `WpOrg\\Requests\\Hooks` and `WpOrg\\Requests\\Requests`."
+          },
+          "i18n": {
+            "score": null,
+            "analysis": "No user-facing strings are present; this is an internal HTTP client method."
+          },
+          "accessibility": {
+            "score": null,
+            "analysis": "HTTP API client method with no HTML output; accessibility is not applicable."
+          }
+        },
+        "overall_score": 32,
+        "key_observation": "The function uses the deprecated `Requests::request()` and `Requests_Hooks` class names (superseded in WP 6.2) instead of `wp_remote_request()`, and the `setCurlSslOpts` hook suggests possible SSL certificate verification bypass in a payment gateway context."
+      },
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_real",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": [],
+        "hallucination_ratio": 0.0
+      },
+      "_audit_index": 158,
+      "_rubric_pending": {
+        "R1": null,
+        "R2": null,
+        "R3": null,
+        "R4": null,
+        "R5": null,
+        "R6": null
+      }
+    },
+    {
+      "code": "/**\n\t * Cache a rate limit.\n\t *\n\t * @param string $action_id Identifier of the action.\n\t * @param object $current_limit Current limit object with expiry and retries remaining.\n\t * @return bool\n\t */\nfunction set_cache( $action_id, $current_limit ): bool {\n\t\treturn wp_cache_set( self::get_cache_key( $action_id ), $current_limit, self::CACHE_GROUP );\n\t}",
+      "source_file": "woocommerce.json",
+      "source_dir": "passed",
+      "function_name": "set_cache",
+      "reasoning": {
+        "verdict": "PASS",
+        "dimension_analysis": {
+          "wpcs_compliance": {
+            "score": 9,
+            "analysis": "Docblock is complete with `@param` and `@return` tags. Function uses snake_case naming, proper tab indentation, and aligned brackets. The return type declaration `: bool` is WPCS-compatible with modern standards. One minor deduction: the `@param object` type hint is vague \u2014 WPCS prefers a concrete class name when possible."
+          },
+          "sql_safety": {
+            "score": 10,
+            "analysis": "wp_cache_set is used exclusively \u2014 no raw SQL is written; this is exactly the correct pattern for avoiding direct database writes in a caching layer."
+          },
+          "security": {
+            "score": 8,
+            "analysis": "Uses `wp_cache_set` \u2014 the standard WP object cache API \u2014 which is inherently safe. The `$action_id` is passed through `self::get_cache_key()` before use, providing indirection that likely normalizes the key. Caching arbitrary objects via `$current_limit` carries no injection risk. No user input is directly stored without filtering."
+          },
+          "performance": {
+            "score": 9,
+            "analysis": "A single `wp_cache_set` call is the most performant approach for rate-limit caching \u2014 it uses the WP object cache (backed by Redis/Memcached if available) rather than transients or post meta, and the function itself is O(1) with no loops or repeated computations."
+          },
+          "wp_api_usage": {
+            "score": 9,
+            "analysis": "`wp_cache_set` is the correct WP API for object caching; using a `CACHE_GROUP` constant for cache namespacing and delegating key construction to `self::get_cache_key()` follows WP best practices for cache management. The three-argument form matches `wp_cache_set( $key, $data, $group )` correctly."
+          },
+          "code_quality": {
+            "score": 9,
+            "analysis": "Tight single-responsibility function with a native return type hint. The delegation to `get_cache_key` and use of a class constant for the cache group makes the code maintainable and testable. No extraneous logic or side effects."
+          },
+          "dependency_integrity": {
+            "score": 8,
+            "analysis": "Depends on `wp_cache_set` (core WP), `self::get_cache_key()` (same class), and `self::CACHE_GROUP` (class constant). All three are internal or core \u2014 no third-party dependencies introduced."
+          },
+          "i18n": {
+            "score": null,
+            "analysis": "A caching utility function that returns a boolean; it produces no user-facing strings, making internationalization not applicable."
+          },
+          "accessibility": {
+            "score": null,
+            "analysis": "Server-side caching function with no HTML output; accessibility evaluation is not applicable."
+          }
+        },
+        "overall_score": 89,
+        "key_observation": "Correctly uses `wp_cache_set` with a class-constant group and a dedicated key-builder, making this a textbook WP object cache write with no identifiable defects."
+      },
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_real",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": [],
+        "hallucination_ratio": 0.0
+      },
+      "_audit_index": 167,
+      "_rubric_pending": {
+        "R1": null,
+        "R2": null,
+        "R3": null,
+        "R4": null,
+        "R5": null,
+        "R6": null
+      }
+    },
+    {
+      "code": "/**\n\t * Whether the given gateway is enabled.\n\t */\nfunction gateway_enabled( string $method_id ): bool {\n\t\treturn $this->payment_settings->is_method_enabled( $method_id );\n\t}",
+      "source_file": "woocommerce-paypal-payments.json",
+      "source_dir": "passed",
+      "function_name": "SettingsProvider::gateway_enabled",
+      "reasoning": {
+        "verdict": "PASS",
+        "dimension_analysis": {
+          "wpcs_compliance": {
+            "score": 7,
+            "analysis": "Docblock is minimal \u2014 only one terse line, missing `@param string $method_id`, `@return bool`, and `@since`. Native `string` parameter type hint and `: bool` return type are correct modern WP practice. Snake_case naming and tab indentation are correct."
+          },
+          "sql_safety": {
+            "score": 9,
+            "analysis": "Delegates entirely to payment_settings->is_method_enabled() with no direct database access; correct thin wrapper design."
+          },
+          "security": {
+            "score": 8,
+            "analysis": "`$method_id` is typed as `string` at the PHP level, enforcing scalar coercion. The method delegates to `$this->payment_settings->is_method_enabled()` \u2014 a settings lookup that presumably reads from WP options or a settings store. No user-supplied input is directly used without indirection through the settings object."
+          },
+          "performance": {
+            "score": 8,
+            "analysis": "Single delegation call \u2014 O(1) wrapper with no added overhead. Performance depends entirely on `is_method_enabled`'s implementation, but the wrapper itself adds no cost."
+          },
+          "wp_api_usage": {
+            "score": 7,
+            "analysis": "No direct WP API calls \u2014 the method delegates to a PayPal-specific payment settings abstraction. This is acceptable for a thin delegation wrapper in a DI-based architecture, and the underlying `is_method_enabled` presumably reads WP options."
+          },
+          "code_quality": {
+            "score": 8,
+            "analysis": "A clean single-responsibility delegation method with native type hints on both input and output. The lack of docblock completeness is the only quality issue. The delegation to `$this->payment_settings` properly encapsulates settings access."
+          },
+          "dependency_integrity": {
+            "score": 8,
+            "analysis": "Depends on `$this->payment_settings` being injected and implementing `is_method_enabled( string $method_id ): bool`. No external packages referenced directly. The dependency contract is implicit without an interface declaration visible in this snippet."
+          },
+          "i18n": {
+            "score": null,
+            "analysis": "Returns a boolean with no user-facing string output; internationalization is not applicable."
+          },
+          "accessibility": {
+            "score": null,
+            "analysis": "A settings-query method returning a boolean with no HTML output; accessibility evaluation is not applicable."
+          }
+        },
+        "overall_score": 79,
+        "key_observation": "A typed delegation wrapper with `: bool` return type and `string` parameter hint, clean and single-purpose, with the only weakness being an incomplete docblock missing `@param` and `@return` tags."
+      },
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_real",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": [],
+        "hallucination_ratio": 0.0
+      },
+      "_audit_index": 178,
+      "_rubric_pending": {
+        "R1": null,
+        "R2": null,
+        "R3": null,
+        "R4": null,
+        "R5": null,
+        "R6": null
+      }
+    },
+    {
+      "code": "function __toString(): string\n    {\n        return '@for $' . $this->variable . ' from ' . $this->from . ($this->exclusive ? ' to ' : ' through ') . $this->to . '{' . implode(' ', $this->getChildren()) . '}';\n    }",
+      "source_file": "wp-scss.json",
+      "source_dir": "failed",
+      "function_name": "ForRule::__toString",
+      "reasoning": {
+        "verdict": "FAIL",
+        "dimension_analysis": {
+          "wpcs_compliance": {
+            "score": 3,
+            "analysis": "PSR-2 brace style (opening brace on own line) violates WPCS K&R requirement. Return type declaration `string` with colon notation is valid PHP 7+ but the overall class style is non-WPCS. No docblock present. Long concatenation chain on a single line exceeds WPCS line length guidelines."
+          },
+          "sql_safety": {
+            "score": null,
+            "analysis": "Function constructs a SCSS for-loop string from object properties. No database access of any kind."
+          },
+          "security": {
+            "score": 5,
+            "analysis": "Properties `$this->variable`, `$this->from`, and `$this->to` are concatenated directly into the output string without any sanitization or escaping. If these properties originate from user input (SCSS source being processed), the output could contain injected content. The function is a compiler AST node serializer, so this is partially expected, but the lack of any validation is notable."
+          },
+          "performance": {
+            "score": 8,
+            "analysis": "Single string concatenation with an `implode()` call on children \u2014 both are O(n) where n is children count. No I/O or expensive operations. Appropriate for a SCSS compiler AST serialization step."
+          },
+          "wp_api_usage": {
+            "score": 2,
+            "analysis": "Uses only native PHP `implode()` and string concatenation with no WordPress APIs. This is a SCSS compiler library component entirely outside WordPress patterns, though it ships inside a WP plugin."
+          },
+          "code_quality": {
+            "score": 4,
+            "analysis": "The entire return statement is a single unbroken 140+ character concatenation chain that is difficult to read and debug. No intermediate variables break up the SCSS token assembly. The ternary `($this->exclusive ? ' to ' : ' through ')` is correctly parenthesized but embedded in a long chain. A named variable for the range keyword would improve clarity."
+          },
+          "dependency_integrity": {
+            "score": 7,
+            "analysis": "Relies on `$this->variable`, `$this->from`, `$this->to`, `$this->exclusive`, and `$this->getChildren()` \u2014 all instance members expected on a ForRule AST node. No external file includes or dynamic dependencies."
+          },
+          "i18n": {
+            "score": null,
+            "analysis": "This function serializes SCSS AST syntax tokens ('@for', 'from', 'to', 'through') which are SCSS language keywords, not user-facing strings. Translation is structurally inapplicable to compiler output tokens."
+          },
+          "accessibility": {
+            "score": 3,
+            "analysis": "The `__toString()` method produces SCSS source code strings for compiler use, with no rendered HTML output. However, if this SCSS is compiled and produces CSS that drives frontend layout, the generated styles could affect accessibility (e.g., hiding elements, controlling focus visibility). The function itself provides no accessibility guarantees for its output."
+          }
+        },
+        "overall_score": 32,
+        "key_observation": "SCSS compiler AST node serializer with PSR-2 style and an unreadable 140+ character single-line concatenation chain that has no WordPress API usage or WPCS compliance."
+      },
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_real",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": [],
+        "hallucination_ratio": 0.0
+      },
+      "_audit_index": 186,
+      "_rubric_pending": {
+        "R1": null,
+        "R2": null,
+        "R3": null,
+        "R4": null,
+        "R5": null,
+        "R6": null
+      }
+    },
+    {
+      "code": "/**\n\t * Options_Form_Generator constructor.\n\t *\n\t * @param Options_Inputs $inputs The Options_Inputs instance.\n\t */\nfunction __construct( Options_Inputs $inputs ) {\n\t\t$this->options_inputs = $inputs;\n\t}",
+      "source_file": "duplicate-post.json",
+      "source_dir": "passed",
+      "function_name": "Options_Form_Generator::__construct",
+      "reasoning": {
+        "verdict": "PASS",
+        "dimension_analysis": {
+          "wpcs_compliance": {
+            "score": 9,
+            "analysis": "Correct WPCS formatting: tabs, K&R style, proper spacing. Docblock with `@param` using the concrete class type hint. Constructor follows WPCS conventions. Missing `@since` tag is a minor docblock completeness issue consistent across the codebase."
+          },
+          "sql_safety": {
+            "score": null,
+            "analysis": "Dependency injection constructor with single property assignment. No database interaction."
+          },
+          "security": {
+            "score": 9,
+            "analysis": "Uses `Options_Inputs` type hint ensuring only the correct type is injected. No user input, no data exposure. Type-safe constructor injection."
+          },
+          "performance": {
+            "score": 10,
+            "analysis": "Single property assignment in constructor. O(1). No side effects."
+          },
+          "wp_api_usage": {
+            "score": 8,
+            "analysis": "Uses a plugin-specific `Options_Inputs` type hint following WordPress class naming conventions (PascalCase with underscore separators). Proper constructor injection pattern consistent with modern WordPress plugin architecture."
+          },
+          "code_quality": {
+            "score": 9,
+            "analysis": "Minimal, correct constructor with a type-hinted parameter. Property naming `$this->options_inputs` matches the parameter class name semantically. No unnecessary complexity."
+          },
+          "dependency_integrity": {
+            "score": 9,
+            "analysis": "Depends on `Options_Inputs` class injected from outside. Clean dependency inversion with no tight coupling to instantiation."
+          },
+          "i18n": {
+            "score": 7,
+            "analysis": "Constructor with property assignment only and no string output. The Options_Inputs dependency injected here handles form generation; any i18n responsibility lies in those form rendering methods, not in the constructor."
+          },
+          "accessibility": {
+            "score": null,
+            "analysis": "Backend constructor with no rendered output. Accessibility evaluation is not applicable."
+          }
+        },
+        "overall_score": 90,
+        "key_observation": "Clean constructor injection with WPCS-compliant class naming, type-hinted `Options_Inputs` parameter, and minimal no-logic implementation."
+      },
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_real",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": [],
+        "hallucination_ratio": 0.0
+      },
+      "_audit_index": 198,
+      "_rubric_pending": {
+        "R1": null,
+        "R2": null,
+        "R3": null,
+        "R4": null,
+        "R5": null,
+        "R6": null
+      }
+    },
+    {
+      "code": "/**\n\t * Sets dimensions.\n\t *\n\t * @since 1.170.0\n\t *\n\t * @param array|null $dimensions Dimensions.\n\t *\n\t * @throws InvalidArgumentException When validation fails.\n\t */\nfunction set_dimensions( $dimensions ) {\n\t\tif ( null === $dimensions ) {\n\t\t\t$this->dimensions = array();\n\t\t\treturn;\n\t\t}\n\n\t\tif ( ! is_array( $dimensions ) ) {\n\t\t\tthrow new InvalidArgumentException( 'dimensions must be an array' );\n\t\t}\n\n\t\t$this->dimensions = $dimensions;\n\t}",
+      "source_file": "google-site-kit.json",
+      "source_dir": "passed",
+      "function_name": "Email_Report_Data_Section_Part::set_dimensions",
+      "reasoning": {
+        "verdict": "PASS",
+        "dimension_analysis": {
+          "wpcs_compliance": {
+            "score": 9,
+            "analysis": "Snake_case function name, Yoda conditions (`null === $dimensions`), proper spacing inside parentheses, and array() syntax all match WPCS standards. DocBlock includes @since, @param, @throws. The developer-facing exception message string is not translated, which is intentional and accepted for PHP exceptions."
+          },
+          "sql_safety": {
+            "score": null,
+            "analysis": "Function performs no database operations; it only sets an in-memory property on the class instance. SQL safety dimension is not applicable."
+          },
+          "security": {
+            "score": 8,
+            "analysis": "Input is validated: null triggers a safe default array(), non-array triggers an InvalidArgumentException. The raw $dimensions array is stored without element-level sanitization, but this is a data-layer setter inside google-site-kit whose callers are expected to provide trusted analytics dimension arrays. No user-facing output occurs here."
+          },
+          "performance": {
+            "score": 9,
+            "analysis": "Single conditional branch assignment with O(1) complexity. No loops or I/O. The null-path short-circuits with an early return avoiding unnecessary work."
+          },
+          "wp_api_usage": {
+            "score": 8,
+            "analysis": "Pure PHP setter with no need for WordPress APIs; the function correctly uses PHP native is_array() and InvalidArgumentException for input validation rather than inventing custom checks. No WP API misuse present."
+          },
+          "code_quality": {
+            "score": 9,
+            "analysis": "Logic is clear and minimal: null guard with early return, type guard with exception, then assignment. Dual-purpose null handling (convert to empty array) is documented via @param type hint. Exception class matches the PHP SPL standard."
+          },
+          "dependency_integrity": {
+            "score": 8,
+            "analysis": "Relies only on PHP built-in InvalidArgumentException (SPL), which is always available. No external dependency risk introduced."
+          },
+          "i18n": {
+            "score": null,
+            "analysis": "No user-visible strings are produced; the exception message is developer-facing and does not require translation. i18n dimension is not applicable."
+          },
+          "accessibility": {
+            "score": 8,
+            "analysis": "This setter does not produce HTML output directly. It stores dimension data that may eventually feed report rendering \u2014 no accessibility anti-patterns are introduced by the setter itself, and the data structure it accepts is format-neutral."
+          }
+        },
+        "overall_score": 85,
+        "key_observation": "Well-structured setter with proper null coercion to empty array and type-guard exception, but the stored array is not validated element-by-element, relying on caller trust for dimension array contents."
+      },
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_real",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": [],
+        "hallucination_ratio": 0.0
+      },
+      "_audit_index": 203,
+      "_rubric_pending": {
+        "R1": null,
+        "R2": null,
+        "R3": null,
+        "R4": null,
+        "R5": null,
+        "R6": null
+      }
+    },
+    {
+      "code": "/**\n\t * Initialize the API namespaces under WooCommerce Admin.\n\t *\n\t * @return void\n\t */\nfunction rest_api_init() {\n\t\tif ( wc_rest_should_load_namespace( 'wc-admin' ) ) {\n\t\t\t$this->rest_api_init_wc_admin();\n\t\t}\n\n\t\t$rest_api_util = wc_get_container()->get( RestApiUtil::class );\n\t\t$rest_api_util->lazy_load_namespace( 'wc-analytics', array( $this, 'rest_api_init_wc_analytics' ) );\n\n\t\tif ( Features::is_enabled( 'launch-your-store' ) ) {\n\t\t\t$controller        = 'Automattic\\WooCommerce\\Admin\\API\\LaunchYourStore';\n\t\t\t$this->$controller = new $controller();\n\t\t\t$this->$controller->register_routes();\n\t\t}\n\t}",
+      "source_file": "woocommerce.json",
+      "source_dir": "passed",
+      "function_name": "lazy_load_namespace::rest_api_init",
+      "reasoning": {
+        "verdict": "PASS",
+        "dimension_analysis": {
+          "wpcs_compliance": {
+            "score": 8,
+            "analysis": "Full docblock with @return void. Tab indentation correct. WPCS spacing around operators and inside parentheses. Alignment padding on `$this->$controller` and `$controller` assignment is applied. Snake_case method name. Only concern: dynamic property assignment `$this->$controller` with variable variable is unusual but not a WPCS violation."
+          },
+          "sql_safety": {
+            "score": null,
+            "analysis": "No database queries; method configures REST API namespace registration."
+          },
+          "security": {
+            "score": 7,
+            "analysis": "The pattern `$controller = 'Automattic\\WooCommerce\\Admin\\API\\LaunchYourStore'; $this->$controller = new $controller();` uses a hardcoded string as both a variable property name and a class instantiation \u2014 since the string is a literal constant (not user input), there is no injection risk. The variable-variable property assignment is an unusual pattern that could be a code smell, but is safe with hardcoded values."
+          },
+          "performance": {
+            "score": 7,
+            "analysis": "wc_get_container()->get() is called on every REST API init \u2014 container resolution should be cached by the DI container itself. lazy_load_namespace() defers wc-analytics initialization which is correct for performance. Feature flag check with Features::is_enabled() is appropriate gating."
+          },
+          "wp_api_usage": {
+            "score": 8,
+            "analysis": "wc_rest_should_load_namespace() and wc_get_container() are correct WooCommerce API abstractions. REST controller pattern with register_routes() follows WP REST API conventions. lazy_load_namespace() defers namespace loading appropriately."
+          },
+          "code_quality": {
+            "score": 7,
+            "analysis": "The variable-variable pattern for dynamic property assignment (`$this->$controller`) is unnecessarily obscure \u2014 `$this->launch_your_store_controller = new LaunchYourStore()` would be clearer. The hardcoded FQCN string rather than using `use` with `::class` is a maintainability weakness."
+          },
+          "dependency_integrity": {
+            "score": 7,
+            "analysis": "Depends on wc_rest_should_load_namespace(), wc_get_container(), RestApiUtil::class, Features::is_enabled() \u2014 all WooCommerce internal APIs. If any of these are absent, the method silently fails or throws. No defensive null-checks on container resolution."
+          },
+          "i18n": {
+            "score": null,
+            "analysis": "No user-visible strings; method registers API namespaces and controllers."
+          },
+          "accessibility": {
+            "score": 6,
+            "analysis": "REST API namespace registration method that registers WooCommerce admin routes. REST API responses consumed by admin UI components must be rendered accessibly by those components; this registration layer does not control output structure."
+          }
+        },
+        "overall_score": 72,
+        "key_observation": "The dynamic property assignment via variable-variable (`$this->$controller = new $controller()`) with a hardcoded FQCN string is unnecessarily obscure when a direct class alias via `use` would be clearer and safer to refactor."
+      },
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_real",
+      "citation_accuracy": {
+        "total_citations": 0,
+        "grounded_citations": 0,
+        "hallucinated_citations": [],
+        "hallucination_ratio": 0.0
+      },
+      "_audit_index": 234,
+      "_rubric_pending": {
+        "R1": null,
+        "R2": null,
+        "R3": null,
+        "R4": null,
+        "R5": null,
+        "R6": null
+      }
+    }
+  ]
+}

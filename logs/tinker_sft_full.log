@@ -1,0 +1,38 @@
+[sft] stage=full base=Qwen/Qwen3-30B-A3B rank=32 lr=4.99e-04 epochs=3 max_steps=None train_batches=70 bs=8
+[sft] step 1 epoch 0 loss=12.400575518608093
+[sft] step 2 epoch 0 loss=10.462089776992798
+[sft] step 3 epoch 0 loss=8.532887518405914
+[sft] step 10 epoch 0 loss=8.81348603963852
+[sft] step 20 epoch 0 loss=7.977215230464935
+[sft] step 30 epoch 0 loss=7.179812550544739
+[sft] step 40 epoch 0 loss=6.731296718120575
+[sft] step 50 epoch 0 loss=6.764706969261169
+[sft] step 60 epoch 0 loss=7.325404644012451
+[sft] step 70 epoch 0 loss=6.763896822929382
+/home/robert_li/Desktop/projects/wp-finetune/scripts/tinker_reasoning_sft.py:137: DeprecationWarning: The 'name' parameter of save_weights_and_get_sampling_client() is deprecated and has no effect — checkpoints are always ephemeral. This parameter will be removed in a future release. Remove the 'name' argument from your call. If you need a persistent checkpoint, use save_weights_for_sampler(name=...) + create_sampling_client(model_path=...) instead.
+  last_sampling_client = tc.save_weights_and_get_sampling_client(name=ep_name)
+[sft] epoch 1 done (step 70); checkpoint saved name=wp-reasoning-v2-ep1
+[epoch-eval] ep1 terse@temp0 = 0/20 = 0.000
+[sft] step 80 epoch 1 loss=5.281534194946289
+[sft] step 90 epoch 1 loss=5.198301672935486
+[sft] step 100 epoch 1 loss=4.773950815200806
+[sft] step 110 epoch 1 loss=4.0680519342422485
+[sft] step 120 epoch 1 loss=4.281577944755554
+[sft] step 130 epoch 1 loss=3.9899383187294006
+[sft] step 140 epoch 1 loss=4.490036517381668
+[sft] epoch 2 done (step 140); checkpoint saved name=wp-reasoning-v2-ep2
+[epoch-eval] ep2 terse@temp0 = 0/20 = 0.000
+[sft] step 150 epoch 2 loss=2.629785865545273
+[sft] step 160 epoch 2 loss=2.7120103240013123
+[sft] step 170 epoch 2 loss=2.726814091205597
+[sft] step 180 epoch 2 loss=2.182001680135727
+[sft] step 190 epoch 2 loss=2.4593715518712997
+[sft] step 200 epoch 2 loss=2.1311424374580383
+[sft] step 210 epoch 2 loss=2.4466294944286346
+[sft] epoch 3 done (step 210); checkpoint saved name=wp-reasoning-v2-ep3
+[epoch-eval] ep3 terse@temp0 = 0/20 = 0.000
+[sft] training done: 210 steps. loss first=12.400575518608093 last=2.4466294944286346
+[eval] sample[0] head: 'WPCS Compliance: score 9/10 — The code follows standard WordPress REST controller patterns. The function `get_installed_plugins` is a typical REST handler method. The return type hint uses `\\WP_Error`'
+[eval] terse(no [/REASONING]) @temp0.0 = 1/77 = 0.013 (max_tokens=1536)
+[eval] terse(no [/REASONING]) @temp0.7 = 7/77 = 0.091 (max_tokens=1536)
+RESULT stage=full steps=210 loss_first=12.400575518608093 loss_last=2.4466294944286346 n_eval=77 terse@0.0=0.013 terse@0.7=0.091

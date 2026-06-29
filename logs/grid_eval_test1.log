@@ -1,0 +1,19 @@
+
+============================================================
+[r8-rp15] BEGIN (rank=8, replay_pct=15)
+[r8-rp15] capture judge responses from Tinker sampler...
+[capture-tinker] sampler path: tinker://d664fc56-99e2-59a2-9f3d-c276686f9807:train:0/sampler_weights/wp-reasoning-v4-r8-rp15-ep3
+[capture-tinker] 121 examples (filter=wp_judge_startswith)
+[capture-tinker] 25/121 close=25 judge_output=25
+[capture-tinker] 50/121 close=50 judge_output=50
+[capture-tinker] 75/121 close=75 judge_output=75
+[capture-tinker] 100/121 close=100 judge_output=100
+[capture-tinker] DONE n=121 close_tag=121 judge_output=121 -> output/eval_reasoning_v4_grid_test1/r8-rp15/captured_responses.jsonl
+[r8-rp15] eval_judge --responses-jsonl ...
+usage: eval_judge.py [-h] [--limit LIMIT] [--output OUTPUT]
+                     [--dataset DATASET] [--model MODEL] [--base-url BASE_URL]
+                     [--gt-mode {dataset,calibrated_canonical}]
+                     [--output-format {json,prose,auto}]
+                     [--responses-jsonl RESPONSES_JSONL]
+eval_judge.py: error: ambiguous option: --out could match --output, --output-format
+[r8-rp15] GATE ERROR: [r8-rp15] eval_judge failed (rc=2)

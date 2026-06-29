@@ -1,0 +1,179 @@
+===RETURNCODE===
+1
+===STDOUT===
+
+============================================================
+  MEMORY PRE-CHECK
+============================================================
+  Total system memory: 121.7 GB
+  Available memory:    110.8 GB
+  Required minimum:    70 GB
+  Headroom:            40.8 GB
+  Status:              OK ✓
+============================================================
+
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+🦥 Unsloth Zoo will now patch everything to make training faster!
+Loading model from /workspace/wp-finetune/models/qwen3-30b-wp-30_70-merged ...
+==((====))==  Unsloth 2026.5.7: Fast Qwen3_MoE patching. Transformers: 5.5.0.
+   \\   /|    NVIDIA GB10. Num GPUs = 1. Max memory: 121.689 GB. Platform: Linux.
+O^O/ \_/ \    Torch: 2.10.0a0+b558c986e8.nv25.11. CUDA: 12.1. CUDA Toolkit: 13.0. Triton: 3.7.0
+\        /    Bfloat16 = TRUE. FA [Xformers = None. FA2 = True]
+ "-____-"     Free license: http://github.com/unslothai/unsloth
+Unsloth: Fast downloading is enabled - ignore downloading bars which are red colored!
+Unsloth: QLoRA and full finetuning all not selected. Switching to 16bit LoRA.
+  output_router_logits = True (MoE load balancing monitoring enabled)
+Loading extended tokenizer from /workspace/wp-finetune/adapters/tokenizer ...
+  <wp_gen> -> token ID 151669 (OK)
+  <wp_judge> -> token ID 151670 (OK)
+
+===STDERR===
+/usr/local/lib/python3.12/dist-packages/unsloth/__init__.py:144: UserWarning: WARNING: Unsloth should be imported before [transformers, peft] to ensure all optimizations are applied. Your code may run slower or encounter memory issues without these optimizations.
+
+Please restructure your imports with 'import unsloth' at the top of your file.
+  from ._gpu_init import *
+
+Loading weights:   0%|          | 0/531 [00:00<?, ?it/s]
+Loading weights:   0%|          | 1/531 [00:06<1:01:08,  6.92s/it]
+Loading weights:   1%|          | 4/531 [00:14<30:24,  3.46s/it]  
+Loading weights:   1%|          | 5/531 [00:15<22:26,  2.56s/it]
+Loading weights:   3%|▎         | 15/531 [00:23<09:58,  1.16s/it]
+Loading weights:   3%|▎         | 16/531 [00:23<09:14,  1.08s/it]
+Loading weights:   5%|▍         | 26/531 [00:29<06:48,  1.24it/s]
+Loading weights:   5%|▌         | 27/531 [00:29<06:22,  1.32it/s]
+Loading weights:   7%|▋         | 37/531 [00:36<06:00,  1.37it/s]
+Loading weights:   7%|▋         | 38/531 [00:37<05:47,  1.42it/s]
+Loading weights:   9%|▉         | 48/531 [00:44<05:45,  1.40it/s]
+Loading weights:   9%|▉         | 49/531 [00:44<05:32,  1.45it/s]
+Loading weights:  11%|█         | 59/531 [00:52<05:28,  1.44it/s]
+Loading weights:  11%|█▏        | 60/531 [00:52<05:15,  1.49it/s]
+Loading weights:  13%|█▎        | 70/531 [00:59<05:27,  1.41it/s]
+Loading weights:  13%|█▎        | 71/531 [00:59<05:08,  1.49it/s]
+Loading weights:  15%|█▌        | 81/531 [01:07<05:18,  1.41it/s]
+Loading weights:  15%|█▌        | 82/531 [01:07<05:07,  1.46it/s]
+Loading weights:  17%|█▋        | 92/531 [01:15<05:19,  1.38it/s]
+Loading weights:  18%|█▊        | 93/531 [01:15<05:03,  1.44it/s]
+Loading weights:  19%|█▉        | 103/531 [01:22<04:58,  1.43it/s]
+Loading weights:  20%|█▉        | 104/531 [01:23<04:50,  1.47it/s]
+Loading weights:  21%|██▏       | 114/531 [01:30<04:59,  1.39it/s]
+Loading weights:  22%|██▏       | 115/531 [01:31<04:48,  1.44it/s]
+Loading weights:  24%|██▎       | 125/531 [01:38<04:58,  1.36it/s]
+Loading weights:  24%|██▎       | 126/531 [01:39<04:50,  1.39it/s]
+Loading weights:  26%|██▌       | 136/531 [01:46<04:51,  1.36it/s]
+Loading weights:  26%|██▌       | 137/531 [01:47<04:38,  1.41it/s]
+Loading weights:  28%|██▊       | 147/531 [01:54<04:27,  1.44it/s]
+Loading weights:  28%|██▊       | 148/531 [01:54<04:20,  1.47it/s]
+Loading weights:  30%|██▉       | 158/531 [02:01<04:21,  1.43it/s]
+Loading weights:  30%|██▉       | 159/531 [02:02<04:11,  1.48it/s]
+Loading weights:  32%|███▏      | 169/531 [02:09<04:16,  1.41it/s]
+Loading weights:  32%|███▏      | 170/531 [02:09<04:05,  1.47it/s]
+Loading weights:  34%|███▍      | 180/531 [02:17<04:14,  1.38it/s]
+Loading weights:  34%|███▍      | 181/531 [02:17<04:02,  1.45it/s]
+Loading weights:  36%|███▌      | 191/531 [02:24<03:48,  1.49it/s]
+Loading weights:  36%|███▌      | 192/531 [02:24<03:40,  1.54it/s]
+Loading weights:  38%|███▊      | 202/531 [02:31<03:44,  1.47it/s]
+Loading weights:  38%|███▊      | 203/531 [02:31<03:34,  1.53it/s]
+Loading weights:  40%|████      | 213/531 [02:39<03:40,  1.44it/s]
+Loading weights:  40%|████      | 214/531 [02:39<03:33,  1.49it/s]
+Loading weights:  42%|████▏     | 224/531 [02:46<03:32,  1.44it/s]
+Loading weights:  42%|████▏     | 225/531 [02:47<03:23,  1.50it/s]
+Loading weights:  44%|████▍     | 235/531 [02:54<03:30,  1.41it/s]
+Loading weights:  44%|████▍     | 236/531 [02:54<03:21,  1.46it/s]
+Loading weights:  46%|████▋     | 246/531 [03:02<03:24,  1.39it/s]
+Loading weights:  47%|████▋     | 247/531 [03:02<03:15,  1.45it/s]
+Loading weights:  48%|████▊     | 257/531 [03:09<03:09,  1.44it/s]
+Loading weights:  49%|████▊     | 258/531 [03:10<03:02,  1.50it/s]
+Loading weights:  50%|█████     | 268/531 [03:17<03:07,  1.40it/s]
+Loading weights:  51%|█████     | 269/531 [03:18<03:01,  1.45it/s]
+Loading weights:  53%|█████▎    | 279/531 [03:25<02:58,  1.41it/s]
+Loading weights:  53%|█████▎    | 280/531 [03:25<02:50,  1.47it/s]
+Loading weights:  55%|█████▍    | 290/531 [03:33<02:52,  1.40it/s]
+Loading weights:  55%|█████▍    | 291/531 [03:33<02:44,  1.46it/s]
+Loading weights:  57%|█████▋    | 301/531 [03:40<02:45,  1.39it/s]
+Loading weights:  57%|█████▋    | 302/531 [03:41<02:37,  1.45it/s]
+Loading weights:  59%|█████▉    | 312/531 [03:48<02:36,  1.40it/s]
+Loading weights:  59%|█████▉    | 313/531 [03:48<02:30,  1.45it/s]
+Loading weights:  61%|██████    | 323/531 [03:56<02:29,  1.39it/s]
+Loading weights:  61%|██████    | 324/531 [03:56<02:23,  1.44it/s]
+Loading weights:  63%|██████▎   | 334/531 [04:04<02:22,  1.38it/s]
+Loading weights:  63%|██████▎   | 335/531 [04:04<02:15,  1.45it/s]
+Loading weights:  65%|██████▍   | 345/531 [04:11<02:13,  1.40it/s]
+Loading weights:  65%|██████▌   | 346/531 [04:12<02:06,  1.46it/s]
+Loading weights:  67%|██████▋   | 356/531 [04:20<02:08,  1.36it/s]
+Loading weights:  67%|██████▋   | 357/531 [04:20<02:03,  1.41it/s]
+Loading weights:  69%|██████▉   | 367/531 [04:28<02:00,  1.36it/s]
+Loading weights:  69%|██████▉   | 368/531 [04:28<01:54,  1.42it/s]
+Loading weights:  71%|███████   | 378/531 [04:36<01:53,  1.35it/s]
+Loading weights:  71%|███████▏  | 379/531 [04:36<01:47,  1.41it/s]
+Loading weights:  73%|███████▎  | 389/531 [04:43<01:43,  1.37it/s]
+Loading weights:  73%|███████▎  | 390/531 [04:44<01:40,  1.40it/s]
+Loading weights:  75%|███████▌  | 400/531 [04:52<01:37,  1.35it/s]
+Loading weights:  76%|███████▌  | 401/531 [04:52<01:33,  1.39it/s]
+Loading weights:  77%|███████▋  | 411/531 [04:59<01:26,  1.38it/s]
+Loading weights:  78%|███████▊  | 412/531 [05:00<01:22,  1.44it/s]
+Loading weights:  79%|███████▉  | 422/531 [05:07<01:20,  1.35it/s]
+Loading weights:  80%|███████▉  | 423/531 [05:08<01:17,  1.39it/s]
+Loading weights:  82%|████████▏ | 433/531 [05:16<01:12,  1.35it/s]
+Loading weights:  82%|████████▏ | 434/531 [05:16<01:09,  1.39it/s]
+Loading weights:  84%|████████▎ | 444/531 [05:24<01:05,  1.34it/s]
+Loading weights:  84%|████████▍ | 445/531 [05:24<01:02,  1.37it/s]
+Loading weights:  86%|████████▌ | 455/531 [05:33<01:00,  1.26it/s]
+Loading weights:  86%|████████▌ | 456/531 [05:33<00:57,  1.31it/s]
+Loading weights:  88%|████████▊ | 466/531 [05:41<00:51,  1.27it/s]
+Loading weights:  88%|████████▊ | 467/531 [05:42<00:48,  1.31it/s]
+Loading weights:  90%|████████▉ | 477/531 [05:49<00:40,  1.32it/s]
+Loading weights:  90%|█████████ | 478/531 [05:49<00:38,  1.37it/s]
+Loading weights:  92%|█████████▏| 488/531 [05:56<00:30,  1.42it/s]
+Loading weights:  92%|█████████▏| 489/531 [05:57<00:28,  1.46it/s]
+Loading weights:  94%|█████████▍| 499/531 [06:04<00:22,  1.44it/s]
+Loading weights:  94%|█████████▍| 500/531 [06:04<00:20,  1.50it/s]
+Loading weights:  96%|█████████▌| 510/531 [06:11<00:14,  1.43it/s]
+Loading weights:  96%|█████████▌| 511/531 [06:12<00:13,  1.48it/s]
+Loading weights:  98%|█████████▊| 521/531 [06:18<00:06,  1.47it/s]
+Loading weights:  98%|█████████▊| 522/531 [06:19<00:06,  1.43it/s]
+Loading weights: 100%|██████████| 531/531 [06:19<00:00,  1.40it/s]
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/workspace/wp-finetune/scripts/train_model.py", line 660, in <module>
+    train(args)
+  File "/workspace/wp-finetune/scripts/train_model.py", line 520, in train
+    model = apply_lora(model, config)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/wp-finetune/scripts/train_model.py", line 238, in apply_lora
+    model = FastLanguageModel.get_peft_model(model, **peft_kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/unsloth/models/llama.py", line 2874, in get_peft_model
+    return FastBaseModel.get_peft_model(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/unsloth/models/vision.py", line 1518, in get_peft_model
+    model = _get_peft_model(model, lora_config)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/peft/mapping_func.py", line 122, in get_peft_model
+    return MODEL_TYPE_TO_PEFT_MODEL_MAPPING[peft_config.task_type](
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/peft/peft_model.py", line 1955, in __init__
+    super().__init__(model, peft_config, adapter_name, **kwargs)
+  File "/usr/local/lib/python3.12/dist-packages/peft/peft_model.py", line 129, in __init__
+    self.base_model = cls(model, {adapter_name: peft_config}, adapter_name)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/peft/tuners/tuners_utils.py", line 315, in __init__
+    self.inject_adapter(self.model, adapter_name, low_cpu_mem_usage=low_cpu_mem_usage, state_dict=state_dict)
+  File "/usr/local/lib/python3.12/dist-packages/peft/tuners/tuners_utils.py", line 913, in inject_adapter
+    self._create_and_replace(
+  File "/usr/local/lib/python3.12/dist-packages/unsloth/models/vision.py", line 1505, in _patched_car
+    return _original_car(
+           ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/peft/tuners/lora/model.py", line 269, in _create_and_replace
+    new_module = self._create_new_module(lora_config, adapter_name, target, device_map=device_map, **kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/peft/tuners/lora/model.py", line 418, in _create_new_module
+    new_module = dispatcher(target, adapter_name, config=lora_config, **kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/peft/tuners/lora/torchao.py", line 142, in dispatch_torchao
+    if not is_torchao_available():
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/peft/import_utils.py", line 143, in is_torchao_available
+    raise ImportError(
+ImportError: Found an incompatible version of torchao. Found version 0.14.0+git, but only versions above 0.16.0 are supported
+

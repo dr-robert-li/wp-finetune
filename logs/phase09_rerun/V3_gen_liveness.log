@@ -1,0 +1,4 @@
+2026-06-26 08:11:25,959 INFO check50: Comparing on 6 fixed gen prompts (group_size=2 temp=0.70).
+2026-06-26 08:11:30,540 INFO tinker.lib.public_interfaces.service_client: ServiceClient initialized for session 2eb49c35-190b-5f41-bd0d-3dcce0377e62
+2026-06-26 08:11:30,540 INFO check50: Loading warm-start sampler (via training client from savestate)...
+2026-06-26 08:11:31,958 INFO tinker.lib.public_interfaces.service_client: TrainingClient initialized for model 2eb49c35-190b-5f41-bd0d-3dcce0377e62:train:0

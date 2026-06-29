@@ -1,0 +1,8 @@
+[export] checkpoint: tinker://3497a27e-5638-5ac7-97c6-a886062666d9:train:0/sampler_weights/wp-reasoning-v3-ep3
+[export] requesting archive URL (server packs the archive — may take a while)...
+Creating checkpoint archive for run id: 3497a27e-5638-5ac7-97c6-a886062666d9:train:0 checkpoint id: sampler_weights/wp-reasoning-v3-ep3 (this may take a while)
+[export] signed URL acquired (expires=None)
+[export] downloading -> models/tinker_export/wp-reasoning-v3/checkpoint.tar
+[export] downloaded 1976.5 MB
+[export] archive OK: 3 members; sample=['checkpoint_complete', 'adapter_config.json', 'adapter_model.safetensors']
+[export] DONE -> models/tinker_export/wp-reasoning-v3/checkpoint.tar (+ models/tinker_export/wp-reasoning-v3/export_manifest.json)

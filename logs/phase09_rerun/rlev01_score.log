@@ -1,0 +1,183 @@
+teacher GT available: 86/121 examples
+  warmstart: spearman=0.5798530866323657 n=86
+  step-50: spearman=0.5391411913345175 n=86
+  step-100: spearman=0.5816920019031836 n=86
+  step-150: spearman=0.6039637828940576 n=86
+  step-200: spearman=0.6210363196716427 n=86
+  step-250: spearman=0.5646641236290117 n=86
+  step-300: spearman=0.5654261560461116 n=86
+  step-350: spearman=0.590128920673062 n=86
+  step-400: spearman=0.6257742910536223 n=86
+  step-450: spearman=0.6010039591387807 n=86
+  step-500: spearman=0.55160538132329 n=85
+common aligned indices across ['warmstart', 'step-50', 'step-100', 'step-150', 'step-200', 'step-250', 'step-300', 'step-350', 'step-400', 'step-450', 'step-500']: n=85
+
+=== SUMMARY ===
+{
+  "metric": "teacher_overall_spearman (SOFT, baseline-comparable)",
+  "per_ckpt": {
+    "warmstart": {
+      "spearman": 0.5798530866323657,
+      "n": 86
+    },
+    "step-50": {
+      "spearman": 0.5391411913345175,
+      "n": 86
+    },
+    "step-100": {
+      "spearman": 0.5816920019031836,
+      "n": 86
+    },
+    "step-150": {
+      "spearman": 0.6039637828940576,
+      "n": 86
+    },
+    "step-200": {
+      "spearman": 0.6210363196716427,
+      "n": 86
+    },
+    "step-250": {
+      "spearman": 0.5646641236290117,
+      "n": 86
+    },
+    "step-300": {
+      "spearman": 0.5654261560461116,
+      "n": 86
+    },
+    "step-350": {
+      "spearman": 0.590128920673062,
+      "n": 86
+    },
+    "step-400": {
+      "spearman": 0.6257742910536223,
+      "n": 86
+    },
+    "step-450": {
+      "spearman": 0.6010039591387807,
+      "n": 86
+    },
+    "step-500": {
+      "spearman": 0.55160538132329,
+      "n": 85
+    }
+  },
+  "n_common_aligned": 85,
+  "aligned_spearman_common_set": {
+    "warmstart": 0.5731784420276048,
+    "step-50": 0.5296547723675707,
+    "step-100": 0.5735130049042698,
+    "step-150": 0.5967667919121246,
+    "step-200": 0.6159767641009066,
+    "step-250": 0.5557677351251836,
+    "step-300": 0.5587909110843927,
+    "step-350": 0.5822956498617278,
+    "step-400": 0.6205776628255594,
+    "step-450": 0.5947828766526784,
+    "step-500": 0.55160538132329
+  },
+  "bootstrap_vs_warmstart": {
+    "step-50": {
+      "improved_beyond_noise": false,
+      "lo": -0.159172710717598,
+      "hi": 0.07114148340089235,
+      "rho_rl_point": 0.5296547723675707,
+      "rho_baseline_point": 0.5731784420276048,
+      "n_pairs": 85,
+      "n_boot": 2000
+    },
+    "step-100": {
+      "improved_beyond_noise": false,
+      "lo": -0.10509082077704636,
+      "hi": 0.1097616599008357,
+      "rho_rl_point": 0.5735130049042698,
+      "rho_baseline_point": 0.5731784420276048,
+      "n_pairs": 85,
+      "n_boot": 2000
+    },
+    "step-150": {
+      "improved_beyond_noise": false,
+      "lo": -0.06403327581747127,
+      "hi": 0.11025598153252757,
+      "rho_rl_point": 0.5967667919121246,
+      "rho_baseline_point": 0.5731784420276048,
+      "n_pairs": 85,
+      "n_boot": 2000
+    },
+    "step-200": {
+      "improved_beyond_noise": false,
+      "lo": -0.0718441646146419,
+      "hi": 0.15726003381037576,
+      "rho_rl_point": 0.6159767641009066,
+      "rho_baseline_point": 0.5731784420276048,
+      "n_pairs": 85,
+      "n_boot": 2000
+    },
+    "step-250": {
+      "improved_beyond_noise": false,
+      "lo": -0.11873438224123407,
+      "hi": 0.08775529405482463,
+      "rho_rl_point": 0.5557677351251836,
+      "rho_baseline_point": 0.5731784420276048,
+      "n_pairs": 85,
+      "n_boot": 2000
+    },
+    "step-300": {
+      "improved_beyond_noise": false,
+      "lo": -0.12350589237288231,
+      "hi": 0.09634079645901458,
+      "rho_rl_point": 0.5587909110843927,
+      "rho_baseline_point": 0.5731784420276048,
+      "n_pairs": 85,
+      "n_boot": 2000
+    },
+    "step-350": {
+      "improved_beyond_noise": false,
+      "lo": -0.0961599872158909,
+      "hi": 0.10724847396050585,
+      "rho_rl_point": 0.5822956498617278,
+      "rho_baseline_point": 0.5731784420276048,
+      "n_pairs": 85,
+      "n_boot": 2000
+    },
+    "step-400": {
+      "improved_beyond_noise": false,
+      "lo": -0.05362939434499032,
+      "hi": 0.14823756744348263,
+      "rho_rl_point": 0.6205776628255594,
+      "rho_baseline_point": 0.5731784420276048,
+      "n_pairs": 85,
+      "n_boot": 2000
+    },
+    "step-450": {
+      "improved_beyond_noise": false,
+      "lo": -0.081832285827217,
+      "hi": 0.1311720317660416,
+      "rho_rl_point": 0.5947828766526784,
+      "rho_baseline_point": 0.5731784420276048,
+      "n_pairs": 85,
+      "n_boot": 2000
+    },
+    "step-500": {
+      "improved_beyond_noise": false,
+      "lo": -0.12808128609754102,
+      "hi": 0.07915796324076874,
+      "rho_rl_point": 0.55160538132329,
+      "rho_baseline_point": 0.5731784420276048,
+      "n_pairs": 85,
+      "n_boot": 2000
+    }
+  },
+  "captured": [
+    "warmstart",
+    "step-50",
+    "step-100",
+    "step-150",
+    "step-200",
+    "step-250",
+    "step-300",
+    "step-350",
+    "step-400",
+    "step-450",
+    "step-500"
+  ]
+}

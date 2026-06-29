@@ -1,0 +1,5 @@
+[baseline-gen] model=models/qwen3-30b-wp-30_70-merged-v2 prompts=10
+[vllm] booting wp-smoke-baseline-vllm on :8011 model=models/qwen3-30b-wp-30_70-merged-v2 gpu_mem_util=0.55
+[vllm] healthy after 500s; served model=wp-30_70
+[vllm] stopped wp-smoke-baseline-vllm
+[baseline-gen] wrote 10 -> data/phase4_4/smoke_baseline_outputs.json (0 empty)

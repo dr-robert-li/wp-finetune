@@ -1519,3 +1519,11 @@ Advisor caught that J.7 verified the reward CAN be hacked (synthetic trivial sni
 - "Both runs found the same hack / all prior learning is fake" (J.7) is **too strong** — withdrawn. Accurate: both runs format-learned similarly; the stale-sampler bug only blinded the LIVE metric (measured frozen S0), never the learning.
 
 **RECOMMENDATION (for Dr. Li):** reopen Phase 8.1 reward — make `_fix_score` require the corrected code to ADDRESS the original critique, not merely parse+score-in-isolation. Candidate: re-judge the corrected code AGAINST the original (delta on the flagged dimension must improve) and/or condition the rubric call on the original function + critique. This is a reward redesign, not a hyperparam tweak. Sampler + KL fixes (ff0872e) are correct and should stay. Gen-reward Elementor-template dead-weight is a separate pre-existing ticket. Diagnostic harnesses committed for reuse: `_check_judge_fixcorr.py`, `_dump_corrected_blocks.py`, `_probe_weights_moved.py`.
+
+### 🛑 OOM-GUARD TRIPPED · 2026-06-29 17:16:53 UTC
+- MemAvailable hit 1256MB (< 2048MB threshold). DGX Spark has no OOM
+  protection, so the run was PAUSED to avoid an unrecoverable hang.
+- Actions: killed rl_train.py + stopped containers wp-consistency-vllm wp-v4-judge-vllm.
+- MemAvailable after stop: 51830MB.
+- RESUME requires manual restart (re-serve judges, relaunch run). Investigate the
+  allocation spike before relaunch (lower gpu-memory-utilization / max-num-seqs).

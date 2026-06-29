@@ -1,0 +1,15 @@
+Loading anchor features: output/diagnostic/pass_anchors_features.jsonl
+  500 anchors
+Loading seed features: output/diagnostic/seed_scorer_features.jsonl
+  145 seed feature rows
+Loading raw seed records for GT derivation
+  145 seed records across 3 sources
+Computing wp-bench leakage call-sites (tightened: name followed by '(' AND source_repo in ['wordpress-develop'])
+  393 call-site names in wp-bench knowledge
+  Leakage: dropped 0/500 anchors
+
+Wrote data/calibration/train.jsonl: 527 rows (PASS=480, FAIL=47)
+Wrote data/calibration/holdout.jsonl: 39 rows (PASS=20, FAIL=19)
+Wrote data/calibration/leakage_audit.json
+  Train subtlety: {'clear-cut': 509, 'boundary': 18}
+  Holdout subtlety: {'clear-cut': 20, 'boundary': 19}

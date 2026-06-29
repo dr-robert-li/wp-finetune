@@ -1,0 +1,28 @@
+[stage1] model=models/qwen3-30b-wp-30_70-reasoning-merged n=3 max_tokens=128 timeout=180s
+[stage1] loading models/qwen3-30b-wp-30_70-reasoning-merged on CPU bf16 ...
+`torch_dtype` is deprecated! Use `dtype` instead!
+Traceback (most recent call last):
+  File "/home/robert_li/miniconda3/lib/python3.13/site-packages/transformers/tokenization_utils_base.py", line 275, in __getattr__
+    return self.data[item]
+           ~~~~~~~~~^^^^^^
+KeyError: 'shape'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/robert_li/Desktop/projects/wp-finetune/scripts/w0_03_smoke_stage1_cpu.py", line 134, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/scripts/w0_03_smoke_stage1_cpu.py", line 113, in main
+    gen = model.generate(
+        prompt_ids, max_new_tokens=args.max_tokens, do_sample=False,
+        temperature=None, top_p=None, top_k=None,
+    )
+  File "/home/robert_li/miniconda3/lib/python3.13/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/robert_li/miniconda3/lib/python3.13/site-packages/transformers/generation/utils.py", line 2390, in generate
+    batch_size = inputs_tensor.shape[0]
+                 ^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/miniconda3/lib/python3.13/site-packages/transformers/tokenization_utils_base.py", line 277, in __getattr__
+    raise AttributeError
+AttributeError

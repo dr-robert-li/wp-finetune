@@ -1,0 +1,6 @@
+[vllm] booting wp-smoke-reasoning-vllm on :8012 model=models/qwen3-30b-wp-30_70-reasoning-merged gpu_mem_util=0.55
+[vllm] healthy after 511s; served model=wp-30_70
+[vllm] stopped wp-smoke-reasoning-vllm
+[stage2] smoke_pass=False mode=B_incoherent distinctness=0.879 exit=1
+[stage2] logs/phase4.4/wave0_smoke_stage2_20260529T140233Z.json
+[stage2] halt marker: output/04.4_smoke_halt.md

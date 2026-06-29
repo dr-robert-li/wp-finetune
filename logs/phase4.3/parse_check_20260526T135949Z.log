@@ -1,0 +1,52 @@
+=== ensure_ready ===
+  Installing pinned dependencies...
+=== parse-check ===
+===RETURNCODE===
+1
+===STDOUT===
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+
+===STDERR(tail 3000)===
+odule>
+    from .auto import AutoHfQuantizer, AutoQuantizationConfig, register_quantization_config, register_quantizer
+  File "/usr/local/lib/python3.12/dist-packages/transformers/quantizers/auto.py", line 67, in <module>
+    from .quantizer_torchao import TorchAoHfQuantizer
+  File "/usr/local/lib/python3.12/dist-packages/transformers/quantizers/quantizer_torchao.py", line 41, in <module>
+    from torchao.prototype.safetensors.safetensors_support import (
+  File "/usr/local/lib/python3.12/dist-packages/torchao/prototype/safetensors/safetensors_support.py", line 7, in <module>
+    from torchao.prototype.safetensors.safetensors_utils import (
+  File "/usr/local/lib/python3.12/dist-packages/torchao/prototype/safetensors/safetensors_utils.py", line 9, in <module>
+    from torchao.prototype.mx_formats.config import ScaleCalculationMode
+  File "/usr/local/lib/python3.12/dist-packages/torchao/prototype/mx_formats/__init__.py", line 6, in <module>
+    from torchao.prototype.mx_formats.inference_workflow import (
+  File "/usr/local/lib/python3.12/dist-packages/torchao/prototype/mx_formats/inference_workflow.py", line 18, in <module>
+    from torchao.prototype.mx_formats.mx_tensor import (
+  File "/usr/local/lib/python3.12/dist-packages/torchao/prototype/mx_formats/mx_tensor.py", line 37, in <module>
+    from torch.nn.functional import ScalingType, SwizzleType
+ImportError: cannot import name 'ScalingType' from 'torch.nn.functional' (/usr/local/lib/python3.12/dist-packages/torch/nn/functional.py)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/workspace/wp-finetune/scripts/checkpoint_parse_check.py", line 293, in <module>
+    main()
+  File "/workspace/wp-finetune/scripts/checkpoint_parse_check.py", line 283, in main
+    run_checkpoint_parse_check(
+  File "/workspace/wp-finetune/scripts/checkpoint_parse_check.py", line 129, in run_checkpoint_parse_check
+    from unsloth import FastLanguageModel
+  File "/usr/local/lib/python3.12/dist-packages/unsloth/__init__.py", line 144, in <module>
+    from ._gpu_init import *
+  File "/usr/local/lib/python3.12/dist-packages/unsloth/_gpu_init.py", line 105, in <module>
+    import unsloth_zoo
+  File "/usr/local/lib/python3.12/dist-packages/unsloth_zoo/__init__.py", line 396, in <module>
+    from .temporary_patches import (
+  File "/usr/local/lib/python3.12/dist-packages/unsloth_zoo/temporary_patches/__init__.py", line 19, in <module>
+    from .gemma import *
+  File "/usr/local/lib/python3.12/dist-packages/unsloth_zoo/temporary_patches/gemma.py", line 22, in <module>
+    from .utils import (
+  File "/usr/local/lib/python3.12/dist-packages/unsloth_zoo/temporary_patches/utils.py", line 167, in <module>
+    raise Exception(e)
+Exception: cannot import name 'ScalingType' from 'torch.nn.functional' (/usr/local/lib/python3.12/dist-packages/torch/nn/functional.py)
+

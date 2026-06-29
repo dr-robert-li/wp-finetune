@@ -1,0 +1,11 @@
+2026-06-26 08:17:43,167 INFO v3probe: loaded 1 gen prompt; keys=['messages']
+2026-06-26 08:17:47,535 INFO tinker.lib.public_interfaces.service_client: ServiceClient initialized for session 9c8ff001-1397-5553-8ead-852cab3c2f20
+2026-06-26 08:17:47,536 INFO v3probe: create_training_client_from_state...
+2026-06-26 08:17:48,959 INFO tinker.lib.public_interfaces.service_client: TrainingClient initialized for model 9c8ff001-1397-5553-8ead-852cab3c2f20:train:0
+2026-06-26 08:18:07,012 INFO v3probe: training client OK in 19.5s
+2026-06-26 08:18:07,012 INFO v3probe: save_weights_and_get_sampling_client...
+2026-06-26 08:18:09,250 INFO v3probe: save_weights OK in 2.2s
+2026-06-26 08:18:09,250 INFO v3probe: first _generate_completions (1 prompt, group 1, 128 tok)...
+2026-06-26 08:18:17,765 INFO v3probe: generate OK in 8.5s, n=1
+2026-06-26 08:18:17,765 INFO v3probe: completion[0][:300]="function process_date_query_columns() {\n\t\tglobal $wpdb;\n\n\t\t$legacy_columns = array(\n\t\t\t'post_date'         => 'date_created_gmt',\n\t\t\t'post_date_gmt'     => 'date_created_gmt',\n\t\t\t'post_modified'     => 'date_modified_gmt',\n\t\t\t'post_modified_gmt' => 'date_updated_gmt',\n\t\t\t'post_status'       => 'stat"
+PROBE COMPLETE

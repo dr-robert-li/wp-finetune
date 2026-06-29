@@ -1,0 +1,11 @@
+[2026-06-10T00:15:02Z] v3 staging: /home/robert_li/Desktop/projects/wp-finetune/models/_staging/qwen3-30b-wp-30_70-reasoning-merged-v3
+[2026-06-10T00:15:02Z] E3 reference Spearman (Tinker-runtime): 0.2626
+[2026-06-10T00:15:02Z] Booting vLLM: wp-revl01a-v3-confirm-vllm model=/home/robert_li/Desktop/projects/wp-finetune/models/_staging/qwen3-30b-wp-30_70-reasoning-merged-v3 port=8021
+[2026-06-10T00:23:32Z] vLLM healthy; served model: wp-30_70
+[2026-06-10T00:23:32Z] SMOKE: 15-prompt census ...
+[2026-06-10T00:29:33Z] SMOKE: parse_fail=0/15 rate=0.0000 spearman=0.2593114702052604
+[2026-06-10T00:29:33Z] FULL: 121-row census ...
+[2026-06-10T01:20:17Z] FULL: parse_fail=3/121 rate=0.0248 spearman=0.24461143774702582 n_pairs=118
+[2026-06-10T01:20:17Z] VERDICT: RC-A CONFIRMED: parse recovered AND Spearman ~= E3
+[2026-06-10T01:20:17Z] Wrote: /home/robert_li/Desktop/projects/wp-finetune/output/eval_reasoning_v3/revl01a_v3_rcA_confirm.json
+[2026-06-10T01:20:19Z] vLLM stopped.

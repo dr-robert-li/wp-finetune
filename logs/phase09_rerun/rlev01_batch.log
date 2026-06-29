@@ -1,0 +1,182 @@
+[warmstart] capture cached (/home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/warmstart/judge_responses.jsonl)
+[warmstart] eval offline -> /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/warmstart/eval_judge_results.json
+[REVL-01] OFFLINE: 121 captured responses from /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/warmstart/judge_responses.jsonl
+[REVL-01] 121 judge examples via OFFLINE:/home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/warmstart/judge_responses.jsonl (model=offline-captured, fmt=auto, gt=calibrated_canonical)
+[REVL-01] saved /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/warmstart/eval_judge_results.json + /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/warmstart/eval_judge_results.pairs.jsonl
+[REVL-01] REVL-01A(HARD) corr=None var_ok=False | REVL-01B(SOFT) corr=0.0 | excluded={'parse_fail': 0, 'no_calibrated_gt': 121, 'api_error': 0}
+[warmstart] spearman=None n_pairs=0 pairs_loaded=0
+[step-50] capture cached (/home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-50/judge_responses.jsonl)
+[step-50] eval offline -> /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-50/eval_judge_results.json
+[REVL-01] OFFLINE: 121 captured responses from /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-50/judge_responses.jsonl
+[REVL-01] 121 judge examples via OFFLINE:/home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-50/judge_responses.jsonl (model=offline-captured, fmt=auto, gt=calibrated_canonical)
+[REVL-01] saved /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-50/eval_judge_results.json + /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-50/eval_judge_results.pairs.jsonl
+[REVL-01] REVL-01A(HARD) corr=None var_ok=False | REVL-01B(SOFT) corr=0.0 | excluded={'parse_fail': 1, 'no_calibrated_gt': 120, 'api_error': 0}
+[step-50] spearman=None n_pairs=0 pairs_loaded=0
+[step-100] capture cached (/home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-100/judge_responses.jsonl)
+[step-100] eval offline -> /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-100/eval_judge_results.json
+[REVL-01] OFFLINE: 121 captured responses from /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-100/judge_responses.jsonl
+[REVL-01] 121 judge examples via OFFLINE:/home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-100/judge_responses.jsonl (model=offline-captured, fmt=auto, gt=calibrated_canonical)
+[REVL-01] saved /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-100/eval_judge_results.json + /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-100/eval_judge_results.pairs.jsonl
+[REVL-01] REVL-01A(HARD) corr=None var_ok=False | REVL-01B(SOFT) corr=0.0 | excluded={'parse_fail': 0, 'no_calibrated_gt': 121, 'api_error': 0}
+[step-100] spearman=None n_pairs=0 pairs_loaded=0
+[step-150] capture cached (/home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-150/judge_responses.jsonl)
+[step-150] eval offline -> /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-150/eval_judge_results.json
+[REVL-01] OFFLINE: 121 captured responses from /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-150/judge_responses.jsonl
+[REVL-01] 121 judge examples via OFFLINE:/home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-150/judge_responses.jsonl (model=offline-captured, fmt=auto, gt=calibrated_canonical)
+[REVL-01] saved /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-150/eval_judge_results.json + /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-150/eval_judge_results.pairs.jsonl
+[REVL-01] REVL-01A(HARD) corr=None var_ok=False | REVL-01B(SOFT) corr=0.0 | excluded={'parse_fail': 0, 'no_calibrated_gt': 121, 'api_error': 0}
+[step-150] spearman=None n_pairs=0 pairs_loaded=0
+[step-200] capture cached (/home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-200/judge_responses.jsonl)
+[step-200] eval offline -> /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-200/eval_judge_results.json
+[REVL-01] OFFLINE: 121 captured responses from /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-200/judge_responses.jsonl
+[REVL-01] 121 judge examples via OFFLINE:/home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-200/judge_responses.jsonl (model=offline-captured, fmt=auto, gt=calibrated_canonical)
+[REVL-01] saved /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-200/eval_judge_results.json + /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-200/eval_judge_results.pairs.jsonl
+[REVL-01] REVL-01A(HARD) corr=None var_ok=False | REVL-01B(SOFT) corr=0.0 | excluded={'parse_fail': 0, 'no_calibrated_gt': 121, 'api_error': 0}
+[step-200] spearman=None n_pairs=0 pairs_loaded=0
+[step-250] capture cached (/home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-250/judge_responses.jsonl)
+[step-250] eval offline -> /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-250/eval_judge_results.json
+[REVL-01] OFFLINE: 121 captured responses from /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-250/judge_responses.jsonl
+[REVL-01] 121 judge examples via OFFLINE:/home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-250/judge_responses.jsonl (model=offline-captured, fmt=auto, gt=calibrated_canonical)
+[REVL-01] saved /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-250/eval_judge_results.json + /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-250/eval_judge_results.pairs.jsonl
+[REVL-01] REVL-01A(HARD) corr=None var_ok=False | REVL-01B(SOFT) corr=0.0 | excluded={'parse_fail': 0, 'no_calibrated_gt': 121, 'api_error': 0}
+[step-250] spearman=None n_pairs=0 pairs_loaded=0
+[step-300] capturing -> /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-300/judge_responses.jsonl
+[capture-tinker] sampler path: tinker://9cb14129-f302-5c84-adf2-cc9ab92128a4:train:0/sampler_weights/step-300
+[capture-tinker] 121 examples (filter=wp_judge_startswith)
+[capture-tinker] 25/121 close=25 judge_output=25
+[capture-tinker] 50/121 close=50 judge_output=50
+[capture-tinker] 75/121 close=75 judge_output=75
+[capture-tinker] 100/121 close=99 judge_output=99
+[capture-tinker] DONE n=121 close_tag=120 judge_output=120 -> /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-300/judge_responses.jsonl
+[step-300] eval offline -> /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-300/eval_judge_results.json
+[REVL-01] OFFLINE: 121 captured responses from /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-300/judge_responses.jsonl
+[REVL-01] 121 judge examples via OFFLINE:/home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-300/judge_responses.jsonl (model=offline-captured, fmt=auto, gt=calibrated_canonical)
+[REVL-01] saved /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-300/eval_judge_results.json + /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-300/eval_judge_results.pairs.jsonl
+[REVL-01] REVL-01A(HARD) corr=None var_ok=False | REVL-01B(SOFT) corr=0.0 | excluded={'parse_fail': 1, 'no_calibrated_gt': 120, 'api_error': 0}
+[step-300] spearman=None n_pairs=0 pairs_loaded=0
+[step-350] capturing -> /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-350/judge_responses.jsonl
+[capture-tinker] sampler path: tinker://9cb14129-f302-5c84-adf2-cc9ab92128a4:train:0/sampler_weights/step-350
+[capture-tinker] 121 examples (filter=wp_judge_startswith)
+[capture-tinker] 25/121 close=25 judge_output=25
+[capture-tinker] 50/121 close=50 judge_output=50
+[capture-tinker] 75/121 close=75 judge_output=75
+[capture-tinker] 100/121 close=100 judge_output=100
+[capture-tinker] DONE n=121 close_tag=121 judge_output=121 -> /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-350/judge_responses.jsonl
+[step-350] eval offline -> /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-350/eval_judge_results.json
+[REVL-01] OFFLINE: 121 captured responses from /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-350/judge_responses.jsonl
+[REVL-01] 121 judge examples via OFFLINE:/home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-350/judge_responses.jsonl (model=offline-captured, fmt=auto, gt=calibrated_canonical)
+[REVL-01] saved /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-350/eval_judge_results.json + /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-350/eval_judge_results.pairs.jsonl
+[REVL-01] REVL-01A(HARD) corr=None var_ok=False | REVL-01B(SOFT) corr=0.0 | excluded={'parse_fail': 0, 'no_calibrated_gt': 121, 'api_error': 0}
+[step-350] spearman=None n_pairs=0 pairs_loaded=0
+[step-400] capturing -> /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-400/judge_responses.jsonl
+[capture-tinker] sampler path: tinker://9cb14129-f302-5c84-adf2-cc9ab92128a4:train:0/sampler_weights/step-400
+[capture-tinker] 121 examples (filter=wp_judge_startswith)
+[capture-tinker] 25/121 close=25 judge_output=25
+[capture-tinker] 50/121 close=50 judge_output=50
+[capture-tinker] 75/121 close=75 judge_output=75
+[capture-tinker] 100/121 close=100 judge_output=100
+[capture-tinker] DONE n=121 close_tag=120 judge_output=120 -> /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-400/judge_responses.jsonl
+[step-400] eval offline -> /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-400/eval_judge_results.json
+[REVL-01] OFFLINE: 121 captured responses from /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-400/judge_responses.jsonl
+[REVL-01] 121 judge examples via OFFLINE:/home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-400/judge_responses.jsonl (model=offline-captured, fmt=auto, gt=calibrated_canonical)
+[REVL-01] saved /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-400/eval_judge_results.json + /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-400/eval_judge_results.pairs.jsonl
+[REVL-01] REVL-01A(HARD) corr=None var_ok=False | REVL-01B(SOFT) corr=0.0 | excluded={'parse_fail': 0, 'no_calibrated_gt': 121, 'api_error': 0}
+[step-400] spearman=None n_pairs=0 pairs_loaded=0
+[step-450] capturing -> /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-450/judge_responses.jsonl
+[capture-tinker] sampler path: tinker://9cb14129-f302-5c84-adf2-cc9ab92128a4:train:0/sampler_weights/step-450
+[capture-tinker] 121 examples (filter=wp_judge_startswith)
+[capture-tinker] 25/121 close=25 judge_output=25
+[capture-tinker] 50/121 close=50 judge_output=50
+[capture-tinker] 75/121 close=75 judge_output=75
+[capture-tinker] 100/121 close=100 judge_output=100
+[capture-tinker] DONE n=121 close_tag=121 judge_output=121 -> /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-450/judge_responses.jsonl
+[step-450] eval offline -> /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-450/eval_judge_results.json
+[REVL-01] OFFLINE: 121 captured responses from /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-450/judge_responses.jsonl
+[REVL-01] 121 judge examples via OFFLINE:/home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-450/judge_responses.jsonl (model=offline-captured, fmt=auto, gt=calibrated_canonical)
+[REVL-01] saved /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-450/eval_judge_results.json + /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-450/eval_judge_results.pairs.jsonl
+[REVL-01] REVL-01A(HARD) corr=None var_ok=False | REVL-01B(SOFT) corr=0.0 | excluded={'parse_fail': 0, 'no_calibrated_gt': 121, 'api_error': 0}
+[step-450] spearman=None n_pairs=0 pairs_loaded=0
+[step-500] capturing -> /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-500/judge_responses.jsonl
+[capture-tinker] sampler path: tinker://9cb14129-f302-5c84-adf2-cc9ab92128a4:train:0/sampler_weights/step-500
+[capture-tinker] 121 examples (filter=wp_judge_startswith)
+[capture-tinker] 25/121 close=25 judge_output=25
+[capture-tinker] 50/121 close=50 judge_output=50
+[capture-tinker] 75/121 close=75 judge_output=75
+[capture-tinker] 100/121 close=100 judge_output=99
+[capture-tinker] DONE n=121 close_tag=120 judge_output=118 -> /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-500/judge_responses.jsonl
+[step-500] eval offline -> /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-500/eval_judge_results.json
+[REVL-01] OFFLINE: 121 captured responses from /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-500/judge_responses.jsonl
+[REVL-01] 121 judge examples via OFFLINE:/home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-500/judge_responses.jsonl (model=offline-captured, fmt=auto, gt=calibrated_canonical)
+[REVL-01] saved /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-500/eval_judge_results.json + /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/step-500/eval_judge_results.pairs.jsonl
+[REVL-01] REVL-01A(HARD) corr=None var_ok=False | REVL-01B(SOFT) corr=0.0 | excluded={'parse_fail': 1, 'no_calibrated_gt': 120, 'api_error': 0}
+[step-500] spearman=None n_pairs=0 pairs_loaded=0
+
+common aligned indices across []: n=0
+
+=== RLEV-01 SUMMARY ===
+{
+  "n_common_aligned": 0,
+  "raw_spearman_per_ckpt": {
+    "warmstart": {
+      "spearman": null,
+      "n_pairs": 0
+    },
+    "step-50": {
+      "spearman": null,
+      "n_pairs": 0
+    },
+    "step-100": {
+      "spearman": null,
+      "n_pairs": 0
+    },
+    "step-150": {
+      "spearman": null,
+      "n_pairs": 0
+    },
+    "step-200": {
+      "spearman": null,
+      "n_pairs": 0
+    },
+    "step-250": {
+      "spearman": null,
+      "n_pairs": 0
+    },
+    "step-300": {
+      "spearman": null,
+      "n_pairs": 0
+    },
+    "step-350": {
+      "spearman": null,
+      "n_pairs": 0
+    },
+    "step-400": {
+      "spearman": null,
+      "n_pairs": 0
+    },
+    "step-450": {
+      "spearman": null,
+      "n_pairs": 0
+    },
+    "step-500": {
+      "spearman": null,
+      "n_pairs": 0
+    }
+  },
+  "aligned_spearman_common_set": {},
+  "bootstrap_vs_warmstart": {},
+  "checkpoints_order": [
+    "warmstart",
+    "step-50",
+    "step-100",
+    "step-150",
+    "step-200",
+    "step-250",
+    "step-300",
+    "step-350",
+    "step-400",
+    "step-450",
+    "step-500"
+  ]
+}
+
+written: /home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/rlev01_summary.json

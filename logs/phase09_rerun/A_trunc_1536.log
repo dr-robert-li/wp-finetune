@@ -1,0 +1,587 @@
+2026-06-26 23:40:11,988 INFO tinker.lib.public_interfaces.service_client: ServiceClient initialized for session daae7166-9059-5965-a261-6bc8592c773f
+2026-06-26 23:40:14,558 INFO tinker.lib.public_interfaces.service_client: TrainingClient initialized for model daae7166-9059-5965-a261-6bc8592c773f:train:0
+[probe] judge_max_new_tokens = 1536 (module default 1536)
+
+################ warm-start ################
+
+--- warm-start prompt#0 fix_score=1.000 corrected_len=528 ---
+<?php
+/**
+ * Gets REST route instances.
+ *
+ * @since 1.119.0
+ *
+ * @return REST_Route[] List of REST_Route objects.
+ */
+function get_rest_routes() {
+	return array(
+		new REST_Route(
+			'core/site/data/site-health-tag-placement-test',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this->tag_placement, 'tag_placement_test' ),
+					'permission_callback' => function () {
+						return current_user_can( 'view_site_health_checks' );
+					},
+				),
+			)
+		),
+	);
+}
+
+--- warm-start prompt#1 fix_score=0.250 corrected_len=5662 ---
+## Step-by-Step Security Analysis
+
+**Function under review:** `ajax_search_products` (from `yith-woocommerce-ajax-search`)
+
+### 1. Input Handling (4/10) — Critical Vulnerability
+
+- **$_REQUEST['query']** is read without any sanitization or validation.
+- **$_REQUEST['product_cat']** is read without sanitization.
+- **$_REQUEST** merges GET and POST data — this function uses `$_REQUEST` for a search query, which is a **security pattern** (see [WordPress Security Handbook](https://wpcs.pw/2019/07/23/why-you-should-never-use-request-in-wordpress/)).
+- **Fix:** Replace `$_REQUEST['query']` with `san
+
+--- warm-start prompt#2 fix_score=0.250 corrected_len=547 ---
+<?php
+/**
+	 * @throws Exception
+	 */
+function get_quiz_questions( QuizQuestionsFilter $filter, &$total_rows = 0 ) {
+		$filter->fields = array_merge( $filter->all_fields, $filter->fields );
+
+		if ( empty( $filter->collection ) ) {
+			$filter->collection = $this->tb_lp_quiz_questions;
+		}
+
+		if ( empty( $filter->collection_alias ) ) {
+			$filter->collection_alias = 'qq';
+		}
+
+		// By quiz id
+		if ( ! empty( $filter->quiz_id ) ) {
+			$filter->where[] = $this->wpdb->prepare( "AND {$filter->collection_alias}.quiz_id = %d", $filter->quiz_id );
+		}
+
+--- warm-start prompt#3 fix_score=0.250 corrected_len=3249 ---
+WPCS Compliance: score 9/10 — The code follows WordPress Coding Standards (WPCS) well. It uses proper indentation, correct function naming conventions (camelCase for methods), and correctly implements the `@return` docblock. The use of backslashes for `sprintf` and `__` is consistent with modern PHP/WordPress practices.
+
+SQL Safety: score 10/10 — The code does not interact with the database. There are no SQL queries, no `$wpdb` usage, and no data manipulation that could lead to SQL injection. This dimension is fully compliant by default.
+
+Security: score 10/10 — The function returns a static s
+
+--- warm-start prompt#4 fix_score=0.250 corrected_len=6554 ---
+## Step-by-Step Security Analysis
+
+**Function under review:** `Dpdconnect_Admin::page` (from `admin-page.php`)
+
+### 1. Code Quality
+
+*Dimension score: code_quality = 10/10 — No structural code quality issues found in Dpdconnect_Admin::page.*
+
+*Why this matters: The function is a single, focused method in an admin class. No complexity or quality issues detected.*
+
+### 2. SQL Safety
+
+*Dimension score: sql_safety = 10/10 — No SQL queries or database interactions present in Dpdconnect_Admin::page.*
+
+*Why this matters: The function outputs an admin settings page with no data retrieval or storage op
+
+--- warm-start prompt#5 fix_score=1.000 corrected_len=1297 ---
+<?php
+/**
+ * Retrieves a list of terms (tags, categories, or custom taxonomies) formatted for display.
+ *
+ * @param array $data {
+ *     Dynamic data for term retrieval.
+ *
+ *     @type string $termSeparator Optional separator string. Defaults to ', '.
+ *     @type string $termType One of: 'tags', 'custom', or default (implied category).
+ *     @type int $context Post ID or WP_Post object for context.
+ *     @type string $taxonomy Optional taxonomy name for custom term lists.
+ * }
+ * @return string HTML-formatted term list.
+ */
+function myplugin_get_terms( $data ) {
+	$terms     = '';
+	$separat
+
+--- warm-start prompt#6 fix_score=0.250 corrected_len=2077 ---
+WPCS Compliance: score 3/10 — camelCase method name violates WPCS snake_case convention; missing docblock; braces on new lines follow PSR-2 not WPCS style.
+
+SQL Safety: score None/10 — No $wpdb or SQL operations present.
+
+Security: score 5/10 — $attributes is passed to setFile() and then to parent::create() without any output escaping consideration; if attributes contains user-supplied data, this chain could propagate unescaped values.
+
+Performance: score 7/10 — Single delegation call with array parameter passing — no loops, no I/O, minimal overhead.
+
+WP API Usage: score 2/10 — No WordPress AP
+
+--- warm-start prompt#7 fix_score=0.250 corrected_len=1848 ---
+<?php
+/**
+ * Registers all hooks and initializes the onboarding flow.
+ */
+public function on_init() {
+		if ( ! $this->feature_controller->feature_is_enabled( 'order_attribution' ) ) {
+			return;
+		}
+
+		self::$is_stamp_html_called = false;
+		$this->consent->register();
+
+		$this->register_hooks();
+		$this->initiate_flow();
+	}
+
+	/**
+	 * Registers all action hooks.
+	 */
+	private function register_hooks() {
+		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts_and_styles' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts_and_styles' ) );
+
+		add_action(
+		
+
+--- warm-start prompt#8 fix_score=0.250 corrected_len=3259 ---
+WPCS Compliance: score 4/10 — The code violates WordPress Coding Standards (WPCS) regarding indentation and whitespace. The function body is indented with 8 spaces (two levels of 4), but the assertions inside use inconsistent indentation (some lines are indented with 12 spaces, others with 8). Additionally, there are trailing spaces after the closing parenthesis in the line `self::$attributes = array( 'moreText' => 'Read More', 'showMoreOnNewLine' => true, );`. WPCS requires consistent indentation (typically 4 spaces) and no trailing whitespace.
+
+SQL Safety: score 10/10 — The code snippet does
+
+--- warm-start prompt#9 fix_score=0.998 corrected_len=1534 ---
+<?php
+/**
+ * List all registered question types into dropdown
+ *
+ * @param array       $args
+ * @param LP_Question $question
+ *
+ * @return string
+ */
+function learn_press_field_question_duration( $args = array(), $question = null ) {
+	global $post;
+
+	$duration_type = get_post_meta( $post->ID, '_lp_duration_type', true );
+	$value         = get_post_meta( $question->id, '_question_duration', true );
+
+	$wrap_class = 'learn-press-question-duration';
+
+	if ( 'questions_duration' !== $duration_type ) {
+		$wrap_class .= ' hide';
+	}
+
+	$args = wp_parse_args(
+		$args,
+		array(
+			'name'        => 'learn_
+
+--- warm-start prompt#10 fix_score=0.250 corrected_len=2128 ---
+WPCS Compliance: score 8/10 — Complete docblock with @since, @param, and @return void; aligned property assignments; uses null coalescing with ??; uses WC_Gateway_Paypal::log() correctly; uses wc_print_r() for debug logging — fully WPCS compliant.
+
+SQL Safety: score None/10 — No $wpdb or raw SQL; uses WC Order ORM methods exclusively.
+
+Security: score 7/10 — $custom_id and $event['resource'] values are read-only from webhook payload; $custom_id is passed to PayPalHelper::get_wc_order_from_paypal_custom_id() which should be a safe lookup; $reason from webhook status_details is interpolated via 
+
+--- warm-start prompt#11 fix_score=0.250 corrected_len=339 ---
+<?php
+/**
+ * Returns parsed company information for small parcel references.
+ *
+ * @return array Parsed company information array.
+ * @since 1.0.0
+ * @throws RuntimeException If option parsing fails.
+ */
+public function smallParcelReference()
+    {
+        return self::parse(get_option('dpdconnect_company_info'), 'dpdconnect_spr');
+    }
+
+@@@@ SUMMARY warm-start budget=1536: code_emission=12/12 (100.0%), mean_fix_score=0.437
+
+################ fixed-step50 ################
+
+--- fixed-step50 prompt#0 fix_score=0.250 corrected_len=1695 ---
+WPCS Compliance: score 7/10 — PHPDoc present with @since and @return; snake_case naming; WPCS alignment padding on array values is consistent. The permission_callback closure lacks a space before the opening brace, violating WPCS brace placement rule.
+
+SQL Safety: score None/10 — No $wpdb or SQL operations present.
+
+Security: score 7/10 — permission_callback uses current_user_can() correctly; the closure returns a boolean. The callback uses $this->tag_placement which is an injected dependency; the method chain is valid. No output or data exposure occurs.
+
+Performance: score 8/10 — Returns a si
+
+--- fixed-step50 prompt#1 fix_score=0.250 corrected_len=1703 ---
+{
+  "wpcs_compliance": 40,
+  "security_score": 20,
+  "performance_score": 60,
+  "i18n_score": 60,
+  "accessibility_score": 40,
+  "documentation_score": 40,
+  "overall_score": 40,
+  "must_fix_issues": [
+    "Missing nonce verification before processing the AJAX request",
+    "Direct database query using get_posts() without a LIKE wildcard prefix on the search term",
+    "Hardcoded English string 'No results' not wrapped in __() or _e() with correct text domain",
+    "$_REQUEST superglobal accessed without sanitization, allowing request smuggling attacks",
+    "No early return when $_REQUEST['qu
+
+--- fixed-step50 prompt#2 fix_score=0.250 corrected_len=3375 ---
+WPCS Compliance: score 3/10 — The function body is syntactically incomplete — the `if` block for `! empty( $filter->quiz_id )` is never closed with a `}` before the function ends. This is a data extraction artifact and would cause a fatal parse error.
+
+SQL Safety: score 2/10 — The `$filter->where[]` assignment inside the `! empty( $filter->quiz_id )` block uses `$this->wpdb->prepare()` with `%d` and `$filter->quiz_id`, which is correct. However, `$filter->collection_alias` is interpolated directly into the SQL string without `prepare()` or `$this->wpdb->esc_like()`, and `$filter->collection` i
+
+--- fixed-step50 prompt#3 fix_score=0.250 corrected_len=1738 ---
+WPCS Compliance: score 8/10 — Complete docblock with @return, proper function naming (camelCase), correct use of \sprintf and \__() with translators comment. Minor: no space before opening brace on function.
+
+SQL Safety: score None/10 — No $wpdb or SQL operations present.
+
+Security: score 8/10 — \__() with translators comment is correct. \sprintf inserts a hardcoded <strong> HTML tag, which is safe because the tag is static and the %s placeholder only accepts the specific '/%postname%/' string, not user input.
+
+Performance: score 8/10 — Single \__() + \sprintf call — negligible overhead.
+
+WP A
+
+--- fixed-step50 prompt#4 fix_score=0.250 corrected_len=6692 ---
+## Step-by-Step Security Analysis
+
+**Function under review:** `Dpdconnect_Admin::page` (from `admin-page.php`)
+
+### Step 1 — Code Quality
+
+*Dimension score: code_quality = 10/10 — No code quality issues found.*
+
+The code follows standard WordPress admin page conventions. Variable naming is consistent, control flow is clear, and the structure is logical. No redundant code or style violations detected.
+
+### Step 2 — SQL Safety
+
+*Dimension score: sql_safety = 10/10 — No SQL queries or database interactions present.*
+
+The function is a pure presentation layer handler. It does not interact with the
+
+--- fixed-step50 prompt#5 fix_score=0.250 corrected_len=2981 ---
+WPCS Compliance: score 7/10 — PHPDoc present with @param and @return; minor: PHPDoc @param type is just 'array' without a specific structure, and @return type string is accurate. Tab indentation and spacing are otherwise correct.
+
+SQL Safety: score None/10 — No $wpdb usage or raw SQL queries present.
+
+Security: score 6/10 — esc_html() is correctly applied to the $data['termSeparator'] source, preventing XSS on the separator string. However, $data['taxonomy'] is passed to get_the_term_list() without any sanitization or allowlist check, and $data['context'] is passed to both get_the_tag_list(), 
+
+--- fixed-step50 prompt#6 fix_score=0.250 corrected_len=1533 ---
+WPCS Compliance: score 4/10 — camelCase method name violates WPCS snake_case convention; braces on new lines follow PSR-2 not WPCS style; no docblock present.
+
+SQL Safety: score None/10 — No $wpdb or SQL operations present.
+
+Security: score 6/10 — $attributes is passed to setFile() and then to parent::create() with no output escaping, but this is an abstract factory method with no direct user input in sight — the attack surface is low but non-zero.
+
+Performance: score 8/10 — Single delegation call with array passing — negligible overhead.
+
+WP API Usage: score None/10 — No WordPress APIs, hooks
+
+--- fixed-step50 prompt#7 fix_score=0.250 corrected_len=6292 ---
+## Step-by-Step Security Analysis
+
+**Function under review:** `Onboarding::on_init` (from `onboarding.php`)
+
+### 1. Code Quality
+
+Function `Onboarding::on_init` has significant quality issues that would block PR review:
+
+*Dimension score: code_quality = 10/10 (failing threshold)*
+
+**Why this matters:** A function that registers 8 separate action hooks with anonymous closures and has no docblock is impossible to review; the full function body is 147 lines of unannotated, unstructured code.
+
+**Fix:** Added a complete PHPDoc block with `@since`, `@return`, `@throws`, and structured `@hook` annota
+
+--- fixed-step50 prompt#8 fix_score=0.250 corrected_len=3581 ---
+WPCS Compliance: score 3/10 — The code violates WordPress Coding Standards (WPCS) regarding indentation and whitespace. The function body is indented with 8 spaces (two levels of 4), but the assertions inside the test method use inconsistent indentation (some lines are indented with 12 spaces, others with 8). Additionally, there are trailing spaces at the end of some lines (e.g., 'Failed to assert that $rendered  does not contain the has-text-align class.' has two spaces before the period). WPCS requires consistent 4-space indentation and no trailing whitespace.
+
+SQL Safety: score 10/10 — This
+
+--- fixed-step50 prompt#9 fix_score=0.998 corrected_len=1538 ---
+<?php
+/**
+ * List all registered question types into dropdown
+ *
+ * @param array       $args
+ * @param LP_Question $question
+ *
+ * @return string
+ */
+function learn_press_field_question_duration( $args = array(), $question = null ) {
+	global $post;
+
+	$duration_type = get_post_meta( $post->ID, '_lp_duration_type', true );
+	$value         = get_post_meta( $question->id, '_question_duration', true );
+
+	$wrap_class = 'learn-press-question-duration';
+
+	if ( 'questions_duration' !== $duration_type ) {
+		$wrap_class .= ' hide';
+	}
+
+	$args = wp_parse_args(
+		$args,
+		array(
+			'name'        => 'learn_
+
+--- fixed-step50 prompt#10 fix_score=0.250 corrected_len=1235 ---
+{
+  "wpcs_compliance": 80,
+  "security_score": 80,
+  "performance_score": 80,
+  "i18n_score": 80,
+  "accessibility_score": 80,
+  "documentation_score": 80,
+  "overall_score": 80,
+  "must_fix_issues": [
+    "Add complete PHPDoc blocks with @param, @return, @since, and @throws where applicable",
+    "Fix indentation to strict 4-space standard throughout the function",
+    "Replace direct property access ($order->set_transaction_id) with explicit getter/setter pattern matching WooCommerce order API conventions"
+  ],
+  "suggested_improvements": [
+    "Add @throws annotation documenting any excepti
+
+--- fixed-step50 prompt#11 fix_score=0.250 corrected_len=134 ---
+<?php
+function smallParcelReference()
+    {
+        return self::parse(get_option('dpdconnect_company_info'), 'dpdconnect_spr');
+    }
+
+@@@@ SUMMARY fixed-step50 budget=1536: code_emission=12/12 (100.0%), mean_fix_score=0.312
+
+################ stale-step50 ################
+
+--- stale-step50 prompt#0 fix_score=1.000 corrected_len=528 ---
+<?php
+/**
+ * Gets REST route instances.
+ *
+ * @since 1.119.0
+ *
+ * @return REST_Route[] List of REST_Route objects.
+ */
+function get_rest_routes() {
+	return array(
+		new REST_Route(
+			'core/site/data/site-health-tag-placement-test',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this->tag_placement, 'tag_placement_test' ),
+					'permission_callback' => function () {
+						return current_user_can( 'view_site_health_checks' );
+					},
+				),
+			)
+		),
+	);
+}
+
+--- stale-step50 prompt#1 fix_score=0.826 corrected_len=1866 ---
+<?php
+function ajax_search_products() {
+	global $woocommerce;
+
+	$search_keyword = isset( $_REQUEST['query'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['query'] ) ) : '';
+	$ordering_args  = $woocommerce->query->get_catalog_ordering_args( 'title', 'asc' );
+	$suggestions    = array();
+
+	$args = array(
+		's'                   => apply_filters( 'yith_wcas_ajax_search_products_search_query', $search_keyword ),
+		'post_type'           => 'product',
+		'post_status'         => 'publish',
+		'ignore_sticky_posts' => 1,
+		'orderby'             => $ordering_args['orderby'],
+		'order'               => $
+
+--- stale-step50 prompt#2 fix_score=1.000 corrected_len=1008 ---
+<?php
+/**
+	 * Retrieves quiz questions matching the filter criteria.
+	 *
+	 * @param QuizQuestionsFilter $filter Filter parameters.
+	 * @param int                 $total_rows Total number of matching rows.
+	 * @return array Array of quiz question records.
+	 * @throws Exception If the database query fails.
+	 */
+function get_quiz_questions( QuizQuestionsFilter $filter, &$total_rows = 0 ) {
+		$filter->fields = array_merge( $filter->all_fields, $filter->fields );
+
+		if ( empty( $filter->collection ) ) {
+			$filter->collection = $this->tb_lp_quiz_questions;
+		}
+
+		if ( empty( $filter->collection_ali
+
+--- stale-step50 prompt#3 fix_score=0.997 corrected_len=486 ---
+<?php
+/**
+	 * Returns the description for when permalinks are not set to contain the post name.
+	 *
+	 * @return string The description as a string.
+	 */
+function get_has_no_postname_in_permalink_description() {
+		return \sprintf(
+			/* translators: %s expands to '/%postname%/' */
+			\__( 'It\'s highly recommended to have your postname in the URL of your posts and pages. Consider setting your permalink structure to %s.', 'wordpress-seo' ),
+			'<strong>/%postname%/</strong>',
+		);
+	}
+
+--- stale-step50 prompt#4 fix_score=0.250 corrected_len=6311 ---
+WPCS Compliance: score 3/10 — The code violates WordPress Coding Standards (WPCS) regarding output escaping. Specifically, the variable `$active_tab` is echoed directly into the HTML attribute value of anchor tags without any escaping (e.g., `echo $active_tab == 'general' ? 'nav-tab-active' : ''`). While the value is compared to hardcoded strings, the lack of `esc_attr()` or `esc_html()` on the output context is a WPCS violation. Additionally, the function uses `__()` without specifying the text domain in one instance (`__('Settings')` vs `__('Settings', 'dpdconnect')`), which is inconsistent.
+
+--- stale-step50 prompt#5 fix_score=1.000 corrected_len=960 ---
+<?php
+/**
+ * Get Terms.
+ *
+ * @param array $data Dynamic Data.
+ * @return string HTML string containing term list.
+ */
+function get_terms( $data ) {
+		$terms     = '';
+		$separator = ', ';
+
+		if ( isset( $data['termSeparator'] ) && ! empty( $data['termSeparator'] ) ) {
+			$separator = esc_html( $data['termSeparator'] );
+		}
+
+		if ( isset( $data['termType'] ) && 'tags' === $data['termType'] ) {
+			$terms = get_the_tag_list( '', $separator, '', absint( $data['context'] ) );
+		} elseif ( isset( $data['termType'] ) && 'custom' === $data['termType'] && isset( $data['taxonomy'] ) && taxonomy_exists(
+
+--- stale-step50 prompt#6 fix_score=0.250 corrected_len=435 ---
+<?php
+/**
+ * Creates a new file record using the provided attributes.
+ *
+ * @param array $attributes Attributes including at minimum a file path.
+ * @return bool True if creation affected a row.
+ */
+function create(array $attributes = []): bool
+    {
+        $attributes = $this->setFile($attributes);
+
+        if (! $this->validate($attributes)) {
+            return false;
+        }
+
+        return parent::create($attributes);
+    }
+
+--- stale-step50 prompt#7 fix_score=0.250 corrected_len=2381 ---
+<?php
+/**
+ * Initializes all hooks and actions for the Order Attribution feature.
+ *
+ * @since 1.0.0
+ * @return void
+ */
+function on_init() {
+		if ( ! $this->feature_controller->feature_is_enabled( 'order_attribution' ) ) {
+			return;
+		}
+
+		self::$is_stamp_html_called = false;
+
+		$this->consent->register();
+
+		add_action(
+			'wp_enqueue_scripts',
+			function () {
+				$this->enqueue_scripts_and_styles();
+			}
+		);
+
+		add_action(
+			'admin_enqueue_scripts',
+			function () {
+				$this->enqueue_admin_scripts_and_styles();
+			}
+		);
+
+		$stamp_checkout_html_actions = apply_filters(
+			'wc_order_att
+
+--- stale-step50 prompt#8 fix_score=0.250 corrected_len=2097 ---
+<?php
+/**
+ * Test gutenberg_render_block_core_post_excerpt() method.
+ *
+ * @covers Gutenberg\Renderer\Blocks\PostExcerpt
+ */
+function test_should_render_correct_excerpt() {
+
+		$block           = new stdClass();
+		$GLOBALS['post'] = self::$post;
+		$block->context  = array( 'postId' => self::$post->ID );
+
+		$rendered = gutenberg_render_block_core_post_excerpt( self::$attributes, '', $block );
+		$this->assertNotEmpty( $rendered, 'Failed to assert that $rendered is not empty.' );
+		$this->assertContains( 'Post Expert content', $rendered, 'Failed to assert that $rendered contains the expected strin
+
+--- stale-step50 prompt#9 fix_score=0.998 corrected_len=1621 ---
+<?php
+/**
+ * List all registered question types into dropdown
+ *
+ * @param array<string, mixed> $args
+ * @param LP_Question|null     $question
+ *
+ * @return string
+ * @since 1.0.0
+ */
+function learn_press_field_question_duration( $args = array(), $question = null ) {
+	global $post;
+
+	$duration_type = get_post_meta( $post->ID, '_lp_duration_type', true );
+	$value         = get_post_meta( $question->id, '_question_duration', true );
+
+	$wrap_class = 'learn-press-question-duration';
+
+	if ( 'questions_duration' !== $duration_type ) {
+		$wrap_class .= ' hide';
+	}
+
+	$args = wp_parse_args(
+		$args,
+		
+
+--- stale-step50 prompt#10 fix_score=0.250 corrected_len=1277 ---
+<?php
+/**
+	 * Process the PAYMENT.CAPTURE.PENDING webhook event.
+	 *
+	 * @since 10.5.0
+	 *
+	 * @param array $event The webhook event data.
+	 * @return void
+	 */
+function process_payment_capture_pending( array $event ): void {
+		$custom_id = $event['resource']['custom_id'] ?? '';
+		$order     = PayPalHelper::get_wc_order_from_paypal_custom_id( $custom_id );
+		if ( ! $order ) {
+			\WC_Gateway_Paypal::log( 'Invalid order. Custom ID: ' . wc_print_r( $custom_id, true ) );
+			return;
+		}
+
+		// Skip if the payment is already processed.
+		if ( PayPalConstants::STATUS_COMPLETED === $order->get_meta( Pa
+
+--- stale-step50 prompt#11 fix_score=0.250 corrected_len=389 ---
+<?php
+/**
+ * Retrieves and parses the small parcel reference from stored company information.
+ *
+ * @return string|null Parsed small parcel reference value, or null if parsing fails.
+ * @since 1.0.0
+ * @throws RuntimeException If the parse operation fails.
+ */
+function smallParcelReference()
+    {
+        return self::parse(get_option('dpdconnect_company_info'), 'dpdconnect_spr');
+    }
+
+@@@@ SUMMARY stale-step50 budget=1536: code_emission=12/12 (100.0%), mean_fix_score=0.610

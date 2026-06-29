@@ -1,0 +1,13 @@
+2026-06-25 07:54:00,282 INFO __main__: Built judge client -> http://localhost:8000/v1 (judge_model=wp_judge)
+2026-06-25 07:54:00,282 INFO __main__: Starting GSPO RL training: model=Qwen/Qwen3-30B-A3B, steps=500, use_gspo=True
+2026-06-25 07:54:02,678 INFO tinker.lib.public_interfaces.service_client: ServiceClient initialized for session 6fcf5ed3-8a99-550b-9e70-4a7f35f2d2fe
+2026-06-25 07:54:04,427 INFO tinker.lib.public_interfaces.service_client: TrainingClient initialized for model 6fcf5ed3-8a99-550b-9e70-4a7f35f2d2fe:train:0
+2026-06-25 07:54:17,346 INFO __main__: WARM START from tinker://80c93d7c-2044-5dae-8e45-12dc1574d8f3:train:0/weights/wp-reasoning-v4-r32-rp30-savestate-final-state: base_model=Qwen/Qwen3-30B-A3B rank=32 (train_mlp=True attn=False unembed=False)
+2026-06-25 07:54:17,349 INFO __main__: Loaded prompt pools: gen=68, judge=482 (group_size=4)
+2026-06-25 08:04:25,455 WARNING __main__: Panickssery step 0: 4 rollouts with |fix_corr - consistency| > 0.3: [{'group_id': 'judge-1', 'fix_correctness': 1.0, 'judge_consistency': 0.6}, {'group_id': 'judge-2', 'fix_correctness': 0.25, 'judge_consistency': 0.6}, {'group_id': 'judge-2', 'fix_correctness': 0.25, 'judge_consistency': 0.8}]
+2026-06-25 08:04:31,016 INFO __main__: Step 0: protected-expert Jaccard=0.0000
+2026-06-25 08:04:31,016 INFO __main__: Step 1/500: reward_mean=0.3212, kl_v1=0.0000
+2026-06-25 08:14:01,348 INFO scripts.rl_rollouts: build_trajectory_groups: dropped 4 security-gated rollout(s) (T-09-SECDROP)
+2026-06-25 08:14:06,583 INFO __main__: Step 2/500: reward_mean=0.3228, kl_v1=0.0000
+2026-06-25 08:24:05,869 INFO __main__: Step 3/500: reward_mean=0.3619, kl_v1=0.0000
+2026-06-25 08:32:33,260 INFO __main__: Step 4/500: reward_mean=0.2374, kl_v1=0.0000

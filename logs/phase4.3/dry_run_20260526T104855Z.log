@@ -1,0 +1,101 @@
+============================================================
+STEP 1: D-03 dataset readiness gate
+============================================================
+D-03 readiness gate PASSED
+
+============================================================
+STEP 2: DGX pre-flight validation
+============================================================
+  ✓ toolbox: Found at /home/robert_li/dgx-toolbox
+  ✓ config: Found: /home/robert_li/Desktop/projects/wp-finetune/config/train_config.yaml
+  ✓ memory: 113.5 GB available (need 70.0)
+DGX pre-flight validation: PASSED
+
+Ensuring unsloth_studio container is ready ...
+  Installing pinned dependencies...
+unsloth_studio: READY
+
+============================================================
+STEP 3: DGX dry-run (train_model --dry-run --config config/train_config_reasoning.yaml)
+============================================================
+
+============================================================
+DRY-RUN STDOUT (VERBATIM):
+============================================================
+
+============================================================
+  MEMORY PRE-CHECK
+============================================================
+  Total system memory: 121.7 GB
+  Available memory:    112.9 GB
+  Required minimum:    70 GB
+  Headroom:            42.9 GB
+  Status:              OK ✓
+============================================================
+
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+🦥 Unsloth Zoo will now patch everything to make training faster!
+Loading model from /workspace/wp-finetune/models/qwen3-30b-wp-30_70-merged ...
+==((====))==  Unsloth 2026.5.7: Fast Qwen3_MoE patching. Transformers: 5.5.0.
+   \\   /|    NVIDIA GB10. Num GPUs = 1. Max memory: 121.689 GB. Platform: Linux.
+O^O/ \_/ \    Torch: 2.10.0a0+b558c986e8.nv25.11. CUDA: 12.1. CUDA Toolkit: 13.0. Triton: 3.7.0
+\        /    Bfloat16 = TRUE. FA [Xformers = None. FA2 = True]
+ "-____-"     Free license: http://github.com/unslothai/unsloth
+Unsloth: Fast downloading is enabled - ignore downloading bars which are red colored!
+Unsloth: QLoRA and full finetuning all not selected. Switching to 16bit LoRA.
+  output_router_logits = True (MoE load balancing monitoring enabled)
+Loading extended tokenizer from /workspace/wp-finetune/adapters/tokenizer ...
+  <wp_gen> -> token ID 151669 (OK)
+  <wp_judge> -> token ID 151670 (OK)
+Loading train dataset from /workspace/wp-finetune/data/reasoning_dataset/openai_train.jsonl ...
+Loading val dataset from /workspace/wp-finetune/data/reasoning_dataset/openai_val.jsonl ...
+  Train: 563 examples
+  Val:   141 examples
+============================================================
+TRAINING CONFIGURATION SUMMARY
+============================================================
+  Model:        Qwen/Qwen3-30B-A3B
+  LoRA r:       32
+  LoRA alpha:   64
+  Dropout:      0.0
+  Target mods:  ['q_proj', 'k_proj', 'v_proj', 'o_proj', 'gate_up_proj', 'down_proj']
+  Modules save: omitted
+  Epochs:       2
+  LR:           2e-05
+  Batch size:   1
+  Grad accum:   16
+  Eff batch:    16
+  LR schedule:  cosine
+  Warmup ratio: n/a
+  Warmup steps: 20
+  BF16:         True
+  Max seq len:  8192
+  Train size:   563
+  Val size:     141
+  Output dir:   ./adapters/qwen3-30b-wp-30_70-reasoning
+  Tracking:     MLflow (local file store)
+============================================================
+Trainable params: 1,285,029,888 / 31,817,152,512 (4.04%)
+Router-freeze check PASSED - no mlp.gate.* parameter is trainable (RTRN-03)
+
+DRY RUN MODE — skipping training.
+
+============================================================
+
+STEP 4: Asserting dry-run stdout ...
+  trainable% = 4.04% — single-digit OK
+
+============================================================
+DRY-RUN GATE PASSED — all assertions satisfied:
+  - Router-freeze check PASSED (RTRN-03)
+  - Single-digit trainable% confirmed
+  - LR 2.0e-5 echoed (RTRN-01)
+  - max_seq_length 8192 echoed (RTRN-02)
+  - warmup_steps 20 echoed (RTRN-01)
+  - merged 30_70 base confirmed (D-01/D-04)
+  - No experiment_001 contamination
+  - No stale merged-30_70 reference
+============================================================
+
+Human verification required: confirm the VERBATIM stdout above satisfies
+all five criteria before proceeding to Task 6 training.

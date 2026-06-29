@@ -1,0 +1,6 @@
+[13:10:44] START tag=tf4bit trip=20480MiB cmd: python -u -m scripts._tf_4bit_peak_probe | initial_avail=118704MiB
+[13:10:44] load launched host_pid=416808
+[13:14:51] !!! WATCHDOG TRIP avail=20373MiB < 20480MiB — KILLING LOAD
+[13:14:54] post-kill avail=44386MiB
+[13:14:54] DONE tripped=1 rc=137 min_avail=20373MiB
+RESULT tripped=1 rc=137 min_avail_mib=20373

@@ -1,0 +1,28 @@
+=== Step 0: REVL-01 GT preflight ===
+[preflight] dataset=data/reasoning_dataset/openai_val.jsonl judge_rows=121
+[preflight] calibrated_overall coverage: 121/121 = 100.00% (min 80%)
+[preflight] rows missing calibrated (would be EXCLUDED): 0
+[preflight] teacher-GT (dataset target) coverage: 83/121 (REVL-01B SOFT)
+[preflight] canonical GT variance: {'stdev': 14.106, 'unique': 25, 'min_stdev': 2.0, 'min_unique': 5, 'ok': True}
+[preflight] coverage_ok=True variance_ok=True -> PASS
+[preflight] REVL-01A canonical GT ready. Cascade may proceed.
+=== Step 1: baseline re-eval (merged-v2) ===
+[vllm] booting wp-eval-baseline-vllm on :8021 model=models/qwen3-30b-wp-30_70-merged-v2 gpu_mem_util=0.55
+[vllm] healthy after 476s; served model=wp-30_70
+[baseline_30_70] eval_gen (REVL-02 PHPCS) ...
+[vllm] stopped wp-eval-baseline-vllm
+Traceback (most recent call last):
+  File "/home/robert_li/Desktop/projects/wp-finetune/scripts/run_eval_reasoning.py", line 232, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/scripts/run_eval_reasoning.py", line 138, in main
+    baseline = _serve_and_eval(BASELINE, "wp-eval-baseline-vllm", "baseline_30_70",
+                               args.dataset, args.limit, args.gpu_mem_util)
+  File "/home/robert_li/Desktop/projects/wp-finetune/scripts/run_eval_reasoning.py", line 57, in _serve_and_eval
+    gen = eval_gen.run_eval(dataset_path=dataset, limit=limit,
+                            output_path=str(out / "eval_gen_results.json"),
+                            base_url=endpoint)
+  File "/home/robert_li/Desktop/projects/wp-finetune/eval/eval_gen.py", line 314, in run_eval
+    print(f"Evaluating {len(examples)} wp_gen examples via {dgx.vllm_endpoint()}", file=sys.stderr)
+                                                            ^^^
+NameError: name 'dgx' is not defined. Did you mean: '_dgx'?

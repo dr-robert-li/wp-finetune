@@ -1,0 +1,5 @@
+[capture] histogram: {"n_total": 120, "n_with_close_tag": 76, "n_with_judge_output": 76, "n_with_corrected_code": 0, "n_parseable_scores": 119, "parseable_rate": 0.9916666666666667}
+[capture] OK — 120 rows, parseable_rate 0.992 -> /home/robert_li/Desktop/projects/wp-finetune/output/eval_reasoning/reasoning_merged/captured_responses.jsonl
+[vllm] booting wp-eval-reasoning-vllm on :8021 model=models/qwen3-30b-wp-30_70-reasoning-merged gpu_mem_util=0.55
+[vllm] healthy after 488s; served model=wp-30_70
+[vllm] stopped wp-eval-reasoning-vllm

@@ -19,7 +19,8 @@ from eval.eval_judge import _extract_gt_from_assistant, _derive_prose_overall
 from scipy.stats import spearmanr
 
 VAL = REPO / "data/reasoning_dataset/openai_val.jsonl"
-CKPTS = ["warmstart", "step-50", "step-100", "step-150", "step-200", "step-250"]
+CKPTS = ["warmstart", "step-50", "step-100", "step-150", "step-200", "step-250",
+         "step-300", "step-350", "step-400", "step-450", "step-500"]
 
 dm = load_dim_map()
 weights = {k: v for k, v in dm["dimension_weights"].items() if not k.startswith("_")}

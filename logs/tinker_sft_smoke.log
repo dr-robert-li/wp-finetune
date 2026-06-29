@@ -1,0 +1,11 @@
+[sft] stage=smoke base=Qwen/Qwen3-30B-A3B rank=32 lr=4.99e-04 epochs=1 max_steps=4 train_batches=70 bs=8
+[sft] step 1 epoch 0 loss=None
+[sft] step 2 epoch 0 loss=None
+[sft] step 3 epoch 0 loss=None
+[sft] training done: 4 steps. loss first=? last=?
+/home/robert_li/Desktop/projects/wp-finetune/scripts/tinker_reasoning_sft.py:114: DeprecationWarning: The 'name' parameter of save_weights_and_get_sampling_client() is deprecated and has no effect — checkpoints are always ephemeral. This parameter will be removed in a future release. Remove the 'name' argument from your call. If you need a persistent checkpoint, use save_weights_for_sampler(name=...) + create_sampling_client(model_path=...) instead.
+  sampling_client = tc.save_weights_and_get_sampling_client(name=save_name)
+[sft] saved weights -> sampling client (name=wp-reasoning-smoke)
+[eval] sample[0] head: '<judge_output>\n<judge_output>\n<judge_output>\n<judge_output>\n<judge_output>\n<judge_output>\n<judge_output>\n<judge_output>\n<judge_output>\n<judge_output>\n<judge_output>\n<judge_output>\n<judge_output>\n<judg'
+[eval] terse(no [/REASONING]) = 4/4 = 1.000 (temp=0.0, max_tokens=2048)
+RESULT stage=smoke steps=4 loss_first=NA loss_last=NA terse_rate=1.000 n_eval=4

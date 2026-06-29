@@ -1,0 +1,21 @@
+2026-06-28 16:44:27,228 INFO checkJ: Controlled judge-axis eval: 40 fixed prompts, group_size=2 temp=0.20
+2026-06-28 16:44:31,108 INFO tinker.lib.public_interfaces.service_client: ServiceClient initialized for session 34f07cc6-b580-5f14-b768-9e82ab644aa5
+2026-06-28 16:44:31,108 INFO checkJ: warm-start sampler...
+2026-06-28 16:44:32,567 INFO tinker.lib.public_interfaces.service_client: TrainingClient initialized for model 34f07cc6-b580-5f14-b768-9e82ab644aa5:train:0
+2026-06-28 16:44:42,758 INFO checkJ: fixed-step-50 sampler... tinker://9cb14129-f302-5c84-adf2-cc9ab92128a4:train:0/sampler_weights/step-50
+2026-06-28 16:44:43,100 INFO checkJ: stale-step-50 (negative control) sampler... tinker://a99724f2-36d3-577b-b51f-94af9198e7d8:train:0/sampler_weights/step-50
+2026-06-28 16:44:43,445 INFO checkJ: PAIR-CHECK prompts[0] _group_id=judge-0 | _judge_original_code len=543
+2026-06-28 16:44:43,446 INFO checkJ: PAIR-CHECK orig0[:200]="/**\n\t * Gets REST route instances.\n\t *\n\t * @since 1.119.0\n\t *\n\t * @return REST_Route[] List of REST_Route objects.\n\t */\nfunction get_rest_routes() {\n\t\treturn array(\n\t\t\tnew REST_Route(\n\t\t\t\t'core/site/d"
+2026-06-28 16:54:48,782 INFO checkJ: [warm-start] n=80 mean_fixcorr=0.3250 median=0.2500 | tiers 0.0=0 0.25=56 0.5=23 hi=1
+2026-06-28 17:06:46,919 INFO checkJ: [fixed-step50] n=80 mean_fixcorr=0.3854 median=0.5000 | tiers 0.0=0 0.25=37 0.5=39 hi=4
+2026-06-28 17:18:19,102 INFO checkJ: [stale-step50(ctrl)] n=80 mean_fixcorr=0.3941 median=0.5000 | tiers 0.0=0 0.25=34 0.5=44 hi=2
+ECHO-ADVERSARY mean_fixcorr = 0.2500  (gate: <= 0.30)
+
+===== CONTROLLED JUDGE-AXIS fix_correctness (fixed prompts, temp 0.20) =====
+policy                  n mean_fixcorr  Δ vs warm
+warm-start             80       0.3250    +0.0000
+fixed-step50           80       0.3854    +0.0604
+stale-step50(ctrl)     80       0.3941    +0.0691
+
+VERDICT: CONFOUNDED (stale ALSO > warm) -> eval/metric artifact, fixed win is meaningless -> investigate eval
+(fixed Δ=+0.0604, stale-ctrl Δ=+0.0691)

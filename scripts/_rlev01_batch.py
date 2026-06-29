@@ -20,9 +20,14 @@ sys.path.insert(0, str(REPO))
 
 VAL = "data/reasoning_dataset/openai_val.jsonl"
 OUT = REPO / "output/rl_eval"
-RL_RUN = "tinker://03c69b7b-a5f8-5a15-a15e-154f00b0ab37:train:0/sampler_weights"
+# seedA live run (post-KL-fix). Old preKLfix run was 03c69b7b — DO NOT use.
+# Verified vs output/rl_checkpoints/metrics/manifest.seedA.json sampler paths (2026-06-28).
+RL_RUN = "tinker://9cb14129-f302-5c84-adf2-cc9ab92128a4:train:0/sampler_weights"
 # warmstart = the v4 savestate promoted ep3 SAMPLER (same weights the RL run init-from'd),
 # captured through the identical pipeline (NOT the stale 0.1534 merged-vLLM number).
+# NOTE(2026-06-28): manifest init_from is .../weights/...-final-state; this uses the ep3
+# SAMPLER export. Treated as the documented baseline per original design — VERIFY ep3==
+# the init weights before trusting the warmstart-relative bootstrap at step-500.
 CKPTS = [
     ("warmstart", "tinker://80c93d7c-2044-5dae-8e45-12dc1574d8f3:train:0/sampler_weights/wp-reasoning-v4-r32-rp30-savestate-ep3"),
     ("step-50",  f"{RL_RUN}/step-50"),
@@ -30,6 +35,11 @@ CKPTS = [
     ("step-150", f"{RL_RUN}/step-150"),
     ("step-200", f"{RL_RUN}/step-200"),
     ("step-250", f"{RL_RUN}/step-250"),
+    ("step-300", f"{RL_RUN}/step-300"),
+    ("step-350", f"{RL_RUN}/step-350"),
+    ("step-400", f"{RL_RUN}/step-400"),
+    ("step-450", f"{RL_RUN}/step-450"),
+    ("step-500", f"{RL_RUN}/step-500"),
 ]
 
 

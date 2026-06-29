@@ -1,0 +1,19 @@
+Loading source records from: /home/robert_li/Desktop/projects/wp-finetune/output/eval_reasoning_v4_winner/eval_gen_results.jsonl
+  Loaded 17 records with overall >= 65.0
+Building perturbation batches (15 cases/axis) ...
+  verbose_padding: 15 cases -> /home/robert_li/Desktop/projects/wp-finetune/output/antihack_validation/antihack_verbose_padding.jsonl
+  template_critique_collapse: 15 cases -> /home/robert_li/Desktop/projects/wp-finetune/output/antihack_validation/antihack_template_critique_collapse.jsonl
+  self_preference_swap: 15 cases -> /home/robert_li/Desktop/projects/wp-finetune/output/antihack_validation/antihack_self_preference_swap.jsonl
+Running live scoring + CI gate (requires vLLM judge) ...
+  Scoring axis: verbose_padding (15 cases) ...
+    FAIL — hi_p=0.2957 >= lo_c=0.0142
+  Scoring axis: template_critique_collapse (15 cases) ...
+    FAIL — hi_p=0.4158 >= lo_c=-0.1849
+  Scoring axis: self_preference_swap (15 cases) ...
+    FAIL — hi_p=0.3557 >= lo_c=-0.1087
+
+Acceptance report: /home/robert_li/Desktop/projects/wp-finetune/output/antihack_validation/acceptance_report.json
+All axes pass: False
+  verbose_padding: gate_pass=False  hi_p=0.2957  lo_c=0.0142
+  template_critique_collapse: gate_pass=False  hi_p=0.4158  lo_c=-0.1849
+  self_preference_swap: gate_pass=False  hi_p=0.3557  lo_c=-0.1087

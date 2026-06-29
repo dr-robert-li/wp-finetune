@@ -1,0 +1,150 @@
+Loading train: data/calibration/train.jsonl
+Loading holdout: data/calibration/holdout.jsonl
+  train=527  holdout=39
+  feature dim: 250 (241 checks + 9 per-dim scores)
+  classifier: train PASS=480 FAIL=47  scale_pos_weight=10.213
+
+[1/2] Verdict classifier 5-fold CV grid search ...
+  [1/36] {'max_depth': 3, 'n_estimators': 100, 'learning_rate': 0.05, 'min_child_weight': 5}  score=+0.9843  (best=+0.9843)
+  [2/36] {'max_depth': 3, 'n_estimators': 100, 'learning_rate': 0.05, 'min_child_weight': 10}  score=+0.9806  (best=+0.9843)
+  [3/36] {'max_depth': 3, 'n_estimators': 100, 'learning_rate': 0.1, 'min_child_weight': 5}  score=+0.9850  (best=+0.9850)
+  [4/36] {'max_depth': 3, 'n_estimators': 100, 'learning_rate': 0.1, 'min_child_weight': 10}  score=+0.9768  (best=+0.9850)
+  [5/36] {'max_depth': 3, 'n_estimators': 200, 'learning_rate': 0.05, 'min_child_weight': 5}  score=+0.9859  (best=+0.9859)
+  [6/36] {'max_depth': 3, 'n_estimators': 200, 'learning_rate': 0.05, 'min_child_weight': 10}  score=+0.9766  (best=+0.9859)
+  [7/36] {'max_depth': 3, 'n_estimators': 200, 'learning_rate': 0.1, 'min_child_weight': 5}  score=+0.9843  (best=+0.9859)
+  [8/36] {'max_depth': 3, 'n_estimators': 200, 'learning_rate': 0.1, 'min_child_weight': 10}  score=+0.9733  (best=+0.9859)
+  [9/36] {'max_depth': 3, 'n_estimators': 400, 'learning_rate': 0.05, 'min_child_weight': 5}  score=+0.9819  (best=+0.9859)
+  [10/36] {'max_depth': 3, 'n_estimators': 400, 'learning_rate': 0.05, 'min_child_weight': 10}  score=+0.9733  (best=+0.9859)
+  [11/36] {'max_depth': 3, 'n_estimators': 400, 'learning_rate': 0.1, 'min_child_weight': 5}  score=+0.9795  (best=+0.9859)
+  [12/36] {'max_depth': 3, 'n_estimators': 400, 'learning_rate': 0.1, 'min_child_weight': 10}  score=+0.9756  (best=+0.9859)
+  [13/36] {'max_depth': 4, 'n_estimators': 100, 'learning_rate': 0.05, 'min_child_weight': 5}  score=+0.9887  (best=+0.9887)
+  [14/36] {'max_depth': 4, 'n_estimators': 100, 'learning_rate': 0.05, 'min_child_weight': 10}  score=+0.9843  (best=+0.9887)
+  [15/36] {'max_depth': 4, 'n_estimators': 100, 'learning_rate': 0.1, 'min_child_weight': 5}  score=+0.9873  (best=+0.9887)
+  [16/36] {'max_depth': 4, 'n_estimators': 100, 'learning_rate': 0.1, 'min_child_weight': 10}  score=+0.9809  (best=+0.9887)
+  [17/36] {'max_depth': 4, 'n_estimators': 200, 'learning_rate': 0.05, 'min_child_weight': 5}  score=+0.9886  (best=+0.9887)
+  [18/36] {'max_depth': 4, 'n_estimators': 200, 'learning_rate': 0.05, 'min_child_weight': 10}  score=+0.9804  (best=+0.9887)
+  [19/36] {'max_depth': 4, 'n_estimators': 200, 'learning_rate': 0.1, 'min_child_weight': 5}  score=+0.9849  (best=+0.9887)
+  [20/36] {'max_depth': 4, 'n_estimators': 200, 'learning_rate': 0.1, 'min_child_weight': 10}  score=+0.9779  (best=+0.9887)
+  [21/36] {'max_depth': 4, 'n_estimators': 400, 'learning_rate': 0.05, 'min_child_weight': 5}  score=+0.9882  (best=+0.9887)
+  [22/36] {'max_depth': 4, 'n_estimators': 400, 'learning_rate': 0.05, 'min_child_weight': 10}  score=+0.9789  (best=+0.9887)
+  [23/36] {'max_depth': 4, 'n_estimators': 400, 'learning_rate': 0.1, 'min_child_weight': 5}  score=+0.9808  (best=+0.9887)
+  [24/36] {'max_depth': 4, 'n_estimators': 400, 'learning_rate': 0.1, 'min_child_weight': 10}  score=+0.9778  (best=+0.9887)
+  [25/36] {'max_depth': 5, 'n_estimators': 100, 'learning_rate': 0.05, 'min_child_weight': 5}  score=+0.9880  (best=+0.9887)
+  [26/36] {'max_depth': 5, 'n_estimators': 100, 'learning_rate': 0.05, 'min_child_weight': 10}  score=+0.9843  (best=+0.9887)
+  [27/36] {'max_depth': 5, 'n_estimators': 100, 'learning_rate': 0.1, 'min_child_weight': 5}  score=+0.9878  (best=+0.9887)
+  [28/36] {'max_depth': 5, 'n_estimators': 100, 'learning_rate': 0.1, 'min_child_weight': 10}  score=+0.9807  (best=+0.9887)
+  [29/36] {'max_depth': 5, 'n_estimators': 200, 'learning_rate': 0.05, 'min_child_weight': 5}  score=+0.9883  (best=+0.9887)
+  [30/36] {'max_depth': 5, 'n_estimators': 200, 'learning_rate': 0.05, 'min_child_weight': 10}  score=+0.9804  (best=+0.9887)
+  [31/36] {'max_depth': 5, 'n_estimators': 200, 'learning_rate': 0.1, 'min_child_weight': 5}  score=+0.9857  (best=+0.9887)
+  [32/36] {'max_depth': 5, 'n_estimators': 200, 'learning_rate': 0.1, 'min_child_weight': 10}  score=+0.9777  (best=+0.9887)
+  [33/36] {'max_depth': 5, 'n_estimators': 400, 'learning_rate': 0.05, 'min_child_weight': 5}  score=+0.9866  (best=+0.9887)
+  [34/36] {'max_depth': 5, 'n_estimators': 400, 'learning_rate': 0.05, 'min_child_weight': 10}  score=+0.9792  (best=+0.9887)
+  [35/36] {'max_depth': 5, 'n_estimators': 400, 'learning_rate': 0.1, 'min_child_weight': 5}  score=+0.9858  (best=+0.9887)
+  [36/36] {'max_depth': 5, 'n_estimators': 400, 'learning_rate': 0.1, 'min_child_weight': 10}  score=+0.9778  (best=+0.9887)
+  Best CV AUC: 0.9887  HPs: {'max_depth': 4, 'n_estimators': 100, 'learning_rate': 0.05, 'min_child_weight': 5}  (30.6s)
+
+[2/2] Overall regressor 5-fold CV grid search ...
+  [1/36] {'max_depth': 3, 'n_estimators': 100, 'learning_rate': 0.05, 'min_child_weight': 5}  score=+0.4848  (best=+0.4848)
+  [2/36] {'max_depth': 3, 'n_estimators': 100, 'learning_rate': 0.05, 'min_child_weight': 10}  score=+0.4806  (best=+0.4848)
+  [3/36] {'max_depth': 3, 'n_estimators': 100, 'learning_rate': 0.1, 'min_child_weight': 5}  score=+0.4783  (best=+0.4848)
+  [4/36] {'max_depth': 3, 'n_estimators': 100, 'learning_rate': 0.1, 'min_child_weight': 10}  score=+0.4792  (best=+0.4848)
+  [5/36] {'max_depth': 3, 'n_estimators': 200, 'learning_rate': 0.05, 'min_child_weight': 5}  score=+0.4791  (best=+0.4848)
+  [6/36] {'max_depth': 3, 'n_estimators': 200, 'learning_rate': 0.05, 'min_child_weight': 10}  score=+0.4790  (best=+0.4848)
+  [7/36] {'max_depth': 3, 'n_estimators': 200, 'learning_rate': 0.1, 'min_child_weight': 5}  score=+0.4787  (best=+0.4848)
+  [8/36] {'max_depth': 3, 'n_estimators': 200, 'learning_rate': 0.1, 'min_child_weight': 10}  score=+0.4795  (best=+0.4848)
+  [9/36] {'max_depth': 3, 'n_estimators': 400, 'learning_rate': 0.05, 'min_child_weight': 5}  score=+0.4781  (best=+0.4848)
+  [10/36] {'max_depth': 3, 'n_estimators': 400, 'learning_rate': 0.05, 'min_child_weight': 10}  score=+0.4793  (best=+0.4848)
+  [11/36] {'max_depth': 3, 'n_estimators': 400, 'learning_rate': 0.1, 'min_child_weight': 5}  score=+0.4779  (best=+0.4848)
+  [12/36] {'max_depth': 3, 'n_estimators': 400, 'learning_rate': 0.1, 'min_child_weight': 10}  score=+0.4814  (best=+0.4848)
+  [13/36] {'max_depth': 4, 'n_estimators': 100, 'learning_rate': 0.05, 'min_child_weight': 5}  score=+0.4831  (best=+0.4848)
+  [14/36] {'max_depth': 4, 'n_estimators': 100, 'learning_rate': 0.05, 'min_child_weight': 10}  score=+0.4789  (best=+0.4848)
+  [15/36] {'max_depth': 4, 'n_estimators': 100, 'learning_rate': 0.1, 'min_child_weight': 5}  score=+0.4781  (best=+0.4848)
+  [16/36] {'max_depth': 4, 'n_estimators': 100, 'learning_rate': 0.1, 'min_child_weight': 10}  score=+0.4791  (best=+0.4848)
+  [17/36] {'max_depth': 4, 'n_estimators': 200, 'learning_rate': 0.05, 'min_child_weight': 5}  score=+0.4788  (best=+0.4848)
+  [18/36] {'max_depth': 4, 'n_estimators': 200, 'learning_rate': 0.05, 'min_child_weight': 10}  score=+0.4796  (best=+0.4848)
+  [19/36] {'max_depth': 4, 'n_estimators': 200, 'learning_rate': 0.1, 'min_child_weight': 5}  score=+0.4785  (best=+0.4848)
+  [20/36] {'max_depth': 4, 'n_estimators': 200, 'learning_rate': 0.1, 'min_child_weight': 10}  score=+0.4796  (best=+0.4848)
+  [21/36] {'max_depth': 4, 'n_estimators': 400, 'learning_rate': 0.05, 'min_child_weight': 5}  score=+0.4786  (best=+0.4848)
+  [22/36] {'max_depth': 4, 'n_estimators': 400, 'learning_rate': 0.05, 'min_child_weight': 10}  score=+0.4790  (best=+0.4848)
+  [23/36] {'max_depth': 4, 'n_estimators': 400, 'learning_rate': 0.1, 'min_child_weight': 5}  score=+0.4779  (best=+0.4848)
+  [24/36] {'max_depth': 4, 'n_estimators': 400, 'learning_rate': 0.1, 'min_child_weight': 10}  score=+0.4809  (best=+0.4848)
+  [25/36] {'max_depth': 5, 'n_estimators': 100, 'learning_rate': 0.05, 'min_child_weight': 5}  score=+0.4848  (best=+0.4848)
+  [26/36] {'max_depth': 5, 'n_estimators': 100, 'learning_rate': 0.05, 'min_child_weight': 10}  score=+0.4810  (best=+0.4848)
+  [27/36] {'max_depth': 5, 'n_estimators': 100, 'learning_rate': 0.1, 'min_child_weight': 5}  score=+0.4798  (best=+0.4848)Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/robert_li/Desktop/projects/wp-finetune/scripts/calibrate_rubric.py", line 331, in <module>
+    main()
+    ~~~~^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/scripts/calibrate_rubric.py", line 276, in main
+    clf.save_model(str(clf_path))
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/home/robert_li/.local/lib/python3.13/site-packages/xgboost/sklearn.py", line 965, in save_model
+    meta["_estimator_type"] = self._get_type()
+                              ~~~~~~~~~~~~~~^^
+  File "/home/robert_li/.local/lib/python3.13/site-packages/xgboost/sklearn.py", line 956, in _get_type
+    raise TypeError(
+    ...<2 lines>...
+    )
+TypeError: `_estimator_type` undefined.  Please use appropriate mixin to define estimator type.
+
+  [28/36] {'max_depth': 5, 'n_estimators': 100, 'learning_rate': 0.1, 'min_child_weight': 10}  score=+0.4791  (best=+0.4848)
+  [29/36] {'max_depth': 5, 'n_estimators': 200, 'learning_rate': 0.05, 'min_child_weight': 5}  score=+0.4775  (best=+0.4848)
+  [30/36] {'max_depth': 5, 'n_estimators': 200, 'learning_rate': 0.05, 'min_child_weight': 10}  score=+0.4802  (best=+0.4848)
+  [31/36] {'max_depth': 5, 'n_estimators': 200, 'learning_rate': 0.1, 'min_child_weight': 5}  score=+0.4782  (best=+0.4848)
+  [32/36] {'max_depth': 5, 'n_estimators': 200, 'learning_rate': 0.1, 'min_child_weight': 10}  score=+0.4781  (best=+0.4848)
+  [33/36] {'max_depth': 5, 'n_estimators': 400, 'learning_rate': 0.05, 'min_child_weight': 5}  score=+0.4774  (best=+0.4848)
+  [34/36] {'max_depth': 5, 'n_estimators': 400, 'learning_rate': 0.05, 'min_child_weight': 10}  score=+0.4808  (best=+0.4848)
+  [35/36] {'max_depth': 5, 'n_estimators': 400, 'learning_rate': 0.1, 'min_child_weight': 5}  score=+0.4769  (best=+0.4848)
+  [36/36] {'max_depth': 5, 'n_estimators': 400, 'learning_rate': 0.1, 'min_child_weight': 10}  score=+0.4652  (best=+0.4848)
+  Best CV Spearman: 0.4848  HPs: {'max_depth': 5, 'n_estimators': 100, 'learning_rate': 0.05, 'min_child_weight': 5}  (34.6s)
+
+Holdout evaluation (45-row boundary):
+  Verdict acc=0.9231  AUC=1.0000  confusion=[[20, 0], [3, 16]]
+  Overall Spearman=+0.8382  Pearson=+0.8126  MAE=13.23
+
+Top-20 classifier features:
+  0.2723  score::D9_structure
+  0.1117  WPCS-P06
+  0.0991  WAPI-N12
+  0.0940  SEC-N02
+  0.0897  WPCS-P01
+  0.0605  WAPI-P08
+  0.0588  score::D4_perf
+  0.0378  WPCS-N02
+  0.0318  score::D2_security
+  0.0287  score::D1_wpcs
+  0.0270  SEC-N04
+  0.0230  I18N-P01
+  0.0174  ERR-P09
+  0.0147  STR-P02
+  0.0110  WPCS-P09
+  0.0105  score::D5_wp_api
+  0.0062  PERF-P09
+  0.0059  score::D8_errors
+
+Top-20 regressor features:
+  0.6859  score::D9_structure
+  0.0866  STR-P02
+  0.0459  WAPI-N12
+  0.0346  WPCS-P01
+  0.0210  SEC-N02
+  0.0159  score::D8_errors
+  0.0156  score::D4_perf
+  0.0127  WAPI-P08
+  0.0116  score::D2_security
+  0.0100  score::D5_wp_api
+  0.0100  SEC-N04
+  0.0082  WPCS-P06
+  0.0055  score::D1_wpcs
+  0.0054  ERR-P09
+  0.0053  WPCS-P09
+  0.0039  SEC-N03
+  0.0036  WPCS-N02
+  0.0033  WPCS-P11
+  0.0033  I18N-N13
+  0.0028  WPCS-P07
+
+Gates:
+  classifier accuracy >= 0.85: PASS (0.9231)
+  regressor Spearman  >= 0.7: PASS (+0.8382)

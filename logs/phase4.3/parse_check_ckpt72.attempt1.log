@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/workspace/wp-finetune/scripts/checkpoint_parse_check.py", line 293, in <module>
+    main()
+  File "/workspace/wp-finetune/scripts/checkpoint_parse_check.py", line 283, in main
+    run_checkpoint_parse_check(
+  File "/workspace/wp-finetune/scripts/checkpoint_parse_check.py", line 130, in run_checkpoint_parse_check
+    from eval.eval_judge import parse_judge_response  # noqa: PLC0415
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/wp-finetune/eval/eval_judge.py", line 25, in <module>
+    import openai
+ModuleNotFoundError: No module named 'openai'
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+🦥 Unsloth Zoo will now patch everything to make training faster!
+FAILED (exit 1) [9.4s] 50 --threshold 0.05

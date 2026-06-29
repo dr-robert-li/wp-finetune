@@ -1,0 +1,1847 @@
+{
+  "stream": "ctf",
+  "sample_size": 20,
+  "random_seed": 20260408,
+  "source_indices": [
+    12,
+    13,
+    16,
+    25,
+    28,
+    30,
+    31,
+    48,
+    83,
+    86,
+    92,
+    94,
+    98,
+    104,
+    125,
+    127,
+    130,
+    137,
+    139,
+    146
+  ],
+  "rubric_keys": [
+    "C1",
+    "C2",
+    "C3",
+    "C4",
+    "C5",
+    "C6"
+  ],
+  "rubric_anchor": "04.1-02-PLAN.md Task 3 structured rubric tables",
+  "examples": [
+    {
+      "source_file": "woocommerce-square.json",
+      "function_name": "Cash_App_Pay_Gateway::log_js_data",
+      "defective_code": "/**\n\t * Logs any data sent by the payment form JS via AJAX.\n\t *\n\t * @since 4.5.0\n\t */\nfunction log_js_data() {\n\t\tcheck_ajax_referer( 'wc_' . $this->get_id() . '_log_js_data', 'security' );\n\n\t\t$message = sprintf( \"wc-square-cash-app-pay.js %1\\$s:\\n \", ! empty( $_REQUEST['type'] ) ? ucfirst( wc_clean( wp_unslash( $_REQUEST['type'] ) ) ) : 'Request' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized\n\n\t\t// add the data\n\t\tif ( ! empty( $_REQUEST['data'] ) ) {\n\t\t\t// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r\n\t\t\t$message .= print_r( wc_clean( wp_unslash( $_REQUEST['data'] ) ), true ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.PHP.DevelopmentFunctions.error_log_print_r\n\t\t}\n\n\t\t// If the type is performance, don't add the request type to the message, it's already in the message.\n\t\tif ( ! empty( $_REQUEST['type'] ) && 'performance' === $_REQUEST['type'] && ! empty( $_REQUEST['data'] ) ) {\n\t\t\t$message = wc_clean( wp_unslash( $_REQUEST['data'] ) );\n\t\t}\n\n\t\t$this->get_plugin()->log( $message, $this->get_id() );\n\t}",
+      "critique": {
+        "summary": "Function 'log_js_data' has 2 high-severity issue(s) (security, code_quality) that compromise security or correctness.",
+        "dimensions": {
+          "wpcs_compliance": {
+            "severity": "low",
+            "issue": "WPCS coding style is acceptable in 'log_js_data' but lacks PHPDoc completeness",
+            "fix": "Ensure @param types and @return type are documented"
+          },
+          "sql_safety": {
+            "severity": "low",
+            "issue": "No direct database queries in 'log_js_data' (source: woocommerce-square.json) \u2014 SQL safety dimension acceptable",
+            "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+          },
+          "security": {
+            "severity": "high",
+            "issue": "'log_js_data' outputs user-controlled data without escaping \u2014 XSS vulnerability allows injection of malicious scripts",
+            "fix": "Apply context-appropriate escaping: esc_html() for HTML text, esc_attr() for attributes, esc_url() for URLs before any echo/print"
+          },
+          "performance": {
+            "severity": "low",
+            "issue": "'log_js_data' has no obvious performance issues for its current scope (source: woocommerce-square.json)",
+            "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+          },
+          "wp_api_usage": {
+            "severity": "low",
+            "issue": "'log_js_data' uses WordPress APIs appropriately for its scope (source: woocommerce-square.json), but hooks and filters could be more explicit",
+            "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+          },
+          "code_quality": {
+            "severity": "high",
+            "issue": "Debug statements (var_dump/print_r/error_log) found in 'log_js_data' \u2014 should not exist in production code paths; leaks information",
+            "fix": "Remove all var_dump(), print_r(), error_log() calls; use WP_DEBUG_LOG conditionally if logging is needed: if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) { error_log($msg); }"
+          },
+          "dependency_integrity": {
+            "severity": "low",
+            "issue": "'log_js_data' has no problematic dependency patterns detected (source: woocommerce-square.json)",
+            "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+          },
+          "i18n": {
+            "severity": "medium",
+            "issue": "'log_js_data' may produce user-visible output without translation wrappers (source: woocommerce-square.json)",
+            "fix": "Audit for hardcoded strings and wrap in __() or esc_html__() with the plugin text domain"
+          },
+          "accessibility": {
+            "severity": "low",
+            "issue": "'log_js_data' does not produce HTML output \u2014 accessibility dimension not applicable (source: woocommerce-square.json)",
+            "fix": "No changes needed for accessibility in this non-rendering function"
+          }
+        },
+        "key_observation": "'log_js_data' outputs user-controlled data without escaping \u2014 XSS vulnerability allows injection of malicious scripts"
+      },
+      "corrected_code": "/**\n\t * Logs any data sent by the payment form JS via AJAX.\n\t *\n\t * @since 4.5.0\n\t */\nfunction log_js_data() {\n    if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_key( $_REQUEST['_wpnonce'] ), 'log_js_data_nonce' ) ) {\n        wp_send_json_error( array( 'message' => esc_html__( 'Invalid security token.', 'plugin-slug' ) ) );\n        return;\n    }\n\t\tcheck_ajax_referer( 'wc_' . $this->get_id() . '_log_js_data', 'security' );\n\n\t\t$message = sprintf( \"wc-square-cash-app-pay.js %1\\$s:\\n \", ! empty( $_REQUEST['type'] ) ? ucfirst( wc_clean( wp_unslash( $_REQUEST['type'] ) ) ) : 'Request' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized\n\n\t\t// add the data\n\t\tif ( ! empty( $_REQUEST['data'] ) ) {\n\t\t\t// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r\n\t\t\t$message .= // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.PHP.DevelopmentFunctions.error_log_print_r\n\t\t}\n\n\t\t// If the type is performance, don't add the request type to the message, it's already in the message.\n\t\tif ( ! empty( $_REQUEST['type'] ) && 'performance' === $_REQUEST['type'] && ! empty( $_REQUEST['data'] ) ) {\n\t\t\t$message = wc_clean( wp_unslash( $_REQUEST['data'] ) );\n\t\t}\n\n\t\t$this->get_plugin()->log( $message, $this->get_id() );\n\t}",
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_few_shot",
+      "php_lint": {
+        "valid": true,
+        "errors": ""
+      },
+      "critique_fix_alignment": {
+        "critical_high_issues": 2,
+        "addressed_issues": 2,
+        "unaddressed_issues": [],
+        "alignment_ratio": 1.0
+      },
+      "_audit_index": 12,
+      "_rubric_pending": {
+        "C1": null,
+        "C2": null,
+        "C3": null,
+        "C4": null,
+        "C5": null,
+        "C6": null
+      }
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "fts_index_on_order_address_table_exists",
+      "defective_code": "/**\n\t * Check if fulltext index with key `order_addresses_fts` on order address table exists.\n\t *\n\t * @return bool\n\t */\nfunction fts_index_on_order_address_table_exists(): bool {\n\t\tglobal $wpdb;\n\t\t$address_table = $wpdb->prefix . 'wc_order_addresses';\n\t\t// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $address_table is hardcoded.\n\t\treturn ! empty( $wpdb->get_results( \"SHOW INDEX FROM $address_table WHERE Key_name = 'order_addresses_fts'\" ) );\n\t}",
+      "critique": {
+        "summary": "Function 'fts_index_on_order_address_table_exists' has 1 critical issue(s) (sql_safety) requiring immediate remediation before deployment.",
+        "dimensions": {
+          "wpcs_compliance": {
+            "severity": "low",
+            "issue": "WPCS coding style is acceptable in 'fts_index_on_order_address_table_exists' but lacks PHPDoc completeness",
+            "fix": "Ensure @param types and @return type are documented"
+          },
+          "sql_safety": {
+            "severity": "critical",
+            "issue": "$wpdb database queries in 'fts_index_on_order_address_table_exists' execute without $wpdb->prepare() \u2014 SQL injection vulnerability allows attackers to manipulate database queries via unsanitized input",
+            "fix": "Wrap all dynamic values in $wpdb->prepare() with typed placeholders: $wpdb->prepare('SELECT * FROM %s WHERE id = %d', $table, absint($id))"
+          },
+          "security": {
+            "severity": "medium",
+            "issue": "'fts_index_on_order_address_table_exists' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce.json)",
+            "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+          },
+          "performance": {
+            "severity": "low",
+            "issue": "'fts_index_on_order_address_table_exists' has no obvious performance issues for its current scope (source: woocommerce.json)",
+            "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+          },
+          "wp_api_usage": {
+            "severity": "low",
+            "issue": "'fts_index_on_order_address_table_exists' uses WordPress APIs appropriately for its scope (source: woocommerce.json), but hooks and filters could be more explicit",
+            "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+          },
+          "code_quality": {
+            "severity": "low",
+            "issue": "'fts_index_on_order_address_table_exists' code quality is acceptable but could improve single responsibility adherence (source: woocommerce.json, 7 lines)",
+            "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+          },
+          "dependency_integrity": {
+            "severity": "low",
+            "issue": "'fts_index_on_order_address_table_exists' has no problematic dependency patterns detected (source: woocommerce.json)",
+            "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+          },
+          "i18n": {
+            "severity": "medium",
+            "issue": "'fts_index_on_order_address_table_exists' may produce user-visible output without translation wrappers (source: woocommerce.json)",
+            "fix": "Audit for hardcoded strings and wrap in __() or esc_html__() with the plugin text domain"
+          },
+          "accessibility": {
+            "severity": "low",
+            "issue": "'fts_index_on_order_address_table_exists' does not produce HTML output \u2014 accessibility dimension not applicable (source: woocommerce.json)",
+            "fix": "No changes needed for accessibility in this non-rendering function"
+          }
+        },
+        "key_observation": "'fts_index_on_order_address_table_exists' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce.json)"
+      },
+      "corrected_code": "/**\n\t * Check if fulltext index with key `order_addresses_fts` on order address table exists.\n\t *\n\t * @return bool\n\t */\nfunction fts_index_on_order_address_table_exists(): bool {\n\t\tglobal $wpdb;\n\t\t$address_table = $wpdb->prefix . 'wc_order_addresses';\n\t\t// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $address_table is hardcoded.\n\t\treturn ! empty( $wpdb->get_results( $wpdb->prepare( \"SHOW INDEX FROM $address_table WHERE Key_name = 'order_addresses_fts'\" ) );\n\t}",
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_few_shot",
+      "php_lint": {
+        "valid": true,
+        "errors": ""
+      },
+      "critique_fix_alignment": {
+        "critical_high_issues": 1,
+        "addressed_issues": 1,
+        "unaddressed_issues": [],
+        "alignment_ratio": 1.0
+      },
+      "_audit_index": 13,
+      "_rubric_pending": {
+        "C1": null,
+        "C2": null,
+        "C3": null,
+        "C4": null,
+        "C5": null,
+        "C6": null
+      }
+    },
+    {
+      "source_file": "woocommerce-shipping.json",
+      "function_name": "Activate::updateDb",
+      "defective_code": "function updateDb()\n    {\n        global $wpdb;\n\n        $version = get_option('my_plugin_version', '1.1');\n\n        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');\n\n        $charset_collate = $wpdb->get_charset_collate();\n\n        $table_name = $wpdb->prefix . 'dpdconnect_labels';\n        $sql = \"CREATE TABLE IF NOT EXISTS $table_name (\n            id mediumint(9) NOT NULL AUTO_INCREMENT,\n            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,\n            order_id int(11) NOT NULL,\n            contents mediumblob NOT NULL,\n            type tinyint NOT NULL,\n            shipment_identifier varchar(255) NOT NULL,\n            parcel_numbers varchar(255) NOT NULL,\n            PRIMARY KEY id (id),\n            INDEX created_at (created_at),\n            INDEX order_id_type_created_at (order_id, type, created_at)\n        ) $charset_collate;\";\n        $wpdb->query($sql);\n\n        $table_name = $wpdb->prefix . 'dpdconnect_batches';\n        $sql = \"CREATE TABLE IF NOT EXISTS $table_name (\n            id mediumint(9) NOT NULL AUTO_INCREMENT,\n            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,\n            shipment_count smallint(5) NOT NULL,\n            success_count smallint(5) DEFAULT 0,\n            failure_count smallint(5) DEFAULT 0,\n            status varchar(255) NOT NULL,\n            PRIMARY KEY id (id),\n            INDEX created_at (created_at)\n        ) $charset_collate;\";\n        $wpdb->query($sql);\n\n        $table_name = $wpdb->prefix . 'dpdconnect_jobs';\n        $sql = \"CREATE TABLE IF NOT EXISTS $table_name (\n            id mediumint(9) NOT NULL AUTO_INCREMENT,\n            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,\n            external_id varchar(255) NOT NULL,\n            batch_id varchar(255) NOT NULL,\n            order_id varchar(255) NOT NULL,\n            status varchar(255) NOT NULL,\n            type varchar(255) NOT NULL,\n            error text,\n            state_message text,\n            label_id int(11) NULL,\n            PRIMARY KEY id (id),\n            INDEX created_at (created_at),\n            INDEX batch_id (batch_id),\n            INDEX order_id_type_created_at (order_id, type, created_at)\n        ) $charset_collate;\";\n        $wpdb->query($sql);\n    }",
+      "critique": {
+        "summary": "Function 'updateDb' has 1 critical issue(s) (sql_safety) requiring immediate remediation before deployment.",
+        "dimensions": {
+          "wpcs_compliance": {
+            "severity": "medium",
+            "issue": "Missing PHPDoc block for 'updateDb' \u2014 required by WPCS for all public functions; Function 'updateDb' uses camelCase \u2014 WPCS requires snake_case (e.g., 'update_db')",
+            "fix": "Add /** @param, @return, @since tags above function 'updateDb'; Rename to snake_case convention"
+          },
+          "sql_safety": {
+            "severity": "critical",
+            "issue": "$wpdb database queries in 'updateDb' execute without $wpdb->prepare() \u2014 SQL injection vulnerability allows attackers to manipulate database queries via unsanitized input",
+            "fix": "Wrap all dynamic values in $wpdb->prepare() with typed placeholders: $wpdb->prepare('SELECT * FROM %s WHERE id = %d', $table, absint($id))"
+          },
+          "security": {
+            "severity": "medium",
+            "issue": "'updateDb' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce-shipping.json)",
+            "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+          },
+          "performance": {
+            "severity": "low",
+            "issue": "'updateDb' has no obvious performance issues for its current scope (source: woocommerce-shipping.json)",
+            "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+          },
+          "wp_api_usage": {
+            "severity": "low",
+            "issue": "'updateDb' uses WordPress APIs appropriately for its scope (source: woocommerce-shipping.json), but hooks and filters could be more explicit",
+            "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+          },
+          "code_quality": {
+            "severity": "medium",
+            "issue": "'updateDb' (51 lines, source: woocommerce-shipping.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+            "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+          },
+          "dependency_integrity": {
+            "severity": "high",
+            "issue": "'updateDb' uses direct require/require_once for file inclusion \u2014 bypasses WordPress autoloading and creates fragile file path dependencies",
+            "fix": "Use WordPress plugin architecture: register classes in plugin.php with spl_autoload_register() or Composer autoloading instead of direct require"
+          },
+          "i18n": {
+            "severity": "low",
+            "issue": "'updateDb' i18n handling is acceptable (source: woocommerce-shipping.json) \u2014 verify text domain consistency across the plugin",
+            "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+          },
+          "accessibility": {
+            "severity": "low",
+            "issue": "'updateDb' does not produce HTML output \u2014 accessibility dimension not applicable (source: woocommerce-shipping.json)",
+            "fix": "No changes needed for accessibility in this non-rendering function"
+          }
+        },
+        "key_observation": "'updateDb' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce-shipping.json)"
+      },
+      "corrected_code": "/**\n * Updatedb \u2014 fixed version.\n *\n * @return mixed\n * @since 1.0.0\n */\nfunction updateDb()\n    {\n    global $wpdb;\n    $cache_key = 'wp_plugin_updateDb_' . md5( serialize( func_get_args() ) );\n    $cached = wp_cache_get( $cache_key, 'plugin-slug' );\n    if ( false !== $cached ) {\n        return $cached;\n    }\n        global $wpdb;\n\n        $version = get_option('my_plugin_version', '1.1');\n\n        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');\n\n        $charset_collate = $wpdb->get_charset_collate();\n\n        $table_name = $wpdb->prefix . 'dpdconnect_labels';\n        $sql = \"CREATE TABLE IF NOT EXISTS $table_name (\n            id mediumint(9) NOT NULL AUTO_INCREMENT,\n            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,\n            order_id int(11) NOT NULL,\n            contents mediumblob NOT NULL,\n            type tinyint NOT NULL,\n            shipment_identifier varchar(255) NOT NULL,\n            parcel_numbers varchar(255) NOT NULL,\n            PRIMARY KEY id (id),\n            INDEX created_at (created_at),\n            INDEX order_id_type_created_at (order_id, type, created_at)\n        ) $charset_collate;\";\n        $wpdb->query($sql);\n\n        $table_name = $wpdb->prefix . 'dpdconnect_batches';\n        $sql = \"CREATE TABLE IF NOT EXISTS $table_name (\n            id mediumint(9) NOT NULL AUTO_INCREMENT,\n            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,\n            shipment_count smallint(5) NOT NULL,\n            success_count smallint(5) DEFAULT 0,\n            failure_count smallint(5) DEFAULT 0,\n            status varchar(255) NOT NULL,\n            PRIMARY KEY id (id),\n            INDEX created_at (created_at)\n        ) $charset_collate;\";\n        $wpdb->query($sql);\n\n        $table_name = $wpdb->prefix . 'dpdconnect_jobs';\n        $sql = \"CREATE TABLE IF NOT EXISTS $table_name (\n            id mediumint(9) NOT NULL AUTO_INCREMENT,\n            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,\n            external_id varchar(255) NOT NULL,\n            batch_id varchar(255) NOT NULL,\n            order_id varchar(255) NOT NULL,\n            status varchar(255) NOT NULL,\n            type varchar(255) NOT NULL,\n            error text,\n            state_message text,\n            label_id int(11) NULL,\n            PRIMARY KEY id (id),\n            INDEX created_at (created_at),\n            INDEX batch_id (batch_id),\n            INDEX order_id_type_created_at (order_id, type, created_at)\n        ) $charset_collate;\";\n        $wpdb->query($sql);\n    }",
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_few_shot",
+      "php_lint": {
+        "valid": true,
+        "errors": ""
+      },
+      "critique_fix_alignment": {
+        "critical_high_issues": 2,
+        "addressed_issues": 1,
+        "unaddressed_issues": [
+          {
+            "dimension": "sql_safety",
+            "severity": "critical",
+            "fix_text": "Wrap all dynamic values in $wpdb->prepare() with typed placeholders: $wpdb->prepare('SELECT * FROM %s WHERE id = %d', $table, absint($id))",
+            "missing_apis": [
+              "$wpdb->prepare",
+              "absint"
+            ]
+          }
+        ],
+        "alignment_ratio": 0.5
+      },
+      "_audit_index": 16,
+      "_rubric_pending": {
+        "C1": null,
+        "C2": null,
+        "C3": null,
+        "C4": null,
+        "C5": null,
+        "C6": null
+      }
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "LP_Post_Type_Actions::trashed_post",
+      "defective_code": "function trashed_post( $post_id ) {\n\t\tif ( $this->is_course_item( $post_id ) ) {\n\t\t\t$course_ids = $this->get( 'item-courses-' . $post_id );\n\n\t\t\tif ( $course_ids ) {\n\t\t\t\t$curd = new LP_Course_CURD();\n\n\t\t\t\tforeach ( $course_ids as $course_id ) {\n\t\t\t\t\t$curd->remove_item( $post_id, $course_id );\n\t\t\t\t\t//do_action( 'learn-press/removed-course-item', $course_id );\n\t\t\t\t}\n\n\t\t\t\t$this->delete( 'item-courses-' . $post_id );\n\t\t\t}\n\t\t} elseif ( $this->is_course( $post_id ) ) {\n\t\t\tdo_action( 'learn-press/trashed-course', $post_id );\n\t\t} elseif ( get_post_type( $post_id ) == LP_QUESTION_CPT ) {\n\t\t\tglobal $wpdb;\n\t\t\t$wpdb->delete( $wpdb->prefix . 'learnpress_quiz_questions', array( 'question_id' => $post_id ), array( '%d' ) );\n\t\t}\n\t}",
+      "critique": {
+        "summary": "Function 'trashed_post' has 1 critical issue(s) (sql_safety) requiring immediate remediation before deployment.",
+        "dimensions": {
+          "wpcs_compliance": {
+            "severity": "medium",
+            "issue": "Missing PHPDoc block for 'trashed_post' \u2014 required by WPCS for all public functions",
+            "fix": "Add /** @param, @return, @since tags above function 'trashed_post'"
+          },
+          "sql_safety": {
+            "severity": "critical",
+            "issue": "$wpdb database queries in 'trashed_post' execute without $wpdb->prepare() \u2014 SQL injection vulnerability allows attackers to manipulate database queries via unsanitized input",
+            "fix": "Wrap all dynamic values in $wpdb->prepare() with typed placeholders: $wpdb->prepare('SELECT * FROM %s WHERE id = %d', $table, absint($id))"
+          },
+          "security": {
+            "severity": "medium",
+            "issue": "'trashed_post' has no obvious security vulnerabilities but lacks defensive coding patterns (source: learnpress-course-review.json)",
+            "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+          },
+          "performance": {
+            "severity": "low",
+            "issue": "'trashed_post' performs potentially expensive operations in a loop without caching (source: learnpress-course-review.json)",
+            "fix": "Cache expensive computed values using wp_cache_set()/wp_cache_get() with appropriate cache group and expiry"
+          },
+          "wp_api_usage": {
+            "severity": "high",
+            "issue": "'trashed_post' uses raw $wpdb queries for post data instead of WP_Query \u2014 bypasses WordPress caching, filters, and multisite table prefix support",
+            "fix": "Replace raw SQL with WP_Query: $query = new WP_Query(['post_type' => 'post', 'posts_per_page' => -1]); $posts = $query->posts;"
+          },
+          "code_quality": {
+            "severity": "medium",
+            "issue": "'trashed_post' (18 lines, source: learnpress-course-review.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+            "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+          },
+          "dependency_integrity": {
+            "severity": "low",
+            "issue": "'trashed_post' instantiates LP_Course_CURD \u2014 ensure these dependencies are available in all execution contexts (source: learnpress-course-review.json)",
+            "fix": "Inject dependencies via constructor or factory pattern rather than instantiating inside the function; improves testability"
+          },
+          "i18n": {
+            "severity": "low",
+            "issue": "'trashed_post' i18n handling is acceptable (source: learnpress-course-review.json) \u2014 verify text domain consistency across the plugin",
+            "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+          },
+          "accessibility": {
+            "severity": "low",
+            "issue": "'trashed_post' does not produce HTML output \u2014 accessibility dimension not applicable (source: learnpress-course-review.json)",
+            "fix": "No changes needed for accessibility in this non-rendering function"
+          }
+        },
+        "key_observation": "'trashed_post' has no obvious security vulnerabilities but lacks defensive coding patterns (source: learnpress-course-review.json)"
+      },
+      "corrected_code": "/**\n * Trashed Post \u2014 fixed version.\n *\n  * @param mixed $post_id Post Id value.\n* @return mixed\n * @since 1.0.0\n */\nfunction trashed_post( $post_id ) {\n    global $wpdb;\n    $cache_key = 'wp_plugin_trashed_post_' . md5( serialize( func_get_args() ) );\n    $cached = wp_cache_get( $cache_key, 'plugin-slug' );\n    if ( false !== $cached ) {\n        return $cached;\n    }\n\t\tif ( $this->is_course_item( $post_id ) ) {\n\t\t\t$course_ids = $this->get( 'item-courses-' . $post_id );\n\n\t\t\tif ( $course_ids ) {\n\t\t\t\t$curd = new LP_Course_CURD();\n\n\t\t\t\tforeach ( $course_ids as $course_id ) {\n\t\t\t\t\t$curd->remove_item( $post_id, $course_id );\n\t\t\t\t\t//do_action( 'learn-press/removed-course-item', $course_id );\n\t\t\t\t}\n\n\t\t\t\t$this->delete( 'item-courses-' . $post_id );\n\t\t\t}\n\t\t} elseif ( $this->is_course( $post_id ) ) {\n\t\t\tdo_action( 'learn-press/trashed-course', $post_id );\n\t\t} elseif ( get_post_type( $post_id ) == LP_QUESTION_CPT ) {\n\t\t\tglobal $wpdb;\n\t\t\t$wpdb->delete( $wpdb->prefix . 'learnpress_quiz_questions', array( 'question_id' => $post_id ), array( '%d' ) );\n\t\t}\n\t}",
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_few_shot",
+      "php_lint": {
+        "valid": true,
+        "errors": ""
+      },
+      "critique_fix_alignment": {
+        "critical_high_issues": 2,
+        "addressed_issues": 1,
+        "unaddressed_issues": [
+          {
+            "dimension": "sql_safety",
+            "severity": "critical",
+            "fix_text": "Wrap all dynamic values in $wpdb->prepare() with typed placeholders: $wpdb->prepare('SELECT * FROM %s WHERE id = %d', $table, absint($id))",
+            "missing_apis": [
+              "$wpdb->prepare",
+              "absint"
+            ]
+          }
+        ],
+        "alignment_ratio": 0.5
+      },
+      "_audit_index": 25,
+      "_rubric_pending": {
+        "C1": null,
+        "C2": null,
+        "C3": null,
+        "C4": null,
+        "C5": null,
+        "C6": null
+      }
+    },
+    {
+      "source_file": "pp-express-wc4jp.json",
+      "function_name": "WC_Gateway_PPEC_Checkout_Handler::maybe_return_from_paypal",
+      "defective_code": "/**\n\t * Checks data is correctly set when returning from PayPal Checkout\n\t */\nfunction maybe_return_from_paypal() {\n\t\t// phpcs:disable WordPress.Security.NonceVerification.Recommended\n\t\tif (\n\t\t\tisset( $_GET['woo-paypal-return'] )\n\t\t\t&& isset( $_GET['update_subscription_payment_method'] )\n\t\t\t&& 'true' === $_GET['update_subscription_payment_method']\n\t\t) {\n\t\t\t$this->handle_subscription_payment_change_success();\n\t\t\treturn;\n\t\t}\n\n\t\tif ( empty( $_GET['woo-paypal-return'] ) || empty( $_GET['token'] ) ) {\n\t\t\treturn;\n\t\t}\n\n\t\t$token                    = $_GET['token']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash\n\t\t$create_billing_agreement = ! empty( $_GET['create-billing-agreement'] );\n\t\t$session                  = WC()->session->get( 'paypal' );\n\n\t\tif ( empty( $session ) || $this->session_has_expired( $token ) ) {\n\t\t\twc_add_notice( esc_html__( 'Your PayPal checkout session has expired. Please check out again.', 'woocommerce-gateway-paypal-express-checkout' ), 'error' );\n\t\t\treturn;\n\t\t}\n\n\t\t// Store values in session.\n\t\t$session->checkout_completed = true;\n\t\t$session->token              = $token;\n\n\t\tif ( ! empty( $_GET['PayerID'] ) ) {\n\t\t\t$session->payer_id = $_GET['PayerID']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash\n\t\t} elseif ( $create_billing_agreement ) {\n\t\t\t$session->create_billing_agreement = true;\n\t\t} else {\n\t\t\treturn;\n\t\t}\n\t\t// phpcs:enable\n\n\t\t// Update customer addresses here from PayPal selection so they can be used to calculate local taxes.\n\t\t$this->update_customer_addresses_from_paypal( $token );\n\n\t\tWC()->session->set( 'paypal', $session );\n\n\t\ttry {\n\t\t\t// If commit was true, take payment right now\n\t\t\tif ( 'order' === $session->source && $session->order_id ) {\n\t\t\t\t$checkout_details = $this->get_checkout_details( $token );\n\n\t\t\t\t// Get order\n\t\t\t\t$order = wc_get_order( $session->order_id );\n\n\t\t\t\t// Maybe create billing agreement.\n\t\t\t\tif ( $create_billing_agreement ) {\n\t\t\t\t\t$this->create_billing_agreement( $order, $checkout_details );\n\t\t\t\t}\n\n\t\t\t\t// Complete the payment now.\n\t\t\t\tif ( ! empty( $session->payer_id ) ) {\n\t\t\t\t\t$this->do_payment( $order, $session->token, $session->payer_id );\n\t\t\t\t} elseif ( $order->get_total() <= 0 ) {\n\t\t\t\t\t$order->payment_complete();\n\t\t\t\t}\n\n\t\t\t\t// Clear Cart\n\t\t\t\tWC()->cart->empty_cart();\n\n\t\t\t\t// Redirect\n\t\t\t\twp_safe_redirect( $order->get_checkout_order_received_url() );\n\t\t\t\texit;\n\t\t\t}\n\t\t} catch ( PayPal_API_Exception $e ) {\n\t\t\twc_add_notice( esc_html__( 'Sorry, an error occurred while trying to retrieve your information from PayPal. Please try again.', 'woocommerce-gateway-paypal-express-checkout' ), 'error' );\n\t\t\t$this->maybe_clear_session_data();\n\t\t\twp_safe_redirect( wc_get_page_permalink( 'cart' ) );\n\t\t\texit;\n\t\t} catch ( PayPal_Missing_Session_Exception $e ) {\n\t\t\twc_add_notice( esc_html__( 'Your PayPal checkout session has expired. Please check out again.', 'woocommerce-gateway-paypal-express-checkout' ), 'error' );\n\t\t\t$this->maybe_clear_session_data();\n\t\t\twp_safe_redirect( wc_get_page_permalink( 'cart' ) );\n\t\t\texit;\n\t\t}\n\t}",
+      "critique": {
+        "summary": "Function 'maybe_return_from_paypal' has 1 critical issue(s) (security) requiring immediate remediation before deployment.",
+        "dimensions": {
+          "wpcs_compliance": {
+            "severity": "low",
+            "issue": "WPCS coding style is acceptable in 'maybe_return_from_paypal' but lacks PHPDoc completeness",
+            "fix": "Ensure @param types and @return type are documented"
+          },
+          "sql_safety": {
+            "severity": "low",
+            "issue": "No direct database queries in 'maybe_return_from_paypal' (source: pp-express-wc4jp.json) \u2014 SQL safety dimension acceptable",
+            "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+          },
+          "security": {
+            "severity": "critical",
+            "issue": "'maybe_return_from_paypal' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests",
+            "fix": "Add wp_verify_nonce($_POST['_wpnonce'], 'action_name') before processing any user input; use wp_nonce_field() in forms"
+          },
+          "performance": {
+            "severity": "low",
+            "issue": "'maybe_return_from_paypal' has no obvious performance issues for its current scope (source: pp-express-wc4jp.json)",
+            "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+          },
+          "wp_api_usage": {
+            "severity": "low",
+            "issue": "'maybe_return_from_paypal' uses WordPress APIs appropriately for its scope (source: pp-express-wc4jp.json), but hooks and filters could be more explicit",
+            "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+          },
+          "code_quality": {
+            "severity": "medium",
+            "issue": "'maybe_return_from_paypal' (69 lines, source: pp-express-wc4jp.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+            "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+          },
+          "dependency_integrity": {
+            "severity": "low",
+            "issue": "'maybe_return_from_paypal' has no problematic dependency patterns detected (source: pp-express-wc4jp.json)",
+            "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+          },
+          "i18n": {
+            "severity": "low",
+            "issue": "'maybe_return_from_paypal' i18n handling is acceptable (source: pp-express-wc4jp.json) \u2014 verify text domain consistency across the plugin",
+            "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+          },
+          "accessibility": {
+            "severity": "low",
+            "issue": "'maybe_return_from_paypal' does not produce HTML output \u2014 accessibility dimension not applicable (source: pp-express-wc4jp.json)",
+            "fix": "No changes needed for accessibility in this non-rendering function"
+          }
+        },
+        "key_observation": "'maybe_return_from_paypal' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests"
+      },
+      "corrected_code": "/**\n\t * Checks data is correctly set when returning from PayPal Checkout\n\t */\nfunction maybe_return_from_paypal() {\n    if ( ! current_user_can( 'manage_options' ) ) {\n        wp_send_json_error( array( 'message' => esc_html__( 'Permission denied.', 'plugin-slug' ) ) );\n        return;\n    }\n    // Security: Verify nonce before processing user input\n    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) ), 'maybe_return_from_paypal_action' ) ) {\n        wp_die( esc_html__( 'Security check failed.', 'plugin-slug' ) );\n    }\n\n\t\t// phpcs:disable WordPress.Security.NonceVerification.Recommended\n\t\tif (\n\t\t\tisset( $_GET['woo-paypal-return'] )\n\t\t\t&& isset( $_GET['update_subscription_payment_method'] )\n\t\t\t&& 'true' === $_GET['update_subscription_payment_method']\n\t\t) {\n\t\t\t$this->handle_subscription_payment_change_success();\n\t\t\treturn;\n\t\t}\n\n\t\tif ( empty( $_GET['woo-paypal-return'] ) || empty( $_GET['token'] ) ) {\n\t\t\treturn;\n\t\t}\n\n\t\t$token                    = $_GET['token']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash\n\t\t$create_billing_agreement = ! empty( $_GET['create-billing-agreement'] );\n\t\t$session                  = WC()->session->get( 'paypal' );\n\n\t\tif ( empty( $session ) || $this->session_has_expired( $token ) ) {\n\t\t\twc_add_notice( esc_html__( 'Your PayPal checkout session has expired. Please check out again.', 'woocommerce-gateway-paypal-express-checkout' ), 'error' );\n\t\t\treturn;\n\t\t}\n\n\t\t// Store values in session.\n\t\t$session->checkout_completed = true;\n\t\t$session->token              = $token;\n\n\t\tif ( ! empty( $_GET['PayerID'] ) ) {\n\t\t\t$session->payer_id = $_GET['PayerID']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash\n\t\t} elseif ( $create_billing_agreement ) {\n\t\t\t$session->create_billing_agreement = true;\n\t\t} else {\n\t\t\treturn;\n\t\t}\n\t\t// phpcs:enable\n\n\t\t// Update customer addresses here from PayPal selection so they can be used to calculate local taxes.\n\t\t$this->update_customer_addresses_from_paypal( $token );\n\n\t\tWC()->session->set( 'paypal', $session );\n\n\t\ttry {\n\t\t\t// If commit was true, take payment right now\n\t\t\tif ( 'order' === $session->source && $session->order_id ) {\n\t\t\t\t$checkout_details = $this->get_checkout_details( $token );\n\n\t\t\t\t// Get order\n\t\t\t\t$order = wc_get_order( $session->order_id );\n\n\t\t\t\t// Maybe create billing agreement.\n\t\t\t\tif ( $create_billing_agreement ) {\n\t\t\t\t\t$this->create_billing_agreement( $order, $checkout_details );\n\t\t\t\t}\n\n\t\t\t\t// Complete the payment now.\n\t\t\t\tif ( ! empty( $session->payer_id ) ) {\n\t\t\t\t\t$this->do_payment( $order, $session->token, $session->payer_id );\n\t\t\t\t} elseif ( $order->get_total() <= 0 ) {\n\t\t\t\t\t$order->payment_complete();\n\t\t\t\t}\n\n\t\t\t\t// Clear Cart\n\t\t\t\tWC()->cart->empty_cart();\n\n\t\t\t\t// Redirect\n\t\t\t\twp_safe_redirect( $order->get_checkout_order_received_url() );\n\t\t\t\texit;\n\t\t\t}\n\t\t} catch ( PayPal_API_Exception $e ) {\n\t\t\twc_add_notice( esc_html__( 'Sorry, an error occurred while trying to retrieve your information from PayPal. Please try again.', 'woocommerce-gateway-paypal-express-checkout' ), 'error' );\n\t\t\t$this->maybe_clear_session_data();\n\t\t\twp_safe_redirect( wc_get_page_permalink( 'cart' ) );\n\t\t\texit;\n\t\t} catch ( PayPal_Missing_Session_Exception $e ) {\n\t\t\twc_add_notice( esc_html__( 'Your PayPal checkout session has expired. Please check out again.', 'woocommerce-gateway-paypal-express-checkout' ), 'error' );\n\t\t\t$this->maybe_clear_session_data();\n\t\t\twp_safe_redirect( wc_get_page_permalink( 'cart' ) );\n\t\t\texit;\n\t\t}\n\t}",
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_few_shot",
+      "php_lint": {
+        "valid": true,
+        "errors": ""
+      },
+      "critique_fix_alignment": {
+        "critical_high_issues": 1,
+        "addressed_issues": 1,
+        "unaddressed_issues": [],
+        "alignment_ratio": 1.0
+      },
+      "_audit_index": 28,
+      "_rubric_pending": {
+        "C1": null,
+        "C2": null,
+        "C3": null,
+        "C4": null,
+        "C5": null,
+        "C6": null
+      }
+    },
+    {
+      "source_file": "woocommerce-paypal-payments.json",
+      "function_name": "AvailabilityNotice::execute",
+      "defective_code": "/**\n\t * Adds availability notice if applicable.\n\t *\n\t * @return void\n\t */\nfunction execute(): void {\n\t\tif ( ! $this->should_display() ) {\n\t\t\treturn;\n\t\t}\n\n\t\t// We need to check is active before checking failure requests, otherwise failure status won't be set.\n\t\t$is_active = $this->product_status->is_active();\n\n\t\tif ( $this->product_status->has_request_failure() ) {\n\t\t\t$this->add_seller_status_failure_notice();\n\t\t} elseif ( ! $is_active ) {\n\t\t\t$this->add_not_available_notice();\n\t\t}\n\n\t\tif ( ! $this->is_available ) {\n\t\t\treturn;\n\t\t}\n\n\t\tif ( ! $this->is_server_supported ) {\n\t\t\t$this->add_server_not_supported_notice();\n\t\t}\n\n\t\t$button_enabled = $this->button->is_enabled();\n\n\t\t// We do this check on $_POST because this is called before settings are saved.\n\t\t// phpcs:ignore WordPress.Security.NonceVerification.Missing\n\t\tif ( isset( $_POST['ppcp'] ) ) {\n\t\t\t// phpcs:ignore WordPress.Security.NonceVerification.Missing\n\t\t\t$post_data      = wc_clean( (array) wp_unslash( $_POST['ppcp'] ) );\n\t\t\t$button_enabled = wc_string_to_bool( $post_data['applepay_button_enabled'] ?? false );\n\t\t}\n\n\t\tif ( ! $button_enabled ) {\n\t\t\treturn;\n\t\t}\n\n\t\tif ( ! $this->settings->applepay_validated() ) {\n\t\t\t$this->add_merchant_not_validated_notice();\n\t\t}\n\t}",
+      "critique": {
+        "summary": "Function 'execute' has 1 critical issue(s) (security) requiring immediate remediation before deployment.",
+        "dimensions": {
+          "wpcs_compliance": {
+            "severity": "medium",
+            "issue": "Function 'execute' uses camelCase \u2014 WPCS requires snake_case (e.g., 'execute')",
+            "fix": "Rename to snake_case convention"
+          },
+          "sql_safety": {
+            "severity": "low",
+            "issue": "No direct database queries in 'execute' (source: woocommerce-paypal-payments.json) \u2014 SQL safety dimension acceptable",
+            "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+          },
+          "security": {
+            "severity": "critical",
+            "issue": "'execute' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests",
+            "fix": "Add wp_verify_nonce($_POST['_wpnonce'], 'action_name') before processing any user input; use wp_nonce_field() in forms"
+          },
+          "performance": {
+            "severity": "low",
+            "issue": "'execute' has no obvious performance issues for its current scope (source: woocommerce-paypal-payments.json)",
+            "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+          },
+          "wp_api_usage": {
+            "severity": "low",
+            "issue": "'execute' uses WordPress APIs appropriately for its scope (source: woocommerce-paypal-payments.json), but hooks and filters could be more explicit",
+            "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+          },
+          "code_quality": {
+            "severity": "medium",
+            "issue": "'execute' (33 lines, source: woocommerce-paypal-payments.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+            "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+          },
+          "dependency_integrity": {
+            "severity": "low",
+            "issue": "'execute' has no problematic dependency patterns detected (source: woocommerce-paypal-payments.json)",
+            "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+          },
+          "i18n": {
+            "severity": "low",
+            "issue": "'execute' i18n handling is acceptable (source: woocommerce-paypal-payments.json) \u2014 verify text domain consistency across the plugin",
+            "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+          },
+          "accessibility": {
+            "severity": "low",
+            "issue": "'execute' does not produce HTML output \u2014 accessibility dimension not applicable (source: woocommerce-paypal-payments.json)",
+            "fix": "No changes needed for accessibility in this non-rendering function"
+          }
+        },
+        "key_observation": "'execute' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests"
+      },
+      "corrected_code": "/**\n\t * Adds availability notice if applicable.\n\t *\n\t * @return void\n\t */\nfunction execute(): void {\n    // Security: Verify nonce before processing user input\n    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) ), 'execute_action' ) ) {\n        wp_die( esc_html__( 'Security check failed.', 'plugin-slug' ) );\n    }\n\n\t\tif ( ! $this->should_display() ) {\n\t\t\treturn;\n\t\t}\n\n\t\t// We need to check is active before checking failure requests, otherwise failure status won't be set.\n\t\t$is_active = $this->product_status->is_active();\n\n\t\tif ( $this->product_status->has_request_failure() ) {\n\t\t\t$this->add_seller_status_failure_notice();\n\t\t} elseif ( ! $is_active ) {\n\t\t\t$this->add_not_available_notice();\n\t\t}\n\n\t\tif ( ! $this->is_available ) {\n\t\t\treturn;\n\t\t}\n\n\t\tif ( ! $this->is_server_supported ) {\n\t\t\t$this->add_server_not_supported_notice();\n\t\t}\n\n\t\t$button_enabled = $this->button->is_enabled();\n\n\t\t// We do this check on $_POST because this is called before settings are saved.\n\t\t// phpcs:ignore WordPress.Security.NonceVerification.Missing\n\t\tif ( isset( $_POST['ppcp'] ) ) {\n\t\t\t// phpcs:ignore WordPress.Security.NonceVerification.Missing\n\t\t\t$post_data      = wc_clean( (array) wp_unslash( $_POST['ppcp'] ) );\n\t\t\t$button_enabled = wc_string_to_bool( $post_data['applepay_button_enabled'] ?? false );\n\t\t}\n\n\t\tif ( ! $button_enabled ) {\n\t\t\treturn;\n\t\t}\n\n\t\tif ( ! $this->settings->applepay_validated() ) {\n\t\t\t$this->add_merchant_not_validated_notice();\n\t\t}\n\t}",
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_few_shot",
+      "php_lint": {
+        "valid": true,
+        "errors": ""
+      },
+      "critique_fix_alignment": {
+        "critical_high_issues": 1,
+        "addressed_issues": 1,
+        "unaddressed_issues": [],
+        "alignment_ratio": 1.0
+      },
+      "_audit_index": 30,
+      "_rubric_pending": {
+        "C1": null,
+        "C2": null,
+        "C3": null,
+        "C4": null,
+        "C5": null,
+        "C6": null
+      }
+    },
+    {
+      "source_file": "masvideos.json",
+      "function_name": "MasVideos_Widget_Movies_Rating_Filter::get_filtered_movie_count",
+      "defective_code": "/**\n\t * Count movies after other filters have occurred by adjusting the main query.\n\t *\n\t * @param  int $rating Rating.\n\t * @return int\n\t */\nfunction get_filtered_movie_count( $rating ) {\n\t\tglobal $wpdb;\n\n\t\t$tax_query  = MasVideos_Movies_Query::get_main_tax_query();\n\t\t$meta_query = MasVideos_Movies_Query::get_main_meta_query();\n\n\t\t// Unset current rating filter.\n\t\tforeach ( $tax_query as $key => $query ) {\n\t\t\tif ( ! empty( $query['rating_filter'] ) ) {\n\t\t\t\tunset( $tax_query[ $key ] );\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\n\t\t// Set new rating filter.\n\t\t$movie_visibility_terms = masvideos_get_movie_visibility_term_ids();\n\t\t$tax_query[]              = array(\n\t\t\t'taxonomy'      => 'movie_visibility',\n\t\t\t'field'         => 'term_taxonomy_id',\n\t\t\t'terms'         => $movie_visibility_terms[ 'rated-' . $rating ],\n\t\t\t'operator'      => 'IN',\n\t\t\t'rating_filter' => true,\n\t\t);\n\n\t\t$meta_query     = new WP_Meta_Query( $meta_query );\n\t\t$tax_query      = new WP_Tax_Query( $tax_query );\n\t\t$meta_query_sql = $meta_query->get_sql( 'post', $wpdb->posts, 'ID' );\n\t\t$tax_query_sql  = $tax_query->get_sql( $wpdb->posts, 'ID' );\n\n\t\t$sql  = \"SELECT COUNT( DISTINCT {$wpdb->posts}",
+      "critique": {
+        "summary": "Function 'get_filtered_movie_count' has 1 critical issue(s) (sql_safety) requiring immediate remediation before deployment.",
+        "dimensions": {
+          "wpcs_compliance": {
+            "severity": "low",
+            "issue": "WPCS coding style is acceptable in 'get_filtered_movie_count' but lacks PHPDoc completeness",
+            "fix": "Ensure @param types and @return type are documented"
+          },
+          "sql_safety": {
+            "severity": "critical",
+            "issue": "$wpdb database queries in 'get_filtered_movie_count' execute without $wpdb->prepare() \u2014 SQL injection vulnerability allows attackers to manipulate database queries via unsanitized input",
+            "fix": "Wrap all dynamic values in $wpdb->prepare() with typed placeholders: $wpdb->prepare('SELECT * FROM %s WHERE id = %d', $table, absint($id))"
+          },
+          "security": {
+            "severity": "medium",
+            "issue": "'get_filtered_movie_count' has no obvious security vulnerabilities but lacks defensive coding patterns (source: masvideos.json)",
+            "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+          },
+          "performance": {
+            "severity": "low",
+            "issue": "'get_filtered_movie_count' performs potentially expensive operations in a loop without caching (source: masvideos.json)",
+            "fix": "Cache expensive computed values using wp_cache_set()/wp_cache_get() with appropriate cache group and expiry"
+          },
+          "wp_api_usage": {
+            "severity": "high",
+            "issue": "'get_filtered_movie_count' uses raw $wpdb queries for post data instead of WP_Query \u2014 bypasses WordPress caching, filters, and multisite table prefix support",
+            "fix": "Replace raw SQL with WP_Query: $query = new WP_Query(['post_type' => 'post', 'posts_per_page' => -1]); $posts = $query->posts;"
+          },
+          "code_quality": {
+            "severity": "medium",
+            "issue": "'get_filtered_movie_count' (26 lines, source: masvideos.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+            "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+          },
+          "dependency_integrity": {
+            "severity": "low",
+            "issue": "'get_filtered_movie_count' instantiates WP_Tax_Query, WP_Meta_Query \u2014 ensure these dependencies are available in all execution contexts (source: masvideos.json)",
+            "fix": "Inject dependencies via constructor or factory pattern rather than instantiating inside the function; improves testability"
+          },
+          "i18n": {
+            "severity": "low",
+            "issue": "'get_filtered_movie_count' i18n handling is acceptable (source: masvideos.json) \u2014 verify text domain consistency across the plugin",
+            "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+          },
+          "accessibility": {
+            "severity": "low",
+            "issue": "'get_filtered_movie_count' does not produce HTML output \u2014 accessibility dimension not applicable (source: masvideos.json)",
+            "fix": "No changes needed for accessibility in this non-rendering function"
+          }
+        },
+        "key_observation": "'get_filtered_movie_count' has no obvious security vulnerabilities but lacks defensive coding patterns (source: masvideos.json)"
+      },
+      "corrected_code": "/**\n\t * Count movies after other filters have occurred by adjusting the main query.\n\t *\n\t * @param  int $rating Rating.\n\t * @return int\n\t */\nfunction get_filtered_movie_count( $rating ) {\n    global $wpdb;\n    $cache_key = 'wp_plugin_get_filtered_movie_count_' . md5( serialize( func_get_args() ) );\n    $cached = wp_cache_get( $cache_key, 'plugin-slug' );\n    if ( false !== $cached ) {\n        return $cached;\n    }\n\t\tglobal $wpdb;\n\n\t\t$tax_query  = MasVideos_Movies_Query::get_main_tax_query();\n\t\t$meta_query = MasVideos_Movies_Query::get_main_meta_query();\n\n\t\t// Unset current rating filter.\n\t\tforeach ( $tax_query as $key => $query ) {\n\t\t\tif ( ! empty( $query['rating_filter'] ) ) {\n\t\t\t\tunset( $tax_query[ $key ] );\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\n\t\t// Set new rating filter.\n\t\t$movie_visibility_terms = masvideos_get_movie_visibility_term_ids();\n\t\t$tax_query[]              = array(\n\t\t\t'taxonomy'      => 'movie_visibility',\n\t\t\t'field'         => 'term_taxonomy_id',\n\t\t\t'terms'         => $movie_visibility_terms[ 'rated-' . $rating ],\n\t\t\t'operator'      => 'IN',\n\t\t\t'rating_filter' => true,\n\t\t);\n\n\t\t$meta_query     = new WP_Meta_Query( $meta_query );\n\t\t$tax_query      = new WP_Tax_Query( $tax_query );\n\t\t$meta_query_sql = $meta_query->get_sql( 'post', $wpdb->posts, 'ID' );\n\t\t$tax_query_sql  = $tax_query->get_sql( $wpdb->posts, 'ID' );\n\n\t\t$sql  = \"SELECT COUNT( DISTINCT {$wpdb->posts}",
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_few_shot",
+      "php_lint": {
+        "valid": true,
+        "errors": ""
+      },
+      "critique_fix_alignment": {
+        "critical_high_issues": 2,
+        "addressed_issues": 1,
+        "unaddressed_issues": [
+          {
+            "dimension": "sql_safety",
+            "severity": "critical",
+            "fix_text": "Wrap all dynamic values in $wpdb->prepare() with typed placeholders: $wpdb->prepare('SELECT * FROM %s WHERE id = %d', $table, absint($id))",
+            "missing_apis": [
+              "$wpdb->prepare",
+              "absint"
+            ]
+          }
+        ],
+        "alignment_ratio": 0.5
+      },
+      "_audit_index": 31,
+      "_rubric_pending": {
+        "C1": null,
+        "C2": null,
+        "C3": null,
+        "C4": null,
+        "C5": null,
+        "C6": null
+      }
+    },
+    {
+      "source_file": "blocks-animation.json",
+      "function_name": "LimitedOffers::__construct",
+      "defective_code": "/**\n\t * LimitedOffers constructor.\n\t */\nfunction __construct() {\n\t\t$this->announcements = apply_filters( 'themeisle_sdk_announcements', array() );\n\n\t\tif ( empty( $this->announcements ) || ! is_array( $this->announcements ) ) {\n\t\t\treturn;\n\t\t}\n\t\n\t\ttry {\n\t\t\tforeach ( $this->announcements as $announcement => $event_data ) {\n\t\t\t\tif ( false !== strpos( $announcement, 'black_friday' ) ) {\n\t\t\t\t\tif (\n\t\t\t\t\t\tempty( $event_data ) ||\n\t\t\t\t\t\t! is_array( $event_data ) ||\n\t\t\t\t\t\tempty( $event_data['active'] ) ||\n\t\t\t\t\t\tempty( $event_data['otter_dashboard_url'] ) ||\n\t\t\t\t\t\t! isset( $event_data['urgency_text'] )\n\t\t\t\t\t) {\n\t\t\t\t\t\tcontinue;\n\t\t\t\t\t}\n\n\t\t\t\t\t$this->active = $announcement;\n\t\t\t\t\t$this->prepare_black_friday_assets( $event_data );\n\t\t\t\t}\n\t\t\t}\n\t\t} catch ( Exception $e ) {\n\t\t\tif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {\n\t\t\t\terror_log( $e->getMessage() ); // phpcs:ignore\n\t\t\t}\n\t\t}\n\t}",
+      "critique": {
+        "summary": "Function '__construct' has 1 high-severity issue(s) (code_quality) that compromise security or correctness.",
+        "dimensions": {
+          "wpcs_compliance": {
+            "severity": "low",
+            "issue": "WPCS coding style is acceptable in '__construct' but lacks PHPDoc completeness",
+            "fix": "Ensure @param types and @return type are documented"
+          },
+          "sql_safety": {
+            "severity": "low",
+            "issue": "No direct database queries in '__construct' (source: blocks-animation.json) \u2014 SQL safety dimension acceptable",
+            "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+          },
+          "security": {
+            "severity": "medium",
+            "issue": "'__construct' has no obvious security vulnerabilities but lacks defensive coding patterns (source: blocks-animation.json)",
+            "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+          },
+          "performance": {
+            "severity": "low",
+            "issue": "'__construct' performs potentially expensive operations in a loop without caching (source: blocks-animation.json)",
+            "fix": "Cache expensive computed values using wp_cache_set()/wp_cache_get() with appropriate cache group and expiry"
+          },
+          "wp_api_usage": {
+            "severity": "low",
+            "issue": "'__construct' uses WordPress APIs appropriately for its scope (source: blocks-animation.json), but hooks and filters could be more explicit",
+            "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+          },
+          "code_quality": {
+            "severity": "high",
+            "issue": "Debug statements (var_dump/print_r/error_log) found in '__construct' \u2014 should not exist in production code paths; leaks information",
+            "fix": "Remove all var_dump(), print_r(), error_log() calls; use WP_DEBUG_LOG conditionally if logging is needed: if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) { error_log($msg); }"
+          },
+          "dependency_integrity": {
+            "severity": "low",
+            "issue": "'__construct' has no problematic dependency patterns detected (source: blocks-animation.json)",
+            "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+          },
+          "i18n": {
+            "severity": "low",
+            "issue": "'__construct' i18n handling is acceptable (source: blocks-animation.json) \u2014 verify text domain consistency across the plugin",
+            "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+          },
+          "accessibility": {
+            "severity": "low",
+            "issue": "'__construct' does not produce HTML output \u2014 accessibility dimension not applicable (source: blocks-animation.json)",
+            "fix": "No changes needed for accessibility in this non-rendering function"
+          }
+        },
+        "key_observation": "'__construct' has no obvious security vulnerabilities but lacks defensive coding patterns (source: blocks-animation.json)"
+      },
+      "corrected_code": "/**\n\t * LimitedOffers constructor.\n\t */\nfunction __construct() {\n\t\t$this->announcements = apply_filters( 'themeisle_sdk_announcements', array() );\n\n\t\tif ( empty( $this->announcements ) || ! is_array( $this->announcements ) ) {\n\t\t\treturn;\n\t\t}\n\t\n\t\ttry {\n\t\t\tforeach ( $this->announcements as $announcement => $event_data ) {\n\t\t\t\tif ( false !== strpos( $announcement, 'black_friday' ) ) {\n\t\t\t\t\tif (\n\t\t\t\t\t\tempty( $event_data ) ||\n\t\t\t\t\t\t! is_array( $event_data ) ||\n\t\t\t\t\t\tempty( $event_data['active'] ) ||\n\t\t\t\t\t\tempty( $event_data['otter_dashboard_url'] ) ||\n\t\t\t\t\t\t! isset( $event_data['urgency_text'] )\n\t\t\t\t\t) {\n\t\t\t\t\t\tcontinue;\n\t\t\t\t\t}\n\n\t\t\t\t\t$this->active = $announcement;\n\t\t\t\t\t$this->prepare_black_friday_assets( $event_data );\n\t\t\t\t}\n\t\t\t}\n\t\t} catch ( Exception $e ) {\n\t\t\tif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {\n // phpcs:ignore\n\t\t\t}\n\t\t}\n\t}",
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_few_shot",
+      "php_lint": {
+        "valid": true,
+        "errors": ""
+      },
+      "critique_fix_alignment": {
+        "critical_high_issues": 1,
+        "addressed_issues": 1,
+        "unaddressed_issues": [],
+        "alignment_ratio": 1.0
+      },
+      "_audit_index": 48,
+      "_rubric_pending": {
+        "C1": null,
+        "C2": null,
+        "C3": null,
+        "C4": null,
+        "C5": null,
+        "C6": null
+      }
+    },
+    {
+      "source_file": "page-optimize.json",
+      "function_name": "page_optimize_service_request",
+      "defective_code": "function page_optimize_service_request() {\n\t$use_cache = defined( 'PAGE_OPTIMIZE_CACHE_DIR' ) && ! empty( PAGE_OPTIMIZE_CACHE_DIR );\n\tif ( $use_cache && ! is_dir( PAGE_OPTIMIZE_CACHE_DIR ) && ! mkdir( PAGE_OPTIMIZE_CACHE_DIR, 0775, true ) ) {\n\t\t$use_cache = false;\n\t\terror_log( sprintf(\n\t\t\t/* translators: a filesystem path to a directory */\n\t\t\t__( \"Disabling page-optimize cache. Unable to create cache directory '%s'.\", page_optimize_get_text_domain() ),\n\t\t\tPAGE_OPTIMIZE_CACHE_DIR\n\t\t) );\n\t}\n\tif ( $use_cache && ( ! is_dir( PAGE_OPTIMIZE_CACHE_DIR ) || ! is_writable( PAGE_OPTIMIZE_CACHE_DIR ) || ! is_executable( PAGE_OPTIMIZE_CACHE_DIR ) ) ) {\n\t\t$use_cache = false;\n\t\terror_log( sprintf(\n\t\t\t/* translators: a filesystem path to a directory */\n\t\t\t__( \"Disabling page-optimize cache. Unable to write to cache directory '%s'.\", page_optimize_get_text_domain() ),\n\t\t\tPAGE_OPTIMIZE_CACHE_DIR\n\t\t) );\n\t}\n\n\tif ( $use_cache ) {\n\t\t$request_uri_hash = md5( $_SERVER['REQUEST_URI'] );\n\t\t$cache_file = PAGE_OPTIMIZE_CACHE_DIR . \"/page-optimize-cache-$request_uri_hash\";\n\t\t$cache_file_meta = PAGE_OPTIMIZE_CACHE_DIR . \"/page-optimize-cache-meta-$request_uri_hash\";\n\n\t\tif ( file_exists( $cache_file ) ) {\n\t\t\tif ( isset( $_SERVER['HTTP_IF_MODIFIED_SINCE'] ) ) {\n\t\t\t\tif ( strtotime( $_SERVER['HTTP_IF_MODIFIED_SINCE'] ) < filemtime( $cache_file ) ) {\n\t\t\t\t\theader( 'HTTP/1.1 304 Not Modified' );\n\t\t\t\t\texit;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tif ( file_exists( $cache_file_meta ) ) {\n\t\t\t\t$meta = json_decode( file_get_contents( $cache_file_meta ) );\n\t\t\t\tif ( null !== $meta && isset( $meta->headers ) ) {\n\t\t\t\t\tforeach ( $meta->headers as $header ) {\n\t\t\t\t\t\theader( $header );\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t$etag = '\"' . md5( file_get_contents( $cache_file ) ) . '\"';\n\n\t\t\theader( 'X-Page-Optimize: cached' );\n\t\t\theader( 'Cache-Control: max-age=' . 31536000 );\n\t\t\theader( 'ETag: ' . $etag );\n\n\t\t\techo file_get_contents( $cache_file ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- We need to trust this unfortunately.\n\t\t\tdie();\n\t\t}\n\t}\n\n\t$output = page_optimize_build_output();\n\t$content = $output['content'];\n\t$headers = $output['headers'];\n\n\tforeach( $headers as $header ) {\n\t\theader( $header );\n\t}\n\theader( 'X-Page-Optimize: uncached' );\n\theader( 'Cache-Control: max-age=' . 31536000 );\n\theader( 'ETag: \"' . md5( $content ) . '\"' );\n\n\techo $content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- We need to trust this unfortunately.\n\n\tif ( $use_cache ) {\n\t\tfile_put_contents( $cache_file, $content );\n\t\tfile_put_contents( $cache_file_meta, json_encode( array( 'headers' => $headers ) ) );\n\t}\n\n\tdie();\n}",
+      "critique": {
+        "summary": "Function 'page_optimize_service_request' has 1 high-severity issue(s) (code_quality) that compromise security or correctness.",
+        "dimensions": {
+          "wpcs_compliance": {
+            "severity": "medium",
+            "issue": "Missing PHPDoc block for 'page_optimize_service_request' \u2014 required by WPCS for all public functions",
+            "fix": "Add /** @param, @return, @since tags above function 'page_optimize_service_request'"
+          },
+          "sql_safety": {
+            "severity": "low",
+            "issue": "No direct database queries in 'page_optimize_service_request' (source: page-optimize.json) \u2014 SQL safety dimension acceptable",
+            "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+          },
+          "security": {
+            "severity": "medium",
+            "issue": "'page_optimize_service_request' has no obvious security vulnerabilities but lacks defensive coding patterns (source: page-optimize.json)",
+            "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+          },
+          "performance": {
+            "severity": "low",
+            "issue": "'page_optimize_service_request' performs potentially expensive operations in a loop without caching (source: page-optimize.json)",
+            "fix": "Cache expensive computed values using wp_cache_set()/wp_cache_get() with appropriate cache group and expiry"
+          },
+          "wp_api_usage": {
+            "severity": "low",
+            "issue": "'page_optimize_service_request' uses WordPress APIs appropriately for its scope (source: page-optimize.json), but hooks and filters could be more explicit",
+            "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+          },
+          "code_quality": {
+            "severity": "high",
+            "issue": "Debug statements (var_dump/print_r/error_log) found in 'page_optimize_service_request' \u2014 should not exist in production code paths; leaks information",
+            "fix": "Remove all var_dump(), print_r(), error_log() calls; use WP_DEBUG_LOG conditionally if logging is needed: if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) { error_log($msg); }"
+          },
+          "dependency_integrity": {
+            "severity": "low",
+            "issue": "'page_optimize_service_request' has no problematic dependency patterns detected (source: page-optimize.json)",
+            "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+          },
+          "i18n": {
+            "severity": "low",
+            "issue": "'page_optimize_service_request' i18n handling is acceptable (source: page-optimize.json) \u2014 verify text domain consistency across the plugin",
+            "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+          },
+          "accessibility": {
+            "severity": "low",
+            "issue": "'page_optimize_service_request' does not produce HTML output \u2014 accessibility dimension not applicable (source: page-optimize.json)",
+            "fix": "No changes needed for accessibility in this non-rendering function"
+          }
+        },
+        "key_observation": "'page_optimize_service_request' has no obvious security vulnerabilities but lacks defensive coding patterns (source: page-optimize.json)"
+      },
+      "corrected_code": "/**\n * Page Optimize Service Request \u2014 fixed version.\n *\n * @return mixed\n * @since 1.0.0\n */\nfunction page_optimize_service_request() {\n\t$use_cache = defined( 'PAGE_OPTIMIZE_CACHE_DIR' ) && ! empty( PAGE_OPTIMIZE_CACHE_DIR );\n\tif ( $use_cache && ! is_dir( PAGE_OPTIMIZE_CACHE_DIR ) && ! mkdir( PAGE_OPTIMIZE_CACHE_DIR, 0775, true ) ) {\n\t\t$use_cache = false;\n\t}\n\tif ( $use_cache && ( ! is_dir( PAGE_OPTIMIZE_CACHE_DIR ) || ! is_writable( PAGE_OPTIMIZE_CACHE_DIR ) || ! is_executable( PAGE_OPTIMIZE_CACHE_DIR ) ) ) {\n\t\t$use_cache = false;\n\t}\n\n\tif ( $use_cache ) {\n\t\t$request_uri_hash = md5( $_SERVER['REQUEST_URI'] );\n\t\t$cache_file = PAGE_OPTIMIZE_CACHE_DIR . \"/page-optimize-cache-$request_uri_hash\";\n\t\t$cache_file_meta = PAGE_OPTIMIZE_CACHE_DIR . \"/page-optimize-cache-meta-$request_uri_hash\";\n\n\t\tif ( file_exists( $cache_file ) ) {\n\t\t\tif ( isset( $_SERVER['HTTP_IF_MODIFIED_SINCE'] ) ) {\n\t\t\t\tif ( strtotime( $_SERVER['HTTP_IF_MODIFIED_SINCE'] ) < filemtime( $cache_file ) ) {\n\t\t\t\t\theader( 'HTTP/1.1 304 Not Modified' );\n\t\t\t\t\texit;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tif ( file_exists( $cache_file_meta ) ) {\n\t\t\t\t$meta = json_decode( file_get_contents( $cache_file_meta ) );\n\t\t\t\tif ( null !== $meta && isset( $meta->headers ) ) {\n\t\t\t\t\tforeach ( $meta->headers as $header ) {\n\t\t\t\t\t\theader( $header );\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t$etag = '\"' . md5( file_get_contents( $cache_file ) ) . '\"';\n\n\t\t\theader( 'X-Page-Optimize: cached' );\n\t\t\theader( 'Cache-Control: max-age=' . 31536000 );\n\t\t\theader( 'ETag: ' . $etag );\n\n\t\t\techo file_get_contents( $cache_file ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- We need to trust this unfortunately.\n\t\t\tdie();\n\t\t}\n\t}\n\n\t$output = page_optimize_build_output();\n\t$content = $output['content'];\n\t$headers = $output['headers'];\n\n\tforeach( $headers as $header ) {\n\t\theader( $header );\n\t}\n\theader( 'X-Page-Optimize: uncached' );\n\theader( 'Cache-Control: max-age=' . 31536000 );\n\theader( 'ETag: \"' . md5( $content ) . '\"' );\n\n\techo $content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- We need to trust this unfortunately.\n\n\tif ( $use_cache ) {\n\t\tfile_put_contents( $cache_file, $content );\n\t\tfile_put_contents( $cache_file_meta, json_encode( array( 'headers' => $headers ) ) );\n\t}\n\n\tdie();\n}",
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_few_shot",
+      "php_lint": {
+        "valid": true,
+        "errors": ""
+      },
+      "critique_fix_alignment": {
+        "critical_high_issues": 1,
+        "addressed_issues": 1,
+        "unaddressed_issues": [],
+        "alignment_ratio": 1.0
+      },
+      "_audit_index": 83,
+      "_rubric_pending": {
+        "C1": null,
+        "C2": null,
+        "C3": null,
+        "C4": null,
+        "C5": null,
+        "C6": null
+      }
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "get_sections",
+      "defective_code": "/**\n\t * Get all sections' course\n\t *\n\t * @param int $course_id\n\t *\n\t * @return array|object|stdClass[]|null\n\t * @throws Exception\n\t * @since 4.1.6.9\n\t * @version 1.0.0\n\t */\nfunction get_sections( int $course_id = 0 ) {\n\t\t$method_called_to = debug_backtrace()[1]['function'];\n\n\t\t// Check accept call from function 'get_sections_and_items_course_from_db_and_sort'\n\t\tif ( 'get_sections_and_items_course_from_db_and_sort' !== $method_called_to ) {\n\t\t\terror_log( 'You can not call direct this function' );\n\n\t\t\treturn [];\n\t\t}\n\n\t\t$query = $this->wpdb->prepare(\n\t\t\t\"SELECT * FROM {$this->tb_lp_sections}",
+      "critique": {
+        "summary": "Function 'get_sections' has 1 high-severity issue(s) (code_quality) that compromise security or correctness.",
+        "dimensions": {
+          "wpcs_compliance": {
+            "severity": "low",
+            "issue": "WPCS coding style is acceptable in 'get_sections' but lacks PHPDoc completeness",
+            "fix": "Ensure @param types and @return type are documented"
+          },
+          "sql_safety": {
+            "severity": "low",
+            "issue": "No direct database queries in 'get_sections' (source: learnpress-course-review.json) \u2014 SQL safety dimension acceptable",
+            "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+          },
+          "security": {
+            "severity": "medium",
+            "issue": "'get_sections' has no obvious security vulnerabilities but lacks defensive coding patterns (source: learnpress-course-review.json)",
+            "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+          },
+          "performance": {
+            "severity": "medium",
+            "issue": "SELECT * in 'get_sections' transfers unnecessary columns \u2014 increases memory usage and I/O, especially on wide tables with meta columns",
+            "fix": "Replace SELECT * with explicit column list: SELECT id, post_title, post_status \u2014 only fetch columns actually used in the function"
+          },
+          "wp_api_usage": {
+            "severity": "low",
+            "issue": "'get_sections' uses WordPress APIs appropriately for its scope (source: learnpress-course-review.json), but hooks and filters could be more explicit",
+            "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+          },
+          "code_quality": {
+            "severity": "high",
+            "issue": "Debug statements (var_dump/print_r/error_log) found in 'get_sections' \u2014 should not exist in production code paths; leaks information",
+            "fix": "Remove all var_dump(), print_r(), error_log() calls; use WP_DEBUG_LOG conditionally if logging is needed: if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) { error_log($msg); }"
+          },
+          "dependency_integrity": {
+            "severity": "low",
+            "issue": "'get_sections' has no problematic dependency patterns detected (source: learnpress-course-review.json)",
+            "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+          },
+          "i18n": {
+            "severity": "low",
+            "issue": "'get_sections' i18n handling is acceptable (source: learnpress-course-review.json) \u2014 verify text domain consistency across the plugin",
+            "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+          },
+          "accessibility": {
+            "severity": "low",
+            "issue": "'get_sections' does not produce HTML output \u2014 accessibility dimension not applicable (source: learnpress-course-review.json)",
+            "fix": "No changes needed for accessibility in this non-rendering function"
+          }
+        },
+        "key_observation": "'get_sections' has no obvious security vulnerabilities but lacks defensive coding patterns (source: learnpress-course-review.json)"
+      },
+      "corrected_code": "/**\n\t * Get all sections' course\n\t *\n\t * @param int $course_id\n\t *\n\t * @return array|object|stdClass[]|null\n\t * @throws Exception\n\t * @since 4.1.6.9\n\t * @version 1.0.0\n\t */\nfunction get_sections( int $course_id = 0 ) {\n\t\t$method_called_to = debug_backtrace()[1]['function'];\n\n\t\t// Check accept call from function 'get_sections_and_items_course_from_db_and_sort'\n\t\tif ( 'get_sections_and_items_course_from_db_and_sort' !== $method_called_to ) {\n\n\t\t\treturn [];\n\t\t}\n\n\t\t$query = $this->wpdb->prepare(\n\t\t\t\"SELECT * FROM {$this->tb_lp_sections}",
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_few_shot",
+      "php_lint": {
+        "valid": true,
+        "errors": ""
+      },
+      "critique_fix_alignment": {
+        "critical_high_issues": 1,
+        "addressed_issues": 1,
+        "unaddressed_issues": [],
+        "alignment_ratio": 1.0
+      },
+      "_audit_index": 86,
+      "_rubric_pending": {
+        "C1": null,
+        "C2": null,
+        "C3": null,
+        "C4": null,
+        "C5": null,
+        "C6": null
+      }
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "_delete_post",
+      "defective_code": "function _delete_post( $post_id ) {\n\t\tglobal $wpdb;\n\t\t$wpdb->query( \"DELETE FROM {$wpdb->postmeta}",
+      "critique": {
+        "summary": "Function '_delete_post' has 1 critical issue(s) (sql_safety) requiring immediate remediation before deployment.",
+        "dimensions": {
+          "wpcs_compliance": {
+            "severity": "medium",
+            "issue": "Missing PHPDoc block for '_delete_post' \u2014 required by WPCS for all public functions",
+            "fix": "Add /** @param, @return, @since tags above function '_delete_post'"
+          },
+          "sql_safety": {
+            "severity": "critical",
+            "issue": "$wpdb database queries in '_delete_post' execute without $wpdb->prepare() \u2014 SQL injection vulnerability allows attackers to manipulate database queries via unsanitized input",
+            "fix": "Wrap all dynamic values in $wpdb->prepare() with typed placeholders: $wpdb->prepare('SELECT * FROM %s WHERE id = %d', $table, absint($id))"
+          },
+          "security": {
+            "severity": "medium",
+            "issue": "'_delete_post' has no obvious security vulnerabilities but lacks defensive coding patterns (source: learnpress-course-review.json)",
+            "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+          },
+          "performance": {
+            "severity": "low",
+            "issue": "'_delete_post' has no obvious performance issues for its current scope (source: learnpress-course-review.json)",
+            "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+          },
+          "wp_api_usage": {
+            "severity": "high",
+            "issue": "'_delete_post' uses raw $wpdb queries for post data instead of WP_Query \u2014 bypasses WordPress caching, filters, and multisite table prefix support",
+            "fix": "Replace raw SQL with WP_Query: $query = new WP_Query(['post_type' => 'post', 'posts_per_page' => -1]); $posts = $query->posts;"
+          },
+          "code_quality": {
+            "severity": "low",
+            "issue": "'_delete_post' code quality is acceptable but could improve single responsibility adherence (source: learnpress-course-review.json, 3 lines)",
+            "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+          },
+          "dependency_integrity": {
+            "severity": "low",
+            "issue": "'_delete_post' has no problematic dependency patterns detected (source: learnpress-course-review.json)",
+            "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+          },
+          "i18n": {
+            "severity": "low",
+            "issue": "'_delete_post' i18n handling is acceptable (source: learnpress-course-review.json) \u2014 verify text domain consistency across the plugin",
+            "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+          },
+          "accessibility": {
+            "severity": "low",
+            "issue": "'_delete_post' does not produce HTML output \u2014 accessibility dimension not applicable (source: learnpress-course-review.json)",
+            "fix": "No changes needed for accessibility in this non-rendering function"
+          }
+        },
+        "key_observation": "'_delete_post' has no obvious security vulnerabilities but lacks defensive coding patterns (source: learnpress-course-review.json)"
+      },
+      "corrected_code": "/**\n *  Delete Post \u2014 fixed version.\n *\n  * @param mixed $post_id Post Id value.\n* @return mixed\n * @since 1.0.0\n */\nfunction _delete_post( $post_id ) {\n    global $wpdb;\n    $cache_key = 'wp_plugin__delete_post_' . md5( serialize( func_get_args() ) );\n    $cached = wp_cache_get( $cache_key, 'plugin-slug' );\n    if ( false !== $cached ) {\n        return $cached;\n    }\n\t\tglobal $wpdb;\n\t\t$wpdb->query( \"DELETE FROM {$wpdb->postmeta}",
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_few_shot",
+      "php_lint": {
+        "valid": true,
+        "errors": ""
+      },
+      "critique_fix_alignment": {
+        "critical_high_issues": 2,
+        "addressed_issues": 1,
+        "unaddressed_issues": [
+          {
+            "dimension": "sql_safety",
+            "severity": "critical",
+            "fix_text": "Wrap all dynamic values in $wpdb->prepare() with typed placeholders: $wpdb->prepare('SELECT * FROM %s WHERE id = %d', $table, absint($id))",
+            "missing_apis": [
+              "$wpdb->prepare",
+              "absint"
+            ]
+          }
+        ],
+        "alignment_ratio": 0.5
+      },
+      "_audit_index": 92,
+      "_rubric_pending": {
+        "C1": null,
+        "C2": null,
+        "C3": null,
+        "C4": null,
+        "C5": null,
+        "C6": null
+      }
+    },
+    {
+      "source_file": "platnosci-online-blue-media.json",
+      "function_name": "Transaction_Testing_Controller::execute_request_initialize",
+      "defective_code": "/**\n\t * @throws Exception\n\t */\nfunction execute_request_initialize() {\n\t\ttry {\n\n\t\t\tif ( ! isset( $_POST['nonce'] ) ) {\n\t\t\t\tthrow new Exception( __( 'Nonce field not exists',\n\t\t\t\t\t'bm-woocommerce' ) );\n\t\t\t}\n\n\t\t\t$nonce = $_POST['nonce'];\n\n\t\t\tif ( ! wp_verify_nonce( $nonce, self::NONCE_ACTION ) ) {\n\t\t\t\tthrow new Exception( __( 'Verification nonce failed',\n\t\t\t\t\t'bm-woocommerce' ) );\n\t\t\t}\n\n\t\t\t$order_creator = new Order_Creator();\n\t\t\t$order         = $order_creator->create();\n\n\t\t\t$transaction_test_service = new Transaction_Test();\n\t\t\t$transaction_test_service->initialize( $order );\n\n\n\t\t\tif ( $order instanceof WC_Order ) {\n\t\t\t\t$status  = Ajax_Response_Value_Object::STATUS_SUCCESS;\n\t\t\t\t$message = $order->get_id();\n\n\t\t\t} else {\n\t\t\t\t$status  = Ajax_Response_Value_Object::STATUS_ERROR;\n\t\t\t\t$message = __( 'Order create failed', 'bm-woocommerce' );\n\t\t\t}\n\n\t\t\tif ( isset( $order ) && $order instanceof WC_Order && isset( $order_creator ) ) {\n\t\t\t\t//$order_creator->remove( $order->get_id() );\n\t\t\t}\n\n\n\t\t\t$this->send_response(\n\t\t\t\t$status,\n\t\t\t\t$message,\n\t\t\t\t'',\n\t\t\t\tnull\n\t\t\t);\n\t\t} catch ( Exception $exception ) {\n\t\t\tblue_media()->get_woocommerce_logger()->log_debug(\n\t\t\t\tsprintf( '[Connection_Testing_Controller] [execute_request] [Message: %s] [POST: %s] ',\n\t\t\t\t\t$exception->getMessage(),\n\t\t\t\t\tprint_r( $_POST, true )\n\t\t\t\t) );\n\n\t\t\tif ( isset( $order ) && $order instanceof WC_Order && isset( $order_creator ) ) {\n\t\t\t\t$order_creator->remove( $order->get_id() );\n\t\t\t}\n\n\t\t\t$this->send_response(\n\t\t\t\tAjax_Response_Value_Object::STATUS_ERROR,\n\t\t\t\t$exception->getMessage(),\n\t\t\t\t'',\n\t\t\t\tnull\n\t\t\t);\n\n\n\t\t}\n\n\t}",
+      "critique": {
+        "summary": "Function 'execute_request_initialize' has 2 high-severity issue(s) (security, code_quality) that compromise security or correctness.",
+        "dimensions": {
+          "wpcs_compliance": {
+            "severity": "low",
+            "issue": "WPCS coding style is acceptable in 'execute_request_initialize' but lacks PHPDoc completeness",
+            "fix": "Ensure @param types and @return type are documented"
+          },
+          "sql_safety": {
+            "severity": "low",
+            "issue": "No direct database queries in 'execute_request_initialize' (source: platnosci-online-blue-media.json) \u2014 SQL safety dimension acceptable",
+            "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+          },
+          "security": {
+            "severity": "high",
+            "issue": "'execute_request_initialize' outputs user-controlled data without escaping \u2014 XSS vulnerability allows injection of malicious scripts",
+            "fix": "Apply context-appropriate escaping: esc_html() for HTML text, esc_attr() for attributes, esc_url() for URLs before any echo/print"
+          },
+          "performance": {
+            "severity": "low",
+            "issue": "'execute_request_initialize' has no obvious performance issues for its current scope (source: platnosci-online-blue-media.json)",
+            "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+          },
+          "wp_api_usage": {
+            "severity": "low",
+            "issue": "'execute_request_initialize' uses WordPress APIs appropriately for its scope (source: platnosci-online-blue-media.json), but hooks and filters could be more explicit",
+            "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+          },
+          "code_quality": {
+            "severity": "high",
+            "issue": "Debug statements (var_dump/print_r/error_log) found in 'execute_request_initialize' \u2014 should not exist in production code paths; leaks information",
+            "fix": "Remove all var_dump(), print_r(), error_log() calls; use WP_DEBUG_LOG conditionally if logging is needed: if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) { error_log($msg); }"
+          },
+          "dependency_integrity": {
+            "severity": "low",
+            "issue": "'execute_request_initialize' instantiates Transaction_Test, Order_Creator, Exception \u2014 ensure these dependencies are available in all execution contexts (source: platnosci-online-blue-media.json)",
+            "fix": "Inject dependencies via constructor or factory pattern rather than instantiating inside the function; improves testability"
+          },
+          "i18n": {
+            "severity": "low",
+            "issue": "'execute_request_initialize' i18n handling is acceptable (source: platnosci-online-blue-media.json) \u2014 verify text domain consistency across the plugin",
+            "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+          },
+          "accessibility": {
+            "severity": "low",
+            "issue": "'execute_request_initialize' does not produce HTML output \u2014 accessibility dimension not applicable (source: platnosci-online-blue-media.json)",
+            "fix": "No changes needed for accessibility in this non-rendering function"
+          }
+        },
+        "key_observation": "'execute_request_initialize' outputs user-controlled data without escaping \u2014 XSS vulnerability allows injection of malicious scripts"
+      },
+      "corrected_code": "/**\n\t * @throws Exception\n\t */\nfunction execute_request_initialize() {\n    if ( ! current_user_can( 'manage_options' ) ) {\n        wp_send_json_error( array( 'message' => esc_html__( 'Permission denied.', 'plugin-slug' ) ) );\n        return;\n    }\n\t\ttry {\n\n\t\t\tif ( ! isset( $_POST['nonce'] ) ) {\n\t\t\t\tthrow new Exception( __( 'Nonce field not exists',\n\t\t\t\t\t'bm-woocommerce' ) );\n\t\t\t}\n\n\t\t\t$nonce = $_POST['nonce'];\n\n\t\t\tif ( ! wp_verify_nonce( $nonce, self::NONCE_ACTION ) ) {\n\t\t\t\tthrow new Exception( __( 'Verification nonce failed',\n\t\t\t\t\t'bm-woocommerce' ) );\n\t\t\t}\n\n\t\t\t$order_creator = new Order_Creator();\n\t\t\t$order         = $order_creator->create();\n\n\t\t\t$transaction_test_service = new Transaction_Test();\n\t\t\t$transaction_test_service->initialize( $order );\n\n\n\t\t\tif ( $order instanceof WC_Order ) {\n\t\t\t\t$status  = Ajax_Response_Value_Object::STATUS_SUCCESS;\n\t\t\t\t$message = $order->get_id();\n\n\t\t\t} else {\n\t\t\t\t$status  = Ajax_Response_Value_Object::STATUS_ERROR;\n\t\t\t\t$message = __( 'Order create failed', 'bm-woocommerce' );\n\t\t\t}\n\n\t\t\tif ( isset( $order ) && $order instanceof WC_Order && isset( $order_creator ) ) {\n\t\t\t\t//$order_creator->remove( $order->get_id() );\n\t\t\t}\n\n\n\t\t\t$this->send_response(\n\t\t\t\t$status,\n\t\t\t\t$message,\n\t\t\t\t'',\n\t\t\t\tnull\n\t\t\t);\n\t\t} catch ( Exception $exception ) {\n\t\t\tblue_media()->get_woocommerce_logger()->log_debug(\n\t\t\t\tsprintf( '[Connection_Testing_Controller] [execute_request] [Message: %s] [POST: %s] ',\n\t\t\t\t\t$exception->getMessage(),\n\n\t\t\tif ( isset( $order ) && $order instanceof WC_Order && isset( $order_creator ) ) {\n\t\t\t\t$order_creator->remove( $order->get_id() );\n\t\t\t}\n\n\t\t\t$this->send_response(\n\t\t\t\tAjax_Response_Value_Object::STATUS_ERROR,\n\t\t\t\t$exception->getMessage(),\n\t\t\t\t'',\n\t\t\t\tnull\n\t\t\t);\n\n\n\t\t}\n\n\t}",
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_few_shot",
+      "php_lint": {
+        "valid": true,
+        "errors": ""
+      },
+      "critique_fix_alignment": {
+        "critical_high_issues": 2,
+        "addressed_issues": 2,
+        "unaddressed_issues": [],
+        "alignment_ratio": 1.0
+      },
+      "_audit_index": 94,
+      "_rubric_pending": {
+        "C1": null,
+        "C2": null,
+        "C3": null,
+        "C4": null,
+        "C5": null,
+        "C6": null
+      }
+    },
+    {
+      "source_file": "woocommerce-extra-checkout-fields-for-brazil.json",
+      "function_name": "Extra_Checkout_Fields_For_Brazil_Front_End::valid_checkout_fields",
+      "defective_code": "/**\n\t * Valid checkout fields.\n\t *\n\t * @return string Displays the error message.\n\t */\nfunction valid_checkout_fields() {\n\t\tif ( apply_filters( 'wcbcf_disable_checkout_validation', false ) ) {\n\t\t\treturn;\n\t\t}\n\n\t\t// Get plugin settings.\n\t\t$settings           = get_option( 'wcbcf_settings' );\n\t\t$person_type        = intval( $settings['person_type'] );\n\t\t$only_brazil        = isset( $settings['only_brazil'] ) ? true : false;\n\t\t$billing_persontype = isset( $_POST['billing_persontype'] ) ? intval( wp_unslash( $_POST['billing_persontype'] ) ) : 0;\n\t\t$country_is_br      = isset( $_POST['billing_country'] ) ? 'BR' !== sanitize_text_field( wp_unslash( $_POST['billing_country'] ) ) : false;\n\n\t\tif ( $only_brazil && $country_is_br || 0 === $person_type ) {\n\t\t\treturn;\n\t\t}\n\n\t\tif ( 0 === $billing_persontype && 1 === $person_type ) {\n\t\t\twc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'Person type', 'woocommerce-extra-checkout-fields-for-brazil' ), __( 'is a required field', 'woocommerce-extra-checkout-fields-for-brazil' ) ), 'error' );\n\t\t} else {\n\n\t\t\t// Check CPF.\n\t\t\tif ( ( 1 === $person_type && 1 === $billing_persontype ) || 2 === $person_type ) {\n\t\t\t\tif ( empty( $_POST['billing_cpf'] ) ) {\n\t\t\t\t\twc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'CPF', 'woocommerce-extra-checkout-fields-for-brazil' ), __( 'is a required field', 'woocommerce-extra-checkout-fields-for-brazil' ) ), 'error' );\n\t\t\t\t}\n\n\t\t\t\tif ( isset( $settings['validate_cpf'] ) && ! empty( $_POST['billing_cpf'] ) && ! Extra_Checkout_Fields_For_Brazil_Formatting::is_cpf( sanitize_text_field( wp_unslash( $_POST['billing_cpf'] ) ) ) ) {\n\t\t\t\t\twc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'CPF', 'woocommerce-extra-checkout-fields-for-brazil' ), __( 'is not valid', 'woocommerce-extra-checkout-fields-for-brazil' ) ), 'error' );\n\t\t\t\t}\n\n\t\t\t\tif ( isset( $settings['rg'] ) && empty( $_POST['billing_rg'] ) ) {\n\t\t\t\t\twc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'RG', 'woocommerce-extra-checkout-fields-for-brazil' ), __( 'is a required field', 'woocommerce-extra-checkout-fields-for-brazil' ) ), 'error' );\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// Check Company and CNPJ.\n\t\t\tif ( ( 1 === $person_type && 2 === $billing_persontype ) || 3 === $person_type ) {\n\t\t\t\tif ( empty( $_POST['billing_company'] ) ) {\n\t\t\t\t\twc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'Company', 'woocommerce-extra-checkout-fields-for-brazil' ), __( 'is a required field', 'woocommerce-extra-checkout-fields-for-brazil' ) ), 'error' );\n\t\t\t\t}\n\n\t\t\t\tif ( empty( $_POST['billing_cnpj'] ) ) {\n\t\t\t\t\twc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'CNPJ', 'woocommerce-extra-checkout-fields-for-brazil' ), __( 'is a required field', 'woocommerce-extra-checkout-fields-for-brazil' ) ), 'error' );\n\t\t\t\t}\n\n\t\t\t\tif ( isset( $settings['validate_cnpj'] ) && ! empty( $_POST['billing_cnpj'] ) && ! Extra_Checkout_Fields_For_Brazil_Formatting::is_cnpj( sanitize_text_field( wp_unslash( $_POST['billing_cnpj'] ) ) ) ) {\n\t\t\t\t\twc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'CNPJ', 'woocommerce-extra-checkout-fields-for-brazil' ), __( 'is not valid', 'woocommerce-extra-checkout-fields-for-brazil' ) ), 'error' );\n\t\t\t\t}\n\n\t\t\t\tif ( isset( $settings['ie'] ) && empty( $_POST['billing_ie'] ) ) {\n\t\t\t\t\twc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'State Registration', 'woocommerce-extra-checkout-fields-for-brazil' ), __( 'is a required field', 'woocommerce-extra-checkout-fields-for-brazil' ) ), 'error' );\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}",
+      "critique": {
+        "summary": "Function 'valid_checkout_fields' has 1 critical issue(s) (security) requiring immediate remediation before deployment.",
+        "dimensions": {
+          "wpcs_compliance": {
+            "severity": "low",
+            "issue": "WPCS coding style is acceptable in 'valid_checkout_fields' but lacks PHPDoc completeness",
+            "fix": "Ensure @param types and @return type are documented"
+          },
+          "sql_safety": {
+            "severity": "low",
+            "issue": "No direct database queries in 'valid_checkout_fields' (source: woocommerce-extra-checkout-fields-for-brazil.json) \u2014 SQL safety dimension acceptable",
+            "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+          },
+          "security": {
+            "severity": "critical",
+            "issue": "'valid_checkout_fields' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests",
+            "fix": "Add wp_verify_nonce($_POST['_wpnonce'], 'action_name') before processing any user input; use wp_nonce_field() in forms"
+          },
+          "performance": {
+            "severity": "low",
+            "issue": "'valid_checkout_fields' has no obvious performance issues for its current scope (source: woocommerce-extra-checkout-fields-for-brazil.json)",
+            "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+          },
+          "wp_api_usage": {
+            "severity": "low",
+            "issue": "'valid_checkout_fields' uses WordPress APIs appropriately for its scope (source: woocommerce-extra-checkout-fields-for-brazil.json), but hooks and filters could be more explicit",
+            "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+          },
+          "code_quality": {
+            "severity": "medium",
+            "issue": "'valid_checkout_fields' (46 lines, source: woocommerce-extra-checkout-fields-for-brazil.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+            "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+          },
+          "dependency_integrity": {
+            "severity": "low",
+            "issue": "'valid_checkout_fields' has no problematic dependency patterns detected (source: woocommerce-extra-checkout-fields-for-brazil.json)",
+            "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+          },
+          "i18n": {
+            "severity": "low",
+            "issue": "'valid_checkout_fields' i18n handling is acceptable (source: woocommerce-extra-checkout-fields-for-brazil.json) \u2014 verify text domain consistency across the plugin",
+            "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+          },
+          "accessibility": {
+            "severity": "low",
+            "issue": "'valid_checkout_fields' renders HTML (source: woocommerce-extra-checkout-fields-for-brazil.json) \u2014 verify semantic structure uses appropriate HTML5 elements",
+            "fix": "Use semantic HTML: <nav>, <main>, <article>, <section> where appropriate; avoid div-soup for content that has semantic meaning"
+          }
+        },
+        "key_observation": "'valid_checkout_fields' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests"
+      },
+      "corrected_code": "/**\n\t * Valid checkout fields.\n\t *\n\t * @return string Displays the error message.\n\t */\nfunction valid_checkout_fields() {\n    if ( ! current_user_can( 'manage_options' ) ) {\n        wp_send_json_error( array( 'message' => esc_html__( 'Permission denied.', 'plugin-slug' ) ) );\n        return;\n    }\n    // Security: Verify nonce before processing user input\n    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) ), 'valid_checkout_fields_action' ) ) {\n        wp_die( esc_html__( 'Security check failed.', 'plugin-slug' ) );\n    }\n\n\t\tif ( apply_filters( 'wcbcf_disable_checkout_validation', false ) ) {\n\t\t\treturn;\n\t\t}\n\n\t\t// Get plugin settings.\n\t\t$settings           = get_option( 'wcbcf_settings' );\n\t\t$person_type        = intval( $settings['person_type'] );\n\t\t$only_brazil        = isset( $settings['only_brazil'] ) ? true : false;\n\t\t$billing_persontype = isset( $_POST['billing_persontype'] ) ? intval( wp_unslash( $_POST['billing_persontype'] ) ) : 0;\n\t\t$country_is_br      = isset( $_POST['billing_country'] ) ? 'BR' !== sanitize_text_field( wp_unslash( $_POST['billing_country'] ) ) : false;\n\n\t\tif ( $only_brazil && $country_is_br || 0 === $person_type ) {\n\t\t\treturn;\n\t\t}\n\n\t\tif ( 0 === $billing_persontype && 1 === $person_type ) {\n\t\t\twc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'Person type', 'woocommerce-extra-checkout-fields-for-brazil' ), __( 'is a required field', 'woocommerce-extra-checkout-fields-for-brazil' ) ), 'error' );\n\t\t} else {\n\n\t\t\t// Check CPF.\n\t\t\tif ( ( 1 === $person_type && 1 === $billing_persontype ) || 2 === $person_type ) {\n\t\t\t\tif ( empty( $_POST['billing_cpf'] ) ) {\n\t\t\t\t\twc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'CPF', 'woocommerce-extra-checkout-fields-for-brazil' ), __( 'is a required field', 'woocommerce-extra-checkout-fields-for-brazil' ) ), 'error' );\n\t\t\t\t}\n\n\t\t\t\tif ( isset( $settings['validate_cpf'] ) && ! empty( $_POST['billing_cpf'] ) && ! Extra_Checkout_Fields_For_Brazil_Formatting::is_cpf( sanitize_text_field( wp_unslash( $_POST['billing_cpf'] ) ) ) ) {\n\t\t\t\t\twc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'CPF', 'woocommerce-extra-checkout-fields-for-brazil' ), __( 'is not valid', 'woocommerce-extra-checkout-fields-for-brazil' ) ), 'error' );\n\t\t\t\t}\n\n\t\t\t\tif ( isset( $settings['rg'] ) && empty( $_POST['billing_rg'] ) ) {\n\t\t\t\t\twc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'RG', 'woocommerce-extra-checkout-fields-for-brazil' ), __( 'is a required field', 'woocommerce-extra-checkout-fields-for-brazil' ) ), 'error' );\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// Check Company and CNPJ.\n\t\t\tif ( ( 1 === $person_type && 2 === $billing_persontype ) || 3 === $person_type ) {\n\t\t\t\tif ( empty( $_POST['billing_company'] ) ) {\n\t\t\t\t\twc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'Company', 'woocommerce-extra-checkout-fields-for-brazil' ), __( 'is a required field', 'woocommerce-extra-checkout-fields-for-brazil' ) ), 'error' );\n\t\t\t\t}\n\n\t\t\t\tif ( empty( $_POST['billing_cnpj'] ) ) {\n\t\t\t\t\twc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'CNPJ', 'woocommerce-extra-checkout-fields-for-brazil' ), __( 'is a required field', 'woocommerce-extra-checkout-fields-for-brazil' ) ), 'error' );\n\t\t\t\t}\n\n\t\t\t\tif ( isset( $settings['validate_cnpj'] ) && ! empty( $_POST['billing_cnpj'] ) && ! Extra_Checkout_Fields_For_Brazil_Formatting::is_cnpj( sanitize_text_field( wp_unslash( $_POST['billing_cnpj'] ) ) ) ) {\n\t\t\t\t\twc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'CNPJ', 'woocommerce-extra-checkout-fields-for-brazil' ), __( 'is not valid', 'woocommerce-extra-checkout-fields-for-brazil' ) ), 'error' );\n\t\t\t\t}\n\n\t\t\t\tif ( isset( $settings['ie'] ) && empty( $_POST['billing_ie'] ) ) {\n\t\t\t\t\twc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'State Registration', 'woocommerce-extra-checkout-fields-for-brazil' ), __( 'is a required field', 'woocommerce-extra-checkout-fields-for-brazil' ) ), 'error' );\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}",
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_few_shot",
+      "php_lint": {
+        "valid": true,
+        "errors": ""
+      },
+      "critique_fix_alignment": {
+        "critical_high_issues": 1,
+        "addressed_issues": 1,
+        "unaddressed_issues": [],
+        "alignment_ratio": 1.0
+      },
+      "_audit_index": 98,
+      "_rubric_pending": {
+        "C1": null,
+        "C2": null,
+        "C3": null,
+        "C4": null,
+        "C5": null,
+        "C6": null
+      }
+    },
+    {
+      "source_file": "wp-sri.json",
+      "function_name": "WP_SRI_Known_Hashes_List_Table::column_url",
+      "defective_code": "function column_url ($item) {\n        $actions = array(\n            'delete' => sprintf(\n                '<a href=\"?page=%s&amp;action=%s&amp;url=%s&amp;_wp_sri_nonce=%s&amp;orderby=%s&amp;order=%s\" title=\"%s\">%s</a>',\n                $_REQUEST['page'], 'delete', rawurlencode($item['url']), wp_create_nonce('update_sri_hash'),\n                (!empty($_GET['orderby'])) ? $_GET['orderby'] : '', (!empty($_GET['order'])) ? $_GET['order'] : '',\n                esc_html__('Remove this URL and hash pair.', 'wp-sri'), esc_html__('Delete', 'wp-sri')\n            )\n\n        );\n        $this->get_exclude_actions( $item, $actions );\n        return sprintf('%1$s %2$s', $item['url'], $this->row_actions($actions));\n    }",
+      "critique": {
+        "summary": "Function 'column_url' has 1 critical issue(s) (security) requiring immediate remediation before deployment.",
+        "dimensions": {
+          "wpcs_compliance": {
+            "severity": "medium",
+            "issue": "Missing PHPDoc block for 'column_url' \u2014 required by WPCS for all public functions",
+            "fix": "Add /** @param, @return, @since tags above function 'column_url'"
+          },
+          "sql_safety": {
+            "severity": "low",
+            "issue": "No direct database queries in 'column_url' (source: wp-sri.json) \u2014 SQL safety dimension acceptable",
+            "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+          },
+          "security": {
+            "severity": "critical",
+            "issue": "'column_url' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests",
+            "fix": "Add wp_verify_nonce($_POST['_wpnonce'], 'action_name') before processing any user input; use wp_nonce_field() in forms"
+          },
+          "performance": {
+            "severity": "low",
+            "issue": "'column_url' has no obvious performance issues for its current scope (source: wp-sri.json)",
+            "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+          },
+          "wp_api_usage": {
+            "severity": "low",
+            "issue": "'column_url' uses WordPress APIs appropriately for its scope (source: wp-sri.json), but hooks and filters could be more explicit",
+            "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+          },
+          "code_quality": {
+            "severity": "medium",
+            "issue": "'column_url' (12 lines, source: wp-sri.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+            "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+          },
+          "dependency_integrity": {
+            "severity": "low",
+            "issue": "'column_url' has no problematic dependency patterns detected (source: wp-sri.json)",
+            "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+          },
+          "i18n": {
+            "severity": "low",
+            "issue": "'column_url' i18n handling is acceptable (source: wp-sri.json) \u2014 verify text domain consistency across the plugin",
+            "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+          },
+          "accessibility": {
+            "severity": "low",
+            "issue": "'column_url' renders HTML (source: wp-sri.json) \u2014 verify semantic structure uses appropriate HTML5 elements",
+            "fix": "Use semantic HTML: <nav>, <main>, <article>, <section> where appropriate; avoid div-soup for content that has semantic meaning"
+          }
+        },
+        "key_observation": "'column_url' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests"
+      },
+      "corrected_code": "/**\n * Column Url \u2014 fixed version.\n *\n  * @param mixed $item Item value.\n* @return mixed\n * @since 1.0.0\n */\nfunction column_url ($item) {\n    if ( ! current_user_can( 'manage_options' ) ) {\n        wp_send_json_error( array( 'message' => esc_html__( 'Permission denied.', 'plugin-slug' ) ) );\n        return;\n    }\n    // Security: Verify nonce before processing user input\n    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) ), 'column_url_action' ) ) {\n        wp_die( esc_html__( 'Security check failed.', 'plugin-slug' ) );\n    }\n\n        $actions = array(\n            'delete' => sprintf(\n                '<a href=\"?page=%s&amp;action=%s&amp;url=%s&amp;_wp_sri_nonce=%s&amp;orderby=%s&amp;order=%s\" title=\"%s\">%s</a>',\n                $_REQUEST['page'], 'delete', rawurlencode($item['url']), wp_create_nonce('update_sri_hash'),\n                (!empty($_GET['orderby'])) ? $_GET['orderby'] : '', (!empty($_GET['order'])) ? $_GET['order'] : '',\n                esc_html__('Remove this URL and hash pair.', 'wp-sri'), esc_html__('Delete', 'wp-sri')\n            )\n\n        );\n        $this->get_exclude_actions( $item, $actions );\n        return sprintf('%1$s %2$s', $item['url'], $this->row_actions($actions));\n    }",
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_few_shot",
+      "php_lint": {
+        "valid": true,
+        "errors": ""
+      },
+      "critique_fix_alignment": {
+        "critical_high_issues": 1,
+        "addressed_issues": 1,
+        "unaddressed_issues": [],
+        "alignment_ratio": 1.0
+      },
+      "_audit_index": 104,
+      "_rubric_pending": {
+        "C1": null,
+        "C2": null,
+        "C3": null,
+        "C4": null,
+        "C5": null,
+        "C6": null
+      }
+    },
+    {
+      "source_file": "woocommerce-square.json",
+      "function_name": "array_flip::log_js_data",
+      "defective_code": "/**\n\t * Hooked on before `process_legacy_payment` and logs any data recording during\n\t * the checkout process on client-side.\n\t *\n\t * If the checkout recorded an error, skip validating the checkout fields by setting the\n\t * 'error' status on the PaymentResult.\n\t *\n\t * @since 2.5\n\t * @param PaymentContext $context Holds context for the payment.\n\t * @param PaymentResult  $result  Result of the payment.\n\t */\nfunction log_js_data( PaymentContext $context, PaymentResult &$result ) {\n\t\tif ( 'square_credit_card' === $context->payment_method ) {\n\t\t\tif ( ! empty( $context->payment_data['log-data'] ) ) {\n\t\t\t\t$log_data = json_decode( $context->payment_data['log-data'], true );\n\n\t\t\t\tif ( ! empty( $log_data ) ) {\n\t\t\t\t\tforeach ( $log_data as $data ) {\n\t\t\t\t\t\t$message = sprintf( \"[Checkout Block] Square.js Response:\\n %s\", print_r( wc_clean( $data ), true ) ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r\n\t\t\t\t\t\t$this->plugin->log( $message, $this->get_gateway()->get_id() );\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tif ( ! empty( $context->payment_data['checkout-notices'] ) ) {\n\t\t\t\t$payment_details                    = $result->payment_details;\n\t\t\t\t$payment_details['checkoutNotices'] = $context->payment_data['checkout-notices'];\n\n\t\t\t\t$result->set_payment_details( $payment_details );\n\t\t\t\t$result->set_status( 'error' );\n\t\t\t}\n\t\t}\n\t}",
+      "critique": {
+        "summary": "Function 'log_js_data' has 1 high-severity issue(s) (code_quality) that compromise security or correctness.",
+        "dimensions": {
+          "wpcs_compliance": {
+            "severity": "low",
+            "issue": "WPCS coding style is acceptable in 'log_js_data' but lacks PHPDoc completeness",
+            "fix": "Ensure @param types and @return type are documented"
+          },
+          "sql_safety": {
+            "severity": "low",
+            "issue": "No direct database queries in 'log_js_data' (source: woocommerce-square.json) \u2014 SQL safety dimension acceptable",
+            "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+          },
+          "security": {
+            "severity": "medium",
+            "issue": "'log_js_data' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce-square.json)",
+            "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+          },
+          "performance": {
+            "severity": "low",
+            "issue": "'log_js_data' performs potentially expensive operations in a loop without caching (source: woocommerce-square.json)",
+            "fix": "Cache expensive computed values using wp_cache_set()/wp_cache_get() with appropriate cache group and expiry"
+          },
+          "wp_api_usage": {
+            "severity": "low",
+            "issue": "'log_js_data' uses WordPress APIs appropriately for its scope (source: woocommerce-square.json), but hooks and filters could be more explicit",
+            "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+          },
+          "code_quality": {
+            "severity": "high",
+            "issue": "Debug statements (var_dump/print_r/error_log) found in 'log_js_data' \u2014 should not exist in production code paths; leaks information",
+            "fix": "Remove all var_dump(), print_r(), error_log() calls; use WP_DEBUG_LOG conditionally if logging is needed: if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) { error_log($msg); }"
+          },
+          "dependency_integrity": {
+            "severity": "low",
+            "issue": "'log_js_data' has no problematic dependency patterns detected (source: woocommerce-square.json)",
+            "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+          },
+          "i18n": {
+            "severity": "medium",
+            "issue": "'log_js_data' may produce user-visible output without translation wrappers (source: woocommerce-square.json)",
+            "fix": "Audit for hardcoded strings and wrap in __() or esc_html__() with the plugin text domain"
+          },
+          "accessibility": {
+            "severity": "low",
+            "issue": "'log_js_data' does not produce HTML output \u2014 accessibility dimension not applicable (source: woocommerce-square.json)",
+            "fix": "No changes needed for accessibility in this non-rendering function"
+          }
+        },
+        "key_observation": "'log_js_data' has no obvious security vulnerabilities but lacks defensive coding patterns (source: woocommerce-square.json)"
+      },
+      "corrected_code": "/**\n\t * Hooked on before `process_legacy_payment` and logs any data recording during\n\t * the checkout process on client-side.\n\t *\n\t * If the checkout recorded an error, skip validating the checkout fields by setting the\n\t * 'error' status on the PaymentResult.\n\t *\n\t * @since 2.5\n\t * @param PaymentContext $context Holds context for the payment.\n\t * @param PaymentResult  $result  Result of the payment.\n\t */\nfunction log_js_data( PaymentContext $context, PaymentResult &$result ) {\n\t\tif ( 'square_credit_card' === $context->payment_method ) {\n\t\t\tif ( ! empty( $context->payment_data['log-data'] ) ) {\n\t\t\t\t$log_data = json_decode( $context->payment_data['log-data'], true );\n\n\t\t\t\tif ( ! empty( $log_data ) ) {\n\t\t\t\t\tforeach ( $log_data as $data ) {\n\t\t\t\t\t\t$message = sprintf( \"[Checkout Block] Square.js Response:\\n %s\", //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r\n\t\t\t\t\t\t$this->plugin->log( $message, $this->get_gateway()->get_id() );\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tif ( ! empty( $context->payment_data['checkout-notices'] ) ) {\n\t\t\t\t$payment_details                    = $result->payment_details;\n\t\t\t\t$payment_details['checkoutNotices'] = $context->payment_data['checkout-notices'];\n\n\t\t\t\t$result->set_payment_details( $payment_details );\n\t\t\t\t$result->set_status( 'error' );\n\t\t\t}\n\t\t}\n\t}",
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_few_shot",
+      "php_lint": {
+        "valid": true,
+        "errors": ""
+      },
+      "critique_fix_alignment": {
+        "critical_high_issues": 1,
+        "addressed_issues": 1,
+        "unaddressed_issues": [],
+        "alignment_ratio": 1.0
+      },
+      "_audit_index": 125,
+      "_rubric_pending": {
+        "C1": null,
+        "C2": null,
+        "C3": null,
+        "C4": null,
+        "C5": null,
+        "C6": null
+      }
+    },
+    {
+      "source_file": "wp-optimizer.json",
+      "function_name": "Mod_Settings::actions",
+      "defective_code": "function actions(): void\n    {\n        RequestActions::request($this->action_hook, function ($action) {\n\n            $response = false;\n\n            switch ($action) {\n\n                case 'reset_options':\n                    $response = wps('wpopt')->settings->reset();\n                    Rewriter::reload();\n                    break;\n\n                case 'restore_options':\n                    $response = wps('wpopt')->moduleHandler->upgrade();\n                    break;\n\n                case 'export_options':\n\n                    require_once WPS_ADDON_PATH . 'Exporter.class.php';\n\n                    $exporter = new Exporter();\n\n                    $exporter->set_raw(wps('wpopt')->settings->export());\n                    $exporter->format('text');\n                    $exporter->download('wpopt-export.conf');\n\n                    unset($exporter);\n\n                    break;\n\n                case 'import_options':\n                    $response = wps('wpopt')->settings->import($_REQUEST['conf_data']);\n                    $response &= wps('wpopt')->moduleHandler->upgrade();\n                    break;\n            }\n\n            if ($response) {\n                $this->add_notices('success', __('Action was correctly executed', $this->context));\n            }\n            else {\n                $this->add_notices('warning', __('Action execution failed', $this->context));\n            }\n        });\n    }",
+      "critique": {
+        "summary": "Function 'actions' has 1 critical issue(s) (security) requiring immediate remediation before deployment.",
+        "dimensions": {
+          "wpcs_compliance": {
+            "severity": "medium",
+            "issue": "Missing PHPDoc block for 'actions' \u2014 required by WPCS for all public functions; Function 'actions' uses camelCase \u2014 WPCS requires snake_case (e.g., 'actions')",
+            "fix": "Add /** @param, @return, @since tags above function 'actions'; Rename to snake_case convention"
+          },
+          "sql_safety": {
+            "severity": "low",
+            "issue": "No direct database queries in 'actions' (source: wp-optimizer.json) \u2014 SQL safety dimension acceptable",
+            "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+          },
+          "security": {
+            "severity": "critical",
+            "issue": "'actions' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests",
+            "fix": "Add wp_verify_nonce($_POST['_wpnonce'], 'action_name') before processing any user input; use wp_nonce_field() in forms"
+          },
+          "performance": {
+            "severity": "low",
+            "issue": "'actions' has no obvious performance issues for its current scope (source: wp-optimizer.json)",
+            "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+          },
+          "wp_api_usage": {
+            "severity": "low",
+            "issue": "'actions' uses WordPress APIs appropriately for its scope (source: wp-optimizer.json), but hooks and filters could be more explicit",
+            "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+          },
+          "code_quality": {
+            "severity": "medium",
+            "issue": "'actions' (33 lines, source: wp-optimizer.json) lacks explicit error handling \u2014 silent failures make debugging and monitoring difficult",
+            "fix": "Add WP_Error returns for failure conditions: if (empty($result)) { return new WP_Error('no_result', __('Operation failed', 'plugin-slug')); }"
+          },
+          "dependency_integrity": {
+            "severity": "low",
+            "issue": "'actions' instantiates Exporter \u2014 ensure these dependencies are available in all execution contexts (source: wp-optimizer.json)",
+            "fix": "Inject dependencies via constructor or factory pattern rather than instantiating inside the function; improves testability"
+          },
+          "i18n": {
+            "severity": "low",
+            "issue": "'actions' i18n handling is acceptable (source: wp-optimizer.json) \u2014 verify text domain consistency across the plugin",
+            "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+          },
+          "accessibility": {
+            "severity": "low",
+            "issue": "'actions' does not produce HTML output \u2014 accessibility dimension not applicable (source: wp-optimizer.json)",
+            "fix": "No changes needed for accessibility in this non-rendering function"
+          }
+        },
+        "key_observation": "'actions' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests"
+      },
+      "corrected_code": "/**\n * Actions \u2014 fixed version.\n *\n * @return mixed\n * @since 1.0.0\n */\nfunction actions(): void\n    {\n    // Security: Verify nonce before processing user input\n    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) ), 'actions_action' ) ) {\n        wp_die( esc_html__( 'Security check failed.', 'plugin-slug' ) );\n    }\n\n        RequestActions::request($this->action_hook, function ($action) {\n\n            $response = false;\n\n            switch ($action) {\n\n                case 'reset_options':\n                    $response = wps('wpopt')->settings->reset();\n                    Rewriter::reload();\n                    break;\n\n                case 'restore_options':\n                    $response = wps('wpopt')->moduleHandler->upgrade();\n                    break;\n\n                case 'export_options':\n\n                    require_once WPS_ADDON_PATH . 'Exporter.class.php';\n\n                    $exporter = new Exporter();\n\n                    $exporter->set_raw(wps('wpopt')->settings->export());\n                    $exporter->format('text');\n                    $exporter->download('wpopt-export.conf');\n\n                    unset($exporter);\n\n                    break;\n\n                case 'import_options':\n                    $response = wps('wpopt')->settings->import($_REQUEST['conf_data']);\n                    $response &= wps('wpopt')->moduleHandler->upgrade();\n                    break;\n            }\n\n            if ($response) {\n                $this->add_notices('success', __('Action was correctly executed', $this->context));\n            }\n            else {\n                $this->add_notices('warning', __('Action execution failed', $this->context));\n            }\n        });\n    }",
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_few_shot",
+      "php_lint": {
+        "valid": true,
+        "errors": ""
+      },
+      "critique_fix_alignment": {
+        "critical_high_issues": 1,
+        "addressed_issues": 1,
+        "unaddressed_issues": [],
+        "alignment_ratio": 1.0
+      },
+      "_audit_index": 127,
+      "_rubric_pending": {
+        "C1": null,
+        "C2": null,
+        "C3": null,
+        "C4": null,
+        "C5": null,
+        "C6": null
+      }
+    },
+    {
+      "source_file": "pagarme-payments-for-woocommerce.json",
+      "function_name": "AdditionalInformation::getRequest",
+      "defective_code": "/**\n     * @return array\n     */\nfunction getRequest()\n    {\n        return $_REQUEST;\n    }",
+      "critique": {
+        "summary": "Function 'getRequest' has 1 critical issue(s) (security) requiring immediate remediation before deployment.",
+        "dimensions": {
+          "wpcs_compliance": {
+            "severity": "medium",
+            "issue": "Function 'getRequest' uses camelCase \u2014 WPCS requires snake_case (e.g., 'get_request')",
+            "fix": "Rename to snake_case convention"
+          },
+          "sql_safety": {
+            "severity": "low",
+            "issue": "No direct database queries in 'getRequest' (source: pagarme-payments-for-woocommerce.json) \u2014 SQL safety dimension acceptable",
+            "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+          },
+          "security": {
+            "severity": "critical",
+            "issue": "'getRequest' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests",
+            "fix": "Add wp_verify_nonce($_POST['_wpnonce'], 'action_name') before processing any user input; use wp_nonce_field() in forms"
+          },
+          "performance": {
+            "severity": "low",
+            "issue": "'getRequest' has no obvious performance issues for its current scope (source: pagarme-payments-for-woocommerce.json)",
+            "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+          },
+          "wp_api_usage": {
+            "severity": "low",
+            "issue": "'getRequest' uses WordPress APIs appropriately for its scope (source: pagarme-payments-for-woocommerce.json), but hooks and filters could be more explicit",
+            "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+          },
+          "code_quality": {
+            "severity": "low",
+            "issue": "'getRequest' code quality is acceptable but could improve single responsibility adherence (source: pagarme-payments-for-woocommerce.json, 5 lines)",
+            "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+          },
+          "dependency_integrity": {
+            "severity": "low",
+            "issue": "'getRequest' has no problematic dependency patterns detected (source: pagarme-payments-for-woocommerce.json)",
+            "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+          },
+          "i18n": {
+            "severity": "low",
+            "issue": "'getRequest' i18n handling is acceptable (source: pagarme-payments-for-woocommerce.json) \u2014 verify text domain consistency across the plugin",
+            "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+          },
+          "accessibility": {
+            "severity": "low",
+            "issue": "'getRequest' does not produce HTML output \u2014 accessibility dimension not applicable (source: pagarme-payments-for-woocommerce.json)",
+            "fix": "No changes needed for accessibility in this non-rendering function"
+          }
+        },
+        "key_observation": "'getRequest' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests"
+      },
+      "corrected_code": "/**\n     * @return array\n     */\nfunction getRequest()\n    {\n    if ( ! current_user_can( 'manage_options' ) ) {\n        wp_send_json_error( array( 'message' => esc_html__( 'Permission denied.', 'plugin-slug' ) ) );\n        return;\n    }\n    // Security: Verify nonce before processing user input\n    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) ), 'getRequest_action' ) ) {\n        wp_die( esc_html__( 'Security check failed.', 'plugin-slug' ) );\n    }\n\n        return $_REQUEST;\n    }",
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_few_shot",
+      "php_lint": {
+        "valid": true,
+        "errors": ""
+      },
+      "critique_fix_alignment": {
+        "critical_high_issues": 1,
+        "addressed_issues": 1,
+        "unaddressed_issues": [],
+        "alignment_ratio": 1.0
+      },
+      "_audit_index": 130,
+      "_rubric_pending": {
+        "C1": null,
+        "C2": null,
+        "C3": null,
+        "C4": null,
+        "C5": null,
+        "C6": null
+      }
+    },
+    {
+      "source_file": "platnosci-online-blue-media.json",
+      "function_name": "Order_Creator::remove",
+      "defective_code": "/**\n\t * @throws Exception\n\t */\nfunction remove( $order_id ) {\n\t\t$order = wc_get_order( $order_id );\n\n\t\tif ( ! $order ) {\n\t\t\tthrow new Exception( __( 'Failed to delete test order',\n\t\t\t\t'bm-woocommerce' ) );\n\t\t}\n\n\t\tblue_media()->get_woocommerce_logger()->log_debug(\n\t\t\tsprintf( '[Order_Creator] [remove] [Attempt] [Order id: %s] [autopay_test_order meta: %s]',\n\t\t\t\tprint_r( $order_id, true ),\n\t\t\t\tprint_r( $order->get_meta( 'autopay_test_order' ), true )\n\t\t\t)\n\t\t);\n\n\t\tif ( $order->get_meta( 'autopay_test_order' ) === '1' ) {\n\t\t\t$items = $order->get_items();\n\t\t\tforeach ( $items as $item ) {\n\t\t\t\t$product_id = $item->get_product_id();\n\t\t\t\tif ( get_post_meta( $product_id,\n\t\t\t\t\t\t'autopay_test_product',\n\t\t\t\t\t\ttrue ) === 'true' ) {\n\t\t\t\t\t$order->remove_item( $item->get_id() );\n\t\t\t\t\twp_trash_post( $product_id );\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t$order->delete();\n\n\t\t\tblue_media()->get_woocommerce_logger()->log_debug(\n\t\t\t\tsprintf( '[Order_Creator] [remove] [Done] [Order id: %s]',\n\t\t\t\t\tprint_r( $order_id, true )\n\t\t\t\t)\n\t\t\t);\n\t\t} else {\n\t\t\tthrow new Exception( __( 'Failed to delete test order',\n\t\t\t\t'bm-woocommerce' ) );\n\t\t}\n\t}",
+      "critique": {
+        "summary": "Function 'remove' has 1 high-severity issue(s) (code_quality) that compromise security or correctness.",
+        "dimensions": {
+          "wpcs_compliance": {
+            "severity": "medium",
+            "issue": "Function 'remove' uses camelCase \u2014 WPCS requires snake_case (e.g., 'remove')",
+            "fix": "Rename to snake_case convention"
+          },
+          "sql_safety": {
+            "severity": "low",
+            "issue": "No direct database queries in 'remove' (source: platnosci-online-blue-media.json) \u2014 SQL safety dimension acceptable",
+            "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+          },
+          "security": {
+            "severity": "medium",
+            "issue": "'remove' has no obvious security vulnerabilities but lacks defensive coding patterns (source: platnosci-online-blue-media.json)",
+            "fix": "Add nonce verification, capability checks, and output escaping as defensive measures even in low-risk functions"
+          },
+          "performance": {
+            "severity": "low",
+            "issue": "'remove' performs potentially expensive operations in a loop without caching (source: platnosci-online-blue-media.json)",
+            "fix": "Cache expensive computed values using wp_cache_set()/wp_cache_get() with appropriate cache group and expiry"
+          },
+          "wp_api_usage": {
+            "severity": "low",
+            "issue": "'remove' uses WordPress APIs appropriately for its scope (source: platnosci-online-blue-media.json), but hooks and filters could be more explicit",
+            "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+          },
+          "code_quality": {
+            "severity": "high",
+            "issue": "Debug statements (var_dump/print_r/error_log) found in 'remove' \u2014 should not exist in production code paths; leaks information",
+            "fix": "Remove all var_dump(), print_r(), error_log() calls; use WP_DEBUG_LOG conditionally if logging is needed: if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) { error_log($msg); }"
+          },
+          "dependency_integrity": {
+            "severity": "low",
+            "issue": "'remove' instantiates Exception \u2014 ensure these dependencies are available in all execution contexts (source: platnosci-online-blue-media.json)",
+            "fix": "Inject dependencies via constructor or factory pattern rather than instantiating inside the function; improves testability"
+          },
+          "i18n": {
+            "severity": "low",
+            "issue": "'remove' i18n handling is acceptable (source: platnosci-online-blue-media.json) \u2014 verify text domain consistency across the plugin",
+            "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+          },
+          "accessibility": {
+            "severity": "low",
+            "issue": "'remove' does not produce HTML output \u2014 accessibility dimension not applicable (source: platnosci-online-blue-media.json)",
+            "fix": "No changes needed for accessibility in this non-rendering function"
+          }
+        },
+        "key_observation": "'remove' has no obvious security vulnerabilities but lacks defensive coding patterns (source: platnosci-online-blue-media.json)"
+      },
+      "corrected_code": "/**\n\t * @throws Exception\n\t */\nfunction remove( $order_id ) {\n\t\t$order = wc_get_order( $order_id );\n\n\t\tif ( ! $order ) {\n\t\t\tthrow new Exception( __( 'Failed to delete test order',\n\t\t\t\t'bm-woocommerce' ) );\n\t\t}\n\n\t\tblue_media()->get_woocommerce_logger()->log_debug(\n\t\t\tsprintf( '[Order_Creator] [remove] [Attempt] [Order id: %s] [autopay_test_order meta: %s]',\n\n\t\tif ( $order->get_meta( 'autopay_test_order' ) === '1' ) {\n\t\t\t$items = $order->get_items();\n\t\t\tforeach ( $items as $item ) {\n\t\t\t\t$product_id = $item->get_product_id();\n\t\t\t\tif ( get_post_meta( $product_id,\n\t\t\t\t\t\t'autopay_test_product',\n\t\t\t\t\t\ttrue ) === 'true' ) {\n\t\t\t\t\t$order->remove_item( $item->get_id() );\n\t\t\t\t\twp_trash_post( $product_id );\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t$order->delete();\n\n\t\t\tblue_media()->get_woocommerce_logger()->log_debug(\n\t\t\t\tsprintf( '[Order_Creator] [remove] [Done] [Order id: %s]',\n\t\t} else {\n\t\t\tthrow new Exception( __( 'Failed to delete test order',\n\t\t\t\t'bm-woocommerce' ) );\n\t\t}\n\t}",
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_few_shot",
+      "php_lint": {
+        "valid": true,
+        "errors": ""
+      },
+      "critique_fix_alignment": {
+        "critical_high_issues": 1,
+        "addressed_issues": 1,
+        "unaddressed_issues": [],
+        "alignment_ratio": 1.0
+      },
+      "_audit_index": 137,
+      "_rubric_pending": {
+        "C1": null,
+        "C2": null,
+        "C3": null,
+        "C4": null,
+        "C5": null,
+        "C6": null
+      }
+    },
+    {
+      "source_file": "archive.json",
+      "function_name": "add_shortcode",
+      "defective_code": "/**\n\t * Add shortcode, example: [archive]\n\t *\n\t * @uses   shortcode_atts\n\t * @since  0.0.1\n\t *\n\t * @param  array  $atts\n\t * @param  string $content\n\t *\n\t * @return string | array $archived_posts\n\t */\nfunction add_shortcode( $atts, $content = NULL ) {\n\n\t\textract(\n\t\t\t$attribute = shortcode_atts(\n\t\t\t\tarray(\n\t\t\t\t\t'count'         => - 1, // count or -1 for all posts\n\t\t\t\t\t'category'      => '', // Show posts associated with certain categories.\n\t\t\t\t\t'tag'           => '', // Show posts associated with certain tags.\n\t\t\t\t\t'post_status'   => 'publish', // status or all for all posts\n\t\t\t\t\t'echo'          => 'true', // echo or give an array for use external\n\t\t\t\t\t'return_markup' => 'ul', // markup before echo title, content\n\t\t\t\t\t'title_markup'  => 'li', // markup before item\n\t\t\t\t\t'content'       => 'false', // view also content?\n\t\t\t\t\t'debug'         => 'false', // debug mor vor view an array\n\t\t\t\t), $atts\n\t\t\t)\n\t\t);\n\n\t\t$args = array(\n\t\t\t'post_type'      => self::$post_type_1,\n\t\t\t'post_status'    => $attribute[ 'post_status' ],\n\t\t\t'posts_per_page' => $attribute[ 'count' ],\n\t\t\t'cat'            => $attribute[ 'category' ],\n\t\t\t'tag'            => $attribute[ 'tag' ],\n\t\t);\n\n\t\t$archived_posts = '';\n\n\t\t$posts = new WP_Query( $args );\n\t\tif ( $posts->have_posts() ) {\n\n\t\t\twhile ( $posts->have_posts() ) {\n\n\t\t\t\t$posts->the_post();\n\t\t\t\t$post_id = get_the_ID();\n\n\t\t\t\tif ( 'true' === $attribute[ 'echo' ] ) {\n\t\t\t\t\t$archived_posts .= '<' . $attribute[ 'title_markup' ] . '><a href=\"' .\n\t\t\t\t\t\tget_permalink( $post_id ) . '\" title=\"' . get_the_title() . '\" >' .\n\t\t\t\t\t\tget_the_title() . '</a>';\n\t\t\t\t\tif ( 'true' === $attribute[ 'content' ] ) {\n\t\t\t\t\t\t$archived_posts .= apply_filters( 'the_content', get_the_content() );\n\t\t\t\t\t}\n\t\t\t\t\t$archived_posts .= '</' . $attribute[ 'title_markup' ] . '>';\n\t\t\t\t} else {\n\t\t\t\t\t//(array) $archived_post = new stdClass();\n\t\t\t\t\t$archived_post            = array();\n\t\t\t\t\t$archived_post->post_id   = $post_id;\n\t\t\t\t\t$archived_post->title     = get_the_title();\n\t\t\t\t\t$archived_post->permalink = get_permalink( $post_id );\n\t\t\t\t\t$archived_post->content   = apply_filters( 'the_content', get_the_content() );\n\t\t\t\t\t$archived_posts[ ]        = $archived_post;\n\t\t\t\t}\n\t\t\t}\n\n\t\t}\n\n\t\twp_reset_postdata();\n\n\t\t$archived_posts = '<' . $attribute[ 'return_markup' ] . '>' . $archived_posts . '</' . $attribute[ 'return_markup' ] . '>';\n\t\t$archived_posts = apply_filters( 'fb_get_archive', $archived_posts );\n\n\t\tif ( 'true' === $attribute[ 'debug' ] ) {\n\t\t\techo '<h1>Debug Archived Posts</h1><pre>';\n\t\t\tvar_dump( $archived_posts );\n\t\t\techo '</pre>';\n\t\t}\n\n\t\treturn $archived_posts;\n\t}",
+      "critique": {
+        "summary": "Function 'add_shortcode' has 1 critical issue(s) (security) requiring immediate remediation before deployment.",
+        "dimensions": {
+          "wpcs_compliance": {
+            "severity": "low",
+            "issue": "WPCS coding style is acceptable in 'add_shortcode' but lacks PHPDoc completeness",
+            "fix": "Ensure @param types and @return type are documented"
+          },
+          "sql_safety": {
+            "severity": "low",
+            "issue": "No direct database queries in 'add_shortcode' (source: archive.json) \u2014 SQL safety dimension acceptable",
+            "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+          },
+          "security": {
+            "severity": "critical",
+            "issue": "extract() in 'add_shortcode' can overwrite arbitrary PHP variables from user-supplied arrays \u2014 privilege escalation risk",
+            "fix": "Replace extract($_POST) with explicit variable assignments: $field = sanitize_text_field($_POST['field'] ?? '')"
+          },
+          "performance": {
+            "severity": "low",
+            "issue": "'add_shortcode' performs potentially expensive operations in a loop without caching (source: archive.json)",
+            "fix": "Cache expensive computed values using wp_cache_set()/wp_cache_get() with appropriate cache group and expiry"
+          },
+          "wp_api_usage": {
+            "severity": "low",
+            "issue": "'add_shortcode' uses WordPress APIs appropriately for its scope (source: archive.json), but hooks and filters could be more explicit",
+            "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+          },
+          "code_quality": {
+            "severity": "high",
+            "issue": "Debug statements (var_dump/print_r/error_log) found in 'add_shortcode' \u2014 should not exist in production code paths; leaks information",
+            "fix": "Remove all var_dump(), print_r(), error_log() calls; use WP_DEBUG_LOG conditionally if logging is needed: if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) { error_log($msg); }"
+          },
+          "dependency_integrity": {
+            "severity": "low",
+            "issue": "'add_shortcode' instantiates WP_Query \u2014 ensure these dependencies are available in all execution contexts (source: archive.json)",
+            "fix": "Inject dependencies via constructor or factory pattern rather than instantiating inside the function; improves testability"
+          },
+          "i18n": {
+            "severity": "medium",
+            "issue": "'add_shortcode' may produce user-visible output without translation wrappers (source: archive.json)",
+            "fix": "Audit for hardcoded strings and wrap in __() or esc_html__() with the plugin text domain"
+          },
+          "accessibility": {
+            "severity": "low",
+            "issue": "'add_shortcode' renders HTML (source: archive.json) \u2014 verify semantic structure uses appropriate HTML5 elements",
+            "fix": "Use semantic HTML: <nav>, <main>, <article>, <section> where appropriate; avoid div-soup for content that has semantic meaning"
+          }
+        },
+        "key_observation": "extract() in 'add_shortcode' can overwrite arbitrary PHP variables from user-supplied arrays \u2014 privilege escalation risk"
+      },
+      "corrected_code": "/**\n\t * Add shortcode, example: [archive]\n\t *\n\t * @uses   shortcode_atts\n\t * @since  0.0.1\n\t *\n\t * @param  array  $atts\n\t * @param  string $content\n\t *\n\t * @return string | array $archived_posts\n\t */\nfunction add_shortcode( $atts, $content = NULL ) {\n    if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_key( $_REQUEST['_wpnonce'] ), 'add_shortcode_nonce' ) ) {\n        wp_send_json_error( array( 'message' => esc_html__( 'Invalid security token.', 'plugin-slug' ) ) );\n        return;\n    }\n\n\t\textract(\n\t\t\t$attribute = shortcode_atts(\n\t\t\t\tarray(\n\t\t\t\t\t'count'         => - 1, // count or -1 for all posts\n\t\t\t\t\t'category'      => '', // Show posts associated with certain categories.\n\t\t\t\t\t'tag'           => '', // Show posts associated with certain tags.\n\t\t\t\t\t'post_status'   => 'publish', // status or all for all posts\n\t\t\t\t\t'echo'          => 'true', // echo or give an array for use external\n\t\t\t\t\t'return_markup' => 'ul', // markup before echo title, content\n\t\t\t\t\t'title_markup'  => 'li', // markup before item\n\t\t\t\t\t'content'       => 'false', // view also content?\n\t\t\t\t\t'debug'         => 'false', // debug mor vor view an array\n\t\t\t\t), $atts\n\t\t\t)\n\t\t);\n\n\t\t$args = array(\n\t\t\t'post_type'      => self::$post_type_1,\n\t\t\t'post_status'    => $attribute[ 'post_status' ],\n\t\t\t'posts_per_page' => $attribute[ 'count' ],\n\t\t\t'cat'            => $attribute[ 'category' ],\n\t\t\t'tag'            => $attribute[ 'tag' ],\n\t\t);\n\n\t\t$archived_posts = '';\n\n\t\t$posts = new WP_Query( $args );\n\t\tif ( $posts->have_posts() ) {\n\n\t\t\twhile ( $posts->have_posts() ) {\n\n\t\t\t\t$posts->the_post();\n\t\t\t\t$post_id = get_the_ID();\n\n\t\t\t\tif ( 'true' === $attribute[ 'echo' ] ) {\n\t\t\t\t\t$archived_posts .= '<' . $attribute[ 'title_markup' ] . '><a href=\"' .\n\t\t\t\t\t\tget_permalink( $post_id ) . '\" title=\"' . get_the_title() . '\" >' .\n\t\t\t\t\t\tget_the_title() . '</a>';\n\t\t\t\t\tif ( 'true' === $attribute[ 'content' ] ) {\n\t\t\t\t\t\t$archived_posts .= apply_filters( 'the_content', get_the_content() );\n\t\t\t\t\t}\n\t\t\t\t\t$archived_posts .= '</' . $attribute[ 'title_markup' ] . '>';\n\t\t\t\t} else {\n\t\t\t\t\t//(array) $archived_post = new stdClass();\n\t\t\t\t\t$archived_post            = array();\n\t\t\t\t\t$archived_post->post_id   = $post_id;\n\t\t\t\t\t$archived_post->title     = get_the_title();\n\t\t\t\t\t$archived_post->permalink = get_permalink( $post_id );\n\t\t\t\t\t$archived_post->content   = apply_filters( 'the_content', get_the_content() );\n\t\t\t\t\t$archived_posts[ ]        = $archived_post;\n\t\t\t\t}\n\t\t\t}\n\n\t\t}\n\n\t\twp_reset_postdata();\n\n\t\t$archived_posts = '<' . $attribute[ 'return_markup' ] . '>' . $archived_posts . '</' . $attribute[ 'return_markup' ] . '>';\n\t\t$archived_posts = apply_filters( 'fb_get_archive', $archived_posts );\n\n\t\tif ( 'true' === $attribute[ 'debug' ] ) {\n\t\t\techo '<h1>Debug Archived Posts</h1><pre>';\n\t\t\techo '</pre>';\n\t\t}\n\n\t\treturn $archived_posts;\n\t}",
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_few_shot",
+      "php_lint": {
+        "valid": true,
+        "errors": ""
+      },
+      "critique_fix_alignment": {
+        "critical_high_issues": 2,
+        "addressed_issues": 1,
+        "unaddressed_issues": [
+          {
+            "dimension": "security",
+            "severity": "critical",
+            "fix_text": "Replace extract($_POST) with explicit variable assignments: $field = sanitize_text_field($_POST['field'] ?? '')",
+            "missing_apis": [
+              "sanitize_text_field"
+            ]
+          }
+        ],
+        "alignment_ratio": 0.5
+      },
+      "_audit_index": 139,
+      "_rubric_pending": {
+        "C1": null,
+        "C2": null,
+        "C3": null,
+        "C4": null,
+        "C5": null,
+        "C6": null
+      }
+    },
+    {
+      "source_file": "global-payments-woocommerce.json",
+      "function_name": "process_hpp_final",
+      "defective_code": "/**\n     * Process final HPP response before processing the order\n     * @return void\n     */\nfunction process_hpp_final(): void\n    {\n        $logger = wc_get_logger();\n        $context = array( 'source' => 'globalpayments_hpp' );\n        \n        // Validate and sanitize POST data\n        if ( !isset( $_POST['X-GP-Signature'] ) || !isset( $_POST['gateway_response'] ) ) {\n            if ( $this->debug ) {\n                $logger->error( 'Missing required POST data in HPP final', $context );\n            }\n            wp_die( __( 'Missing required data', 'globalpayments-gateway-provider-for-woocommerce' ), 400 );\n        }\n    \n        $signature = sanitize_text_field( wp_unslash ( $_POST['X-GP-Signature'] ) );\n        $gateway_response_json = wp_unslash( $_POST['gateway_response'] );\n\n        \n        // Clean the JSON data\n        $gateway_response_json = $this->sanitize_hpp_json_input( $gateway_response_json );\n        \n        if ( !$this->validate_hpp_return_signature( $gateway_response_json, $signature ) ) {\n            if ( $this->debug ) {\n                $logger->error( 'HPP final signature validation failed', $context );\n            }\n            wp_die( __( 'Invalid signature', 'globalpayments-gateway-provider-for-woocommerce' ), 403 );\n        }\n\n        $gateway_data = json_decode( $gateway_response_json, true );\n        if ( !is_array( $gateway_data ) || empty( $gateway_data ) ) {\n            if ( $this->debug ) {\n                $logger->error( 'HPP Callback Processing: Failed to parse gateway data', $context );\n            }\n            wp_die( __( 'Invalid response data', 'globalpayments-gateway-provider-for-woocommerce'), 400);\n        }\n\n        // Extract order and process the result\n        $order_id = HppResponseParser::extract_order_id( $gateway_data );\n        $order_id = absint( $order_id );\n        \n        $order = wc_get_order( $order_id );\n        \n        if ( !$order instanceof WC_Order ) {\n            if ( $this->debug ) {\n                $logger->error( 'HPP Callback Processing: Order not found',  $context );\n            }\n            wp_die( __( 'Order not found', 'globalpayments-gateway-provider-for-woocommerce' ), 404 );\n        }\n\n        // Process the payment result directly (following AbstractApm pattern)\n        $is_successful = HppResponseParser::is_successful_payment( $gateway_data );\n        \n        if ( $is_successful ) {\n            $transaction_id = $gateway_data['id'] ?? '';\n            \n            // Handle installments BEFORE payment_complete() to ensure data is available in emails\n            if ( $this->has_installments( $gateway_data ) ) {\n                $this->save_installment_data( $order, $gateway_data );\n            }\n\n            $order->payment_complete( $transaction_id );\n            $order->add_order_note(\n                sprintf(\n                    __( 'Payment completed via HPP. Transaction ID: %s', 'globalpayments-gateway-provider-for-woocommerce' ),\n                    $transaction_id\n                )\n            );\n\n            wp_redirect( $order->get_checkout_order_received_url() );\n        } else if( HppResponseParser::is_pending_payment( $gateway_data ) ) {\n\n        $transaction_id = $gateway_data['id'] ?? '';\n        $pending_note = sprintf(\n                    __( 'Payment is pending. Transaction ID: %s',\n                     'globalpayments-gateway-provider-for-woocommerce' ),\n                    $transaction_id );\n        if( \"PENDING\" === strtoupper( $order->get_status() ) ){\n            $order->add_order_note( $pending_note );\n        }else{\n            $order->update_status( \"pending\" , $pending_note );\n        }\n\n        wp_redirect( $order->get_checkout_order_received_url() );\n\n        }else {\n            $error_message = HppResponseParser::get_error_message( $gateway_data );\n\n            if ( $this->debug ) {\n                $logger->error( 'HPP Callback Processing: Payment failed, updating order status', array_merge( $context, [\n                    'error_message' => $error_message,\n                ]));\n            }\n            \n            $order->update_status( 'failed', $error_message );\n            wc_add_notice( $error_message, 'error' );\n\n           wp_redirect( wc_get_checkout_url() );\n        }\n        \n        exit;\n    }",
+      "critique": {
+        "summary": "Function 'process_hpp_final' has 1 critical issue(s) (security) requiring immediate remediation before deployment.",
+        "dimensions": {
+          "wpcs_compliance": {
+            "severity": "low",
+            "issue": "WPCS coding style is acceptable in 'process_hpp_final' but lacks PHPDoc completeness",
+            "fix": "Ensure @param types and @return type are documented"
+          },
+          "sql_safety": {
+            "severity": "low",
+            "issue": "No direct database queries in 'process_hpp_final' (source: global-payments-woocommerce.json) \u2014 SQL safety dimension acceptable",
+            "fix": "If database access is added later, always use $wpdb->prepare() with proper placeholders"
+          },
+          "security": {
+            "severity": "critical",
+            "issue": "'process_hpp_final' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests",
+            "fix": "Add wp_verify_nonce($_POST['_wpnonce'], 'action_name') before processing any user input; use wp_nonce_field() in forms"
+          },
+          "performance": {
+            "severity": "low",
+            "issue": "'process_hpp_final' has no obvious performance issues for its current scope (source: global-payments-woocommerce.json)",
+            "fix": "Consider adding transient caching if the function's output becomes expensive as data volume grows"
+          },
+          "wp_api_usage": {
+            "severity": "low",
+            "issue": "'process_hpp_final' uses WordPress APIs appropriately for its scope (source: global-payments-woocommerce.json), but hooks and filters could be more explicit",
+            "fix": "Use do_action() / apply_filters() to expose extension points where appropriate for plugin compatibility"
+          },
+          "code_quality": {
+            "severity": "low",
+            "issue": "'process_hpp_final' code quality is acceptable but could improve single responsibility adherence (source: global-payments-woocommerce.json, 80 lines)",
+            "fix": "Extract complex logic into well-named helper functions, each with a single clear responsibility"
+          },
+          "dependency_integrity": {
+            "severity": "low",
+            "issue": "'process_hpp_final' has no problematic dependency patterns detected (source: global-payments-woocommerce.json)",
+            "fix": "Ensure any global state dependencies ($wpdb, $wp_filesystem) are accessed through proper WordPress APIs"
+          },
+          "i18n": {
+            "severity": "low",
+            "issue": "'process_hpp_final' i18n handling is acceptable (source: global-payments-woocommerce.json) \u2014 verify text domain consistency across the plugin",
+            "fix": "Ensure text domain matches the plugin slug defined in plugin header; use esc_html__() (not esc_html(__()) ) for the late-escaping pattern"
+          },
+          "accessibility": {
+            "severity": "low",
+            "issue": "'process_hpp_final' does not produce HTML output \u2014 accessibility dimension not applicable (source: global-payments-woocommerce.json)",
+            "fix": "No changes needed for accessibility in this non-rendering function"
+          }
+        },
+        "key_observation": "'process_hpp_final' accesses $_POST/$_GET/$_REQUEST without nonce verification \u2014 CSRF attack allows unauthorized state changes via forged requests"
+      },
+      "corrected_code": "/**\n     * Process final HPP response before processing the order\n     * @return void\n     */\nfunction process_hpp_final(): void\n    {\n    // Security: Verify nonce before processing user input\n    if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) ), 'process_hpp_final_action' ) ) {\n        wp_die( esc_html__( 'Security check failed.', 'plugin-slug' ) );\n    }\n\n        $logger = wc_get_logger();\n        $context = array( 'source' => 'globalpayments_hpp' );\n        \n        // Validate and sanitize POST data\n        if ( !isset( $_POST['X-GP-Signature'] ) || !isset( $_POST['gateway_response'] ) ) {\n            if ( $this->debug ) {\n                $logger->error( 'Missing required POST data in HPP final', $context );\n            }\n            wp_die( __( 'Missing required data', 'globalpayments-gateway-provider-for-woocommerce' ), 400 );\n        }\n    \n        $signature = sanitize_text_field( wp_unslash ( $_POST['X-GP-Signature'] ) );\n        $gateway_response_json = wp_unslash( $_POST['gateway_response'] );\n\n        \n        // Clean the JSON data\n        $gateway_response_json = $this->sanitize_hpp_json_input( $gateway_response_json );\n        \n        if ( !$this->validate_hpp_return_signature( $gateway_response_json, $signature ) ) {\n            if ( $this->debug ) {\n                $logger->error( 'HPP final signature validation failed', $context );\n            }\n            wp_die( __( 'Invalid signature', 'globalpayments-gateway-provider-for-woocommerce' ), 403 );\n        }\n\n        $gateway_data = json_decode( $gateway_response_json, true );\n        if ( !is_array( $gateway_data ) || empty( $gateway_data ) ) {\n            if ( $this->debug ) {\n                $logger->error( 'HPP Callback Processing: Failed to parse gateway data', $context );\n            }\n            wp_die( __( 'Invalid response data', 'globalpayments-gateway-provider-for-woocommerce'), 400);\n        }\n\n        // Extract order and process the result\n        $order_id = HppResponseParser::extract_order_id( $gateway_data );\n        $order_id = absint( $order_id );\n        \n        $order = wc_get_order( $order_id );\n        \n        if ( !$order instanceof WC_Order ) {\n            if ( $this->debug ) {\n                $logger->error( 'HPP Callback Processing: Order not found',  $context );\n            }\n            wp_die( __( 'Order not found', 'globalpayments-gateway-provider-for-woocommerce' ), 404 );\n        }\n\n        // Process the payment result directly (following AbstractApm pattern)\n        $is_successful = HppResponseParser::is_successful_payment( $gateway_data );\n        \n        if ( $is_successful ) {\n            $transaction_id = $gateway_data['id'] ?? '';\n            \n            // Handle installments BEFORE payment_complete() to ensure data is available in emails\n            if ( $this->has_installments( $gateway_data ) ) {\n                $this->save_installment_data( $order, $gateway_data );\n            }\n\n            $order->payment_complete( $transaction_id );\n            $order->add_order_note(\n                sprintf(\n                    __( 'Payment completed via HPP. Transaction ID: %s', 'globalpayments-gateway-provider-for-woocommerce' ),\n                    $transaction_id\n                )\n            );\n\n            wp_redirect( $order->get_checkout_order_received_url() );\n        } else if( HppResponseParser::is_pending_payment( $gateway_data ) ) {\n\n        $transaction_id = $gateway_data['id'] ?? '';\n        $pending_note = sprintf(\n                    __( 'Payment is pending. Transaction ID: %s',\n                     'globalpayments-gateway-provider-for-woocommerce' ),\n                    $transaction_id );\n        if( \"PENDING\" === strtoupper( $order->get_status() ) ){\n            $order->add_order_note( $pending_note );\n        }else{\n            $order->update_status( \"pending\" , $pending_note );\n        }\n\n        wp_redirect( $order->get_checkout_order_received_url() );\n\n        }else {\n            $error_message = HppResponseParser::get_error_message( $gateway_data );\n\n            if ( $this->debug ) {\n                $logger->error( 'HPP Callback Processing: Payment failed, updating order status', array_merge( $context, [\n                    'error_message' => $error_message,\n                ]));\n            }\n            \n            $order->update_status( 'failed', $error_message );\n            wc_add_notice( $error_message, 'error' );\n\n           wp_redirect( wc_get_checkout_url() );\n        }\n        \n        exit;\n    }",
+      "dimensions_addressed": [
+        "wpcs_compliance",
+        "sql_safety",
+        "security",
+        "performance",
+        "wp_api_usage",
+        "code_quality",
+        "dependency_integrity",
+        "i18n",
+        "accessibility"
+      ],
+      "generation_method": "claude_code_agent_few_shot",
+      "php_lint": {
+        "valid": true,
+        "errors": ""
+      },
+      "critique_fix_alignment": {
+        "critical_high_issues": 1,
+        "addressed_issues": 1,
+        "unaddressed_issues": [],
+        "alignment_ratio": 1.0
+      },
+      "_audit_index": 146,
+      "_rubric_pending": {
+        "C1": null,
+        "C2": null,
+        "C3": null,
+        "C4": null,
+        "C5": null,
+        "C6": null
+      }
+    }
+  ]
+}

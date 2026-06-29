@@ -1,0 +1,5 @@
+[14:34:15] START tag=prequant_mergedv2_load trip=12288MiB cmd: python -u -m scripts._tf_4bit_peak_probe --save models/qwen3-30b-wp-30_70-merged-v2-4bit | initial_avail=121410MiB
+[14:34:15] load launched host_pid=526606
+[14:49:59] load exited rc=0
+[14:49:59] DONE tripped=0 rc=0 min_avail=12365MiB
+RESULT tripped=0 rc=0 min_avail_mib=12365

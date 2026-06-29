@@ -1,0 +1,32 @@
+
+######## PROMPT 0  (sampled 364 tokens, max=700) ########
+--- RAW completion (last 200 chars) ---
+..."lumn'] = $prefix . '.' . $column;\n\n\t\t\t// If we have a meta query date column, we need to join the meta table.\n\t\t\tif ( 'meta' === $table ) {\n\t\t\t\t$this->join_meta_table( $column );\n\t\t\t}\n\t\t}\n\t}<|im_end|>"
+--- extracted php len=1167, parseable=False, valid_wp=False ---
+--- php -l: Parse error: syntax error, unexpected token "<", expecting end of file in /tmp/tmpvq4arsz0.php on line 50
+Errors parsing /tmp/tmpvq4arsz0.php
+--- extracted TAIL (last 160 chars): ..." If we have a meta query date column, we need to join the meta table.\n\t\t\tif ( 'meta' === $table ) {\n\t\t\t\t$this->join_meta_table( $column );\n\t\t\t}\n\t\t}\n\t}<|im_end|>"
+
+######## PROMPT 1  (sampled 85 tokens, max=700) ########
+--- RAW completion (last 200 chars) ---
+...'rue;\n\t\t}\n\n\t\tif ( ! $this->is_paid_plan() ) {\n\t\t\treturn true;\n\t\t}\n\n\t\treturn (\n\t\t\t$this->get_plan_name() === Plan::FREE_PLAN_NAME ||\n\t\t\t$this->get_plan_name() === Plan::TRIAL_PLAN_NAME\n\t\t);\n\t}<|im_end|>'
+--- extracted php len=273, parseable=False, valid_wp=False ---
+--- php -l: Parse error: syntax error, unexpected token "<", expecting end of file in /tmp/tmpe2w3_kzz.php on line 15
+Errors parsing /tmp/tmpe2w3_kzz.php
+--- extracted TAIL (last 160 chars): ...' ) {\n\t\t\treturn true;\n\t\t}\n\n\t\treturn (\n\t\t\t$this->get_plan_name() === Plan::FREE_PLAN_NAME ||\n\t\t\t$this->get_plan_name() === Plan::TRIAL_PLAN_NAME\n\t\t);\n\t}<|im_end|>'
+
+######## PROMPT 2  (sampled 92 tokens, max=700) ########
+--- RAW completion (last 200 chars) ---
+..."unt,\n\t\t\t\t'country_code'   => $data->country_code,\n\t\t\t\t'currency'       => $data->currency,\n\t\t\t\t'enabled'        => $data->enabled,\n\t\t\t\t'pending_reason' => $data->pending_reason,\n\t\t\t)\n\t\t);\n\t}<|im_end|>"
+--- extracted php len=328, parseable=False, valid_wp=False ---
+--- php -l: Parse error: syntax error, unexpected token "<", expecting end of file in /tmp/tmp_3lb2uq2.php on line 12
+Errors parsing /tmp/tmp_3lb2uq2.php
+--- extracted TAIL (last 160 chars): ..."try_code,\n\t\t\t\t'currency'       => $data->currency,\n\t\t\t\t'enabled'        => $data->enabled,\n\t\t\t\t'pending_reason' => $data->pending_reason,\n\t\t\t)\n\t\t);\n\t}<|im_end|>"
+
+######## PROMPT 3  (sampled 175 tokens, max=700) ########
+--- RAW completion (last 200 chars) ---
+...'status = wp_remote_retrieve_response_code( $response );\n\n\t\tif ( $status < 200 || $status >= 300 ) {\n\t\t\tthrow new TransactionFailed( wp_remote_retrieve_response_message( $response ) );\n\t\t}\n\t}<|im_end|>'
+--- extracted php len=581, parseable=False, valid_wp=False ---
+--- php -l: Parse error: syntax error, unexpected token "<", expecting end of file in /tmp/tmpwxvn366r.php on line 23
+Errors parsing /tmp/tmpwxvn366r.php
+--- extracted TAIL (last 160 chars): ...'e( $response );\n\n\t\tif ( $status < 200 || $status >= 300 ) {\n\t\t\tthrow new TransactionFailed( wp_remote_retrieve_response_message( $response ) );\n\t\t}\n\t}<|im_end|>'

@@ -1,0 +1,28 @@
+2026-06-26 08:19:43,405 INFO tinker.lib.public_interfaces.service_client: ServiceClient initialized for session 668dc02f-a1ff-5177-9680-44516bafe2f7
+2026-06-26 08:19:43,405 INFO v3live: warm-start sampler...
+2026-06-26 08:19:45,225 INFO tinker.lib.public_interfaces.service_client: TrainingClient initialized for model 668dc02f-a1ff-5177-9680-44516bafe2f7:train:0
+2026-06-26 08:20:10,653 INFO v3live: prompt 0 -> 2 completions (running total 2)
+2026-06-26 08:20:18,398 INFO v3live: prompt 1 -> 2 completions (running total 4)
+2026-06-26 08:20:26,875 INFO v3live: prompt 2 -> 2 completions (running total 6)
+2026-06-26 08:20:36,095 INFO v3live: prompt 3 -> 2 completions (running total 8)
+2026-06-26 08:20:44,553 INFO v3live: prompt 4 -> 2 completions (running total 10)
+2026-06-26 08:20:54,569 INFO v3live: prompt 5 -> 2 completions (running total 12)
+2026-06-26 08:21:03,684 INFO v3live: prompt 6 -> 2 completions (running total 14)
+2026-06-26 08:21:13,686 INFO v3live: prompt 7 -> 2 completions (running total 16)
+2026-06-26 08:21:21,460 INFO v3live: prompt 8 -> 2 completions (running total 18)
+2026-06-26 08:21:29,065 INFO v3live: prompt 9 -> 2 completions (running total 20)
+2026-06-26 08:21:36,634 INFO v3live: prompt 10 -> 2 completions (running total 22)
+2026-06-26 08:21:44,926 INFO v3live: prompt 11 -> 2 completions (running total 24)
+2026-06-26 08:21:44,927 INFO v3live: sampled 24 completions, skipped 0 prompts
+
+===== V3 GEN-AXIS LIVENESS (warm-start, robust per-prompt) =====
+completions scored : 24  (skipped 0 hanging prompts)
+OLD gate _is_parseable_php : parseable=  0  mean_reward=0.0000
+NEW gate _is_valid_wp_php  : parseable=  0  mean_reward=0.0000
+template-only credited by FIX 2 (new-yes, old-no): 0
+
+GATE warm parseable(new) > 0      : FAIL (0)
+GATE >=1 nonzero gen mean_reward  : FAIL (0.0000)
+GATE FIX2 additive (new >= old)   : PASS (0 >= 0)
+
+VERDICT: V3 FAIL

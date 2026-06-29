@@ -1,349 +1,529 @@
 {
   "phase": "04.1",
   "stream": "ctf",
-  "generated_at": "2026-04-08T20:14:56.266361Z",
+  "generated_at": "2026-04-09T21:50:47.932635Z",
   "function_ids": [
     {
-      "source_file": "woocommerce.json",
-      "function_name": "wc_get_attribute_taxonomies",
+      "source_file": "advanced-custom-fields-markdown.json",
+      "function_name": "acf_field_markdown::create_field",
       "source_dir": "",
-      "phase1_id": "6da9dc930966acd295aa531a68bf1315897ac821f0474c7eb681711b417bd2c5"
-    },
-    {
-      "source_file": "komoju-japanese-payments.json",
-      "function_name": "WC_Gateway_Komoju_Request::get_komoju_args",
-      "source_dir": "",
-      "phase1_id": "5ed1cd4e5798df8b7da3336c6146136d1ed6c72466d259ce8a964ad58d230d16"
-    },
-    {
-      "source_file": "woocommerce-legacy-rest-api.json",
-      "function_name": "WC_API_Server::__construct",
-      "source_dir": "",
-      "phase1_id": "260810f5e2ef65535a6ff39a60824b97fa716d6bc7a2988b1a5707fa7eb31633"
-    },
-    {
-      "source_file": "wordpress-importer.json",
-      "function_name": "WP_Import::get_author_mapping",
-      "source_dir": "",
-      "phase1_id": "5700c270bc24eae87f458c402d500a094c39f53e09ab88c669593335736ab37a"
-    },
-    {
-      "source_file": "woo-product-reviews-shortcode.json",
-      "function_name": "fs_get_raw_referer",
-      "source_dir": "",
-      "phase1_id": "abae1a7666ee959ee2d67a8270d412b83a8473abfd869a4cf9a5b1335e35170e"
-    },
-    {
-      "source_file": "advanced-custom-fields.json",
-      "function_name": "acf_validate_post_id",
-      "source_dir": "",
-      "phase1_id": "4fbc3d5990edab77d843fd7d1fca05872cbbee928f3e4a875d22b70cf7b8119d"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "WC_Admin_API_Keys::allow_save_settings",
-      "source_dir": "",
-      "phase1_id": "6cf9c3c8a0f454db4f1399cb7aae42e36f4d265192934d7ea1310fd8fca3f34a"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "OnboardingSetupWizard::is_setup_wizard",
-      "source_dir": "",
-      "phase1_id": "884c736d9d7739a657a299916013bcfb020eb1fa074fc4beec077d9610783f51"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "get_database_schema::drop_tables",
-      "source_dir": "",
-      "phase1_id": "82adf5f676546cd6ec0c81ff67215710bd2088cadc84943584c38c2aeb7bbbe2"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "WC_Admin_Webhooks::screen_option",
-      "source_dir": "",
-      "phase1_id": "eb62cc6b3457dcb1cd8bd29c67f36f3357a4e2e7fe985b947044ebd3fb48ad37"
-    },
-    {
-      "source_file": "learnpress-course-review.json",
-      "function_name": "wp_is_post_revision::download_order_csv_file",
-      "source_dir": "",
-      "phase1_id": "9dc60a87f45be15baac85cdb5caad2b248478d49e63246dc6dee1e1fc6e7e458"
-    },
-    {
-      "source_file": "contact-form-7.json",
-      "function_name": "FileRule::validate",
-      "source_dir": "",
-      "phase1_id": "5f2cf56d4862ffdb6c7402ca7a0d758aea777dca2023bdd0bd090f90be0b0dd3"
-    },
-    {
-      "source_file": "woocommerce-square.json",
-      "function_name": "Cash_App_Pay_Gateway::log_js_data",
-      "source_dir": "",
-      "phase1_id": "101c6f253130a421a28ff28d3ecb89e358b7abf64ab189ce02aba8ad710ee6ea"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "fts_index_on_order_address_table_exists",
-      "source_dir": "",
-      "phase1_id": "48ae1b360ab5095818f376ade73d659e0ae23d7662ef6f2d99fb148e39ed9e30"
-    },
-    {
-      "source_file": "pixtypes.json",
-      "function_name": "pixtypes_cmb_force_send",
-      "source_dir": "",
-      "phase1_id": "3d23863a1dc7dfd2e7de2936c4e8c96f4198a97f67126575e06f0b5810d66a28"
-    },
-    {
-      "source_file": "loginradius-for-wordpress.json",
-      "function_name": "CIAM_WP_Default_Login::login_user",
-      "source_dir": "",
-      "phase1_id": "2dc93176b6d34d4eba74cc30c85a0ab5f55f556e8d7a7a0eaa469a9422034766"
-    },
-    {
-      "source_file": "woocommerce-shipping.json",
-      "function_name": "Activate::updateDb",
-      "source_dir": "",
-      "phase1_id": "96c81a6f0d50592d92b660d7fb103a6437dd838cfb1267286831e8285e327efb"
-    },
-    {
-      "source_file": "pp-express-wc4jp.json",
-      "function_name": "WC_Gateway_PPEC_Client::_request",
-      "source_dir": "",
-      "phase1_id": "c529dcf4f193539bb68f867af1845b9e27534549e2cea70c1dacc6f08d8c4733"
-    },
-    {
-      "source_file": "webp-express.json",
-      "function_name": "WodConfigLoader::getWebPExpressContentDirWithDocRoot",
-      "source_dir": "",
-      "phase1_id": "78f419a1e18bc197ac5b986aa5a3d6bae550f87ef8f794387fd403d8fb2c55b1"
-    },
-    {
-      "source_file": "loginradius-for-wordpress.json",
-      "function_name": "CIAM_Authentication_Loginfunction::custom_page_redirection",
-      "source_dir": "",
-      "phase1_id": "53246c516ace301e33fa4c13984bb1a5cb059efa499cccba17dc4c1870924f26"
-    },
-    {
-      "source_file": "ads-txt.json",
-      "function_name": "adstxt_revisions_restore",
-      "source_dir": "",
-      "phase1_id": "55a1b9833bc4d384699ac66aa5dda6945747fc9c7ce3cdb0c506d31f011355de"
-    },
-    {
-      "source_file": "webp-express.json",
-      "function_name": "Convert::convertFile",
-      "source_dir": "",
-      "phase1_id": "d998ee9addc3399f38eae41264b3387e7a9fa055d5971a50a7af1116455e0a1d"
-    },
-    {
-      "source_file": "pagarme-payments-for-woocommerce.json",
-      "function_name": "PostFormatter::dataToFilterFromPost",
-      "source_dir": "",
-      "phase1_id": "28b8ce4d8bc599c059d6aab40b4420bae9864d3e55d8869018549fc65ceb0bdf"
-    },
-    {
-      "source_file": "wp-optimizer.json",
-      "function_name": "Media_Table::process_bulk_action",
-      "source_dir": "",
-      "phase1_id": "d7dde02027539dd46a371e863acf2100f3a8b536991cb33ca1d7329ef1420216"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "wc_get_shipping_method_count",
-      "source_dir": "",
-      "phase1_id": "4df8633ee1ecd61634b2983557383f2f2f1b1186f971620b3f11aa996a61ee73"
-    },
-    {
-      "source_file": "learnpress-course-review.json",
-      "function_name": "LP_Post_Type_Actions::trashed_post",
-      "source_dir": "",
-      "phase1_id": "0423733669b85aa7c1e98003e5fe19c768a6642558c670f442844b4fba592549"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "get_legacy_webhooks_count::search_box",
-      "source_dir": "",
-      "phase1_id": "507a029b7221d13930da4733c8b3a70e50c69f9c6d762b172f66407aee33e2c1"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "change_feature_enable::is_trying_new_templates",
-      "source_dir": "",
-      "phase1_id": "5be15711da23a5b325382eb117e8b4bd044cf5d16f294ed2df119013c467520a"
-    },
-    {
-      "source_file": "pp-express-wc4jp.json",
-      "function_name": "WC_Gateway_PPEC_Checkout_Handler::maybe_return_from_paypal",
-      "source_dir": "",
-      "phase1_id": "62616e55261ef933b8c042d76f3bf181d07e9ce084af2c94a0e24a25936df535"
-    },
-    {
-      "source_file": "jupiterx-core.json",
-      "function_name": "Plugin::admin_notice_minimum_elementor_version",
-      "source_dir": "",
-      "phase1_id": "94a8968fe9ca6d49617f3d454c9b78a47ea5ae544248fc4c5c0f07bd20193796"
-    },
-    {
-      "source_file": "woocommerce-paypal-payments.json",
-      "function_name": "AvailabilityNotice::execute",
-      "source_dir": "",
-      "phase1_id": "ded07eef5ec782e29c80c27126a63b13ceff8a268578b5b7c796add520d777df"
-    },
-    {
-      "source_file": "masvideos.json",
-      "function_name": "MasVideos_Widget_Movies_Rating_Filter::get_filtered_movie_count",
-      "source_dir": "",
-      "phase1_id": "f3ba11f4addbef51ba071e0e908a75e75b37ec316a82057797727273ba26a7cb"
-    },
-    {
-      "source_file": "woocommerce-square.json",
-      "function_name": "Settings::register_pages",
-      "source_dir": "",
-      "phase1_id": "4a223c1980ebcbde0fba4db2f37d196769fbb805e83eae843851cd7213d610f2"
-    },
-    {
-      "source_file": "wp-super-cache.json",
-      "function_name": "scossdl_off_update",
-      "source_dir": "",
-      "phase1_id": "1c9ccc1b556b29b20456ccc4ff8e9729c651a537a1df725cbfc8f5986e1efc3d"
-    },
-    {
-      "source_file": "contact-form-7.json",
-      "function_name": "WPCF7_Service_OAuth2::load",
-      "source_dir": "",
-      "phase1_id": "4981e09aed2a47ef36faf56e651a578a9377ed47cdc686007fb9b84ad514746c"
-    },
-    {
-      "source_file": "public-post-preview.json",
-      "function_name": "DS_Public_Post_Preview::add_list_table_view",
-      "source_dir": "",
-      "phase1_id": "e0833610ed108656673538af4677156765c1974ebe7538c3dac0393c94d3673a"
-    },
-    {
-      "source_file": "woocommerce-paypal-payments.json",
-      "function_name": "update_subscription_product_meta",
-      "source_dir": "",
-      "phase1_id": "20187bb041d4a4f4c973e0b08cf160bde9ca18122f726323ffce2bd0607d4bfc"
-    },
-    {
-      "source_file": "learnpress-course-review.json",
-      "function_name": "LP_Setup_Wizard::create_pages",
-      "source_dir": "",
-      "phase1_id": "e1b0622d10cb8a54f085ef0efce963073a3a6a1da1e019713b780a8729f05904"
-    },
-    {
-      "source_file": "woocommerce-paypal-payments.json",
-      "function_name": "CartScriptParamsEndpoint::handle_request",
-      "source_dir": "",
-      "phase1_id": "62943110f5f3543e289986dc806a582b67099d3d38760ce6bfa1c5f8f50b2f19"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "get_query_var::wc_product_canonical_redirect",
-      "source_dir": "",
-      "phase1_id": "a62be9a13f26521565120ac9282c685aeb776156bccf94a7038d454b76c6f21f"
-    },
-    {
-      "source_file": "tiktok-for-business.json",
-      "function_name": "OrderList::OrderList",
-      "source_dir": "",
-      "phase1_id": "dee29d5486e92efe87953e251722a5f75ee628b96872cfd71a52710950c1143f"
-    },
-    {
-      "source_file": "wp-super-cache.json",
-      "function_name": "wp_cache_phase2",
-      "source_dir": "",
-      "phase1_id": "470a4fb6ffdf51f3760ecbaf142e53c1ad2eb2274339681a5cd5edb95f05c934"
-    },
-    {
-      "source_file": "wp-mail-smtp.json",
-      "function_name": "Debug::pvar",
-      "source_dir": "",
-      "phase1_id": "97c4926a928cad4ae513920a0faf86a438307c23328b7160421189eff7c0f3c8"
-    },
-    {
-      "source_file": "seo-by-rank-math.json",
-      "function_name": "SEO_Analyzer::set_url",
-      "source_dir": "",
-      "phase1_id": "9220ccd1189a0d3b1656edbe685a4f9b52879f48eb92b5470b31ebec48ecfc6e"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "cleanup::wc_is_running_from_async_action_scheduler",
-      "source_dir": "",
-      "phase1_id": "f0d23101dcb2de8e2b5fbf6c9f7a2ee390c0dfc2fb7f55f6b7822fb8eada788a"
-    },
-    {
-      "source_file": "yith-woocommerce-ajax-search.json",
-      "function_name": "YIT_Plugin_Panel_WooCommerce::get_current_tab",
-      "source_dir": "",
-      "phase1_id": "b7eea6230a5c76a5cfb167aa1d705bc691fd15688c8e8a5939f4069c261c59f8"
-    },
-    {
-      "source_file": "platnosci-online-blue-media.json",
-      "function_name": "Vas::get_vas_content",
-      "source_dir": "",
-      "phase1_id": "d44c0f12ff503fecc4b99e7fa4f09787155f2ae56f1dab8c20e20baa435e26cc"
+      "phase1_id": "81bd8a178f7f1ae6b021bdea43e0f4f0be599337cc26ca0e0092a1ab77db7652"
     },
     {
       "source_file": "learnpress-wishlist.json",
-      "function_name": "LP_Forms_Handler::process_become_teacher",
+      "function_name": "learn_press_field_question_duration",
       "source_dir": "",
-      "phase1_id": "00a7cfa588f52bb6529defd89e5297f28515278d8f4d0bfd841105f9e066fe9e"
+      "phase1_id": "8044c155045fd480004f693b0f1cfae079ee4fc4a797da65b9046e3c0e75a873"
     },
     {
-      "source_file": "blocks-animation.json",
-      "function_name": "LimitedOffers::__construct",
+      "source_file": "auxin-elements.json",
+      "function_name": "auxin_widget_gmaps_callback",
       "source_dir": "",
-      "phase1_id": "8d19b790196aa610ff3224ec90df31bff8c1ef2653694b56b205778b4d8bbcdc"
+      "phase1_id": "2a67350f8a11855b8aeaa2bc73b97c6b85573e17eb1dc20eacac8e18d10e4652"
     },
     {
-      "source_file": "masvideos.json",
-      "function_name": "MasVideos_Widget_TV_Shows_Layered_Nav::get_filtered_term_tv_show_counts",
+      "source_file": "wp-optimizer.json",
+      "function_name": "Mod_ActivityLog::render_sub_modules",
       "source_dir": "",
-      "phase1_id": "e3d1fa3dc30dad60d49e1d1f24d76af1072079f11276a06cf232978a8fb6780f"
+      "phase1_id": "621655c0f71f93e8141c7d4ea8ed1a1832e452e14b899877974c8dba33419cbd"
+    },
+    {
+      "source_file": "plugnmeet.json",
+      "function_name": "PlugNmeetAjaxHelper::__construct",
+      "source_dir": "",
+      "phase1_id": "ac88b7d28f3f0c92714041d5684ca832ddf128375c8db12c8caecc4fa7d67ae6"
     },
     {
       "source_file": "platnosci-online-blue-media.json",
-      "function_name": "Banner::get_banner_src",
+      "function_name": "Transaction_Testing_Controller::execute_request_verify_itn",
       "source_dir": "",
-      "phase1_id": "98635986d3a12bed39bb195ccd6d3367bf15853ec667c3eb0e33fe3d161d143c"
+      "phase1_id": "ba89c4f0244bcd5315658e04500b8850d9726f2943a940226fe3bde496a4cefe"
     },
     {
-      "source_file": "woocommerce-square.json",
-      "function_name": "Gift_Card::is_new",
+      "source_file": "gutenberg.json",
+      "function_name": "WP_Block_Supports_Spacing_Test::test_spacing_style_is_applied",
       "source_dir": "",
-      "phase1_id": "141bb13a8a80e78fd2cb3353109f1bfe1a55b7473196e0dbdcda812fb36b1858"
+      "phase1_id": "96ea160d308b97a301d6f088796adeff0007cfe4f2d8eb6439a768f70aabc9e1"
     },
     {
-      "source_file": "woocommerce-square.json",
-      "function_name": "Digital_Wallet::build_payment_request_line_items",
+      "source_file": "wordpress-importer.json",
+      "function_name": "BlockMarkupUrlProcessor::get_inspected_attribute_name",
       "source_dir": "",
-      "phase1_id": "6be385d3e259b5fc0f0bcab5e03b0c41ac7057b23361c2727c662c4f6aecc97f"
+      "phase1_id": "80dd41252a3f03dcddd515545a3ba1fa6ed8350208b478fdce7f29c8dc024f2d"
     },
     {
-      "source_file": "pinterest-for-woocommerce.json",
-      "function_name": "handle_update_product",
+      "source_file": "wp-super-cache.json",
+      "function_name": "wpcache_broken_message",
       "source_dir": "",
-      "phase1_id": "bd4c7f04000d1cfd3e07abace7d479445b210849ec68b9be74c1084b59fa15cd"
+      "phase1_id": "efb62aa912114663301a29352eb5c9abe09eef4723ccc5c1c270a0ab5dcee9ef"
+    },
+    {
+      "source_file": "seo-by-rank-math.json",
+      "function_name": "save_meta_data",
+      "source_dir": "",
+      "phase1_id": "778e6a4cfcee78e61793cacba5f304dc67d6262ca7a1dcea91ffcba53959313f"
+    },
+    {
+      "source_file": "wp-super-cache.json",
+      "function_name": "wp_cache_setting",
+      "source_dir": "",
+      "phase1_id": "4511ddb13c1da93567dfb90b91dca07c9a192cebf362a5aedd419196bb36a07a"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "WP_REST_Global_Styles_Controller_Gutenberg_Test::test_get_item_no_user_edit",
+      "source_dir": "",
+      "phase1_id": "f26d66459baae227285e68ca48bc16926cb049656b9b2ccd1356ecadc34b7dcc"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "call_function::update_order_meta_from_object",
+      "source_dir": "",
+      "phase1_id": "653aa66807bba7999b71bb24108dde486283a56a6f89dcd450e37b6e51630cd9"
+    },
+    {
+      "source_file": "global-payments-woocommerce.json",
+      "function_name": "AbstractAsyncPaymentMethod::process_async_cancel",
+      "source_dir": "",
+      "phase1_id": "6dd2546f089babdd629d55bf57e9be36df6d7d04f932a914312015b1cb4ee7c1"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "WC_Widget_Brand_Nav::get_filtered_term_product_counts",
+      "source_dir": "",
+      "phase1_id": "087b5e15335ac6286c3ef632094291775d4378ed0d523339458d91dd9f0e42b5"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "Links_Table_Reports::get_success_description",
+      "source_dir": "",
+      "phase1_id": "bd0f8014b882cf23b52daa7757c2837a51a96eb30aa7d5fc72157b025f8de6f4"
+    },
+    {
+      "source_file": "pp-express-wc4jp.json",
+      "function_name": "wc_gateway_ppec_is_using_credit",
+      "source_dir": "",
+      "phase1_id": "4b51cafef302a019901f36e61bdcb1aca485419e2d99f4c4f4a02eff12b473ab"
+    },
+    {
+      "source_file": "wp-super-cache.json",
+      "function_name": "wp_cache_disable",
+      "source_dir": "",
+      "phase1_id": "13fa9e52503cd4e566672c69c13893cec06ed2eeb9736196128388aea450a119"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "strtoupper::run_query",
+      "source_dir": "",
+      "phase1_id": "3d50b8c90afb0da2abcc221c96869c9e3edc5137a64476ce07470178b7d3f780"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "Wrapper::get_wpdb",
+      "source_dir": "",
+      "phase1_id": "5d2435bc33b1bc7d1ccec91ddde203749bdc496c4f105d5c250ecc94149f7587"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "search_by_title_only",
+      "source_dir": "",
+      "phase1_id": "9810ee72d3eb77e52f7fc86e70206f72a80428820e08c5e8555a51024066aeaa"
+    },
+    {
+      "source_file": "speculation-rules.json",
+      "function_name": "PLVT_View_Transition_Animation::get_stylesheet",
+      "source_dir": "",
+      "phase1_id": "6c3a9a5900f64dbe4e3184a62cef651ed93f518e52e442a5669b0b5df6ef9b34"
     },
     {
       "source_file": "learnpress-buddypress.json",
-      "function_name": "LP_Forms_Handler::process_register",
+      "function_name": "TemplateAJAX::html_section_item_actions",
       "source_dir": "",
-      "phase1_id": "b9f021c6f3c87e55bee1a5c3ad08733ccb37f2cea4d7ac84ddb24e82ee87795b"
+      "phase1_id": "146846cbc4bc105c32a1e473441964647dc6263685066ae1e3e6e5c1b982905e"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "Gutenberg_REST_Attachments_Controller_Test::test_full_exif_metadata_extracted_for_client_side_upload",
+      "source_dir": "",
+      "phase1_id": "79320a9a2032cff758df9598321955b5aa0ec2128d63f14b80b0bb5bc158ec1a"
+    },
+    {
+      "source_file": "vk-blocks.json",
+      "function_name": "vk_blocks_image_style",
+      "source_dir": "",
+      "phase1_id": "83efb829890174b8de12a1709623a9914e5cf6e191a1027c2b3a3af91575d618"
+    },
+    {
+      "source_file": "blocks-animation.json",
+      "function_name": "Block_Frontend::enqueue_fse_css",
+      "source_dir": "",
+      "phase1_id": "231e9a7c81e624f7178b55a6915ac1075ba2f94d985dab8fe5197756593925f3"
+    },
+    {
+      "source_file": "wordpress-importer.json",
+      "function_name": "CSSURLProcessor::next_url",
+      "source_dir": "",
+      "phase1_id": "05285690d5f8ed796d2ac1f47dc75f525ee5636d10cd4afdbc67d69de0aee0e7"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "WP_Test_REST_Comments_Controller_Gutenberg::test_cannot_create_with_non_valid_comment_type",
+      "source_dir": "",
+      "phase1_id": "bb9cf2e926a5b960edf908d46cc09d1ae6566c2bc5a86ebca349b41a529cdb45"
+    },
+    {
+      "source_file": "fonto.json",
+      "function_name": "save_term",
+      "source_dir": "",
+      "phase1_id": "1113f67fc2853985647a070b157b19df2627d52c1aa85357c86118b6502e2197"
+    },
+    {
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "learn_press_update_user_profile_basic_information",
+      "source_dir": "",
+      "phase1_id": "8f3c34afdc75a75f09787d9e1c3a5a8ffba6476bf286a79febe02c1b57445f8b"
+    },
+    {
+      "source_file": "webp-express.json",
+      "function_name": "WodConfigLoader::fixConfigIfEwwwDiscoveredNonFunctionalApiKeys",
+      "source_dir": "",
+      "phase1_id": "3c094769799a2ef9f289449a9094fbf8dcb3963447a8cc3aed078c6a91818b30"
+    },
+    {
+      "source_file": "google-site-kit.json",
+      "function_name": "Report_Data_Builder::normalize_section_input",
+      "source_dir": "",
+      "phase1_id": "18f31d58e56d36c84a86e8395246cf660f2110424abd001d6a88651b8f9a891e"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "JupiterX_Core_Control_Panel_Custom_Fonts::__construct",
+      "source_dir": "",
+      "phase1_id": "2bfbe3024db8964d63ad829fac56b51185f12ac1a1c80ace25c892cb46ee331d"
+    },
+    {
+      "source_file": "pp-express-wc4jp.json",
+      "function_name": "woo_pp_start_checkout",
+      "source_dir": "",
+      "phase1_id": "c8170f16cb017e7193ba07acacfe6cb7ca8ffada83cc7c9eebc2498ddbd32e15"
+    },
+    {
+      "source_file": "advanced-custom-fields.json",
+      "function_name": "edit_term",
+      "source_dir": "",
+      "phase1_id": "0fe36521e40081e704cedc1995c49bb5cfcd49bef2e1396b99a9dd575e4d8d43"
+    },
+    {
+      "source_file": "learnpress-wishlist.json",
+      "function_name": "learn_press_course_insert_section",
+      "source_dir": "",
+      "phase1_id": "07e50a43fb60433df3114364d8cc3bccd3bd903e025f3fc3a975e506ef2187fd"
+    },
+    {
+      "source_file": "google-site-kit.json",
+      "function_name": "Site_Health::__construct",
+      "source_dir": "",
+      "phase1_id": "efa234cfc9bc558a3bad407dc8f5f1f1efc6c2c760711c44eea2499242d66620"
+    },
+    {
+      "source_file": "advanced-custom-fields.json",
+      "function_name": "acf_admin_field_group::mb_options",
+      "source_dir": "",
+      "phase1_id": "c6e891ca8c307d3e8596f9dff0028034d435df76d7e4a3c8cd5521b6df7aa676"
+    },
+    {
+      "source_file": "blocks-animation.json",
+      "function_name": "Dynamic_Content::evaluate_content_media_server",
+      "source_dir": "",
+      "phase1_id": "15fb913b46de7f6a05275b7419c92add21d9947e8a7058ea20425d8e0205356d"
+    },
+    {
+      "source_file": "pagarme-payments-for-woocommerce.json",
+      "function_name": "Checkout::__construct",
+      "source_dir": "",
+      "phase1_id": "80e5a0a685ff72d59f4035f19da58be815be56b95154027b840ff278e231bc49"
+    },
+    {
+      "source_file": "woocommerce-services.json",
+      "function_name": "WC_Connect_Label_Reports::get_export_button",
+      "source_dir": "",
+      "phase1_id": "aa5f217fd80ed275e542e9e72be719003ad88992f4b64d0f2c62762aa6a189f0"
+    },
+    {
+      "source_file": "vk-blocks.json",
+      "function_name": "VK_Blocks_Block_Loader::separate_assets_load_reducer",
+      "source_dir": "",
+      "phase1_id": "058cee2557e8360de91a5a969b3a6827e6e4bf2b97102394a58317c60cc41a2a"
+    },
+    {
+      "source_file": "blocks-animation.json",
+      "function_name": "Block_Frontend::enqueue_assets",
+      "source_dir": "",
+      "phase1_id": "5fd81ffc9c415437e1754538bb5c5db2a89da2439c99a4b7b997ca2dc0576276"
+    },
+    {
+      "source_file": "masvideos.json",
+      "function_name": "MasVideos_TV_Shows_Genres_Filter_Widget::get_filtered_term_tv_show_counts",
+      "source_dir": "",
+      "phase1_id": "fdcf446b24f950c7918a18edcb053722cd1e26337a3b878dce0df13a933a3f59"
+    },
+    {
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "learn_press_debug",
+      "source_dir": "",
+      "phase1_id": "0fab0bb2a7041bedd796c0b1f6723f20edaec52b72478bdf52747a372a04c9ab"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "ProfileCoursesTemplate::layout",
+      "source_dir": "",
+      "phase1_id": "9370da9a205cbcba72e3d7c0b101d31cd7a5b51196bef679ab5fd306fd008a7d"
+    },
+    {
+      "source_file": "aqua-page-builder.json",
+      "function_name": "AQ_Widgets_Block::block",
+      "source_dir": "",
+      "phase1_id": "c58e81004979eb306a18aa42b56606716f7d07a861a038b314b86ebcb5c14813"
+    },
+    {
+      "source_file": "advanced-custom-fields.json",
+      "function_name": "ACF_Ajax_Query_Users::get_args",
+      "source_dir": "",
+      "phase1_id": "95fb4756f34656e0f798fa5ee10133206e27ca7ad0b2f72c4df2507074f13820"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "WP_Block_Supports_Elements_Test::test_elements_block_support_class",
+      "source_dir": "",
+      "phase1_id": "b9825f4e95e5f4519f65c8a919adbf28fbe1e842b8a1a12ed827b21f26047adc"
+    },
+    {
+      "source_file": "woocommerce-shipping.json",
+      "function_name": "column_default",
+      "source_dir": "",
+      "phase1_id": "c3ae9cd4d36910bd2bef5a910abe5e707b0d39305d2e5e6ee79c8896188c3117"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "Render_Block_Navigation_Test::test_block_core_navigation_block_contains_core_navigation_no_navigation",
+      "source_dir": "",
+      "phase1_id": "f195a76a390d651d409f083419beb6e6bfa07d41290485c02c9c76eb28781356"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "Test_Blocks_RenderReusable::test_render_respects_custom_context",
+      "source_dir": "",
+      "phase1_id": "fd66719b4fdf3e0835f0744fbf055a5baca42b31680a8a9e499039f93240be60"
+    },
+    {
+      "source_file": "fonto.json",
+      "function_name": "CMB2_Type_Select::render",
+      "source_dir": "",
+      "phase1_id": "80496f9c59c31cb09c7e4553cdc4b73314181ae97d0dc623660a708c2016a8d5"
+    },
+    {
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "TemplateAJAX::html_section_item_actions",
+      "source_dir": "",
+      "phase1_id": "639582f2dc4e19a31483d7ec1c8343c9612d0f364f51b9e74c856da66632be08"
+    },
+    {
+      "source_file": "wp-stats.json",
+      "function_name": "get_totalauthors",
+      "source_dir": "",
+      "phase1_id": "389041ad5e65203dec06c43aaeae9de8803f0aaf0a10be83d65a39f1cae042da"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "Tests_Blocks_RenderBlockCorePostTitle::test_should_render_empty_string_when_title_is_empty",
+      "source_dir": "",
+      "phase1_id": "72874284a9f1212e577ad8d2a1087f6262e17818f2df2a06c2ef27352f270ce4"
+    },
+    {
+      "source_file": "polldaddy.json",
+      "function_name": "Polldaddy_Ajax::ajax_upload_image",
+      "source_dir": "",
+      "phase1_id": "5573835befd65451d861ca2b502e2732551b3e56cdc07d924aaa816feb94ce49"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "__construct::set_comparison_date_range_parameters",
+      "source_dir": "",
+      "phase1_id": "cc8ef7a917b47cd655d3a36c8356125b979455385266427f77433db177361ac3"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "JupiterX_Core_Control_Panel_Enable_Widgets::__construct",
+      "source_dir": "",
+      "phase1_id": "4cb148519f2c18ccbd22e0e0ff5bd06321e4712eb1438bcfbab3f7d4b44dc10d"
     },
     {
       "source_file": "woocommerce.json",
-      "function_name": "AddToCartForm::add_to_cart_form_action",
+      "function_name": "get_columns",
       "source_dir": "",
-      "phase1_id": "8ecd5919c206ca76ccaf4e5d924e3a6d015075f2de1a4ac756227afba0f3377e"
+      "phase1_id": "6fe5960f29cec6ff0da1541273686f254fc7cedf04f68f7b093134b61f80de75"
     },
     {
       "source_file": "woocommerce.json",
-      "function_name": "WC_Gateway_COD::is_accessing_settings",
+      "function_name": "WC_REST_Paypal_Webhooks_Controller::validate_webhook",
       "source_dir": "",
-      "phase1_id": "9d42fd0b305aca2e8d221fea0746464a84576188433995508960b559666e5f64"
+      "phase1_id": "9c9c335ef2ea7602eb81c643c58c204b7680631d0ef2f9821d41f982f6a7caf3"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "register_hooks::add_submenu_page",
+      "source_dir": "",
+      "phase1_id": "b81daa2d18d2da36e3f6c4a509e06bf4cc32393d99c594269c2ccbf31e0f1b52"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "JupiterX_Core_Control_Panel_Filesystem::add_error",
+      "source_dir": "",
+      "phase1_id": "f7717e02b3ca54c75b4f37acb9eb3ad2b82a2e2697087eb32b59d76da4e33d6f"
+    },
+    {
+      "source_file": "a3-responsive-slider.json",
+      "function_name": "Hook_Filter::include_frontend_script",
+      "source_dir": "",
+      "phase1_id": "d688b9f03fca35da16a9bbc6ce0706a0d6b846c6cf07a75bcf6146b1ffb347f8"
+    },
+    {
+      "source_file": "blocks-animation.json",
+      "function_name": "CSS_Handler::is_writable",
+      "source_dir": "",
+      "phase1_id": "7af623c37d65987fc23bdebe98b6aa8dd05cc894adcf42328f91496695549397"
+    },
+    {
+      "source_file": "blocks-animation.json",
+      "function_name": "Block_Frontend::enqueue_styles",
+      "source_dir": "",
+      "phase1_id": "149e9b504cc65519b348b7e7b5ad0bdebe47a0a4fe94885a39d2997a38ee1e5d"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "Postname_Permalink_Reports::get_has_no_postname_in_permalink_actions",
+      "source_dir": "",
+      "phase1_id": "7a0c4ab35021bbcf1681a83cf0ab3df287f37915ba80fa1a7119710dbc7ffb02"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "Tests_Blocks_RenderLastPosts::test_render_block_core_latest_posts_no_priming",
+      "source_dir": "",
+      "phase1_id": "67ec06338b905c4d10b2dd8c7ecc10b61730dfe993c43b93d1c0dd3458ecc68e"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "get_stock_status_counts",
+      "source_dir": "",
+      "phase1_id": "399891ec8aba763c5493c1d94cdbdc4f6e387eae28b41f79835e26f041548e66"
+    },
+    {
+      "source_file": "lmsace-connect.json",
+      "function_name": "lmsace_connect_auto_create_webservice",
+      "source_dir": "",
+      "phase1_id": "9c22320f825a3ce354150858279351ad7b7769914e5faac1d42759b1581bdcfd"
+    },
+    {
+      "source_file": "elementor.json",
+      "function_name": "Widget_Testimonial::is_dynamic_content",
+      "source_dir": "",
+      "phase1_id": "948c7d87b4200b530cb5b1a81c4570f83a25f7e085a507e6406943e4ef2ba8ab"
+    },
+    {
+      "source_file": "wp-super-cache.json",
+      "function_name": "get_is_preload_active",
+      "source_dir": "",
+      "phase1_id": "55e589bb5c2bf66be93366c7c5171907b9e4c41ee970e8471a587ca956591016"
+    },
+    {
+      "source_file": "blocks-animation.json",
+      "function_name": "Form_Settings_Data::extract_integration_data",
+      "source_dir": "",
+      "phase1_id": "1dedbc40180b36a888730d6db046cb1c62a23a3ce7df4ed39ec9c282173cce22"
+    },
+    {
+      "source_file": "contact-form-7.json",
+      "function_name": "wpcf7_current_action",
+      "source_dir": "",
+      "phase1_id": "6fcc8535335693df7c1ed1f5b14c5bb8a8d7538fb70fff98717578058f24bfb4"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "get_product_dimension_selection",
+      "source_dir": "",
+      "phase1_id": "1ae76e02ed03a3d8bd75c4d2a69437561465c62a7b77cbb678ab06522bc5d22f"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "WC_Email_Customer_Refunded_Order::set_email_strings",
+      "source_dir": "",
+      "phase1_id": "8811855f733e66cdf7f90cbc16134742c77376f86318594eac5c6d4fd339cfe4"
+    },
+    {
+      "source_file": "pagarme-payments-for-woocommerce.json",
+      "function_name": "Checkout::process",
+      "source_dir": "",
+      "phase1_id": "40aa6cf32773d4f095e597c1b1f0139f5c2d50c0e8fbd9181929480aac2ba60c"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "WC_Admin_List_Table::prepare_row_data",
+      "source_dir": "",
+      "phase1_id": "5861576135a19642f99643b73aaacbe789ecad893f20e68f2ffb7c6e18b224eb"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "__construct::bust_subscription_cache",
+      "source_dir": "",
+      "phase1_id": "b9444249820f0b42a27c9120bdfd726187fa55db56150f264bc030c49da42729"
+    },
+    {
+      "source_file": "query-monitor.json",
+      "function_name": "QM_Collector_Caps::get_concerned_options",
+      "source_dir": "",
+      "phase1_id": "bce1815c135b7ee54f03d2ecde581330231a47505acef410bb438805e43cdd5b"
+    },
+    {
+      "source_file": "advanced-custom-fields.json",
+      "function_name": "ACF_Taxonomy::ajax_validate_values",
+      "source_dir": "",
+      "phase1_id": "f70e6a797ea3ecbb56728b0d4048cc0165e0f3e1039d86d5c7aad2b3e2ab6dba"
+    },
+    {
+      "source_file": "advanced-custom-fields.json",
+      "function_name": "prepare_post_for_import",
+      "source_dir": "",
+      "phase1_id": "3de55f5f2bbb7c9f4d8a210a7f896921d2f7bb983b517198d7d29f9998f0b727"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "WP_Block_Supports_Typography_Test::tear_down",
+      "source_dir": "",
+      "phase1_id": "772735686124e4f71c35583100631167e4c74450217681b548ed2d2c3f81f82a"
+    },
+    {
+      "source_file": "bs-payone-woocommerce.json",
+      "function_name": "column_default",
+      "source_dir": "",
+      "phase1_id": "a98ac93318c4baaf9358a5fdf06ce967557c1cf42baa99a87d71cd185ab8f6bc"
+    },
+    {
+      "source_file": "list-category-posts.json",
+      "function_name": "CatListDisplayer::get_posts_morelink",
+      "source_dir": "",
+      "phase1_id": "b4edba59fc4a9efd9ec5940f02effb6eff678a79db96f5e7c6ebb024d3ffeb32"
+    },
+    {
+      "source_file": "bs-payone-woocommerce.json",
+      "function_name": "RatepayBase::sanitize_shop_ids_field",
+      "source_dir": "",
+      "phase1_id": "c9a3a77fa974c61733446760a49572182ed6ae7c6b4eda1de7606e7773c1fba3"
+    },
+    {
+      "source_file": "integromat-connector.json",
+      "function_name": "Rest_Request::dispatch",
+      "source_dir": "",
+      "phase1_id": "75c74886b04e9d8f34f699e33251cfafc9042edf21a05dec7b783a2e716616cc"
     },
     {
       "source_file": "connect-polylang-elementor.json",
@@ -352,556 +532,556 @@
       "phase1_id": "1ea0b5e3aa9820eb029f9bca41e94d919a8957d650509aefa7446d59068723b0"
     },
     {
-      "source_file": "woocommerce-square.json",
-      "function_name": "Order::no_verification_on_guest_save",
+      "source_file": "webp-express.json",
+      "function_name": "WebPOnDemand::getSourceDocRoot",
       "source_dir": "",
-      "phase1_id": "7aa6bce2c4825c54b7f34c55039a0223a1c7608afd22ae4ac9344d592f8e1e84"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "WebhookHandler::process_payment_capture_pending",
-      "source_dir": "",
-      "phase1_id": "bd92dfb88a8f2aaee9bf2405d616746ae7436d219ac58f6c2c9c8b08347860e3"
-    },
-    {
-      "source_file": "bs-payone-woocommerce.json",
-      "function_name": "Log::construct_from_post_vars",
-      "source_dir": "",
-      "phase1_id": "44f2845a3fb7c051e41a4d77d71de07698bf0a1acf0d1341c9502d2f7dc99412"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "CategoryLookup::regenerate",
-      "source_dir": "",
-      "phase1_id": "9142684c0291da7fbbf3f998083bde6b7a7b17a9831c11bb91e765c24dc371e0"
-    },
-    {
-      "source_file": "cmb2.json",
-      "function_name": "object_id",
-      "source_dir": "",
-      "phase1_id": "ca8a882da0291c26df1d160c909114f3593c3f8d37443f7f64da248a108a5713"
-    },
-    {
-      "source_file": "learnpress-buddypress.json",
-      "function_name": "learn_press_update_user_profile_basic_information",
-      "source_dir": "",
-      "phase1_id": "e58ae84116b93ee1e013168d4025a8f8afa7372de296c73951cfb0a5ed78a8be"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "get_tax_rate_classes",
-      "source_dir": "",
-      "phase1_id": "dc9b771481d3812d71227df29c81279695fbbd23ca412e352e6f338e45c02fdb"
-    },
-    {
-      "source_file": "sierotki.json",
-      "function_name": "iWorks_Orphans_Import::import_json",
-      "source_dir": "",
-      "phase1_id": "5a350004f8ae3bffba12f2d1c94a5045336bad578ab8bea543bce6f3869adeca"
-    },
-    {
-      "source_file": "query-monitor.json",
-      "function_name": "QM_Collector_DB_Queries::process_db_object",
-      "source_dir": "",
-      "phase1_id": "2374ef81b673b93d4e31f8a72fba7fe1baf083aa4884de585baace71d0040bbf"
-    },
-    {
-      "source_file": "embed-optimizer.json",
-      "function_name": "perflab_install_activate_plugin_callback",
-      "source_dir": "",
-      "phase1_id": "6ff2318e494350d43e35945971749710df445cb1ebdd036f956577fef0b21a03"
-    },
-    {
-      "source_file": "wordpress-seo.json",
-      "function_name": "__construct::install_and_activate_addons",
-      "source_dir": "",
-      "phase1_id": "d82ca6826ab94e79c8d4b7e6b01c8d00d2f4c3f624f9086fdf31a8b6308bde89"
-    },
-    {
-      "source_file": "advanced-custom-fields.json",
-      "function_name": "save_widget",
-      "source_dir": "",
-      "phase1_id": "d49583ef3db1e91899cd131278def92549ece3b6fefb941eb87300090cb3c228"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "Themes::upload_theme",
-      "source_dir": "",
-      "phase1_id": "18b8d3cb15910434d59bc6d871a3fc097c3d606fd8c0849489f7167b903a5c86"
-    },
-    {
-      "source_file": "elementor.json",
-      "function_name": "get_super_global_value",
-      "source_dir": "",
-      "phase1_id": "55eb13d612dbb669c0be178b7c9d8a52e3e8f5e8d69607bb0626416e7432f679"
-    },
-    {
-      "source_file": "google-video-sitemap-feed-with-multisite-support.json",
-      "function_name": "APGSitemapVideo::consulta",
-      "source_dir": "",
-      "phase1_id": "43fad661a9f3f9db2527dc23587b11db1ef9b8f21a0410d3300d4be39c23d106"
-    },
-    {
-      "source_file": "melhor-envio-cotacao.json",
-      "function_name": "TokenController::get",
-      "source_dir": "",
-      "phase1_id": "e8029e5c223cbd3e66abe59aa5dd9d73caa1bf2493cc361e7038e1dc2717c20b"
-    },
-    {
-      "source_file": "yith-woocommerce-ajax-search.json",
-      "function_name": "YIT_Plugin_Panel_WooCommerce::yit_panel",
-      "source_dir": "",
-      "phase1_id": "650b7398b6d9eae3af370979dee2155cf9da0008547697dd0f58f1d75d3a969f"
-    },
-    {
-      "source_file": "wordpress-seo.json",
-      "function_name": "Yoast_Admin_And_Dashboard_Conditional::on_upgrade_page",
-      "source_dir": "",
-      "phase1_id": "85c9afb3f64b9e2c8cb38c5da61db707b3fc931768c2be9ac224da7f42cfd399"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "WC_Meta_Box_Product_Data::prepare_attributes",
-      "source_dir": "",
-      "phase1_id": "674ca08c913859f8b42e07acd892460e5c5ebfb78cc8f9e0d5106e71ee191c27"
-    },
-    {
-      "source_file": "printful-shipping-for-woocommerce.json",
-      "function_name": "Printful_Admin_Settings::prepare_carriers",
-      "source_dir": "",
-      "phase1_id": "82d5c97ad9f184efd0a62fc385a91cba496d2b5661652992dcb3bdd77f82ff50"
-    },
-    {
-      "source_file": "pixtypes.json",
-      "function_name": "cmb_Meta_Box::add_for_specific_select_value",
-      "source_dir": "",
-      "phase1_id": "2829a0b6bf41b298fb6f4b2b9c1927e506910e7b7e03b7f3e50e754cbdf8244a"
+      "phase1_id": "713d79153f85b0471b47be56745f8e0299ade35c5ea5b60a2925d5dbad16aeb0"
     },
     {
       "source_file": "wp-super-cache.json",
-      "function_name": "wp_cache_clean_cache",
+      "function_name": "wpsc_feed_update",
       "source_dir": "",
-      "phase1_id": "9d804bd94f1e76cc21c879918281dfbb5783522cba5cc1e71c815da8d1bf6a23"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "WC_Admin_API_Keys::screen_option",
-      "source_dir": "",
-      "phase1_id": "89a86128cfda242e6105406fb23c901fe11d3b45297142adc7f085d654e18fb7"
-    },
-    {
-      "source_file": "advanced-custom-fields.json",
-      "function_name": "acf_loop::add_loop",
-      "source_dir": "",
-      "phase1_id": "3c291502609488cb3c0be7d2d1730c975efad429a7803ef8790970fb9ac44723"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "is_filtered",
-      "source_dir": "",
-      "phase1_id": "22f2d1533c224d62096f287ce612c7af24bf62f424f5095fbb28bbb56891c338"
-    },
-    {
-      "source_file": "page-optimize.json",
-      "function_name": "page_optimize_service_request",
-      "source_dir": "",
-      "phase1_id": "bb73728532399dadf89281b5905ed532233d05d19e302608e395fcbb692a9d36"
-    },
-    {
-      "source_file": "webp-express.json",
-      "function_name": "WCFMApi::processDeleteConverted",
-      "source_dir": "",
-      "phase1_id": "801fd1e9ed1479c3822b934556d9f20722cca4d5c0c3f280e6e65e7f825c4651"
-    },
-    {
-      "source_file": "webp-express.json",
-      "function_name": "ConvertHelperIndependent::convert",
-      "source_dir": "",
-      "phase1_id": "ed986bed76d81b0b076263e6303637cb030ed1e4be66acb4dc3a77b47103efb5"
-    },
-    {
-      "source_file": "learnpress-course-review.json",
-      "function_name": "get_sections",
-      "source_dir": "",
-      "phase1_id": "1ef6b9031f0f217d83b45542bbddda4c422930c2b2b7b18af7a9dbbd33ae44df"
-    },
-    {
-      "source_file": "platnosci-online-blue-media.json",
-      "function_name": "Transaction_Test::verify_itn",
-      "source_dir": "",
-      "phase1_id": "80762f6bc6916865bc6858f56507c1753ff3bd4c1457681c418995011bb7ce31"
-    },
-    {
-      "source_file": "learnpress-course-review.json",
-      "function_name": "learn_press_touch_time",
-      "source_dir": "",
-      "phase1_id": "4f6a40af9a86baf053478c07d003cc2bac879f8a13268aea7e4905b97e36cfe2"
-    },
-    {
-      "source_file": "learnpress-course-review.json",
-      "function_name": "LP_Settings_Courses::save",
-      "source_dir": "",
-      "phase1_id": "8e7b8c2f6a94382d65c9fb89bfabc075dd63151bbb2a7cb7f48935b6d2c4a6a3"
-    },
-    {
-      "source_file": "wp-optimizer.json",
-      "function_name": "WPMails::get_items",
-      "source_dir": "",
-      "phase1_id": "98d3f4fe91c19673774f8b319e350acfbc1919f6b1f87807e451c6d99bb733ce"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "CostOfGoodsSoldController::generate_lookup_cogs_columns",
-      "source_dir": "",
-      "phase1_id": "d497aaa9512c7b441ff350e2317948f475da0840d7ada6b32d0abab745d36b46"
-    },
-    {
-      "source_file": "learnpress-course-review.json",
-      "function_name": "_delete_post",
-      "source_dir": "",
-      "phase1_id": "e57f3742746de6ac8986cd7ad9954a07a68bc8b74ba6da1411958363b57dbbe5"
-    },
-    {
-      "source_file": "pagarme-payments-for-woocommerce.json",
-      "function_name": "Subscription::isChangePaymentSubscription",
-      "source_dir": "",
-      "phase1_id": "1336ce1d147be60f996ad218965c41e7d661c77a25d60c6940ef525f0911e78e"
-    },
-    {
-      "source_file": "platnosci-online-blue-media.json",
-      "function_name": "Transaction_Testing_Controller::execute_request_initialize",
-      "source_dir": "",
-      "phase1_id": "473dae43d53353021e10ae4226a9064c5904d723b62cd5c586c57be12feaf9b8"
-    },
-    {
-      "source_file": "loginradius-for-wordpress.json",
-      "function_name": "delete_loginradius_options",
-      "source_dir": "",
-      "phase1_id": "5688a7a524cd77ca229979d740718e40a15f0f7bbfbdcf0f940286468cd2645b"
-    },
-    {
-      "source_file": "contact-form-7.json",
-      "function_name": "wpcf7_acceptance_filter",
-      "source_dir": "",
-      "phase1_id": "8c9b0ec2317be3894a35b8c758dbfd1b896816c84fca07f28b77c6060786a513"
-    },
-    {
-      "source_file": "learnpress-wishlist.json",
-      "function_name": "LP_Debug::time_start",
-      "source_dir": "",
-      "phase1_id": "4e4953bb983f7c3158dec87d3d18957e638ad016686abcec61f1f6e03dd8634b"
-    },
-    {
-      "source_file": "woocommerce-extra-checkout-fields-for-brazil.json",
-      "function_name": "Extra_Checkout_Fields_For_Brazil_Front_End::valid_checkout_fields",
-      "source_dir": "",
-      "phase1_id": "47dc2d625c42982670fadce5b9ee928cd9b4d5342d523dd7a114db0b723d603a"
-    },
-    {
-      "source_file": "masvideos.json",
-      "function_name": "do_ajax_movie_import",
-      "source_dir": "",
-      "phase1_id": "0c64dbdf47cba698af7859e35a574e403b8add3c1e96fb5cdf28894ff3084087"
-    },
-    {
-      "source_file": "webp-express.json",
-      "function_name": "SelfTest::processAjax",
-      "source_dir": "",
-      "phase1_id": "20c2582e52585bb485ac583c1def8ecf7a331d023d4ed7c3482c96fbfb29d5cd"
-    },
-    {
-      "source_file": "wp-job-manager-companies.json",
-      "function_name": "Astoundify_Job_Manager_Companies::build_company_archive",
-      "source_dir": "",
-      "phase1_id": "ff8235c22fdb7703fc13be59a7fdb2dff6cfb7cb5c3f6074a5e9dbf76f12c934"
+      "phase1_id": "858e541e34f51a64a7c37d9bd067d66278d96720d77ab21711db67ecc6b4c0a5"
     },
     {
       "source_file": "woocommerce-shipping.json",
-      "function_name": "get_job",
+      "function_name": "add_submenu_page::page",
       "source_dir": "",
-      "phase1_id": "10652cbd199d235c0a388c6f4cc36b9fd589b3da86a2f1187cdd3213b37e512c"
+      "phase1_id": "5462c6929f6463ae55e07f91836cdd0918a2bcd90ad7a500700c89851cad846f"
     },
     {
-      "source_file": "contact-form-7.json",
-      "function_name": "WPCF7_Editor::display",
+      "source_file": "custom-post-type-ui.json",
+      "function_name": "cptui_update_post_type",
       "source_dir": "",
-      "phase1_id": "2545bb4a55e85aea412f43edc46123e17a51477b33664f90e62fe32650609b84"
+      "phase1_id": "b1f00bb0ba51b0555bd5a2653a08d20641be2ac158c13d6d2c2c9c6e5e3e26f3"
     },
     {
-      "source_file": "wp-sri.json",
-      "function_name": "WP_SRI_Known_Hashes_List_Table::column_url",
+      "source_file": "smart-custom-fields.json",
+      "function_name": "Smart_Custom_Fields_Controller_Option::custom_options_page",
       "source_dir": "",
-      "phase1_id": "2d8f32a2abcfb343987e4c2d70a2075128b99a9aa6965ccd9a0ed1aa5fd66f2f"
-    },
-    {
-      "source_file": "learnpress-bbpress.json",
-      "function_name": "WP_Async_Request::maybe_handle",
-      "source_dir": "",
-      "phase1_id": "2037f4644a64c76eba04c97ebc2a53965fb6f05ccdf765a4f509de70d4c515ba"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "current_action",
-      "source_dir": "",
-      "phase1_id": "53b4a764bf7f5743775145d920e8965222ff8bbdba15d4d3838d523702a19ddb"
-    },
-    {
-      "source_file": "bs-payone-woocommerce.json",
-      "function_name": "process_check_api_settings_callback",
-      "source_dir": "",
-      "phase1_id": "52ff586cc3cbd210d9957d3b53c0b0a362825b8eea991d63a6c5e3fed5e0654d"
-    },
-    {
-      "source_file": "learnpress-bbpress.json",
-      "function_name": "ProfileTemplate::html_upload_cover_image",
-      "source_dir": "",
-      "phase1_id": "70902c1f03c8bcf95d861591524b5e551412c3f38bcfbed0b24355e25a2e5cdf"
-    },
-    {
-      "source_file": "learnpress-wishlist.json",
-      "function_name": "get_template",
-      "source_dir": "",
-      "phase1_id": "5f39edaaf80562d2ac25d4f4cac803bdc31bb853a7f1d62891eede4492822232"
-    },
-    {
-      "source_file": "woo-razorpay.json",
-      "function_name": "RZP_Route_Action::directTransfer",
-      "source_dir": "",
-      "phase1_id": "46b85a0fc83b20b09dec6bb3ec3299f877e92444d6b68fc82befe93ff06c0a1b"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "WC_Orders_Tracking::track_search_in_orders_list",
-      "source_dir": "",
-      "phase1_id": "4cb5fd839645d9b915c1a37e36c783937e4cccfea83c1eb24048c7cf89d41aa2"
-    },
-    {
-      "source_file": "woocommerce-square.json",
-      "function_name": "Digital_Wallet::get_payment_request_for_context",
-      "source_dir": "",
-      "phase1_id": "18edde33065e536d215792e86d8938772c6cee2b2b8d3a34365acdf09bd9a708"
-    },
-    {
-      "source_file": "woocommerce-paypal-payments.json",
-      "function_name": "AuthorizeOrderActionNotice::current_message",
-      "source_dir": "",
-      "phase1_id": "386b4335b10a72428a0ff630e18bc5d0d73118082ded0a630cf8c2f94c6c63a8"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "WC_Site_Tracking::is_tracking_enabled",
-      "source_dir": "",
-      "phase1_id": "da610b64a947c2845686f4361e905f41382afa9ff1358e3e0c1f28eba9bc9c1a"
-    },
-    {
-      "source_file": "pp-express-wc4jp.json",
-      "function_name": "WC_Gateway_PPEC_Cart_Handler::wc_ajax_start_checkout",
-      "source_dir": "",
-      "phase1_id": "911f1416ea94a6f34c0a306da8768413c3c9106256544dbc70c468fe28ca9993"
-    },
-    {
-      "source_file": "ads-txt.json",
-      "function_name": "ads_txt_adjust_revisions_return_to_editor_link",
-      "source_dir": "",
-      "phase1_id": "75d7bfaa80f35b04ad5e22f6b652928947422c04e06250f1c3848b74bab30511"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "prepare_items",
-      "source_dir": "",
-      "phase1_id": "f153cd21470e294af5abf34ca9c236dc86b0bb73a6b07daff1ff5c68dc3de601"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "WC_Meta_Box_Product_Data::prepare_children",
-      "source_dir": "",
-      "phase1_id": "3978a36d532b4caf40b1bea82db95ff9936795bc143ac3ab89deac74c472ebd6"
-    },
-    {
-      "source_file": "constant-contact-forms.json",
-      "function_name": "ConstantContact_CPTS::maybe_duplicate_form",
-      "source_dir": "",
-      "phase1_id": "f4e426becbf58dd500f79df24f8a361955eaf49c0f28fd3e85263a87a1cf81a4"
-    },
-    {
-      "source_file": "wp-super-cache.json",
-      "function_name": "wp_cache_time_update",
-      "source_dir": "",
-      "phase1_id": "e1a1954c16d8e66f3459032cebe78f802fc4e359bf2a995d9e9e1f56d40cbb0c"
-    },
-    {
-      "source_file": "woocommerce-square.json",
-      "function_name": "is_payment_gateway_configuration_page",
-      "source_dir": "",
-      "phase1_id": "67cde7b13ac39a50577772ac71d4bb68de5e982fd0677287844fc82fa7dfe866"
-    },
-    {
-      "source_file": "webp-express.json",
-      "function_name": "WCFMApi::processGetFolder",
-      "source_dir": "",
-      "phase1_id": "6c512842773b75294642d7206ab5056e6a2da26c616adb6d829d3c59269c68df"
-    },
-    {
-      "source_file": "pp-express-wc4jp.json",
-      "function_name": "WC_Gateway_PPEC_Admin_Handler::filter_checkout_sections",
-      "source_dir": "",
-      "phase1_id": "3a9ed53d582c1df90639bc815bd798f3b4421a692fa962fc8db9b1e1a8aac35a"
-    },
-    {
-      "source_file": "permalink-fix-disable-canonical-redirects-pack.json",
-      "function_name": "requesturipow_init",
-      "source_dir": "",
-      "phase1_id": "da08eaea5022ddb3130cf8f6dac668150b676f425a48951317a51ba8fb9a38bf"
-    },
-    {
-      "source_file": "woocommerce-square.json",
-      "function_name": "array_flip::log_js_data",
-      "source_dir": "",
-      "phase1_id": "741a563bda1bce953d3307fe8bc6ecfa509b86914a35101c3671e39eac99a459"
-    },
-    {
-      "source_file": "pp-express-wc4jp.json",
-      "function_name": "WC_Gateway_PPEC_Admin_Handler::maybe_reset_api_credentials",
-      "source_dir": "",
-      "phase1_id": "c49031d5f83fe7c2bbf9f040d18497a18097d0a9141e94247a99cd57c2e5c6ea"
-    },
-    {
-      "source_file": "wp-optimizer.json",
-      "function_name": "Mod_Settings::actions",
-      "source_dir": "",
-      "phase1_id": "f4c36518e63a27bdaba4ad56645b078af1e161c38528d95ead3dbde3a55b562c"
-    },
-    {
-      "source_file": "learnpress-course-review.json",
-      "function_name": "AdminEditCourseCurriculumWithAITemplate::layout_popup",
-      "source_dir": "",
-      "phase1_id": "f6732c8f1f3f7951decfa0fb08dd482f766a51b423e3d35ded9214c25cbf0a9f"
-    },
-    {
-      "source_file": "learnpress-bbpress.json",
-      "function_name": "maybe_handle",
-      "source_dir": "",
-      "phase1_id": "ff7d4c5e3ae697c956ca617099856b4f20421e976e2ce972796d5f96c1db90a0"
-    },
-    {
-      "source_file": "pagarme-payments-for-woocommerce.json",
-      "function_name": "AdditionalInformation::getRequest",
-      "source_dir": "",
-      "phase1_id": "5bdbd3eae51339942a286d05cdc5bc8b74e6e01561e4242e8b8c0c2d28bfad0c"
+      "phase1_id": "34739d21222f08c54b5bb66a4a129c257bd4f0a319b61936a2142c987202c244"
     },
     {
       "source_file": "seo-by-rank-math.json",
-      "function_name": "Admin::get_sources_for_log",
+      "function_name": "run",
       "source_dir": "",
-      "phase1_id": "f7b541f7a6838a44fdbe262748bb30f25de5ce69a45366a158a43ac86e84bcd7"
+      "phase1_id": "db78e909ba8227d7db83b839fb4a44692fca30cc3dc4f8b40e3c39cf23860097"
     },
     {
-      "source_file": "woocommerce.json",
-      "function_name": "WC_Helper_Admin::add_marketplace_settings",
+      "source_file": "woo-product-reviews-shortcode.json",
+      "function_name": "fs_request_get_raw",
       "source_dir": "",
-      "phase1_id": "19404139f02ba3a5671aff4b0afd3dbda6aeb3164c3ab9bb7bb2afbe64ff567c"
-    },
-    {
-      "source_file": "woocommerce-paypal-payments.json",
-      "function_name": "CapturePayPalPayment::create_order",
-      "source_dir": "",
-      "phase1_id": "55c34fb13576c00014d41c34ec833f483b1560a739f7b90646fc0ac3056cc567"
-    },
-    {
-      "source_file": "komoju-japanese-payments.json",
-      "function_name": "WC_Gateway_Komoju_IPN_Handler::check_response",
-      "source_dir": "",
-      "phase1_id": "b6db61457a65404c59bb7c85e2d5037f7ec6ff8ab710d5e736ef438f39b5ccaa"
-    },
-    {
-      "source_file": "woocommerce.json",
-      "function_name": "render::status_logs_file",
-      "source_dir": "",
-      "phase1_id": "e70297a22b77bfd80d4a42bad3fb99f0c364c35f3c7a09cb216efb5068ef392e"
-    },
-    {
-      "source_file": "rara-one-click-demo-import.json",
-      "function_name": "WXR_Import_UI::display_author_step",
-      "source_dir": "",
-      "phase1_id": "931bf072efb8a5a64a05927cf380169a7d61057a9fbd270ea7153bdd8e5ab3fb"
-    },
-    {
-      "source_file": "platnosci-online-blue-media.json",
-      "function_name": "Order_Creator::remove",
-      "source_dir": "",
-      "phase1_id": "4ae2e6e32f30cd909a93bf8c9ca83ab8848314e72cc4d473c1aaee2bf38ae484"
+      "phase1_id": "61d8efd05260ff3b30e203b6ba29d62e2885f369e22e243db6bfe4634157527b"
     },
     {
       "source_file": "blocks-animation.json",
-      "function_name": "Form_Emails_Storing::export_submissions",
+      "function_name": "Dynamic_Content::get_terms",
       "source_dir": "",
-      "phase1_id": "bdb16f45de7ffa8c1a21df0dd7fe763a782dcdad99cc3efde945a95700be0215"
+      "phase1_id": "216c1ac52e9216b5ff6d4a81cb91131da42c012f49b683000fbbf755801c3ee2"
     },
     {
-      "source_file": "archive.json",
-      "function_name": "add_shortcode",
+      "source_file": "woo-razorpay.json",
+      "function_name": "RZP_Route::column_default",
       "source_dir": "",
-      "phase1_id": "7456d4f4041379cb800aa7e6505d9f0a160f86a2d89e73dc4ec69f6931911e0b"
+      "phase1_id": "2b66a8909ecacf829363a1d368408163aceef07eed41473cf45a1553e0b94962"
     },
     {
       "source_file": "woocommerce.json",
-      "function_name": "WC_Gateway_BACS::save_account_details",
+      "function_name": "MiniCartTitleItemsCounterBlock::render_experimental_iapi_title_label_block",
       "source_dir": "",
-      "phase1_id": "ee165276c8af40cc3325d9e2309790663e8a98853068606d7d5ba52ba91a2c08"
+      "phase1_id": "5f22cd7ae304756cd326b16bd616bb85d44fa34c108dfd1af0647c0ef9a2a32e"
+    },
+    {
+      "source_file": "advanced-custom-fields.json",
+      "function_name": "ACF_Local_JSON::get_save_paths",
+      "source_dir": "",
+      "phase1_id": "31a335cb2938b355bfe144e815e792eff1d269ca64e582814daaa6c2aa3026aa"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "Manager::invalidate",
+      "source_dir": "",
+      "phase1_id": "e09caf646c4cdf1d27ab5331f96d8f378579f0ba517cfe691a5524798d7aecc2"
+    },
+    {
+      "source_file": "wordpress-importer.json",
+      "function_name": "cmpr_strlen",
+      "source_dir": "",
+      "phase1_id": "f06d22a4d2398fac25827a22369dded6a74449cc8b7c410557712eacdb052696"
+    },
+    {
+      "source_file": "google-site-kit.json",
+      "function_name": "RequestHelper::encodeQueryParameter",
+      "source_dir": "",
+      "phase1_id": "fd42afa298884c981201287f3de222066cd8c293ba3dfdb837fa6bc2c5b21f4a"
+    },
+    {
+      "source_file": "blocks-animation.json",
+      "function_name": "Product_Related_Products_Block::render",
+      "source_dir": "",
+      "phase1_id": "cb4ebce6ff9a38414ee0054989b32dac678f0f5564bc59729e1163f95c187ca6"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "replace_attachment_urls_in_content",
+      "source_dir": "",
+      "phase1_id": "4a39dfdf5d573e4378785b2649fcab57a08bda391e509e562ee89d0db6dbcdaf"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "create_default_answers",
+      "source_dir": "",
+      "phase1_id": "797c9f5bb40188949cca19d552e9e2a57b1d5219142d7ab6ca934187a86e767b"
+    },
+    {
+      "source_file": "recaptcha-for-mw-wp-form.json",
+      "function_name": "MW_WP_Form_ReCaptchaV3_Validation::rule",
+      "source_dir": "",
+      "phase1_id": "d0ca6652eb319e16184af64e42ad91c3a4cf33b1237bf88f6dd96d75afc059c4"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "Indexable::get_extension",
+      "source_dir": "",
+      "phase1_id": "1d4dcc75639506e7baeb65c456d21d71b9604e2621bb7b69df6012903a5ec4fc"
+    },
+    {
+      "source_file": "acf-page-builder.json",
+      "function_name": "ACF_Page_Builder::getSection_gallery",
+      "source_dir": "",
+      "phase1_id": "f777eed4186ca5adfa4576b3c510c64647f4d53911e0acf848ceed5553b70d14"
+    },
+    {
+      "source_file": "learnpress-wishlist.json",
+      "function_name": "LP_Install::create_table_courses",
+      "source_dir": "",
+      "phase1_id": "90d0f49e44a076255fafbd13dfab8e1a3391b6b709629ba8519a71fd49d401e6"
+    },
+    {
+      "source_file": "cmb2.json",
+      "function_name": "render_group_row",
+      "source_dir": "",
+      "phase1_id": "0fb4fe25ed9563a57b0456192288f1b01f4bbafe385e38c150dfb019dd14c874"
+    },
+    {
+      "source_file": "cmb2.json",
+      "function_name": "options_page_menu_hooks",
+      "source_dir": "",
+      "phase1_id": "de4e5b0cd32df2762597054c94b1f59561c65a7645ad6bb6bebfb1c392dd40d5"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "__construct::inject_yoast_tab",
+      "source_dir": "",
+      "phase1_id": "052a9e6a27593e8c4ffc629b2f4c4e879e1d441416455db63ff4af2206c1b6fa"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "TemplateAJAX::html_edit_section_description",
+      "source_dir": "",
+      "phase1_id": "27984d9c5518e2951cc1690d7c0e953302643064c7dd9f7b335764d70e48c1ea"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "WC_Settings_Tax::save_tax_rates",
+      "source_dir": "",
+      "phase1_id": "8075a64c035070d190a7f20f43cb4a012d43839777286aac8379cb9705f5197d"
+    },
+    {
+      "source_file": "blocks-animation.json",
+      "function_name": "Stripe_Checkout_Block::format_error",
+      "source_dir": "",
+      "phase1_id": "5bfee82d26d7af5fb4a4df98a0521a6ff7f10c9f01fa5f20bdbe56cd6703cdd4"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "wc_update_320_mexican_states",
+      "source_dir": "",
+      "phase1_id": "e394aa93f826ec231899b30b31450b115de21605e78a9217df85cfc6ea5fd727"
+    },
+    {
+      "source_file": "cmb2.json",
+      "function_name": "yourprefix_render_row_cb",
+      "source_dir": "",
+      "phase1_id": "14476001cd93d5e71a38c2dd62e8a0a85feb988fef4a22fa525485f8da44828a"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "cleanup_orphaned_from_table",
+      "source_dir": "",
+      "phase1_id": "71972a114912acbf6e139515aecc13a1f14a1ad66cf4f9d50e3ccd7e8179ac65"
+    },
+    {
+      "source_file": "blocks-animation.json",
+      "function_name": "Prompt_Server::forward_prompt",
+      "source_dir": "",
+      "phase1_id": "830ba11f86e79574d59cd38022723c22a349934047a8d997537ab73d2d570847"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "WP_Style_Engine_Processor_Test::test_should_dedupe_and_merge_css_declarations",
+      "source_dir": "",
+      "phase1_id": "d63f47eb471097f11c5396a9edb116cde6523e00d222c01115359015f223bd5a"
+    },
+    {
+      "source_file": "google-site-kit.json",
+      "function_name": "Cache::remove_global_cache_key",
+      "source_dir": "",
+      "phase1_id": "9ad6655af1d7c9684ecfe0cca0e7d4374e1303fa0c1da5cd5d9715cedaa3bed5"
+    },
+    {
+      "source_file": "a3-responsive-slider.json",
+      "function_name": "Mobile_Display::mobile_dispay_slider",
+      "source_dir": "",
+      "phase1_id": "6473f113060626a2ab6d4fd9c9f04e5f69dc180ec82499cd8098205b7e6de85a"
+    },
+    {
+      "source_file": "query-monitor.json",
+      "function_name": "QM_Collectors::request_supported",
+      "source_dir": "",
+      "phase1_id": "12dd8cd8efbfe346790613e0b9a2a114ff5c8f374dda302d490aaab56f2ce8e0"
+    },
+    {
+      "source_file": "advanced-custom-fields.json",
+      "function_name": "acf_form_front::validate_save_post",
+      "source_dir": "",
+      "phase1_id": "4df2ffe34f05aeed9bf7c15463db551f2768048323da87d04a3c551af5b6e748"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "WC_Brands_Admin::save_coupon_brands",
+      "source_dir": "",
+      "phase1_id": "4b2a04da01037ebea48827f78f724aaf689be3b14775a7403d92c2629f127518"
+    },
+    {
+      "source_file": "wordpress-importer.json",
+      "function_name": "URLInTextProcessor::apply_lexical_updates",
+      "source_dir": "",
+      "phase1_id": "6ac64380c7635617f76f1f6bf5876a0111a4df947c742203c881ead832a33aaf"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "AdminTemplate::html_tom_select",
+      "source_dir": "",
+      "phase1_id": "6330540c0e358aa93e1a7e05d130c1503b224223516ebe7d1f26a24eaf9347a4"
+    },
+    {
+      "source_file": "wp-super-cache.json",
+      "function_name": "wp_cache_create_advanced_cache",
+      "source_dir": "",
+      "phase1_id": "58796f9ddca4fc56b1c1725c57f0ed834efd05da72c21c92069fe80601d71903"
+    },
+    {
+      "source_file": "jupiterx-core.json",
+      "function_name": "Module::__construct",
+      "source_dir": "",
+      "phase1_id": "f6f7afdacbf7bdf6655a324584dcce64ff2d93bf8eaafc57e53693925b9f3790"
+    },
+    {
+      "source_file": "query-monitor.json",
+      "function_name": "QM_Output_Raw_Conditionals::get_output",
+      "source_dir": "",
+      "phase1_id": "4fe93437b1ed76f9d4dc8e4b75fc2598c20e2c95a7c0705e5b8c2f9b38950336"
+    },
+    {
+      "source_file": "blocks-animation.json",
+      "function_name": "WooCommerce_Builder::enable_block_editor",
+      "source_dir": "",
+      "phase1_id": "3fc314a93c2e67dd091bc5b3b75ca75766950cac6d2deeed9a4f1528b9fd7fd5"
+    },
+    {
+      "source_file": "google-site-kit.json",
+      "function_name": "Admin_Post_List::register",
+      "source_dir": "",
+      "phase1_id": "23fe384418717241d6a1093eb92b142e2bc3e71bd8b9fd10e4fec6315fa96b6e"
+    },
+    {
+      "source_file": "aqua-page-builder.json",
+      "function_name": "aq_block_widgets",
+      "source_dir": "",
+      "phase1_id": "b9a36a381be9df9d53a066668a94077302a29b69ddfa93c2c19ab2b3d3eb588a"
+    },
+    {
+      "source_file": "advanced-custom-fields.json",
+      "function_name": "acf_get_users",
+      "source_dir": "",
+      "phase1_id": "bb983172ec309d005b5e4397058691e86e72316f11d1f6388d956b8525de4946"
+    },
+    {
+      "source_file": "yith-woocommerce-ajax-search.json",
+      "function_name": "YITH_WCAS::ajax_search_products",
+      "source_dir": "",
+      "phase1_id": "29c9441fcce6bc2041697ecac3176c6d7c787911fd87fe63b8339968259c36dd"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "UI::handle_search",
+      "source_dir": "",
+      "phase1_id": "74e174191b091ab4186e5e32fdbff82c1016af33e9fc4f87abd5460e77523e56"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "WP_Navigation_Block_Renderer_Test::test_gutenberg_get_markup_for_inner_block_site_title",
+      "source_dir": "",
+      "phase1_id": "a66fa316e03ebdc0e145120e82c52f65e00742ff1eefc0f4b448525fbb67e27e"
+    },
+    {
+      "source_file": "yith-woocommerce-ajax-search.json",
+      "function_name": "cptu_change_columns",
+      "source_dir": "",
+      "phase1_id": "5b06ab5087da83b856cb21394c18bdad05be84535b1e74a7fcb1784b2164f4cb"
+    },
+    {
+      "source_file": "smart-custom-fields.json",
+      "function_name": "Smart_Custom_Fields_Field_Textarea::display_field_options",
+      "source_dir": "",
+      "phase1_id": "b6c0def56049ca224717d74658eeb233bea614a8db773eb79d6197d76278ff07"
+    },
+    {
+      "source_file": "learnpress-course-review.json",
+      "function_name": "learn_press_output_question_nonce",
+      "source_dir": "",
+      "phase1_id": "bcebf7b89b1e531961cefbfa220f37de4569124ebae24c06d7be87088d96520a"
     },
     {
       "source_file": "woocommerce-payments.json",
-      "function_name": "WC_Payments_Account::init_stripe_onboarding",
+      "function_name": "woocommerce_admin_parse_pot",
       "source_dir": "",
-      "phase1_id": "b751d430f1131ffeb601ca47aeda6e033c83eb63f15a24488fe5446d6c8035f4"
+      "phase1_id": "c4356e01361e1c71224b005ed2d76607b56518149faaba0471cf2a4a8df0c2c8"
     },
     {
       "source_file": "woocommerce.json",
-      "function_name": "wc_update_210_file_paths",
+      "function_name": "register::post_importer_compatibility",
       "source_dir": "",
-      "phase1_id": "a50d07dec64d9800f86fa1bd41f8c65988e07dce61ea694bb155ee1695f1ad92"
+      "phase1_id": "df88851575d7f96696d5f0ae1b2026392ace8a42388acf69f184c5fd659c2949"
     },
     {
-      "source_file": "woocommerce.json",
-      "function_name": "OnboardingSetupWizard::is_homepage",
+      "source_file": "seo-by-rank-math.json",
+      "function_name": "get_column_description",
       "source_dir": "",
-      "phase1_id": "8e1d9fc622d53a6e80ecf350b74d2662b63fdaf7caee53c42f4c50ad01949298"
+      "phase1_id": "1811069c9cd80a351863dfcc3610244dfa5e45f73d37491b69345528905f7c6a"
     },
     {
-      "source_file": "woocommerce-legacy-rest-api.json",
-      "function_name": "WC_API_JSON_Handler::generate_response",
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "LP_Debug::var_dump",
       "source_dir": "",
-      "phase1_id": "1d6e1ed7b16bd4083d4bc0db12d92a2c1463f63b16e1ef185120994ccb941562"
+      "phase1_id": "ed15747bbf8e472bea167c5ac3159fd570482fe0edc19622f5e953014b81c49d"
     },
     {
-      "source_file": "posti-shipping.json",
-      "function_name": "Admin::ajax_meta_box",
+      "source_file": "wp-optimizer.json",
+      "function_name": "StaticCache::check_cacheability",
       "source_dir": "",
-      "phase1_id": "e0cd8b55f3030faf1f5f1e67a6a263265521e3ba0e371d635d60271feedbf2b5"
+      "phase1_id": "42496744f1154623d2a7b438e9278a5c76a7ec599a1a5493f99f6357243e424e"
     },
     {
-      "source_file": "global-payments-woocommerce.json",
-      "function_name": "process_hpp_final",
+      "source_file": "learnpress-bbpress.json",
+      "function_name": "get_page_permalink",
       "source_dir": "",
-      "phase1_id": "37efe5a860a70cda807729c0a84a447948464f4544402f59ba62606033a87b3a"
+      "phase1_id": "6c75aa85eabfcbe09d7e79cab2bc24bec63cb827eb870cfa2f4c33d506cb4f47"
+    },
+    {
+      "source_file": "learnpress-buddypress.json",
+      "function_name": "create_question_answers",
+      "source_dir": "",
+      "phase1_id": "db44546311219e59d1696e92215a8090a2c00dc82dee76ac80a8b27981afb68a"
     },
     {
       "source_file": "woocommerce-services.json",
-      "function_name": "WC_Connect_Shipping_Method::debug",
+      "function_name": "WC_Connect_TaxJar_Integration::is_nexus_address_valid",
       "source_dir": "",
-      "phase1_id": "587bbc68612012bfce70815e06cb158aaeb8f0e7b63ada801319fd5f045aca81"
+      "phase1_id": "8fbc98933b7ab9f22964c0c141ae1d14cac1394599724d2edab587d2d7f898c4"
+    },
+    {
+      "source_file": "wp-stats.json",
+      "function_name": "get_totalpages",
+      "source_dir": "",
+      "phase1_id": "b3db03b54066a35521fc06eedd5e60080fa6d00b560f3228caa42abb31c83ef4"
+    },
+    {
+      "source_file": "global-payments-woocommerce.json",
+      "function_name": "Blik::process_blik_sale",
+      "source_dir": "",
+      "phase1_id": "8fa2af9fe1affea6a6b4e060a7cf046e7f9baf54ec409cebc624f286629647cc"
+    },
+    {
+      "source_file": "blocks-animation.json",
+      "function_name": "Product_Title_Block::render",
+      "source_dir": "",
+      "phase1_id": "06f2fa902ae95fd7f01dee9e6305485358ff0ba2084e5391d591fa0ed21d98a1"
     },
     {
       "source_file": "woocommerce.json",
-      "function_name": "ReviewsListTable::set_review_status",
+      "function_name": "OrderAttributionController::on_init",
       "source_dir": "",
-      "phase1_id": "c636909b7a4aae454b20c509054f483aaf8e70d1250b284b172f1ddd39690910"
+      "phase1_id": "e5dca2693741b49724ff206c8a3ffb35a268b411970530840a5a3f4cdd8a8b22"
     },
     {
-      "source_file": "woocommerce-legacy-rest-api.json",
-      "function_name": "WC_API_JSON_Handler::get_content_type",
+      "source_file": "wordpress-seo.json",
+      "function_name": "Postname_Permalink_Reports::get_has_no_postname_in_permalink_description",
       "source_dir": "",
-      "phase1_id": "58688b84802d508880443c6195061185dcda59dce24f8b6034e5d1556a46be15"
+      "phase1_id": "22f8f2b14c906fd8cdb922ea2975734e4a0c49896293657d6204b26611614c6d"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "WP_Block_Supports_Layout_Test::data_layout_support_flag_renders_consistent_container_hash",
+      "source_dir": "",
+      "phase1_id": "462a7c022024509a2793ac636f9c6ca7e320f923ccd8eab5ea98ffe3786763a6"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "Tests_Blocks_RenderBlockCorePostExcerpt::test_should_render_empty_string_when_excerpt_is_empty",
+      "source_dir": "",
+      "phase1_id": "59cb2ff9e735c5281b11d70355ef8b94d6b5adcd17ae9a582405d2334015c068"
+    },
+    {
+      "source_file": "vk-blocks.json",
+      "function_name": "vk_blocks_ancestor_page_list_render_callback",
+      "source_dir": "",
+      "phase1_id": "7795342de0142b9a4bcdf876700e36f760a86bb9120b6aa76d275d3e45b576f5"
+    },
+    {
+      "source_file": "google-site-kit.json",
+      "function_name": "RequestHelper::normalizeHeaders",
+      "source_dir": "",
+      "phase1_id": "afe78565ff8d17298e25fafcf9a0d3361cb97f57281af529196ceb427b863173"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "Cleanup_Integration::get_additional_indexable_cleanups",
+      "source_dir": "",
+      "phase1_id": "1cea4b655ceb6ff8cd6fa851e87e1396d3e20c42f368c94a48ff34744aa8b643"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "false::for_indexables",
+      "source_dir": "",
+      "phase1_id": "15c0decbe16d6f76bf26eb8eb469a8e7d5be80ebc9fb5048812221912d18a3db"
+    },
+    {
+      "source_file": "wordpress-importer.json",
+      "function_name": "WXREntityReader::is_finished",
+      "source_dir": "",
+      "phase1_id": "7414f01e5c326fb1cb4ec8ee8d2de51ac57928a0622ca0609cfaa7f9dea06f90"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "__construct::get_needed_presenters",
+      "source_dir": "",
+      "phase1_id": "86abaf700935af0808b89bdfeeb42f9fd97eee9c6961258dd0633fb7cb483a9b"
+    },
+    {
+      "source_file": "auxin-elements.json",
+      "function_name": "auxin_widget_latest_items",
+      "source_dir": "",
+      "phase1_id": "c4a4e851de0a144a860e9ce3e39418492204013ddd909228e9f766ae96622de9"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "WP_Theme_Json_Test::test_theme_has_no_theme_json",
+      "source_dir": "",
+      "phase1_id": "974cfe7d1e9035f9ca21f37df2cbbc563d546f228b14a2c22a7afe8abe4667fe"
+    },
+    {
+      "source_file": "advanced-custom-fields.json",
+      "function_name": "ACF_Assets::print_footer_scripts",
+      "source_dir": "",
+      "phase1_id": "5a6013f4dfdf18d7d1c33a282126c75c53dee4ce8edc272f5d6bce5195d90126"
+    },
+    {
+      "source_file": "woocommerce-payments.json",
+      "function_name": "WCPay_Changelog_Formatter::parse",
+      "source_dir": "",
+      "phase1_id": "d265e5598d087f8ab9a0601336a2635f80ddb3fa89403501f16551be97176f0d"
+    },
+    {
+      "source_file": "melhor-envio-cotacao.json",
+      "function_name": "RouterService::laodRoutesPayload",
+      "source_dir": "",
+      "phase1_id": "a353a866edec7df59f2d624c9454a2eee0f23ac2662d49936cbfcb2923670492"
+    },
+    {
+      "source_file": "auxin-elements.json",
+      "function_name": "auxin_widget_video_callback",
+      "source_dir": "",
+      "phase1_id": "60be4fdfa75e43119e09f0ce74c9954073bcceb913fd774ac1e0a2e76bd4bca6"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "WP_REST_Global_Styles_Controller_Gutenberg_Test::test_update_item_invalid_styles_css",
+      "source_dir": "",
+      "phase1_id": "aeab56eb6343d454cdcafbee150a4cadcad4d5984154d6d0a68aa11740a59d68"
+    },
+    {
+      "source_file": "gutenberg.json",
+      "function_name": "WP_Navigation_Block_Renderer_Test::test_gutenberg_block_core_navigation_overlay_html_has_close_block_returns_false_when_absent",
+      "source_dir": "",
+      "phase1_id": "01f7da08a81b6055750948fcf3e09ba948913600444af99c25ac1b5c16bf4e89"
+    },
+    {
+      "source_file": "pp-express-wc4jp.json",
+      "function_name": "WC_Gateway_PPEC_Checkout_Handler::init",
+      "source_dir": "",
+      "phase1_id": "b7cc86d5956885def34b0fe27ae89307ac85438a7f1899f3bf9fa3e48c139bc7"
+    },
+    {
+      "source_file": "elementor.json",
+      "function_name": "BFI_Thumb_1_3::thumb",
+      "source_dir": "",
+      "phase1_id": "1a8f4db185b43a4cfd449d1d1ac2f90196d10b7e235b7d90813a22a74ac15e03"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "WC_REST_Shipping_Zone_Methods_V2_Controller::update_fields",
+      "source_dir": "",
+      "phase1_id": "d029caf260e4dddb17c1d15303041347c06d27ff93e97a438831ba094cf7402d"
+    },
+    {
+      "source_file": "wordpress-seo.json",
+      "function_name": "Improve_Content_SEO_Child::get_analyzer",
+      "source_dir": "",
+      "phase1_id": "a4264e07555b20231c883b08f6772ecf05c3adcac69ccd6a7427853aa82f8f2d"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "prime_raw_meta_cache_for_orders",
+      "source_dir": "",
+      "phase1_id": "4ad48e2a608effb645cb890b8a11959abd85f71e874db4735c71dcea8dcf1e83"
+    },
+    {
+      "source_file": "official-mailerlite-sign-up-forms.json",
+      "function_name": "Shortcode::init",
+      "source_dir": "",
+      "phase1_id": "a966ec26605c95fb1b44e95cabaf385c0a03d5e20ff03b2960ba9dafa655de23"
+    },
+    {
+      "source_file": "masvideos.json",
+      "function_name": "do_ajax_tv_show_import",
+      "source_dir": "",
+      "phase1_id": "e7804182d844ecdb25c4726252f16fc124671ecd21ac7f3063bbf8b4d925e654"
+    },
+    {
+      "source_file": "a3-responsive-slider.json",
+      "function_name": "Admin_Interface::init_scripts",
+      "source_dir": "",
+      "phase1_id": "7a43be9a085f5d375a0bf5b2e900de61aaac80c31d0653ffec707cc82877c3fa"
+    },
+    {
+      "source_file": "auxin-elements.json",
+      "function_name": "auxin_widget_divider_callback",
+      "source_dir": "",
+      "phase1_id": "f7373836832cf22f02b4cceb885a9df356d5e403e4cc4aa706b0fd1a8886d933"
+    },
+    {
+      "source_file": "woocommerce-payments.json",
+      "function_name": "WC_REST_Payments_Settings_Controller::register_routes",
+      "source_dir": "",
+      "phase1_id": "631e84c21f431117cd86042334888b77d7f408bd634101b041687186665fdff7"
+    },
+    {
+      "source_file": "woocommerce.json",
+      "function_name": "get_price_filter_query_for_displayed_taxes",
+      "source_dir": "",
+      "phase1_id": "e513ea4a354e437f9e3a7761f56263087aa073b060fc065067551bfec447182d"
     }
   ]
 }

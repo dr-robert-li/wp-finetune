@@ -1,0 +1,567 @@
+[grid-train.sh] starting 2026-06-11T02:12:29Z
+[grid-train] === candidate 1/9: r8-rp15 (rank=8 replay=15%) ===
+[grid-train] RUN /home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/bin/python scripts/tinker_reasoning_sft.py --stage v4-r8-rp15 --rank 8 --train-path data/reasoning_dataset/openai_train.augmented.jsonl --epochs 3 --per-epoch-eval-n 8 --manifest output/tinker/wp-reasoning-v4-r8-rp15-manifest.json
+[sft] train_path=data/reasoning_dataset/openai_train.augmented.jsonl
+[sft] stage=v4-r8-rp15 base=Qwen/Qwen3-30B-A3B rank=8 lr=4.99e-04 epochs=3 max_steps=None train_batches=74 bs=8
+[sft] step 1 epoch 0 loss=12.27069902420044
+[sft] step 2 epoch 0 loss=11.80131459236145
+[sft] step 3 epoch 0 loss=12.628026247024536
+[sft] step 10 epoch 0 loss=7.044644355773926
+[sft] step 20 epoch 0 loss=6.936914503574371
+[sft] step 30 epoch 0 loss=7.133969604969025
+[sft] step 40 epoch 0 loss=7.378280758857727
+[sft] step 50 epoch 0 loss=6.100234746932983
+[sft] step 60 epoch 0 loss=5.730463027954102
+[sft] step 70 epoch 0 loss=6.735144674777985
+[manifest] wrote output/tinker/wp-reasoning-v4-r8-rp15-manifest.json
+[sft] epoch 1 done (step 74); persistent sampler ckpt name=wp-reasoning-v4-r8-rp15-ep1 path=tinker://d664fc56-99e2-59a2-9f3d-c276686f9807:train:0/sampler_weights/wp-reasoning-v4-r8-rp15-ep1
+[epoch-eval] ep1 terse@temp0 = 0/8 = 0.000
+[sft] step 80 epoch 1 loss=5.411949157714844
+[sft] step 90 epoch 1 loss=4.342522382736206
+[sft] step 100 epoch 1 loss=4.542073726654053
+[sft] step 110 epoch 1 loss=4.473209649324417
+[sft] step 120 epoch 1 loss=3.9322220385074615
+[sft] step 130 epoch 1 loss=3.7741827964782715
+[sft] step 140 epoch 1 loss=4.255446046590805
+[manifest] wrote output/tinker/wp-reasoning-v4-r8-rp15-manifest.json
+[sft] epoch 2 done (step 148); persistent sampler ckpt name=wp-reasoning-v4-r8-rp15-ep2 path=tinker://d664fc56-99e2-59a2-9f3d-c276686f9807:train:0/sampler_weights/wp-reasoning-v4-r8-rp15-ep2
+[epoch-eval] ep2 terse@temp0 = 0/8 = 0.000
+[sft] step 150 epoch 2 loss=2.6885762810707092
+[sft] step 160 epoch 2 loss=2.623051196336746
+[sft] step 170 epoch 2 loss=2.4638356417417526
+[sft] step 180 epoch 2 loss=2.1688345074653625
+[sft] step 190 epoch 2 loss=1.8628997206687927
+[sft] step 200 epoch 2 loss=2.1873034834861755
+[sft] step 210 epoch 2 loss=2.0333913564682007
+[sft] step 220 epoch 2 loss=1.76545849442482
+[manifest] wrote output/tinker/wp-reasoning-v4-r8-rp15-manifest.json
+[sft] epoch 3 done (step 222); persistent sampler ckpt name=wp-reasoning-v4-r8-rp15-ep3 path=tinker://d664fc56-99e2-59a2-9f3d-c276686f9807:train:0/sampler_weights/wp-reasoning-v4-r8-rp15-ep3
+[epoch-eval] ep3 terse@temp0 = 0/8 = 0.000
+[sft] training done: 222 steps. loss first=12.27069902420044 last=2.3885355591773987
+[eval] sample[0] head: 'WPCS Compliance: score 9/10 — The code follows standard WordPress REST API conventions. It uses `rest_ensure_response()` to wrap the return value, ensuring a consistent response format. The function n'
+[eval] terse(no [/REASONING]) @temp0.0 = 0/4 = 0.000 (max_tokens=2048)
+RESULT stage=v4-r8-rp15 steps=222 loss_first=12.27069902420044 loss_last=2.3885355591773987 n_eval=4 terse@0.0=0.000
+[grid-train] RUN /home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/bin/python scripts/tinker_export_checkpoint.py --manifest output/tinker/wp-reasoning-v4-r8-rp15-manifest.json --out-dir models/tinker_export/wp-reasoning-v4-r8-rp15
+[export] checkpoint: tinker://d664fc56-99e2-59a2-9f3d-c276686f9807:train:0/sampler_weights/wp-reasoning-v4-r8-rp15-ep3
+[export] requesting archive URL (server packs the archive — may take a while)...
+Creating checkpoint archive for run id: d664fc56-99e2-59a2-9f3d-c276686f9807:train:0 checkpoint id: sampler_weights/wp-reasoning-v4-r8-rp15-ep3 (this may take a while)
+... still running
+... still running
+... still running
+[export] signed URL acquired (expires=None)
+[export] downloading -> models/tinker_export/wp-reasoning-v4-r8-rp15/checkpoint.tar
+[export] downloaded 462.5 MB
+[export] archive OK: 3 members; sample=['adapter_config.json', 'checkpoint_complete', 'adapter_model.safetensors']
+[export] DONE -> models/tinker_export/wp-reasoning-v4-r8-rp15/checkpoint.tar (+ models/tinker_export/wp-reasoning-v4-r8-rp15/export_manifest.json)
+[grid-train] r8-rp15: DONE — grid_manifest now has 1 candidate(s)
+[grid-train] CHECKPOINT: candidate 1 (r8-rp15) trained+exported+MoE-only-verified. Live Tinker->export chain validated. Continuing remaining 8.
+[grid-train] === candidate 2/9: r8-rp30 (rank=8 replay=30%) ===
+[grid-train] RUN /home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/bin/python scripts/tinker_reasoning_sft.py --stage v4-r8-rp30 --rank 8 --train-path data/reasoning_dataset/openai_train.augmented.replay30.jsonl --epochs 3 --per-epoch-eval-n 8 --manifest output/tinker/wp-reasoning-v4-r8-rp30-manifest.json
+[sft] train_path=data/reasoning_dataset/openai_train.augmented.replay30.jsonl
+[sft] stage=v4-r8-rp30 base=Qwen/Qwen3-30B-A3B rank=8 lr=4.99e-04 epochs=3 max_steps=None train_batches=90 bs=8
+[sft] step 1 epoch 0 loss=12.658833622932434
+[sft] step 2 epoch 0 loss=13.498139381408691
+[sft] step 3 epoch 0 loss=13.347914218902588
+[sft] step 10 epoch 0 loss=8.972484409809113
+[sft] step 20 epoch 0 loss=7.208324611186981
+[sft] step 30 epoch 0 loss=6.232925176620483
+[sft] step 40 epoch 0 loss=6.724202573299408
+[sft] step 50 epoch 0 loss=5.815866947174072
+[sft] step 60 epoch 0 loss=6.272177457809448
+[sft] step 70 epoch 0 loss=5.317676365375519
+[sft] step 80 epoch 0 loss=6.8089388608932495
+[sft] step 90 epoch 0 loss=6.6074952483177185
+[manifest] wrote output/tinker/wp-reasoning-v4-r8-rp30-manifest.json
+[sft] epoch 1 done (step 90); persistent sampler ckpt name=wp-reasoning-v4-r8-rp30-ep1 path=tinker://1e25ebf0-34d7-554b-b2cb-7a6bf8e0e20d:train:0/sampler_weights/wp-reasoning-v4-r8-rp30-ep1
+[epoch-eval] ep1 terse@temp0 = 0/8 = 0.000
+[sft] step 100 epoch 1 loss=5.4998829662799835
+[sft] step 110 epoch 1 loss=4.836436092853546
+[sft] step 120 epoch 1 loss=3.217927187681198
+[sft] step 130 epoch 1 loss=4.513320624828339
+[sft] step 140 epoch 1 loss=3.412956029176712
+[sft] step 150 epoch 1 loss=3.87359881401062
+[sft] step 160 epoch 1 loss=3.097688913345337
+[sft] step 170 epoch 1 loss=4.058141320943832
+[sft] step 180 epoch 1 loss=4.121186673641205
+[manifest] wrote output/tinker/wp-reasoning-v4-r8-rp30-manifest.json
+[sft] epoch 2 done (step 180); persistent sampler ckpt name=wp-reasoning-v4-r8-rp30-ep2 path=tinker://1e25ebf0-34d7-554b-b2cb-7a6bf8e0e20d:train:0/sampler_weights/wp-reasoning-v4-r8-rp30-ep2
+[epoch-eval] ep2 terse@temp0 = 0/8 = 0.000
+[sft] step 190 epoch 2 loss=3.2136310040950775
+[sft] step 200 epoch 2 loss=2.8936020880937576
+[sft] step 210 epoch 2 loss=1.5226027965545654
+[sft] step 220 epoch 2 loss=2.523618310689926
+[sft] step 230 epoch 2 loss=1.8157607316970825
+[sft] step 240 epoch 2 loss=2.0734812319278717
+[sft] step 250 epoch 2 loss=1.6006101369857788
+[sft] step 260 epoch 2 loss=2.050078898668289
+[sft] step 270 epoch 2 loss=2.37669837474823
+[manifest] wrote output/tinker/wp-reasoning-v4-r8-rp30-manifest.json
+[sft] epoch 3 done (step 270); persistent sampler ckpt name=wp-reasoning-v4-r8-rp30-ep3 path=tinker://1e25ebf0-34d7-554b-b2cb-7a6bf8e0e20d:train:0/sampler_weights/wp-reasoning-v4-r8-rp30-ep3
+[epoch-eval] ep3 terse@temp0 = 0/8 = 0.000
+[sft] training done: 270 steps. loss first=12.658833622932434 last=2.37669837474823
+[eval] sample[0] head: 'WPCS Compliance: score 8/10 — The code follows standard WordPress coding conventions for function naming (camelCase for the method) and structure. It correctly uses `rest_ensure_response` to wrap the '
+[eval] terse(no [/REASONING]) @temp0.0 = 0/4 = 0.000 (max_tokens=2048)
+RESULT stage=v4-r8-rp30 steps=270 loss_first=12.658833622932434 loss_last=2.37669837474823 n_eval=4 terse@0.0=0.000
+[grid-train] RUN /home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/bin/python scripts/tinker_export_checkpoint.py --manifest output/tinker/wp-reasoning-v4-r8-rp30-manifest.json --out-dir models/tinker_export/wp-reasoning-v4-r8-rp30
+[export] checkpoint: tinker://1e25ebf0-34d7-554b-b2cb-7a6bf8e0e20d:train:0/sampler_weights/wp-reasoning-v4-r8-rp30-ep3
+[export] requesting archive URL (server packs the archive — may take a while)...
+Creating checkpoint archive for run id: 1e25ebf0-34d7-554b-b2cb-7a6bf8e0e20d:train:0 checkpoint id: sampler_weights/wp-reasoning-v4-r8-rp30-ep3 (this may take a while)
+... still running
+... still running
+... still running
+[export] signed URL acquired (expires=None)
+[export] downloading -> models/tinker_export/wp-reasoning-v4-r8-rp30/checkpoint.tar
+[export] downloaded 462.5 MB
+[export] archive OK: 3 members; sample=['adapter_config.json', 'checkpoint_complete', 'adapter_model.safetensors']
+[export] DONE -> models/tinker_export/wp-reasoning-v4-r8-rp30/checkpoint.tar (+ models/tinker_export/wp-reasoning-v4-r8-rp30/export_manifest.json)
+[grid-train] r8-rp30: DONE — grid_manifest now has 2 candidate(s)
+[grid-train] === candidate 3/9: r8-rp50 (rank=8 replay=50%) ===
+[grid-train] RUN /home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/bin/python scripts/tinker_reasoning_sft.py --stage v4-r8-rp50 --rank 8 --train-path data/reasoning_dataset/openai_train.augmented.replay50.jsonl --epochs 3 --per-epoch-eval-n 8 --manifest output/tinker/wp-reasoning-v4-r8-rp50-manifest.json
+[sft] train_path=data/reasoning_dataset/openai_train.augmented.replay50.jsonl
+[sft] stage=v4-r8-rp50 base=Qwen/Qwen3-30B-A3B rank=8 lr=4.99e-04 epochs=3 max_steps=None train_batches=127 bs=8
+[sft] step 1 epoch 0 loss=11.073895454406738
+[sft] step 2 epoch 0 loss=11.40080201625824
+[sft] step 3 epoch 0 loss=9.69470727443695
+[sft] step 10 epoch 0 loss=7.817756950855255
+[sft] step 20 epoch 0 loss=7.3558361530303955
+[sft] step 30 epoch 0 loss=8.168815612792969
+[sft] step 40 epoch 0 loss=7.5446178913116455
+[sft] step 50 epoch 0 loss=6.275864988565445
+[sft] step 60 epoch 0 loss=6.61739456653595
+[sft] step 70 epoch 0 loss=6.106156587600708
+[sft] step 80 epoch 0 loss=6.376474559307098
+[sft] step 90 epoch 0 loss=5.901448726654053
+[sft] step 100 epoch 0 loss=6.193400025367737
+[sft] step 110 epoch 0 loss=5.885498940944672
+[sft] step 120 epoch 0 loss=6.054696679115295
+[manifest] wrote output/tinker/wp-reasoning-v4-r8-rp50-manifest.json
+[sft] epoch 1 done (step 127); persistent sampler ckpt name=wp-reasoning-v4-r8-rp50-ep1 path=tinker://467d2923-22a9-5ba3-a81c-8544fb995a8c:train:0/sampler_weights/wp-reasoning-v4-r8-rp50-ep1
+[epoch-eval] ep1 terse@temp0 = 0/8 = 0.000
+[sft] step 130 epoch 1 loss=5.560422420501709
+[sft] step 140 epoch 1 loss=3.181198328733444
+[sft] step 150 epoch 1 loss=3.3177494406700134
+[sft] step 160 epoch 1 loss=5.441467225551605
+[sft] step 170 epoch 1 loss=3.9244643449783325
+[sft] step 180 epoch 1 loss=4.527724862098694
+[sft] step 190 epoch 1 loss=4.175851404666901
+[sft] step 200 epoch 1 loss=3.2682633996009827
+[sft] step 210 epoch 1 loss=5.157802224159241
+[sft] step 220 epoch 1 loss=3.198651075363159
+[sft] step 230 epoch 1 loss=4.220745205879211
+[sft] step 240 epoch 1 loss=3.2904568910598755
+[sft] step 250 epoch 1 loss=3.583886504173279
+[manifest] wrote output/tinker/wp-reasoning-v4-r8-rp50-manifest.json
+[sft] epoch 2 done (step 254); persistent sampler ckpt name=wp-reasoning-v4-r8-rp50-ep2 path=tinker://467d2923-22a9-5ba3-a81c-8544fb995a8c:train:0/sampler_weights/wp-reasoning-v4-r8-rp50-ep2
+[epoch-eval] ep2 terse@temp0 = 0/8 = 0.000
+[sft] step 260 epoch 2 loss=2.4213632941246033
+[sft] step 270 epoch 2 loss=2.9719458371400833
+[sft] step 280 epoch 2 loss=2.2220244109630585
+[sft] step 290 epoch 2 loss=1.6076232492923737
+[sft] step 300 epoch 2 loss=1.374844342470169
+[sft] step 310 epoch 2 loss=1.8268760442733765
+[sft] step 320 epoch 2 loss=2.7243989408016205
+[sft] step 330 epoch 2 loss=2.354522466659546
+[sft] step 340 epoch 2 loss=2.2981356382369995
+[sft] step 350 epoch 2 loss=2.1785313189029694
+[sft] step 360 epoch 2 loss=2.2921708822250366
+[sft] step 370 epoch 2 loss=1.9285517930984497
+[sft] step 380 epoch 2 loss=2.4372236132621765
+[manifest] wrote output/tinker/wp-reasoning-v4-r8-rp50-manifest.json
+[sft] epoch 3 done (step 381); persistent sampler ckpt name=wp-reasoning-v4-r8-rp50-ep3 path=tinker://467d2923-22a9-5ba3-a81c-8544fb995a8c:train:0/sampler_weights/wp-reasoning-v4-r8-rp50-ep3
+[epoch-eval] ep3 terse@temp0 = 0/8 = 0.000
+[sft] training done: 381 steps. loss first=11.073895454406738 last=1.6638438999652863
+[eval] sample[0] head: 'WPCS Compliance: score 7/10 — The code follows standard WordPress coding standards for function naming (snake_case for functions) and structure. However, the indentation is inconsistent (mixed tabs/sp'
+[eval] terse(no [/REASONING]) @temp0.0 = 0/4 = 0.000 (max_tokens=2048)
+RESULT stage=v4-r8-rp50 steps=381 loss_first=11.073895454406738 loss_last=1.6638438999652863 n_eval=4 terse@0.0=0.000
+[grid-train] RUN /home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/bin/python scripts/tinker_export_checkpoint.py --manifest output/tinker/wp-reasoning-v4-r8-rp50-manifest.json --out-dir models/tinker_export/wp-reasoning-v4-r8-rp50
+[export] checkpoint: tinker://467d2923-22a9-5ba3-a81c-8544fb995a8c:train:0/sampler_weights/wp-reasoning-v4-r8-rp50-ep3
+[export] requesting archive URL (server packs the archive — may take a while)...
+Creating checkpoint archive for run id: 467d2923-22a9-5ba3-a81c-8544fb995a8c:train:0 checkpoint id: sampler_weights/wp-reasoning-v4-r8-rp50-ep3 (this may take a while)
+... still running
+... still running
+... still running
+... still running
+[export] signed URL acquired (expires=None)
+[export] downloading -> models/tinker_export/wp-reasoning-v4-r8-rp50/checkpoint.tar
+[export] downloaded 462.5 MB
+[export] archive OK: 3 members; sample=['adapter_config.json', 'checkpoint_complete', 'adapter_model.safetensors']
+[export] DONE -> models/tinker_export/wp-reasoning-v4-r8-rp50/checkpoint.tar (+ models/tinker_export/wp-reasoning-v4-r8-rp50/export_manifest.json)
+[grid-train] r8-rp50: DONE — grid_manifest now has 3 candidate(s)
+[grid-train] === candidate 4/9: r16-rp15 (rank=16 replay=15%) ===
+[grid-train] RUN /home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/bin/python scripts/tinker_reasoning_sft.py --stage v4-r16-rp15 --rank 16 --train-path data/reasoning_dataset/openai_train.augmented.jsonl --epochs 3 --per-epoch-eval-n 8 --manifest output/tinker/wp-reasoning-v4-r16-rp15-manifest.json
+[sft] train_path=data/reasoning_dataset/openai_train.augmented.jsonl
+[sft] stage=v4-r16-rp15 base=Qwen/Qwen3-30B-A3B rank=16 lr=4.99e-04 epochs=3 max_steps=None train_batches=74 bs=8
+[sft] step 1 epoch 0 loss=12.27069902420044
+[sft] step 2 epoch 0 loss=11.90122663974762
+[sft] step 3 epoch 0 loss=12.702605247497559
+[sft] step 10 epoch 0 loss=7.058291554450989
+[sft] step 20 epoch 0 loss=6.948900938034058
+[sft] step 30 epoch 0 loss=7.11752051115036
+[sft] step 40 epoch 0 loss=7.379761099815369
+[sft] step 50 epoch 0 loss=6.139269530773163
+[sft] step 60 epoch 0 loss=5.686332106590271
+[sft] step 70 epoch 0 loss=6.705119609832764
+[manifest] wrote output/tinker/wp-reasoning-v4-r16-rp15-manifest.json
+[sft] epoch 1 done (step 74); persistent sampler ckpt name=wp-reasoning-v4-r16-rp15-ep1 path=tinker://ba3520e0-19d4-5eb7-bebe-52d6652f23b4:train:0/sampler_weights/wp-reasoning-v4-r16-rp15-ep1
+[epoch-eval] ep1 terse@temp0 = 0/8 = 0.000
+[sft] step 80 epoch 1 loss=5.390941798686981
+[sft] step 90 epoch 1 loss=4.336640119552612
+[sft] step 100 epoch 1 loss=4.505958795547485
+[sft] step 110 epoch 1 loss=4.366466522216797
+[sft] step 120 epoch 1 loss=3.8454716205596924
+[sft] step 130 epoch 1 loss=3.682129919528961
+[sft] step 140 epoch 1 loss=4.198565661907196
+[manifest] wrote output/tinker/wp-reasoning-v4-r16-rp15-manifest.json
+[sft] epoch 2 done (step 148); persistent sampler ckpt name=wp-reasoning-v4-r16-rp15-ep2 path=tinker://ba3520e0-19d4-5eb7-bebe-52d6652f23b4:train:0/sampler_weights/wp-reasoning-v4-r16-rp15-ep2
+[epoch-eval] ep2 terse@temp0 = 1/8 = 0.125
+[sft] step 150 epoch 2 loss=2.6495366990566254
+[sft] step 160 epoch 2 loss=2.5723912119865417
+[sft] step 170 epoch 2 loss=2.4943366199731827
+[sft] step 180 epoch 2 loss=2.1354057043790817
+[sft] step 190 epoch 2 loss=1.8542179465293884
+[sft] step 200 epoch 2 loss=2.060959592461586
+[sft] step 210 epoch 2 loss=2.0157392024993896
+[sft] step 220 epoch 2 loss=1.6476693153381348
+[manifest] wrote output/tinker/wp-reasoning-v4-r16-rp15-manifest.json
+[sft] epoch 3 done (step 222); persistent sampler ckpt name=wp-reasoning-v4-r16-rp15-ep3 path=tinker://ba3520e0-19d4-5eb7-bebe-52d6652f23b4:train:0/sampler_weights/wp-reasoning-v4-r16-rp15-ep3
+[epoch-eval] ep3 terse@temp0 = 0/8 = 0.000
+[sft] training done: 222 steps. loss first=12.27069902420044 last=2.4162550270557404
+[eval] sample[0] head: 'WPCS Compliance: score 8/10 — Follows WordPress REST controller conventions: snake_case naming, proper type-hinting via PHPDoc, and use of rest_ensure_response() to wrap the response object. Minor: no'
+[eval] terse(no [/REASONING]) @temp0.0 = 0/4 = 0.000 (max_tokens=2048)
+RESULT stage=v4-r16-rp15 steps=222 loss_first=12.27069902420044 loss_last=2.4162550270557404 n_eval=4 terse@0.0=0.000
+[grid-train] RUN /home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/bin/python scripts/tinker_export_checkpoint.py --manifest output/tinker/wp-reasoning-v4-r16-rp15-manifest.json --out-dir models/tinker_export/wp-reasoning-v4-r16-rp15
+[export] checkpoint: tinker://ba3520e0-19d4-5eb7-bebe-52d6652f23b4:train:0/sampler_weights/wp-reasoning-v4-r16-rp15-ep3
+[export] requesting archive URL (server packs the archive — may take a while)...
+Creating checkpoint archive for run id: ba3520e0-19d4-5eb7-bebe-52d6652f23b4:train:0 checkpoint id: sampler_weights/wp-reasoning-v4-r16-rp15-ep3 (this may take a while)
+... still running
+... still running
+... still running
+... still running
+[export] signed URL acquired (expires=None)
+[export] downloading -> models/tinker_export/wp-reasoning-v4-r16-rp15/checkpoint.tar
+[export] downloaded 924.9 MB
+[export] archive OK: 3 members; sample=['adapter_config.json', 'checkpoint_complete', 'adapter_model.safetensors']
+[export] DONE -> models/tinker_export/wp-reasoning-v4-r16-rp15/checkpoint.tar (+ models/tinker_export/wp-reasoning-v4-r16-rp15/export_manifest.json)
+[grid-train] r16-rp15: DONE — grid_manifest now has 4 candidate(s)
+[grid-train] === candidate 5/9: r16-rp30 (rank=16 replay=30%) ===
+[grid-train] RUN /home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/bin/python scripts/tinker_reasoning_sft.py --stage v4-r16-rp30 --rank 16 --train-path data/reasoning_dataset/openai_train.augmented.replay30.jsonl --epochs 3 --per-epoch-eval-n 8 --manifest output/tinker/wp-reasoning-v4-r16-rp30-manifest.json
+[sft] train_path=data/reasoning_dataset/openai_train.augmented.replay30.jsonl
+[sft] stage=v4-r16-rp30 base=Qwen/Qwen3-30B-A3B rank=16 lr=4.99e-04 epochs=3 max_steps=None train_batches=90 bs=8
+[sft] step 1 epoch 0 loss=12.658833622932434
+[sft] step 2 epoch 0 loss=13.576339364051819
+[sft] step 3 epoch 0 loss=13.38999354839325
+[sft] step 10 epoch 0 loss=8.93437111377716
+[sft] step 20 epoch 0 loss=7.209848880767822
+[sft] step 30 epoch 0 loss=6.216606974601746
+[sft] step 40 epoch 0 loss=6.73326313495636
+[sft] step 50 epoch 0 loss=5.744529604911804
+[sft] step 60 epoch 0 loss=6.3315998911857605
+[sft] step 70 epoch 0 loss=5.301011621952057
+[sft] step 80 epoch 0 loss=6.77963250875473
+[sft] step 90 epoch 0 loss=6.58673757314682
+[manifest] wrote output/tinker/wp-reasoning-v4-r16-rp30-manifest.json
+[sft] epoch 1 done (step 90); persistent sampler ckpt name=wp-reasoning-v4-r16-rp30-ep1 path=tinker://8e984dad-aae3-5acd-9ce4-6f6ae68c6c08:train:0/sampler_weights/wp-reasoning-v4-r16-rp30-ep1
+[epoch-eval] ep1 terse@temp0 = 0/8 = 0.000
+[sft] step 100 epoch 1 loss=5.49568834900856
+[sft] step 110 epoch 1 loss=4.8568185567855835
+[sft] step 120 epoch 1 loss=3.131881356239319
+[sft] step 130 epoch 1 loss=4.426155388355255
+[sft] step 140 epoch 1 loss=3.3713989555835724
+[sft] step 150 epoch 1 loss=3.919126123189926
+[sft] step 160 epoch 1 loss=3.1473435759544373
+[sft] step 170 epoch 1 loss=4.015657991170883
+[sft] step 180 epoch 1 loss=4.131121337413788
+[manifest] wrote output/tinker/wp-reasoning-v4-r16-rp30-manifest.json
+[sft] epoch 2 done (step 180); persistent sampler ckpt name=wp-reasoning-v4-r16-rp30-ep2 path=tinker://8e984dad-aae3-5acd-9ce4-6f6ae68c6c08:train:0/sampler_weights/wp-reasoning-v4-r16-rp30-ep2
+[epoch-eval] ep2 terse@temp0 = 0/8 = 0.000
+[sft] step 190 epoch 2 loss=3.1429386138916016
+[sft] step 200 epoch 2 loss=2.796866714954376
+[sft] step 210 epoch 2 loss=1.5101208090782166
+[sft] step 220 epoch 2 loss=2.4515035152435303
+[sft] step 230 epoch 2 loss=1.7218829840421677
+[sft] step 240 epoch 2 loss=2.054646670818329
+[sft] step 250 epoch 2 loss=1.7330755591392517
+[sft] step 260 epoch 2 loss=1.972316950559616
+[sft] step 270 epoch 2 loss=2.1296803951263428
+[manifest] wrote output/tinker/wp-reasoning-v4-r16-rp30-manifest.json
+[sft] epoch 3 done (step 270); persistent sampler ckpt name=wp-reasoning-v4-r16-rp30-ep3 path=tinker://8e984dad-aae3-5acd-9ce4-6f6ae68c6c08:train:0/sampler_weights/wp-reasoning-v4-r16-rp30-ep3
+[epoch-eval] ep3 terse@temp0 = 0/8 = 0.000
+[sft] training done: 270 steps. loss first=12.658833622932434 last=2.1296803951263428
+[eval] sample[0] head: 'WPCS Compliance: score 8/10 — The code follows standard WordPress coding conventions for function naming (camelCase for internal class methods) and structure. It includes proper PHPDoc comments with p'
+[eval] terse(no [/REASONING]) @temp0.0 = 0/4 = 0.000 (max_tokens=2048)
+RESULT stage=v4-r16-rp30 steps=270 loss_first=12.658833622932434 loss_last=2.1296803951263428 n_eval=4 terse@0.0=0.000
+[grid-train] RUN /home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/bin/python scripts/tinker_export_checkpoint.py --manifest output/tinker/wp-reasoning-v4-r16-rp30-manifest.json --out-dir models/tinker_export/wp-reasoning-v4-r16-rp30
+[export] checkpoint: tinker://8e984dad-aae3-5acd-9ce4-6f6ae68c6c08:train:0/sampler_weights/wp-reasoning-v4-r16-rp30-ep3
+[export] requesting archive URL (server packs the archive — may take a while)...
+Creating checkpoint archive for run id: 8e984dad-aae3-5acd-9ce4-6f6ae68c6c08:train:0 checkpoint id: sampler_weights/wp-reasoning-v4-r16-rp30-ep3 (this may take a while)
+... still running
+... still running
+... still running
+[export] signed URL acquired (expires=None)
+[export] downloading -> models/tinker_export/wp-reasoning-v4-r16-rp30/checkpoint.tar
+[export] downloaded 924.9 MB
+[export] archive OK: 3 members; sample=['adapter_config.json', 'checkpoint_complete', 'adapter_model.safetensors']
+[export] DONE -> models/tinker_export/wp-reasoning-v4-r16-rp30/checkpoint.tar (+ models/tinker_export/wp-reasoning-v4-r16-rp30/export_manifest.json)
+[grid-train] r16-rp30: DONE — grid_manifest now has 5 candidate(s)
+[grid-train] === candidate 6/9: r16-rp50 (rank=16 replay=50%) ===
+[grid-train] RUN /home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/bin/python scripts/tinker_reasoning_sft.py --stage v4-r16-rp50 --rank 16 --train-path data/reasoning_dataset/openai_train.augmented.replay50.jsonl --epochs 3 --per-epoch-eval-n 8 --manifest output/tinker/wp-reasoning-v4-r16-rp50-manifest.json
+[sft] train_path=data/reasoning_dataset/openai_train.augmented.replay50.jsonl
+[sft] stage=v4-r16-rp50 base=Qwen/Qwen3-30B-A3B rank=16 lr=4.99e-04 epochs=3 max_steps=None train_batches=127 bs=8
+[sft] step 1 epoch 0 loss=11.073895454406738
+[sft] step 2 epoch 0 loss=11.518590331077576
+[sft] step 3 epoch 0 loss=9.769251704216003
+[sft] step 10 epoch 0 loss=7.829224705696106
+[sft] step 20 epoch 0 loss=7.356842041015625
+[sft] step 30 epoch 0 loss=8.157171607017517
+[sft] step 40 epoch 0 loss=7.510589957237244
+[sft] step 50 epoch 0 loss=6.3565394282341
+[sft] step 60 epoch 0 loss=6.634631156921387
+[sft] step 70 epoch 0 loss=6.0960182547569275
+[sft] step 80 epoch 0 loss=6.311709702014923
+[sft] step 90 epoch 0 loss=5.872675955295563
+[sft] step 100 epoch 0 loss=6.123379170894623
+[sft] step 110 epoch 0 loss=5.916600823402405
+[sft] step 120 epoch 0 loss=6.019497632980347
+[manifest] wrote output/tinker/wp-reasoning-v4-r16-rp50-manifest.json
+[sft] epoch 1 done (step 127); persistent sampler ckpt name=wp-reasoning-v4-r16-rp50-ep1 path=tinker://c74ee1df-5187-528e-b2f5-d247adc6f9a9:train:0/sampler_weights/wp-reasoning-v4-r16-rp50-ep1
+[epoch-eval] ep1 terse@temp0 = 0/8 = 0.000
+[sft] step 130 epoch 1 loss=5.5577738881111145
+[sft] step 140 epoch 1 loss=3.174511641263962
+[sft] step 150 epoch 1 loss=3.401630848646164
+[sft] step 160 epoch 1 loss=5.392315864562988
+[sft] step 170 epoch 1 loss=4.041521310806274
+[sft] step 180 epoch 1 loss=4.464081645011902
+[sft] step 190 epoch 1 loss=4.118796110153198
+[sft] step 200 epoch 1 loss=3.4538178741931915
+[sft] step 210 epoch 1 loss=5.216953009366989
+[sft] step 220 epoch 1 loss=3.107869029045105
+[sft] step 230 epoch 1 loss=4.082127392292023
+[sft] step 240 epoch 1 loss=3.1888547539711
+[sft] step 250 epoch 1 loss=3.5699339509010315
+[manifest] wrote output/tinker/wp-reasoning-v4-r16-rp50-manifest.json
+[sft] epoch 2 done (step 254); persistent sampler ckpt name=wp-reasoning-v4-r16-rp50-ep2 path=tinker://c74ee1df-5187-528e-b2f5-d247adc6f9a9:train:0/sampler_weights/wp-reasoning-v4-r16-rp50-ep2
+[epoch-eval] ep2 terse@temp0 = 0/8 = 0.000
+[sft] step 260 epoch 2 loss=2.505640894174576
+[sft] step 270 epoch 2 loss=3.2312430888414383
+[sft] step 280 epoch 2 loss=2.360131323337555
+[sft] step 290 epoch 2 loss=1.3294247388839722
+[sft] step 300 epoch 2 loss=1.2789469361305237
+[sft] step 310 epoch 2 loss=1.9944570064544678
+[sft] step 320 epoch 2 loss=2.7176488041877747
+[sft] step 330 epoch 2 loss=2.415233075618744
+[sft] step 340 epoch 2 loss=2.3052646219730377
+[sft] step 350 epoch 2 loss=2.1224573254585266
+[sft] step 360 epoch 2 loss=2.2061590552330017
+[sft] step 370 epoch 2 loss=1.79281485080719
+[sft] step 380 epoch 2 loss=2.450335204601288
+[manifest] wrote output/tinker/wp-reasoning-v4-r16-rp50-manifest.json
+[sft] epoch 3 done (step 381); persistent sampler ckpt name=wp-reasoning-v4-r16-rp50-ep3 path=tinker://c74ee1df-5187-528e-b2f5-d247adc6f9a9:train:0/sampler_weights/wp-reasoning-v4-r16-rp50-ep3
+[epoch-eval] ep3 terse@temp0 = 0/8 = 0.000
+[sft] training done: 381 steps. loss first=11.073895454406738 last=1.7000931799411774
+[eval] sample[0] head: 'WPCS Compliance: score 9/10 — The code follows standard WordPress coding conventions. The function name `get_installed_plugins` is descriptive and follows snake_case. The parameter `$request` is corre'
+[eval] terse(no [/REASONING]) @temp0.0 = 0/4 = 0.000 (max_tokens=2048)
+RESULT stage=v4-r16-rp50 steps=381 loss_first=11.073895454406738 loss_last=1.7000931799411774 n_eval=4 terse@0.0=0.000
+[grid-train] RUN /home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/bin/python scripts/tinker_export_checkpoint.py --manifest output/tinker/wp-reasoning-v4-r16-rp50-manifest.json --out-dir models/tinker_export/wp-reasoning-v4-r16-rp50
+[export] checkpoint: tinker://c74ee1df-5187-528e-b2f5-d247adc6f9a9:train:0/sampler_weights/wp-reasoning-v4-r16-rp50-ep3
+[export] requesting archive URL (server packs the archive — may take a while)...
+Creating checkpoint archive for run id: c74ee1df-5187-528e-b2f5-d247adc6f9a9:train:0 checkpoint id: sampler_weights/wp-reasoning-v4-r16-rp50-ep3 (this may take a while)
+... still running
+... still running
+... still running
+[export] signed URL acquired (expires=None)
+[export] downloading -> models/tinker_export/wp-reasoning-v4-r16-rp50/checkpoint.tar
+[export] downloaded 924.9 MB
+[export] archive OK: 3 members; sample=['adapter_config.json', 'checkpoint_complete', 'adapter_model.safetensors']
+[export] DONE -> models/tinker_export/wp-reasoning-v4-r16-rp50/checkpoint.tar (+ models/tinker_export/wp-reasoning-v4-r16-rp50/export_manifest.json)
+[grid-train] r16-rp50: DONE — grid_manifest now has 6 candidate(s)
+[grid-train] === candidate 7/9: r32-rp15 (rank=32 replay=15%) ===
+[grid-train] RUN /home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/bin/python scripts/tinker_reasoning_sft.py --stage v4-r32-rp15 --rank 32 --train-path data/reasoning_dataset/openai_train.augmented.jsonl --epochs 3 --per-epoch-eval-n 8 --manifest output/tinker/wp-reasoning-v4-r32-rp15-manifest.json
+[sft] train_path=data/reasoning_dataset/openai_train.augmented.jsonl
+[sft] stage=v4-r32-rp15 base=Qwen/Qwen3-30B-A3B rank=32 lr=4.99e-04 epochs=3 max_steps=None train_batches=74 bs=8
+[sft] step 1 epoch 0 loss=12.27069902420044
+[sft] step 2 epoch 0 loss=11.983311414718628
+[sft] step 3 epoch 0 loss=12.80185842514038
+[sft] step 10 epoch 0 loss=7.068063884973526
+[sft] step 20 epoch 0 loss=6.9557976722717285
+[sft] step 30 epoch 0 loss=7.136987864971161
+[sft] step 40 epoch 0 loss=7.372672200202942
+[sft] step 50 epoch 0 loss=6.087867766618729
+[sft] step 60 epoch 0 loss=5.70475161075592
+[sft] step 70 epoch 0 loss=6.707165896892548
+[manifest] wrote output/tinker/wp-reasoning-v4-r32-rp15-manifest.json
+[sft] epoch 1 done (step 74); persistent sampler ckpt name=wp-reasoning-v4-r32-rp15-ep1 path=tinker://3e64fbb1-175d-592d-9b39-ba0013fcf5e8:train:0/sampler_weights/wp-reasoning-v4-r32-rp15-ep1
+[epoch-eval] ep1 terse@temp0 = 1/8 = 0.125
+[sft] step 80 epoch 1 loss=5.396607756614685
+[sft] step 90 epoch 1 loss=4.424401521682739
+[sft] step 100 epoch 1 loss=4.565739035606384
+[sft] step 110 epoch 1 loss=4.374706536531448
+[sft] step 120 epoch 1 loss=3.86800354719162
+[sft] step 130 epoch 1 loss=3.6870421767234802
+[sft] step 140 epoch 1 loss=4.249498635530472
+[manifest] wrote output/tinker/wp-reasoning-v4-r32-rp15-manifest.json
+[sft] epoch 2 done (step 148); persistent sampler ckpt name=wp-reasoning-v4-r32-rp15-ep2 path=tinker://3e64fbb1-175d-592d-9b39-ba0013fcf5e8:train:0/sampler_weights/wp-reasoning-v4-r32-rp15-ep2
+[epoch-eval] ep2 terse@temp0 = 0/8 = 0.000
+[sft] step 150 epoch 2 loss=2.6694485545158386
+[sft] step 160 epoch 2 loss=2.4497299939393997
+[sft] step 170 epoch 2 loss=2.4542039930820465
+[sft] step 180 epoch 2 loss=2.1377977430820465
+[sft] step 190 epoch 2 loss=1.8337976336479187
+[sft] step 200 epoch 2 loss=2.0532112568616867
+[sft] step 210 epoch 2 loss=1.9011389315128326
+[sft] step 220 epoch 2 loss=1.703081339597702
+[manifest] wrote output/tinker/wp-reasoning-v4-r32-rp15-manifest.json
+[sft] epoch 3 done (step 222); persistent sampler ckpt name=wp-reasoning-v4-r32-rp15-ep3 path=tinker://3e64fbb1-175d-592d-9b39-ba0013fcf5e8:train:0/sampler_weights/wp-reasoning-v4-r32-rp15-ep3
+[epoch-eval] ep3 terse@temp0 = 0/8 = 0.000
+[sft] training done: 222 steps. loss first=12.27069902420044 last=2.333096891641617
+[eval] sample[0] head: 'WPCS Compliance: score 9/10 — The code follows standard WordPress REST API conventions. It uses `rest_ensure_response` to wrap the return value, which is the correct pattern for REST handlers. The doc'
+[eval] terse(no [/REASONING]) @temp0.0 = 0/4 = 0.000 (max_tokens=2048)
+RESULT stage=v4-r32-rp15 steps=222 loss_first=12.27069902420044 loss_last=2.333096891641617 n_eval=4 terse@0.0=0.000
+[grid-train] RUN /home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/bin/python scripts/tinker_export_checkpoint.py --manifest output/tinker/wp-reasoning-v4-r32-rp15-manifest.json --out-dir models/tinker_export/wp-reasoning-v4-r32-rp15
+[export] checkpoint: tinker://3e64fbb1-175d-592d-9b39-ba0013fcf5e8:train:0/sampler_weights/wp-reasoning-v4-r32-rp15-ep3
+[export] requesting archive URL (server packs the archive — may take a while)...
+Creating checkpoint archive for run id: 3e64fbb1-175d-592d-9b39-ba0013fcf5e8:train:0 checkpoint id: sampler_weights/wp-reasoning-v4-r32-rp15-ep3 (this may take a while)
+... still running
+... still running
+... still running
+... still running
+[export] signed URL acquired (expires=None)
+[export] downloading -> models/tinker_export/wp-reasoning-v4-r32-rp15/checkpoint.tar
+[export] downloaded 1849.7 MB
+[export] archive OK: 3 members; sample=['adapter_config.json', 'checkpoint_complete', 'adapter_model.safetensors']
+[export] DONE -> models/tinker_export/wp-reasoning-v4-r32-rp15/checkpoint.tar (+ models/tinker_export/wp-reasoning-v4-r32-rp15/export_manifest.json)
+[grid-train] r32-rp15: DONE — grid_manifest now has 7 candidate(s)
+[grid-train] === candidate 8/9: r32-rp30 (rank=32 replay=30%) ===
+[grid-train] RUN /home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/bin/python scripts/tinker_reasoning_sft.py --stage v4-r32-rp30 --rank 32 --train-path data/reasoning_dataset/openai_train.augmented.replay30.jsonl --epochs 3 --per-epoch-eval-n 8 --manifest output/tinker/wp-reasoning-v4-r32-rp30-manifest.json
+[sft] train_path=data/reasoning_dataset/openai_train.augmented.replay30.jsonl
+[sft] stage=v4-r32-rp30 base=Qwen/Qwen3-30B-A3B rank=32 lr=4.99e-04 epochs=3 max_steps=None train_batches=90 bs=8
+[sft] step 1 epoch 0 loss=12.658833622932434
+[sft] step 2 epoch 0 loss=13.643152594566345
+[sft] step 3 epoch 0 loss=13.492585897445679
+[sft] step 10 epoch 0 loss=8.926323771476746
+[sft] step 20 epoch 0 loss=7.1850608587265015
+[sft] step 30 epoch 0 loss=6.216744899749756
+[sft] step 40 epoch 0 loss=6.689879775047302
+[sft] step 50 epoch 0 loss=5.741457402706146
+[sft] step 60 epoch 0 loss=6.357645034790039
+[sft] step 70 epoch 0 loss=5.302299857139587
+[sft] step 80 epoch 0 loss=6.777734100818634
+[sft] step 90 epoch 0 loss=6.587564051151276
+[manifest] wrote output/tinker/wp-reasoning-v4-r32-rp30-manifest.json
+[sft] epoch 1 done (step 90); persistent sampler ckpt name=wp-reasoning-v4-r32-rp30-ep1 path=tinker://fc55e8b9-89ae-595f-9f4a-614ed9ca035f:train:0/sampler_weights/wp-reasoning-v4-r32-rp30-ep1
+[epoch-eval] ep1 terse@temp0 = 1/8 = 0.125
+[sft] step 100 epoch 1 loss=5.469367802143097
+[sft] step 110 epoch 1 loss=4.80128887295723
+[sft] step 120 epoch 1 loss=3.1489343643188477
+[sft] step 130 epoch 1 loss=4.546033263206482
+[sft] step 140 epoch 1 loss=3.3650766909122467
+[sft] step 150 epoch 1 loss=3.908661961555481
+[sft] step 160 epoch 1 loss=3.1446629762649536
+[sft] step 170 epoch 1 loss=4.052766442298889
+[sft] step 180 epoch 1 loss=4.133296191692352
+[manifest] wrote output/tinker/wp-reasoning-v4-r32-rp30-manifest.json
+[sft] epoch 2 done (step 180); persistent sampler ckpt name=wp-reasoning-v4-r32-rp30-ep2 path=tinker://fc55e8b9-89ae-595f-9f4a-614ed9ca035f:train:0/sampler_weights/wp-reasoning-v4-r32-rp30-ep2
+[epoch-eval] ep2 terse@temp0 = 0/8 = 0.000
+[sft] step 190 epoch 2 loss=3.168789029121399
+[sft] step 200 epoch 2 loss=2.868939593434334
+[sft] step 210 epoch 2 loss=1.4407897144556046
+[sft] step 220 epoch 2 loss=2.7026533782482147
+[sft] step 230 epoch 2 loss=1.8594830334186554
+[sft] step 240 epoch 2 loss=2.0238295793533325
+[sft] step 250 epoch 2 loss=1.5936191380023956
+[sft] step 260 epoch 2 loss=2.115396097302437
+[sft] step 270 epoch 2 loss=2.202931970357895
+[manifest] wrote output/tinker/wp-reasoning-v4-r32-rp30-manifest.json
+[sft] epoch 3 done (step 270); persistent sampler ckpt name=wp-reasoning-v4-r32-rp30-ep3 path=tinker://fc55e8b9-89ae-595f-9f4a-614ed9ca035f:train:0/sampler_weights/wp-reasoning-v4-r32-rp30-ep3
+[epoch-eval] ep3 terse@temp0 = 0/8 = 0.000
+[sft] training done: 270 steps. loss first=12.658833622932434 last=2.202931970357895
+[eval] sample[0] head: 'WPCS Compliance: score 7/10 — PHPDoc present with @param and @return; snake_case naming; docblock indentation uses double-tab (20 spaces) which is unusual but not a WPCS violation. Minor: PHPDoc align'
+[eval] terse(no [/REASONING]) @temp0.0 = 0/4 = 0.000 (max_tokens=2048)
+RESULT stage=v4-r32-rp30 steps=270 loss_first=12.658833622932434 loss_last=2.202931970357895 n_eval=4 terse@0.0=0.000
+[grid-train] RUN /home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/bin/python scripts/tinker_export_checkpoint.py --manifest output/tinker/wp-reasoning-v4-r32-rp30-manifest.json --out-dir models/tinker_export/wp-reasoning-v4-r32-rp30
+[export] checkpoint: tinker://fc55e8b9-89ae-595f-9f4a-614ed9ca035f:train:0/sampler_weights/wp-reasoning-v4-r32-rp30-ep3
+[export] requesting archive URL (server packs the archive — may take a while)...
+Creating checkpoint archive for run id: fc55e8b9-89ae-595f-9f4a-614ed9ca035f:train:0 checkpoint id: sampler_weights/wp-reasoning-v4-r32-rp30-ep3 (this may take a while)
+... still running
+... still running
+... still running
+... still running
+... still running
+[export] signed URL acquired (expires=None)
+[export] downloading -> models/tinker_export/wp-reasoning-v4-r32-rp30/checkpoint.tar
+[export] downloaded 1849.7 MB
+[export] archive OK: 3 members; sample=['adapter_config.json', 'checkpoint_complete', 'adapter_model.safetensors']
+[export] DONE -> models/tinker_export/wp-reasoning-v4-r32-rp30/checkpoint.tar (+ models/tinker_export/wp-reasoning-v4-r32-rp30/export_manifest.json)
+[grid-train] r32-rp30: DONE — grid_manifest now has 8 candidate(s)
+[grid-train] === candidate 9/9: r32-rp50 (rank=32 replay=50%) ===
+[grid-train] RUN /home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/bin/python scripts/tinker_reasoning_sft.py --stage v4-r32-rp50 --rank 32 --train-path data/reasoning_dataset/openai_train.augmented.replay50.jsonl --epochs 3 --per-epoch-eval-n 8 --manifest output/tinker/wp-reasoning-v4-r32-rp50-manifest.json
+[sft] train_path=data/reasoning_dataset/openai_train.augmented.replay50.jsonl
+[sft] stage=v4-r32-rp50 base=Qwen/Qwen3-30B-A3B rank=32 lr=4.99e-04 epochs=3 max_steps=None train_batches=127 bs=8
+[sft] step 1 epoch 0 loss=11.073895454406738
+[sft] step 2 epoch 0 loss=11.511595487594604
+[sft] step 3 epoch 0 loss=9.771225690841675
+[sft] step 10 epoch 0 loss=7.833887159824371
+[sft] step 20 epoch 0 loss=7.376095175743103
+[sft] step 30 epoch 0 loss=8.136106967926025
+[sft] step 40 epoch 0 loss=7.4965298771858215
+[sft] step 50 epoch 0 loss=6.291397720575333
+[sft] step 60 epoch 0 loss=6.601926863193512
+[sft] step 70 epoch 0 loss=6.060248553752899
+[sft] step 80 epoch 0 loss=6.3412642776966095
+[sft] step 90 epoch 0 loss=5.851280689239502
+[sft] step 100 epoch 0 loss=6.146393895149231
+[sft] step 110 epoch 0 loss=5.901494204998016
+[sft] step 120 epoch 0 loss=6.011113166809082
+[manifest] wrote output/tinker/wp-reasoning-v4-r32-rp50-manifest.json
+[sft] epoch 1 done (step 127); persistent sampler ckpt name=wp-reasoning-v4-r32-rp50-ep1 path=tinker://5c707778-4a5f-5ded-8b41-f4711856f9bf:train:0/sampler_weights/wp-reasoning-v4-r32-rp50-ep1
+[epoch-eval] ep1 terse@temp0 = 0/8 = 0.000
+[sft] step 130 epoch 1 loss=5.555058717727661
+[sft] step 140 epoch 1 loss=3.208829790353775
+[sft] step 150 epoch 1 loss=3.309300482273102
+[sft] step 160 epoch 1 loss=5.3332942724227905
+[sft] step 170 epoch 1 loss=3.9967541098594666
+[sft] step 180 epoch 1 loss=4.530224084854126
+[sft] step 190 epoch 1 loss=4.132058501243591
+[sft] step 200 epoch 1 loss=3.1151024103164673
+[sft] step 210 epoch 1 loss=5.231546401977539
+[sft] step 220 epoch 1 loss=3.1131743788719177
+[sft] step 230 epoch 1 loss=4.1816489696502686
+[sft] step 240 epoch 1 loss=3.1871857345104218
+[sft] step 250 epoch 1 loss=3.5242245197296143
+[manifest] wrote output/tinker/wp-reasoning-v4-r32-rp50-manifest.json
+[sft] epoch 2 done (step 254); persistent sampler ckpt name=wp-reasoning-v4-r32-rp50-ep2 path=tinker://5c707778-4a5f-5ded-8b41-f4711856f9bf:train:0/sampler_weights/wp-reasoning-v4-r32-rp50-ep2
+[epoch-eval] ep2 terse@temp0 = 0/8 = 0.000
+[sft] step 260 epoch 2 loss=2.450343042612076
+[sft] step 270 epoch 2 loss=3.0244593620300293
+[sft] step 280 epoch 2 loss=2.1497848331928253
+[sft] step 290 epoch 2 loss=1.5194810032844543
+[sft] step 300 epoch 2 loss=1.170277863740921
+[sft] step 310 epoch 2 loss=1.7984435856342316
+[sft] step 320 epoch 2 loss=2.81939959526062
+[sft] step 330 epoch 2 loss=2.509854108095169
+[sft] step 340 epoch 2 loss=2.290046751499176
+[sft] step 350 epoch 2 loss=2.2379878163337708
+[sft] step 360 epoch 2 loss=2.322495847940445
+[sft] step 370 epoch 2 loss=1.9748161882162094
+[sft] step 380 epoch 2 loss=2.24515300989151
+[manifest] wrote output/tinker/wp-reasoning-v4-r32-rp50-manifest.json
+[sft] epoch 3 done (step 381); persistent sampler ckpt name=wp-reasoning-v4-r32-rp50-ep3 path=tinker://5c707778-4a5f-5ded-8b41-f4711856f9bf:train:0/sampler_weights/wp-reasoning-v4-r32-rp50-ep3
+[epoch-eval] ep3 terse@temp0 = 0/8 = 0.000
+[sft] training done: 381 steps. loss first=11.073895454406738 last=1.6300884783267975
+[eval] sample[0] head: 'WPCS Compliance: score 10/10 — The code follows WordPress Coding Standards. The function name `get_installed_plugins` uses snake_case, which is acceptable for functions in WordPress (though hooks ofte'
+[eval] terse(no [/REASONING]) @temp0.0 = 0/4 = 0.000 (max_tokens=2048)
+RESULT stage=v4-r32-rp50 steps=381 loss_first=11.073895454406738 loss_last=1.6300884783267975 n_eval=4 terse@0.0=0.000
+[grid-train] RUN /home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/bin/python scripts/tinker_export_checkpoint.py --manifest output/tinker/wp-reasoning-v4-r32-rp50-manifest.json --out-dir models/tinker_export/wp-reasoning-v4-r32-rp50
+[export] checkpoint: tinker://5c707778-4a5f-5ded-8b41-f4711856f9bf:train:0/sampler_weights/wp-reasoning-v4-r32-rp50-ep3
+[export] requesting archive URL (server packs the archive — may take a while)...
+Creating checkpoint archive for run id: 5c707778-4a5f-5ded-8b41-f4711856f9bf:train:0 checkpoint id: sampler_weights/wp-reasoning-v4-r32-rp50-ep3 (this may take a while)
+... still running
+... still running
+... still running
+[export] signed URL acquired (expires=None)
+[export] downloading -> models/tinker_export/wp-reasoning-v4-r32-rp50/checkpoint.tar
+[export] downloaded 1849.7 MB
+[export] archive OK: 3 members; sample=['adapter_config.json', 'checkpoint_complete', 'adapter_model.safetensors']
+[export] DONE -> models/tinker_export/wp-reasoning-v4-r32-rp50/checkpoint.tar (+ models/tinker_export/wp-reasoning-v4-r32-rp50/export_manifest.json)
+[grid-train] r32-rp50: DONE — grid_manifest now has 9 candidate(s)
+[grid-train] ALL 9 candidates trained + exported. grid_manifest.json written (9 entries).
+[grid-train] DONE

@@ -1,0 +1,106 @@
+{
+  "smoke_pass": false,
+  "exit_code": 1,
+  "model": "models/qwen3-30b-wp-30_70-reasoning-merged",
+  "served": "wp-30_70",
+  "n": 10,
+  "judge_distinctness": 0.8791,
+  "thresholds": {
+    "max_baseline_sim": 0.85,
+    "min_distinctness": 0.15
+  },
+  "diagnosis": {
+    "mode": "B_incoherent",
+    "suggested_action": "iterate_4.3_or_investigate_baseline",
+    "any_degenerate": false,
+    "any_incoherent": true,
+    "no_reasoning_effect": false
+  },
+  "per_prompt": [
+    {
+      "source_val_idx": 0,
+      "kind": "judge",
+      "pass": true,
+      "fail_reason": null,
+      "output": "<think>\n\n</think>\n\nWPCS Compliance: score 8/10 \u2014 The code follows WordPress coding standards with proper PHPDoc block including @param and @return annotations. The function is concise and follows the single-responsibility principle. The use of rest_ensure_response() is the correct WordPress REST API pattern for returning responses.\n\nSQL Safety: score 10/10 \u2014 The function does not perform any SQL queries. It delegates data retrieval to InstalledExtensions::get_data(), which is a static method. There is no direct database interaction in this function.\n\nSecurity: score 8/10 \u2014 The function is a REST API endpoint handler. It correctly uses rest_ensure_response() to wrap the response. However, it does not include any capability check (current_user_can()) to verify that the caller has permission to access this endpoint. Depending on the plugin's requirements, this could be a security concern if the endpoint exposes sensitive installed plugin information to unauthenticated users.\n\nPerformance: score 8/10 \u2014 The function is lightweight and delegates to a static method. There are no performance concerns at this level. The performance of the function depends on the implementation of InstalledExtensions::get_data().\n\nWP API Usage: score 8/10 \u2014 The function correctly uses the WordPress REST API pattern by returning a rest_ensure_response() object. It follows the standard WordPress REST controller pattern for GET requests.\n\nCode Quality: score 8/10 \u2014 The code is clean, concise, and follows WordPress best practices. It has a single responsibility and is easy to understand. The PHPDoc block is complete with @param and @return annotations.\n\nDependency Integrity: score 8/10 \u2014 The function depends on InstalledExtensions::get_data() for data retrieval. It is a static method call, which is a common and acceptable pattern in WordPress plugins. The dependency integrity is good as long as InstalledExtensions::get_data() is properly implemented.\n\ni18n: score 7/10 \u2014 The function does not output any user-facing strings. It returns data, so ",
+      "coherence_detail": "dims=9/9 explained_scores=9 total_scores=9",
+      "richness": 281.2,
+      "baseline_similarity": 0.1059
+    },
+    {
+      "source_val_idx": 1,
+      "kind": "judge",
+      "pass": true,
+      "fail_reason": null,
+      "output": "<think>\n\n</think>\n\nWPCS Compliance: score 9/10 \u2014 The code follows WordPress coding standards well. It has a proper PHPDoc block with @return tag, uses a class method with a clear name, and has a return type declaration. The function is concise and has a single responsibility.\n\nSQL Safety: score 10/10 \u2014 The code does not directly interact with the database. It uses a dependency injection container to get an instance of CustomOrdersTableController and calls a method on it. There are no SQL queries or direct database operations, so SQL safety is not a concern.\n\nSecurity: score 10/10 \u2014 The code is a simple helper function that returns a boolean value. It does not handle user input, output data, or perform any security-sensitive operations. The function itself does not introduce any security vulnerabilities.\n\nPerformance: score 10/10 \u2014 The code is efficient. It uses a dependency injection container to get the required service, which is a common and efficient pattern in modern WordPress development. The function has no loops or heavy operations.\n\nWP API Usage: score 10/10 \u2014 The code uses the WordPress dependency injection container (wc_get_container()) to resolve dependencies, which is the recommended approach in WooCommerce. It does not use deprecated functions or patterns.\n\nCode Quality: score 10/10 \u2014 The code is clean, well-structured, and follows best practices. It has a clear single responsibility, proper PHPDoc documentation, and uses modern PHP features like return type declarations.\n\nDependency Integrity: score 10/10 \u2014 The code relies on the WooCommerce dependency injection container and the CustomOrdersTableController class, which are part of the WooCommerce core. These dependencies are well-established and maintained.\n\ni18n: score 10/10 \u2014 The code does not contain any user-facing strings, so internationalization is not applicable. The function returns a boolean value, which does not require translation.\n\nAccessibility: score 10/10 \u2014 The code is a server-side helper function and does not have any HTML output o",
+      "coherence_detail": "dims=9/9 explained_scores=9 total_scores=9",
+      "richness": 257.2,
+      "baseline_similarity": 0.1281
+    },
+    {
+      "source_val_idx": 2,
+      "kind": "judge",
+      "pass": true,
+      "fail_reason": null,
+      "output": "<think>\n\n</think>\n\nWPCS Compliance: score 9/10 \u2014 The code follows WordPress Coding Standards well. It uses `int` type hint, has a proper PHPDoc block with `@since`, `@param`, and `@return` tags, and uses the `self` return type hint for fluent interface pattern. The only minor issue is the missing `@access` tag, but this is not required by WPCS.\n\nSQL Safety: score 10/10 \u2014 The code does not use any SQL queries or database operations. It only manipulates a local object property (`$this->time_limit`), so there are no SQL safety concerns.\n\nSecurity: score 9/10 \u2014 The code is a simple setter method that validates the input type and ensures the value is non-negative. It does not handle user input directly, nor does it output data, so there are no injection or output escaping concerns. The type hint on the parameter (`int`) provides a basic level of input validation.\n\nPerformance: score 9/10 \u2014 The method is a simple property assignment with a minor conditional check. It has no performance overhead and is efficient. No queries, no loops, no heavy computation.\n\nWP API Usage: score 9/10 \u2014 The code does not use any specific WordPress API functions. It is a pure OOP method that follows the fluent interface pattern common in modern WordPress plugins. It does not require any WordPress hooks or filters.\n\nCode Quality: score 9/10 \u2014 The code is clean, concise, and well-documented. It has a single clear responsibility: setting a time limit property with validation. The use of `self` return type hint is a modern PHP best practice that improves code readability and maintainability.\n\nDependency Integrity: score 9/10 \u2014 The code depends on the `self` return type hint, which is a PHP 7.0+ feature. It does not depend on any external libraries or WordPress core functions. The dependency chain is minimal and well-understood.\n\ni18n: score 10/10 \u2014 The code does not contain any user-facing strings or translatable content. It is a simple setter method with no output, so i18n is not applicable.\n\nAccessibility: score 10/10 \u2014 The code is a server-s",
+      "coherence_detail": "dims=9/9 explained_scores=9 total_scores=9",
+      "richness": 246.3,
+      "baseline_similarity": 0.0954
+    },
+    {
+      "source_val_idx": 3,
+      "kind": "judge",
+      "pass": true,
+      "fail_reason": null,
+      "output": "<think>\n\n</think>\n\nWPCS Compliance: score 1/10 \u2014 The function uses snake_case naming (`normalize_type_rows`, `get_known_request_types`, `request_type`, `hits`, `avg_ms`, `max_ms`, `slow_hits`) which is consistent with WordPress Coding Standards. However, the function is defined without the `public`/`protected`/`private` visibility modifier, which is required for class methods in modern PHP and WordPress OOP practices. The indentation uses tabs (correct) but the function keyword is not indented to match its class context in the snippet, suggesting it may be improperly formatted.\n\nSQL Safety: score 10/10 \u2014 The function does not execute any SQL queries. It processes an array of request type rows and returns a normalized array. There are no database operations, so SQL injection is not a concern.\n\nSecurity: score 10/10 \u2014 The function processes an array of request type data and returns a normalized version of it. It does not handle user input directly, does not output HTML, and does not perform any state-changing operations. The data is purely transformed and returned, so there are no security concerns such as XSS or CSRF.\n\nPerformance: score 10/10 \u2014 The function has a time complexity of O(n + m), where n is the number of rows and m is the number of known request types. It iterates over the rows once to index them and then over the known request types to build the normalized array. This is efficient and appropriate for the task.\n\nWP API Usage: score 10/10 \u2014 The function does not use any WordPress API functions. It is a pure data transformation function that operates on an array of request type rows. It does not require hooks, filters, or any WordPress-specific APIs.\n\nCode Quality: score 10/10 \u2014 The code is clean and well-structured. It uses a two-step approach: first indexing the rows by request type for O(1) lookup, then iterating over the known request types to build the normalized array. The null coalescing operator (`??`) is used correctly to provide default values for missing request types. The PHPDoc block is pre",
+      "coherence_detail": "dims=7/9 explained_scores=7 total_scores=7",
+      "richness": 337.6,
+      "baseline_similarity": 0.0219
+    },
+    {
+      "source_val_idx": 85,
+      "kind": "judge",
+      "pass": false,
+      "fail_reason": "incoherent:dims=4/9 explained_scores=0 total_scores=0",
+      "output": "<think>\n\n</think>\n\n{\n  \"overall_score\": 50,\n  \"wpcs_compliance\": 60,\n  \"security_score\": 80,\n  \"performance_score\": 80,\n  \"i18n_score\": 70,\n  \"accessibility_score\": 70,\n  \"documentation_score\": 60,\n  \"must_fix_issues\": [\n    \"MEDIUM: Missing PHPDoc block \\u2014 functions must have @param, @return, and @since tags\",\n    \"MEDIUM: Missing PHPDoc documentation block with @param, @return, and @since\"\n  ],\n  \"suggested_improvements\": [\n    \"Add complete PHPDoc blocks with @param, @return, and @since tags for all functions\"\n  ],\n  \"passes_threshold\": false,\n  \"explanation\": \"This function (ACF_Admin_Field_Group::mb_options) fails quality review due to WordPress Coding Standards violations including incomplete documentation. Key dimension scores: wpcs=6/10, i18n=7/10.\"\n}",
+      "coherence_detail": "dims=4/9 explained_scores=0 total_scores=0",
+      "richness": 0.0
+    },
+    {
+      "source_val_idx": 120,
+      "kind": "gen",
+      "pass": false,
+      "fail_reason": "gen: php_lint failed",
+      "output": "<think>\n\n</think>\n\nfunction after_widget_wrapper_html() {\n\t\t$this->widget_wrapper->after();\n\t}"
+    },
+    {
+      "source_val_idx": 121,
+      "kind": "gen",
+      "pass": false,
+      "fail_reason": "gen: php_lint failed",
+      "output": "<think>\n\n</think>\n\nfunction process_refund( $order_id, $amount = null, $reason = '' ) {\n\t\t$order = wc_get_order( $order_id );\n\t\tif ( ! $order ) {\n\t\t\treturn false;\n\t\t}\n\n\t\t$transaction_id = $order->get_transaction_id();\n\t\tif ( ! $transaction_id ) {\n\t\t\treturn false;\n\t\t}\n\n\t\t$refund = $this->create_refund( $order, $amount, $reason );\n\n\t\tif ( is_wp_error( $refund ) ) {\n\t\t\treturn $refund;\n\t\t}\n\n\t\t$refund_id = $refund->get_id();\n\t\t$order->add_order_note( sprintf( __( 'Refund ID: %s', 'woocommerce-square' ), $refund_id ) );\n\n\t\treturn true;\n\t}"
+    },
+    {
+      "source_val_idx": 123,
+      "kind": "gen",
+      "pass": false,
+      "fail_reason": "gen: php_lint failed",
+      "output": "<think>\n\n</think>\n\nfunction set_from( $email, $name = '' ) {\n\t\t$this->mailer->setFrom( $email, $name );\n\t}"
+    },
+    {
+      "source_val_idx": 124,
+      "kind": "gen",
+      "pass": false,
+      "fail_reason": "gen: php_lint failed",
+      "output": "<think>\n\n</think>\n\n<?php\n/**\n\t * Get the order by ID\n\t *\n\t * @param int $order_id\n\t *\n\t * @return \\WC_Order\n\t */\nfunction get_order( $order_id ) {\n\t\treturn wc_get_order( $order_id );\n\t}"
+    },
+    {
+      "source_val_idx": 125,
+      "kind": "gen",
+      "pass": false,
+      "fail_reason": "gen: php_lint failed",
+      "output": "<think>\n\n</think>\n\nfunction filter_styles( $styles ) {\n\t\t$filtered = array();\n\n\t\tforeach ( $styles as $style ) {\n\t\t\t$filtered[] = $this->filter_style( $style );\n\t\t}\n\n\t\treturn $filtered;\n\t}"
+    }
+  ],
+  "output_json": "logs/phase4.4/wave0_smoke_stage2_20260529T140233Z.json"
+}

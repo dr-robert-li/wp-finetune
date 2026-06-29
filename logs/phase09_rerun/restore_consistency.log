@@ -1,0 +1,10 @@
+Launching wp-consistency-vllm on :8001
+  model: nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-NVFP4 (text-only NVFP4 consistency judge)
+  served-model-name: wp_consistency
+  gpu-memory-utilization: 0.30  (coexists with wp_judge :8000)
+  moe-backend: flashinfer_cutlass  image: ghcr.io/spark-arena/dgx-vllm-eugr-nightly:latest
+2863a79e7dd75d280c076eb0a295ec4d9970c016e9f69b9e5640263a487ad6a2
+
+Follow readiness:  docker logs -f wp-consistency-vllm
+Ready when:        curl -s http://localhost:8001/v1/models | grep -q wp_consistency
+Stop:              docker stop wp-consistency-vllm

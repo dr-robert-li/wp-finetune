@@ -1,0 +1,56 @@
+Existing anchors: 463
+Passed pool: 82165 functions
+Stratified-sampled 1998 candidates (seed=4242)
+  [1/1998] +1 anchor: seo-by-rank-math::Ready::get_localized_data overall=100.00 llm_skipped=0
+  [2/1998] +2 anchor: twitter::TwitterList::toArray overall=99.70 llm_skipped=0
+  [3/1998] +3 anchor: speculation-rules::embed_optimizer_add_non_optimization_detective_hooks overall=100.00 llm_skipped=0
+  [5/1998] +4 anchor: seo-by-rank-math::Plugin_Importer::format_message overall=99.60 llm_skipped=0
+  [6/1998] +5 anchor: google-site-kit::Reader_Revenue_Manager::register overall=100.00 llm_skipped=0
+  [7/1998] +6 anchor: ultimate-pdf-flipbooks-flip-books-made-easy::upfb_my_admin_menu overall=100.00 llm_skipped=0
+  [8/1998] +7 anchor: wordpress-develop::add_blog_option overall=100.00 llm_skipped=0
+  [10/1998] +8 anchor: bs-payone-woocommerce::RatepayBase::__construct overall=99.70 llm_skipped=0
+  [12/1998] +9 anchor: dpo-group-for-woocommerce::DpoPayServices::get_service overall=100.00 llm_skipped=0
+  [13/1998] +10 anchor: wordpress-develop::clean_url overall=100.00 llm_skipped=0
+  [14/1998] +11 anchor: learnpress-bbpress::handle_status_param overall=100.00 llm_skipped=0
+  [15/1998] +12 anchor: smart-custom-fields::Smart_Custom_Fields_Field_Datepicker::settings_enqueue_scripts overall=100.00 llm_skipped=0
+  [18/1998] +13 anchor: seo-by-rank-math::Role::get_localized_data overall=100.00 llm_skipped=0
+  [19/1998] +14 anchor: seo-by-rank-math::Slack::get_post_data overall=100.00 llm_skipped=0
+  [20/1998] +15 anchor: wp-scss::Value::minus overall=99.20 llm_skipped=0
+  [21/1998] +16 anchor: wordpress-develop::ParagonIE_Sodium_Core_Base64_UrlSafe::encode6Bits overall=99.50 llm_skipped=0
+  [22/1998] +17 anchor: directorist-wpml-integration::Selectfield_Translation::register_strings overall=100.00 llm_skipped=0
+  [24/1998] +18 anchor: speculation-rules::webp_uploads_update_attachment_metadata overall=100.00 llm_skipped=0
+  [28/1998] +19 anchor: speculation-rules::plwwo_get_configuration overall=100.00 llm_skipped=0
+  [30/1998] +20 anchor: seo-by-rank-math::Block_TOC::add_graph overall=100.00 llm_skipped=0
+  [31/1998] +21 anchor: seo-by-rank-math::Base::get_dates overall=100.00 llm_skipped=0
+  [33/1998] +22 anchor: wordpress-develop::convert_smilies overall=100.00 llm_skipped=0
+  [34/1998] +23 anchor: wordpress-develop::get_edit_profile_url overall=100.00 llm_skipped=0
+  [35/1998] +24 anchor: woocommerce::WC_Tracks_Client::send_batched_pixels overall=98.80 llm_skipped=0
+  [36/1998] +25 anchor: woocommerce::FulfillmentUtils::get_default_order_fulfillment_statuses overall=100.00 llm_skipped=0
+  [37/1998] +26 anchor: custom-post-type-ui::CPTUI_Debug_Info::num_convt overall=100.00 llm_skipped=0
+  [40/1998] +27 anchor: seo-by-rank-math::get_url overall=100.00 llm_skipped=0
+  [42/1998] +28 anchor: wp-scss::checkImportPathConflicts overall=98.90 llm_skipped=0
+  [43/1998] +29 anchor: wordpress-develop::Psr17Factory::createResponse overall=99.50 llm_skipped=0
+  [44/1998] +30 anchor: seo-by-rank-math::advanced_robots overall=100.00 llm_skipped=0
+  [45/1998] +31 anchor: wp-scss::assertColor overall=98.90 llm_skipped=0
+  [46/1998] +32 anchor: custom-post-type-ui::cptui_tools_tabs overall=100.00 llm_skipped=0
+  [47/1998] +33 anchor: directorist-wpml-integration::Sorting_Options_Translation::is_wpml_active overall=100.00 llm_skipped=0
+  [49/1998] +34 anchor: wp-scss::SelectorParser::typeOrUniversalSelector overall=99.70 llm_skipped=0
+  [50/1998] +35 anchor: advanced-custom-fields::ACF_Local_Meta::pre_load_metadata overall=100.00 llm_skipped=0
+  [52/1998] +36 anchor: jetpack::Share_Twitter::get_related_accounts overall=100.00 llm_skipped=0
+  [54/1998] +37 anchor: learnpress-wishlist::CourseSectionModel::find overall=100.00 llm_skipped=0
+
+Top-up complete. Added 37 new anchors.
+Total anchors now: 500
+Skipped dup keys: 1
+Rejected: 16
+Top reject reasons:
+      2  overall 69.9 < 90.0
+      2  overall 78.5 < 90.0
+      2  overall 70.2 < 90.0
+      2  overall 69.5 < 90.0
+      2  overall 61.3 < 90.0
+      1  phpcs WordPress 5 errors
+      1  overall 74.1 < 90.0
+      1  overall 75.4 < 90.0
+      1  overall 78.0 < 90.0
+      1  overall 84.0 < 90.0

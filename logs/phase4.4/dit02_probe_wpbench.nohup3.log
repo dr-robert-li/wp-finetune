@@ -1,0 +1,24 @@
+[2026-06-10T03:54:21Z] WPBENCH_LIMIT=30 (per phase: knowledge + execution)
+[2026-06-10T03:54:22Z] --- baseline_v2: boot + wp-bench subset (models/qwen3-30b-wp-30_70-merged-v2) ---
+[vllm] booting wp-probe-baseline on :8021 model=/home/robert_li/Desktop/projects/wp-finetune/models/qwen3-30b-wp-30_70-merged-v2 gpu_mem_util=0.55
+[vllm] healthy after 499s; served model=wp-30_70
+[vllm] stopped wp-probe-baseline
+[2026-06-10T04:04:37Z] baseline_v2: ran=True overall=0.4857 scores={'knowledge': 0.6333333333333333, 'correctness': 0.375, 'quality': None, 'overall': 0.4857} err=None
+[2026-06-10T04:04:37Z] --- v3_full: boot + wp-bench subset (models/_staging/qwen3-30b-wp-30_70-reasoning-merged-v3) ---
+[vllm] booting wp-probe-v3full on :8021 model=/home/robert_li/Desktop/projects/wp-finetune/models/_staging/qwen3-30b-wp-30_70-reasoning-merged-v3 gpu_mem_util=0.55
+[vllm] healthy after 498s; served model=wp-30_70
+[vllm] stopped wp-probe-v3full
+[2026-06-10T04:14:57Z] v3_full: ran=True overall=0.381 scores={'knowledge': 0.5, 'correctness': 0.2916666666666667, 'quality': None, 'overall': 0.381} err=None
+[2026-06-10T04:14:57Z] --- probe_attn: boot + wp-bench subset (models/_staging/qwen3-30b-wp-30_70-probe-attn-only) ---
+[vllm] booting wp-probe-attn on :8021 model=/home/robert_li/Desktop/projects/wp-finetune/models/_staging/qwen3-30b-wp-30_70-probe-attn-only gpu_mem_util=0.55
+[vllm] healthy after 499s; served model=wp-30_70
+[vllm] stopped wp-probe-attn
+[2026-06-10T04:25:41Z] probe_attn: ran=True overall=0.4429 scores={'knowledge': 0.5333333333333333, 'correctness': 0.375, 'quality': None, 'overall': 0.4429} err=None
+[2026-06-10T04:25:41Z] --- probe_moe: boot + wp-bench subset (models/_staging/qwen3-30b-wp-30_70-probe-moe-only) ---
+[vllm] booting wp-probe-moe on :8021 model=/home/robert_li/Desktop/projects/wp-finetune/models/_staging/qwen3-30b-wp-30_70-probe-moe-only gpu_mem_util=0.55
+[vllm] healthy after 488s; served model=wp-30_70
+[vllm] stopped wp-probe-moe
+[2026-06-10T04:35:47Z] probe_moe: ran=True overall=0.4071 scores={'knowledge': 0.5333333333333333, 'correctness': 0.3125, 'quality': None, 'overall': 0.4071} err=None
+[2026-06-10T04:35:47Z] VERDICT: MoE carries the codegen damage — retrain with lower MoE rank / fewer expert modules; attention deltas largely codegen-safe.
+[2026-06-10T04:35:47Z] overall: baseline=0.4857 v3_full=0.381 attn=0.4429 moe=0.4071
+[2026-06-10T04:35:47Z] Wrote: /home/robert_li/Desktop/projects/wp-finetune/output/eval_reasoning_probe_dit02/dit02_attribution_result.json

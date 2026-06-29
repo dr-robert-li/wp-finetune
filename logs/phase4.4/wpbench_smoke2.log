@@ -1,0 +1,4 @@
+[vllm] booting wp-probe-smoke on :8021 model=/home/robert_li/Desktop/projects/wp-finetune/models/qwen3-30b-wp-30_70-merged-v2 gpu_mem_util=0.55
+[vllm] healthy after 498s; served model=wp-30_70
+[vllm] stopped wp-probe-smoke
+SMOKE_RESULT: {"ran": true, "wpbench_score": 0.2143, "scores": {"knowledge": 0.5, "correctness": 0.0, "quality": null, "overall": 0.2143}, "error": null}

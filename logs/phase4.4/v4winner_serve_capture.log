@@ -1,0 +1,68 @@
+[2026-06-13T07:51:10Z] === _04.4_v4winner_serve_capture.py START ===
+[2026-06-13T07:51:10Z] staging_dir: /home/robert_li/Desktop/projects/wp-finetune/models/_staging/qwen3-30b-wp-30_70-reasoning-merged-v4
+[2026-06-13T07:51:10Z] out_dir:     /home/robert_li/Desktop/projects/wp-finetune/output/eval_reasoning_v4_winner
+[2026-06-13T07:51:10Z] Preflight: staging_dir=/home/robert_li/Desktop/projects/wp-finetune/models/_staging/qwen3-30b-wp-30_70-reasoning-merged-v4
+[2026-06-13T07:51:10Z] Preflight: merge_report anchors_all_pass=True (report=/home/robert_li/Desktop/projects/wp-finetune/output/merge_v4_winner/merge_report.json)
+[2026-06-13T07:51:10Z] Preflight: staging dir OK
+[2026-06-13T07:51:10Z] NOTE: nvidia-smi memory check not available (normal for GB10 unified-memory)
+[2026-06-13T07:51:10Z] Loading dataset: /home/robert_li/Desktop/projects/wp-finetune/data/reasoning_dataset/openai_val.jsonl
+[2026-06-13T07:51:10Z] val rows: 141  sentinel rows: 24
+[2026-06-13T07:51:10Z] wp_judge filtered examples (judge_val): 121
+[2026-06-13T07:51:10Z] sentinel examples: 24
+[2026-06-13T07:51:10Z] reasoning_samples (cot+ctf): 120
+[2026-06-13T07:51:10Z] gen_samples (ctf): 35
+[2026-06-13T07:51:10Z] Booting vLLM: wp-v4winner-capture-vllm port=8021 gpu_mem_util=0.55
+[2026-06-13T08:00:04Z] vLLM healthy; served_identity=wp-30_70
+[2026-06-13T08:00:04Z] Served identity OK: wp-30_70
+[2026-06-13T08:00:04Z] Capturing judge_val_responses ...
+[2026-06-13T08:08:55Z] [judge_val] captured 20/121
+[2026-06-13T08:18:41Z] [judge_val] captured 40/121
+[2026-06-13T08:28:24Z] [judge_val] captured 60/121
+[2026-06-13T08:38:00Z] [judge_val] captured 80/121
+[2026-06-13T08:48:12Z] [judge_val] captured 100/121
+[2026-06-13T08:58:36Z] [judge_val] captured 120/121
+[2026-06-13T08:59:14Z] [judge_val] captured 121 rows -> /home/robert_li/Desktop/projects/wp-finetune/output/eval_reasoning_v4_winner/judge_val_responses.jsonl
+[2026-06-13T08:59:14Z] Capturing sentinel_responses (24 held-out invalid-PHP prompts) ...
+[2026-06-13T09:04:47Z] [sentinel] captured 20/24
+[2026-06-13T09:06:04Z] [sentinel] captured 24 rows -> /home/robert_li/Desktop/projects/wp-finetune/output/eval_reasoning_v4_winner/sentinel_responses.jsonl
+[2026-06-13T09:06:04Z] Capturing reasoning_samples (cot+ctf) ...
+[2026-06-13T09:22:28Z] === _04.4_v4winner_serve_capture.py START ===
+[2026-06-13T09:22:28Z] staging_dir: /home/robert_li/Desktop/projects/wp-finetune/models/_staging/qwen3-30b-wp-30_70-reasoning-merged-v4
+[2026-06-13T09:22:28Z] out_dir:     /home/robert_li/Desktop/projects/wp-finetune/output/eval_reasoning_v4_winner
+[2026-06-13T09:22:28Z] Preflight: staging_dir=/home/robert_li/Desktop/projects/wp-finetune/models/_staging/qwen3-30b-wp-30_70-reasoning-merged-v4
+[2026-06-13T09:22:28Z] Preflight: merge_report anchors_all_pass=True (report=/home/robert_li/Desktop/projects/wp-finetune/output/merge_v4_winner/merge_report.json)
+[2026-06-13T09:22:28Z] Preflight: staging dir OK
+[2026-06-13T09:22:28Z] NOTE: nvidia-smi memory check not available (normal for GB10 unified-memory)
+[2026-06-13T09:22:28Z] Loading dataset: /home/robert_li/Desktop/projects/wp-finetune/data/reasoning_dataset/openai_val.jsonl
+[2026-06-13T09:22:28Z] val rows: 141  sentinel rows: 24
+[2026-06-13T09:22:28Z] wp_judge filtered examples (judge_val): 121
+[2026-06-13T09:22:28Z] sentinel examples: 24
+[2026-06-13T09:22:28Z] reasoning_samples (cot+ctf): 120
+[2026-06-13T09:22:28Z] gen_samples (ctf): 35
+[2026-06-13T09:22:28Z] Booting vLLM: wp-v4winner-capture-vllm port=8021 gpu_mem_util=0.55
+[2026-06-13T09:30:47Z] vLLM healthy; served_identity=wp-30_70
+[2026-06-13T09:30:47Z] Served identity OK: wp-30_70
+[2026-06-13T09:30:47Z] [REUSE] judge_val_responses.jsonl already exists (121 rows) — skipping
+[2026-06-13T09:30:47Z] [REUSE] sentinel_responses.jsonl already exists (24 rows) — skipping
+[2026-06-13T09:30:47Z] Capturing reasoning_samples (cot+ctf) ...
+[2026-06-13T09:41:57Z] [reasoning] captured 20/120
+[2026-06-13T09:55:29Z] [reasoning] captured 40/120
+[2026-06-13T10:10:30Z] [reasoning] captured 60/120
+[2026-06-13T10:25:13Z] [reasoning] captured 80/120
+[2026-06-13T10:39:40Z] [reasoning] captured 100/120
+[2026-06-13T10:55:51Z] [reasoning] captured 120/120
+[2026-06-13T10:55:51Z] [reasoning] captured 120 rows -> /home/robert_li/Desktop/projects/wp-finetune/output/eval_reasoning_v4_winner/reasoning_samples.jsonl
+[2026-06-13T10:55:51Z] Capturing gen_samples (ctf) ...
+[2026-06-13T11:08:49Z] [gen] captured 20/35
+[2026-06-13T11:22:15Z] [gen] captured 35 rows -> /home/robert_li/Desktop/projects/wp-finetune/output/eval_reasoning_v4_winner/gen_samples.jsonl
+[2026-06-13T11:22:15Z] Running eval_gen (REVL-02 phpcs_pass_rate) ...
+[2026-06-13T11:25:55Z] eval_gen done: phpcs_pass_rate=0.9412
+[2026-06-13T11:25:56Z] vLLM container stopped.
+[2026-06-13T11:25:56Z] capture_manifest.json written: /home/robert_li/Desktop/projects/wp-finetune/output/eval_reasoning_v4_winner/capture_manifest.json
+[2026-06-13T11:25:56Z] === _04.4_v4winner_serve_capture.py COMPLETE ===
+[2026-06-13T11:25:56Z]   judge_val rows:       121
+[2026-06-13T11:25:56Z]   sentinel rows:        24
+[2026-06-13T11:25:56Z]   reasoning rows:       120
+[2026-06-13T11:25:56Z]   gen rows:             35
+[2026-06-13T11:25:56Z]   phpcs_pass_rate:      0.9412
+[2026-06-13T11:25:56Z]   served identity:      wp-30_70

@@ -1,0 +1,26 @@
+## REVIEWER: Codex
+
+### CtF v3 verdict: 17/20 pass
+
+- `#12 call_function::update_order_meta_from_object` — `C4` fail. The critique flags a high-severity N+1 write pattern, but the stated fix admits it mostly adds notes/grouping rather than removing the per-item `add_post_meta()` write loop. This is not a substantive remediation of the identified high issue.
+- `#41 VK_Blocks_Block_Loader::separate_assets_load_reducer` — `C4` fail. The high-severity critique says to merge the duplicated loops; the corrected preview still shows separate `$free_blocks` and `$pro_blocks` loops. High issue not actually fixed.
+- `#69 lmsace_connect_auto_create_webservice` — `C6` fail. This is Moodle code, not WordPress. Accepting it means the source filter is still leaking non-WP material into a WP-specific CtF set, so the critique/fix cannot be considered function-specific under the stated rubric.
+
+Residual issues compared to v2:
+- The major v2 regressions appear fixed in this sample: no bogus `$args/$params/$data` hallucinations outside scope, no `plugin-slug`, no obvious wrong-context `manage_options`, no cache-wrapper evasion replacing SQL fixes, and nonce/request-method alignment looks sane in the security samples reviewed.
+- Remaining weakness is narrower: some accepted entries still overstate remediation quality, and one non-WP sample slipped through filtering.
+
+### Agreement with "the fixes worked this time"
+
+PARTIALLY AGREE
+
+The generator change clearly fixed the catastrophic Round 1/2 failure modes. This sample looks materially better and mostly grounded. But it is not clean enough to call fully solved: 3/20 sampled accepts still fail rubric-level review, and two of those are “accepted despite not actually fixing the flagged high issue.”
+
+### Recommended action
+
+Accept with caveats
+
+Proceed to Phase 4.2 only after a targeted cleanup pass:
+- Drop non-WordPress entries like `#69`.
+- Re-scrub accepted entries where the top issue is `performance` or `code_quality` and verify the corrected code, not just the critique text, implements the claimed fix.
+- Keep the new real-agent pipeline; the core architectural fix appears to have worked.

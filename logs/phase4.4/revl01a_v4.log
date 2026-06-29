@@ -1,0 +1,22 @@
+[2026-06-09T15:57:59Z] === _04.4_revl01a_v4.py START ===
+[2026-06-09T15:57:59Z] v4 staging: /home/robert_li/Desktop/projects/wp-finetune/models/_staging/qwen3-30b-wp-30_70-reasoning-merged-v4-nolmhead
+[2026-06-09T15:57:59Z] out_dir:    /home/robert_li/Desktop/projects/wp-finetune/output/eval_reasoning_v4_nolmhead
+[2026-06-09T15:57:59Z] Preflight: checking v4 merge_report and staging dir ...
+[2026-06-09T15:57:59Z] Preflight OK: lm_head_excluded=True, anchors_all_pass=True
+[2026-06-09T15:57:59Z] Baseline REVL-01A Spearman from disk: 0.2678275724901261
+[2026-06-09T15:57:59Z] Baseline REVL-02 PHPCS from disk: 1.0
+[2026-06-09T15:57:59Z] Booting vLLM: wp-revl01a-v4-vllm model=/home/robert_li/Desktop/projects/wp-finetune/models/_staging/qwen3-30b-wp-30_70-reasoning-merged-v4-nolmhead port=8021 gpu_mem_util=0.55
+[2026-06-09T16:06:53Z] vLLM healthy; served model: wp-30_70
+[2026-06-09T16:06:53Z] Step 1: REVL-01A parse census + judge Spearman ...
+[2026-06-09T17:02:45Z] REVL-01A: parse_fail=30/121 rate=0.2479 gate_pass=False
+[2026-06-09T17:02:45Z] REVL-01A Spearman: 0.15341196250907996 vs baseline 0.2678275724901261 pass=False
+[2026-06-09T17:02:45Z] excluded: {'parse_fail': 30, 'no_calibrated_gt': 0, 'api_error': 0}
+[2026-06-09T17:02:45Z] Wrote: /home/robert_li/Desktop/projects/wp-finetune/output/eval_reasoning_v4_nolmhead/revl01a_v4.json
+[2026-06-09T17:02:45Z] Step 2: REVL-02 fresh PHPCS via eval_gen ...
+[2026-06-09T17:05:47Z] REVL-02 PHPCS: 1.0000 vs baseline 1.0000 (threshold 0.9800) pass=True
+[2026-06-09T17:05:47Z] Wrote: /home/robert_li/Desktop/projects/wp-finetune/output/eval_reasoning_v4_nolmhead/revl02_gen_phpcs_v4.json
+[2026-06-09T17:05:49Z] vLLM stopped.
+[2026-06-09T17:05:49Z] Step 3: Capturing v4 responses (--max-tokens 2048) ...
+[2026-06-09T17:05:49Z] >>> CAPTURE_v4: /home/robert_li/miniconda3/bin/python3 /home/robert_li/Desktop/projects/wp-finetune/scripts/capture_reasoning_responses.py --dataset data/reasoning_dataset/openai_val.jsonl --out /home/robert_li/Desktop/projects/wp-finetune/output/eval_reasoning_v4_nolmhead/reasoning_merged_v4/captured_responses.jsonl --include-streams cot,ctf --gpu-mem-util 0.55 --max-tokens 2048 --model-dir /home/robert_li/Desktop/projects/wp-finetune/models/_staging/qwen3-30b-wp-30_70-reasoning-merged-v4-nolmhead --served-name wp-30_70 --port 8021
+[capture] resolved model-dir: /home/robert_li/Desktop/projects/wp-finetune/models/_staging/qwen3-30b-wp-30_70-reasoning-merged-v4-nolmhead
+[capture] resolved served-name: wp-30_70  port: 8021

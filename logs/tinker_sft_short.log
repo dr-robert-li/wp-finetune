@@ -1,0 +1,18 @@
+[sft] stage=short base=Qwen/Qwen3-30B-A3B rank=32 lr=4.99e-04 epochs=1 max_steps=None train_batches=70 bs=8
+[sft] step 1 epoch 0 loss=12.400575518608093
+[sft] step 2 epoch 0 loss=10.437620759010315
+[sft] step 3 epoch 0 loss=8.51881355047226
+[sft] step 10 epoch 0 loss=8.818273067474365
+[sft] step 20 epoch 0 loss=7.973284184932709
+[sft] step 30 epoch 0 loss=7.191818594932556
+[sft] step 40 epoch 0 loss=6.7719873785972595
+[sft] step 50 epoch 0 loss=6.77903425693512
+[sft] step 60 epoch 0 loss=7.32923948764801
+[sft] step 70 epoch 0 loss=6.77028101682663
+[sft] training done: 70 steps. loss first=12.400575518608093 last=6.77028101682663
+/home/robert_li/Desktop/projects/wp-finetune/scripts/tinker_reasoning_sft.py:132: DeprecationWarning: The 'name' parameter of save_weights_and_get_sampling_client() is deprecated and has no effect — checkpoints are always ephemeral. This parameter will be removed in a future release. Remove the 'name' argument from your call. If you need a persistent checkpoint, use save_weights_for_sampler(name=...) + create_sampling_client(model_path=...) instead.
+  sampling_client = tc.save_weights_and_get_sampling_client(name=save_name)
+[sft] saved weights -> sampling client (name=wp-reasoning-short)
+[eval] sample[0] head: 'WPCS Compliance: score 9/10 — The code follows standard WordPress coding standards. It uses proper indentation, docblocks with @param and @return annotations, and standard PHP syntax. There are no obv'
+[eval] terse(no [/REASONING]) = 0/20 = 0.000 (temp=0.0, max_tokens=1536)
+RESULT stage=short steps=70 loss_first=12.400575518608093 loss_last=6.77028101682663 terse_rate=0.000 n_eval=20

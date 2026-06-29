@@ -1,0 +1,18 @@
+2026-06-26 02:06:24,483 INFO checkJ: Controlled judge-axis eval: 20 fixed prompts, group_size=2 temp=0.20
+2026-06-26 02:06:28,871 INFO tinker.lib.public_interfaces.service_client: ServiceClient initialized for session eb2891da-74a5-542e-8bd8-e51040f3ff99
+2026-06-26 02:06:28,871 INFO checkJ: warm-start sampler...
+2026-06-26 02:06:30,625 INFO tinker.lib.public_interfaces.service_client: TrainingClient initialized for model eb2891da-74a5-542e-8bd8-e51040f3ff99:train:0
+2026-06-26 02:06:46,965 INFO checkJ: fixed-step-50 sampler... tinker://3207bc66-b26a-549a-ad7a-a02cb401eac1:train:0/sampler_weights/step-50
+2026-06-26 02:06:47,301 INFO checkJ: stale-step-50 (negative control) sampler... tinker://a99724f2-36d3-577b-b51f-94af9198e7d8:train:0/sampler_weights/step-50
+2026-06-26 02:12:19,907 INFO checkJ: [warm-start] n=40 mean_fixcorr=0.4371 median=0.2500 | tiers 0.0=0 0.25=30 hi=10
+2026-06-26 02:18:33,495 INFO checkJ: [fixed-step50] n=40 mean_fixcorr=0.6056 median=0.2500 | tiers 0.0=0 0.25=21 hi=19
+2026-06-26 02:24:24,164 INFO checkJ: [stale-step50(ctrl)] n=40 mean_fixcorr=0.6557 median=0.9955 | tiers 0.0=0 0.25=18 hi=22
+
+===== CONTROLLED JUDGE-AXIS fix_correctness (fixed prompts, temp 0.20) =====
+policy                  n mean_fixcorr  Δ vs warm
+warm-start             40       0.4371    +0.0000
+fixed-step50           40       0.6056    +0.1685
+stale-step50(ctrl)     40       0.6557    +0.2186
+
+VERDICT: CONFOUNDED (stale ALSO > warm) -> eval/metric artifact, fixed win is meaningless -> investigate eval
+(fixed Δ=+0.1685, stale-ctrl Δ=+0.2186)
