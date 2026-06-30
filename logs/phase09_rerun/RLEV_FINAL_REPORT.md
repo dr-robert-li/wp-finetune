@@ -75,6 +75,23 @@ validated RLEV-01 targets, and regressed codegen. Classic Goodhart: moved the re
   step-200/step-400 checkpoints (best teacher-Spearman) on wp-bench before deciding — cheaper than a
   re-train and may dominate step-500.
 
+## PROBE RESULT (2026-07-01) — option 3 executed → RECOMMENDATION: REJECT RL, ship v1.2 SFT
+wp-bench on the best mid-run checkpoints (the cheap disambiguating probe):
+| checkpoint | wp-bench overall | vs v1.2 0.4616 |
+|---|---|---|
+| step-200 | 0.3926 | −0.069 FAIL |
+| step-400 | 0.3926 | −0.069 FAIL |
+| step-500 | 0.4125 | −0.049 FAIL (least-bad) |
+- All three RL checkpoints REGRESS codegen below v1.2; step-500 is the least-bad, mid-run is worse.
+  (step-200/400 land at the identical weighted 0.3926 — 145/344 correct each, different task sets;
+  96 boundary tasks flip net-zero given the tiny ~0.009 KL drift. Genuinely distinct evals, verified
+  per-task; not a caching artifact.)
+- Combined with judge-Spearman (no checkpoint beyond noise): **NO salvageable RL checkpoint exists.**
+- **RECOMMENDATION: reject RL-as-configured; keep v1.2 SFT as the v3.0 model.** A re-train is only
+  worth it with a REWARD REDESIGN (the fix-correctness proxy doesn't transfer to judge-Spearman and
+  costs codegen) — not merely a higher LR, which would optimize the same mis-specified proxy harder.
+  Probe artifacts: output/rl_eval/wpbench_seedA_step{200,400}/.
+
 ## Artifacts
 - wp-bench: output/rl_eval/wpbench_seedA_step500/  | judge-Spearman: output/rl_eval/rlev01_summary.json + logs/phase09_rerun/rlev01_score.log
 - anti-hack: output/antihack_validation/acceptance_report.{v12_judge,rl_step500}.json

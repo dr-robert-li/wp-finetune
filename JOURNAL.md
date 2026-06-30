@@ -4,6 +4,18 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-07-01 — The cheap probe that closed the door on RL
+
+The step-500 gate failed but left one honest question open: step-500 was the *worst* checkpoint on every axis that moved — teacher-Spearman peaked at 200 and 400, reward was highest mid-run — so maybe the 500-step grind ruined a checkpoint that was actually good earlier. Before recommending anything as expensive as a 31-hour re-train, that question was worth twenty minutes. I wp-benched step-200 and step-400 through the exact pipeline already built for step-500: export the sampler weights, merge against stock base, boot vLLM, grade 344 tasks.
+
+Both came back at 0.3926 — below step-500's 0.4125, and well below the v1.2 bar of 0.4616. So the ranking on codegen is the inverse of the judge-Spearman peaks: the mid-run checkpoints that looked best on the judge axis are the *worst* on generation. Every RL checkpoint regresses codegen; none beats judge-Spearman noise. There is no salvageable checkpoint hiding in the run. The door is closed.
+
+The identical 0.3926 for both 200 and 400 stopped me — two different checkpoints landing on the same weighted score to four decimals is the kind of coincidence that's usually a bug. I checked per-task before believing it: the answers differ, the prompt hashes differ, 96 of 344 graded verdicts flip between the two checkpoints. They each get 145 right, just a different 145, and the knowledge/execution split happens to weight to the same aggregate. That's real, not a cache collision — and it's exactly what you'd expect from checkpoints separated by almost no KL: the argmax is stable on the easy and hard tasks and only the boundary cases flip, roughly balanced, so the aggregate barely moves while the identity of the correct set churns.
+
+The recommendation is therefore unambiguous: reject RL-as-configured and ship v1.2 SFT as v3.0. And the more useful conclusion for whoever picks this up — don't reach for a higher learning rate. The whole run is a clean Goodhart demonstration: the policy maximized the fix-correctness proxy it was paid on, the proxy's intended target (judge calibration) didn't follow, and an untargeted capability (codegen) paid for it. Cranking LR optimizes the same mis-specified objective harder. If RL is revisited it needs a reward that provably tracks judge-Spearman and a codegen-regression guardrail in the loop — a reward-design problem, which is where Phase 08.1 was already pointing, not a hyperparameter.
+
+---
+
 ## 2026-06-30 — The RL run that moved the reward but not the target
 
 seedA reached step 500 clean — both `step-500` and `final-step-500` checkpoints landed, KL pinned around 0.009 the whole way, e_frac steady near 0.96, never a halt. The monitoring was the easy half: a small bash watchdog keyed on step number (never on wall-clock, because the metrics `ts` is UTC and the box is GMT+10) that polled the metrics tail, the PID, KL, e_frac, and both judge endpoints every two minutes and exited the moment a target checkpoint landed or anything breached. Five trend reads at 300/350/400/450/500 confirmed the within-run fix-correctness plateau the binding gate had already bought at 250: fixed-50 0.385 climbing to roughly 0.41 and holding, echo-adversary nailed at 0.25 every single read. On the proxy reward the run looked like a modest, honest win.
