@@ -1370,6 +1370,34 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "RVAL-03 test seam (T-082-07)."
         ),
     )
+    # ---------------------------------------------------------------------------
+    # Calibration reward args (RVAL-02 / D-08.2 / Plan 08.2-03)
+    # The judge-axis now supports a parameterized calibration term vs TRAIN teacher GT.
+    # Default form "hybrid", weight 0.0 = pure fix_correctness behavior (back-compat).
+    # Plan 04 selects the winning (form, weight) after the offline sweep.
+    # Plan 05's assembled smoke command passes these flags — they MUST exist here.
+    # ---------------------------------------------------------------------------
+    parser.add_argument(
+        "--calib-form",
+        type=str,
+        default="hybrid",
+        help=(
+            "Calibration reward form for the judge axis (RVAL-02). "
+            "One of: 'pairwise', 'hybrid', 'calibration'. "
+            "Default 'hybrid' (pairwise + small abs-error term for intra-group gradient). "
+            "Plan 04 selects the winning form after the offline sweep."
+        ),
+    )
+    parser.add_argument(
+        "--calib-weight",
+        type=float,
+        default=0.0,
+        help=(
+            "Weight of the calibration term in the judge reward blend (RVAL-02). "
+            "0.0 (default) = pure fix_correctness behavior, unchanged from prior runs. "
+            "Plan 04 selects the winning weight after the offline sweep."
+        ),
+    )
 
     # Output-path overrides — let a smoke/test run isolate its outputs from the
     # canonical (git-tracked) manifest/metrics that Phase 10 D-10-02 reads.

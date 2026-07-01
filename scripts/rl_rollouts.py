@@ -1026,12 +1026,89 @@ def collect_rollouts(
         # the module default (0.3) to amplify the already-graded consistency signal
         # as a backstop against the >90 saturation cluster on parseable outputs.
         # Guard (weight>0.5 -> ValueError) is NOT relaxed — 0.45 <= 0.5 (D-09-05).
+        #
+        # Calibration term (RVAL-02 / Plan 08.2-03): the judge scalar is optionally
+        # augmented with a per-completion pairwise rank-agreement-vs-TRAIN-teacher-GT
+        # calibration reward, loaded once per run from data/rl_probe/judge_gt_sidecar.jsonl.
+        # - calib_weight=0.0 (default): augment_judge_scalar is a no-op — byte-for-byte
+        #   back-compat with prior behavior (0*NaN trap guarded in augment_judge_scalar).
+        # - calib_weight>0: folded INSIDE [0,1] before downstream MO-GRPO centering.
+        #   The D-09-05 consistency cap and downstream centering are UNCHANGED (CR-05).
+        # - GT join: per completion's code_hash from _judge_original_code; missing GT
+        #   -> NaN calib_reward -> augment_judge_scalar falls back to judge_scalar (no-op).
+        calib_weight = float(getattr(args, "calib_weight", 0.0))
+        calib_form = str(getattr(args, "calib_form", "hybrid"))
+
+        if calib_weight > 0.0:
+            # Load the TRAIN-GT anchor set once (lazy singleton, thread-safe).
+            # Import here (not at module level) to avoid pulling reward_calibration into
+            # the module scope for callers that never use the calibration path.
+            from scripts.reward_calibration import (  # noqa: PLC0415
+                get_anchor_set,
+                calibration_reward,
+                augment_judge_scalar,
+            )
+            _anchor_set, _gt_map = get_anchor_set()
+            # Dimension weights for _derive_prose_overall fallback (same as oracle).
+            from eval.output_parsers import load_dim_map as _ldm  # noqa: PLC0415
+            import hashlib as _hashlib  # noqa: PLC0415
+            _dm = _ldm()
+            _dim_weights = {k: v for k, v in _dm["dimension_weights"].items() if not k.startswith("_")}
+        else:
+            # calib_weight=0: skip the calibration path entirely (guard 0*NaN trap).
+            from scripts.reward_calibration import augment_judge_scalar  # noqa: PLC0415
+            _anchor_set = []
+            _gt_map = {}
+            _dim_weights = {}
+
         for i, completion_obj in enumerate(judge_completions):
             combined_scalar = combine_judge_reward(
                 fix_correctness=fix_correctness_scores[i],
                 consistency=consistency_scores[i],
                 weight=judge_consistency_weight_lever2,
             )
+
+            # Calibration augmentation (RVAL-02). At calib_weight=0, augment_judge_scalar
+            # is the identity — the combined_scalar passes through unchanged.
+            if calib_weight > 0.0:
+                # Derive model_overall from this completion's judge score.
+                from eval.output_parsers import parse_judge_scores  # noqa: PLC0415
+                from eval.eval_judge import _derive_prose_overall  # noqa: PLC0415
+                parsed = parse_judge_scores(completion_obj.completion, "auto")
+                if parsed and parsed.get("dimension_scores"):
+                    model_overall = (
+                        float(parsed["overall"])
+                        if "overall" in parsed
+                        else _derive_prose_overall(parsed["dimension_scores"], _dim_weights)
+                    )
+                else:
+                    model_overall = None
+
+                # Look up teacher GT via content-hash of original code (T-082-02).
+                # Uses same SHA-256[:16] content-hash join as build_reward_gt_sidecar.py
+                # (T-082-02 / Plan 01 design — reorder-proof GT join).
+                item = judge_by_gid.get(getattr(completion_obj, "group_id", None), {})
+                orig = _judge_original_code(item)
+                code_hash = _hashlib.sha256(orig.encode()).hexdigest()[:16] if orig else ""
+                teacher_overall = _gt_map.get(code_hash)
+
+                if model_overall is not None and teacher_overall is not None:
+                    calib_r = calibration_reward(
+                        model_overall=float(model_overall),
+                        teacher_overall=float(teacher_overall),
+                        anchor_set=_anchor_set,
+                        form=calib_form,
+                    )
+                else:
+                    # Missing parse or missing GT -> NaN (augment_judge_scalar falls back)
+                    calib_r = float("nan")
+
+                combined_scalar = augment_judge_scalar(
+                    judge_scalar=combined_scalar,
+                    calib_reward=calib_r,
+                    calib_weight=calib_weight,
+                )
+            # calib_weight==0: combined_scalar is already correct (no-op path).
 
             # Wrap in a RewardResult-like object for build_trajectory_groups
             reward_obj = _make_reward_result(
