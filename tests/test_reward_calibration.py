@@ -423,3 +423,91 @@ class TestPhase8Regression:
         assert result == pytest.approx(judge_scalar), (
             f"Expected fallback to judge_scalar {judge_scalar}, got {result}"
         )
+
+
+# ---------------------------------------------------------------------------
+# Task 2: --calib-form / --calib-weight in rl_train._parse_args (RED)
+# ---------------------------------------------------------------------------
+
+class TestRlTrainCalibArgs:
+    """Task 2: rl_train._parse_args must expose --calib-form and --calib-weight.
+
+    Plan 05's smoke command depends on these flags existing. If they are absent,
+    argparse raises SystemExit(2) on an unrecognised argument, breaking the smoke.
+    """
+
+    def test_calib_form_arg_exists(self):
+        """--calib-form must be a registered argument with default 'hybrid'."""
+        train = pytest.importorskip("scripts.rl_train")
+        args = train._parse_args(["--dry-run"])
+        assert hasattr(args, "calib_form"), (
+            "_parse_args must expose calib_form attribute (--calib-form not registered)"
+        )
+        assert args.calib_form == "hybrid", (
+            f"Default calib_form must be 'hybrid', got {args.calib_form!r}"
+        )
+
+    def test_calib_weight_arg_exists(self):
+        """--calib-weight must be a registered float argument with default 0.0."""
+        train = pytest.importorskip("scripts.rl_train")
+        args = train._parse_args(["--dry-run"])
+        assert hasattr(args, "calib_weight"), (
+            "_parse_args must expose calib_weight attribute (--calib-weight not registered)"
+        )
+        assert args.calib_weight == pytest.approx(0.0), (
+            f"Default calib_weight must be 0.0 (no behavior change until Plan 04 selects), "
+            f"got {args.calib_weight}"
+        )
+
+    def test_calib_form_can_be_set(self):
+        """--calib-form pairwise must parse cleanly."""
+        train = pytest.importorskip("scripts.rl_train")
+        args = train._parse_args(["--dry-run", "--calib-form", "pairwise"])
+        assert args.calib_form == "pairwise"
+
+    def test_calib_weight_can_be_set(self):
+        """--calib-weight 0.3 must parse as float 0.3."""
+        train = pytest.importorskip("scripts.rl_train")
+        args = train._parse_args(["--dry-run", "--calib-weight", "0.3"])
+        assert args.calib_weight == pytest.approx(0.3)
+
+    def test_grep_calib_in_rl_train(self):
+        """grep -n 'calib' scripts/rl_train.py must return at least 2 lines (the two new args)."""
+        import subprocess
+        result = subprocess.run(
+            ["grep", "-n", "calib", str(REPO / "scripts/rl_train.py")],
+            capture_output=True, text=True
+        )
+        lines = [l for l in result.stdout.splitlines() if l.strip()]
+        assert len(lines) >= 2, (
+            f"Expected >= 2 lines matching 'calib' in rl_train.py, got {len(lines)}:\n"
+            + "\n".join(lines)
+        )
+
+
+class TestCollectRolloutsCalibWiring:
+    """Task 2: collect_rollouts wiring — calib_weight=0 leaves all existing tests green."""
+
+    def test_augment_judge_scalar_imported_in_rollouts(self):
+        """rl_rollouts must be able to import augment_judge_scalar from reward_calibration."""
+        rc = pytest.importorskip("scripts.reward_calibration")
+        assert hasattr(rc, "augment_judge_scalar"), (
+            "reward_calibration must export augment_judge_scalar"
+        )
+
+    def test_combine_judge_reward_unchanged_at_weight_zero(self):
+        """combine_judge_reward output must equal augment_judge_scalar output at calib_weight=0."""
+        rr = pytest.importorskip("scripts.rl_rollouts")
+        rc = pytest.importorskip("scripts.reward_calibration")
+
+        for fix_c, cons in [(0.0, 0.0), (0.5, 0.5), (1.0, 0.8), (0.25, 0.75)]:
+            base = rr.combine_judge_reward(fix_c, cons, weight=rr.judge_consistency_weight_lever2)
+            augmented = rc.augment_judge_scalar(
+                judge_scalar=base,
+                calib_reward=0.9,   # nonzero but must be ignored at weight=0
+                calib_weight=0.0,
+            )
+            assert augmented == pytest.approx(base), (
+                f"calib_weight=0 must be identity: fix={fix_c}, cons={cons}, "
+                f"base={base:.6f}, augmented={augmented:.6f}"
+            )
