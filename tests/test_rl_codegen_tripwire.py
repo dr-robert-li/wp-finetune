@@ -20,7 +20,6 @@ import pytest
 # Reuse shared test helpers from the integration suite to avoid drift.
 # ---------------------------------------------------------------------------
 from tests.test_rl_train_integration import (
-    _FakeSamplingClient,
     _gen_pool,
     _judge_pool,
     _make_args,
