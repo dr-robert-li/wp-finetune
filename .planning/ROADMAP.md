@@ -58,7 +58,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 7: Router Profiling & Protected Expert Set** - Gradient-free profiling pass tagging expert routing counts by task token affinity, identify dual-purpose experts that must not be pruned (D-10), with stability verification and concentration report (COMPLETE 2026-06-19 — all automated gates green under D-09 CI-aware; 1,480-expert protected mask exported; human sign-off APPROVED, council-unanimous on both judgment items)
 - [x] **Phase 8: Reward Infrastructure** - Build composite reward pipeline (70% verifiable / 30% judge) with security hard gate, MO-GRPO normalization, VeRPO partial credit, and anti-hack eval set (D-11) (COMPLETE 2026-06-20 — verified + HUMAN-UAT; consumed by Phase 9)
 - [x] **Phase 8.1: Reward Redesign** - INSERTED 2026-06-24. Replace the effectively-binary 0.7 fix_correctness verifiable term with graded partial credit (fraction of PHPCS/security/syntax sub-checks) + rebalance/per-group diversity shaping so GSPO groups carry non-zero advantage, and add diagnostic logging (component means, frac_groups_all_zero, entropy). Triggered by Phase 9's flat-reward finding (binary reward → uniform groups → advantage collapse → vanishing gradient; RLEV-01 verdict FLAT). Gates a targeted Phase 9 rerun. (completed 2026-06-24)
-- [ ] **Phase 8.2: Reward Validity Gate** - INSERTED 2026-07-01. Close the gap 08.1 left: 08.1 fixed reward SHAPE (gradient existed) but never checked reward VALIDITY (does the reward track the validated target?). Build an offline reward-validity oracle (a candidate reward's per-checkpoint trajectory must rank-correlate with the validated teacher-Spearman target before any GPU), redesign the judge-axis reward around the only form that passes it (per-group pairwise rank-agreement vs teacher GT), add an in-run wp-bench codegen trip-wire, and gate a 50/250-step smoke on the VALIDATED metric. Triggered by Phase 10 RLEV verdict: seedA RL Goodharted — fix_correctness proxy rose +0.028 but teacher-Spearman didn't move and wp-bench regressed −0.049 (oracle: fix_correctness↔target corr −0.24 INVALID; pairwise_rank_agreement +0.70 VALID). Gates any future RL rerun. (planning)
+- [x] **Phase 8.2: Reward Validity Gate** - INSERTED 2026-07-01. Close the gap 08.1 left: 08.1 fixed reward SHAPE (gradient existed) but never checked reward VALIDITY (does the reward track the validated target?). Build an offline reward-validity oracle (a candidate reward's per-checkpoint trajectory must rank-correlate with the validated teacher-Spearman target before any GPU), redesign the judge-axis reward around the only form that passes it (per-group pairwise rank-agreement vs teacher GT), add an in-run wp-bench codegen trip-wire, and gate a 50/250-step smoke on the VALIDATED metric. Triggered by Phase 10 RLEV verdict: seedA RL Goodharted — fix_correctness proxy rose +0.028 but teacher-Spearman didn't move and wp-bench regressed −0.049 (oracle: fix_correctness↔target corr −0.24 INVALID; pairwise_rank_agreement +0.70 VALID). Gates any future RL rerun. (planning) (completed 2026-07-01)
 - [x] **Phase 9: GSPO Training** - Dual-mode RL (gen + judge reasoning) on FULL MoE with router-shift stabilization and collapse monitoring; GSPO (sequence-level) is the primary objective for MoE stability (D-08); GRPO is an optional fallback decided at Phase 9 planning time; protected experts from Phase 7 monitored — Complete 2026-06-20 (live Tinker run tracked in 09-HUMAN-UAT.md)
 - [ ] **Phase 10: RL Comparative Evaluation** - Compare RL model against v1.2 SFT baseline on wp-bench and all 9 eval dimensions; gates v3.0
 
@@ -124,6 +124,7 @@ Plans:
 - [x] 02-05-PLAN.md — [GAP CLOSURE] Gap analysis + mutations (Python, no LLM) then synthetic generation via Claude Code agents (~500 rejection examples)
 - [x] 02-06-PLAN.md — [GAP CLOSURE] Judge synthetics + generate judge training data via Claude Code agents (rubric-scored 0-100 examples)
 - [x] 02-07-PLAN.md — [GAP CLOSURE] CoT reasoning via Claude Code agents + export dataset (Python) + human validation checkpoint
+
 <!-- 02-04..07 executed 2026-03-29 via /run-data-pipeline; checkboxes ticked + re-verified 2026-06-26 (02-VERIFICATION.md status: passed). -->
 
 ### Phase 3: Model Prep and Training
@@ -487,15 +488,16 @@ Plans:
   3. An in-run codegen trip-wire guards generation: a periodic wp-bench probe (reuse `scripts/_rlev01_wpbench_ckpt.py`) early-stops the run if codegen drops below the v1.2 SFT bar (0.4616).
   4. An offline reward weight/form sweep on `data/rl_probe/judge_probe_corpus.jsonl`, scored by the oracle, selects the highest reward↔target-correlation form with no codegen penalty.
   5. A 50/250-step 2-seed RL smoke is PLANNED and gated on the VALIDATED metric (within-run paired teacher-Spearman trend + codegen trip-wire + echo-adversary ≤0.30), kill-at-50 if the validated metric isn't moving — NOT executed in this phase (stops before GPU/Tinker spend; execution is a gated Phase 9 rerun).
+
 **Skill**: No new skill — `scripts/_reward_validity_oracle.py` (built), `scripts/_rlev01_wpbench_ckpt.py` (built, reused), edits to `scripts/reward_pipeline.py` / `scripts/rl_rollouts.py` + pytest. Consumes Phase 10 `RLEV_FINAL_REPORT.md` + `ORACLE_FINDING.md`.
 **Gates**: any future Phase 9 RL rerun — no rerun until SC1–SC4 hold and SC5's smoke passes the validated-metric gate.
 **Plans**: 5 plans (planned 2026-07-01; 4 waves; RVAL-01..05 map to SC1..SC5; all offline/CPU — HARD boundary: no GPU/Tinker spend, SC5 smoke is spec-only)
 
-- [ ] 08.2-01-PLAN.md — [W1] Formalize oracle→standing gate (run_validity_gate + regression test + GATE-RULE.md) + the TRAIN-teacher-GT wiring precondition (content-hash sidecar; val held out) [RVAL-01]
-- [ ] 08.2-02-PLAN.md — [W1] In-run codegen trip-wire (reuse _rlev01_wpbench_ckpt) wired to rl_train checkpoint cadence; halt below 0.4616 via existing seam; no-GPU dry-run test [RVAL-03]
-- [ ] 08.2-03-PLAN.md — [W2] Per-group pairwise-rank-agreement-vs-TRAIN-teacher calibration term (parameterized form+weight) in reward_pipeline+rl_rollouts; registered in oracle FORMS → VALID; no Phase-8 regression [RVAL-02]
-- [ ] 08.2-04-PLAN.md — [W3] Offline (form,weight) sweep on the GT-attached probe corpus; DUAL-LENS select (oracle CI-lower>0 + 08.1 gradient density + echo≤0.30); ranked table + selected config [RVAL-04]
-- [ ] 08.2-05-PLAN.md — [W4] Gated 50/250-step 2-seed smoke SPEC + guarded launcher (validated-metric gates + kill-at-50); execution OUT-OF-SCOPE — dry-print only, no GPU spend [RVAL-05]
+- [x] 08.2-01-PLAN.md — [W1] Formalize oracle→standing gate (run_validity_gate + regression test + GATE-RULE.md) + the TRAIN-teacher-GT wiring precondition (content-hash sidecar; val held out) [RVAL-01]
+- [x] 08.2-02-PLAN.md — [W1] In-run codegen trip-wire (reuse _rlev01_wpbench_ckpt) wired to rl_train checkpoint cadence; halt below 0.4616 via existing seam; no-GPU dry-run test [RVAL-03]
+- [x] 08.2-03-PLAN.md — [W2] Per-group pairwise-rank-agreement-vs-TRAIN-teacher calibration term (parameterized form+weight) in reward_pipeline+rl_rollouts; registered in oracle FORMS → VALID; no Phase-8 regression [RVAL-02]
+- [x] 08.2-04-PLAN.md — [W3] Offline (form,weight) sweep on the GT-attached probe corpus; DUAL-LENS select (oracle CI-lower>0 + 08.1 gradient density + echo≤0.30); ranked table + selected config [RVAL-04]
+- [x] 08.2-05-PLAN.md — [W4] Gated 50/250-step 2-seed smoke SPEC + guarded launcher (validated-metric gates + kill-at-50); execution OUT-OF-SCOPE — dry-print only, no GPU spend [RVAL-05]
 
 ### Phase 9: GSPO Training
 

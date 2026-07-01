@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
-current_phase: 10
-current_phase_name: Wave 0 complete; BLOCKED at Task-3 human gate — live RL run not landed
-status: blocked
+current_phase: 09
+current_phase_name: GSPO Training
+status: planning
 stopped_at: context exhaustion at 100% (2026-06-28)
-last_updated: "2026-06-30T23:59:20.394Z"
+last_updated: "2026-07-01T02:34:14.389Z"
 progress:
   total_phases: 15
-  completed_phases: 13
-  total_plans: 51
-  completed_plans: 51
-  percent: 87
+  completed_phases: 14
+  total_plans: 56
+  completed_plans: 56
+  percent: 93
 ---
 
 # Project State
@@ -22,11 +22,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 10 — RL Comparative Evaluation (Wave 0 done + committed; BLOCKED at Task-3 human gate — live RL run not landed)
+**Current focus:** Phase 08.2 — reward-validity
 
 ## Current Position
 
-Phase: 10 — RL Comparative Evaluation (Wave 0 complete; BLOCKED at Task-3 human gate — live RL run not landed)
+Phase: 09 — GSPO Training
 Prev: Phase 09 (gspo-training) — COMPLETE 2026-06-20, 6/6 plans
 Requirements: RLEV-01 (RL vs v1.2 SFT baseline on wp-bench + 9 dims, no regression), RLEV-02 (reward-convergence + router-shift + protected-expert retention + anti-hack report)
 Next: plan Phase 10. NOTE: Phase 10 execution consumes the metrics from Phase 9's live Tinker RL run — that run is credential-gated and still tracked partial in 09-HUMAN-UAT.md, so it must complete before Phase 10 can produce real comparison results.
@@ -147,7 +147,7 @@ Progress: [██████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 23
+- Total plans completed: 30
 - Average duration: 9 min
 - Total execution time: 0.62 hours
 
@@ -162,6 +162,7 @@ Progress: [██████████] 100%
 | 8 | 4 | - | - |
 | 09 | 6 | - | - |
 | 08.1 | 4 | - | - |
+| 08.2 | 5 | - | - |
 
 **Recent Trend:**
 
