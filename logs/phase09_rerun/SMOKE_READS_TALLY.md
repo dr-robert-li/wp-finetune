@@ -57,3 +57,27 @@ refined hybrid (calibration + a real codegen/anti-hack term) is NOT foreclosed b
 This REINFORCES Phase-08.2's conclusion (no offline-safe reward found) and the Phase-10 reject-RL verdict.
 **Recommendation stands: hold RL, ship v1.2 SFT for v3.0.** Cost paid: v4 save_state regen (270 SFT steps) +
 ~52 RL steps + ρ_initial/step-50 captures. Kill-at-50 discipline worked as designed.
+
+---
+
+## ADDENDUM 2026-07-02 — verdict RE-LABELED (root cause found: calib never fired)
+
+Code review found the 07-01 smoke's GT hash-join was DEAD: the reward path hashed RAW
+original code (`rl_rollouts.py:1092`) while `build_reward_gt_sidecar.py` hashed
+whitespace-NORMALIZED code → join 0/482 → `calib_r=NaN` for every completion →
+`augment_judge_scalar` fell back to the raw judge scalar. With the consistency scorer
+also dead (ANTHROPIC keys unset → 0.0 at 0.45 weight), the run's effective reward was
+**pure fix_correctness** — the exact reward Phase 10 proved Goodharts. Proof: raw-hash
+join = 0/482; normalized-hash join = 342/482.
+
+**Re-label:** this tally's kill verdict is "pure-fc re-confirmed Goodhart (third time),"
+NOT "hybrid@0.8 failed to move the metric." hybrid@0.8 was never in the loss and remains
+UNTESTED by this run. The observed signature (fc +0.025, teacher-Spearman flat,
+ENTROPY_COLLAPSE) is exactly what pure-fc training predicts.
+
+Fixes + loud-fail wiring shipped (commit "fix(08.2 reward): GT hash-join was DEAD…"):
+canonical `normalized_code_hash` both sides, GT-coverage pool filter (482→342),
+per-step calib telemetry, step-0 CALIB_JOIN_DEAD halt, codegen trip-wire
+misconfiguration halt (+ `--codegen-probe-model-dir` flag), explicit consistency
+weight-0 when unkeyed. Rerun: `output/rl_checkpoints/smoke_seedA2/` (2026-07-02) —
+the FIRST actual test of hybrid@0.8, same kill-at-50 discipline, ρ_initial 0.6243.
