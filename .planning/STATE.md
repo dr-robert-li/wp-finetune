@@ -5,8 +5,8 @@ milestone_name: MVP
 current_phase: 09
 current_phase_name: GSPO Training
 status: planning
-stopped_at: context exhaustion at 100% (2026-06-28)
-last_updated: "2026-07-01T02:34:14.389Z"
+stopped_at: Gated smoke (Option B) KILLED at step 50 — hybrid@0.8 flat teacher-Spearman; reject-RL reinforced, ship v1.2 SFT
+last_updated: "2026-07-02T00:00:00.000Z"
 progress:
   total_phases: 15
   completed_phases: 14
@@ -308,8 +308,11 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-28T07:22:06.605Z
-Stopped at: context exhaustion at 100% (2026-06-28)
+Last session: 2026-07-02T00:00:00.000Z
+Stopped at: Path A executed (regen v4 save_state → gated smoke). Smoke KILLED at step 50: hybrid@0.8 did not move validated teacher-Spearman above warm-start noise (Δ+0.015 < +0.02 bar; ρ_initial 0.6243), while forbidden fix_correctness proxy rose +0.025 = Goodhart-consistent. Kill-at-50 fired as designed. Reject-RL reinforced → ship v1.2 SFT for v3.0. Loadable v4 save_state now exists (reusable). Artifacts: logs/phase09_rerun/SMOKE_READS_TALLY.md. Resume = ./.continue-here.md (user decides: accept verdict → v3.0 packaging, OR refine non-code-blind reward + re-smoke with Gate-2 armed).
+
+Prior session: 2026-07-01T02:38:02.215Z
+Stopped at: context exhaustion at 100% (2026-07-01)
 
 Prior session: 2026-06-02T21:31:00.000Z
 Stopped at: Phase 4.4 CLOSED **REJECTED** at REVL-05 (human). All automated gates run; merge NOT promoted; D-05 disposition pending (recommend Phase 4.3 format-stability re-train). See `04.4-GATE-LEDGER.md` + `04.4-D05-DIAGNOSIS.md`. Resume = decide D-05.

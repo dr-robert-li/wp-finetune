@@ -4,6 +4,46 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-07-01 — The gated smoke, and the warm-start that had to be rebuilt first
+
+Phase 08.2 ended with a humble verdict — the old reward is dead, and no offline sweep found a replacement that
+survives the code-blind echo test — and it deliberately refused to green-light an RL rerun. It left one honest
+question: is `hybrid@0.8` (the least-bad candidate) actually worthless, or does it just look bad to a pessimistic
+offline proxy? The runbook's answer was a *gated* smoke: warm-start, kill at step 50 unless the validated
+teacher-Spearman is measurably moving, never 500 steps on faith.
+
+The catch surfaced before any GPU spent: the smoke's warm-start pointed at `wp-reasoning-v4-r32-rp30-ep3`, which is a
+*sampler_weights* checkpoint — and Tinker's `load_state` rejects those. The "cheap smoke" wasn't cheap: a valid v4
+warm-start needed a regenerated `save_state` first (a full 3-epoch SFT re-run). The v3 escape-hatch was worse than
+confounded — v3 codegen sits ~0.37, the trip-wire bar is 0.4616, so it would false-kill on codegen at the first probe
+before any judge signal. So: regenerate v4 with `--save-state` (loss 12.7→2.5, 0% terse, MoE-only — the recipe
+reproduced), which finally produced a loadable `/weights/` state. That artifact is the one durable good to come out of
+today; any future warm-start RL skips this step.
+
+Then the smoke itself. Warm-start took cleanly (`train_mlp=True attn=False unembed=False`, judge_failures=0,
+fix_correctness 0.36 — the model judges, it doesn't refuse). Step-0 reward_mean read low (0.146) but that's a
+hybrid-form artifact, not a failure — 80% of the judge-axis weight rides a pairwise-rank term that starts near zero.
+I measured ρ_initial = 0.6243 on the ep3 sampler (same end-of-epoch-3 model the RL warmed from) so step 50 would be
+adjudicable against a fixed baseline rather than eyeballed — that eyeballing is precisely what sank Phase 10.
+
+Step 50 came back flat. Teacher-Spearman moved +0.015 against a +0.02 noise bar; the bootstrap CI straddled zero. And
+the tell: `fix_correctness` — the proxy the runbook explicitly forbids as a go/no-go — rose +0.025, *more* than the
+validated metric moved. Proxy up, validated metric flat, with an ENTROPY_COLLAPSE flag on top. That is Goodhart onset
+by definition, and kill-at-50 exists to kill exactly this ambiguity. So I killed it — at step 50, ~52 steps of spend,
+not 500.
+
+Two honest caveats I'm keeping in the record rather than laundering out. First, the step-50 capture kept getting
+reaped under Tinker contention with the live run; n=41 is where it stopped, not a chosen sample — it meets the
+runbook's n≈40 floor and the *divergence* (which carries the decision) is n-independent, but the CI at that n is
+corroborating, not load-bearing. So the honest claim is "hybrid@0.8 failed to demonstrate it works in 50 steps," not
+"proven dead at scale" — a refined hybrid with a real codegen/anti-hack term is not foreclosed. Second, I found a live
+defect: the in-run codegen trip-wire never armed — `run_codegen_probe` defaults its model_dir to `"."`, no
+`--codegen-probe-model-dir` is wired, so it returned None and `halt_reason: null` meant "not checked," not "passed."
+Gate 2 was inert this run. It didn't matter (Gate 1 already killed), but any re-smoke must wire it.
+
+Net: the smoke did its job. It caught the failure at 50, cost a save_state regen plus a handful of RL steps, and
+reinforced the standing disposition — hold RL, ship v1.2 SFT for v3.0 — with an actual data point instead of a fear.
+
 ## 2026-07-01 — The cheap probe that closed the door on RL
 
 The step-500 gate failed but left one honest question open: step-500 was the *worst* checkpoint on every axis that moved — teacher-Spearman peaked at 200 and 400, reward was highest mid-run — so maybe the 500-step grind ruined a checkpoint that was actually good earlier. Before recommending anything as expensive as a 31-hour re-train, that question was worth twenty minutes. I wp-benched step-200 and step-400 through the exact pipeline already built for step-500: export the sampler weights, merge against stock base, boot vLLM, grade 344 tasks.
