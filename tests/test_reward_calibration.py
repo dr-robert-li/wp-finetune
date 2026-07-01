@@ -50,9 +50,11 @@ class TestPairwiseForm:
 
     def test_perfect_discordance(self):
         rc = pytest.importorskip("scripts.reward_calibration")
-        # model_overall > anchor_gt (model ranks high) but teacher_overall < anchor_gt
-        # (teacher ranks low) -> every pair discordant -> 0.0
-        anchor_set = [(None, float(a)) for a in [96.0, 97.0, 98.0, 99.0]]
+        # model ranks HIGH (model > anchor_gt) but teacher ranks LOW (teacher < anchor_gt)
+        # -> every pair discordant -> 0.0
+        # Anchor set with gt BETWEEN teacher and model: teacher=50 < anchor_gt=60,70,80 < model=90
+        # sign(90-60)=+1, sign(50-60)=-1 -> discordant for all anchors
+        anchor_set = [(None, float(a)) for a in [60.0, 70.0, 80.0]]
         score = rc.calibration_reward(90.0, 50.0, anchor_set, form="pairwise")
         assert score == pytest.approx(0.0), f"Expected 0.0 discordance, got {score}"
 
@@ -77,13 +79,16 @@ class TestPairwiseForm:
 
     def test_equal_anchor_gt_skipped(self):
         rc = pytest.importorskip("scripts.reward_calibration")
+        import math
         # Anchors where anchor_gt == teacher_overall should be skipped (sign undefined)
         # Only non-equal anchors count
         anchor_set = [(None, 70.0), (None, 70.0)]  # both equal teacher_overall
         score = rc.calibration_reward(80.0, 70.0, anchor_set, form="pairwise")
-        # All pairs skipped -> fallback to NaN or 0.0 (no denominator)
-        # Spec says: pairs with equal anchor_gt skipped; if t==0, return NaN (or 0)
-        assert score == score or score == 0.0  # must not raise
+        # All pairs skipped -> fallback to NaN (no denominator): this is correct
+        # behavior (the oracle also returns nan when t==0). Must not raise.
+        assert math.isnan(score) or score == 0.0, (
+            f"Expected NaN or 0.0 when all anchors skipped, got {score}"
+        )
 
     def test_in_range_01(self):
         rc = pytest.importorskip("scripts.reward_calibration")
