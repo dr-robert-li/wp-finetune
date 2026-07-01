@@ -22,10 +22,8 @@ Run:
 """
 from __future__ import annotations
 
-import hashlib
 import json
 import os
-import re
 import sys
 from pathlib import Path
 
@@ -65,12 +63,13 @@ def _code_hash(user_content: str) -> str | None:
 
     Returns None if no PHP block can be extracted (unhashable prompt).
     This is the JOIN KEY: reorder-proof and shared between train and pool sides.
+    Delegates to reward_calibration.normalized_code_hash — the SAME function the
+    reward path uses (2026-07-02 fix: forked raw-vs-normalized hashing made the
+    smoke's GT join 0/482).
     """
-    php = extract_php_code(user_content)
-    if not php:
-        return None
-    normalized = re.sub(r"\s+", " ", php).strip()
-    return hashlib.sha256(normalized.encode()).hexdigest()[:16]
+    from scripts.reward_calibration import normalized_code_hash  # noqa: PLC0415
+
+    return normalized_code_hash(extract_php_code(user_content))
 
 
 def build_train_hash_map() -> dict[str, float]:

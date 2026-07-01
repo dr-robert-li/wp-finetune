@@ -857,6 +857,12 @@ def _log_step(
         "frac_groups_nonuniform": gs.get("frac_groups_nonuniform"),
         "frac_reward_gt_0.9": gs.get("frac_reward_gt_0.9"),
         "frac_reward_lt_0.1": gs.get("frac_reward_lt_0.1"),
+        # Calib liveness telemetry (loud-fail wiring, 2026-07-02): fired_frac
+        # None = calib off / no judge batch; 0.0 = configured but GT join DEAD.
+        "calib_fired_frac": gs.get("calib_fired_frac"),
+        "calib_mean": gs.get("calib_mean"),
+        "calib_std": gs.get("calib_std"),
+        "calib_n": gs.get("calib_n"),
         # Priority-2 policy/optimizer health (08.1-02)
         "entropy": _extract_entropy(kl_metrics),
         "grad_norm": moe_metrics.get("grad_norm"),
@@ -990,6 +996,37 @@ def run_training_step(
         )
     }
 
+    # Calib liveness telemetry (loud-fail wiring, 2026-07-02). Drain the per-step
+    # accumulator rl_rollouts filled during collect_rollouts. calib_fired_frac
+    # None = no judge completions this step; 0.0 = judge ran but GT join dead.
+    _calib_weight = float(getattr(args, "calib_weight", 0.0))
+    if _calib_weight > 0.0:
+        from scripts.reward_calibration import get_and_reset_calib_stats  # noqa: PLC0415
+
+        _calib_stats = get_and_reset_calib_stats()
+        group_stats.update(_calib_stats)
+        # STEP-0 HARD GATE: if the calibration term is configured but effectively
+        # dead (<50% of judge completions joined GT and produced a finite calib
+        # reward), HALT. The 2026-07-01 smoke burned 50 steps of GPU on a
+        # "hybrid@0.8" run whose calib term never fired once (0/482 hash join).
+        # Folded into halt_reason downstream (same seam as the codegen trip-wire)
+        # so the metrics row + emergency checkpoint still happen.
+        _fired = _calib_stats.get("calib_fired_frac")
+        if step == 0 and (_fired is None or _fired < 0.5):
+            _calib_halt = (
+                f"CALIB_JOIN_DEAD: calib_weight={_calib_weight:.2f} but "
+                f"calib_fired_frac={_fired} (< 0.5) at step 0 — calibration "
+                f"reward is NOT in the loss"
+            )
+            logger.error("%s. calib stats: %s", _calib_halt, _calib_stats)
+        else:
+            _calib_halt = None
+    else:
+        _calib_halt = None
+        group_stats.update(
+            {"calib_fired_frac": None, "calib_mean": None, "calib_std": None, "calib_n": 0}
+        )
+
     if not data:
         logger.warning("Step %d: no training data after advantage filter", step)
         return False
@@ -1046,6 +1083,11 @@ def run_training_step(
         efrac_hard=args.efrac_hard,
     )
 
+    # Calib step-0 liveness gate (loud-fail wiring, 2026-07-02) — same seam as
+    # the codegen trip-wire below: fold into halt_reason so the emergency
+    # checkpoint + metrics row + return-True path all fire.
+    halt_reason = halt_reason or _calib_halt
+
     # Codegen trip-wire (RVAL-03 / D-08.2) — periodic wp-bench probe wired to
     # the checkpoint cadence.  Folds into halt_reason so the SAME emergency-
     # checkpoint + return-True seam fires (no second halt mechanism — T-082-06).
@@ -1062,16 +1104,39 @@ def run_training_step(
             _codegen_score = _codegen_score_override
             _codegen_sub: dict | None = None
         else:
-            # Live path (Plan 05 smoke): merge + serve the just-saved checkpoint.
-            _probe_result = run_codegen_probe(
-                model_dir=getattr(args, "codegen_probe_model_dir", "."),
-                tag=f"step{step}",
-                step=step,
-            )
-            _codegen_score = _probe_result.get("wpbench_score")
-            _codegen_sub = {
-                k: _probe_result.get(k) for k in ("knowledge", "exec")
-            }
+            # Loud-fail wiring (2026-07-02): the 2026-07-01 smoke ran with
+            # model_dir="." (no flag wired) -> probe returned None ->
+            # check_codegen_tripwire(None) silently skipped -> halt_reason null
+            # read as "codegen passed" when codegen was NEVER checked. If the
+            # trip-wire is ARMED (codegen_probe_every > 0) the model_dir MUST
+            # point at a real merged model (config.json present) — else HALT.
+            _probe_model_dir = getattr(args, "codegen_probe_model_dir", None)
+            if not _probe_model_dir or not os.path.isfile(
+                os.path.join(_probe_model_dir, "config.json")
+            ):
+                halt_reason = halt_reason or (
+                    f"CODEGEN_TRIPWIRE_MISCONFIGURED: probe armed "
+                    f"(codegen_probe_every={_codegen_probe_every}) but "
+                    f"codegen_probe_model_dir={_probe_model_dir!r} is not a model "
+                    f"dir (no config.json). Silent skip is forbidden — pass a "
+                    f"valid --codegen-probe-model-dir, use "
+                    f"--codegen-score-override, or disarm with "
+                    f"--codegen-probe-every 0."
+                )
+                logger.error(halt_reason)
+                _codegen_score = None
+                _codegen_sub = None
+            else:
+                # Live path (Plan 05 smoke): merge + serve the just-saved checkpoint.
+                _probe_result = run_codegen_probe(
+                    model_dir=_probe_model_dir,
+                    tag=f"step{step}",
+                    step=step,
+                )
+                _codegen_score = _probe_result.get("wpbench_score")
+                _codegen_sub = {
+                    k: _probe_result.get(k) for k in ("knowledge", "exec")
+                }
         _codegen_halt = check_codegen_tripwire(
             wpbench_score=_codegen_score,
             bar=_codegen_bar,
@@ -1361,6 +1426,19 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--codegen-probe-model-dir",
+        type=str,
+        default=None,
+        dest="codegen_probe_model_dir",
+        help=(
+            "Merged-model dir served to the live codegen probe (must contain "
+            "config.json). REQUIRED when the trip-wire is armed "
+            "(--codegen-probe-every > 0) without --codegen-score-override — the "
+            "2026-07-01 smoke silently skipped every probe because this "
+            "defaulted to '.' (loud-fail wiring, 2026-07-02)."
+        ),
+    )
+    parser.add_argument(
         "--codegen-score-override",
         type=float,
         default=None,
@@ -1559,6 +1637,34 @@ def run_training(args: argparse.Namespace) -> None:
 
     gen_pool = load_rl_prompts("gen")
     judge_pool = load_rl_prompts("judge")
+
+    # GT-coverage pool filter (2026-07-02 hash-join fix). When the calibration
+    # term is active, judge items WITHOUT a TRAIN-GT sidecar row would fall back
+    # to pure fix_correctness (the proven-Goodhart reward) via the NaN no-op in
+    # augment_judge_scalar — 29% of the pool pre-filter. Restrict the judge pool
+    # to GT-covered items so every judge group trains on the blended reward.
+    if float(getattr(args, "calib_weight", 0.0)) > 0.0:
+        from scripts.reward_calibration import get_anchor_set  # noqa: PLC0415
+        from scripts.rl_rollouts import judge_item_code_hash  # noqa: PLC0415
+
+        _, _gt_map = get_anchor_set()
+        _pre = len(judge_pool)
+        judge_pool = [it for it in judge_pool if judge_item_code_hash(it) in _gt_map]
+        logger.info(
+            "GT-coverage filter (calib_weight=%.2f): judge pool %d -> %d "
+            "(%d dropped without TRAIN-GT sidecar rows)",
+            args.calib_weight, _pre, len(judge_pool), _pre - len(judge_pool),
+        )
+        if not judge_pool:
+            raise RuntimeError(
+                "GT-coverage filter left an EMPTY judge pool: the sidecar join "
+                "matched 0 items. The calibration reward cannot fire — refusing "
+                "to start a run that would silently train on pure fix_correctness "
+                "(the 2026-07-01 smoke failure mode). Check that "
+                "data/rl_probe/judge_gt_sidecar.jsonl was built with the same "
+                "normalized_code_hash as the reward path."
+            )
+
     if getattr(args, "max_pool", None):
         gen_pool = gen_pool[: args.max_pool]
         judge_pool = judge_pool[: args.max_pool]

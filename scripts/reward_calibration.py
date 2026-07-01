@@ -37,8 +37,10 @@ CPU / $0. No GPU, no vLLM, no API.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import math
+import re
 import threading
 from pathlib import Path
 from typing import Optional
@@ -54,6 +56,75 @@ _DEFAULT_SIDECAR = Path(__file__).resolve().parent.parent / "data/rl_probe/judge
 # 0.10 chosen so a 10-point mis-calibration costs 0.01 (1% of the [0,1] range) —
 # noticeable within a group but dominated by the pairwise rank signal.
 _HYBRID_CALIB_WEIGHT: float = 0.10
+
+# ---------------------------------------------------------------------------
+# Canonical GT join key (single source of truth for BOTH sidecar build and
+# reward time)
+# ---------------------------------------------------------------------------
+
+
+def normalized_code_hash(php_code: str | None) -> str | None:
+    """SHA-256[:16] of whitespace-normalized PHP — the canonical GT JOIN KEY.
+
+    This is the ONE hash function shared by build_reward_gt_sidecar.py (sidecar
+    side) and rl_rollouts.py (reward side). The 2026-07-01 gated smoke was
+    silently calib-dead because the reward side hashed RAW code while the
+    sidecar hashed normalized code — 0/482 join, calib term never fired, the
+    run trained on pure fix_correctness. Never fork this normalization.
+
+    Returns None for empty/None input (unhashable — no PHP to key on).
+    """
+    if not php_code:
+        return None
+    normalized = re.sub(r"\s+", " ", php_code).strip()
+    return hashlib.sha256(normalized.encode()).hexdigest()[:16]
+
+
+# ---------------------------------------------------------------------------
+# Per-step calib liveness telemetry (loud-fail wiring, 2026-07-02)
+# ---------------------------------------------------------------------------
+# Mirrors the rl_judge_dispatch.get_and_reset_score_hist pattern: rl_rollouts
+# records one entry per judge completion during collect_rollouts; rl_train
+# drains the accumulator once per step into rl_metrics.jsonl. A calib reward
+# that never fires must be VISIBLE (and step-0 halt-worthy), never silent.
+
+_CALIB_STATS_LOCK = threading.Lock()
+_CALIB_STATS: dict[str, list[float]] = {"fired": [], "values": []}
+
+
+def record_calib_stat(calib_reward: float) -> None:
+    """Record one judge completion's calib outcome (NaN = did not fire)."""
+    with _CALIB_STATS_LOCK:
+        fired = not math.isnan(calib_reward)
+        _CALIB_STATS["fired"].append(1.0 if fired else 0.0)
+        if fired:
+            _CALIB_STATS["values"].append(float(calib_reward))
+
+
+def get_and_reset_calib_stats() -> dict[str, float | None]:
+    """Drain the per-step calib accumulator.
+
+    Returns {calib_fired_frac, calib_mean, calib_std, calib_n}; fired_frac is
+    None when no judge completions were recorded this step (distinguishes
+    "no judge batch" from "joined 0%").
+    """
+    with _CALIB_STATS_LOCK:
+        fired = _CALIB_STATS["fired"]
+        values = _CALIB_STATS["values"]
+        _CALIB_STATS["fired"] = []
+        _CALIB_STATS["values"] = []
+    if not fired:
+        return {"calib_fired_frac": None, "calib_mean": None, "calib_std": None, "calib_n": 0}
+    n = len(values)
+    mean = sum(values) / n if n else None
+    std = math.sqrt(sum((v - mean) ** 2 for v in values) / n) if n else None
+    return {
+        "calib_fired_frac": sum(fired) / len(fired),
+        "calib_mean": mean,
+        "calib_std": std,
+        "calib_n": n,
+    }
+
 
 # ---------------------------------------------------------------------------
 # Module-level lazy singleton (load anchor set once per run, keyed by path)

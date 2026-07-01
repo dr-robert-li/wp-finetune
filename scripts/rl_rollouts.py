@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import random
 import subprocess
 from typing import Any, Optional
@@ -319,6 +320,19 @@ def _judge_original_code(item: dict) -> str:
     if idx != -1:
         user_content = user_content[:idx]
     return extract_php_code(user_content)
+
+
+def judge_item_code_hash(item: dict) -> str | None:
+    """Canonical GT join key for a judge pool item (2026-07-02 hash-join fix).
+
+    Composes _judge_original_code (same extraction the reward path uses) with
+    reward_calibration.normalized_code_hash (same normalization the sidecar
+    builder uses). Used by BOTH the reward-time GT lookup and rl_train's
+    GT-coverage pool filter, so the two can never disagree again.
+    """
+    from scripts.reward_calibration import normalized_code_hash  # noqa: PLC0415
+
+    return normalized_code_hash(_judge_original_code(item))
 
 
 def _fix_score_from_completion(
@@ -1006,14 +1020,36 @@ def collect_rollouts(
             }
             for c in judge_completions
         ]
-        consistency_scores = asyncio.run(
-            score_judge_consistency_batch(
-                consistency_samples,
-                model=getattr(args, "consistency_model", "sonnet"),
-                n_votes=getattr(args, "n_votes", 1),
-                base_url=getattr(args, "consistency_base_url", None),
-            )
+        # Loud-fail wiring (2026-07-02): the consistency scorer needs an Anthropic
+        # key (model="sonnet") or an explicit base_url. In the 2026-07-01 smoke the
+        # keys were unset -> every call timed out -> consistency=0.0 for ALL
+        # completions, silently rescaling judge_scalar to 0.55*fc. If the scorer
+        # cannot possibly work, set its weight to 0 EXPLICITLY (fc keeps full
+        # judge_scalar weight) and say so once, instead of blending in a dead zero.
+        _consistency_base_url = getattr(args, "consistency_base_url", None)
+        _consistency_can_run = bool(
+            _consistency_base_url
+            or os.environ.get("ANTHROPIC_API_KEY")
+            or os.environ.get("ANTHROPIC_AUTH_TOKEN")
         )
+        consistency_weight = judge_consistency_weight_lever2
+        if not _consistency_can_run:
+            consistency_weight = 0.0
+            logger.warning(
+                "Consistency scorer has no ANTHROPIC key and no --consistency-base-url: "
+                "setting consistency weight to 0.0 (was %.2f). judge_scalar = fix_correctness.",
+                judge_consistency_weight_lever2,
+            )
+            consistency_scores = [0.0] * len(consistency_samples)
+        else:
+            consistency_scores = asyncio.run(
+                score_judge_consistency_batch(
+                    consistency_samples,
+                    model=getattr(args, "consistency_model", "sonnet"),
+                    n_votes=getattr(args, "n_votes", 1),
+                    base_url=_consistency_base_url,
+                )
+            )
 
         # Combine on the RAW [0, 1] scale (D-09-05 guard 1). fix_correctness and
         # consistency are both in [0, 1], so (1-w)*fc + w*cons stays in [0, 1] and
@@ -1047,11 +1083,11 @@ def collect_rollouts(
                 get_anchor_set,
                 calibration_reward,
                 augment_judge_scalar,
+                record_calib_stat,
             )
             _anchor_set, _gt_map = get_anchor_set()
             # Dimension weights for _derive_prose_overall fallback (same as oracle).
             from eval.output_parsers import load_dim_map as _ldm  # noqa: PLC0415
-            import hashlib as _hashlib  # noqa: PLC0415
             _dm = _ldm()
             _dim_weights = {k: v for k, v in _dm["dimension_weights"].items() if not k.startswith("_")}
         else:
@@ -1065,7 +1101,7 @@ def collect_rollouts(
             combined_scalar = combine_judge_reward(
                 fix_correctness=fix_correctness_scores[i],
                 consistency=consistency_scores[i],
-                weight=judge_consistency_weight_lever2,
+                weight=consistency_weight,
             )
 
             # Calibration augmentation (RVAL-02). At calib_weight=0, augment_judge_scalar
@@ -1085,12 +1121,13 @@ def collect_rollouts(
                     model_overall = None
 
                 # Look up teacher GT via content-hash of original code (T-082-02).
-                # Uses same SHA-256[:16] content-hash join as build_reward_gt_sidecar.py
-                # (T-082-02 / Plan 01 design — reorder-proof GT join).
+                # MUST use normalized_code_hash — the SAME whitespace-normalized
+                # join key build_reward_gt_sidecar.py writes. The 2026-07-01 smoke
+                # hashed RAW code here -> 0/482 join -> calib silently never fired
+                # (the run trained on pure fix_correctness). Single source of truth.
                 item = judge_by_gid.get(getattr(completion_obj, "group_id", None), {})
-                orig = _judge_original_code(item)
-                code_hash = _hashlib.sha256(orig.encode()).hexdigest()[:16] if orig else ""
-                teacher_overall = _gt_map.get(code_hash)
+                code_hash = judge_item_code_hash(item)
+                teacher_overall = _gt_map.get(code_hash) if code_hash else None
 
                 if model_overall is not None and teacher_overall is not None:
                     calib_r = calibration_reward(
@@ -1102,6 +1139,8 @@ def collect_rollouts(
                 else:
                     # Missing parse or missing GT -> NaN (augment_judge_scalar falls back)
                     calib_r = float("nan")
+                # Liveness telemetry (loud-fail wiring): NaN = did-not-fire.
+                record_calib_stat(calib_r)
 
                 combined_scalar = augment_judge_scalar(
                     judge_scalar=combined_scalar,
