@@ -36,6 +36,16 @@ if str(_PROJECT_ROOT) not in sys.path:
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
+# Codegen trip-wire (RVAL-03 / D-08.2) — import-safe, no GPU at module level.
+# CODEGEN_BAR_V12 is the single source of truth from _rlev01_wpbench_ckpt.
+# ---------------------------------------------------------------------------
+from scripts.rl_codegen_tripwire import (  # noqa: E402
+    CODEGEN_BAR_V12,
+    check_codegen_tripwire,
+    run_codegen_probe,
+)
+
+# ---------------------------------------------------------------------------
 # Defaults — thresholds from GRPO-08
 # ---------------------------------------------------------------------------
 
@@ -1036,6 +1046,47 @@ def run_training_step(
         efrac_hard=args.efrac_hard,
     )
 
+    # Codegen trip-wire (RVAL-03 / D-08.2) — periodic wp-bench probe wired to
+    # the checkpoint cadence.  Folds into halt_reason so the SAME emergency-
+    # checkpoint + return-True seam fires (no second halt mechanism — T-082-06).
+    #
+    # cadence: every args.codegen_probe_every steps when > 0 (default 0 = disabled;
+    #   Plan 05's live smoke enables it; --codegen-score-override drives dry-run/test).
+    # bar:     args.codegen_bar (default CODEGEN_BAR_V12 = 0.4616 v1.2 SFT bar).
+    _codegen_probe_every = getattr(args, "codegen_probe_every", 0)
+    if _codegen_probe_every > 0 and step % _codegen_probe_every == 0:
+        _codegen_score_override = getattr(args, "codegen_score_override", None)
+        _codegen_bar = getattr(args, "codegen_bar", CODEGEN_BAR_V12)
+        if _codegen_score_override is not None:
+            # Dry-run / test path: use the injected score, never call vLLM.
+            _codegen_score = _codegen_score_override
+            _codegen_sub: dict | None = None
+        else:
+            # Live path (Plan 05 smoke): merge + serve the just-saved checkpoint.
+            _probe_result = run_codegen_probe(
+                model_dir=getattr(args, "codegen_probe_model_dir", "."),
+                tag=f"step{step}",
+                step=step,
+            )
+            _codegen_score = _probe_result.get("wpbench_score")
+            _codegen_sub = {
+                k: _probe_result.get(k) for k in ("knowledge", "exec")
+            }
+        _codegen_halt = check_codegen_tripwire(
+            wpbench_score=_codegen_score,
+            bar=_codegen_bar,
+            sub_scores=_codegen_sub,
+        )
+        if _codegen_halt:
+            logger.error(
+                "Codegen trip-wire at step %d: score=%.4f bar=%.4f — %s",
+                step,
+                _codegen_score if _codegen_score is not None else float("nan"),
+                _codegen_bar,
+                _codegen_halt,
+            )
+        halt_reason = halt_reason or _codegen_halt
+
     # Protected-expert Jaccard monitor (every N steps, logging only)
     jaccard: float | None = None
     if step % args.jaccard_every == 0:
@@ -1285,6 +1336,41 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "truncation (STEP A probe: mean fix_score +0.10-0.13 from 1536->4096)."
         ),
     )
+    # ---------------------------------------------------------------------------
+    # Codegen trip-wire (RVAL-03 / D-08.2) — periodic in-run wp-bench probe.
+    # Default 0 = disabled; Plan 05's live smoke enables via --codegen-probe-every.
+    # --codegen-score-override is a TEST/DRY-RUN seam ONLY — live path uses
+    # run_codegen_probe (real wp-bench). See rl_codegen_tripwire.py.
+    # ---------------------------------------------------------------------------
+    parser.add_argument(
+        "--codegen-probe-every",
+        type=int,
+        default=0,
+        help=(
+            "Run the wp-bench codegen probe every N steps (0 = disabled, default). "
+            "Plan 05's live smoke sets this to 50 or 100. RVAL-03."
+        ),
+    )
+    parser.add_argument(
+        "--codegen-bar",
+        type=float,
+        default=CODEGEN_BAR_V12,
+        help=(
+            "Halt threshold for the codegen trip-wire "
+            f"(default: CODEGEN_BAR_V12 = {CODEGEN_BAR_V12}, the v1.2 SFT bar). RVAL-03."
+        ),
+    )
+    parser.add_argument(
+        "--codegen-score-override",
+        type=float,
+        default=None,
+        help=(
+            "TEST/DRY-RUN ONLY: inject a synthetic wp-bench score instead of running "
+            "the real probe. Never set in live training (Plan 05 uses the real runner). "
+            "RVAL-03 test seam (T-082-07)."
+        ),
+    )
+
     # Output-path overrides — let a smoke/test run isolate its outputs from the
     # canonical (git-tracked) manifest/metrics that Phase 10 D-10-02 reads.
     parser.add_argument(
