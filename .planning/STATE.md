@@ -6,13 +6,13 @@ current_phase: 10
 current_phase_name: Wave 0 complete; BLOCKED at Task-3 human gate — live RL run not landed
 status: blocked
 stopped_at: context exhaustion at 100% (2026-06-28)
-last_updated: "2026-06-28T07:22:06.614Z"
+last_updated: "2026-06-30T23:59:20.394Z"
 progress:
-  total_phases: 14
+  total_phases: 15
   completed_phases: 13
   total_plans: 51
   completed_plans: 51
-  percent: 93
+  percent: 87
 ---
 
 # Project State
@@ -300,6 +300,10 @@ Recent decisions affecting current work:
 | 260403-utp | Fix stale eval tests to match current API (rubric refactor) | 2026-04-03 | 49ec4b6 | [260403-utp-fix-stale-eval-tests-to-match-current-ev](./quick/260403-utp-fix-stale-eval-tests-to-match-current-ev/) |
 | 260403-vvg | Fix stale unsloth refs in dgx_toolbox; fix CONFIG_PATH; add missing dataloader fields to 30_70/40_60 configs | 2026-04-03 | f340b22 | [260403-vvg-fix-stale-unsloth-refs-and-config-incons](./quick/260403-vvg-fix-stale-unsloth-refs-and-config-incons/) |
 | 260620-bwf | Update all docs, changelog, and JOURNAL.md to reflect Phase 7 closure + Phase 8 reward infrastructure | 2026-06-20 | 4513027 | [260620-bwf-update-all-docs-changelog-and-journal-md](./quick/260620-bwf-update-all-docs-changelog-and-journal-md/) |
+
+### Roadmap Evolution
+
+- Phase 08.2 inserted after Phase 08.1: Reward Validity Gate — offline reward<->teacher-Spearman oracle + calibration reward + codegen trip-wire (Phase 10 Goodhart trigger) (URGENT)
 
 ## Session Continuity
 

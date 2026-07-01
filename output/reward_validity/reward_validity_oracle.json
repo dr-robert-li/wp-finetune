@@ -1,0 +1,139 @@
+{
+  "metric_target": "teacher_overall_spearman (validated RLEV-01 axis)",
+  "n_common_aligned": 85,
+  "checkpoints": [
+    "warmstart",
+    "step-50",
+    "step-100",
+    "step-150",
+    "step-200",
+    "step-250",
+    "step-300",
+    "step-350",
+    "step-400",
+    "step-450",
+    "step-500"
+  ],
+  "target_trajectory": {
+    "warmstart": 0.5731784420276048,
+    "step-50": 0.5296547723675707,
+    "step-100": 0.5735130049042698,
+    "step-150": 0.5967667919121246,
+    "step-200": 0.6159767641009066,
+    "step-250": 0.5557677351251836,
+    "step-300": 0.5587909110843927,
+    "step-350": 0.5822956498617278,
+    "step-400": 0.6205776628255594,
+    "step-450": 0.5947828766526784,
+    "step-500": 0.55160538132329
+  },
+  "reward_series": {
+    "pairwise_rank_agreement": {
+      "warmstart": 0.6604829210836278,
+      "step-50": 0.6372202591283863,
+      "step-100": 0.6613663133097762,
+      "step-150": 0.6595995288574794,
+      "step-200": 0.6593050647820966,
+      "step-250": 0.6395759717314488,
+      "step-300": 0.6366313309776207,
+      "step-350": 0.6557714958775029,
+      "step-400": 0.6722614840989399,
+      "step-450": 0.6489988221436984,
+      "step-500": 0.6448763250883393
+    },
+    "in_group_spearman": {
+      "warmstart": 0.5731784420276048,
+      "step-50": 0.5296547723675707,
+      "step-100": 0.5735130049042698,
+      "step-150": 0.5967667919121246,
+      "step-200": 0.6159767641009066,
+      "step-250": 0.5557677351251836,
+      "step-300": 0.5587909110843927,
+      "step-350": 0.5822956498617278,
+      "step-400": 0.6205776628255594,
+      "step-450": 0.5947828766526784,
+      "step-500": 0.55160538132329
+    },
+    "listwise_ndcg@10": {
+      "warmstart": 0.9028535974990847,
+      "step-50": 0.9526886007978231,
+      "step-100": 0.9515471560990936,
+      "step-150": 0.8827347441671831,
+      "step-200": 0.9407537043465336,
+      "step-250": 0.9531931617246996,
+      "step-300": 0.9119783681184634,
+      "step-350": 0.9237655227833046,
+      "step-400": 0.9818444168947157,
+      "step-450": 0.9407537043465336,
+      "step-500": 0.9117750251795916
+    },
+    "neg_abs_calibration": {
+      "warmstart": 0.8282132215715898,
+      "step-50": 0.8194780346203508,
+      "step-100": 0.827185052862538,
+      "step-150": 0.8246800578623923,
+      "step-200": 0.8313961729270021,
+      "step-250": 0.8211455782841276,
+      "step-300": 0.8217122608079377,
+      "step-350": 0.8223160878809355,
+      "step-400": 0.8180158441987126,
+      "step-450": 0.8135355863421454,
+      "step-500": 0.8130052134403852
+    },
+    "fix_correctness_BASELINE": {
+      "step-50": 0.385,
+      "step-100": 0.3575,
+      "step-150": 0.3937,
+      "step-200": 0.3689,
+      "step-250": 0.413,
+      "step-300": 0.41,
+      "step-350": 0.413,
+      "step-400": 0.41,
+      "step-450": 0.403,
+      "step-500": 0.413
+    }
+  },
+  "validity": {
+    "pairwise_rank_agreement": {
+      "n_ckpts": 11,
+      "spearman_vs_target": 0.7000000000000001,
+      "ci_lo": 0.14691943127962084,
+      "ci_hi": 0.9348837209302328,
+      "pearson_vs_target": 0.8078408660422891,
+      "valid": true
+    },
+    "in_group_spearman": {
+      "n_ckpts": 11,
+      "spearman_vs_target": 1.0,
+      "ci_lo": 0.9999999999999999,
+      "ci_hi": 1.0,
+      "pearson_vs_target": 0.9999999999999999,
+      "valid": true
+    },
+    "listwise_ndcg@10": {
+      "n_ckpts": 11,
+      "spearman_vs_target": 0.04555820475782052,
+      "ci_lo": -0.7104812143431035,
+      "ci_hi": 0.7799043062200957,
+      "pearson_vs_target": 0.14374635801147842,
+      "valid": false
+    },
+    "neg_abs_calibration": {
+      "n_ckpts": 11,
+      "spearman_vs_target": 0.30000000000000004,
+      "ci_lo": -0.45370370370370366,
+      "ci_hi": 0.9158878504672897,
+      "pearson_vs_target": 0.26269060179421555,
+      "valid": false
+    },
+    "fix_correctness_BASELINE": {
+      "n_ckpts": 10,
+      "spearman_vs_target": -0.2400284074096988,
+      "ci_lo": -0.8723567442899585,
+      "ci_hi": 0.41674373439444434,
+      "pearson_vs_target": -0.12667366216682419,
+      "valid": false
+    }
+  },
+  "note": "Calibration forms derived from (model,teacher) are target-aligned by construction (monotone w/ Spearman) \u2014 that is the DESIRED property. The decisive empirical finding is whether fix_correctness_BASELINE (the proxy seedA optimized) tracks the target: if its corr CI includes/below 0, the seedA reward was INVALID -> Goodhart confirmed. Ongoing use: score FUTURE non-trivial candidate rewards here before any GPU."
+}
