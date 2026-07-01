@@ -91,6 +91,19 @@
       "step-400": 0.41,
       "step-450": 0.403,
       "step-500": 0.413
+    },
+    "calibration_reward_impl": {
+      "warmstart": 0.6604829210836278,
+      "step-50": 0.6372202591283863,
+      "step-100": 0.6613663133097762,
+      "step-150": 0.6595995288574794,
+      "step-200": 0.6593050647820966,
+      "step-250": 0.6395759717314488,
+      "step-300": 0.6366313309776207,
+      "step-350": 0.6557714958775029,
+      "step-400": 0.6722614840989399,
+      "step-450": 0.6489988221436984,
+      "step-500": 0.6448763250883393
     }
   },
   "validity": {
@@ -133,6 +146,14 @@
       "ci_hi": 0.41674373439444434,
       "pearson_vs_target": -0.12667366216682419,
       "valid": false
+    },
+    "calibration_reward_impl": {
+      "n_ckpts": 11,
+      "spearman_vs_target": 0.7000000000000001,
+      "ci_lo": 0.14691943127962084,
+      "ci_hi": 0.9348837209302328,
+      "pearson_vs_target": 0.8078408660422891,
+      "valid": true
     }
   },
   "note": "Calibration forms derived from (model,teacher) are target-aligned by construction (monotone w/ Spearman) \u2014 that is the DESIRED property. The decisive empirical finding is whether fix_correctness_BASELINE (the proxy seedA optimized) tracks the target: if its corr CI includes/below 0, the seedA reward was INVALID -> Goodhart confirmed. Ongoing use: score FUTURE non-trivial candidate rewards here before any GPU."
