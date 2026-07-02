@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
-current_phase: 09
-current_phase_name: GSPO Training
+current_phase: 11
+current_phase_name: Post-RL MoE-Sieve (on v1.2 SFT — RL rejected)
 status: planning
-stopped_at: Gated smoke (Option B) KILLED at step 50 — hybrid@0.8 flat teacher-Spearman; reject-RL reinforced, ship v1.2 SFT
-last_updated: "2026-07-02T00:00:00.000Z"
+stopped_at: SHIPPED decision — v3.0 proceeds on v1.2 SFT (RL rejected; seedA2 honest hybrid@0.8 killed on G1 2026-07-03). Phase 11 re-scoped to v1.2 SFT routing.
+last_updated: "2026-07-03T00:00:00.000Z"
 progress:
   total_phases: 15
   completed_phases: 14

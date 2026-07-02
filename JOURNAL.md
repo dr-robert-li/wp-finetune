@@ -4,6 +4,38 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-07-03 — SHIPPED: v3.0 proceeds on v1.2 SFT. RL closed (recoverable, but not by retrying).
+
+**Context:** The 2026-07-01 smoke kill turned out to be a wiring artifact, not a verdict: code review
+found the reward-time GT hash-join was DEAD (raw vs whitespace-normalized hashing, 0/482 joins), so the
+"hybrid@0.8" run had actually trained on pure fix_correctness — the exact reward Phase 10 proved
+Goodharts — with the consistency scorer also silently dead and the codegen trip-wire silently skipped.
+Three silent no-ops, one run. Fixed with a canonical `normalized_code_hash` on both sides, a GT-coverage
+pool filter (482→342), per-step calib liveness telemetry, a step-0 CALIB_JOIN_DEAD hard gate, a trip-wire
+misconfiguration halt, and an explicit consistency weight-0 when unkeyed.
+
+**Decision / Observation:** The rerun (smoke_seedA2) was the FIRST honest test of hybrid@0.8 — calib
+provably in the loss (fired 0.90–1.0 every step) — and it still failed Gate-1: step-50 teacher-Spearman
+0.6066 vs warm-start 0.6243 (−0.018; bar +0.02), step-150 trend read 0.6434 (+0.019, CI spans zero).
+Crucially, NO Goodhart signature this time: fix_correctness flat, entropy flat. The oracle-valid
+calibration signal is honest but too weak/slow. That is a real negative on the reward's trainability,
+not on the wiring. KILL applied per discipline (read arrived late — a sentinel bug let the run reach
+step 161; recorded in SMOKE_READS_TALLY).
+
+**Reasoning:** Three independent confirmations now support the same disposition (Phase 10, the re-labeled
+07-01 run, and an honest 07-03 run): hold RL, ship v1.2 SFT as the v3.0 base. ROADMAP amended — Phases
+11-15 operate on v1.2 SFT (routing profiles re-scoped to the SFT policy). RL is NOT foreclosed: the
+recovery paths are (a) measure the teacher ceiling (Claude-generated GT — test-retest reliability bounds
+attainable ρ via attenuation; if the ceiling is thin the target itself is exhausted), (b) if headroom
+≥ ~0.1, a reward-v2 with materially stronger per-step signal (defect-grounded terms, G=8–16 groups,
+MO-GRPO separation), oracle-gated offline before any spend. Retrying hybrid@0.8 with more steps is
+explicitly rejected — the 50→150 slope (+0.037) would need ~300+ speculative steps to clear noise.
+
+**Outcome:** v3.0 unblocked on v1.2 SFT. Teacher-ceiling measurement is next (in-session Claude agents,
+$0). Artifacts: output/rl_eval/step-{50,150}-seedA2/, rlev01_teacher_summary.json, tests/test_calib_join.py.
+
+---
+
 ## 2026-07-01 — The gated smoke, and the warm-start that had to be rebuilt first
 
 Phase 08.2 ended with a humble verdict — the old reward is dead, and no offline sweep found a replacement that

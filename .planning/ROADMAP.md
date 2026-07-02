@@ -18,6 +18,17 @@ Phases 7-10 (v2.0) implement RL alignment per Issue #1's recommended order: firs
 
 Phases 11-15 (v3.0) apply MoE-Sieve on the RL-trained model using RL-policy routing logs (Phase 11), evaluate the sieved model (Phase 12), merge LoRA and prune with AIMER (primary, D-09) or REAP (optional comparison) on the final routing distribution (Phase 13), evaluate against v2.0 (Phase 14), and package for production (Phase 15). MoE-Sieve operates post-RL so that sieve selection reflects reward-aligned routing, not SFT routing. LoRA must be merged before pruning runs — activation magnitudes require the unified model.
 
+**AMENDMENT 2026-07-03 (v3.0 base = v1.2 SFT):** RL was REJECTED at the Phase 10 gate and the
+rejection held through two Phase-08.2 gated smokes (2026-07-01 calib-dead run; 2026-07-03 seedA2
+honest hybrid@0.8 run — killed on G1, teacher-Spearman never left the noise band while the reward
+stayed un-Goodharted). **v3.0 therefore proceeds on the v1.2 SFT model.** Everywhere Phases 11-15
+say "RL-trained model" / "RL-policy routing logs" / "v2.0 RL baseline", read "v1.2 SFT model" /
+"v1.2 SFT-policy routing logs" / "v1.2 SFT baseline". Phase 11's fresh profiling pass profiles the
+v1.2 SFT policy (the Phase 7 profiles remain the protected-expert reference). A future RL reopening
+requires: teacher-ceiling headroom ≥ ~0.1 (measured), a reward-v2 with materially stronger per-step
+signal (defect-grounded / MO-GRPO), offline oracle gate, then ONE gated smoke — see
+logs/phase09_rerun/SMOKE_READS_TALLY.md and .continue-here.md.
+
 **LLM Execution Pattern (MANDATORY across all phases):** ALL LLM-driven work — data generation, reasoning generation, judge evaluation, eval-by-LLM scoring — MUST use **Claude Code agents** (parallel `Agent(run_in_background=true)` spawning following the `wp-finetune:run-data-pipeline` SKILL.md pattern), NOT the Anthropic API directly. The direct API path (`call_with_backoff`, `anthropic.Anthropic()`) is acceptable only for small pilots (<50 examples). At scale (>100 examples), the direct API fails due to rate limits, timeout cascades, and error recovery brittleness; Claude Code agents use the subscription quota and parallelize reliably. This is a hard rule established from prior phase experience (Phase 1/2 generated 134K judged + 29K CoT examples successfully via agents).
 
 ## Phases
@@ -67,7 +78,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 <details>
 <summary>v3.0 MoE-Sieve, Pruning & Packaging (Phases 11-15) — Planned</summary>
 
-- [ ] **Phase 11: Post-RL MoE-Sieve** - Re-profile routing using RL-policy logs, apply MoE-Sieve selective training on the RL-trained model with conservative threshold, validate protected experts retained, optional recovery SFT pass
+- [ ] **Phase 11: Post-RL MoE-Sieve** *(AMENDED 2026-07-03: RL rejected — operates on v1.2 SFT)* - Re-profile routing using v1.2 SFT-policy logs, apply MoE-Sieve selective training on the v1.2 SFT model with conservative threshold, validate protected experts retained, optional recovery SFT pass
 - [ ] **Phase 12: MoE-Sieve Comparative Evaluation** - A/B compare each k-sweep MoE-Sieve adapter against v2.0 RL baseline on wp-bench and all 9 eval dimensions
 - [ ] **Phase 13: LoRA Merge & Pruning (AIMER primary, REAP optional)** - Merge adapters, run AIMER (weight-based, primary per D-09) and optionally REAP (calibration-based) at 3 compression ratios, compare to determine if WordPress specialization benefits domain-aware pruning
 - [ ] **Phase 14: Final Comparative Evaluation** - A/B compare pruned model against v2.0 RL baseline on wp-bench, all 9 dimensions, speed delta, and model size
