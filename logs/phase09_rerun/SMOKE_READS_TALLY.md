@@ -81,3 +81,49 @@ per-step calib telemetry, step-0 CALIB_JOIN_DEAD halt, codegen trip-wire
 misconfiguration halt (+ `--codegen-probe-model-dir` flag), explicit consistency
 weight-0 when unkeyed. Rerun: `output/rl_checkpoints/smoke_seedA2/` (2026-07-02) —
 the FIRST actual test of hybrid@0.8, same kill-at-50 discipline, ρ_initial 0.6243.
+
+---
+
+## seedA2 READ (2026-07-03) — the FIRST honest hybrid@0.8 test: **KILL (G1 fail)**
+
+**Run:** `output/rl_checkpoints/smoke_seedA2/` (2026-07-02 08:40 → 2026-07-03 ~07:54,
+died silently at step 161; kill verdict already earned at the step-50 read).
+Config: seedA-equivalent + hash-join fix + loud-fail wiring; `--codegen-probe-every 0`
+(explicitly disarmed, manual Gate-2 planned); consistency weight 0 (loud, by design).
+
+**Step-0 gate: ALL GREEN, calib IN THE LOSS for the first time** — calib_fired_frac 0.90,
+calib_mean 0.732±0.197, reward_mean 0.447 (vs 0.146 calib-dead on 07-01), WARM START,
+GT-coverage filter 482→342.
+
+**Process breach (recorded):** the step-50 sentinel checked `checkpoint['step']==50` but the
+manifest keys checkpoints by `name` — sentinel never fired, the run trained past the gate to
+step 161 before the read happened (~110 steps of unadjudicated spend). The banked step-100/150
+checkpoints turned part of that spend into a trend read.
+
+**Gate-1 (mechanical, n=86 common aligned, full capture n=121/117 parseable):**
+| ckpt | rho | Δ vs 0.6243 | bootstrap CI | beyond_noise |
+|---|---|---|---|---|
+| step-50 | 0.6066 | −0.018 | [−0.130,+0.082] | false ❌ |
+| step-150 | 0.6434 | +0.019 | [−0.059,+0.099] | false ❌ |
+
+**KILL at the 50-read** (rho DOWN −0.018). The 150 trend read is informational: direction
+reversed (+0.037 from 50→150) but still under the +0.02 bar with CI spanning zero.
+
+**Interpretation — the load-bearing difference from 07-01:** this run's reward was HONEST:
+fix_correctness flat (0.28–0.34, window-means 0.286/0.298/0.302/0.284), entropy flat
+(~0.41, no collapse), calib fired 0.75–1.0 every step. No Goodhart signature. So the verdict
+is a REAL negative on hybrid@0.8-as-configured: the oracle-valid calibration signal, honestly
+wired, is too weak/slow to move validated teacher-Spearman beyond noise in 50 (or 150) steps.
+Parse rate drifted 117→109 (mild format degradation). G2 codegen NOT read (moot for the kill;
+required before any future continuation). G3 echo not read (moot).
+
+**Disposition:** kill-at-50 discipline upheld (read late due to sentinel bug, verdict applied
+on read). hybrid@0.8 has now had its real test: FAILED TO DEMONSTRATE within the gated
+budget. Continuing to ~500 steps on the +0.037 slope extrapolation is speculation the runbook
+forbids ("no 500-step runs on faith"). Recommendation unchanged and now doubly supported:
+**hold RL, ship v1.2 SFT for v3.0.** Any future RL attempt needs a reward with materially
+stronger per-step signal (e.g. grounded defect-detection terms / MO-GRPO separation per
+09-REWARD redesign notes), not more steps of this one.
+
+All processes dead; judge stopped (GPU freed). Captures: `output/rl_eval/step-{50,150}-seedA2/`,
+07-01 captures archived to `output/rl_eval_seedA1_0701/`.
