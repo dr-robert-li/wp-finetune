@@ -1,0 +1,1161 @@
+{
+ "val:7": {
+  "wpcs_compliance": 8.0,
+  "performance": 8.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 8.0,
+  "overall": 82.0,
+  "verdict": "PASS"
+ },
+ "val:66": {
+  "wpcs_compliance": 6.0,
+  "performance": 5.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 8.0,
+  "i18n": 8.0,
+  "error_handling": 8.0,
+  "security": 7.5,
+  "overall": 74.0,
+  "verdict": "PASS"
+ },
+ "val:65": {
+  "wpcs_compliance": 8.0,
+  "performance": 8.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 8.0,
+  "error_handling": 5.0,
+  "overall": 76.0,
+  "verdict": "PASS"
+ },
+ "val:13": {
+  "wpcs_compliance": 3.0,
+  "code_quality": 7.0,
+  "performance": 7.5,
+  "wp_api_usage": 6.0,
+  "overall": 62.0,
+  "verdict": "PASS"
+ },
+ "val:49": {
+  "wpcs_compliance": 7.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 8.0,
+  "i18n": 7.0,
+  "security": 7.0,
+  "overall": 78.0,
+  "verdict": "PASS"
+ },
+ "val:112": {
+  "wpcs_compliance": 8.0,
+  "performance": 8.0,
+  "code_quality": 8.0,
+  "overall": 82.0,
+  "verdict": "PASS"
+ },
+ "val:76": {
+  "wpcs_compliance": 7.0,
+  "security": 6.0,
+  "performance": 6.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 7.0,
+  "i18n": 8.0,
+  "error_handling": 7.0,
+  "overall": 73.0,
+  "verdict": "PASS"
+ },
+ "val:37": {
+  "wpcs_compliance": 7.0,
+  "security": 6.0,
+  "performance": 7.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 6.0,
+  "error_handling": 5.0,
+  "overall": 67.0,
+  "verdict": "PASS"
+ },
+ "val:35": {
+  "wpcs_compliance": 7.0,
+  "security": 8.0,
+  "code_quality": 8.0,
+  "error_handling": 8.0,
+  "performance": 8.0,
+  "wp_api_usage": 8.0,
+  "overall": 82.0,
+  "verdict": "PASS"
+ },
+ "val:94": {
+  "wpcs_compliance": 7.0,
+  "security": 5.0,
+  "performance": 8.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 7.0,
+  "error_handling": 8.0,
+  "overall": 70.0,
+  "verdict": "PASS"
+ },
+ "val:78": {
+  "wpcs_compliance": 4.0,
+  "security": 7.0,
+  "performance": 6.5,
+  "wp_api_usage": 6.0,
+  "code_quality": 5.0,
+  "i18n": 3.0,
+  "error_handling": 4.5,
+  "overall": 52.0,
+  "verdict": "FAIL"
+ },
+ "val:18": {
+  "wpcs_compliance": 8.0,
+  "performance": 8.0,
+  "code_quality": 8.0,
+  "i18n": 3.0,
+  "overall": 74.0,
+  "verdict": "PASS"
+ },
+ "val:15": {
+  "wpcs_compliance": 9.0,
+  "performance": 8.0,
+  "code_quality": 9.0,
+  "security": 7.0,
+  "wp_api_usage": 8.0,
+  "error_handling": 6.0,
+  "overall": 85.0,
+  "verdict": "PASS"
+ },
+ "val:39": {
+  "wpcs_compliance": 7.0,
+  "performance": 7.5,
+  "code_quality": 7.0,
+  "wp_api_usage": 7.0,
+  "overall": 74.0,
+  "verdict": "PASS"
+ },
+ "val:1": {
+  "wpcs_compliance": 8.0,
+  "performance": 8.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 9.0,
+  "overall": 83.0,
+  "verdict": "PASS"
+ },
+ "val:92": {
+  "wpcs_compliance": 6.0,
+  "security": 7.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 8.0,
+  "performance": 8.0,
+  "overall": 73.0,
+  "verdict": "PASS"
+ },
+ "val:97": {
+  "wpcs_compliance": 6.0,
+  "security": 6.0,
+  "performance": 6.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 5.0,
+  "i18n": 7.0,
+  "error_handling": 6.0,
+  "overall": 66.0,
+  "verdict": "PASS"
+ },
+ "val:113": {
+  "wpcs_compliance": 7.0,
+  "security": 6.0,
+  "performance": 8.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 7.0,
+  "accessibility": 5.0,
+  "overall": 71.0,
+  "verdict": "PASS"
+ },
+ "val:109": {
+  "wpcs_compliance": 7.0,
+  "security": 5.0,
+  "performance": 8.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 8.0,
+  "i18n": 5.0,
+  "error_handling": 5.5,
+  "overall": 66.0,
+  "verdict": "PASS"
+ },
+ "val:63": {
+  "wpcs_compliance": 8.0,
+  "performance": 8.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 8.0,
+  "security": 7.0,
+  "error_handling": 6.0,
+  "overall": 80.0,
+  "verdict": "PASS"
+ },
+ "val:73": {
+  "wpcs_compliance": 8.0,
+  "security": 7.0,
+  "performance": 8.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 8.0,
+  "error_handling": 5.0,
+  "overall": 76.0,
+  "verdict": "PASS"
+ },
+ "val:106": {
+  "wpcs_compliance": 7.0,
+  "security": 6.0,
+  "performance": 7.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 7.0,
+  "error_handling": 7.0,
+  "overall": 69.0,
+  "verdict": "PASS"
+ },
+ "val:105": {
+  "wpcs_compliance": 5.0,
+  "security": 5.0,
+  "performance": 8.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 5.0,
+  "error_handling": 5.5,
+  "overall": 58.0,
+  "verdict": "PASS"
+ },
+ "val:137": {
+  "wpcs_compliance": 8.0,
+  "security": 8.0,
+  "performance": 8.0,
+  "wp_api_usage": 9.0,
+  "code_quality": 8.0,
+  "error_handling": 6.0,
+  "overall": 83.0,
+  "verdict": "PASS"
+ },
+ "val:21": {
+  "wpcs_compliance": 9.0,
+  "performance": 8.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 9.0,
+  "security": 8.0,
+  "error_handling": 6.0,
+  "overall": 86.0,
+  "verdict": "PASS"
+ },
+ "val:3": {
+  "wpcs_compliance": 6.0,
+  "performance": 8.0,
+  "code_quality": 8.0,
+  "error_handling": 7.0,
+  "overall": 76.0,
+  "verdict": "PASS"
+ },
+ "val:85": {
+  "wpcs_compliance": 8.0,
+  "security": 7.0,
+  "performance": 7.5,
+  "wp_api_usage": 7.0,
+  "code_quality": 7.0,
+  "error_handling": 5.0,
+  "overall": 74.0,
+  "verdict": "PASS"
+ },
+ "val:79": {
+  "wpcs_compliance": 9.0,
+  "performance": 8.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 8.0,
+  "error_handling": 7.0,
+  "security": 8.0,
+  "overall": 85.0,
+  "verdict": "PASS"
+ },
+ "val:119": {
+  "wpcs_compliance": 8.0,
+  "security": 8.0,
+  "performance": 7.5,
+  "wp_api_usage": 9.0,
+  "code_quality": 8.0,
+  "error_handling": 6.0,
+  "overall": 84.0,
+  "verdict": "PASS"
+ },
+ "val:40": {
+  "wpcs_compliance": 4.0,
+  "security": 5.0,
+  "performance": 7.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 5.0,
+  "i18n": 6.0,
+  "accessibility": 7.0,
+  "error_handling": 5.0,
+  "overall": 61.0,
+  "verdict": "PASS"
+ },
+ "val:57": {
+  "wpcs_compliance": 8.0,
+  "security": 8.0,
+  "performance": 7.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 8.0,
+  "i18n": 8.0,
+  "accessibility": 6.0,
+  "error_handling": 7.0,
+  "overall": 83.0,
+  "verdict": "PASS"
+ },
+ "val:22": {
+  "wpcs_compliance": 7.0,
+  "security": 6.0,
+  "performance": 8.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 7.0,
+  "i18n": 6.0,
+  "accessibility": 5.0,
+  "overall": 70.0,
+  "verdict": "PASS"
+ },
+ "val:83": {
+  "wpcs_compliance": 9.0,
+  "performance": 8.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 8.0,
+  "i18n": 7.0,
+  "security": 8.0,
+  "error_handling": 6.0,
+  "overall": 88.0,
+  "verdict": "PASS"
+ },
+ "val:71": {
+  "wpcs_compliance": 5.0,
+  "security": 5.0,
+  "performance": 7.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 6.0,
+  "accessibility": 5.0,
+  "error_handling": 6.0,
+  "overall": 60.0,
+  "verdict": "FAIL"
+ },
+ "val:5": {
+  "wpcs_compliance": 8.0,
+  "performance": 7.5,
+  "wp_api_usage": 8.0,
+  "code_quality": 8.0,
+  "i18n": 8.0,
+  "error_handling": 6.5,
+  "security": 8.0,
+  "overall": 84.0,
+  "verdict": "PASS"
+ },
+ "val:91": {
+  "wpcs_compliance": 7.0,
+  "performance": 7.5,
+  "wp_api_usage": 7.0,
+  "code_quality": 8.0,
+  "error_handling": 6.0,
+  "overall": 78.0,
+  "verdict": "PASS"
+ },
+ "val:33": {
+  "wpcs_compliance": 6.0,
+  "security": 6.0,
+  "performance": 7.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 6.0,
+  "i18n": 4.0,
+  "accessibility": 5.0,
+  "overall": 66.0,
+  "verdict": "PASS"
+ },
+ "val:70": {
+  "wpcs_compliance": 8.0,
+  "code_quality": 8.0,
+  "overall": 82.0,
+  "verdict": "PASS"
+ },
+ "val:19": {
+  "wpcs_compliance": 8.0,
+  "security": 8.0,
+  "code_quality": 8.0,
+  "error_handling": 8.0,
+  "i18n": 4.0,
+  "wp_api_usage": 8.0,
+  "overall": 80.0,
+  "verdict": "PASS"
+ },
+ "val:99": {
+  "wpcs_compliance": 8.0,
+  "code_quality": 8.0,
+  "performance": 8.0,
+  "wp_api_usage": 8.0,
+  "overall": 80.0,
+  "verdict": "PASS"
+ },
+ "val:31": {
+  "wpcs_compliance": 8.0,
+  "security": 7.5,
+  "wp_api_usage": 9.0,
+  "code_quality": 8.0,
+  "performance": 8.0,
+  "error_handling": 7.0,
+  "overall": 86.0,
+  "verdict": "PASS"
+ },
+ "val:10": {
+  "wpcs_compliance": 8.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 7.0,
+  "i18n": 8.0,
+  "performance": 7.5,
+  "error_handling": 6.0,
+  "overall": 80.0,
+  "verdict": "PASS"
+ },
+ "val:89": {
+  "wpcs_compliance": 6.0,
+  "security": 6.0,
+  "performance": 6.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 5.0,
+  "error_handling": 6.0,
+  "overall": 64.0,
+  "verdict": "PASS"
+ },
+ "val:58": {
+  "wpcs_compliance": 8.0,
+  "code_quality": 8.0,
+  "wp_api_usage": 7.0,
+  "overall": 76.0,
+  "verdict": "PASS"
+ },
+ "val:90": {
+  "wpcs_compliance": 8.0,
+  "security": 8.0,
+  "performance": 7.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 5.0,
+  "accessibility": 4.0,
+  "error_handling": 6.0,
+  "overall": 66.0,
+  "verdict": "PASS"
+ },
+ "val:61": {
+  "wpcs_compliance": 8.0,
+  "security": 7.0,
+  "performance": 7.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 8.0,
+  "error_handling": 5.0,
+  "overall": 78.0,
+  "verdict": "PASS"
+ },
+ "val:93": {
+  "wpcs_compliance": 6.0,
+  "security": 6.0,
+  "sql_safety": 5.0,
+  "performance": 4.0,
+  "wp_api_usage": 6.0,
+  "code_quality": 4.0,
+  "error_handling": 4.0,
+  "overall": 52.0,
+  "verdict": "FAIL"
+ },
+ "val:43": {
+  "wpcs_compliance": 2.0,
+  "code_quality": 6.0,
+  "overall": 55.0,
+  "verdict": "FAIL"
+ },
+ "val:25": {
+  "wpcs_compliance": 6.0,
+  "security": 7.0,
+  "performance": 8.0,
+  "code_quality": 7.0,
+  "wp_api_usage": 6.0,
+  "overall": 71.0,
+  "verdict": "PASS"
+ },
+ "val:95": {
+  "wpcs_compliance": 8.0,
+  "security": 6.0,
+  "performance": 6.5,
+  "wp_api_usage": 8.0,
+  "code_quality": 7.0,
+  "i18n": 8.0,
+  "error_handling": 7.0,
+  "overall": 74.0,
+  "verdict": "PASS"
+ },
+ "val:75": {
+  "wpcs_compliance": 8.0,
+  "performance": 8.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 8.0,
+  "error_handling": 6.5,
+  "overall": 80.0,
+  "verdict": "PASS"
+ },
+ "val:4": {
+  "wpcs_compliance": 6.0,
+  "performance": 7.5,
+  "code_quality": 7.0,
+  "wp_api_usage": 7.0,
+  "overall": 73.0,
+  "verdict": "PASS"
+ },
+ "val:17": {
+  "wpcs_compliance": 9.0,
+  "performance": 8.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 8.0,
+  "error_handling": 5.5,
+  "security": 7.0,
+  "overall": 82.0,
+  "verdict": "PASS"
+ },
+ "val:96": {
+  "wpcs_compliance": 6.0,
+  "performance": 7.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 8.0,
+  "error_handling": 8.0,
+  "security": 7.0,
+  "overall": 76.0,
+  "verdict": "PASS"
+ },
+ "val:67": {
+  "wpcs_compliance": 8.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 8.0,
+  "overall": 77.0,
+  "verdict": "PASS"
+ },
+ "val:111": {
+  "wpcs_compliance": 8.0,
+  "security": 7.0,
+  "performance": 8.0,
+  "code_quality": 8.0,
+  "wp_api_usage": 7.5,
+  "overall": 82.0,
+  "verdict": "PASS"
+ },
+ "val:72": {
+  "wpcs_compliance": 4.0,
+  "security": 7.0,
+  "sql_safety": 6.0,
+  "performance": 5.0,
+  "wp_api_usage": 4.0,
+  "code_quality": 5.0,
+  "error_handling": 5.0,
+  "overall": 60.0,
+  "verdict": "PASS"
+ },
+ "val:52": {
+  "wpcs_compliance": 5.0,
+  "security": 7.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 8.0,
+  "i18n": 3.0,
+  "performance": 7.0,
+  "error_handling": 6.0,
+  "overall": 68.0,
+  "verdict": "PASS"
+ },
+ "val:107": {
+  "wpcs_compliance": 4.0,
+  "security": 4.0,
+  "performance": 6.0,
+  "wp_api_usage": 6.0,
+  "code_quality": 4.0,
+  "error_handling": 4.5,
+  "overall": 52.0,
+  "verdict": "FAIL"
+ },
+ "val:16": {
+  "wpcs_compliance": 4.0,
+  "code_quality": 7.0,
+  "performance": 8.0,
+  "overall": 66.0,
+  "verdict": "PASS"
+ },
+ "val:117": {
+  "wpcs_compliance": 4.0,
+  "security": 7.0,
+  "sql_safety": 6.0,
+  "performance": 5.0,
+  "wp_api_usage": 4.0,
+  "code_quality": 5.0,
+  "error_handling": 5.5,
+  "overall": 62.0,
+  "verdict": "PASS"
+ },
+ "val:23": {
+  "wpcs_compliance": 8.0,
+  "wp_api_usage": 9.0,
+  "code_quality": 7.0,
+  "performance": 8.5,
+  "overall": 83.0,
+  "verdict": "PASS"
+ },
+ "val:115": {
+  "wpcs_compliance": 7.0,
+  "security": 7.0,
+  "sql_safety": 8.0,
+  "performance": 6.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 6.0,
+  "error_handling": 6.0,
+  "overall": 70.0,
+  "verdict": "PASS"
+ },
+ "val:47": {
+  "wpcs_compliance": 7.0,
+  "security": 7.0,
+  "sql_safety": 8.0,
+  "performance": 6.0,
+  "wp_api_usage": 6.0,
+  "code_quality": 6.0,
+  "error_handling": 5.0,
+  "overall": 71.0,
+  "verdict": "PASS"
+ },
+ "val:2": {
+  "wpcs_compliance": 9.0,
+  "performance": 8.0,
+  "code_quality": 9.0,
+  "wp_api_usage": 8.0,
+  "error_handling": 7.0,
+  "overall": 86.0,
+  "verdict": "PASS"
+ },
+ "val:44": {
+  "wpcs_compliance": 2.0,
+  "security": 2.0,
+  "wp_api_usage": 5.0,
+  "code_quality": 5.0,
+  "error_handling": 3.0,
+  "performance": 7.0,
+  "overall": 36.0,
+  "verdict": "FAIL"
+ },
+ "val:12": {
+  "wpcs_compliance": 8.0,
+  "performance": 7.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 8.0,
+  "error_handling": 8.0,
+  "overall": 85.0,
+  "verdict": "PASS"
+ },
+ "val:80": {
+  "wpcs_compliance": 6.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 8.0,
+  "overall": 74.0,
+  "verdict": "PASS"
+ },
+ "val:82": {
+  "wpcs_compliance": 7.0,
+  "security": 3.0,
+  "wp_api_usage": 4.0,
+  "code_quality": 5.0,
+  "error_handling": 4.0,
+  "performance": 6.0,
+  "overall": 42.0,
+  "verdict": "FAIL"
+ },
+ "val:0": {
+  "wpcs_compliance": 9.0,
+  "security": 8.0,
+  "wp_api_usage": 9.0,
+  "code_quality": 8.0,
+  "error_handling": 6.0,
+  "performance": 7.5,
+  "overall": 82.0,
+  "verdict": "PASS"
+ },
+ "val:53": {
+  "wpcs_compliance": 8.0,
+  "security": 8.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 7.0,
+  "i18n": 8.0,
+  "overall": 80.0,
+  "verdict": "PASS"
+ },
+ "val:87": {
+  "wpcs_compliance": 8.0,
+  "security": 8.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 8.0,
+  "performance": 8.0,
+  "overall": 82.0,
+  "verdict": "PASS"
+ },
+ "val:104": {
+  "wpcs_compliance": 8.0,
+  "security": 6.0,
+  "performance": 7.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 6.0,
+  "error_handling": 4.0,
+  "overall": 66.0,
+  "verdict": "PASS"
+ },
+ "val:86": {
+  "wpcs_compliance": 8.0,
+  "security": 7.0,
+  "performance": 7.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 7.0,
+  "i18n": 7.0,
+  "error_handling": 6.0,
+  "overall": 73.0,
+  "verdict": "PASS"
+ },
+ "val:29": {
+  "wpcs_compliance": 5.0,
+  "performance": 7.5,
+  "wp_api_usage": 7.0,
+  "code_quality": 7.0,
+  "error_handling": 6.0,
+  "security": 7.0,
+  "overall": 70.0,
+  "verdict": "PASS"
+ },
+ "val:48": {
+  "wpcs_compliance": 6.0,
+  "security": 5.0,
+  "sql_safety": 5.0,
+  "performance": 5.0,
+  "wp_api_usage": 4.0,
+  "code_quality": 5.0,
+  "error_handling": 4.0,
+  "overall": 52.0,
+  "verdict": "FAIL"
+ },
+ "val:50": {
+  "wpcs_compliance": 8.0,
+  "security": 6.0,
+  "performance": 8.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 8.0,
+  "i18n": 7.0,
+  "accessibility": 6.0,
+  "error_handling": 6.0,
+  "overall": 76.0,
+  "verdict": "PASS"
+ },
+ "val:34": {
+  "wpcs_compliance": 7.0,
+  "security": 6.0,
+  "performance": 7.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 5.0,
+  "error_handling": 5.0,
+  "overall": 65.0,
+  "verdict": "PASS"
+ },
+ "val:102": {
+  "wpcs_compliance": 5.0,
+  "performance": 7.0,
+  "wp_api_usage": 6.0,
+  "code_quality": 7.0,
+  "overall": 70.0,
+  "verdict": "PASS"
+ },
+ "val:14": {
+  "wpcs_compliance": 8.0,
+  "performance": 8.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 8.0,
+  "overall": 80.0,
+  "verdict": "PASS"
+ },
+ "val:103": {
+  "wpcs_compliance": 7.0,
+  "security": 5.0,
+  "performance": 7.0,
+  "wp_api_usage": 6.0,
+  "code_quality": 6.0,
+  "i18n": 5.0,
+  "accessibility": 6.0,
+  "error_handling": 6.0,
+  "overall": 66.0,
+  "verdict": "PASS"
+ },
+ "val:38": {
+  "wpcs_compliance": 8.0,
+  "performance": 8.0,
+  "code_quality": 8.0,
+  "wp_api_usage": 7.0,
+  "overall": 78.0,
+  "verdict": "PASS"
+ },
+ "val:114": {
+  "wpcs_compliance": 8.0,
+  "security": 6.0,
+  "sql_safety": 5.0,
+  "performance": 6.0,
+  "wp_api_usage": 6.0,
+  "code_quality": 7.0,
+  "error_handling": 6.0,
+  "overall": 67.0,
+  "verdict": "PASS"
+ },
+ "val:55": {
+  "wpcs_compliance": 3.0,
+  "code_quality": 6.0,
+  "error_handling": 5.0,
+  "wp_api_usage": 4.5,
+  "performance": 7.0,
+  "overall": 56.0,
+  "verdict": "PASS"
+ },
+ "val:8": {
+  "wpcs_compliance": 8.0,
+  "performance": 7.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 8.0,
+  "i18n": 8.0,
+  "overall": 80.0,
+  "verdict": "PASS"
+ },
+ "val:26": {
+  "wpcs_compliance": 3.0,
+  "code_quality": 6.0,
+  "error_handling": 5.0,
+  "performance": 6.0,
+  "security": 6.0,
+  "wp_api_usage": 6.0,
+  "overall": 58.0,
+  "verdict": "PASS"
+ },
+ "val:54": {
+  "wpcs_compliance": 3.0,
+  "code_quality": 6.0,
+  "error_handling": 6.0,
+  "performance": 7.0,
+  "wp_api_usage": 4.0,
+  "overall": 58.0,
+  "verdict": "PASS"
+ },
+ "val:51": {
+  "wpcs_compliance": 7.0,
+  "wp_api_usage": 5.0,
+  "code_quality": 5.0,
+  "performance": 8.0,
+  "overall": 60.0,
+  "verdict": "PASS"
+ },
+ "val:81": {
+  "wpcs_compliance": 8.0,
+  "performance": 8.0,
+  "code_quality": 8.0,
+  "overall": 80.0,
+  "verdict": "PASS"
+ },
+ "val:30": {
+  "wpcs_compliance": 6.0,
+  "performance": 8.0,
+  "code_quality": 8.0,
+  "wp_api_usage": 7.0,
+  "overall": 76.0,
+  "verdict": "PASS"
+ },
+ "val:41": {
+  "wpcs_compliance": 2.0,
+  "performance": 6.5,
+  "wp_api_usage": 4.0,
+  "code_quality": 6.0,
+  "error_handling": 5.0,
+  "overall": 55.0,
+  "verdict": "FAIL"
+ },
+ "val:60": {
+  "wpcs_compliance": 7.0,
+  "security": 7.0,
+  "sql_safety": 7.0,
+  "performance": 6.0,
+  "wp_api_usage": 5.0,
+  "code_quality": 7.0,
+  "error_handling": 5.0,
+  "overall": 68.0,
+  "verdict": "PASS"
+ },
+ "val:98": {
+  "wpcs_compliance": 5.0,
+  "security": 6.0,
+  "performance": 6.0,
+  "wp_api_usage": 5.0,
+  "code_quality": 5.0,
+  "error_handling": 2.0,
+  "overall": 54.0,
+  "verdict": "FAIL"
+ },
+ "val:46": {
+  "wpcs_compliance": 8.0,
+  "security": 7.0,
+  "performance": 7.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 8.0,
+  "error_handling": 8.0,
+  "overall": 83.0,
+  "verdict": "PASS"
+ },
+ "val:68": {
+  "wpcs_compliance": 5.0,
+  "performance": 7.5,
+  "wp_api_usage": 5.0,
+  "code_quality": 7.0,
+  "security": 6.0,
+  "error_handling": 5.0,
+  "overall": 66.0,
+  "verdict": "PASS"
+ },
+ "val:101": {
+  "wpcs_compliance": 7.0,
+  "security": 8.0,
+  "performance": 8.0,
+  "wp_api_usage": 9.0,
+  "code_quality": 7.0,
+  "error_handling": 6.0,
+  "overall": 81.0,
+  "verdict": "PASS"
+ },
+ "val:11": {
+  "wpcs_compliance": 8.0,
+  "security": 7.0,
+  "performance": 7.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 8.0,
+  "error_handling": 7.0,
+  "overall": 80.0,
+  "verdict": "PASS"
+ },
+ "val:20": {
+  "wpcs_compliance": 7.0,
+  "security": 7.0,
+  "performance": 7.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 6.0,
+  "i18n": 7.0,
+  "error_handling": 7.0,
+  "overall": 76.0,
+  "verdict": "PASS"
+ },
+ "val:118": {
+  "wpcs_compliance": 6.0,
+  "performance": 7.5,
+  "wp_api_usage": 8.0,
+  "code_quality": 6.0,
+  "overall": 70.0,
+  "verdict": "PASS"
+ },
+ "val:32": {
+  "wpcs_compliance": 8.0,
+  "performance": 8.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 8.0,
+  "error_handling": 6.0,
+  "overall": 80.0,
+  "verdict": "PASS"
+ },
+ "val:9": {
+  "wpcs_compliance": 7.0,
+  "security": 8.0,
+  "performance": 7.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 7.0,
+  "accessibility": 7.0,
+  "error_handling": 6.0,
+  "overall": 81.0,
+  "verdict": "PASS"
+ },
+ "val:56": {
+  "wpcs_compliance": 8.0,
+  "performance": 8.0,
+  "wp_api_usage": 7.5,
+  "code_quality": 8.0,
+  "i18n": 8.0,
+  "error_handling": 7.0,
+  "overall": 80.0,
+  "verdict": "PASS"
+ },
+ "val:42": {
+  "wpcs_compliance": 2.0,
+  "security": 4.0,
+  "performance": 6.0,
+  "wp_api_usage": 2.0,
+  "code_quality": 3.0,
+  "overall": 36.0,
+  "verdict": "FAIL"
+ },
+ "val:110": {
+  "wpcs_compliance": 4.0,
+  "security": 5.0,
+  "performance": 5.0,
+  "wp_api_usage": 6.0,
+  "code_quality": 4.0,
+  "error_handling": 4.0,
+  "overall": 54.0,
+  "verdict": "FAIL"
+ },
+ "val:100": {
+  "wpcs_compliance": 8.0,
+  "performance": 7.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 8.0,
+  "error_handling": 6.0,
+  "overall": 80.0,
+  "verdict": "PASS"
+ },
+ "val:88": {
+  "wpcs_compliance": 3.0,
+  "performance": 5.0,
+  "wp_api_usage": 3.0,
+  "code_quality": 2.0,
+  "error_handling": 2.0,
+  "security": 5.0,
+  "overall": 27.0,
+  "verdict": "FAIL"
+ },
+ "val:62": {
+  "wpcs_compliance": 8.0,
+  "performance": 8.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 8.0,
+  "overall": 84.0,
+  "verdict": "PASS"
+ },
+ "val:36": {
+  "wpcs_compliance": 7.0,
+  "performance": 7.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 7.0,
+  "error_handling": 6.0,
+  "overall": 77.0,
+  "verdict": "PASS"
+ },
+ "val:28": {
+  "wpcs_compliance": 9.0,
+  "security": 8.0,
+  "performance": 7.0,
+  "wp_api_usage": 9.0,
+  "code_quality": 8.0,
+  "error_handling": 6.5,
+  "overall": 86.0,
+  "verdict": "PASS"
+ },
+ "val:77": {
+  "wpcs_compliance": 8.0,
+  "security": 8.0,
+  "performance": 8.0,
+  "wp_api_usage": 8.0,
+  "code_quality": 8.0,
+  "overall": 78.0,
+  "verdict": "PASS"
+ },
+ "val:27": {
+  "wpcs_compliance": 6.0,
+  "security": 6.0,
+  "performance": 7.0,
+  "wp_api_usage": 6.0,
+  "code_quality": 5.0,
+  "error_handling": 5.0,
+  "overall": 63.0,
+  "verdict": "PASS"
+ },
+ "val:64": {
+  "wpcs_compliance": 8.0,
+  "security": 6.0,
+  "performance": 8.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 6.0,
+  "error_handling": 6.0,
+  "overall": 72.0,
+  "verdict": "PASS"
+ },
+ "val:84": {
+  "wpcs_compliance": 8.0,
+  "security": 4.0,
+  "performance": 7.5,
+  "wp_api_usage": 8.0,
+  "code_quality": 7.0,
+  "i18n": 8.0,
+  "error_handling": 5.0,
+  "overall": 53.0,
+  "verdict": "FAIL"
+ },
+ "val:6": {
+  "wpcs_compliance": 3.0,
+  "performance": 8.0,
+  "wp_api_usage": 6.0,
+  "code_quality": 7.0,
+  "error_handling": 5.0,
+  "overall": 62.0,
+  "verdict": "PASS"
+ },
+ "val:59": {
+  "wpcs_compliance": 8.0,
+  "security": 8.0,
+  "performance": 7.0,
+  "wp_api_usage": 6.0,
+  "code_quality": 7.0,
+  "error_handling": 6.0,
+  "overall": 74.0,
+  "verdict": "PASS"
+ },
+ "val:45": {
+  "wpcs_compliance": 8.0,
+  "performance": 8.0,
+  "code_quality": 8.0,
+  "error_handling": 6.5,
+  "overall": 80.0,
+  "verdict": "PASS"
+ },
+ "val:69": {
+  "wpcs_compliance": 7.0,
+  "performance": 8.0,
+  "wp_api_usage": 7.5,
+  "code_quality": 8.0,
+  "error_handling": 6.0,
+  "security": 7.0,
+  "overall": 78.0,
+  "verdict": "PASS"
+ },
+ "val:116": {
+  "wpcs_compliance": 7.0,
+  "performance": 8.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 8.0,
+  "error_handling": 7.0,
+  "overall": 78.0,
+  "verdict": "PASS"
+ },
+ "val:24": {
+  "wpcs_compliance": 8.0,
+  "security": 6.0,
+  "performance": 8.0,
+  "wp_api_usage": 6.0,
+  "code_quality": 8.0,
+  "error_handling": 6.0,
+  "overall": 72.0,
+  "verdict": "PASS"
+ },
+ "val:108": {
+  "wpcs_compliance": 7.0,
+  "security": 6.5,
+  "performance": 6.5,
+  "wp_api_usage": 6.0,
+  "code_quality": 4.0,
+  "error_handling": 4.0,
+  "overall": 54.0,
+  "verdict": "FAIL"
+ },
+ "val:74": {
+  "wpcs_compliance": 8.0,
+  "performance": 8.0,
+  "wp_api_usage": 7.0,
+  "code_quality": 8.0,
+  "overall": 82.0,
+  "verdict": "PASS"
+ }
+}

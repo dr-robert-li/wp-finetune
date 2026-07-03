@@ -1,0 +1,18 @@
+{
+  "in_family_ckpts": [
+    "relabel_1ep",
+    "full_ep1",
+    "full_ep2",
+    "full_ep3",
+    "s1_ep3_v13",
+    "s2_ep3"
+  ],
+  "oracle_calib_infamily": 0.8857142857142858,
+  "oracle_defect_infamily": -0.8857142857142858,
+  "oracle_blend_infamily": -0.2571428571428572,
+  "calib_ci_infamily": [
+    0.3142857142857143,
+    1.0
+  ],
+  "gate_pass_infamily_calib": true
+}

@@ -1,0 +1,184 @@
+{
+  "picked": [
+    {
+      "id": "holdout:0",
+      "src": "google-listings-and-ads.json",
+      "fn": "WPCOMProxy::prepare_response",
+      "hash": "d5e91827d2062b5d"
+    },
+    {
+      "id": "holdout:1",
+      "src": "yith-woocommerce-ajax-search.json",
+      "fn": "yit_avoid_duplicate",
+      "hash": "7bfb15f5d2939824"
+    },
+    {
+      "id": "holdout:2",
+      "src": "yith-woocommerce-ajax-search.json",
+      "fn": "YIT_Upgrade::multisite_updater_script",
+      "hash": "9f0764fa40de8929"
+    },
+    {
+      "id": "holdout:3",
+      "src": "woocommerce.json",
+      "fn": "BacsGatewaySettingsSchema::validate_bacs_accounts",
+      "hash": "92adfea31350c94b"
+    },
+    {
+      "id": "holdout:4",
+      "src": "elementor.json",
+      "fn": "Api::get_deactivation_data",
+      "hash": "141ff5f80557c3bf"
+    },
+    {
+      "id": "holdout:5",
+      "src": "amp.json",
+      "fn": "ErrorPage::with_throwable",
+      "hash": "38fe273e35e4abaa"
+    },
+    {
+      "id": "holdout:6",
+      "src": "onoffice-for-wp-websites.json",
+      "fn": "InputFieldComplexSortableListRenderer::esc_html",
+      "hash": "99325ad0ee768a37"
+    },
+    {
+      "id": "holdout:7",
+      "src": "pagarme-payments-for-woocommerce.json",
+      "fn": "HubCommand::sendResponse",
+      "hash": "56a494180ba0f091"
+    },
+    {
+      "id": "holdout:8",
+      "src": "woocommerce-square.json",
+      "fn": "Settings::get_location_id",
+      "hash": "be8b8970f8e23c4c"
+    },
+    {
+      "id": "holdout:9",
+      "src": "woocommerce-payments.json",
+      "fn": "WC_Payments_Redirect_Service::redirect_to_overview_page_with_error",
+      "hash": "21c04ec1489988b9"
+    },
+    {
+      "id": "holdout:10",
+      "src": "woo-product-reviews-shortcode.json",
+      "fn": "send_install_update",
+      "hash": "388bdf947beef00a"
+    },
+    {
+      "id": "holdout:11",
+      "src": "google-site-kit.json",
+      "fn": "Module_Sharing_Settings::get_shared_roles",
+      "hash": "2c802c0a0d9d4d47"
+    },
+    {
+      "id": "holdout:12",
+      "src": "woocommerce.json",
+      "fn": "WC_REST_Posts_Controller::update_item_permissions_check",
+      "hash": "b7ca681772766908"
+    },
+    {
+      "id": "holdout:13",
+      "src": "woocommerce.json",
+      "fn": "get_button_html",
+      "hash": "2c0b6653a71f863b"
+    },
+    {
+      "id": "holdout:14",
+      "src": "woocommerce-services.json",
+      "fn": "WC_Connect_Service_Settings_Store::get_enabled_services_by_ids",
+      "hash": "e8f7eaa33d3568ed"
+    },
+    {
+      "id": "holdout:15",
+      "src": "theme-demo-import.json",
+      "fn": "OCDI_Plugin::__construct",
+      "hash": "31072e063a700021"
+    },
+    {
+      "id": "holdout:16",
+      "src": "wordpress-seo.json",
+      "fn": "Indexable_Date_Archive_Presentation::generate_canonical",
+      "hash": "57fe586354740acb"
+    },
+    {
+      "id": "holdout:17",
+      "src": "google-site-kit.json",
+      "fn": "Profile_Reader::get_profile_data",
+      "hash": "a20c1a79c0fedb73"
+    },
+    {
+      "id": "holdout:18",
+      "src": "learnpress-wishlist.json",
+      "fn": "learn_press_process_chart",
+      "hash": "c2bb516433437a6a"
+    },
+    {
+      "id": "holdout:19",
+      "src": "hello-plus.json",
+      "fn": "Ehp_Footer::add_style_section",
+      "hash": "c8530a0af816ed29"
+    },
+    {
+      "id": "holdout:20",
+      "src": "wordpress-seo.json",
+      "fn": "General_Page_Integration::get_script_data",
+      "hash": "3b049ed6f14107c4"
+    },
+    {
+      "id": "holdout:21",
+      "src": "pagarme-payments-for-woocommerce.json",
+      "fn": "Billet::field_billet_allowed_for_subscription",
+      "hash": "6a19fcc7f6315673"
+    },
+    {
+      "id": "holdout:22",
+      "src": "jupiterx-core.json",
+      "fn": "JupiterX_Customizer_Base_Group_Control::exclude_fields",
+      "hash": "f59fe520ae6b6a51"
+    },
+    {
+      "id": "holdout:23",
+      "src": "google-site-kit.json",
+      "fn": "Modules::inline_modules_data",
+      "hash": "d54ea25516de6d64"
+    },
+    {
+      "id": "holdout:24",
+      "src": "woocommerce-square.json",
+      "fn": "Orders::get_shipping_line_items",
+      "hash": "e8afc95b84d8e12a"
+    },
+    {
+      "id": "holdout:25",
+      "src": "woocommerce-mercadopago.json",
+      "fn": "Gateway::separateCheckboxesList",
+      "hash": "83d5ce082d8e9810"
+    },
+    {
+      "id": "holdout:26",
+      "src": "wordpress-develop.json",
+      "fn": "IXR_Server::setCallbacks",
+      "hash": "690035d62e9a48cb"
+    },
+    {
+      "id": "holdout:27",
+      "src": "jupiterx-core.json",
+      "fn": "Post_Base::register_overlay_controls",
+      "hash": "4009063c4406ba8f"
+    },
+    {
+      "id": "holdout:28",
+      "src": "plugnmeet.json",
+      "fn": "PerformRpcRequest::setPayload",
+      "hash": "448e5a89f9075cf5"
+    },
+    {
+      "id": "holdout:29",
+      "src": "wp-super-cache.json",
+      "fn": "User_Agent_Info::is_yandex_browser",
+      "hash": "d73693de357ef129"
+    }
+  ]
+}
