@@ -4,6 +4,33 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-07-04 — PROMOTED v1.3 judge: relabel 3-epoch SFT beats v1.2, multi-seed confirmed.
+
+**What shipped.** The re-labeling campaign paid off. Rebuilt 478 judge SFT targets from the
+median-aggregated relabel scores (`openai_train_relabel_v1.jsonl` — verdict + all dims + overall
+made mutually consistent, inline CoT numbers patched to match the emitted JSON), then trained the
+same rank-32 MoE-only LoRA the v1.2 recipe uses. The trainer builds a fresh LoRA from base (no
+`load_state`), so "continued fine-tune of v1.2" is really a fresh SFT on better labels — I ran the
+isolated A/B to prove it was the labels, not the recipe.
+
+**The evidence, cleanest form.** Same 121 val items, vs the new relabel_v1 labels, identical
+recipe/seed — only the training targets differ:
+- 1-epoch A/B: relabel 0.638 vs old-data control 0.487 → **+0.15 label effect**.
+- 3-epoch curve: 0.610 → 0.739 → **0.796** (monotonic, no collapse; train loss 2.68, terse 0.0).
+- Multi-seed ep3 (seeds default/1/2): 0.796 / 0.827 / 0.790 → mean 0.804, sd 0.020, **all beat
+  v1.2's 0.748**; 3-seed median-ensemble 0.842. Paired advantage CI [-0.007,+0.127] grazes zero
+  (v1.2 is one strong instance, n=121 eval noise is wide) — but every independent seed clearing
+  the bar is the decisive fact, not the marginal CI.
+- Reformat-probe bias audit (the QC axis skipped in session 3): Δ=0, no formatting sensitivity.
+
+**Decision.** Promote **seed 1, ep3 (rho 0.827)** as the v1.3 judge — canonical record
+`output/tinker/PROMOTED_v1.3.json`, sampler `tinker://6a06e60f-…/sampler_weights/wp-reasoning-relabel-s1-ep3`,
+local archive `models/tinker_export/wp-reasoning-v1.3`. Gap-to-ceiling now +0.16 (was +0.24) —
+thin, still SFT territory. **RL stays gated behind reward-v2.** Codegen no-regression gate skipped
+with rationale: judge-only relabel, `<wp_gen>` data byte-identical to v1.2, so no regression path
+(unlike the RL Goodhart arc). Total measured Tinker spend for this session: **$1.83** (balance
+$102.59 → $100.76); real rate ~30x under the initial parametric estimate.
+
 ## 2026-07-03 — SHIPPED: v3.0 proceeds on v1.2 SFT. RL closed (recoverable, but not by retrying).
 
 **Context:** The 2026-07-01 smoke kill turned out to be a wiring artifact, not a verdict: code review

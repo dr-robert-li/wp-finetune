@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: MVP
 current_phase: 11
-current_phase_name: Post-RL MoE-Sieve (on v1.2 SFT — RL rejected)
+current_phase_name: Post-RL MoE-Sieve (on v1.3 SFT judge — relabel SFT promoted 2026-07-04)
 status: planning
-stopped_at: SHIPPED decision — v3.0 proceeds on v1.2 SFT (RL rejected; seedA2 honest hybrid@0.8 killed on G1 2026-07-03). Phase 11 re-scoped to v1.2 SFT routing.
-last_updated: "2026-07-03T00:00:00.000Z"
+stopped_at: "v1.3 judge PROMOTED 2026-07-04 — relabel 3-epoch SFT (seed 1) judge-rho 0.827 vs new val labels, beats v1.2 SFT 0.748 (all 3 seeds clear bar; reformat-bias audit PASS). Supersedes v1.2 SFT judge baseline. Canonical: output/tinker/PROMOTED_v1.3.json. RL still rejected/gated behind reward-v2. Phase 11 routing now operates on v1.3."
+last_updated: "2026-07-04T00:00:00.000Z"
 progress:
   total_phases: 15
   completed_phases: 14
