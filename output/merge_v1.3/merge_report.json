@@ -1,0 +1,31 @@
+{
+  "status": "staging_written_pending_anchor",
+  "merge_type": "tinker_per_expert_moe_only_NO_attn_NO_lm_head",
+  "base_path": "models/Qwen3-30B-A3B",
+  "adapter_tar": "models/tinker_export/v1.3_pkg/checkpoint.tar.gz/checkpoint.tar",
+  "out_dir": "models/_staging/qwen3-30b-wp-v1.3-merged",
+  "scale": 1.0,
+  "r": 32,
+  "lora_alpha": 32,
+  "math_convention": "tinker_shared_A_per_expert_B (w1/w3) | per_expert_A_shared_B (w2)",
+  "per_expert_delta_differ_check": {
+    "w1": 0.016389,
+    "w3": 0.015531,
+    "w2": 0.008643
+  },
+  "gate_up_touched": 6144,
+  "down_touched": 6144,
+  "is_moe_only_adapter": true,
+  "attention_q_proj_changed": false,
+  "attention_skipped": true,
+  "lm_head_excluded": true,
+  "lm_head_applied": false,
+  "lm_head_touched": 0,
+  "base_vocab": 151936,
+  "tokenizer_vocab": 151669,
+  "tokenizer_max_id": 151668,
+  "tokenizer_wp_judge_pieces": 5,
+  "tokenizer_is_stock_text_routing": true,
+  "shard_count": 13,
+  "wall_clock_sec": 118.0
+}
