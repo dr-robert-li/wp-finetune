@@ -1,0 +1,55 @@
+{
+  "n": 30,
+  "rho": 0.841303548714575,
+  "ci": [
+    0.7034762577641074,
+    0.9081906436653238
+  ],
+  "inter_pass_r": 0.9447736825845475,
+  "sentinel_drift": {
+    "train:61": [
+      72.0,
+      70.0
+    ],
+    "train:44": [
+      78.0,
+      78.0
+    ],
+    "train:29": [
+      80.0,
+      80.0
+    ]
+  },
+  "labels": {
+    "holdout:28": 64.0,
+    "holdout:14": 68.0,
+    "holdout:12": 85.0,
+    "holdout:8": 80.0,
+    "holdout:5": 82.0,
+    "holdout:24": 82.0,
+    "holdout:11": 80.0,
+    "holdout:2": 66.0,
+    "holdout:27": 78.0,
+    "holdout:10": 63.0,
+    "holdout:16": 78.0,
+    "holdout:6": 40.0,
+    "holdout:22": 80.0,
+    "holdout:0": 76.0,
+    "holdout:25": 66.0,
+    "holdout:3": 85.0,
+    "holdout:20": 80.0,
+    "holdout:18": 50.0,
+    "holdout:17": 80.0,
+    "holdout:29": 78.0,
+    "holdout:26": 62.0,
+    "holdout:21": 74.0,
+    "holdout:1": 66.0,
+    "holdout:4": 71.0,
+    "holdout:7": 64.0,
+    "holdout:19": 76.0,
+    "holdout:9": 75.0,
+    "holdout:15": 74.0,
+    "holdout:23": 78.0,
+    "holdout:13": 74.0
+  }
+}
