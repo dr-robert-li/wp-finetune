@@ -1,0 +1,10 @@
+{
+  "note": "Same 118 val items, vs NEW val labels (val_labels_v1). Identical 1-epoch LoRA-from-base recipe (rank32, MoE-only, seed42); only training targets differ.",
+  "n_common": 118,
+  "ceiling": 0.9844,
+  "relabel_sft_1ep_new_data": {"rho": 0.6384, "ci": [0.508, 0.743]},
+  "old_ctrl_1ep_old_data":    {"rho": 0.4868, "ci": [0.318, 0.626]},
+  "v1_2_mature_baseline":     {"rho": 0.7569, "ci": [0.660, 0.821]},
+  "label_effect_relabel_minus_oldctrl": 0.1516,
+  "conclusion": "Relabeling improves judge calibration +0.15 at fixed recipe. 1-epoch from base < mature v1.2; promote via full (3-epoch) relabel SFT to likely exceed 0.7569."
+}

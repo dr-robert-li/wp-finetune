@@ -1,0 +1,14 @@
+{
+  "capture": "output/relabel/eval_relabel_v1/judge_responses.jsonl",
+  "rho_new": 0.6084163141929773,
+  "n": 121,
+  "ci": [
+    0.47350191224514504,
+    0.7214868487437682
+  ],
+  "baseline_rho": 0.7476689625425029,
+  "delta_vs_baseline": -0.13925264834952567,
+  "ceiling": 0.9844009569826934,
+  "gap_to_ceiling": 0.3759846427897161,
+  "parse_fail": 0
+}
