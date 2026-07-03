@@ -138,6 +138,8 @@ def terse_gate_eval(sampling_client, renderer, tok, val_rows, target_n, max_toke
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--stage", default="smoke")
+    ap.add_argument("--seed", type=int, default=None,
+                    help="LoRA init seed (default: Tinker default; vary for multi-seed CIs)")
     ap.add_argument("--train-path", default=None,
                     help="override train JSONL (e.g. the corrective augmented set)")
     ap.add_argument("--rank", type=int, default=32)
@@ -192,12 +194,14 @@ def main():
           f"bs={args.batch_size}", flush=True)
 
     sc = tinker.ServiceClient()
+    lora_kwargs = {} if args.seed is None else {"seed": args.seed}
     tc = sc.create_lora_training_client(
         base_model=BASE_MODEL,
         rank=args.rank,
         train_mlp=True,                    # MoE expert w1/w2/w3 — always on
         train_attn=args.train_attn,        # False by default = MoE-only (D-N1)
         train_unembed=args.train_unembed,  # False by default
+        **lora_kwargs,
     )
 
     step = 0
