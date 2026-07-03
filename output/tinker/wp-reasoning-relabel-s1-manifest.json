@@ -1,0 +1,29 @@
+{
+  "save_name": "wp-reasoning-relabel-s1",
+  "base_model": "Qwen/Qwen3-30B-A3B",
+  "rank": 32,
+  "train_attn": false,
+  "train_unembed": false,
+  "renderer": "qwen3_disable_thinking",
+  "epochs": 3,
+  "checkpoints": [
+    {
+      "epoch": 1,
+      "name": "wp-reasoning-relabel-s1-ep1",
+      "sampler_path": "tinker://6a06e60f-ab56-519d-9da8-b5ca11eb5967:train:0/sampler_weights/wp-reasoning-relabel-s1-ep1"
+    },
+    {
+      "epoch": 2,
+      "name": "wp-reasoning-relabel-s1-ep2",
+      "sampler_path": "tinker://6a06e60f-ab56-519d-9da8-b5ca11eb5967:train:0/sampler_weights/wp-reasoning-relabel-s1-ep2"
+    },
+    {
+      "epoch": 3,
+      "name": "wp-reasoning-relabel-s1-ep3",
+      "sampler_path": "tinker://6a06e60f-ab56-519d-9da8-b5ca11eb5967:train:0/sampler_weights/wp-reasoning-relabel-s1-ep3"
+    }
+  ],
+  "promoted": "wp-reasoning-relabel-s1-ep3",
+  "state_path": null,
+  "created": "2026-07-03T20:34:50.300566+00:00"
+}
