@@ -40,6 +40,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
 import re
 import threading
 from pathlib import Path
@@ -48,8 +49,12 @@ from typing import Optional
 # Valid form names
 CALIB_FORMS: frozenset[str] = frozenset({"pairwise", "hybrid", "calibration"})
 
-# Default sidecar path (Plan 01 output — TRAIN GT only)
-_DEFAULT_SIDECAR = Path(__file__).resolve().parent.parent / "data/rl_probe/judge_gt_sidecar.jsonl"
+# Default sidecar path (Plan 01 output — TRAIN GT only). Overridable via
+# REWARD_SIDECAR_PATH so the relabel-v1 sidecar v2 (B2 conditional-go 2026-07-04)
+# can be adopted without touching every get_anchor_set() call site.
+_DEFAULT_SIDECAR = Path(os.environ.get(
+    "REWARD_SIDECAR_PATH",
+    str(Path(__file__).resolve().parent.parent / "data/rl_probe/judge_gt_sidecar.jsonl")))
 
 # Hybrid form: calibration-error weight subtracted from pairwise concordance.
 # Small enough to preserve the primary pairwise signal while adding intra-group gradient.
@@ -193,11 +198,14 @@ def load_gt_anchor_set(sidecar_path: str) -> tuple[list, dict]:
                 continue
             row = json.loads(line)
             src = row.get("source", "")
-            assert src == "train", (
+            # Any train-split provenance is accepted (e.g. "train_relabel_v1" from
+            # the 2026-07-03 relabel campaign); the protected invariant is that VAL
+            # GT never enters the reward path.
+            assert src == "train" or src.startswith("train_"), (
                 f"Anti-leakage (T-082-08): row {lineno} in {sidecar_path!r} has "
-                f"source={src!r} (expected 'train'). Val GT must NEVER enter the "
-                f"reward path — val is the oracle's held-out target (T-09-LEAK). "
-                f"Row: {row}"
+                f"source={src!r} (expected 'train' or 'train_*'). Val GT must NEVER "
+                f"enter the reward path — val is the oracle's held-out target "
+                f"(T-09-LEAK). Row: {row}"
             )
             rows.append(row)
 

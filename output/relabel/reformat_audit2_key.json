@@ -1,0 +1,156 @@
+{
+  "key": {
+    "train:386": {
+      "orig": "O00",
+      "reform": "R00"
+    },
+    "train:426": {
+      "orig": "O01",
+      "reform": "R01"
+    },
+    "train:366": {
+      "orig": "O02",
+      "reform": "R02"
+    },
+    "train:416": {
+      "orig": "O03",
+      "reform": "R03"
+    },
+    "train:342": {
+      "orig": "O04",
+      "reform": "R04"
+    },
+    "train:339": {
+      "orig": "O05",
+      "reform": "R05"
+    },
+    "train:547": {
+      "orig": "O06",
+      "reform": "R06"
+    },
+    "train:155": {
+      "orig": "O07",
+      "reform": "R07"
+    },
+    "train:63": {
+      "orig": "O08",
+      "reform": "R08"
+    },
+    "train:31": {
+      "orig": "O09",
+      "reform": "R09"
+    },
+    "train:69": {
+      "orig": "O10",
+      "reform": "R10"
+    },
+    "train:37": {
+      "orig": "O11",
+      "reform": "R11"
+    },
+    "train:168": {
+      "orig": "O12",
+      "reform": "R12"
+    },
+    "train:358": {
+      "orig": "O13",
+      "reform": "R13"
+    },
+    "train:51": {
+      "orig": "O14",
+      "reform": "R14"
+    },
+    "train:364": {
+      "orig": "O15",
+      "reform": "R15"
+    },
+    "train:297": {
+      "orig": "O16",
+      "reform": "R16"
+    },
+    "train:158": {
+      "orig": "O17",
+      "reform": "R17"
+    },
+    "train:140": {
+      "orig": "O18",
+      "reform": "R18"
+    },
+    "train:22": {
+      "orig": "O19",
+      "reform": "R19"
+    },
+    "train:96": {
+      "orig": "O20",
+      "reform": "R20"
+    },
+    "train:115": {
+      "orig": "O21",
+      "reform": "R21"
+    },
+    "train:275": {
+      "orig": "O22",
+      "reform": "R22"
+    },
+    "train:266": {
+      "orig": "O23",
+      "reform": "R23"
+    },
+    "train:257": {
+      "orig": "O24",
+      "reform": "R24"
+    },
+    "train:171": {
+      "orig": "O25",
+      "reform": "R25"
+    },
+    "train:450": {
+      "orig": "O26",
+      "reform": "R26"
+    },
+    "train:310": {
+      "orig": "O27",
+      "reform": "R27"
+    },
+    "train:93": {
+      "orig": "O28",
+      "reform": "R28"
+    },
+    "train:300": {
+      "orig": "O29",
+      "reform": "R29"
+    }
+  },
+  "picked": [
+    "train:386",
+    "train:426",
+    "train:366",
+    "train:416",
+    "train:342",
+    "train:339",
+    "train:547",
+    "train:155",
+    "train:63",
+    "train:31",
+    "train:69",
+    "train:37",
+    "train:168",
+    "train:358",
+    "train:51",
+    "train:364",
+    "train:297",
+    "train:158",
+    "train:140",
+    "train:22",
+    "train:96",
+    "train:115",
+    "train:275",
+    "train:266",
+    "train:257",
+    "train:171",
+    "train:450",
+    "train:310",
+    "train:93",
+    "train:300"
+  ]
+}
