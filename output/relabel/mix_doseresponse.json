@@ -1,0 +1,43 @@
+{
+  "note": "judge-rho vs relabel val labels, n=121, mix dose-response (2026-07-04)",
+  "cells": {
+    "raw_relabel_v13": {
+      "negatives": false,
+      "replay": 0,
+      "judge_rho": 0.8274,
+      "codegen": 0.3808,
+      "codegen_gate": "FAIL"
+    },
+    "aug15": {
+      "negatives": true,
+      "replay": 15,
+      "judge_rho": 0.7227,
+      "ci": [
+        0.6258,
+        0.7988
+      ],
+      "codegen": null
+    },
+    "rp30_v131": {
+      "negatives": true,
+      "replay": 30,
+      "judge_rho": 0.7408,
+      "ci": [
+        0.6448,
+        0.8122
+      ],
+      "codegen": "benching"
+    },
+    "genreplay": {
+      "negatives": false,
+      "replay": "genx3 (33.5% gen)",
+      "judge_rho": "training",
+      "codegen": null
+    },
+    "v12_bar": {
+      "judge_rho": 0.7477,
+      "codegen": 0.4616
+    }
+  },
+  "hypothesis": "negatives (old-distribution invalid-PHP judge targets) fight relabel calibration; both negative-containing mixes collapse to ~0.73 regardless of replay level"
+}
