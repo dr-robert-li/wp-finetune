@@ -1,0 +1,14 @@
+{
+  "tag": "seed101_step50",
+  "capture": "output/rl_eval/smoke_v13_seed101_step50/judge_responses.jsonl",
+  "n": 121,
+  "parse_fail": 0,
+  "rho_ckpt": 0.7915217309436793,
+  "rho_warmstart": 0.8273673812600575,
+  "delta": -0.03584565031637821,
+  "delta_ci": [
+    -0.07862496749899817,
+    0.0018452719896602243
+  ],
+  "verdict": "INCONCLUSIVE"
+}
