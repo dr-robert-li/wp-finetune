@@ -11,7 +11,11 @@
 #     calib_std collapses < 0.02 (score-distribution drift / discrimination collapse).
 #   - G1 at reads (50/100/150): paired-delta-rho vs warmstart, CI-lower > 0
 #     (B3: point bars under 0.05 are sub-2SE noise at n=121).
-#   - G2: wp-bench >= A4 v1.3 bar (output/rl_eval/wpbench_v1.3/wpbench_result.json).
+#   - G2: wp-bench >= warm-start's OWN 0.3808 (output/rl_eval/wpbench_v1.3/
+#     wpbench_result.json). Two-model decision 2026-07-04: v1.3 is the JUDGE
+#     artifact (v1.2 remains the gen artifact); mix dose-response showed
+#     judge-rho tracks judge-exposure share, so no mix recovers both axes.
+#     G2 here = RL must not degrade the judge model's residual codegen.
 #   - codegen trip-wire ARMED via --codegen-probe-model-dir (the seedA2 gap).
 #
 # Usage: launch_smoke_v13_calib.sh <seed> [--i-understand-this-spends-gpu]
