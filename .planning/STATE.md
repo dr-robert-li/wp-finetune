@@ -5,7 +5,7 @@ milestone_name: MVP
 current_phase: 11
 current_phase_name: Post-RL MoE-Sieve (on v1.3 SFT judge — relabel SFT promoted 2026-07-04)
 status: planning
-stopped_at: "v1.3 judge PROMOTED 2026-07-04 — relabel 3-epoch SFT (seed 1) judge-rho 0.827 vs new val labels, beats v1.2 SFT 0.748 (all 3 seeds clear bar; reformat-bias audit PASS). Supersedes v1.2 SFT judge baseline. Canonical: output/tinker/PROMOTED_v1.3.json. RL still rejected/gated behind reward-v2. Phase 11 routing now operates on v1.3."
+stopped_at: "RL CLOSED 2026-07-05 — ideal-conditions smoke (v1.3 warm-start, oracle-validated calib-only reward, 2 seeds) killed per pre-registered criterion: 6/6 G1 reads <=0 (SMOKE_V13_VERDICT.json). v1.3 = final judge artifact (rho 0.827; PROMOTED_v1.3.json). TWO-MODEL decision: v1.3 judge + v1.2 gen (mix dose-response: no mix recovers both axes; wpbench v1.3 0.381 vs bar 0.4616). Next: Phase 11 packaging on the two-model pair."
 last_updated: "2026-07-04T00:00:00.000Z"
 progress:
   total_phases: 15

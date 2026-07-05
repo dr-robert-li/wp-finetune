@@ -4,6 +4,34 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-07-05 — RL closed for good: the ideal-conditions smoke also came back empty. v1.3 final.
+
+**The test.** After the B2 offline oracle gate passed for the calib-only stream (in-family 0.886,
+CI [0.31,1.0], leave-one-run-out robust; defect stream anti-correlated and was zeroed per the
+Fable 5 adversarial review), we ran the RL configuration every prior failure pointed to: warm-start
+from v1.3 (0.827, the real promoted judge — not a fresh LoRA), pure calibration reward against the
+re-labeled sidecar v2 (the honest GT), 5× the headroom of the seedA2 attempt (+0.157 vs +0.03),
+two independent seeds, codegen trip-wire armed, drift trip-wires live, CI-based G1 gates with
+measured noise floors. Every defect from the previous three RL post-mortems was fixed.
+
+**The result.** Six checkpoint reads (2 seeds × steps 50/100/150), six negative deltas:
+−0.036/−0.018 → −0.015/−0.030 → −0.020/−0.025, every CI straddling zero from below. No format
+collapse (0 parse fails in all 726 captures), no Goodhart signature (calib_mean/std flat, KL ~0.01),
+reward telemetry honest throughout. The pre-registered kill criterion (both seeds ≤ 0 at 150) fired
+and both runs were killed at steps 155/157. Verdict artifact: `output/rl_eval/SMOKE_V13_VERDICT.json`.
+
+**What this settles.** Per-step judge-score calibration reward does not improve a converged SFT
+judge — not because the reward was broken (this time it provably wasn't), but because the residual
+error the reward can see is the same error SFT already minimized. The +0.079 that was available in
+the labels, SFT took (0.748 → 0.827 via the relabel campaign). What remains to the 0.984 ceiling is
+noise-shaped for this reward family. Any future RL needs a *different signal* (execution-grounded,
+preference-based, or multi-turn), not a better-tuned version of this one.
+
+**Also this session (mix dose-response, A4):** wp-bench showed v1.3 codegen 0.381 vs v1.2's 0.4616
+bar; the mix search (raw / aug15 / rp30 / gen-replay) proved judge-rho tracks judge-exposure share
+monotonically — no training mix recovers both axes. Decision: **two-model** — v1.3 is the judge
+artifact, v1.2 remains the generation artifact, unified dual-mode deferred to Phase 11 packaging.
+
 ## 2026-07-04 — PROMOTED v1.3 judge: relabel 3-epoch SFT beats v1.2, multi-seed confirmed.
 
 **What shipped.** The re-labeling campaign paid off. Rebuilt 478 judge SFT targets from the

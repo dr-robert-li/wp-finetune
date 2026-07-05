@@ -1,0 +1,75 @@
+{
+  "verdict": "KILL (pre-registered criterion: both seeds <= 0 at step-150)",
+  "date": "2026-07-05",
+  "config": {
+    "warm_start": "v1.3 (s1-ss final-state, judge-rho 0.827)",
+    "reward": "calib-only (calibration form, weight 1.0) vs relabel sidecar v2",
+    "oracle_gate": "PASSED in-family before launch (0.886, CI [0.31,1.0])",
+    "seeds": [
+      101,
+      202
+    ],
+    "steps_at_kill": [
+      155,
+      157
+    ]
+  },
+  "g1_reads": {
+    "step50": {
+      "seed101": {
+        "rho": 0.7915,
+        "delta": -0.0358,
+        "ci": [
+          -0.0786,
+          0.0018
+        ]
+      },
+      "seed202": {
+        "rho": 0.809,
+        "delta": -0.0183,
+        "ci": [
+          -0.0605,
+          0.0182
+        ]
+      }
+    },
+    "step100": {
+      "seed101": {
+        "rho": 0.812,
+        "delta": -0.0153,
+        "ci": [
+          -0.0548,
+          0.022
+        ]
+      },
+      "seed202": {
+        "rho": 0.7975,
+        "delta": -0.0299,
+        "ci": [
+          -0.0747,
+          0.0073
+        ]
+      }
+    },
+    "step150": {
+      "seed101": {
+        "rho": 0.8076,
+        "delta": -0.0198,
+        "ci": [
+          -0.0644,
+          0.0179
+        ]
+      },
+      "seed202": {
+        "rho": 0.8021,
+        "delta": -0.0253,
+        "ci": [
+          -0.068,
+          0.0124
+        ]
+      }
+    }
+  },
+  "evidence_quality": "Strongest RL test this project has run: honest oracle-validated reward (in-family calib), 5x the seedA2 headroom (0.157 vs 0.03), true warm-start, 2 independent seeds, CI-based gates with known noise floors, format intact (0 parse fails all 6 captures), no Goodhart signature (calib_mean/std stable, kl ~0.01).",
+  "conclusion": "6/6 checkpoint reads <= 0 across 2 seeds x 3 checkpoints. Per-step judge-score calibration reward does not improve on a converged SFT judge even under ideal conditions. SFT on better labels captured the available value (0.748 -> 0.827); the remaining +0.157 to ceiling is not reachable by this reward family. RL closed. v1.3 = final judge artifact for v3.0; route Phase 11 packaging (two-model: v1.3 judge + v1.2 gen)."
+}
