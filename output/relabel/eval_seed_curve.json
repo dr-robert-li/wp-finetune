@@ -1,0 +1,20 @@
+{
+  "note": "Seed-ensemble N-curve from 3 relabel-SFT seeds (median aggregate, n=121 vs val_labels_v1). N=2/3 are subset means over all combinations.",
+  "singles": {
+    "full_ep3": 0.7957,
+    "s1_ep3": 0.8274,
+    "s2_ep3": 0.7901
+  },
+  "N1_mean": 0.8044,
+  "N2_mean": 0.8314,
+  "N3": 0.842,
+  "best_single": 0.8274,
+  "ceiling": 0.9844,
+  "marginal_gain": {
+    "N1_to_N2": 0.027,
+    "N2_to_N3": 0.0106,
+    "extrapolated_N3_to_N4": 0.005,
+    "extrapolated_N4_to_N5": 0.002
+  },
+  "verdict": "Yes but saturating fast. Ensemble removes per-seed init/sampling variance (seed sd 0.020) only, NOT the label-attenuation floor (ceiling 0.984) -> asymptote ~0.85, capped far below ceiling. Marginal gain halves per added seed. N=3 (0.842) already captures ~85% of achievable ensemble gain; ensemble edge over BEST single seed (s1 0.8274) is only +0.0146. Seeds 4-5 cost ~$0.7 each + 4-5x serve for ~+0.007 total -> DOMINATED. Ship single-seed s1 greedy, or 3-seed ensemble if +0.015 justifies 3x serve. Do not train more seeds."
+}

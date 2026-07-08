@@ -65,8 +65,11 @@ print(f"baseline v1.2 student   : rho = {b:.4f}")
 print(f"ceiling = sqrt({rel3:.3f}) = {ceil:.4f}")
 print(f"Δ vs baseline = {r_new - b:+.4f}   gap-to-ceiling now = {ceil - r_new:+.4f} (was {ceil - b:+.4f})")
 
+# write summary next to the capture (avoid clobbering a shared fixed path when
+# evaluating many checkpoints); mirror to eval_relabel_v1.json only for the canonical v1.3.
+out = os.path.join(os.path.dirname(CAP), "eval_summary.json")
 json.dump({"capture": CAP, "rho_new": r_new, "n": n, "ci": [boots[50], boots[1949]],
            "baseline_rho": b, "delta_vs_baseline": r_new - b,
            "ceiling": ceil, "gap_to_ceiling": ceil - r_new, "parse_fail": n_parse_fail},
-          open("output/relabel/eval_relabel_v1.json", "w"), indent=2)
-print("wrote output/relabel/eval_relabel_v1.json")
+          open(out, "w"), indent=2)
+print(f"wrote {out}")

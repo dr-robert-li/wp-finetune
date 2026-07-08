@@ -1,0 +1,42 @@
+[sft] train_path=data/reasoning_dataset/openai_train_relabel_v1.jsonl
+[sft] stage=full base=Qwen/Qwen3-30B-A3B rank=64 lr=4.99e-04 epochs=3 max_steps=None train_batches=70 bs=8
+Your Tinker SDK version is outdated. Please upgrade to the latest version.
+[sft] step 1 epoch 0 loss=13.140099167823792
+[sft] step 2 epoch 0 loss=10.936052083969116
+[sft] step 3 epoch 0 loss=9.235292315483093
+[sft] step 10 epoch 0 loss=9.173767387866974
+[sft] step 20 epoch 0 loss=8.223070919513702
+[sft] step 30 epoch 0 loss=7.411623775959015
+[sft] step 40 epoch 0 loss=7.108415961265564
+[sft] step 50 epoch 0 loss=6.9874560832977295
+[sft] step 60 epoch 0 loss=7.610632836818695
+[sft] step 70 epoch 0 loss=6.965859293937683
+[manifest] wrote output/tinker/capB-r64attn-manifest.json
+[sft] epoch 1 done (step 70); persistent sampler ckpt name=wp-reasoning-relabel-capB-r64attn-ep1 path=tinker://faedca31-c4bc-5d15-ba6c-479a6afc1c59:train:0/sampler_weights/wp-reasoning-relabel-capB-r64attn-ep1
+[epoch-eval] ep1 terse@temp0 = 0/20 = 0.000
+[sft] step 80 epoch 1 loss=5.64282500743866
+[sft] step 90 epoch 1 loss=5.399349093437195
+[sft] step 100 epoch 1 loss=4.988716661930084
+[sft] step 110 epoch 1 loss=4.298273205757141
+[sft] step 120 epoch 1 loss=4.4215109050273895
+[sft] step 130 epoch 1 loss=4.162380218505859
+[sft] step 140 epoch 1 loss=4.690139174461365
+[manifest] wrote output/tinker/capB-r64attn-manifest.json
+[sft] epoch 2 done (step 140); persistent sampler ckpt name=wp-reasoning-relabel-capB-r64attn-ep2 path=tinker://faedca31-c4bc-5d15-ba6c-479a6afc1c59:train:0/sampler_weights/wp-reasoning-relabel-capB-r64attn-ep2
+[epoch-eval] ep2 terse@temp0 = 0/20 = 0.000
+[sft] step 150 epoch 2 loss=2.7768118530511856
+[sft] step 160 epoch 2 loss=2.856211096048355
+[sft] step 170 epoch 2 loss=2.8892536759376526
+[sft] step 180 epoch 2 loss=2.4223838448524475
+[sft] step 190 epoch 2 loss=2.5410244464874268
+[sft] step 200 epoch 2 loss=2.3534452319145203
+[sft] step 210 epoch 2 loss=2.7132905423641205
+[manifest] wrote output/tinker/capB-r64attn-manifest.json
+[sft] epoch 3 done (step 210); persistent sampler ckpt name=wp-reasoning-relabel-capB-r64attn-ep3 path=tinker://faedca31-c4bc-5d15-ba6c-479a6afc1c59:train:0/sampler_weights/wp-reasoning-relabel-capB-r64attn-ep3
+[epoch-eval] ep3 terse@temp0 = 1/20 = 0.050
+[sft] training done: 210 steps. loss first=13.140099167823792 last=2.7132905423641205
+[manifest] wrote output/tinker/capB-r64attn-manifest.json
+[sft] final save_state path=tinker://faedca31-c4bc-5d15-ba6c-479a6afc1c59:train:0/weights/wp-reasoning-relabel-capB-r64attn-final-state
+[eval] sample[0] head: 'WPCS Compliance: score 8/10 — The code follows WordPress Coding Standards (WPCS) regarding indentation (tabs used) and structure. However, the function `get_installed_plugins` lacks a unique prefix (e'
+[eval] terse(no [/REASONING]) @temp0.0 = 0/20 = 0.000 (max_tokens=2048)
+RESULT stage=full steps=210 loss_first=13.140099167823792 loss_last=2.7132905423641205 n_eval=20 terse@0.0=0.000

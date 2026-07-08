@@ -4,9 +4,9 @@
 
 - ✅ **v1.0 MVP** - Phases 1-5 (Phases 1-4 complete; Phase 5 deferred/closed → v3.0 Phase 15)
 - ✅ **v1.1 Adaptive Training Infrastructure** - Phase 6 (complete 2026-04-01)
-- 🚧 **v1.2 Judge Reasoning Fine-Tune** - Phases 4.1-4.4 (inserted after Phase 4, before Phase 7)
-- 📋 **v2.0 RL Alignment** - Phases 7-10 (planned)
-- 📋 **v3.0 MoE-Sieve, Pruning & Packaging** - Phases 11-15 (planned)
+- ✅ **v1.2 Judge Reasoning Fine-Tune** - Phases 4.1-4.4 (complete; relabel SFT → v1.3 judge promoted 2026-07-04)
+- ❌ **v2.0 RL Alignment** - Phases 7-10 (infra COMPLETE; RL REJECTED at Phase 10 gate, closed 2026-07-05)
+- 🚧 **v3.0 MoE-Sieve, Pruning & Packaging** - Phases 11-15 (in progress — packaging the two-model pair)
 
 ## Overview
 
@@ -28,6 +28,19 @@ v1.2 SFT policy (the Phase 7 profiles remain the protected-expert reference). A 
 requires: teacher-ceiling headroom ≥ ~0.1 (measured), a reward-v2 with materially stronger per-step
 signal (defect-grounded / MO-GRPO), offline oracle gate, then ONE gated smoke — see
 logs/phase09_rerun/SMOKE_READS_TALLY.md and .continue-here.md.
+
+**AMENDMENT 2026-07-08 (two-model pair + judge ceiling closed):** The shipped v3.0 artifact is a
+**two-model pair**, not a single model: **v1.3 3-seed median ensemble judge** (rho 0.842; single-seed
+s1 0.827 fallback) for the wp_judge role + **v1.2 SFT generation model** (codegen bar 0.4616) for the
+wp_gen role. The relabel SFT that produced v1.3 (0.748 → 0.827) is the judge; v1.2 stays the generator
+because no single-model mix recovers both axes (judge-rho vs codegen orthogonal). A gap-closure
+investigation (2026-07-08) confirmed judge rho 0.827 is a **local optimum** — capacity (rank64+attn
+overfit 0.662), loss-reshaping (uniform CE is the peak), and data-cleaning (gap distributed) all fail
+to beat it; the ceiling-moving lever is a stronger base model (future qwen3.6/3.7 work). Evidence:
+`output/relabel/gap_closure_summary.json`. **Packaging implication for Phase 11:** the ensemble judge
+is 3 LoRA seeds (3× judge inference) — Phase 11 must decide whether MoE-Sieve/AIMER target the ensemble
+or the leaner single-seed s1 (0.827). Phases 11-15 "v2.0 RL baseline" comparison targets read "v1.2 SFT
+(gen) / v1.3 ensemble (judge) baseline".
 
 **LLM Execution Pattern (MANDATORY across all phases):** ALL LLM-driven work — data generation, reasoning generation, judge evaluation, eval-by-LLM scoring — MUST use **Claude Code agents** (parallel `Agent(run_in_background=true)` spawning following the `wp-finetune:run-data-pipeline` SKILL.md pattern), NOT the Anthropic API directly. The direct API path (`call_with_backoff`, `anthropic.Anthropic()`) is acceptable only for small pilots (<50 examples). At scale (>100 examples), the direct API fails due to rate limits, timeout cascades, and error recovery brittleness; Claude Code agents use the subscription quota and parallelize reliably. This is a hard rule established from prior phase experience (Phase 1/2 generated 134K judged + 29K CoT examples successfully via agents).
 
@@ -730,11 +743,11 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 4.4. Reasoning Eval & Merge | v1.2 | 5/4 | Complete   | 2026-06-13 |
 | 5. Packaging and Deployment | v1.0 | 0/3 | Deferred to v3.0 | - |
 | 6. Adaptive Training Planner | v1.1 | 6/6 | Complete | 2026-04-01 |
-| 7. Router Profiling & Protected Expert Set | v2.0 | 1/2 | In Progress|  |
+| 7. Router Profiling & Protected Expert Set | v2.0 | 2/2 | Complete (approved 2026-06-19) | 2026-06-19 |
 | 8. Reward Infrastructure | v2.0 | 4/4 | Complete   | 2026-06-19 |
 | 9. GSPO Training | v2.0 | 6/6 | Complete   | 2026-06-20 |
-| 10. RL Comparative Evaluation | v2.0 | 0/? | Not started | - |
-| 11. Post-RL MoE-Sieve | v3.0 | 0/? | Not started | - |
+| 10. RL Comparative Evaluation | v2.0 | - | CLOSED — RL rejected (2026-07-05) | 2026-07-05 |
+| 11. Compression & Packaging (two-model pair) | v3.0 | 0/? | Planning (needs scaffold) | - |
 | 12. MoE-Sieve Comparative Evaluation | v3.0 | 0/? | Not started | - |
 | 13. LoRA Merge & Pruning | v3.0 | 0/? | Not started | - |
 | 14. Final Comparative Evaluation | v3.0 | 0/? | Not started | - |

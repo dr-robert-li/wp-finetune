@@ -1,0 +1,29 @@
+{
+  "save_name": "wp-reasoning-relabel-capB-r64attn",
+  "base_model": "Qwen/Qwen3-30B-A3B",
+  "rank": 64,
+  "train_attn": true,
+  "train_unembed": false,
+  "renderer": "qwen3_disable_thinking",
+  "epochs": 3,
+  "checkpoints": [
+    {
+      "epoch": 1,
+      "name": "wp-reasoning-relabel-capB-r64attn-ep1",
+      "sampler_path": "tinker://faedca31-c4bc-5d15-ba6c-479a6afc1c59:train:0/sampler_weights/wp-reasoning-relabel-capB-r64attn-ep1"
+    },
+    {
+      "epoch": 2,
+      "name": "wp-reasoning-relabel-capB-r64attn-ep2",
+      "sampler_path": "tinker://faedca31-c4bc-5d15-ba6c-479a6afc1c59:train:0/sampler_weights/wp-reasoning-relabel-capB-r64attn-ep2"
+    },
+    {
+      "epoch": 3,
+      "name": "wp-reasoning-relabel-capB-r64attn-ep3",
+      "sampler_path": "tinker://faedca31-c4bc-5d15-ba6c-479a6afc1c59:train:0/sampler_weights/wp-reasoning-relabel-capB-r64attn-ep3"
+    }
+  ],
+  "promoted": "wp-reasoning-relabel-capB-r64attn-ep3",
+  "state_path": "tinker://faedca31-c4bc-5d15-ba6c-479a6afc1c59:train:0/weights/wp-reasoning-relabel-capB-r64attn-final-state",
+  "created": "2026-07-08T00:46:03.941502+00:00"
+}

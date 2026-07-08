@@ -22,6 +22,7 @@ from tinker_cookbook.tokenizer_utils import get_tokenizer
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import json
+from reweight_json_loss import make_weighted_nll_loss, reweight_batch
 from tinker_reasoning_data import BASE_MODEL, RENDERER_NAME, TRAIN_PATH, VAL_PATH, build_datasets
 
 
@@ -143,6 +144,10 @@ def main():
     ap.add_argument("--train-path", default=None,
                     help="override train JSONL (e.g. the corrective augmented set)")
     ap.add_argument("--rank", type=int, default=32)
+    ap.add_argument("--loss", default="cross_entropy", choices=["cross_entropy", "json_weighted"],
+                    help="json_weighted (lever A): up-weight the <judge_output> JSON span")
+    ap.add_argument("--json-weight", type=float, default=3.0,
+                    help="alpha multiplier on JSON-span loss weights (--loss json_weighted)")
     ap.add_argument("--train-attn", action="store_true", default=False,
                     help="include attention q/k/v/o in LoRA target (default: MoE-only, D-N1)")
     ap.add_argument("--train-unembed", action="store_true", default=False,
@@ -204,6 +209,10 @@ def main():
         **lora_kwargs,
     )
 
+    weighted_loss = make_weighted_nll_loss() if args.loss == "json_weighted" else None
+    if weighted_loss:
+        print(f"[sft] LEVER A: loss=json_weighted alpha={args.json_weight}", flush=True)
+
     step = 0
     losses = []
     stop = False
@@ -211,7 +220,11 @@ def main():
     for epoch in range(args.epochs):
         for i in range(len(train_ds)):
             batch = train_ds.get_batch(i)
-            fb = tc.forward_backward(data=batch, loss_fn="cross_entropy")
+            if weighted_loss:
+                reweight_batch(batch, tok, args.json_weight)
+                fb = tc.forward_backward_custom(data=batch, loss_fn=weighted_loss)
+            else:
+                fb = tc.forward_backward(data=batch, loss_fn="cross_entropy")
             tc.optim_step(tinker.AdamParams(learning_rate=lr))
             out = fb.result() if hasattr(fb, "result") else fb
             loss = _loss_of(out)

@@ -1,0 +1,16 @@
+{
+  "source": "eval_s1_ep3 (v1.3 promoted) vs val_labels_v1, n=121",
+  "rho": 0.8274,
+  "residual_mean": 5.9,
+  "residual_median": 4.0,
+  "residual_p90": 14.0,
+  "residual_max": 26,
+  "drop_worst": {
+    "0": 0.8274,
+    "5": 0.829,
+    "10": 0.827,
+    "15": 0.8421
+  },
+  "finding": "Gap to ceiling 0.984 is DISTRIBUTED, not outlier label errors (drop-worst-15 only +0.015). Systematic: 12/15 worst items = student UNDER-scores mid-band labels (compresses middle band toward low). Capability/resolution signature -> favors capacity lever (B) over relabel (C). Rank-compression -> rank-aware loss (A) motivated but weighted-CE is weak approximation; true listwise infeasible on Tinker logprobs-only custom loss.",
+  "lever_reorder": "B (capacity) primary; A (loss) secondary/uncertain; C (data) smallest, confirmed"
+}

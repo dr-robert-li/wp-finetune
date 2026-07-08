@@ -1,0 +1,9 @@
+{
+  "lever": "A json_weighted loss (rank32/MoE-only/3ep/seed1, relabel data)",
+  "alpha_curve": {
+    "0.5": 0.7728,
+    "1.0_plainCE_v13": 0.8274,
+    "3.0": 0.7803
+  },
+  "verdict": "LOSE both directions. Uniform CE (alpha=1.0) is the PEAK; up-weighting JSON scores (3.0) OR prose (0.5) both drop ~0.05. Token-reweighting cannot beat uniform CE. The reasoning-then-score structure is jointly load-bearing; distorting the gradient balance hurts calibration either way."
+}

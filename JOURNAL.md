@@ -4,6 +4,48 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-07-08 — Judge ceiling is a wall: all three gap-closure levers fail. Ship v1.3 ensemble, go to packaging.
+
+**Question.** With RL dead, could anything push the judge from rho 0.827 toward the attenuation
+ceiling 0.984 before compression? Three levers, pre-registered, tested honestly.
+
+**Ceiling first (is it even right?).** Verified: val labels are M=3 (120/121), pilot inter-pass
+Spearman r=0.9125 → Spearman-Brown M=3 reliability 0.969 → √0.969 = 0.9844. Correct formula, correct
+input. It is a best-case upper bound (assumes a perfect predictor), and it is the ceiling for THIS
+noisy val — relabel to M=5 lifts it only ~0.01. The 0.157 gap is genuine capability, not a math error.
+
+**C — data cleaning: dominated.** Residual audit (student vs val labels): dropping the 15 worst-residual
+items moves rho only 0.827 → 0.842. The gap is DISTRIBUTED, and systematic — 12/15 worst items are the
+student UNDER-scoring mid-band labels (student 34 vs 60, 36 vs 62, 52 vs 74…). Mid-band rank-compression,
+a capability signature, not label outliers. `residual_audit.json`.
+
+**B — capacity: OVERFIT (0.662).** Unfroze attention + rank 32→64, 3 epochs on the relabel data.
+Train loss crashed 13→2.71; val rho collapsed to 0.662, below even v1.2 (0.748). The surprise: the old
+MoE-only/rank-32 recipe was doing REGULARIZATION, not paying a codegen tax. The two-model split does NOT
+unlock a free capacity win — the limiter is generalization, not capacity. `leverB_capacity_result.json`.
+
+**A — loss reshape: uniform CE is the peak.** Added a `forward_backward_custom` loss that up-weights the
+`<judge_output>` JSON score tokens (`scripts/reweight_json_loss.py`, `--loss json_weighted`). alpha 3.0
+(emphasize scores) → 0.780; alpha 0.5 (emphasize prose CoT) → 0.773. Both below plain CE 0.827. Deviating
+from uniform token weighting in EITHER direction costs ~0.05 — the reasoning-then-score structure is
+jointly load-bearing; you cannot beat uniform CE by reweighting tokens. (Also earlier: self-consistency
+median@5 T=0.7 = 0.802 < greedy 0.827.) `leverA_loss_result.json`, `gap_closure_summary.json`.
+
+**Verdict.** v1.3 (rank-32 MoE-only, 3-epoch, uniform CE on relabeled data, seed 1) is a LOCAL OPTIMUM.
+None of capacity, loss-reshaping, or data-cleaning beats rho 0.827. The 0.157 gap is a real wall for
+SFT-on-relabeled-data on Qwen3-30B-A3B. The only measured improvement is the 3-seed median ensemble
+(0.842, seed-noise cancellation, saturating — `eval_seed_curve.json`). The lever that actually moves the
+ceiling is a stronger base model — the qwen3.6/3.7 plan.
+
+**Ship decision.** Two-model pair for v3.0: **v1.3 3-seed ensemble judge (0.842)** + **v1.2 gen (0.4616)**.
+Single-seed s1 (0.827) is the leaner fallback. Proceed to Phase 11 compression/packaging. Packaging must
+resolve ensemble (3× judge serve) vs single-seed for the MoE-Sieve/AIMER target. Spend this session:
+~$2-3 Tinker (3 training runs + captures), all negative — but the negative IS the answer: stop tuning
+this base. Footgun fixed: `eval_relabel.py` hardcoded its output path and was clobbering the v1.3 record;
+now writes next to each capture.
+
+---
+
 ## 2026-07-05 — RL closed for good: the ideal-conditions smoke also came back empty. v1.3 final.
 
 **The test.** After the B2 offline oracle gate passed for the calib-only stream (in-family 0.886,

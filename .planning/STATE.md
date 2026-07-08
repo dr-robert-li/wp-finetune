@@ -1,12 +1,12 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: MVP
+milestone: v3.0
+milestone_name: MoE-Sieve, Pruning & Packaging
 current_phase: 11
-current_phase_name: Post-RL MoE-Sieve (on v1.3 SFT judge — relabel SFT promoted 2026-07-04)
+current_phase_name: Compression & Packaging (two-model pair — v1.3 3-seed ensemble judge + v1.2 gen)
 status: planning
-stopped_at: "RL CLOSED 2026-07-05 — ideal-conditions smoke (v1.3 warm-start, oracle-validated calib-only reward, 2 seeds) killed per pre-registered criterion: 6/6 G1 reads <=0 (SMOKE_V13_VERDICT.json). v1.3 = final judge artifact (rho 0.827; PROMOTED_v1.3.json). TWO-MODEL decision: v1.3 judge + v1.2 gen (mix dose-response: no mix recovers both axes; wpbench v1.3 0.381 vs bar 0.4616). Next: Phase 11 packaging on the two-model pair."
-last_updated: "2026-07-04T00:00:00.000Z"
+stopped_at: "GAP-CLOSURE INVESTIGATION CLOSED 2026-07-08 — judge rho 0.827 confirmed a LOCAL OPTIMUM: none of capacity (rank64+attn OVERFIT 0.662), loss-reshaping (json-weight alpha 0.5/3.0 both <0.827; uniform CE is the peak), or data-cleaning (gap distributed not outliers, drop-worst-15 +0.015) beats v1.3. The 0.157 gap to ceiling 0.984 is a genuine wall for SFT-on-relabeled-data on Qwen3-30B-A3B; the ceiling-moving lever is a stronger base (qwen3.6/3.7). SHIP DECISION: v1.3 3-seed median ENSEMBLE (rho 0.842, 3x judge serve) + v1.2 gen. Evidence: output/relabel/gap_closure_summary.json. Prior: RL CLOSED 2026-07-05 (6/6 G1 reads <=0, SMOKE_V13_VERDICT.json). Next: Phase 11 compression/packaging (MoE-Sieve + AIMER prune per ROADMAP) on the two-model pair."
+last_updated: "2026-07-08T00:00:00.000Z"
 progress:
   total_phases: 15
   completed_phases: 14
@@ -22,14 +22,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 08.2 — reward-validity
+**Current focus:** Phase 11 — Compression & Packaging (two-model pair)
 
 ## Current Position
 
-Phase: 09 — GSPO Training
-Prev: Phase 09 (gspo-training) — COMPLETE 2026-06-20, 6/6 plans
-Requirements: RLEV-01 (RL vs v1.2 SFT baseline on wp-bench + 9 dims, no regression), RLEV-02 (reward-convergence + router-shift + protected-expert retention + anti-hack report)
-Next: plan Phase 10. NOTE: Phase 10 execution consumes the metrics from Phase 9's live Tinker RL run — that run is credential-gated and still tracked partial in 09-HUMAN-UAT.md, so it must complete before Phase 10 can produce real comparison results.
+Phase: 11 — Compression & Packaging
+Prev: Phases 09 (GSPO), 08.2 (reward-validity), 10 (RL comparative eval) — all CLOSED. RL rejected; gap-closure investigation CLOSED 2026-07-08.
+Ship artifact: **v1.3 3-seed median ensemble judge** (rho 0.842; single-seed s1 0.827 fallback if 3x serve unacceptable) + **v1.2 generation model** (codegen bar 0.4616). Both frozen; no further training on this base.
+Requirements (v3.0, per ROADMAP Phases 11-15): MoE-Sieve routing profile on v1.2 SFT policy → sieved-model eval → LoRA merge + AIMER prune on protected mask → eval vs baseline → package for serving.
+
+### 2026-07-08 — Gap-closure investigation (judge reasoning ceiling)
+Tested all three levers to push judge rho past 0.827 toward ceiling 0.984; **all negative, v1.3 is a local optimum:**
+- **B capacity** (rank64 + train_attn, 3ep): rho **0.662** — OVERFIT. Prior rank32/MoE-only was regularization, NOT a codegen handicap; two-model split does not unlock free capacity.
+- **A loss-reshape** (`--loss json_weighted`): alpha 0.5 → 0.773, alpha 3.0 → 0.780; **uniform CE (v1.3) is the peak.** Reasoning-then-score structure jointly load-bearing.
+- **C data-cleaning**: gap is distributed mid-band compression, not label outliers (drop-worst-15 only +0.015). Dominated.
+- **Verdict:** 0.157 gap is a real wall for SFT-on-relabeled-data on Qwen3-30B-A3B. Ceiling-moving lever = stronger base (qwen3.6/3.7 plan). Test-time compute (3-seed ensemble 0.842) is the only measured gain. Evidence: `output/relabel/{gap_closure_summary,leverA_loss_result,leverB_capacity_result,residual_audit}.json`. New: `scripts/reweight_json_loss.py`, `--loss json_weighted` in `tinker_reasoning_sft.py`.
+- **Packaging note:** ensemble = 3 LoRA seeds → 3x judge inference. Phase 11 must decide whether compression targets the ensemble (heavier) or falls back to single-seed s1 (0.827) for a leaner package. Flag for Phase 11 planning.
+
+Next: scaffold + plan Phase 11 (no `.planning/phases/11-*` dir exists yet).
 
 **Phase 7 closure (07-HUMAN-REVIEW §5, council-reviewed):** Profiling run of canonical v1.2 merged model on
 matched 30/70 training stimulus (34,855 examples, 785.8M tokens, GB10 6h30m, rc=0). All automated gates green —
