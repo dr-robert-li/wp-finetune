@@ -40,7 +40,7 @@ Tested all three levers to push judge rho past 0.827 toward ceiling 0.984; **all
 - **Ensemble choice LOCKED (2026-07-08):** compression targets the **3-seed ensemble**. Serving mechanics REVISED per Phase 11 research: Tinker MoE LoRA ≠ standard PEFT (vLLM can't runtime-load it) → ensemble = **3 merged checkpoints served sequentially** (median at the end), not multi-LoRA. Single-seed s1 (0.827) is the pre-authorized fallback if GB10 memory wall or 3-pass latency breaks serving (fallback = JOURNAL note, no re-decision). Protected mask (1,480 experts) is inviolable in Sieve AND prune; `layer_stability_notes` added to mask JSON per Phase 7 forward obligation.
 - **Phase 11 scope LOCKED (2026-07-08, user-selected): TRAINING-FREE Sieve** — routing profile + inference-time expert-masking k-sweep + prune-set for Phase 13. No LoRA retraining, no recovery SFT (ROADMAP's literal retraining spec superseded by the frozen-weights ship decision).
 
-Next: Phase 11 planning in progress (`11-CONTEXT.md` + `11-RESEARCH.md` exist; planner spawning).
+Next: `/gsd-execute-phase 11` — planning COMPLETE 2026-07-08: 5 plans (11-01..05, waves 0-4), checker VERIFICATION PASSED (1 warning resolved: k-sweep sanity tolerances pre-registered — judge rho >= 0.822, wp_bench >= 0.4416). RESEARCH/VALIDATION/CONTEXT all committed.
 
 **Phase 7 closure (07-HUMAN-REVIEW §5, council-reviewed):** Profiling run of canonical v1.2 merged model on
 matched 30/70 training stimulus (34,855 examples, 785.8M tokens, GB10 6h30m, rc=0). All automated gates green —
