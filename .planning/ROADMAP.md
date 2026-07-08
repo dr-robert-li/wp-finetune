@@ -616,7 +616,18 @@ Plans:
   - Invokes `wp-finetune:review-telemetry` after all k-sweeps complete
   - Human review checkpoint: present k-sweep comparison table before declaring optimal k
 
-**Plans**: 1 plan
+**Note (planned 2026-07-08, TRAINING-FREE scope per CONTEXT lock):** The literal retraining spec above
+is superseded — Phase 11 is a training-free routing-analysis + inference-time expert-masking k-sweep on
+the shipped two-model pair (v1.2 gen + v1.3 3-seed judge ensemble). No LoRA retraining. SIEVE-01/04/05
+reinterpreted as profile/mask/TOST deliverables; SIEVE-02 N/A, SIEVE-03 traceability. See 11-CONTEXT.md.
+
+**Plans**: 5 plans
+
+- [ ] 11-01-PLAN.md — Wave-0 scaffolding: env pre-check + SIEVE-01/04/05 test contracts (wave 0)
+- [ ] 11-02-PLAN.md — Export + merge s0/s2 judge seeds into 13-shard checkpoints (wave 1)
+- [ ] 11-03-PLAN.md — Profile 3 judge seeds + cross-seed overlap + protected-mask subset verify (wave 2)
+- [ ] 11-04-PLAN.md — Inference-time expert-masking k-sweep (13/32/64) → wp-bench + judge rho (wave 3)
+- [ ] 11-05-PLAN.md — TOST optimal-k + human sign-off + Phase-13 prune-set + SIEVE-02/03 docs (wave 4)
 
 ### Phase 12: MoE-Sieve Comparative Evaluation
 
