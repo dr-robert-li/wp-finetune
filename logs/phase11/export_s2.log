@@ -1,0 +1,477 @@
+=== export try 1/10 ===
+[export] checkpoint: tinker://c39dba07-e3e0-5e1a-8136-66726ddffd12:train:0/sampler_weights/wp-reasoning-relabel-s2-ep3
+Your Tinker SDK version is outdated. Please upgrade to the latest version.
+[export] requesting archive URL (server packs the archive — may take a while)...
+Creating checkpoint archive for run id: c39dba07-e3e0-5e1a-8136-66726ddffd12:train:0 checkpoint id: sampler_weights/wp-reasoning-relabel-s2-ep3 (this may take a while)
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+Traceback (most recent call last):
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/connection.py", line 103, in handle_async_request
+    return await self._connection.handle_async_request(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/http2.py", line 187, in handle_async_request
+    raise exc
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/http2.py", line 150, in handle_async_request
+    status, headers = await self._receive_response(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        request=request, stream_id=stream_id
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/http2.py", line 294, in _receive_response
+    event = await self._receive_stream_event(request, stream_id)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/http2.py", line 336, in _receive_stream_event
+    await self._receive_events(request, stream_id)
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/http2.py", line 364, in _receive_events
+    events = await self._read_incoming_data(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/http2.py", line 455, in _read_incoming_data
+    raise exc
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/http2.py", line 441, in _read_incoming_data
+    data = await self._network_stream.read(self.READ_NUM_BYTES, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_backends/anyio.py", line 32, in read
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/robert_li/miniconda3/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ReadTimeout
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/_base_client.py", line 987, in request
+    response = await self._client.send(
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/robert_li/miniconda3/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ReadTimeout
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/robert_li/Desktop/projects/wp-finetune/scripts/tinker_export_checkpoint.py", line 88, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/scripts/tinker_export_checkpoint.py", line 50, in main
+    resp = rc.get_checkpoint_archive_url_from_tinker_path(tinker_path).result()
+  File "/home/robert_li/miniconda3/lib/python3.13/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/home/robert_li/miniconda3/lib/python3.13/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/lib/public_interfaces/rest_client.py", line 336, in _get_checkpoint_archive_url_async
+    result = await self.holder.execute_with_retries(_send_request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/lib/internal_client_holder.py", line 636, in execute_with_retries
+    raise e
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/lib/internal_client_holder.py", line 592, in execute_with_retries
+    return await func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/lib/public_interfaces/rest_client.py", line 329, in _send_request
+    return await client.weights.get_checkpoint_archive_url(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+    )
+    ^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/resources/weights.py", line 284, in get_checkpoint_archive_url
+    response = await self._get(
+               ^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/_base_client.py", line 1192, in get
+    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/_base_client.py", line 1005, in request
+    raise APITimeoutError(request=request) from err
+tinker.APITimeoutError: Request timed out.
+try 1 failed rc=1; sleeping 120s (server may still be packing)
+=== export try 2/10 ===
+[export] checkpoint: tinker://c39dba07-e3e0-5e1a-8136-66726ddffd12:train:0/sampler_weights/wp-reasoning-relabel-s2-ep3
+Your Tinker SDK version is outdated. Please upgrade to the latest version.
+[export] requesting archive URL (server packs the archive — may take a while)...
+Creating checkpoint archive for run id: c39dba07-e3e0-5e1a-8136-66726ddffd12:train:0 checkpoint id: sampler_weights/wp-reasoning-relabel-s2-ep3 (this may take a while)
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+Traceback (most recent call last):
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/connection.py", line 103, in handle_async_request
+    return await self._connection.handle_async_request(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/http2.py", line 187, in handle_async_request
+    raise exc
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/http2.py", line 150, in handle_async_request
+    status, headers = await self._receive_response(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        request=request, stream_id=stream_id
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/http2.py", line 294, in _receive_response
+    event = await self._receive_stream_event(request, stream_id)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/http2.py", line 336, in _receive_stream_event
+    await self._receive_events(request, stream_id)
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/http2.py", line 364, in _receive_events
+    events = await self._read_incoming_data(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/http2.py", line 455, in _read_incoming_data
+    raise exc
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/http2.py", line 441, in _read_incoming_data
+    data = await self._network_stream.read(self.READ_NUM_BYTES, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_backends/anyio.py", line 32, in read
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/robert_li/miniconda3/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ReadTimeout
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/_base_client.py", line 987, in request
+    response = await self._client.send(
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/robert_li/miniconda3/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ReadTimeout
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/robert_li/Desktop/projects/wp-finetune/scripts/tinker_export_checkpoint.py", line 88, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/scripts/tinker_export_checkpoint.py", line 50, in main
+    resp = rc.get_checkpoint_archive_url_from_tinker_path(tinker_path).result()
+  File "/home/robert_li/miniconda3/lib/python3.13/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/home/robert_li/miniconda3/lib/python3.13/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/lib/public_interfaces/rest_client.py", line 336, in _get_checkpoint_archive_url_async
+    result = await self.holder.execute_with_retries(_send_request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/lib/internal_client_holder.py", line 636, in execute_with_retries
+    raise e
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/lib/internal_client_holder.py", line 592, in execute_with_retries
+    return await func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/lib/public_interfaces/rest_client.py", line 329, in _send_request
+    return await client.weights.get_checkpoint_archive_url(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+    )
+    ^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/resources/weights.py", line 284, in get_checkpoint_archive_url
+    response = await self._get(
+               ^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/_base_client.py", line 1192, in get
+    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/_base_client.py", line 1005, in request
+    raise APITimeoutError(request=request) from err
+tinker.APITimeoutError: Request timed out.
+try 2 failed rc=1; sleeping 120s (server may still be packing)
+=== export try 3/10 ===
+[export] checkpoint: tinker://c39dba07-e3e0-5e1a-8136-66726ddffd12:train:0/sampler_weights/wp-reasoning-relabel-s2-ep3
+Your Tinker SDK version is outdated. Please upgrade to the latest version.
+[export] requesting archive URL (server packs the archive — may take a while)...
+Creating checkpoint archive for run id: c39dba07-e3e0-5e1a-8136-66726ddffd12:train:0 checkpoint id: sampler_weights/wp-reasoning-relabel-s2-ep3 (this may take a while)
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+Traceback (most recent call last):
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/connection.py", line 103, in handle_async_request
+    return await self._connection.handle_async_request(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/http2.py", line 187, in handle_async_request
+    raise exc
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/http2.py", line 150, in handle_async_request
+    status, headers = await self._receive_response(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        request=request, stream_id=stream_id
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/http2.py", line 294, in _receive_response
+    event = await self._receive_stream_event(request, stream_id)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/http2.py", line 336, in _receive_stream_event
+    await self._receive_events(request, stream_id)
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/http2.py", line 364, in _receive_events
+    events = await self._read_incoming_data(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/http2.py", line 455, in _read_incoming_data
+    raise exc
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_async/http2.py", line 441, in _read_incoming_data
+    data = await self._network_stream.read(self.READ_NUM_BYTES, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_backends/anyio.py", line 32, in read
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/robert_li/miniconda3/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ReadTimeout
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/_base_client.py", line 987, in request
+    response = await self._client.send(
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/robert_li/miniconda3/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ReadTimeout
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/robert_li/Desktop/projects/wp-finetune/scripts/tinker_export_checkpoint.py", line 88, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/scripts/tinker_export_checkpoint.py", line 50, in main
+    resp = rc.get_checkpoint_archive_url_from_tinker_path(tinker_path).result()
+  File "/home/robert_li/miniconda3/lib/python3.13/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/home/robert_li/miniconda3/lib/python3.13/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/lib/public_interfaces/rest_client.py", line 336, in _get_checkpoint_archive_url_async
+    result = await self.holder.execute_with_retries(_send_request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/lib/internal_client_holder.py", line 636, in execute_with_retries
+    raise e
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/lib/internal_client_holder.py", line 592, in execute_with_retries
+    return await func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/lib/public_interfaces/rest_client.py", line 329, in _send_request
+    return await client.weights.get_checkpoint_archive_url(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+    )
+    ^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/resources/weights.py", line 284, in get_checkpoint_archive_url
+    response = await self._get(
+               ^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/_base_client.py", line 1192, in get
+    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/robert_li/Desktop/projects/wp-finetune/.venv-tinker/lib/python3.13/site-packages/tinker/_base_client.py", line 1005, in request
+    raise APITimeoutError(request=request) from err
+tinker.APITimeoutError: Request timed out.
+try 3 failed rc=1; sleeping 120s (server may still be packing)
+=== export try 4/10 ===
+[export] checkpoint: tinker://c39dba07-e3e0-5e1a-8136-66726ddffd12:train:0/sampler_weights/wp-reasoning-relabel-s2-ep3
+Your Tinker SDK version is outdated. Please upgrade to the latest version.
+[export] requesting archive URL (server packs the archive — may take a while)...
+Creating checkpoint archive for run id: c39dba07-e3e0-5e1a-8136-66726ddffd12:train:0 checkpoint id: sampler_weights/wp-reasoning-relabel-s2-ep3 (this may take a while)
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+... still running
+[export] signed URL acquired (expires=None)
+[export] downloading -> models/tinker_export/s2/checkpoint.tar
+[export] downloaded 1849.7 MB
+[export] archive OK: 3 members; sample=['adapter_config.json', 'adapter_model.safetensors', 'checkpoint_complete']
+[export] DONE -> models/tinker_export/s2/checkpoint.tar (+ models/tinker_export/s2/export_manifest.json)
+=== export SUCCEEDED on try 4 ===
