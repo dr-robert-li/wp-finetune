@@ -37,9 +37,9 @@ Tested all three levers to push judge rho past 0.827 toward ceiling 0.984; **all
 - **A loss-reshape** (`--loss json_weighted`): alpha 0.5 → 0.773, alpha 3.0 → 0.780; **uniform CE (v1.3) is the peak.** Reasoning-then-score structure jointly load-bearing.
 - **C data-cleaning**: gap is distributed mid-band compression, not label outliers (drop-worst-15 only +0.015). Dominated.
 - **Verdict:** 0.157 gap is a real wall for SFT-on-relabeled-data on Qwen3-30B-A3B. Ceiling-moving lever = stronger base (qwen3.6/3.7 plan). Test-time compute (3-seed ensemble 0.842) is the only measured gain. Evidence: `output/relabel/{gap_closure_summary,leverA_loss_result,leverB_capacity_result,residual_audit}.json`. New: `scripts/reweight_json_loss.py`, `--loss json_weighted` in `tinker_reasoning_sft.py`.
-- **Packaging note:** ensemble = 3 LoRA seeds → 3x judge inference. Phase 11 must decide whether compression targets the ensemble (heavier) or falls back to single-seed s1 (0.827) for a leaner package. Flag for Phase 11 planning.
+- **Ensemble choice LOCKED (2026-07-08):** compression targets the **3-seed ensemble** — one pruned base + 3 rank-32 MoE-only LoRA adapters (multi-LoRA serving), NOT 3 pruned models. Single-seed s1 (0.827) is the pre-authorized fallback if GB10 memory wall or 3× judge latency breaks serving (fallback = JOURNAL note, no re-decision). Protected mask (1,480 experts) is inviolable in Sieve AND prune; `layer_stability_notes` added to mask JSON per Phase 7 forward obligation.
 
-Next: scaffold + plan Phase 11 (no `.planning/phases/11-*` dir exists yet).
+Next: `/gsd-plan-phase` on Phase 11 — scaffold exists at `.planning/phases/11-compression-packaging/11-CONTEXT.md` (locked decisions, hard constraints, open questions).
 
 **Phase 7 closure (07-HUMAN-REVIEW §5, council-reviewed):** Profiling run of canonical v1.2 merged model on
 matched 30/70 training stimulus (34,855 examples, 785.8M tokens, GB10 6h30m, rc=0). All automated gates green —
