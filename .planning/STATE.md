@@ -6,13 +6,13 @@ current_phase: 11
 current_phase_name: Compression & Packaging (two-model pair — v1.3 3-seed ensemble judge + v1.2 gen)
 status: planning
 stopped_at: "GAP-CLOSURE INVESTIGATION CLOSED 2026-07-08 — judge rho 0.827 confirmed a LOCAL OPTIMUM: none of capacity (rank64+attn OVERFIT 0.662), loss-reshaping (json-weight alpha 0.5/3.0 both <0.827; uniform CE is the peak), or data-cleaning (gap distributed not outliers, drop-worst-15 +0.015) beats v1.3. The 0.157 gap to ceiling 0.984 is a genuine wall for SFT-on-relabeled-data on Qwen3-30B-A3B; the ceiling-moving lever is a stronger base (qwen3.6/3.7). SHIP DECISION: v1.3 3-seed median ENSEMBLE (rho 0.842, 3x judge serve) + v1.2 gen. Evidence: output/relabel/gap_closure_summary.json. Prior: RL CLOSED 2026-07-05 (6/6 G1 reads <=0, SMOKE_V13_VERDICT.json). Next: Phase 11 compression/packaging (MoE-Sieve + AIMER prune per ROADMAP) on the two-model pair."
-last_updated: "2026-07-08T00:00:00.000Z"
+last_updated: "2026-07-08T23:02:52.194Z"
 progress:
   total_phases: 15
   completed_phases: 14
-  total_plans: 56
-  completed_plans: 56
-  percent: 93
+  total_plans: 61
+  completed_plans: 59
+  percent: 94
 ---
 
 # Project State
@@ -32,7 +32,9 @@ Ship artifact: **v1.3 3-seed median ensemble judge** (rho 0.842; single-seed s1 
 Requirements (v3.0, per ROADMAP Phases 11-15): MoE-Sieve routing profile on v1.2 SFT policy → sieved-model eval → LoRA merge + AIMER prune on protected mask → eval vs baseline → package for serving.
 
 ### 2026-07-08 — Gap-closure investigation (judge reasoning ceiling)
+
 Tested all three levers to push judge rho past 0.827 toward ceiling 0.984; **all negative, v1.3 is a local optimum:**
+
 - **B capacity** (rank64 + train_attn, 3ep): rho **0.662** — OVERFIT. Prior rank32/MoE-only was regularization, NOT a codegen handicap; two-model split does not unlock free capacity.
 - **A loss-reshape** (`--loss json_weighted`): alpha 0.5 → 0.773, alpha 3.0 → 0.780; **uniform CE (v1.3) is the peak.** Reasoning-then-score structure jointly load-bearing.
 - **C data-cleaning**: gap is distributed mid-band compression, not label outliers (drop-worst-15 only +0.015). Dominated.
@@ -319,7 +321,10 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-02T00:00:00.000Z
+Last session: 2026-07-08T23:02:52.187Z
+Stopped at: Completed 11-03-PLAN.md — 3 judge-seed routing profiles (bounded 3000-ex stimulus), cross-seed mean Jaccard 0.9332 → sieve_profile_mode=shared (Open Question 2 resolved), protected mask verified subset of top-64 hot set (k=32: 198 at risk, k=13: 866 at risk — force-retain in k-sweep masks), mask byte-unchanged. Next: 11-04 k-sweep.
+
+Prior session: 2026-07-08T00:00:00.000Z
 Stopped at: Path A executed (regen v4 save_state → gated smoke). Smoke KILLED at step 50: hybrid@0.8 did not move validated teacher-Spearman above warm-start noise (Δ+0.015 < +0.02 bar; ρ_initial 0.6243), while forbidden fix_correctness proxy rose +0.025 = Goodhart-consistent. Kill-at-50 fired as designed. Reject-RL reinforced → ship v1.2 SFT for v3.0. Loadable v4 save_state now exists (reusable). Artifacts: logs/phase09_rerun/SMOKE_READS_TALLY.md. Resume = ./.continue-here.md (user decides: accept verdict → v3.0 packaging, OR refine non-code-blind reward + re-smoke with Gate-2 armed).
 
 Prior session: 2026-07-01T02:38:02.215Z

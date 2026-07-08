@@ -621,11 +621,11 @@ is superseded — Phase 11 is a training-free routing-analysis + inference-time 
 the shipped two-model pair (v1.2 gen + v1.3 3-seed judge ensemble). No LoRA retraining. SIEVE-01/04/05
 reinterpreted as profile/mask/TOST deliverables; SIEVE-02 N/A, SIEVE-03 traceability. See 11-CONTEXT.md.
 
-**Plans**: 5 plans
+**Plans**: 3/5 plans executed
 
-- [ ] 11-01-PLAN.md — Wave-0 scaffolding: env pre-check + SIEVE-01/04/05 test contracts (wave 0)
-- [ ] 11-02-PLAN.md — Export + merge s0/s2 judge seeds into 13-shard checkpoints (wave 1)
-- [ ] 11-03-PLAN.md — Profile 3 judge seeds + cross-seed overlap + protected-mask subset verify (wave 2)
+- [x] 11-01-PLAN.md — Wave-0 scaffolding: env pre-check + SIEVE-01/04/05 test contracts (wave 0)
+- [x] 11-02-PLAN.md — Export + merge s0/s2 judge seeds into 13-shard checkpoints (wave 1)
+- [x] 11-03-PLAN.md — Profile 3 judge seeds + cross-seed overlap + protected-mask subset verify (wave 2)
 - [ ] 11-04-PLAN.md — Inference-time expert-masking k-sweep (13/32/64) → wp-bench + judge rho (wave 3)
 - [ ] 11-05-PLAN.md — TOST optimal-k + human sign-off + Phase-13 prune-set + SIEVE-02/03 docs (wave 4)
 
@@ -758,7 +758,7 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 8. Reward Infrastructure | v2.0 | 4/4 | Complete   | 2026-06-19 |
 | 9. GSPO Training | v2.0 | 6/6 | Complete   | 2026-06-20 |
 | 10. RL Comparative Evaluation | v2.0 | - | CLOSED — RL rejected (2026-07-05) | 2026-07-05 |
-| 11. Compression & Packaging (two-model pair) | v3.0 | 0/? | Planning (needs scaffold) | - |
+| 11. Compression & Packaging (two-model pair) | v3.0 | 3/5 | In Progress | - |
 | 12. MoE-Sieve Comparative Evaluation | v3.0 | 0/? | Not started | - |
 | 13. LoRA Merge & Pruning | v3.0 | 0/? | Not started | - |
 | 14. Final Comparative Evaluation | v3.0 | 0/? | Not started | - |
