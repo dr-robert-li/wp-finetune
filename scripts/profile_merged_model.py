@@ -110,6 +110,7 @@ def profile_merged_model(
     tokenizer,
     data_path: str,
     full_subsample_frac: float = 1.0,
+    full_limit: int | None = None,
     subsample_frac: float = 0.10,
     batch_size: int = 1,
     max_seq_len: int = 2048,
@@ -132,6 +133,9 @@ def profile_merged_model(
         tokenizer: Extended tokenizer from adapters/tokenizer/.
         data_path: Path to openai_train.jsonl (ratio_30_70 matched stimulus).
         full_subsample_frac: Fraction for the full reference pass (default 1.0 = all).
+        full_limit: Optional hard cap (example count) on the full reference pass,
+            takes precedence over full_subsample_frac when set. Use for a bounded
+            stimulus (e.g. cross-seed comparison) instead of the full corpus pass.
         subsample_frac: Fraction for the Jaccard subsample (default 0.10).
         batch_size: Forward pass batch size (default 1 for memory safety).
         max_seq_len: Maximum sequence length for tokenization.
@@ -212,7 +216,10 @@ def profile_merged_model(
 
     try:
         # --- FULL PASS (reference ranking) ---
-        n_full = max(1, int(len(examples) * full_subsample_frac))
+        if full_limit is not None:
+            n_full = max(1, min(full_limit, len(examples)))
+        else:
+            n_full = max(1, int(len(examples) * full_subsample_frac))
         full_sample = examples[:n_full]
         logger.info(f"Running FULL pass: {n_full} examples")
         full_counts = _run_pass(full_sample)
@@ -301,6 +308,13 @@ def main():
         help="Fraction for Jaccard subsample (default 0.10)",
     )
     parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Cap the FULL reference pass at this many examples (bounded stimulus). "
+             "Default: use the full discovered dataset (34,855 for ratio_30_70).",
+    )
+    parser.add_argument(
         "--batch-size",
         type=int,
         default=1,
@@ -310,6 +324,12 @@ def main():
         "--allow-cpu",
         action="store_true",
         help="Allow CPU execution (NOT recommended for 30B model)",
+    )
+    parser.add_argument(
+        "--model-tag",
+        default=None,
+        help="Tag written into each JSONL record's 'model' field. "
+             f"Default: derived from --output-dir basename (falls back to {DEFAULT_MODEL_TAG!r}).",
     )
     args = parser.parse_args()
 
@@ -372,14 +392,17 @@ def main():
     )
     model.eval()
 
+    model_tag = args.model_tag or output_dir.name or DEFAULT_MODEL_TAG
+
     profile_merged_model(
         model=model,
         tokenizer=tokenizer,
         data_path=data_path,
+        full_limit=args.limit,
         subsample_frac=args.subsample,
         batch_size=args.batch_size,
         output_dir=str(output_dir),
-        model_tag=DEFAULT_MODEL_TAG,
+        model_tag=model_tag,
     )
 
 
