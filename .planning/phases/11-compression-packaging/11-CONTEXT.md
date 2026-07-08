@@ -4,6 +4,16 @@
 **Scope note:** ROADMAP Phases 11-15 (Sieve → sieve-eval → merge+prune → final-eval → package).
 This phase starts the chain; the 2026-07-03 and 2026-07-08 ROADMAP amendments govern.
 
+## Scope decision (LOCKED 2026-07-08, user-selected): TRAINING-FREE SIEVE
+
+Phase 11 is **training-free**: routing profile (v1.2 SFT policy + 3 judge seeds) → inference-time
+expert-masking k-sweep (mask cold experts, measure wp-bench + judge rho at k≈13/32/64) → declare
+optimal k + emit prune-set for Phase 13 AIMER. **No LoRA retraining, no recovery SFT** — the ROADMAP's
+literal hot-expert retraining spec is superseded (it predates RL rejection + the frozen-weights ship
+decision). SIEVE success criteria reinterpret "adapter checkpoint per k" as "expert-mask + eval record
+per k"; optimal-k rule unchanged (smallest k within tolerance of full model, TOST epsilon=2pp, 3+ seeds
+where seeds = judge ensemble members / eval bootstrap, not training seeds).
+
 ## Ship artifact (LOCKED — do not relitigate)
 
 | Role | Model | Metric | Source |
@@ -14,14 +24,20 @@ This phase starts the chain; the 2026-07-03 and 2026-07-08 ROADMAP amendments go
 - Judge ensemble = 3 LoRA adapters (rank-32, MoE-only) over the SAME base, median-aggregated
   `overall` per item. Seed checkpoints (ep3 samplers, manifests in `output/tinker/`):
   s0 = `wp-reasoning-relabel-v1-full-ep3` (default seed) · s1 = `wp-reasoning-relabel-s1-ep3`
-  (canonical, exported at `models/tinker_export/v1.3`, merged at
-  `models/_staging/qwen3-30b-wp-v1.3-merged`) · s2 = `wp-reasoning-relabel-s2-ep3`.
-  s0/s2 have Tinker sampler ckpts only — Phase 11 must EXPORT them (same path as s1) to serve locally.
+  (canonical; LoRA archive `models/tinker_export/v1.3_pkg/checkpoint.tar.gz/`, MERGED 13-shard model at
+  `models/_staging/qwen3-30b-wp-v1.3-merged/` — NOTE `models/tinker_export/v1.3/` is EMPTY, do not
+  reference it) · s2 = `wp-reasoning-relabel-s2-ep3`.
+  s0/s2 have Tinker sampler ckpts only — Phase 11 must EXPORT + merge them (via `scripts/merge_tinker_v3.py`
+  path, Tinker MoE LoRA is NOT standard PEFT; vLLM cannot load it as a runtime adapter → sequential serving
+  of merged checkpoints, not concurrent multi-LoRA). Disk headroom for 2 more ~57GB merges confirmed (1.6T free).
 - **Fallback (pre-authorized):** single-seed s1 (rho 0.827, `PROMOTED_v1.3.json`) IF packaging
   measurement shows the ensemble cannot fit the GB10 memory wall or 3× judge latency breaks serving.
   Fallback exercise requires only a JOURNAL note, not a re-decision.
-- Why ensemble is safe to compress around: seeds share one base → ONE pruned base + 3 small LoRA
-  adapters (multi-LoRA serving), NOT 3 pruned models. Judge inference = 3 adapter passes + median.
+- Ensemble mechanics (REVISED per research): Tinker MoE-expert LoRA is NOT standard PEFT — vLLM cannot
+  load it as a runtime adapter (`merge_tinker_v3.py` does manual per-expert tensor arithmetic). So the
+  ensemble serves as **3 merged checkpoints, sequentially** (batch all val items through seed_i, swap,
+  median at the end), NOT concurrent multi-LoRA. Judge latency = 3 sequential passes; fine for batch
+  review workloads, the pre-authorized s1 fallback covers latency-sensitive serving.
 - No further training on this base. RL closed (2026-07-05, 6/6 kills); SFT gap-closure closed
   (2026-07-08, all levers negative — `output/relabel/gap_closure_summary.json`).
 
