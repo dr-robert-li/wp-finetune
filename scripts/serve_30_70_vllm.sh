@@ -39,6 +39,28 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MODEL_DIR="${MODEL_DIR:-$REPO_ROOT/models/qwen3-30b-wp-30_70-merged}"
 IMAGE="${IMAGE:-ghcr.io/spark-arena/dgx-vllm-eugr-nightly:latest}"
 
+# SIEVE-04 k-sweep (plan 11-04): optional inference-time expert-mask.
+# SIEVE_MASK_NPY=<host path to [n_layers,n_experts] bool keep-mask.npy> mounts
+# scripts/_sieve_vllm_patch (sitecustomize.py, auto-loaded via PYTHONPATH) +
+# the mask file read-only into the container; the k="full" baseline arm
+# leaves SIEVE_MASK_NPY unset and serves fully unmasked (no-op, unchanged
+# behavior from every prior caller of this script).
+SIEVE_MASK_NPY="${SIEVE_MASK_NPY:-}"
+SIEVE_DOCKER_ARGS=()
+if [ -n "$SIEVE_MASK_NPY" ]; then
+  if [ ! -f "$SIEVE_MASK_NPY" ]; then
+    echo "ERROR: SIEVE_MASK_NPY set but file not found: $SIEVE_MASK_NPY" >&2
+    exit 1
+  fi
+  SIEVE_DOCKER_ARGS+=(
+    -v "${REPO_ROOT}/scripts/_sieve_vllm_patch:/sieve_patch:ro"
+    -v "$(cd "$(dirname "$SIEVE_MASK_NPY")" && pwd)/$(basename "$SIEVE_MASK_NPY"):/sieve_mask/keep_mask.npy:ro"
+    -e "PYTHONPATH=/sieve_patch"
+    -e "SIEVE_KEEP_MASK_NPY=/sieve_mask/keep_mask.npy"
+  )
+  echo "  expert mask: $SIEVE_MASK_NPY (SIEVE-04 k-sweep)"
+fi
+
 if [ ! -d "$MODEL_DIR" ]; then
   echo "ERROR: model dir not found: $MODEL_DIR" >&2
   echo "Expected merged checkpoint at: $MODEL_DIR" >&2
@@ -63,6 +85,7 @@ docker run --rm -d \
   -p "${PORT}:${PORT}" \
   -v "${MODEL_DIR}:/workspace/model:ro" \
   -e HF_HUB_ENABLE_HF_TRANSFER=1 \
+  "${SIEVE_DOCKER_ARGS[@]}" \
   "$IMAGE" \
   vllm serve /workspace/model \
     --host 0.0.0.0 \
