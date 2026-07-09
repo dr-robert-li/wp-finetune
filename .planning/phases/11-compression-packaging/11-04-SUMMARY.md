@@ -302,3 +302,34 @@ recorded.
 ---
 *Phase: 11-compression-packaging*
 *Completed: 2026-07-09 (BLOCKED — see Next Phase Readiness)*
+
+---
+
+## FINAL STATE ADDENDUM (2026-07-10, orchestrator)
+
+Resumed sweep (post-recalibration, floors 0.79/0.425) ran k=64 fully and k=32 gen before the executor
+session died mid-k=32-judge. Measured arms:
+
+| k | wp_bench | judge_ensemble_rho | protected_retained |
+|---|---|---|---|
+| full | 0.4484 | 0.8075 | true |
+| 64 | 0.2275 | 0.5415 | true |
+| 32 | 0.0546 | (not measured) | true |
+| 13 | (not run) | (not run) | — |
+
+**VERDICT — sweep decided on partial data; remaining arms deliberately NOT run.** The collapse is
+monotone and catastrophic (k=64 halves wp-bench; k=32 destroys it). Cause established, not conjectured:
+measured E_eff on the profiling stimulus is ~88-99 effective experts/layer out of 128 (judge-s0
+eeff_total 98.3, eeff_wp_gen 87.8, eeff_wp_judge 99.1) — the swept budgets {13,32,64} all sit far below
+the model's active expert usage, so masking removes live capacity. This matches Phase 7's concentration
+finding directionally (judge E_eff > gen E_eff) at higher absolute levels on the bounded stimulus.
+
+**Consequence for SIEVE-05 / Phase 13:** No swept k can pass TOST (±1pp of full) — optimal k = FULL
+(no expert-count compression headroom on Qwen3-30B-A3B for this workload). Expert-DROP compression is
+dead; Phase 13's AIMER weight-level pruning is a different mechanism and remains the live compression
+path, but must be conservative given distributed routing. Completing k=32-judge/k=13 arms would spend
+GPU-hours measuring deeper collapse with zero decision value (pre-registered optimal-k rule already
+decided by monotonicity).
+
+SIEVE-04 status: SATISFIED (k-sweep executed with decision-grade evidence; per-k records + full baseline
+present; protected experts retained at every measured k; sequential serving honored).
