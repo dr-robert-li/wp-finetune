@@ -511,7 +511,12 @@ architecture is a realistic target for the method, not a mismatch.
 
 **If this table is empty:** N/A — see entries above.
 
-## Open Questions
+## Open Questions (RESOLVED — dispositions in the committed plans)
+
+> Q1 RESOLVED: separate prune sets per model — 13-04 gates gen and judge independently (own scores,
+> own bars). Q2 RESOLVED: REAP gated on AIMER@25% passing — 13-05 Task 2 conditional branch.
+> Q3 RESOLVED: tensor keys verified against the real model.safetensors.index.json — per-expert
+> unstacked layout wired into 13-01/13-03/13-07 (research assumption A2 corrected).
 
 1. **Separate vs shared prune set for gen vs judge?**
    - What we know: gen's E_eff (mean 60.7-61.1, max 87.8-88.0) is measurably lower than judge's
