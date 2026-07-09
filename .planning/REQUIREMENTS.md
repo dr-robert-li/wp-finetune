@@ -181,10 +181,10 @@ Requirements for MoE-Sieve on the RL-trained model, followed by LoRA merge, prun
 ### Selective Training (MoE-Sieve) — Post-RL
 
 - [x] **SIEVE-01**: Fresh routing profiling on RL-trained model; LoRA r=32, alpha=64, dropout=0.05 applied to hot routed experts (per RL-policy routing) + all attention (Q/K/V/O) + router gates + 4 shared experts (always trained); cold routed experts frozen. Protected experts from Phase 7 must be in the retained set.
-- [ ] **SIEVE-02**: Gen-hot experts (per RL-policy routing categories) trained on golden signal data only (passed examples, synthetic good); judge-hot experts trained on full spectrum (passed + failed + contrastive)
-- [ ] **SIEVE-03**: Retrain uses best gen/judge ratio determined by Phase 4 eval results
-- [ ] **SIEVE-04**: K-sweep at minimum 3 budgets (~13, 32, 64 experts per layer from 128 routed) to find accuracy plateau for Qwen3-30B-A3B on WordPress data
-- [ ] **SIEVE-05**: Optimal k is smallest budget matching full-LoRA within +/-1pp on wp-bench (TOST equivalence test, epsilon=2pp, 3+ seeds); all protected experts from Phase 7 must be retained at optimal k
+- [x] **SIEVE-02**: Gen-hot experts (per RL-policy routing categories) trained on golden signal data only (passed examples, synthetic good); judge-hot experts trained on full spectrum (passed + failed + contrastive)
+- [x] **SIEVE-03**: Retrain uses best gen/judge ratio determined by Phase 4 eval results
+- [x] **SIEVE-04**: K-sweep at minimum 3 budgets (~13, 32, 64 experts per layer from 128 routed) to find accuracy plateau for Qwen3-30B-A3B on WordPress data
+- [x] **SIEVE-05**: Optimal k is smallest budget matching full-LoRA within +/-1pp on wp-bench (TOST equivalence test, epsilon=2pp, 3+ seeds); all protected experts from Phase 7 must be retained at optimal k
 
 ### MoE-Sieve Comparative Evaluation
 
@@ -341,10 +341,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RLEV-01 | Phase 10 | Pending |
 | RLEV-02 | Phase 10 | Pending |
 | SIEVE-01 | Phase 11 | Complete |
-| SIEVE-02 | Phase 11 | Pending |
-| SIEVE-03 | Phase 11 | Pending |
-| SIEVE-04 | Phase 11 | Pending |
-| SIEVE-05 | Phase 11 | Pending |
+| SIEVE-02 | Phase 11 | Complete |
+| SIEVE-03 | Phase 11 | Complete |
+| SIEVE-04 | Phase 11 | Complete |
+| SIEVE-05 | Phase 11 | Complete |
 | EVAL2-01 | Phase 12 | Pending |
 | EVAL2-02 | Phase 12 | Pending |
 | MERGE-01 | Phase 13 | Pending |

@@ -1,18 +1,18 @@
 ---
 gsd_state_version: 1.0
 milestone: v3.0
-milestone_name: MoE-Sieve, Pruning & Packaging
+milestone_name: Phase 15)
 current_phase: 11
-current_phase_name: Compression & Packaging (two-model pair — v1.3 3-seed ensemble judge + v1.2 gen)
+current_phase_name: Compression & Packaging
 status: planning
-stopped_at: "GAP-CLOSURE INVESTIGATION CLOSED 2026-07-08 — judge rho 0.827 confirmed a LOCAL OPTIMUM: none of capacity (rank64+attn OVERFIT 0.662), loss-reshaping (json-weight alpha 0.5/3.0 both <0.827; uniform CE is the peak), or data-cleaning (gap distributed not outliers, drop-worst-15 +0.015) beats v1.3. The 0.157 gap to ceiling 0.984 is a genuine wall for SFT-on-relabeled-data on Qwen3-30B-A3B; the ceiling-moving lever is a stronger base (qwen3.6/3.7). SHIP DECISION: v1.3 3-seed median ENSEMBLE (rho 0.842, 3x judge serve) + v1.2 gen. Evidence: output/relabel/gap_closure_summary.json. Prior: RL CLOSED 2026-07-05 (6/6 G1 reads <=0, SMOKE_V13_VERDICT.json). Next: Phase 11 compression/packaging (MoE-Sieve + AIMER prune per ROADMAP) on the two-model pair."
-last_updated: "2026-07-08T23:02:52.194Z"
+stopped_at: "Completed 11-05-PLAN.md — Phase 11 Sieve chain CLOSED: optimal_k=FULL locked (human sign-off 2026-07-10), prune_set_for_phase13.json emitted, SIEVE-02/03/05 documented"
+last_updated: "2026-07-09T20:37:25.551Z"
 progress:
-  total_phases: 15
-  completed_phases: 14
-  total_plans: 61
-  completed_plans: 59
-  percent: 94
+  total_phases: 5
+  completed_phases: 1
+  total_plans: 5
+  completed_plans: 5
+  percent: 20
 ---
 
 # Project State
@@ -218,6 +218,7 @@ Progress: [██████████] 100%
 | Phase 09-gspo-training P06 | 15m | 1 tasks | 1 files |
 | Phase 08.1 P02 | 10 | 2 tasks | 3 files |
 | Phase 08.1-reward-redesign P01 | 30 | 3 tasks | 2 files |
+| Phase 11 P05 | ~35 min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -276,6 +277,8 @@ Recent decisions affecting current work:
 - [Phase 09]: D-09-08 — RL trains MoE-only (train_attn=False, train_unembed=False), warm-started from v1.2 SFT v4 `save_state` via create_training_client_from_state; supersedes D-09-02 attn/unembed=True (attn deltas net-harmful per D-IT 04.4; judge skill MoE-borne; cold-start raw-base fails RLEV-01). Signed off Dr. Robert Li 2026-06-22; see 09-RL-INIT-RECONCILIATION.md
 - [Phase ?]: entropy source is kl_metrics['optim/entropy'] not fb_out.metrics
 - [Phase ?]: BOTH judge-path pathologies confirmed: parse-cliff 0-mode (68% fail) + lax-checks >90 cluster (mean=98.9) — judge frac_mid=0.011 vs gen 0.202; selected Lever 1 Form A + Lever 2 for Plan 03
+- [Phase ?]: optimal_k = FULL locked (human sign-off 2026-07-10): no swept k passes TOST at epsilon=2pp; expert-DROP compression dead, Phase 13 AIMER weight-level pruning is the sole remaining compression path
+- [Phase ?]: TOST/regression reference = vLLM-measured full arm (wp-bench 0.4484, rho 0.8075), not Tinker-native 0.842/0.827 — shipping-stack rho ~0.81 is the true figure
 
 ### Pending Todos
 
@@ -321,8 +324,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-08T23:02:52.187Z
-Stopped at: Completed 11-03-PLAN.md — 3 judge-seed routing profiles (bounded 3000-ex stimulus), cross-seed mean Jaccard 0.9332 → sieve_profile_mode=shared (Open Question 2 resolved), protected mask verified subset of top-64 hot set (k=32: 198 at risk, k=13: 866 at risk — force-retain in k-sweep masks), mask byte-unchanged. Next: 11-04 k-sweep.
+Last session: 2026-07-09T20:37:25.544Z
+Stopped at: Completed 11-05-PLAN.md — Phase 11 Sieve chain CLOSED: optimal_k=FULL locked (human sign-off 2026-07-10), prune_set_for_phase13.json emitted, SIEVE-02/03/05 documented
 
 Prior session: 2026-07-08T00:00:00.000Z
 Stopped at: Path A executed (regen v4 save_state → gated smoke). Smoke KILLED at step 50: hybrid@0.8 did not move validated teacher-Spearman above warm-start noise (Δ+0.015 < +0.02 bar; ρ_initial 0.6243), while forbidden fix_correctness proxy rose +0.025 = Goodhart-consistent. Kill-at-50 fired as designed. Reject-RL reinforced → ship v1.2 SFT for v3.0. Loadable v4 save_state now exists (reusable). Artifacts: logs/phase09_rerun/SMOKE_READS_TALLY.md. Resume = ./.continue-here.md (user decides: accept verdict → v3.0 packaging, OR refine non-code-blind reward + re-smoke with Gate-2 armed).
@@ -373,7 +376,7 @@ Stopped at: W1-W6 cascade BLOCKED on eval-harness prose compat (2 layers). Findi
   - **CERTIFIED VERDICT (c246a20)**: smoke_pass=True exit=0 distinctness=0.879. judge 5/5 (prose 9/9 dims + 1 CtF json), gen 5/5 php_lint, baseline-sim 0.02-0.42 (<0.85 canary → reasoning diverges). Artifact: merge-artifacts/w0_03_smoke_PASS_verdict.json.
   - Data finding flagged: reasoning judge output is dimensional PROSE (CoT) or JSON (CtF), NOT <REASONING>-tagged. parse_judge_response(JSON-only) would have false-failed all CoT — coherence redesigned prose-aware + json-aware.
 
-Resume file: .planning/phases/08.1-reward-redesign/08.1-CONTEXT.md
+Resume file: None
 Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertions + smoke-gate hardening), THEN W0-03 smoke gate against models/qwen3-30b-wp-30_70-reasoning-merged/ vs models/qwen3-30b-wp-30_70-merged-v2/ baseline, THEN REVL-01..08 eval gates
 
 ### Session 2026-05-29 reasoning MERGE COMPLETE + PROMOTED
