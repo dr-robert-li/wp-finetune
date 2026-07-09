@@ -105,10 +105,37 @@ def build_masks_for_k(k: int | str) -> tuple[Path | None, Path | None, dict]:
     return gen_path, judge_path, meta
 
 
+def _reset_wpbench_grader() -> None:
+    """Stop+remove any wp-env-runtime-* grader containers before a wp-bench run.
+
+    Discovered live during this plan's execution (not a masking bug): wp-bench's
+    docker-based PHP-execution grader (config/wp-bench.yaml grader.wp_env_dir)
+    REUSES its WordPress+MySQL containers across separate invocations rather
+    than recreating them. Across sequential k-sweep arms this let WordPress-DB
+    state accumulate from earlier test executions, silently degrading the
+    "correctness" (code-execution) sub-score run-to-run while "knowledge"
+    (pure text matching, no execution) stayed bit-identical -- confirmed via
+    3 repeat invocations: 0.4603 (fresh containers) -> 0.4365 (stale, twice,
+    byte-identical per-test) -> 0.4603 (fresh again after this reset). Not
+    vLLM/model nondeterminism (generation was byte-identical across all
+    invocations); a stale wp-bench-owned Docker fixture. Reset before every
+    gen arm so each k gets a fair, reproducible correctness measurement.
+    """
+    import subprocess
+    names = subprocess.run(["docker", "ps", "-a", "--format", "{{.Names}}"],
+                            capture_output=True, text=True).stdout.splitlines()
+    stale = [n for n in names if n.startswith("wp-env-runtime-")]
+    if stale:
+        print(f"[wpbench-reset] removing stale grader containers: {stale}", flush=True)
+        subprocess.run(["docker", "rm", "-f", *stale], stdout=subprocess.DEVNULL,
+                        stderr=subprocess.STDOUT, check=False)
+
+
 def run_gen_arm(k: int | str, gen_mask_path: Path | None) -> dict:
     """Boot gen model (masked or full), run REVL-04-style wp-bench, stop."""
     from scripts.run_eval_reasoning import _wpbench_with_boot
 
+    _reset_wpbench_grader()
     tag = f"gen_k{k}"
     _set_mask_env(gen_mask_path)
     try:
