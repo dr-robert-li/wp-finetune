@@ -66,8 +66,11 @@ RESULTS_PATH = PROJECT_ROOT / "output/sieve/k_sweep_results.json"
 
 # Pre-registered sanity bounds (11-04-PLAN.md acceptance criteria). Full-arm
 # failure -> HALT, harness misconfiguration not a masking result.
-FULL_JUDGE_RHO_FLOOR = 0.822
-FULL_WPBENCH_FLOOR = 0.4416
+# RECALIBRATED 2026-07-09 (user decision, output/sieve/sanity_gate_recalibration.json):
+# Tinker-native floors (0.822 / 0.4416) replaced with vLLM-merged-stack floors
+# (~3-run mean - 2sd) after a systematic ~3pp Tinker-vs-vLLM serving gap was measured.
+FULL_JUDGE_RHO_FLOOR = 0.79
+FULL_WPBENCH_FLOOR = 0.425
 
 
 def _set_mask_env(mask_path: Path | None) -> None:
@@ -247,24 +250,32 @@ def run_one_arm(k: int | str) -> dict:
 def main() -> int:
     OUT_ROOT.mkdir(parents=True, exist_ok=True)
     order = ["full", *KS]
+    # Resume support: arms already in k_sweep_results.json are kept, not re-run
+    # (recalibration decision 2026-07-09: the recorded k=full arm stays canonical).
     sweep = []
-    halted = False
+    if RESULTS_PATH.exists():
+        sweep = json.loads(RESULTS_PATH.read_text()).get("sweep", [])
+    done_ks = {r["k"] for r in sweep}
     for k in order:
-        t0 = time.time()
-        arm = run_one_arm(k)
-        arm["duration_sec"] = round(time.time() - t0, 1)
-        sweep.append(arm)
+        if str(k) in done_ks:
+            arm = next(r for r in sweep if r["k"] == str(k))
+            print(f"=== k={k}: already recorded (wp_bench={arm['wp_bench']}, "
+                  f"rho={arm['judge_ensemble_rho']}), skipping ===", flush=True)
+        else:
+            t0 = time.time()
+            arm = run_one_arm(k)
+            arm["duration_sec"] = round(time.time() - t0, 1)
+            sweep.append(arm)
 
-        RESULTS_PATH.write_text(json.dumps({"sweep": sweep, "halted": halted}, indent=2))
+        RESULTS_PATH.write_text(json.dumps({"sweep": sweep, "halted": False}, indent=2))
         print(f"=== k={k} DONE: wp_bench={arm['wp_bench']} "
               f"judge_ensemble_rho={arm['judge_ensemble_rho']} "
-              f"({arm['duration_sec']}s) ===", flush=True)
+              f"({arm.get('duration_sec')}s) ===", flush=True)
 
         if k == "full":
             wp = arm["wp_bench"]
             rho = arm["judge_ensemble_rho"]
             if wp is None or rho is None or wp < FULL_WPBENCH_FLOOR or rho < FULL_JUDGE_RHO_FLOOR:
-                halted = True
                 RESULTS_PATH.write_text(json.dumps({"sweep": sweep, "halted": True,
                     "halt_reason": (f"full arm sanity bounds failed: "
                                     f"wp_bench={wp} (floor {FULL_WPBENCH_FLOOR}), "
