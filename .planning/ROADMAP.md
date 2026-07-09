@@ -677,7 +677,14 @@ reinterpreted as profile/mask/TOST deliverables; SIEVE-02 N/A, SIEVE-03 traceabi
   - Human review checkpoint: present full comparison table (6 variants: 2 methods x 3 ratios) before committing to physical pruning
   - Step 6: Physical pruning + router re-normalization → verify pruned model loads and generates coherent output
 
-**Plans**: 1 plan
+**Plans**: 7 plans (planned 2026-07-10)
+- [ ] 13-01-PLAN.md — MERGE-01 traceability + AIMER weight-norm scorer (wave 1)
+- [ ] 13-02-PLAN.md — gate-before-remove eval driver + REAP scorer module (wave 1)
+- [ ] 13-03-PLAN.md — overlap + selection + physical-surgery modules & Wave-0 tests (wave 1)
+- [ ] 13-04-PLAN.md — AIMER@25% gated eval, gen + judge ensemble (wave 2, the decision gate)
+- [ ] 13-05-PLAN.md — conditional AIMER 50/75% + REAP + AIMER-vs-REAP overlap (wave 3)
+- [ ] 13-06-PLAN.md — comparison table + selection + blocking human sign-off (wave 4)
+- [ ] 13-07-PLAN.md — physical surgery for winner OR documented ship-unpruned close (wave 5)
 
 ### Phase 14: Final Comparative Evaluation
 
