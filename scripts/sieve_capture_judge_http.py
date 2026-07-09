@@ -25,15 +25,25 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+# Matches wp-bench's own concurrency=4 convention (config/wp-bench.yaml,
+# scripts/run_eval_reasoning.py _run_wpbench) -- vLLM continuous batching
+# handles concurrent requests fine; a naive sequential loop here was the
+# actual bottleneck (single in-flight request at a time, ~20-30s/item ==>
+# hours for 121 items x 3 seeds x 4 k-arms).
+DEFAULT_CONCURRENCY = 4
+
 
 def capture(base_url: str, model: str | None, dataset: str, out: str,
-            max_tokens: int = 1024, temperature: float = 0.0) -> dict:
+            max_tokens: int = 1024, temperature: float = 0.0,
+            concurrency: int = DEFAULT_CONCURRENCY) -> dict:
     import openai
     from eval.eval_judge import _detect_model, _judge_create
 
@@ -45,33 +55,49 @@ def capture(base_url: str, model: str | None, dataset: str, out: str,
         (m["content"] for m in r["messages"] if m["role"] == "user"), ""
     ).startswith("<wp_judge>")]
     print(f"[sieve-capture] {len(examples)} wp_judge examples via {base_url} "
-          f"(model={resolved_model})", file=sys.stderr)
+          f"(model={resolved_model}, concurrency={concurrency})", file=sys.stderr)
+
+    results: dict[int, str] = {}
+    counts_lock = threading.Lock()
+    counts = {"ok": 0, "err": 0, "done": 0}
+
+    def _one(idx: int, r: dict) -> tuple[int, str]:
+        user_msgs = [m for m in r["messages"] if m["role"] == "user"]
+        try:
+            resp = _judge_create(client, model=resolved_model, messages=user_msgs,
+                                  max_tokens=max_tokens, temperature=temperature)
+            text = resp.choices[0].message.content or ""
+            with counts_lock:
+                counts["ok"] += 1
+        except Exception as e:  # noqa: BLE001
+            print(f"[sieve-capture] error idx {idx}: {e}", file=sys.stderr, flush=True)
+            text = ""
+            with counts_lock:
+                counts["err"] += 1
+        with counts_lock:
+            counts["done"] += 1
+            if counts["done"] % 25 == 0:
+                print(f"[sieve-capture] {counts['done']}/{len(examples)} "
+                      f"ok={counts['ok']} err={counts['err']}", file=sys.stderr, flush=True)
+        return idx, text
+
+    with ThreadPoolExecutor(max_workers=concurrency) as pool:
+        futures = [pool.submit(_one, idx, r) for idx, r in enumerate(examples)]
+        for fut in as_completed(futures):
+            idx, text = fut.result()
+            results[idx] = text
 
     out_path = Path(out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    n_ok = n_err = 0
     with out_path.open("w") as fh:
         fh.write(json.dumps({"__provenance__": base_url, "model": resolved_model,
                               "dataset": dataset, "max_tokens": max_tokens,
                               "temperature": temperature, "n": len(examples)}) + "\n")
-        for idx, r in enumerate(examples):
-            user_msgs = [m for m in r["messages"] if m["role"] == "user"]
-            try:
-                resp = _judge_create(client, model=resolved_model, messages=user_msgs,
-                                      max_tokens=max_tokens, temperature=temperature)
-                text = resp.choices[0].message.content or ""
-                n_ok += 1
-            except Exception as e:  # noqa: BLE001
-                print(f"[sieve-capture] error idx {idx}: {e}", file=sys.stderr, flush=True)
-                text = ""
-                n_err += 1
-            fh.write(json.dumps({"index": idx, "response": text}) + "\n")
-            if (idx + 1) % 25 == 0:
-                print(f"[sieve-capture] {idx + 1}/{len(examples)} ok={n_ok} err={n_err}",
-                      file=sys.stderr, flush=True)
-    print(f"[sieve-capture] DONE n={len(examples)} ok={n_ok} err={n_err} -> {out_path}",
-          file=sys.stderr, flush=True)
-    return {"n": len(examples), "ok": n_ok, "err": n_err, "out": str(out_path)}
+        for idx in range(len(examples)):
+            fh.write(json.dumps({"index": idx, "response": results[idx]}) + "\n")
+    print(f"[sieve-capture] DONE n={len(examples)} ok={counts['ok']} err={counts['err']} "
+          f"-> {out_path}", file=sys.stderr, flush=True)
+    return {"n": len(examples), "ok": counts["ok"], "err": counts["err"], "out": str(out_path)}
 
 
 def main() -> int:
