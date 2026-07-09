@@ -1,18 +1,18 @@
 ---
 gsd_state_version: 1.0
 milestone: v3.0
-milestone_name: Phase 15)
-current_phase: 11
-current_phase_name: Compression & Packaging
-status: planning
-stopped_at: "Completed 11-05-PLAN.md — Phase 11 Sieve chain CLOSED: optimal_k=FULL locked (human sign-off 2026-07-10), prune_set_for_phase13.json emitted, SIEVE-02/03/05 documented"
-last_updated: "2026-07-09T20:37:25.551Z"
+milestone_name: MoE-Sieve, Pruning & Packaging
+current_phase: 12
+current_phase_name: MoE-Sieve Comparative Evaluation (RE-SCOPE OR SKIP — optimal_k=full means no sieve variants to A/B)
+status: ready-to-plan
+stopped_at: "Phase 11 COMPLETE + VERIFIED (passed_with_notes, audit-trail corrected 2026-07-10). Sieve chain closed: optimal_k=FULL locked (human sign-off), NO expert-drop compression headroom (E_eff ~88-99/128; k<=64 collapses wp-bench -22pp and judge to 0/121 parseable). prune_set_for_phase13.json emitted (protected 1480 + layer_stability_notes + no-expert-drop finding + vLLM shipping-rho ~0.81 note). SIEVE-01..05 complete. NEXT DECISION: skip/re-scope Phase 12 (nothing to A/B), then Phase 13 AIMER weight-level pruning (sole remaining compression path, conservative)."
+last_updated: "2026-07-10T00:00:00.000Z"
 progress:
-  total_phases: 5
-  completed_phases: 1
-  total_plans: 5
-  completed_plans: 5
-  percent: 20
+  total_phases: 15
+  completed_phases: 11
+  total_plans: 61
+  completed_plans: 61
+  percent: 73
 ---
 
 # Project State
