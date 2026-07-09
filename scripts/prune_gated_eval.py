@@ -80,8 +80,16 @@ VAL_LABELS = "output/relabel/val_labels_v1.json"
 PORT = 8021
 GPU_MEM_UTIL = 0.55
 
-MASK_DIR = PROJECT_ROOT / "output/prune/gated/masks"
+MASK_DIR = PROJECT_ROOT / "output/prune/masks"
 OUT_ROOT = PROJECT_ROOT / "output/prune/gated"
+
+# Unmasked (k=full) 3-seed judge baseline captures from Phase 11's k-sweep --
+# the reference for D2_security retention comparison (no new GPU spend to
+# get a baseline: these captures already exist, same val set, max_tokens=2048).
+BASELINE_JUDGE_CAPTURES = {
+    seed: PROJECT_ROOT / f"output/sieve/ksweep/judge_kfull/{seed}/judge_responses.jsonl"
+    for seed in ("s0", "s1", "s2")
+}
 
 DEFAULT_SCORE_NPY = {
     "aimer": {"gen": "output/prune/aimer_scores_gen.npy", "judge": "output/prune/aimer_scores_judge.npy"},
@@ -239,6 +247,40 @@ def score_judge_gate(seed_captures: dict[str, Path]) -> dict:
     }
 
 
+def _d2_security_mean(seed_captures: dict[str, Path]) -> float | None:
+    """Mean D2_security dimension score (0-10 raw scale, eval/dim_map.json) across
+    the val set, ensembled per item (median across seeds with a parseable score).
+    None if nothing parsed. Used for prune_selection.py's d2_security_retention/
+    d2_security_baseline eligibility check (13-03 forward dependency)."""
+    from eval.output_parsers import parse_judge_scores
+
+    per_seed: dict[str, dict[int, float]] = {}
+    for seed, path in seed_captures.items():
+        path = Path(path)
+        if not path.exists():
+            continue
+        scores: dict[int, float] = {}
+        for line in open(path):
+            r = json.loads(line)
+            if "index" not in r:
+                continue
+            parsed = parse_judge_scores(r["response"], "auto")
+            d2 = (parsed or {}).get("dimension_scores", {}).get("D2_security")
+            if d2 is not None:
+                scores[r["index"]] = float(d2)
+        per_seed[seed] = scores
+
+    all_indices: set[int] = set()
+    for s in per_seed.values():
+        all_indices |= set(s)
+    ensemble = []
+    for idx in all_indices:
+        vals = [per_seed[s][idx] for s in per_seed if idx in per_seed[s]]
+        if vals:
+            ensemble.append(float(np.median(vals)))
+    return float(np.mean(ensemble)) if ensemble else None
+
+
 def _write_result(method: str, ratio: int, axis: str, record: dict) -> Path:
     OUT_ROOT.mkdir(parents=True, exist_ok=True)
     out_path = OUT_ROOT / f"{method}_{ratio}_{axis}.json"
@@ -255,7 +297,7 @@ def run_gate(method: str, ratio: int, axis: str, score_npy: str | Path,
     kept = build_gated_mask(scores, protected, ratio)
 
     MASK_DIR.mkdir(parents=True, exist_ok=True)
-    mask_path = MASK_DIR / f"{method}_{axis}_r{ratio}_mask.npy"
+    mask_path = MASK_DIR / f"{method}_{axis}_k{RATIO_TO_K[ratio]}.npy"
     np.save(mask_path, kept)
 
     out_dir = OUT_ROOT / f"{method}_{ratio}_{axis}"
@@ -291,6 +333,19 @@ def run_gate(method: str, ratio: int, axis: str, score_npy: str | Path,
             "bars_used": {"judge_ensemble_rho_floor": JUDGE_ENS_RHO_FLOOR,
                           "judge_parse_floor": JUDGE_PARSE_FLOOR},
         }
+
+        # 13-03 forward dependency: prune_selection.load_variant_records() only
+        # reads d2_security_retention/baseline from the "gen" or "d2" axis file,
+        # never "judge" -- write a separate {method}_{ratio}_d2.json (per its
+        # documented merge convention) so 13-06 selection can find it.
+        d2_record = {
+            "method": method, "ratio": ratio, "axis": "d2",
+            "d2_security_retention": _d2_security_mean(seed_captures),
+            "d2_security_baseline": _d2_security_mean(BASELINE_JUDGE_CAPTURES),
+            "protected_retained": protected_retained,
+        }
+        d2_path = _write_result(method, ratio, "d2", d2_record)
+        print(f"Wrote {d2_path}")
 
     out_path = _write_result(method, ratio, axis, record)
     print(f"Wrote {out_path}")
@@ -342,7 +397,14 @@ def main() -> int:
     if not args.axis:
         ap.error("--axis {gen,judge} is required for a real gate run (or pass --dry-run)")
     score_npy = args.score_npy or DEFAULT_SCORE_NPY[args.method][args.axis]
-    run_gate(args.method, args.ratio, args.axis, score_npy, args.protected_mask)
+    record = run_gate(args.method, args.ratio, args.axis, score_npy, args.protected_mask)
+    # Infra failure (boot/eval error -> null primary metric) is NOT a measured
+    # fail: exit nonzero so a chained driver stops instead of running further
+    # arms against a gate record that never actually measured anything.
+    primary = record.get("wp_bench") if args.axis == "gen" else record.get("judge_ensemble_rho")
+    if primary is None:
+        print(f"ERROR: {args.axis} gate produced null primary metric (infra failure)", flush=True)
+        return 1
     return 0
 
 

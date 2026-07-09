@@ -78,7 +78,11 @@ echo "Launching $NAME on :$PORT"
 echo "  model: $MODEL_DIR (merged)"
 echo "  image: $IMAGE"
 
-docker run --rm -d \
+# NOTE: no --rm — a crashed boot must leave the container behind so
+# `docker logs` is retrievable (13-04 gen-arm boot failure lost its logs).
+# Cleanup is already handled: this script rm -f's any previous $NAME above,
+# and every caller's stop_vllm() does `docker rm -f` when done.
+docker run -d \
   --name "$NAME" \
   --gpus all \
   --ipc=host \

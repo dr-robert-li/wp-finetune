@@ -21,6 +21,21 @@ class VllmBootTimeout(RuntimeError):
     pass
 
 
+def _dump_boot_log(name: str) -> str:
+    """Save `docker logs <name>` to logs/vllm_boot_failures/ and return the tail.
+
+    Requires the container to still exist post-crash (serve_30_70_vllm.sh no
+    longer uses --rm precisely so this works)."""
+    r = subprocess.run(["docker", "logs", name], capture_output=True, text=True)
+    full = (r.stdout or "") + (r.stderr or "")
+    out_dir = PROJECT_ROOT / "logs" / "vllm_boot_failures"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out = out_dir / f"{name}-{time.strftime('%Y%m%d_%H%M%S')}.log"
+    out.write_text(full or "(docker logs empty/unavailable)")
+    print(f"[vllm] boot-failure log saved: {out}")
+    return "\n".join(full.splitlines()[-30:]) if full else "(no log output captured)"
+
+
 def boot_vllm(model_dir: str, name: str, port: int, gpu_mem_util: float = 0.55) -> None:
     """Launch vLLM container (detached) for model_dir."""
     env = {
@@ -51,7 +66,10 @@ def wait_healthy(port: int, name: str, timeout: int = BOOT_TIMEOUT_SEC) -> str:
             ["docker", "ps", "--format", "{{.Names}}"], capture_output=True, text=True,
         ).stdout
         if name not in alive:
-            raise VllmBootTimeout(f"container {name} exited during boot (see docker logs {name})")
+            log_tail = _dump_boot_log(name)
+            raise VllmBootTimeout(
+                f"container {name} exited during boot; last log lines:\n{log_tail}"
+            )
         try:
             models = client.models.list()
             served = models.data[0].id
