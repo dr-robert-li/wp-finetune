@@ -42,7 +42,7 @@ DEFAULT_CONCURRENCY = 4
 
 
 def capture(base_url: str, model: str | None, dataset: str, out: str,
-            max_tokens: int = 1024, temperature: float = 0.0,
+            max_tokens: int = 2048, temperature: float = 0.0,
             concurrency: int = DEFAULT_CONCURRENCY) -> dict:
     import openai
     from eval.eval_judge import _detect_model, _judge_create
@@ -106,7 +106,7 @@ def main() -> int:
     ap.add_argument("--model", default=None)
     ap.add_argument("--dataset", default="data/reasoning_dataset/openai_val.jsonl")
     ap.add_argument("--out", required=True)
-    ap.add_argument("--max-tokens", type=int, default=1024)
+    ap.add_argument("--max-tokens", type=int, default=2048)
     ap.add_argument("--temperature", type=float, default=0.0)
     args = ap.parse_args()
     capture(args.base_url, args.model, args.dataset, args.out, args.max_tokens, args.temperature)
