@@ -759,7 +759,7 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 9. GSPO Training | v2.0 | 6/6 | Complete   | 2026-06-20 |
 | 10. RL Comparative Evaluation | v2.0 | - | CLOSED — RL rejected (2026-07-05) | 2026-07-05 |
 | 11. Compression & Packaging (two-model pair) | v3.0 | 5/5 | Complete   | 2026-07-09 |
-| 12. MoE-Sieve Comparative Evaluation | v3.0 | 0/? | Not started | - |
+| 12. MoE-Sieve Comparative Evaluation | v3.0 | - | SKIPPED (optimal_k=full — no variants to A/B) | 2026-07-10 |
 | 13. LoRA Merge & Pruning | v3.0 | 0/? | Not started | - |
 | 14. Final Comparative Evaluation | v3.0 | 0/? | Not started | - |
 | 15. Packaging | v3.0 | 0/? | Not started | - |

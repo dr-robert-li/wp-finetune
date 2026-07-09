@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: MoE-Sieve, Pruning & Packaging
-current_phase: 12
-current_phase_name: MoE-Sieve Comparative Evaluation (RE-SCOPE OR SKIP — optimal_k=full means no sieve variants to A/B)
-status: ready-to-plan
-stopped_at: "Phase 11 COMPLETE + VERIFIED (passed_with_notes, audit-trail corrected 2026-07-10). Sieve chain closed: optimal_k=FULL locked (human sign-off), NO expert-drop compression headroom (E_eff ~88-99/128; k<=64 collapses wp-bench -22pp and judge to 0/121 parseable). prune_set_for_phase13.json emitted (protected 1480 + layer_stability_notes + no-expert-drop finding + vLLM shipping-rho ~0.81 note). SIEVE-01..05 complete. NEXT DECISION: skip/re-scope Phase 12 (nothing to A/B), then Phase 13 AIMER weight-level pruning (sole remaining compression path, conservative)."
+current_phase: 13
+current_phase_name: LoRA Merge & Pruning (AIMER primary; weight-level — sole remaining compression path)
+status: planning
+stopped_at: "Phase 11 COMPLETE + VERIFIED (passed_with_notes, audit-trail corrected 2026-07-10). Sieve chain closed: optimal_k=FULL locked (human sign-off), NO expert-drop compression headroom (E_eff ~88-99/128; k<=64 collapses wp-bench -22pp and judge to 0/121 parseable). prune_set_for_phase13.json emitted (protected 1480 + layer_stability_notes + no-expert-drop finding + vLLM shipping-rho ~0.81 note). SIEVE-01..05 complete. Phase 12 SKIPPED 2026-07-10 (12-SKIP.md — no sieve variants to A/B). NOW: Phase 13 AIMER weight-level pruning (sole remaining compression path, conservative; consumes prune_set_for_phase13.json)."
 last_updated: "2026-07-10T00:00:00.000Z"
 progress:
   total_phases: 15
-  completed_phases: 11
+  completed_phases: 12
   total_plans: 61
   completed_plans: 61
-  percent: 73
+  percent: 80
 ---
 
 # Project State

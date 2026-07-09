@@ -188,8 +188,8 @@ Requirements for MoE-Sieve on the RL-trained model, followed by LoRA merge, prun
 
 ### MoE-Sieve Comparative Evaluation
 
-- [ ] **EVAL2-01**: A/B eval of each k-sweep MoE-Sieve adapter against v2.0 RL baseline on wp-bench and static eval suite
-- [ ] **EVAL2-02**: Report includes per-dimension comparison (all 9 dimensions), overall scores, inference speed delta, and seed variance comparison
+- [x] ~~**EVAL2-01**~~ (N/A — Phase 12 SKIPPED 2026-07-10: optimal_k=full, no sieve variants exist; see phases/12-*/12-SKIP.md): A/B eval of each k-sweep MoE-Sieve adapter against v2.0 RL baseline on wp-bench and static eval suite
+- [x] ~~**EVAL2-02**~~ (N/A — Phase 12 SKIPPED 2026-07-10: no variant report possible; see phases/12-*/12-SKIP.md): Report includes per-dimension comparison (all 9 dimensions), overall scores, inference speed delta, and seed variance comparison
 
 ### LoRA Merge & Pruning (AIMER primary, REAP optional)
 
@@ -345,8 +345,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SIEVE-03 | Phase 11 | Complete |
 | SIEVE-04 | Phase 11 | Complete |
 | SIEVE-05 | Phase 11 | Complete |
-| EVAL2-01 | Phase 12 | Pending |
-| EVAL2-02 | Phase 12 | Pending |
+| EVAL2-01 | Phase 12 | N/A (skipped) |
+| EVAL2-02 | Phase 12 | N/A (skipped) |
 | MERGE-01 | Phase 13 | Pending |
 | PRUNE-01 | Phase 13 | Pending |
 | PRUNE-02 | Phase 13 | Pending |
