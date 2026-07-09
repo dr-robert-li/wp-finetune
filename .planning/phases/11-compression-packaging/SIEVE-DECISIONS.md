@@ -62,8 +62,14 @@ vLLM-measured full arm (0.4484 wp-bench / 0.8075 ensemble rho — NOT the Tinker
 |---|---|---|---|---|---|
 | full | 0.4484 | (reference) | true | (reference 0.8075) | — |
 | 64 | 0.2275 (−22pp) | NO (p≈1e-12) | true | FAIL (0.5415 < 0.755) | not equivalent |
-| 32 | 0.0546 (−39pp) | NO (p≈4e-40) | true | not measured | not equivalent |
-| 13 | not run | bounded worse (monotone collapse) | — | — | not equivalent |
+| 32 | 0.0546 (−39pp) | NO (p≈4e-40) | true | judge collapse: 0/121 parseable | not equivalent |
+| 13 | gen timed out (7200s) | bounded worse (monotone collapse) | true | judge collapse: 0/121 parseable | not equivalent |
+
+> **AUDIT CORRECTION 2026-07-10 (11-VERIFICATION):** an earlier narrative said k=32-judge/k=13 were
+> "never run" / "session died". False — the background driver survived the executor session and ran
+> the sweep to `=== k-sweep COMPLETE ===` (logs/sieve/ksweep_driver_resume.log). Judge captures at
+> k=13/32 completed (121/121, all 3 seeds) but produced **0/121 parseable outputs** — the judge
+> collapses into unparseable text under aggressive masking. Stronger evidence for the same verdict.
 
 **`optimal_k = "full"`, `no_equivalent_k = true`.** Cause established (11-04 addendum): measured
 E_eff ~88–99 effective experts/layer out of 128 — every swept budget sits far below active usage.

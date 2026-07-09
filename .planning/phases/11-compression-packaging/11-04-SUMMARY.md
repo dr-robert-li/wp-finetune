@@ -333,3 +333,15 @@ decided by monotonicity).
 
 SIEVE-04 status: SATISFIED (k-sweep executed with decision-grade evidence; per-k records + full baseline
 present; protected experts retained at every measured k; sequential serving honored).
+
+## AUDIT CORRECTION (2026-07-10, from 11-VERIFICATION)
+
+The FINAL STATE ADDENDUM above contains a stale narrative. Verified against
+logs/sieve/ksweep_driver_resume.log: the background driver SURVIVED the executor session death and ran
+the sweep to an explicit `=== k-sweep COMPLETE ===`. Real outcomes for the arms the addendum called
+"not run": k=32 judge captures completed (121/121, all 3 seeds) — **0/121 parseable**; k=13 gen arm
+genuinely timed out at 7200s; k=13 judge captured 121/121 × 3 seeds — **0/121 parseable**. The judge
+model collapses into unparseable output under aggressive masking. `judge_ensemble_rho: null` in
+k_sweep_results.json means parse collapse, not a skipped measurement. Verdict (optimal_k=full)
+unchanged — strengthened. Corrections propagated to optimal_k.json, prune_set_for_phase13.json,
+SIEVE-DECISIONS.md.
