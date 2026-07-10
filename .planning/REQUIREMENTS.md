@@ -212,7 +212,7 @@ Sub-experiment: Does WordPress domain specialization create enough routing conce
 
 - [x] **PKG-01**: Gate 1 — Eval bf16 model: record size, inference speed, all 9 dimensions as quality baseline — `output/packaging/gate1_bf16_baseline.json` (57 GB, wp-bench 0.4484, judge rho 0.8075). On unpruned pair (no pruned model).
 - [x] **PKG-02**: Gate 2 — Assess whether quantization is needed — WARRANTED (121 GB host vs 114/228 GB pair); uniform nf4 excluded by measured collapse; start Q8, activation-aware below. `output/packaging/gate2_quantization_decision.md`
-- [~] **PKG-03**: Incremental Q8→Q6→Q5→Q4 with ±2pp stop rule — **Q8 MEASURED, LOSSLESS**: Q8_0 GGUF, 30.2 GiB (47% off bf16). Full 3-seed ensemble @8192 tokens, 0/121 parse fails all arms: Q8 ens rho 0.8056 vs bf16 ens 0.8100 (Δ−0.4pp, clean ±2pp pass); bf16 ens matches vLLM 0.8075. `output/packaging/pkg03_ens8192_results.json`. (Earlier single-seed@2048 −4.6pp was a truncation artifact.) Foundation base 0/121 parseable. Q4-nf4 FAIL recorded. Q6/Q5 pending. Recipe `scripts/run_packaging_recipe.md`.
+- [x] **PKG-03**: Incremental Q8→Q6→Q5→Q4 with ±2pp stop rule — **CLOSED at Q8, LOSSLESS ship tier**: Q8_0 GGUF, 30.2 GiB (47% off bf16). Full 3-seed ensemble @8192 tokens, 0/121 parse fails all arms: Q8 ens rho 0.8056 vs bf16 ens 0.8100 (Δ−0.4pp, clean ±2pp pass); bf16 ens matches vLLM 0.8075. `output/packaging/pkg03_ens8192_results.json`. (Earlier single-seed@2048 −4.6pp was a truncation artifact.) Foundation base 0/121 parseable. Q4-nf4 FAIL recorded. **Q6/Q5 descent DEFERRED (closed 2026-07-11): Q8 already fits the 121 GB host with full pair headroom, so deeper tiers are size optimization with quality risk and no deployment need; ladder re-opens only if a smaller host becomes a target.** Recipe `scripts/run_packaging_recipe.md`.
 - [x] **PKG-04**: Model card with full compression lineage (base -> RL rejected -> MoE-Sieve full -> merge -> AIMER/REAP no_winner -> quantization) + usage — `output/packaging/MODEL_CARD.md`. Upload push is human-authorized final step.
 - [x] **PKG-05**: E2E inference validation — bf16 shipped format VALIDATED (gen 10/10, judge 10/10, routing 20/20, `output/packaging/pkg05_e2e_validation.json`); quantized tier pending toolchain.
 
@@ -221,6 +221,23 @@ Sub-experiment: Does WordPress domain specialization create enough routing conce
 - [x] **PIPE-01**: `PIPELINE.md` documents every stage end-to-end with runnable entrypoint, gate, and known Qwen3-30B-A3B result; no-winner gates (RL/Sieve/prune) kept as conditional re-test stages for the next base.
 - [x] **PIPE-02**: 95 one-off scripts moved to `deprecated/` with a README; grep confirms 0 active imports of a moved file; 3 misclassified active deps caught and retained; `py_compile` clean.
 - [x] **PIPE-03**: `logs/` gitignored, root stray deprecated, README links PIPELINE.md + deprecated/; layout parseable by outside users.
+
+### v3.1 Benchmark Expansion (Phase 17)
+
+- [ ] **BENCH-01**: Full (unlimited) wp-bench run on the v1.2 gen model via the shipping stack; score + config + seed recorded and compared to the 0.4484 Gate-1 receipt.
+- [ ] **BENCH-02**: SWE-bench generation-mode (non-agentic patch generation) eval at the largest scope the aarch64 toolchain can honestly evaluate; scope and harness constraints pre-registered before results are read.
+- [ ] **BENCH-03**: MODEL_CARD.md Benchmarks section updated with both results + out-of-domain caveat for SWE-bench.
+
+### v3.1 Production Sweep & Publication (Phase 18)
+
+- [ ] **PUB-01**: Repo sweep — README/PROJECT/PIPELINE/STATE mutually consistent; stale artifacts to deprecated/ with README notes; clean root.
+- [ ] **PUB-02**: Two-model pair packaged together (v1.2 gen + v1.3 3-seed ensemble judge, Q8 GGUF ship tier) with full-lineage model card.
+- [ ] **PUB-03**: HuggingFace upload + post-upload validation (download, GGUF load, gen/judge smoke round-trip).
+
+### v3.1 Next-Base Rerun Roadmap (Phase 19)
+
+- [ ] **NEXT-01**: Latest Qwen-family base researched and selected with documented rationale (architecture match, size class, routing concentration, license).
+- [ ] **NEXT-02**: Roadmap doc maps every PIPELINE.md stage to the new base with expected deltas, conditional re-test gates carried forward, and rough compute/cost estimates.
 
 ## v4 Requirements (deferred)
 
@@ -364,9 +381,17 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EVAL3-02 | Phase 14 | Complete (2026-07-10) |
 | PKG-01 | Phase 15 | Complete (2026-07-10) |
 | PKG-02 | Phase 15 | Complete (2026-07-10) |
-| PKG-03 | Phase 15 | Q8 MEASURED LOSSLESS (30.2 GiB −47%; ens@8192 0.8056 vs bf16 0.8100, Δ−0.4pp, 0 parse fails); Q6/Q5 pending |
+| PKG-03 | Phase 15 | Complete (2026-07-11) — Q8 LOSSLESS ship tier (30.2 GiB −47%; ens@8192 0.8056 vs bf16 0.8100, Δ−0.4pp, 0 parse fails); Q6/Q5 descent deferred, no deployment need |
 | PKG-04 | Phase 15 | Complete (model card; upload human-authorized) |
 | PKG-05 | Phase 15 | Complete (bf16); quantized pending |
+| BENCH-01 | Phase 17 | Pending |
+| BENCH-02 | Phase 17 | Pending |
+| BENCH-03 | Phase 17 | Pending |
+| PUB-01 | Phase 18 | Pending |
+| PUB-02 | Phase 18 | Pending |
+| PUB-03 | Phase 18 | Pending |
+| NEXT-01 | Phase 19 | Pending |
+| NEXT-02 | Phase 19 | Pending |
 
 **Coverage:**
 
@@ -376,7 +401,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 - v2.0 requirements: 16 total (0 complete) — PROF(5) + GATE-01(1) + GRPO(8) + RLEV(2) [Phases 7-10]
 - v3.0 requirements: 21 total (0 complete) — SIEVE(5) + EVAL2(2) + MERGE(1) + PRUNE(6) + EVAL3(2) + PKG(5) [Phases 11-15]
 - DPLT requirements: 7 total (deferred -> v3.0 PKG/PRUNE)
-- Total mapped to phases: 101 active + 7 deferred (all requirements mapped, 0 unmapped)
+- v3.1 requirements: 8 total (0 complete) — BENCH(3) + PUB(3) + NEXT(2) [Phases 17-19]
+- Total mapped to phases: 109 active + 7 deferred (all requirements mapped, 0 unmapped)
 
 ---
 *Requirements defined: 2026-03-26*

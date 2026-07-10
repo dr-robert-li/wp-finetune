@@ -6,7 +6,8 @@
 - ✅ **v1.1 Adaptive Training Infrastructure** - Phase 6 (complete 2026-04-01)
 - ✅ **v1.2 Judge Reasoning Fine-Tune** - Phases 4.1-4.4 (complete; relabel SFT → v1.3 judge promoted 2026-07-04)
 - ❌ **v2.0 RL Alignment** - Phases 7-10 (infra COMPLETE; RL REJECTED at Phase 10 gate, closed 2026-07-05)
-- 🚧 **v3.0 MoE-Sieve, Pruning & Packaging** - Phases 11-15 (in progress — packaging the two-model pair)
+- ✅ **v3.0 MoE-Sieve, Pruning & Packaging** - Phases 11-16 (complete 2026-07-11 — Sieve full, prune no_winner, Q8 GGUF lossless ship tier, pipeline locked in PIPELINE.md)
+- 🚧 **v3.1 Benchmark, Publish & Next Base** - Phases 17-19 (active — wp-bench + SWE-bench gen eval, HF publication, next-base rerun roadmap)
 
 ## Overview
 
@@ -84,18 +85,28 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 8.1: Reward Redesign** - INSERTED 2026-06-24. Replace the effectively-binary 0.7 fix_correctness verifiable term with graded partial credit (fraction of PHPCS/security/syntax sub-checks) + rebalance/per-group diversity shaping so GSPO groups carry non-zero advantage, and add diagnostic logging (component means, frac_groups_all_zero, entropy). Triggered by Phase 9's flat-reward finding (binary reward → uniform groups → advantage collapse → vanishing gradient; RLEV-01 verdict FLAT). Gates a targeted Phase 9 rerun. (completed 2026-06-24)
 - [x] **Phase 8.2: Reward Validity Gate** - INSERTED 2026-07-01. Close the gap 08.1 left: 08.1 fixed reward SHAPE (gradient existed) but never checked reward VALIDITY (does the reward track the validated target?). Build an offline reward-validity oracle (a candidate reward's per-checkpoint trajectory must rank-correlate with the validated teacher-Spearman target before any GPU), redesign the judge-axis reward around the only form that passes it (per-group pairwise rank-agreement vs teacher GT), add an in-run wp-bench codegen trip-wire, and gate a 50/250-step smoke on the VALIDATED metric. Triggered by Phase 10 RLEV verdict: seedA RL Goodharted — fix_correctness proxy rose +0.028 but teacher-Spearman didn't move and wp-bench regressed −0.049 (oracle: fix_correctness↔target corr −0.24 INVALID; pairwise_rank_agreement +0.70 VALID). Gates any future RL rerun. (planning) (completed 2026-07-01)
 - [x] **Phase 9: GSPO Training** - Dual-mode RL (gen + judge reasoning) on FULL MoE with router-shift stabilization and collapse monitoring; GSPO (sequence-level) is the primary objective for MoE stability (D-08); GRPO is an optional fallback decided at Phase 9 planning time; protected experts from Phase 7 monitored — Complete 2026-06-20 (live Tinker run tracked in 09-HUMAN-UAT.md)
-- [ ] **Phase 10: RL Comparative Evaluation** - Compare RL model against v1.2 SFT baseline on wp-bench and all 9 eval dimensions; gates v3.0
+- [x] **Phase 10: RL Comparative Evaluation** - Compare RL model against v1.2 SFT baseline on wp-bench and all 9 eval dimensions; gates v3.0 (CLOSED 2026-07-05 — RL REJECTED: Goodharted proxy, no teacher-Spearman gain, wp-bench regression; v1.2 SFT stays canonical)
 
 </details>
 
 <details>
 <summary>v3.0 MoE-Sieve, Pruning & Packaging (Phases 11-15) — Planned</summary>
 
-- [ ] **Phase 11: Post-RL MoE-Sieve** *(AMENDED 2026-07-03: RL rejected — operates on v1.2 SFT)* - Re-profile routing using v1.2 SFT-policy logs, apply MoE-Sieve selective training on the v1.2 SFT model with conservative threshold, validate protected experts retained, optional recovery SFT pass
-- [ ] **Phase 12: MoE-Sieve Comparative Evaluation** - A/B compare each k-sweep MoE-Sieve adapter against v2.0 RL baseline on wp-bench and all 9 eval dimensions
-- [ ] **Phase 13: LoRA Merge & Pruning (AIMER primary, REAP optional)** - Merge adapters, run AIMER (weight-based, primary per D-09) and optionally REAP (calibration-based) at 3 compression ratios, compare to determine if WordPress specialization benefits domain-aware pruning
-- [ ] **Phase 14: Final Comparative Evaluation** - A/B compare pruned model against v2.0 RL baseline on wp-bench, all 9 dimensions, speed delta, and model size
-- [ ] **Phase 15: Packaging** - Cascading compression gates (bf16 baseline -> quantization decision -> HuggingFace upload -> E2E inference validation)
+- [x] **Phase 11: Post-RL MoE-Sieve** *(AMENDED 2026-07-03: RL rejected — operates on v1.2 SFT)* - Training-free Sieve: routing profile + k-sweep expert masking on v1.2 SFT (COMPLETE 2026-07-09 — optimal_k=full, no mask wins)
+- [x] **Phase 12: MoE-Sieve Comparative Evaluation** - A/B compare k-sweep MoE-Sieve variants (SKIPPED 2026-07-10 — optimal_k=full leaves no variants to A/B)
+- [x] **Phase 13: LoRA Merge & Pruning (AIMER primary, REAP optional)** - Merge adapters, AIMER/REAP pruning at 3 compression ratios (COMPLETE 2026-07-10 — no_winner: pruning gives nothing on this base; merged pair retained unpruned)
+- [x] **Phase 14: Final Comparative Evaluation** - A/B eval, speed delta, model size (COMPLETE 2026-07-10 — re-confirmation PASS on unpruned pair; size flat)
+- [x] **Phase 15: Packaging** - Cascading compression gates (COMPLETE 2026-07-11 — Gates 1-2 done, Q8 GGUF LOSSLESS ship tier 30.2 GiB −47%, model card + bf16 E2E validated; Q6/Q5 descent deferred, no deployment need; HF upload moved to Phase 18)
+- [x] **Phase 16: Pipeline Lockdown & Repo Cleanup** - Freeze v3.0 method into PIPELINE.md, deprecate one-off scaffolding, clean folder layout (COMPLETE 2026-07-10)
+
+</details>
+
+<details open>
+<summary>v3.1 Benchmark, Publish & Next Base (Phases 17-19) — ACTIVE</summary>
+
+- [ ] **Phase 17: Benchmark Expansion — wp-bench + SWE-bench Generation Eval** - Full wp-bench run on the shipped gen model plus a SWE-bench generation-mode eval to position the model against a public coding benchmark; document scores honestly in the model card
+- [ ] **Phase 18: Production Sweep & HuggingFace Publication** - Full repo sweep (docs current, stale artifacts to deprecated/, streamlined layout), then package the two-model pair (v1.2 gen + v1.3 judge ensemble, Q8 GGUF ship tier) and publish to HuggingFace
+- [ ] **Phase 19: Next-Base Rerun Roadmap** - Plan the full pipeline rerun on the latest Qwen-family base (research current best same-class MoE), producing a costed roadmap for the next milestone
 
 </details>
 
@@ -763,6 +774,43 @@ project folder so it is clean and parseable by outside followers.
 
 **Plans**: 1 plan
 
+### v3.1 Benchmark, Publish & Next Base
+
+### Phase 17: Benchmark Expansion — wp-bench + SWE-bench Generation Eval
+
+**Goal**: The shipped two-model pair has current, honest benchmark numbers: a full wp-bench run on the v1.2 generation model (shipping stack), and a SWE-bench generation-mode eval that positions the model against a public coding benchmark for the model card
+**Depends on**: Phase 15 (shipped pair locked), Phase 16 (pipeline entrypoints documented)
+**Requirements**: BENCH-01 (full wp-bench on shipped stack), BENCH-02 (SWE-bench generation-mode eval, feasible scope documented), BENCH-03 (results folded into MODEL_CARD.md)
+**Success Criteria** (what must be TRUE):
+
+  1. A full (unlimited) wp-bench run completes on the v1.2 gen model via the shipping stack, score recorded with config + seed, and compared against the 0.4484 Gate-1 receipt
+  2. A SWE-bench generation-mode eval (patch generation, non-agentic) runs at the largest scope the DGX Spark (aarch64) toolchain can honestly evaluate — scope, harness constraints, and any subset choice recorded BEFORE results are read
+  3. MODEL_CARD.md gains a Benchmarks section with both results, including the honest caveat that the model is WordPress-specialized and SWE-bench is out-of-domain
+**Plans**: TBD at planning
+
+### Phase 18: Production Sweep & HuggingFace Publication
+
+**Goal**: The repo reads production-clean (docs current, stale artifacts deprecated, streamlined layout), and the two-model pair (v1.2 gen + v1.3 3-seed ensemble judge, Q8 GGUF ship tier) is packaged together and published to HuggingFace with the full-lineage model card
+**Depends on**: Phase 17 (benchmark numbers for the card)
+**Requirements**: PUB-01 (repo sweep + doc currency), PUB-02 (pair packaging), PUB-03 (HF upload + post-upload validation)
+**Success Criteria** (what must be TRUE):
+
+  1. README/PROJECT/PIPELINE/STATE agree with each other and with the shipped artifacts; stale files are in deprecated/ with README notes; root is clean
+  2. A single HF repo (or paired repos) carries both models with the MODEL_CARD.md lineage, quantization ladder results, and usage examples for both task tokens
+  3. Post-upload validation: files download, GGUF loads, and a smoke gen/judge prompt round-trips from the published artifact
+**Plans**: TBD at planning
+
+### Phase 19: Next-Base Rerun Roadmap
+
+**Goal**: A costed, evidence-linked roadmap exists for rerunning the full locked pipeline (PIPELINE.md) on the latest same-class Qwen-family MoE base, carrying forward every v3.0 lesson (truncation-aware evals, warm-up gating, no-winner gates as conditional stages)
+**Depends on**: Phase 18
+**Requirements**: NEXT-01 (base-model research + selection), NEXT-02 (roadmap doc with per-stage cost/time estimates and re-test gates)
+**Success Criteria** (what must be TRUE):
+
+  1. The candidate base is selected from current Qwen releases with documented rationale (architecture match, size class, routing concentration prospects, license)
+  2. A roadmap document maps every PIPELINE.md stage to the new base with expected deltas, the conditional re-test gates (RL, Sieve, prune) explicitly carried forward, and rough compute/cost estimates
+**Plans**: TBD at planning
+
 ## Progress
 
 **Execution Order:**
@@ -795,5 +843,8 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 12. MoE-Sieve Comparative Evaluation | v3.0 | - | SKIPPED (optimal_k=full — no variants to A/B) | 2026-07-10 |
 | 13. LoRA Merge & Pruning | v3.0 | 7/7 | Complete   | 2026-07-10 |
 | 14. Final Comparative Evaluation | v3.0 | 1/1 | Complete (re-confirmation; no pruned/RL variant) | 2026-07-10 |
-| 15. Packaging | v3.0 | 1/1 | Complete (Gates 1-2 + card + bf16 E2E; Q8/Q6/Q5 pending toolchain) | 2026-07-10 |
+| 15. Packaging | v3.0 | 1/1 | Complete (Gates 1-2 + card + bf16 E2E; Q8 GGUF LOSSLESS ship tier; Q6/Q5 deferred) | 2026-07-11 |
 | 16. Pipeline Lockdown & Repo Cleanup | v3.0 | 1/1 | Complete (PIPELINE.md + 95 files deprecated + cleanup) | 2026-07-10 |
+| 17. Benchmark Expansion (wp-bench + SWE-bench gen) | v3.1 | - | Planned | - |
+| 18. Production Sweep & HuggingFace Publication | v3.1 | - | Planned | - |
+| 19. Next-Base Rerun Roadmap | v3.1 | - | Planned | - |

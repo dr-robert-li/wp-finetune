@@ -4,7 +4,35 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
-## 2026-07-10 — Q8 rerun at 8192 tokens: the "degradation" was truncation, and it's gone.
+## 2026-07-11 — Phase 15 closed, v3.0 done. The ladder stops at Q8 on purpose.
+
+**Why I'm not running Q6 and Q5.** The ladder spec says descend until a tier breaks the ±2pp gate. Q8
+passed clean, so the letter of the spec says keep going. I'm stopping anyway, and the reason is boring:
+there's nothing to buy. Q8 at 30.2 GiB already fits the 121 GB host with the full two-model pair loaded
+and room to spare. Q6 would save maybe 7 more GiB that nobody needs, at real risk to a judge whose whole
+value is calibration. Descending the ladder for its own sake is how you trade a measured lossless tier
+for a marginal one and call it progress. If a smaller host ever becomes a target, the recipe is written
+down and the ladder re-opens from Q8. Until then, deferred.
+
+**So Phase 15 is complete.** Gates 1 and 2 done, model card written, bf16 E2E validated, Q8 confirmed
+lossless on the full ensemble at 8192 tokens. The one deliberate change: the HuggingFace upload that
+PKG-04 carried as a rider moves to its own home in Phase 18, because publishing deserves a phase with
+its own validation loop, not a checkbox at the tail of quantization. With that, v3.0 closes for real.
+Sixteen phases, and the honest scorecard for the milestone is: RL rejected, Sieve returned full, pruning
+returned no winner, quantization returned the only genuine size cut of the campaign. Three nulls and one
+win, all measured, all kept in the pipeline as conditional gates for the next base.
+
+**What v3.1 is for.** Three phases. Phase 17 gets the pair current benchmark numbers: a full wp-bench
+run on the shipping stack, plus a SWE-bench generation-mode eval so the model card can position this
+thing against a public benchmark instead of only our own. I expect SWE-bench to be humbling (a
+WordPress-specialized 30B doing out-of-domain Python patches), and that's fine; the caveat goes in the
+card next to the number. Phase 18 is the production sweep and the actual publication: repo docs
+reconciled, stale artifacts deprecated, then both models packaged together and pushed to HuggingFace
+with post-upload validation. Phase 19 writes the roadmap I keep gesturing at in these entries: rerun
+the locked PIPELINE.md on the newest Qwen-class base and see whether a stronger base moves the judge
+ceiling and finally makes pruning pay. That plan should be costed, not vibes.
+
+
 
 **The doubt.** The first Q8 read came in at rho 0.7239 against bf16 0.7700, a 4.6pp gap that squeaked past
 the ±2pp bar. I flagged it as marginal and blamed the 24% parse failures on the model's long prose getting
