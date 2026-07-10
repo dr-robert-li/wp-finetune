@@ -201,7 +201,7 @@ Sub-experiment: Does WordPress domain specialization create enough routing conce
 - [ ] **PRUNE-03**: Evaluate both methods via gating mask before weight removal — compare retention across all 9 eval dimensions at each compression ratio (6 variants total: 2 methods × 3 ratios)
 - [ ] **PRUNE-04**: Analyze domain specificity signal: compare which experts each method retains/prunes — high overlap suggests WordPress isn't specialized enough for calibration-based advantage; low overlap suggests REAP is capturing domain-specific routing patterns AIMER misses
 - [x] **PRUNE-05**: Select winning method + compression ratio with best dimension-level retention (especially D2_security), prefer higher compression at equivalent quality; if regression on any dimension, reduce compression incrementally until clean
-- [ ] **PRUNE-06**: Final model has expert weights physically removed and router softmax re-normalized for removed expert slots; saved as HuggingFace-compatible checkpoint; pruning methodology documented in model card
+- [x] **PRUNE-06**: Final model has expert weights physically removed and router softmax re-normalized for removed expert slots; saved as HuggingFace-compatible checkpoint; pruning methodology documented in model card
 
 ### Final Comparative Evaluation
 
@@ -353,7 +353,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PRUNE-03 | Phase 13 | Pending |
 | PRUNE-04 | Phase 13 | Pending |
 | PRUNE-05 | Phase 13 | Complete |
-| PRUNE-06 | Phase 13 | Pending |
+| PRUNE-06 | Phase 13 | Complete |
 | EVAL3-01 | Phase 14 | Pending |
 | EVAL3-02 | Phase 14 | Pending |
 | PKG-01 | Phase 15 | Pending |

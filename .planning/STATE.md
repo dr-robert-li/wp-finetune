@@ -6,13 +6,13 @@ current_phase: 11
 current_phase_name: Compression & Packaging
 status: executing
 stopped_at: "Phase 11 COMPLETE + VERIFIED (passed_with_notes, audit-trail corrected 2026-07-10). Sieve chain closed: optimal_k=FULL locked (human sign-off), NO expert-drop compression headroom (E_eff ~88-99/128; k<=64 collapses wp-bench -22pp and judge to 0/121 parseable). prune_set_for_phase13.json emitted (protected 1480 + layer_stability_notes + no-expert-drop finding + vLLM shipping-rho ~0.81 note). SIEVE-01..05 complete. Phase 12 SKIPPED 2026-07-10 (12-SKIP.md — no sieve variants to A/B). Phase 13 PLANNED 2026-07-10: 7 plans, 5 waves, checker PASSED (0 blockers, 4 warnings fixed). Gate-before-remove; REAP conditional on AIMER@25; human sign-off before surgery; no-winner=ship-unpruned first-class. NOW: executing Phase 13."
-last_updated: "2026-07-10T05:03:11.918Z"
+last_updated: "2026-07-10T05:07:36.366Z"
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 12
-  completed_plans: 11
-  percent: 20
+  completed_plans: 12
+  percent: 40
 ---
 
 # Project State
@@ -220,6 +220,7 @@ Progress: [██████████] 100%
 | Phase 08.1-reward-redesign P01 | 30 | 3 tasks | 2 files |
 | Phase 11 P05 | ~35 min | 3 tasks | 4 files |
 | Phase 13 P06 | ~15min | 2 tasks | 2 files |
+| Phase 13 P07 | 10min | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -281,6 +282,7 @@ Recent decisions affecting current work:
 - [Phase ?]: optimal_k = FULL locked (human sign-off 2026-07-10): no swept k passes TOST at epsilon=2pp; expert-DROP compression dead, Phase 13 AIMER weight-level pruning is the sole remaining compression path
 - [Phase ?]: TOST/regression reference = vLLM-measured full arm (wp-bench 0.4484, rho 0.8075), not Tinker-native 0.842/0.827 — shipping-stack rho ~0.81 is the true figure
 - [Phase ?]: 13-06: no_winner verdict from prune_selection.py; human approved ship unpruned — 13-07 does not run
+- [Phase ?]: PRUNE-06 realized via ship-unpruned branch: no_winner + human sign-off ship_unpruned, no surgery ran, prune_methodology.md + MERGE-01 final lineage written; both Phase 11 (routing-cold) and Phase 13 (weight-norm) negative pruning results recorded together
 
 ### Pending Todos
 
@@ -326,7 +328,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-10T05:03:04.110Z
+Last session: 2026-07-10T05:07:07.621Z
 Stopped at: Completed 11-05-PLAN.md — Phase 11 Sieve chain CLOSED: optimal_k=FULL locked (human sign-off 2026-07-10), prune_set_for_phase13.json emitted, SIEVE-02/03/05 documented
 
 Prior session: 2026-07-08T00:00:00.000Z
