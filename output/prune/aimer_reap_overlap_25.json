@@ -1,0 +1,7 @@
+{
+  "analysis": "aimer_reap_overlap",
+  "ratio": 25,
+  "skipped": true,
+  "measured": false,
+  "reason": "REAP not run: AIMER@25 did not pass; REAP domain comparison moot per PRUNE-02 conditional rule. No REAP keep-mask exists at k=96 to compare against AIMER's aimer_gen_k96.npy / aimer_judge_k96.npy, so no per-layer Jaccard could be computed. See output/prune/expansion_decision.md and output/prune/gated/reap_25_{gen,judge}.json for the upstream conditional-skip."
+}
