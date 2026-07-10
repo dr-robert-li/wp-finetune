@@ -1,0 +1,99 @@
+{
+  "verdict": "no_winner",
+  "winner": null,
+  "max_protected_per_layer": 40,
+  "layer_stability_disposition": {
+    "flagged_layers": [9, 13, 14, 31, 35, 36, 45, 46, 47],
+    "protected_count_by_flagged_layer": {
+      "9": 29, "13": 33, "14": 32, "31": 27, "35": 36, "36": 30,
+      "45": 27, "46": 28, "47": 31
+    },
+    "max_flagged_layer_protected_count": 36,
+    "note": "13-CONTEXT hard-constraint headroom obligation for the low-Jaccard-instability band {9,13,14,31,35,36} plus the late-layer-shift band {45,46,47} (output/sieve/prune_set_for_phase13.json layer_stability_notes). PRUNE-06's uniform-per-layer keep-count K makes a per-layer budget impossible (transformers num_local_experts is a scalar), so the obligation is enforced via the protected set: every flagged layer's protected experts are already counted in protected_expert_mask.npy and gate through the same physical-feasibility floor (k >= max_protected_per_layer, the global max over ALL 48 layers, = 40, driven by layer 1, which is not itself a flagged layer). Headroom check K >= 2x max_flagged_layer_protected_count (flagged-only max = 36, so 2x36=72; using the more conservative global max=40 instead, 2x40=80): K=96 (25%) passes both (96>=72 and 96>=80); K=64 (50%) FAILS both (64<72 and 64<80); K=32 (75%) fails both the headroom check and the absolute physical-feasibility floor (32<40).",
+    "candidate_winner_check": null,
+    "candidate_winner_check_reason": "verdict is no_winner (see per_variant reasons below) -- no candidate winner exists to assert the K >= 2x headroom check against. Recorded for the record: had AIMER@25 (K=96) passed its accuracy bars, it would ALSO satisfy the flagged-layer headroom check (96 >= 2*36=72), so headroom would not have been the disqualifying factor for K=96 -- the gen/judge/parse bars were."
+  },
+  "per_variant": [
+    {
+      "method": "aimer",
+      "ratio": 25,
+      "k": 96,
+      "eligible": false,
+      "reasons": [
+        "gen_wp_bench 0.1577 < floor 0.4284",
+        "judge_ensemble_rho 0.1651 < floor 0.7555",
+        "judge_parse_rate 0.4463 < floor 0.95"
+      ]
+    },
+    {
+      "method": "aimer",
+      "ratio": 50,
+      "k": 64,
+      "eligible": false,
+      "reasons": [
+        "missing_field:gen_wp_bench",
+        "missing_field:judge_ensemble_rho",
+        "missing_field:judge_parse_rate",
+        "missing_field:d2_security_retention",
+        "missing_field:d2_security_baseline",
+        "missing_field:protected_retained"
+      ]
+    },
+    {
+      "method": "aimer",
+      "ratio": 75,
+      "k": 32,
+      "eligible": false,
+      "reasons": [
+        "missing_field:gen_wp_bench",
+        "missing_field:judge_ensemble_rho",
+        "missing_field:judge_parse_rate",
+        "missing_field:d2_security_retention",
+        "missing_field:d2_security_baseline",
+        "missing_field:protected_retained"
+      ]
+    },
+    {
+      "method": "reap",
+      "ratio": 25,
+      "k": 96,
+      "eligible": false,
+      "reasons": [
+        "missing_field:gen_wp_bench",
+        "missing_field:judge_ensemble_rho",
+        "missing_field:judge_parse_rate",
+        "missing_field:d2_security_retention",
+        "missing_field:d2_security_baseline",
+        "missing_field:protected_retained"
+      ]
+    },
+    {
+      "method": "reap",
+      "ratio": 50,
+      "k": 64,
+      "eligible": false,
+      "reasons": [
+        "missing_field:gen_wp_bench",
+        "missing_field:judge_ensemble_rho",
+        "missing_field:judge_parse_rate",
+        "missing_field:d2_security_retention",
+        "missing_field:d2_security_baseline",
+        "missing_field:protected_retained"
+      ]
+    },
+    {
+      "method": "reap",
+      "ratio": 75,
+      "k": 32,
+      "eligible": false,
+      "reasons": [
+        "missing_field:gen_wp_bench",
+        "missing_field:judge_ensemble_rho",
+        "missing_field:judge_parse_rate",
+        "missing_field:d2_security_retention",
+        "missing_field:d2_security_baseline",
+        "missing_field:protected_retained"
+      ]
+    }
+  ]
+}
