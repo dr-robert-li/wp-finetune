@@ -1,0 +1,18 @@
+[warmup] real-generation OK (served_model='wp-30_70'): '{"function": "function", "name": "name", "description": "'
+[vllm] booting wp-bench17-vllm on :8020 model=models/qwen3-30b-wp-30_70-reasoning-merged-v4 gpu_mem_util=0.55
+[vllm] healthy after 521s; served model=wp-30_70
+[vllm] stopped wp-bench17-vllm
+{
+  "wpbench_score": 0.4365,
+  "scores": {
+    "knowledge": 0.490625,
+    "correctness": 0.3958333333333333,
+    "quality": null,
+    "overall": 0.4365
+  },
+  "results_file": "/home/robert_li/Desktop/projects/wp-finetune/output/bench17/full_gate_rerun/wp_bench_results_20260711_050328.json",
+  "ran": true,
+  "served_model_dir": "models/qwen3-30b-wp-30_70-reasoning-merged-v4",
+  "port": 8020,
+  "wall_clock_s": 1116.5
+}
