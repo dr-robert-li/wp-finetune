@@ -230,17 +230,23 @@ def score_judge_gate(seed_captures: dict[str, Path]) -> dict:
                          [labels[k] for k in common]).statistic
                if len(common) > 2 else None)
 
-    s1_rho = None
-    if "s1" in per_seed:
-        common_s1 = sorted(set(per_seed["s1"]) & set(labels))
-        if len(common_s1) > 2:
-            s1_rho = spearmanr([per_seed["s1"][k] for k in common_s1],
-                               [labels[k] for k in common_s1]).statistic
+    # Per-seed rho (13-04 Task 2 done criterion: judge validated on ALL 3
+    # seeds, not s1 alone -- HARD CONSTRAINT 6). None if a seed parsed <3 items.
+    per_seed_rho: dict[str, float | None] = {}
+    for seed in per_seed:
+        common_s = sorted(set(per_seed[seed]) & set(labels))
+        per_seed_rho[seed] = (
+            float(spearmanr([per_seed[seed][k] for k in common_s],
+                            [labels[k] for k in common_s]).statistic)
+            if len(common_s) > 2 else None
+        )
+    s1_rho = per_seed_rho.get("s1")
 
     parse_rate = len(ensemble) / len(labels) if labels else None
     return {
         "judge_ensemble_rho": ens_rho,
         "judge_s1_rho": s1_rho,
+        "per_seed_rho": per_seed_rho,
         "parse_rate": parse_rate,
         "n_scored": len(common),
         "n_per_seed": {s: len(v) for s, v in per_seed.items()},
@@ -284,7 +290,10 @@ def _d2_security_mean(seed_captures: dict[str, Path]) -> float | None:
 def _write_result(method: str, ratio: int, axis: str, record: dict) -> Path:
     OUT_ROOT.mkdir(parents=True, exist_ok=True)
     out_path = OUT_ROOT / f"{method}_{ratio}_{axis}.json"
-    out_path.write_text(json.dumps(record, indent=2))
+    # default=.item(): numpy scalars leak into records (np.bool_ from
+    # `np_float >= floor` comparisons, np.float64 from spearmanr.statistic)
+    # and stdlib json rejects np.bool_ (not a bool subclass).
+    out_path.write_text(json.dumps(record, indent=2, default=lambda o: o.item()))
     return out_path
 
 
@@ -311,7 +320,8 @@ def run_gate(method: str, ratio: int, axis: str, score_npy: str | Path,
             "wp_bench": wp_bench,
             "wp_bench_detail": {k: gen_res.get(k) for k in ("scores", "ran", "error")},
             "protected_retained": protected_retained,
-            "pass_gen_wp_bench": (wp_bench is not None and wp_bench >= GEN_WPBENCH_FLOOR),
+            "pass": bool(wp_bench is not None and wp_bench >= GEN_WPBENCH_FLOOR),
+            "pass_gen_wp_bench": bool(wp_bench is not None and wp_bench >= GEN_WPBENCH_FLOOR),
             "bars_used": {"gen_wp_bench_floor": GEN_WPBENCH_FLOOR},
         }
     else:
@@ -320,15 +330,19 @@ def run_gate(method: str, ratio: int, axis: str, score_npy: str | Path,
         judge_res = score_judge_gate(seed_captures)
         ens_rho = judge_res["judge_ensemble_rho"]
         parse_rate = judge_res["parse_rate"]
+        pass_rho = bool(ens_rho is not None and ens_rho >= JUDGE_ENS_RHO_FLOOR)
+        pass_parse = bool(parse_rate is not None and parse_rate >= JUDGE_PARSE_FLOOR)
         record = {
             "method": method, "ratio": ratio, "axis": axis,
             "judge_ensemble_rho": ens_rho,
             "judge_s1_rho": judge_res["judge_s1_rho"],
+            "per_seed_rho": judge_res["per_seed_rho"],
             "parse_rate": parse_rate,
             "n_scored": judge_res["n_scored"], "n_per_seed": judge_res["n_per_seed"],
             "protected_retained": protected_retained,
-            "pass_judge_ensemble_rho": (ens_rho is not None and ens_rho >= JUDGE_ENS_RHO_FLOOR),
-            "pass_judge_parse_rate": (parse_rate is not None and parse_rate >= JUDGE_PARSE_FLOOR),
+            "pass": pass_rho and pass_parse,
+            "pass_judge_ensemble_rho": pass_rho,
+            "pass_judge_parse_rate": pass_parse,
             "s1_fallback_bar": JUDGE_S1_FALLBACK_BAR,
             "bars_used": {"judge_ensemble_rho_floor": JUDGE_ENS_RHO_FLOOR,
                           "judge_parse_floor": JUDGE_PARSE_FLOOR},

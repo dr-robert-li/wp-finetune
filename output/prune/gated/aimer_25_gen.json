@@ -1,0 +1,22 @@
+{
+  "method": "aimer",
+  "ratio": 25,
+  "axis": "gen",
+  "wp_bench": 0.1577,
+  "wp_bench_detail": {
+    "scores": {
+      "knowledge": 0.3125,
+      "correctness": 0.041666666666666664,
+      "quality": null,
+      "overall": 0.1577
+    },
+    "ran": true,
+    "error": null
+  },
+  "protected_retained": true,
+  "pass_gen_wp_bench": false,
+  "bars_used": {
+    "gen_wp_bench_floor": 0.4284
+  },
+  "pass": false
+}
