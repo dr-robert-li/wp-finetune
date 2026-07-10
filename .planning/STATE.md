@@ -6,12 +6,12 @@ current_phase: 17
 current_phase_name: wp-bench full + SWE-bench generation-mode eval
 status: ready-to-plan
 stopped_at: "Phase 15 CLOSED COMPLETE 2026-07-11: PKG-03 ladder closed at Q8 (LOSSLESS ship tier, 30.2 GiB, -47%; ens@8192 rho 0.8056 vs bf16 0.8100, delta -0.4pp, 0/121 parse fails all 6 arms). Q6/Q5 descent DEFERRED — Q8 already fits the 121 GB host with pair headroom; ladder re-opens only for a smaller target host. HF upload moved from PKG-04 rider to Phase 18 (PUB-03). v3.0 milestone fully closed (Phases 11-16). NEW v3.1 milestone opened (Phases 17-19): 17 = full wp-bench + SWE-bench generation-mode eval (BENCH-01..03), 18 = production repo sweep + two-model-pair HF publication (PUB-01..03), 19 = next-base (latest Qwen MoE) rerun roadmap over locked PIPELINE.md (NEXT-01..02). Prior context: Q8 rerun lessons — gate capture on real-generation warmup not /health; --parallel N splits n_ctx N ways."
-last_updated: "2026-07-10T19:09:12.649Z"
+last_updated: "2026-07-10T19:38:41.018Z"
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -225,6 +225,7 @@ Progress: [██████████] 100%
 | Phase 13 P06 | ~15min | 2 tasks | 2 files |
 | Phase 13 P07 | 10min | 1 tasks | 2 files |
 | Phase 17 P01 | 25min | 2 tasks | 8 files |
+| Phase 17 P02 | 40min | 4 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -289,6 +290,8 @@ Recent decisions affecting current work:
 - [Phase ?]: PRUNE-06 realized via ship-unpruned branch: no_winner + human sign-off ship_unpruned, no surgery ran, prune_methodology.md + MERGE-01 final lineage written; both Phase 11 (routing-cold) and Phase 13 (weight-norm) negative pruning results recorded together
 - [Phase 17]: [Phase 17-01]: Restored scripts/_wpbench_pth + scripts/_wpbench_shim (mis-archived in Phase 16 cleanup) — active runtime dependencies referenced via string path construction, missed by import-only grep
 - [Phase 17]: [Phase 17-01]: BENCH-01 fresh full wp-bench (0.4365) reproduces 0.4484 Gate-1 within the 5.20pp seed-noise floor — no regression, same vLLM bf16 stack confirmed
+- [Phase ?]: [Phase 17-02]: SWE-bench scope pre-registered before results: Lite-300 primary + PHP-43 secondary, oracle, generation-mode, native arm64 local Docker (<=20h rule; Verified-500 out at 27.21h projected)
+- [Phase ?]: [Phase 17-02]: Native arm64 SWE-bench eval CONFIRMED working (gold patches resolve via make_test_spec arch=arm64 wrapper); amd64 fails fast on this host (no QEMU) — sb-cli/cloud fallback not needed
 
 ### Pending Todos
 
@@ -334,7 +337,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-10T19:08:42.940Z
+Last session: 2026-07-10T19:38:20.960Z
 Stopped at: Completed 11-05-PLAN.md — Phase 11 Sieve chain CLOSED: optimal_k=FULL locked (human sign-off 2026-07-10), prune_set_for_phase13.json emitted, SIEVE-02/03/05 documented
 
 Prior session: 2026-07-08T00:00:00.000Z
