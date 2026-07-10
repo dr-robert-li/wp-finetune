@@ -4,6 +4,43 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-07-10 — Phase 15: packaging, and quantization as the last size lever standing (with one tier already dead).
+
+**The setup.** Pruning gave nothing, so the model ships at its full 57 GB bf16 footprint per checkpoint.
+That's a problem for serving, not just aesthetics. The GB10 has 121 GB of unified memory. The single-seed
+pair (gen + one judge seed) is 114 GB before you account for the KV cache and activations, so it fits on
+paper and chokes in practice. The three-seed judge ensemble is 228 GB, which doesn't fit at all. If we
+want to serve the thing we actually promoted, we have to make it smaller. Quantization is the only lever
+left, and unlike expert count it's orthogonal to the routing story that killed pruning.
+
+**Gate 1 is a copy-paste.** The bf16 baseline is exactly the Phase 14 numbers: 57 GB, wp-bench 0.4484,
+judge ensemble rho 0.8075, speed identical to base. Nothing to re-measure.
+
+**Gate 2 is where the judgment lives, and it's already half-decided by an old scar.** Back in Phase 4.3
+I tried a 4-bit post-hoc gate on this exact architecture and it collapsed: bitsandbytes nf4 double-quant
+turns the MoE router to mush and the model emits degenerate text regardless of the adapter. That result
+retired RTRN-04 as invalid on quantized Qwen3-MoE. The artifact is still on disk
+(`models/qwen3-30b-wp-30_70-merged-v2-4bit`) as the tombstone. So the naive bottom of the ladder, Q4 via
+uniform nf4, is off the table before I start. That's not a guess, it's a measurement I already paid for.
+
+**So the Gate 2 call:** quantization is warranted (the memory math forces it), but the search starts high
+and the method matters. Uniform nf4 is what broke; an activation-aware method that protects the salient
+router and attention weights (AWQ, or a GGUF Q8_0/Q6_K that keeps more bits on the sensitive tensors) is
+the right family. The pre-registered PKG-03 ladder is Q8 -> Q6 -> Q5 -> Q4, stop at the lowest tier still
+within 2 points of the Gate 1 baseline, and Q4-nf4 is already marked FAIL.
+
+**What I can honestly finish here, and what I can't.** This environment doesn't have the quant toolchain
+installed. No autoawq, no llmcompressor, no llama.cpp; the project has always quantized and served through
+the DGX vLLM containers, not local transformers, precisely because a local 30B load walks straight into
+the memory wall. I'm not going to fabricate Q8 eval numbers I didn't run, and I'm not going to kick off a
+multi-hour local quant I can't sit and watch. What I can do, and did, is nail down the parts that are real
+and shippable: the Gate 1 record, the Gate 2 decision with the ladder and the one measured dead tier, a
+turnkey recipe for the pending tiers, and the HuggingFace model card with the full compression lineage
+end to end. The model card is the thing an outside person actually reads, and it's honest about every gate
+including the ones that returned nothing.
+
+---
+
 ## 2026-07-10 — Phase 14: the final comparison, and the honest admission that it's mostly a re-confirmation.
 
 **Where this sits.** Phase 13 closed with a `no_winner` verdict and a human sign-off to ship unpruned.

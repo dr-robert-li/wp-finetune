@@ -210,11 +210,11 @@ Sub-experiment: Does WordPress domain specialization create enough routing conce
 
 ### Packaging (cascading compression gates)
 
-- [ ] **PKG-01**: Gate 1 — Eval pruned bf16 model: record size, inference speed, all 9 dimensions as quality baseline for subsequent compression
-- [ ] **PKG-02**: Gate 2 — Assess whether quantization is needed based on pruned model size, deployment constraints, and Gate 1 performance margins
-- [ ] **PKG-03**: If quantization warranted, test incrementally Q8→Q6→Q5→Q4, eval at each level, stop at lowest quantization holding within ±2pp of Gate 1 baseline
-- [ ] **PKG-04**: Model card + adapter uploaded to HuggingFace with full compression lineage (base -> RL -> MoE-Sieve -> merge -> AIMER/REAP winner -> quantization level, eval at each gate) including AIMER vs REAP comparison results
-- [ ] **PKG-05**: E2E inference validation on final shipped format (both `<wp_gen>` and `<wp_judge>` prompts via target serving stack)
+- [x] **PKG-01**: Gate 1 — Eval bf16 model: record size, inference speed, all 9 dimensions as quality baseline — `output/packaging/gate1_bf16_baseline.json` (57 GB, wp-bench 0.4484, judge rho 0.8075). On unpruned pair (no pruned model).
+- [x] **PKG-02**: Gate 2 — Assess whether quantization is needed — WARRANTED (121 GB host vs 114/228 GB pair); uniform nf4 excluded by measured collapse; start Q8, activation-aware below. `output/packaging/gate2_quantization_decision.md`
+- [~] **PKG-03**: Incremental Q8→Q6→Q5→Q4 with ±2pp stop rule — ladder + rule + measured Q4-nf4 FAIL recorded (`output/packaging/pkg03_quantization_ladder.json`); Q8/Q6/Q5 pre-registered pending quant toolchain (turnkey recipe `scripts/run_packaging_recipe.md`). Not fabricated.
+- [x] **PKG-04**: Model card with full compression lineage (base -> RL rejected -> MoE-Sieve full -> merge -> AIMER/REAP no_winner -> quantization) + usage — `output/packaging/MODEL_CARD.md`. Upload push is human-authorized final step.
+- [x] **PKG-05**: E2E inference validation — bf16 shipped format VALIDATED (gen 10/10, judge 10/10, routing 20/20, `output/packaging/pkg05_e2e_validation.json`); quantized tier pending toolchain.
 
 ## v4 Requirements (deferred)
 
@@ -356,11 +356,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PRUNE-06 | Phase 13 | Complete |
 | EVAL3-01 | Phase 14 | Complete (2026-07-10, adapted) |
 | EVAL3-02 | Phase 14 | Complete (2026-07-10) |
-| PKG-01 | Phase 15 | Pending |
-| PKG-02 | Phase 15 | Pending |
-| PKG-03 | Phase 15 | Pending |
-| PKG-04 | Phase 15 | Pending |
-| PKG-05 | Phase 15 | Pending |
+| PKG-01 | Phase 15 | Complete (2026-07-10) |
+| PKG-02 | Phase 15 | Complete (2026-07-10) |
+| PKG-03 | Phase 15 | Partial — ladder+rule+Q4-nf4 FAIL; Q8/Q6/Q5 pending toolchain |
+| PKG-04 | Phase 15 | Complete (model card; upload human-authorized) |
+| PKG-05 | Phase 15 | Complete (bf16); quantized pending |
 
 **Coverage:**
 

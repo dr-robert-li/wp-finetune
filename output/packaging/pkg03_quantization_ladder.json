@@ -1,0 +1,30 @@
+{
+  "requirement": "PKG-03",
+  "title": "Incremental quantization ladder Q8->Q6->Q5->Q4 with +/-2pp stop rule",
+  "generated_utc": "2026-07-10",
+  "gate1_baseline_ref": "output/packaging/gate1_bf16_baseline.json",
+  "bands": {
+    "wp_bench_floor": 0.4284,
+    "wp_bench_gate1": 0.4484,
+    "judge_ensemble_rho_floor": 0.7554276436552908,
+    "judge_s1_rho_floor": 0.7497114144787573,
+    "epsilon_pp": 2
+  },
+  "stop_rule": "Descend Q8->Q6->Q5->Q4. Ship the lowest tier whose wp-bench and judge rho are both within 2pp of the Gate 1 baseline. Halt descent at the first tier that drops >2pp.",
+  "ladder": [
+    {"tier": "Q8", "method": "GGUF Q8_0 or INT8", "status": "pending-toolchain", "measured": null},
+    {"tier": "Q6", "method": "GGUF Q6_K", "status": "pending-toolchain", "measured": null},
+    {"tier": "Q5", "method": "GGUF Q5_K_M", "status": "pending-toolchain", "measured": null},
+    {"tier": "Q4-awq", "method": "AWQ W4A16 (activation-aware)", "status": "pending-toolchain", "risk": "high", "measured": null},
+    {
+      "tier": "Q4-nf4",
+      "method": "bitsandbytes nf4 double-quant (uniform)",
+      "status": "measured",
+      "result": "FAIL",
+      "evidence": "Phase 4.3 RTRN-04 post-hoc gate: MoE router-quant collapse -> degenerate output regardless of adapter. Artifact: models/qwen3-30b-wp-30_70-merged-v2-4bit (config confirms bitsandbytes nf4 double-quant). RTRN-04 retired as invalid on quantized Qwen3-MoE.",
+      "measured": {"coherent_output": false, "reason": "router weights quantized at same uniform width as experts; sparse routing cannot tolerate the blur"}
+    }
+  ],
+  "recommended_ship_target": "Q8 GGUF (safe end) for Ollama; AWQ W4A16 only if a smaller vLLM artifact is required and it clears the +/-2pp gate. Uniform nf4 is excluded.",
+  "execution_note": "Q8/Q6/Q5 measurements pending quantization toolchain provisioning (no autoawq/llmcompressor/llama.cpp in this environment). Turnkey recipe: scripts/run_packaging_recipe.md. No unrun numbers are reported."
+}

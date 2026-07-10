@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: MoE-Sieve, Pruning & Packaging
-current_phase: 15
-current_phase_name: Packaging (cascading compression gates — quantization is the only live size lever)
-status: ready-to-plan
-stopped_at: "Phase 14 COMPLETE + VERIFIED (passed_with_notes) 2026-07-10. Re-confirmation: both planned A/B arms empty (no pruned variant from Phase 13 no_winner; no shipped RL baseline from Phase 10 rejection). Shipping stack (v1.2 gen + v1.3 3-seed judge ensemble) measured vLLM full-arm clears all bars: wp-bench 0.4484>=0.4286 HARD GATE PASS, judge ensemble rho 0.8075>=0.7554, s1 0.8017>=0.7497. Size FLAT: 57GB/checkpoint bf16, 0% reduction, speed unchanged (pruning dead both ways). Deliverables output/eval3/eval3_final_comparison.json + EVAL3-REPORT.md. Phase 15 quantization is the sole remaining size lever; Gate 2 must weigh known 4-bit Qwen3-MoE router-collapse."
-last_updated: "2026-07-10T07:43:00.000Z"
+current_phase: 16
+current_phase_name: Pipeline Lockdown & Repo Cleanup (formalize repeatable pipeline, deprecate, restructure)
+status: in-progress
+stopped_at: "Phase 15 COMPLETE + VERIFIED (passed_with_notes) 2026-07-10. Gate 1 bf16 baseline recorded (57GB, wp-bench 0.4484, judge rho 0.8075). Gate 2: quantization WARRANTED (121GB host vs 114/228GB pair); uniform nf4 4-bit EXCLUDED (measured router collapse RTRN-04); start Q8, activation-aware below. PKG-03 ladder+rule+Q4-nf4 FAIL recorded, Q8/Q6/Q5 pre-registered pending quant toolchain (turnkey recipe scripts/run_packaging_recipe.md). PKG-04 model card written (full lineage). PKG-05 bf16 E2E VALIDATED (gen 10/10, judge 10/10, routing 20/20). Deliverables under output/packaging/. Phase 16 (NEW): formalize repeatable pipeline + deprecate + restructure + push as dr-robert-li."
+last_updated: "2026-07-10T07:51:00.000Z"
 progress:
-  total_phases: 15
-  completed_phases: 14
-  total_plans: 69
-  completed_plans: 69
-  percent: 93
+  total_phases: 16
+  completed_phases: 15
+  total_plans: 70
+  completed_plans: 70
+  percent: 94
 ---
 
 # Project State

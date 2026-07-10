@@ -1,0 +1,36 @@
+{
+  "gate": 1,
+  "requirement": "PKG-01",
+  "title": "bf16 baseline — quality reference for all subsequent compression decisions",
+  "generated_utc": "2026-07-10",
+  "source": "Reuses Phase 14 measured full-arm numbers (output/eval3/eval3_final_comparison.json) — same vLLM stack, no re-measure needed.",
+  "model_pair": {
+    "generation": "models/qwen3-30b-wp-30_70-reasoning-merged-v4 (v1.2)",
+    "judge_ensemble": [
+      "models/_staging/qwen3-30b-wp-v1.3-merged (s1)",
+      "models/_staging/qwen3-30b-wp-v1.3-s0-merged",
+      "models/_staging/qwen3-30b-wp-v1.3-s2-merged"
+    ],
+    "judge_single_seed_fallback": "models/_staging/qwen3-30b-wp-v1.3-merged (s1)"
+  },
+  "size": {
+    "bf16_gb_per_checkpoint": 57,
+    "total_params_billions": 30.5,
+    "active_params_billions": 3.3,
+    "served_pair_gb_single_seed": 114,
+    "served_pair_gb_ensemble": 228,
+    "host_unified_memory_gb": 121,
+    "serving_constraint": "bf16 single-seed pair (114GB) fits nominally but leaves no headroom for KV cache/activations on the 121GB GB10; ensemble (228GB) does not fit. Quantization required to serve with margin."
+  },
+  "quality": {
+    "wp_bench_overall": 0.4484,
+    "judge_ensemble_rho": 0.8074640593499867,
+    "judge_single_s1_rho": 0.8017478301734532,
+    "nine_dim_source": "judge rho is the aggregate correlation vs human-relabeled 9-dim scores; per-dim behavior = promoted v1.3 judge"
+  },
+  "inference_speed": {
+    "status": "unchanged vs base Qwen3-30B-A3B (no params removed; top-8/128 routing, ~3.3B active identical to base)",
+    "note": "TTFT/throughput not re-benched; architecturally identical to base, no pruning speedup exists to measure"
+  },
+  "verdict": "Gate 1 baseline recorded. This is the +/-2pp reference for the PKG-03 quantization ladder."
+}
