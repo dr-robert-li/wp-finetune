@@ -4,6 +4,39 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-07-10 — Phase 14: the final comparison, and the honest admission that it's mostly a re-confirmation.
+
+**Where this sits.** Phase 13 closed with a `no_winner` verdict and a human sign-off to ship unpruned.
+Two independent signals killed expert-level pruning: the Phase 11 routing profile (E_eff ~88-99 live
+experts per layer, so every masked-k budget cuts into capacity the model is actually using), and the
+Phase 13 weight-norm AIMER run (25% compression collapses generation to 0.1577 and drags judge parse
+to 45%). So walking into Phase 14, there is no pruned variant to A/B against anything. And the ROADMAP's
+other comparison arm, the "v2.0 RL baseline", never shipped a model either. RL was rejected back in
+Phase 10 on 6/6 dead checkpoint reads. Both arms of the planned A/B are empty.
+
+**So what is Phase 14, really.** It's the audit that confirms the shipping stack is what we think it is,
+with numbers that already exist and provenance attached to each one. I decided not to re-run the multi-hour
+vLLM wp-bench sweep to reproduce figures I already have measured under the identical serving stack. That
+would burn GB10 hours to re-derive 0.4484. The measured full-arm numbers live in
+`output/sieve/optimal_k.json`, captured on the same vLLM path both sides, and those are the true shipping
+figures: wp-bench 0.4484, judge ensemble rho 0.8075, single-seed s1 rho 0.8017. The Tinker-native 0.842
+/ 0.827 I quoted through the campaign are runtime numbers with a known serving gap; the vLLM figures are
+the ones that ship.
+
+**The size story is the uncomfortable part.** The whole v3.0 milestone was pitched on shrinking the model.
+Expert-drop is dead, weight-level AIMER is dead, so the bf16 footprint after the full pipeline is exactly
+what it was before: 57 GB per merged checkpoint, ~30.5B total params, ~3.3B active. The two-model pair is
+57 GB (gen) plus 57 GB (judge, single seed) or 3x57 GB if we serve the ensemble. Phase 14 records that flat
+line honestly. The only size lever left standing is quantization, and that's Phase 15's whole job.
+
+**What I'm actually gating on.** wp-bench is the hard gate for packaging. With no pruned candidate, the
+gate reduces to: does the shipping gen model clear the codegen bar it was held to. It does, 0.4484 measured
+vLLM full-arm against the 0.4286 Phase-4.4 acceptance bar (the 0.4616 figure was the Tinker-runtime codegen
+number; the vLLM-served figure is 0.4484 and it still clears). Judge rho 0.8075 ensemble clears its
+recalibrated bar 0.7554. Nothing here is new capability. It's the receipt.
+
+---
+
 ## 2026-07-08 — Judge ceiling is a wall: all three gap-closure levers fail. Ship v1.3 ensemble, go to packaging.
 
 **Question.** With RL dead, could anything push the judge from rho 0.827 toward the attenuation

@@ -205,8 +205,8 @@ Sub-experiment: Does WordPress domain specialization create enough routing conce
 
 ### Final Comparative Evaluation
 
-- [ ] **EVAL3-01**: A/B eval of pruned model against v2.0 RL baseline on wp-bench and static eval suite
-- [ ] **EVAL3-02**: Report includes per-dimension comparison, inference speed delta (expect significant from pruning), model size reduction, and seed variance
+- [x] **EVAL3-01**: A/B eval of pruned model against v2.0 RL baseline on wp-bench and static eval suite — ADAPTED: no pruned variant (Phase 13 no_winner) and no shipped RL baseline (Phase 10 rejected); reduced to shipping-stack receipt vs acceptance bars (wp-bench 0.4484 >= 0.4286). See `output/eval3/eval3_final_comparison.json`.
+- [x] **EVAL3-02**: Report includes per-dimension comparison, inference speed delta (expect significant from pruning), model size reduction, and seed variance — size reduction 0% (pruning dead), speed unchanged; recorded honestly in `EVAL3-REPORT.md`.
 
 ### Packaging (cascading compression gates)
 
@@ -354,8 +354,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PRUNE-04 | Phase 13 | Complete |
 | PRUNE-05 | Phase 13 | Complete |
 | PRUNE-06 | Phase 13 | Complete |
-| EVAL3-01 | Phase 14 | Pending |
-| EVAL3-02 | Phase 14 | Pending |
+| EVAL3-01 | Phase 14 | Complete (2026-07-10, adapted) |
+| EVAL3-02 | Phase 14 | Complete (2026-07-10) |
 | PKG-01 | Phase 15 | Pending |
 | PKG-02 | Phase 15 | Pending |
 | PKG-03 | Phase 15 | Pending |

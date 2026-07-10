@@ -769,5 +769,5 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 11. Compression & Packaging (two-model pair) | v3.0 | 5/5 | Complete   | 2026-07-09 |
 | 12. MoE-Sieve Comparative Evaluation | v3.0 | - | SKIPPED (optimal_k=full — no variants to A/B) | 2026-07-10 |
 | 13. LoRA Merge & Pruning | v3.0 | 7/7 | Complete   | 2026-07-10 |
-| 14. Final Comparative Evaluation | v3.0 | 0/? | Not started | - |
+| 14. Final Comparative Evaluation | v3.0 | 1/1 | Complete (re-confirmation; no pruned/RL variant) | 2026-07-10 |
 | 15. Packaging | v3.0 | 0/? | Not started | - |
