@@ -195,11 +195,11 @@ Requirements for MoE-Sieve on the RL-trained model, followed by LoRA merge, prun
 
 Sub-experiment: Does WordPress domain specialization create enough routing concentration for calibration-based pruning (REAP) to outperform weight-based pruning (AIMER)? Or is PHP/WordPress too close to general code for domain-aware pruning to differentiate? AIMER is the primary pruning method (D-09) — calibration-free and fast iteration. REAP is an optional comparison.
 
-- [ ] **MERGE-01**: Merge MoE-Sieve + RL LoRA adapters into base model weights before pruning — REAP needs activation magnitudes from the unified model, AIMER needs final weight norms
-- [ ] **PRUNE-01**: Run AIMER pruning on merged model (weight-based, no calibration, ~1 second) at 25%, 50%, and 75% compression ratios — serves as primary pruning method (D-09)
-- [ ] **PRUNE-02**: Optionally run REAP pruning on same merged model with WordPress calibration data (gen + judge examples), `reap` saliency scoring, at same 25%, 50%, 75% compression ratios — serves as domain-aware comparison
-- [ ] **PRUNE-03**: Evaluate both methods via gating mask before weight removal — compare retention across all 9 eval dimensions at each compression ratio (6 variants total: 2 methods × 3 ratios)
-- [ ] **PRUNE-04**: Analyze domain specificity signal: compare which experts each method retains/prunes — high overlap suggests WordPress isn't specialized enough for calibration-based advantage; low overlap suggests REAP is capturing domain-specific routing patterns AIMER misses
+- [x] **MERGE-01** (COMPLETE 2026-07-10 — traceability record, no unmerged adapters existed): Merge MoE-Sieve + RL LoRA adapters into base model weights before pruning — REAP needs activation magnitudes from the unified model, AIMER needs final weight norms
+- [x] **PRUNE-01** (COMPLETE 2026-07-10 — AIMER scorer + real scores + gated eval; measured FAIL at 25%): Run AIMER pruning on merged model (weight-based, no calibration, ~1 second) at 25%, 50%, and 75% compression ratios — serves as primary pruning method (D-09)
+- [x] **PRUNE-02** (COMPLETE 2026-07-10 — REAP module built; 6 conditional-skip stubs per pre-registered rule): Optionally run REAP pruning on same merged model with WordPress calibration data (gen + judge examples), `reap` saliency scoring, at same 25%, 50%, 75% compression ratios — serves as domain-aware comparison
+- [x] **PRUNE-03** (COMPLETE 2026-07-10 — gate-before-remove honored; no weight removal ever ran): Evaluate both methods via gating mask before weight removal — compare retention across all 9 eval dimensions at each compression ratio (6 variants total: 2 methods × 3 ratios)
+- [x] **PRUNE-04** (COMPLETE 2026-07-10 — overlap documented-skip (no REAP mask exists)): Analyze domain specificity signal: compare which experts each method retains/prunes — high overlap suggests WordPress isn't specialized enough for calibration-based advantage; low overlap suggests REAP is capturing domain-specific routing patterns AIMER misses
 - [x] **PRUNE-05**: Select winning method + compression ratio with best dimension-level retention (especially D2_security), prefer higher compression at equivalent quality; if regression on any dimension, reduce compression incrementally until clean
 - [x] **PRUNE-06**: Final model has expert weights physically removed and router softmax re-normalized for removed expert slots; saved as HuggingFace-compatible checkpoint; pruning methodology documented in model card
 
@@ -347,11 +347,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SIEVE-05 | Phase 11 | Complete |
 | EVAL2-01 | Phase 12 | N/A (skipped) |
 | EVAL2-02 | Phase 12 | N/A (skipped) |
-| MERGE-01 | Phase 13 | Pending |
-| PRUNE-01 | Phase 13 | Pending |
-| PRUNE-02 | Phase 13 | Pending |
-| PRUNE-03 | Phase 13 | Pending |
-| PRUNE-04 | Phase 13 | Pending |
+| MERGE-01 | Phase 13 | Complete |
+| PRUNE-01 | Phase 13 | Complete |
+| PRUNE-02 | Phase 13 | Complete |
+| PRUNE-03 | Phase 13 | Complete |
+| PRUNE-04 | Phase 13 | Complete |
 | PRUNE-05 | Phase 13 | Complete |
 | PRUNE-06 | Phase 13 | Complete |
 | EVAL3-01 | Phase 14 | Pending |

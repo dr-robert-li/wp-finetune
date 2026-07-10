@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Phase 15)
-current_phase: 11
-current_phase_name: Compression & Packaging
-status: executing
-stopped_at: "Phase 11 COMPLETE + VERIFIED (passed_with_notes, audit-trail corrected 2026-07-10). Sieve chain closed: optimal_k=FULL locked (human sign-off), NO expert-drop compression headroom (E_eff ~88-99/128; k<=64 collapses wp-bench -22pp and judge to 0/121 parseable). prune_set_for_phase13.json emitted (protected 1480 + layer_stability_notes + no-expert-drop finding + vLLM shipping-rho ~0.81 note). SIEVE-01..05 complete. Phase 12 SKIPPED 2026-07-10 (12-SKIP.md — no sieve variants to A/B). Phase 13 PLANNED 2026-07-10: 7 plans, 5 waves, checker PASSED (0 blockers, 4 warnings fixed). Gate-before-remove; REAP conditional on AIMER@25; human sign-off before surgery; no-winner=ship-unpruned first-class. NOW: executing Phase 13."
+current_phase: 14
+current_phase_name: Final Comparative Evaluation (on UNPRUNED two-model pair — no pruned variant exists)
+status: ready-to-plan
+stopped_at: "Phase 13 COMPLETE + VERIFIED (passed_with_notes) 2026-07-10. Verdict: no_winner -> SHIP UNPRUNED (human sign-off). Expert-level pruning dead by TWO independent signals: routing-cold (Phase 11) + weight-norm AIMER (Phase 13, 25% collapses gen to 0.1577 and judge to rho 0.165/parse 45%). REAP conditional-skip per pre-registered rule. Protected mask byte-unchanged end-to-end. Phase 12 SKIPPED same day. Remaining size levers = Phase 15 quantization gates. Phase 14 compares shipping stack vs baselines on unpruned pair."
 last_updated: "2026-07-10T05:07:36.366Z"
 progress:
   total_phases: 5
