@@ -1,0 +1,16 @@
+{
+  "method": "aimer",
+  "ratio": 75,
+  "axis": "gen",
+  "measured": false,
+  "wp_bench": null,
+  "wp_bench_detail": null,
+  "protected_retained": null,
+  "pass_gen_wp_bench": false,
+  "bars_used": {
+    "gen_wp_bench_floor": 0.4284
+  },
+  "pass": false,
+  "physically_infeasible": true,
+  "skip_reason": "bounded-worse-by-monotonicity: not served (no GB10 wall-clock spent). AIMER@25 (keep k=96/128) measured wp_bench 0.1577, FAIL vs floor 0.4284 (aimer_25_gen.json, 13-04). AIMER@75 keeps k=32/128, a strict subset of both AIMER@25's and AIMER@50's keep-sets. Phase 11's k-sweep (output/sieve/optimal_k.json) measured wp_bench=0.0546 at k=32 (-39.4pp vs full-model 0.4484). Additionally, k=32 is PHYSICALLY INFEASIBLE regardless of accuracy: output/profiling/reasoning-merged-v4/protected_expert_mask.npy shows layer 1 alone carries 40 protected experts, exceeding k=32 (PRUNE-06 uniform-per-layer constraint; see scripts/prune_selection.py max_protected_per_layer check and output/prune/expansion_decision.md)."
+}

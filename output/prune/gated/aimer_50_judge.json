@@ -1,0 +1,19 @@
+{
+  "method": "aimer",
+  "ratio": 50,
+  "axis": "judge",
+  "measured": false,
+  "judge_ensemble_rho": null,
+  "judge_s1_rho": null,
+  "per_seed_rho": null,
+  "parse_rate": null,
+  "protected_retained": null,
+  "pass_judge_ensemble_rho": false,
+  "pass_judge_parse_rate": false,
+  "bars_used": {
+    "judge_ensemble_rho_floor": 0.7555,
+    "judge_parse_floor": 0.95
+  },
+  "pass": false,
+  "skip_reason": "bounded-worse-by-monotonicity: not served (no GB10 wall-clock spent). AIMER@25 (keep k=96/128, the LEAST aggressive of the three ratios) measured judge ensemble rho 0.1651 (FAIL vs floor 0.7555) with parse rate 0.4463 (FAIL vs floor 0.95) and per-seed parse counts 26/34/5 of 121 -- the known parse-collapse mode (output/prune/gated/aimer_25_judge.json, 13-04, 13-RESEARCH Pitfall 2). AIMER@50 keeps k=64/128, a strict subset of AIMER@25's keep-set, so the judge's routing disruption (and resulting parse collapse) can only be equal or worse. See output/prune/expansion_decision.md for the full monotonicity argument."
+}

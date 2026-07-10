@@ -1,0 +1,15 @@
+{
+  "method": "aimer",
+  "ratio": 50,
+  "axis": "gen",
+  "measured": false,
+  "wp_bench": null,
+  "wp_bench_detail": null,
+  "protected_retained": null,
+  "pass_gen_wp_bench": false,
+  "bars_used": {
+    "gen_wp_bench_floor": 0.4284
+  },
+  "pass": false,
+  "skip_reason": "bounded-worse-by-monotonicity: not served (no GB10 wall-clock spent). AIMER@25 (keep k=96/128, the LEAST aggressive of the three ratios) measured wp_bench 0.1577, FAIL vs floor 0.4284 (output/prune/gated/aimer_25_gen.json, 13-04). AIMER@50 keeps k=64/128, a strict subset of AIMER@25's keep-set. Phase 11's own k-sweep (output/sieve/optimal_k.json) measured wp_bench=0.2275 at k=64 (-22.1pp vs full-model 0.4484), already below this bar and below AIMER@25's own 0.1577 floor-relative-failure region. A smaller keep-count cannot exceed a larger keep-count that already failed by 27.1pp. See output/prune/expansion_decision.md for the full monotonicity argument."
+}
