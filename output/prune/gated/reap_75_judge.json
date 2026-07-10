@@ -1,0 +1,13 @@
+{
+  "method": "reap",
+  "ratio": 75,
+  "axis": "judge",
+  "measured": false,
+  "skipped": true,
+  "judge_ensemble_rho": null,
+  "parse_rate": null,
+  "protected_retained": null,
+  "pass": false,
+  "physically_infeasible": true,
+  "reason": "AIMER@25 did not pass; REAP domain comparison moot per PRUNE-02 conditional rule. Also moot independently: 75 percent is bounded collapse territory per Phase 11 monotonicity, and k=32 is physically infeasible regardless of accuracy (layer 1 carries 40 protected experts; see output/prune/expansion_decision.md)."
+}

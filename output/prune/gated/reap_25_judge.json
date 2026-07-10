@@ -1,0 +1,12 @@
+{
+  "method": "reap",
+  "ratio": 25,
+  "axis": "judge",
+  "measured": false,
+  "skipped": true,
+  "judge_ensemble_rho": null,
+  "parse_rate": null,
+  "protected_retained": null,
+  "pass": false,
+  "reason": "AIMER@25 did not pass; REAP domain comparison moot per PRUNE-02 conditional rule. No REAP calibration forward pass was run (scripts/reap_prune.compute_reap_scores remains unexecuted; see output/prune/expansion_decision.md)."
+}
