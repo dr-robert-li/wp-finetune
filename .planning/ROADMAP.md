@@ -677,13 +677,14 @@ reinterpreted as profile/mask/TOST deliverables; SIEVE-02 N/A, SIEVE-03 traceabi
   - Human review checkpoint: present full comparison table (6 variants: 2 methods x 3 ratios) before committing to physical pruning
   - Step 6: Physical pruning + router re-normalization → verify pruned model loads and generates coherent output
 
-**Plans**: 7 plans (planned 2026-07-10)
-- [ ] 13-01-PLAN.md — MERGE-01 traceability + AIMER weight-norm scorer (wave 1)
-- [ ] 13-02-PLAN.md — gate-before-remove eval driver + REAP scorer module (wave 1)
-- [ ] 13-03-PLAN.md — overlap + selection + physical-surgery modules & Wave-0 tests (wave 1)
-- [ ] 13-04-PLAN.md — AIMER@25% gated eval, gen + judge ensemble (wave 2, the decision gate)
-- [ ] 13-05-PLAN.md — conditional AIMER 50/75% + REAP + AIMER-vs-REAP overlap (wave 3)
-- [ ] 13-06-PLAN.md — comparison table + selection + blocking human sign-off (wave 4)
+**Plans**: 6/7 plans executed
+
+- [x] 13-01-PLAN.md — MERGE-01 traceability + AIMER weight-norm scorer (wave 1)
+- [x] 13-02-PLAN.md — gate-before-remove eval driver + REAP scorer module (wave 1)
+- [x] 13-03-PLAN.md — overlap + selection + physical-surgery modules & Wave-0 tests (wave 1)
+- [x] 13-04-PLAN.md — AIMER@25% gated eval, gen + judge ensemble (wave 2, the decision gate)
+- [x] 13-05-PLAN.md — conditional AIMER 50/75% + REAP + AIMER-vs-REAP overlap (wave 3)
+- [x] 13-06-PLAN.md — comparison table + selection + blocking human sign-off (wave 4)
 - [ ] 13-07-PLAN.md — physical surgery for winner OR documented ship-unpruned close (wave 5)
 
 ### Phase 14: Final Comparative Evaluation
@@ -767,6 +768,6 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 10. RL Comparative Evaluation | v2.0 | - | CLOSED — RL rejected (2026-07-05) | 2026-07-05 |
 | 11. Compression & Packaging (two-model pair) | v3.0 | 5/5 | Complete   | 2026-07-09 |
 | 12. MoE-Sieve Comparative Evaluation | v3.0 | - | SKIPPED (optimal_k=full — no variants to A/B) | 2026-07-10 |
-| 13. LoRA Merge & Pruning | v3.0 | 0/? | Not started | - |
+| 13. LoRA Merge & Pruning | v3.0 | 6/7 | In Progress|  |
 | 14. Final Comparative Evaluation | v3.0 | 0/? | Not started | - |
 | 15. Packaging | v3.0 | 0/? | Not started | - |
