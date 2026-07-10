@@ -1,121 +1,0 @@
-[r8-rp15] SKIP — terminal summary.json found (use --force to re-run)
-[r8-rp30] SKIP — terminal summary.json found (use --force to re-run)
-[r8-rp50] SKIP — terminal summary.json found (use --force to re-run)
-[r16-rp15] SKIP — terminal summary.json found (use --force to re-run)
-[r16-rp30] SKIP — terminal summary.json found (use --force to re-run)
-[r16-rp50] SKIP — terminal summary.json found (use --force to re-run)
-[r32-rp15] SKIP — terminal summary.json found (use --force to re-run)
-
-============================================================
-[r32-rp30] BEGIN (rank=32, replay_pct=30)
-[r32-rp30] reuse existing judge-val capture (output/eval_reasoning_v4_grid/r32-rp30/captured_responses.jsonl)
-[r32-rp30] eval_judge --responses-jsonl ...
-[REVL-01] OFFLINE: 121 captured responses from output/eval_reasoning_v4_grid/r32-rp30/captured_responses.jsonl
-[REVL-01] 121 judge examples via OFFLINE:output/eval_reasoning_v4_grid/r32-rp30/captured_responses.jsonl (model=offline-captured, fmt=auto, gt=calibrated_canonical)
-  [25/121] paired=25
-  [50/121] paired=50
-  [75/121] paired=75
-[REVL-01] saved output/eval_reasoning_v4_grid/r32-rp30/judge_results.json + output/eval_reasoning_v4_grid/r32-rp30/judge_results.pairs.jsonl
-[REVL-01] REVL-01A(HARD) corr=0.2943753156768175 var_ok=True | REVL-01B(SOFT) corr=0.47644109369276805 | excluded={'parse_fail': 3, 'no_calibrated_gt': 0, 'api_error': 0}
-{
-  "revl01a_overall_spearman_HARD": {
-    "corr": 0.2943753156768175,
-    "p_value": 0.0012134346089165923,
-    "n_pairs": 118
-  },
-  "revl01a_gt": "rubric_calibrated_overall",
-  "revl01a_variance_preflight": {
-    "stdev": 13.813,
-    "unique": 26,
-    "min_stdev": 2.0,
-    "min_unique": 5,
-    "ok": true
-  },
-  "revl01b_overall_spearman_teacher_SOFT": {
-    "corr": 0.47644109369276805,
-    "p_value": 5.289227411237786e-06,
-    "n_pairs": 83
-  },
-  "per_dimension_clean_SOFT": {
-    "D1_wpcs": {
-      "corr": -0.003240528981099584,
-      "p_value": 0.9722180737271847,
-      "n_pairs": 118
-    },
-    "D2_security": {
-      "corr": 0.4664199488769315,
-      "p_value": 0.09272858709190365,
-      "n_pairs": 14
-    },
-    "D3_sql": {
-      "corr": 0.6009252125773316,
-      "p_value": 0.08700654755314986,
-      "n_pairs": 9
-    },
-    "D4_perf": {
-      "corr": 0.49999999999999994,
-      "p_value": 0.3910022189557703,
-      "n_pairs": 5
-    },
-    "D5_wp_api": {
-      "corr": 0.0,
-      "p_value": 1.0,
-      "n_pairs": 48
-    },
-    "D7_a11y": {
-      "corr": -0.8660254037844387,
-      "p_value": 0.33333333333333326,
-      "n_pairs": 3
-    }
-  },
-  "per_dim_basis": "raw_rubric",
-  "clean_dims": [
-    "D1_wpcs",
-    "D2_security",
-    "D3_sql",
-    "D4_perf",
-    "D5_wp_api",
-    "D7_a11y"
-  ],
-  "n_examples": 121,
-  "n_paired_canonical": 118,
-  "n_paired_teacher": 83,
-  "excluded": {
-    "parse_fail": 3,
-    "no_calibrated_gt": 0,
-    "api_error": 0
-  },
-  "overall_spearman": {
-    "corr": 0.2943753156768175,
-    "p_value": 0.0012134346089165923,
-    "n_pairs": 118
-  },
-  "spearman_corr": 0.2943753156768175
-}
-[r32-rp30] reuse existing sentinel capture (output/eval_reasoning_v4_grid/r32-rp30/sentinel_responses.jsonl)
-[r32-rp30] check_invalid_php_sentinel ...
-[sentinel] n=24 RAW_false_pass=0 POLICY_false_pass=0 (thr=70.0) correct_fail=24 unparseable=0 -> GATE PASS
-[sentinel] summary -> output/eval_reasoning_v4_grid/r32-rp30/sentinel_result.json
-[r32-rp30] check_verdict_confusion ...
-[confusion] teacher_dist={'PASS': 62, 'FAIL': 58, None: 1}
-[confusion] POLICY false-FAIL on teacher-PASS = 24/62 = 0.387 (over-strictness guard)
-[confusion] POLICY recall on teacher-FAIL      = 40/58 = 0.690
-[confusion] -> output/eval_reasoning_v4_grid/r32-rp30/confusion_result.json
-[r32-rp30] reuse existing fs_result (output/eval_reasoning_v4_grid/r32-rp30/fs_result.json)
-[r32-rp30] pre_merge_pass=True
-  judge_spearman: {'rho': 0.2943753156768175, 'ci_lower': 0.0, 'bar': 0.263, 'mode': 'point', 'pass': True}
-  sentinel_0_policy: {'policy_false_pass': 0, 'pass': True}
-  confusion_gate: {'false_FAIL_on_teacherPASS': 0.3870967741935484, 'recall_on_teacherFAIL': 0.6896551724137931, 'p4_false_fail_baseline': 0.403, 'p4_recall_baseline': 0.638, 'pareto_ok': True, 'pass': True}
-  fs_gate: {'wilson_upper': 0.031020271055929513, 'fs_pass': True, 'pass': True}
-[r32-rp30] merging adapter (MoE-only-aware)...
-/home/robert_li/Desktop/projects/wp-finetune/scripts/merge_tinker_v3.py:248: DeprecationWarning: Python 3.14 will, by default, filter extracted tar archives and reject files or modify their metadata. Use the filter argument to control this behavior.
-  tf.extract(m, dest)
-`torch_dtype` is deprecated! Use `dtype` instead!
-Loading weights:   0%|          | 0/531 [00:00<?, ?it/s]Loading weights:   1%|          | 4/531 [00:00<00:50, 10.36it/s]Loading weights:   1%|          | 6/531 [00:01<01:38,  5.36it/s]Loading weights:   3%|▎         | 15/531 [00:01<00:35, 14.35it/s]Loading weights:   3%|▎         | 18/531 [00:01<00:54,  9.50it/s]Loading weights:   5%|▍         | 26/531 [00:02<00:34, 14.78it/s]Loading weights:   5%|▌         | 29/531 [00:02<00:48, 10.43it/s]Loading weights:   7%|▋         | 37/531 [00:02<00:32, 15.09it/s]Loading weights:   8%|▊         | 40/531 [00:03<00:45, 10.76it/s]Loading weights:   9%|▉         | 48/531 [00:03<00:32, 14.76it/s]Loading weights:  10%|▉         | 51/531 [00:04<00:40, 11.86it/s]Loading weights:  11%|█         | 59/531 [00:04<00:29, 16.17it/s]Loading weights:  12%|█▏        | 62/531 [00:05<00:38, 12.18it/s]Loading weights:  13%|█▎        | 70/531 [00:05<00:29, 15.80it/s]Loading weights:  14%|█▎        | 73/531 [00:05<00:40, 11.31it/s]Loading weights:  15%|█▌        | 81/531 [00:06<00:28, 15.87it/s]Loading weights:  16%|█▌        | 84/531 [00:06<00:36, 12.22it/s]Loading weights:  17%|█▋        | 92/531 [00:06<00:26, 16.29it/s]Loading weights:  18%|█▊        | 95/531 [00:07<00:35, 12.31it/s]Loading weights:  19%|█▉        | 103/531 [00:07<00:26, 15.96it/s]Loading weights:  20%|█▉        | 106/531 [00:08<00:40, 10.57it/s]Loading weights:  21%|██▏       | 114/531 [00:08<00:28, 14.54it/s]Loading weights:  22%|██▏       | 117/531 [00:09<00:41, 10.07it/s]Loading weights:  24%|██▎       | 125/531 [00:09<00:27, 14.69it/s]Loading weights:  24%|██▍       | 128/531 [00:09<00:31, 12.83it/s]Loading weights:  26%|██▌       | 136/531 [00:10<00:21, 18.12it/s]Loading weights:  26%|██▌       | 139/531 [00:10<00:27, 14.14it/s]Loading weights:  28%|██▊       | 147/531 [00:10<00:19, 19.55it/s]Loading weights:  28%|██▊       | 150/531 [00:11<00:25, 15.12it/s]Loading weights:  30%|██▉       | 158/531 [00:11<00:17, 20.80it/s]Loading weights:  30%|███       | 161/531 [00:11<00:22, 16.20it/s]Loading weights:  32%|███▏      | 169/531 [00:11<00:16, 21.98it/s]Loading weights:  33%|███▎      | 173/531 [00:12<00:20, 17.67it/s]Loading weights:  34%|███▍      | 180/531 [00:12<00:15, 22.20it/s]Loading weights:  34%|███▍      | 183/531 [00:12<00:21, 15.86it/s]Loading weights:  36%|███▌      | 191/531 [00:13<00:15, 21.58it/s]Loading weights:  37%|███▋      | 194/531 [00:13<00:20, 16.66it/s]Loading weights:  38%|███▊      | 202/531 [00:13<00:14, 22.47it/s]Loading weights:  39%|███▊      | 205/531 [00:13<00:19, 16.82it/s]Loading weights:  40%|████      | 213/531 [00:14<00:14, 22.57it/s]Loading weights:  41%|████      | 216/531 [00:14<00:19, 15.94it/s]Loading weights:  42%|████▏     | 224/531 [00:14<00:14, 21.70it/s]Loading weights:  43%|████▎     | 228/531 [00:15<00:17, 17.57it/s]Loading weights:  44%|████▍     | 235/531 [00:15<00:13, 21.99it/s]Loading weights:  45%|████▍     | 238/531 [00:15<00:17, 16.50it/s]Loading weights:  46%|████▋     | 246/531 [00:15<00:12, 22.35it/s]Loading weights:  47%|████▋     | 249/531 [00:16<00:17, 16.02it/s]Loading weights:  48%|████▊     | 257/531 [00:16<00:12, 21.82it/s]Loading weights:  49%|████▉     | 260/531 [00:16<00:16, 16.62it/s]Loading weights:  50%|█████     | 268/531 [00:17<00:11, 22.38it/s]Loading weights:  51%|█████     | 272/531 [00:17<00:14, 17.86it/s]Loading weights:  53%|█████▎    | 279/531 [00:17<00:11, 22.30it/s]Loading weights:  53%|█████▎    | 282/531 [00:18<00:15, 15.76it/s]Loading weights:  55%|█████▍    | 290/531 [00:18<00:11, 21.84it/s]Loading weights:  55%|█████▌    | 294/531 [00:18<00:13, 17.56it/s]Loading weights:  57%|█████▋    | 301/531 [00:18<00:10, 22.00it/s]Loading weights:  57%|█████▋    | 304/531 [00:19<00:13, 16.67it/s]Loading weights:  59%|█████▉    | 312/531 [00:19<00:09, 22.52it/s]Loading weights:  59%|█████▉    | 315/531 [00:19<00:13, 16.20it/s]Loading weights:  61%|██████    | 323/531 [00:19<00:09, 22.01it/s]Loading weights:  61%|██████▏   | 326/531 [00:20<00:12, 16.63it/s]Loading weights:  63%|██████▎   | 334/531 [00:20<00:08, 22.48it/s]Loading weights:  64%|██████▎   | 338/531 [00:20<00:10, 17.87it/s]Loading weights:  65%|██████▍   | 345/531 [00:20<00:08, 22.47it/s]Loading weights:  66%|██████▌   | 348/531 [00:21<00:11, 16.48it/s]Loading weights:  67%|██████▋   | 356/531 [00:21<00:07, 22.22it/s]Loading weights:  68%|██████▊   | 359/531 [00:21<00:10, 16.77it/s]Loading weights:  69%|██████▉   | 367/531 [00:22<00:07, 22.47it/s]Loading weights:  70%|██████▉   | 370/531 [00:22<00:09, 16.83it/s]Loading weights:  71%|███████   | 378/531 [00:22<00:06, 22.79it/s]Loading weights:  72%|███████▏  | 382/531 [00:23<00:08, 17.50it/s]Loading weights:  73%|███████▎  | 389/531 [00:23<00:06, 22.19it/s]Loading weights:  74%|███████▍  | 392/531 [00:23<00:08, 16.67it/s]Loading weights:  75%|███████▌  | 400/531 [00:23<00:05, 22.63it/s]Loading weights:  76%|███████▌  | 404/531 [00:24<00:07, 18.09it/s]Loading weights:  77%|███████▋  | 411/531 [00:24<00:05, 22.38it/s]Loading weights:  78%|███████▊  | 414/531 [00:24<00:07, 16.03it/s]Loading weights:  79%|███████▉  | 422/531 [00:24<00:04, 21.88it/s]Loading weights:  80%|████████  | 425/531 [00:26<00:11,  9.60it/s]Loading weights:  82%|████████▏ | 433/531 [00:26<00:06, 14.15it/s]Loading weights:  82%|████████▏ | 436/531 [00:26<00:08, 11.24it/s]Loading weights:  84%|████████▎ | 444/531 [00:26<00:05, 15.80it/s]Loading weights:  84%|████████▍ | 447/531 [00:27<00:07, 10.76it/s]Loading weights:  86%|████████▌ | 455/531 [00:27<00:04, 15.26it/s]Loading weights:  86%|████████▋ | 458/531 [00:28<00:06, 10.68it/s]Loading weights:  88%|████████▊ | 466/531 [00:28<00:04, 14.11it/s]Loading weights:  88%|████████▊ | 469/531 [00:29<00:06,  9.77it/s]Loading weights:  90%|████████▉ | 477/531 [00:29<00:03, 13.73it/s]Loading weights:  90%|█████████ | 480/531 [00:30<00:05,  8.91it/s]Loading weights:  92%|█████████▏| 488/531 [00:30<00:03, 13.03it/s]Loading weights:  92%|█████████▏| 491/531 [00:31<00:03, 10.28it/s]Loading weights:  94%|█████████▍| 499/531 [00:31<00:02, 14.61it/s]Loading weights:  95%|█████████▍| 502/531 [00:32<00:02, 11.99it/s]Loading weights:  96%|█████████▌| 510/531 [00:32<00:01, 16.47it/s]Loading weights:  97%|█████████▋| 513/531 [00:32<00:01, 11.42it/s]Loading weights:  98%|█████████▊| 521/531 [00:33<00:00, 16.14it/s]Loading weights:  99%|█████████▊| 524/531 [00:33<00:00, 13.07it/s]Loading weights: 100%|██████████| 531/531 [00:33<00:00, 15.79it/s]
-Writing model shards:   0%|          | 0/13 [00:00<?, ?it/s]Writing model shards:   8%|▊         | 1/13 [00:05<01:00,  5.05s/it]Writing model shards:  15%|█▌        | 2/13 [00:09<00:49,  4.49s/it]Writing model shards:  23%|██▎       | 3/13 [00:14<00:46,  4.69s/it]Writing model shards:  31%|███       | 4/13 [00:18<00:39,  4.44s/it]Writing model shards:  38%|███▊      | 5/13 [00:21<00:33,  4.22s/it]Writing model shards:  46%|████▌     | 6/13 [00:25<00:28,  4.11s/it]Writing model shards:  54%|█████▍    | 7/13 [00:29<00:24,  4.03s/it]Writing model shards:  62%|██████▏   | 8/13 [00:33<00:19,  3.98s/it]Writing model shards:  69%|██████▉   | 9/13 [00:37<00:15,  3.93s/it]Writing model shards:  77%|███████▋  | 10/13 [00:41<00:11,  3.84s/it]Writing model shards:  85%|████████▍ | 11/13 [00:44<00:07,  3.84s/it]Writing model shards:  92%|█████████▏| 12/13 [00:48<00:03,  3.85s/it]Writing model shards: 100%|██████████| 13/13 [00:49<00:00,  2.96s/it]Writing model shards: 100%|██████████| 13/13 [00:49<00:00,  3.82s/it]
-[DONE] staging merge written to output/eval_reasoning_v4_grid/_staging/r32-rp30 in 140.6s
-  differ {'w1': 0.014709, 'w3': 0.01562, 'w2': 0.008629} | shards 13 | report output/merge_v3/merge_report.json
-  STATUS: staging_written_pending_anchor — DO NOT PROMOTE until 3 anchors pass
-[r32-rp30] REVL-04 wp-bench (--wpbench-only)...
-HALT: no prior summary.json for --wpbench-only.
-[r32-rp30] run_eval_reasoning --wpbench-only FAILED (rc=1)

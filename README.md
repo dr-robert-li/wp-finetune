@@ -24,7 +24,11 @@ No open-source model existed for this. The tools in this space are wrappers arou
 | Serving | vLLM, Ollama, GGUF, AWQ |
 | Infrastructure | [DGX Toolbox](https://github.com/dr-robert-li/dgx-toolbox) |
 
-See [wp-moe.md](wp-moe.md) for the full model specification.
+See [wp-moe.md](wp-moe.md) for the full model specification, and **[PIPELINE.md](PIPELINE.md)** for the
+frozen end-to-end method: every stage with its runnable entrypoint, its pass/fail gate, and the known
+Qwen3-30B-A3B result — written so you can re-run it on a fresh same-architecture base (e.g. a future
+Qwen3.6-class MoE). One-off experiment scaffolding from the v3.0 campaign lives in
+[deprecated/](deprecated/), out of the pipeline path.
 
 ## Usage
 

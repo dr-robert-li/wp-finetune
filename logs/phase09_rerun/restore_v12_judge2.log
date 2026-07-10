@@ -1,9 +1,0 @@
-Launching wp-v4-judge-vllm on :8000
-  model: /home/robert_li/Desktop/projects/wp-finetune/models/_staging/qwen3-30b-wp-30_70-reasoning-merged-v4 (v4 winner = judge)
-  served-model-name: wp_judge
-  image: ghcr.io/spark-arena/dgx-vllm-eugr-nightly:latest
-1ebd8c939b48df38e3fd2dd584506cd86d95a6b66d3df40e73fb9b68f759e6bc
-
-Follow readiness:  docker logs -f wp-v4-judge-vllm
-Ready when:        curl -s http://localhost:8000/v1/models
-Stop:              docker stop wp-v4-judge-vllm

@@ -3,16 +3,16 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: MoE-Sieve, Pruning & Packaging
 current_phase: 16
-current_phase_name: Pipeline Lockdown & Repo Cleanup (formalize repeatable pipeline, deprecate, restructure)
-status: in-progress
-stopped_at: "Phase 15 COMPLETE + VERIFIED (passed_with_notes) 2026-07-10. Gate 1 bf16 baseline recorded (57GB, wp-bench 0.4484, judge rho 0.8075). Gate 2: quantization WARRANTED (121GB host vs 114/228GB pair); uniform nf4 4-bit EXCLUDED (measured router collapse RTRN-04); start Q8, activation-aware below. PKG-03 ladder+rule+Q4-nf4 FAIL recorded, Q8/Q6/Q5 pre-registered pending quant toolchain (turnkey recipe scripts/run_packaging_recipe.md). PKG-04 model card written (full lineage). PKG-05 bf16 E2E VALIDATED (gen 10/10, judge 10/10, routing 20/20). Deliverables under output/packaging/. Phase 16 (NEW): formalize repeatable pipeline + deprecate + restructure + push as dr-robert-li."
-last_updated: "2026-07-10T07:51:00.000Z"
+current_phase_name: Pipeline Lockdown & Repo Cleanup — COMPLETE (v3.0 milestone done)
+status: complete
+stopped_at: "Phase 16 COMPLETE + VERIFIED (passed) 2026-07-10. v3.0 milestone DONE (16/16 phases). PIPELINE.md written: frozen spine (data->SFT gen+judge->merge->eval) + 3 conditional compression gates (RL rejected, Sieve full, prune no_winner) kept as re-test stages for the next base (qwen3.6-class). 95 one-off scripts moved to deprecated/ with README; 3 misclassified active deps (_rlev01_wpbench_ckpt, _p0_vllm_smoke_serve, _reward_validity_oracle) caught and retained; grep=0 active imports of moved files; py_compile clean. logs/ gitignored, root stray deprecated, README links PIPELINE.md. PIPE-01/02/03 closed. Committed + pushed as dr-robert-li."
+last_updated: "2026-07-10T08:05:00.000Z"
 progress:
   total_phases: 16
-  completed_phases: 15
-  total_plans: 70
-  completed_plans: 70
-  percent: 94
+  completed_phases: 16
+  total_plans: 71
+  completed_plans: 71
+  percent: 100
 ---
 
 # Project State

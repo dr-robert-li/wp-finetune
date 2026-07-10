@@ -1,7 +1,0 @@
-[capture-tinker] sampler path: tinker://3497a27e-5638-5ac7-97c6-a886062666d9:train:0/sampler_weights/wp-reasoning-v3-ep3
-[capture-tinker] 121 examples (filter=wp_judge_startswith)
-[capture-tinker] 25/121 close=25 judge_output=25
-[capture-tinker] 50/121 close=49 judge_output=49
-[capture-tinker] 75/121 close=74 judge_output=74
-[capture-tinker] 100/121 close=99 judge_output=99
-[capture-tinker] DONE n=121 close_tag=118 judge_output=118 -> output/eval_reasoning/reasoning_v3_tinker/judge_responses.jsonl

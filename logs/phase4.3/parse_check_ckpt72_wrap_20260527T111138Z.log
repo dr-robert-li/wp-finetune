@@ -1,2 +1,0 @@
-/home/robert_li/Desktop/projects/wp-finetune/scripts/_run_parse_check_ckpt72.py:22: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
-  ts = _dt.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")

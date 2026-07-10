@@ -1,6 +1,0 @@
-[22:03:53] START model=models/qwen3-30b-wp-30_70-merged-v2-reshard trip=18432MiB poll=2s initial_avail=118013MiB
-[22:03:53] stream-probe launched host_pid=605980
-[22:07:56] !!! WATCHDOG TRIP avail=18041MiB < 18432MiB — KILLING LOAD
-[22:07:59] post-kill avail=44856MiB
-[22:07:59] DONE tripped=1 rc=137 min_avail=18041MiB (peak_used~102959MiB)
-RESULT tripped=1 rc=137 min_avail_mib=18041

@@ -738,6 +738,31 @@ reinterpreted as profile/mask/TOST deliverables; SIEVE-02 N/A, SIEVE-03 traceabi
 
 **Plans**: 1 plan
 
+### Phase 16: Pipeline Lockdown & Repo Cleanup
+
+**Goal**: Freeze the v3.0 method into a single repeatable pipeline document that an outside user can run on
+a fresh same-architecture base (e.g. Qwen3.6-30B-class), preserving the gates that returned nothing (RL
+rejected, Sieve full, prune no_winner) as conditional stages rather than deleting them. Deprecate one-off
+experiment scaffolding into `deprecated/`, strip dead references from active code, and restructure the
+project folder so it is clean and parseable by outside followers.
+**Depends on**: Phase 15
+**Requirements**: PIPE-01 (repeatable PIPELINE.md), PIPE-02 (deprecate + strip references), PIPE-03
+(folder restructure + root cleanup)
+**Success Criteria** (what must be TRUE):
+
+  1. `PIPELINE.md` documents every stage end-to-end (data -> SFT gen + judge -> merge -> eval/wp-bench ->
+     router-profiling -> sieve k-sweep gate -> merge+AIMER prune gate -> packaging quant gates) with the
+     runnable entrypoint for each, the pass/fail gate, and the known Qwen3-30B-A3B result. Gates that
+     returned no winner are kept as conditional re-test stages for the next base, not removed.
+  2. Dead one-off experiment drivers are moved to `deprecated/` with a README explaining each; no active
+     script or skill still references a moved file (verified by grep).
+  3. The project root and folder layout read cleanly: stray logs/artifacts swept, semantic grouping, so an
+     outside user can clone and follow along.
+
+**Skill**: none new — documentation + refactor phase.
+
+**Plans**: 1 plan
+
 ## Progress
 
 **Execution Order:**
@@ -771,4 +796,4 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 13. LoRA Merge & Pruning | v3.0 | 7/7 | Complete   | 2026-07-10 |
 | 14. Final Comparative Evaluation | v3.0 | 1/1 | Complete (re-confirmation; no pruned/RL variant) | 2026-07-10 |
 | 15. Packaging | v3.0 | 1/1 | Complete (Gates 1-2 + card + bf16 E2E; Q8/Q6/Q5 pending toolchain) | 2026-07-10 |
-| 16. Pipeline Lockdown & Repo Cleanup | v3.0 | 0/? | In progress | - |
+| 16. Pipeline Lockdown & Repo Cleanup | v3.0 | 1/1 | Complete (PIPELINE.md + 95 files deprecated + cleanup) | 2026-07-10 |

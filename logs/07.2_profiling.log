@@ -1,156 +1,0 @@
-
-=============
-== PyTorch ==
-=============
-
-NVIDIA Release 26.02 (build 269443100)
-PyTorch Version 2.11.0a0+eb65b36
-Container image Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-Copyright (c) 2014-2024 Facebook Inc.
-Copyright (c) 2011-2014 Idiap Research Institute (Ronan Collobert)
-Copyright (c) 2012-2014 Deepmind Technologies    (Koray Kavukcuoglu)
-Copyright (c) 2011-2012 NEC Laboratories America (Koray Kavukcuoglu)
-Copyright (c) 2011-2013 NYU                      (Clement Farabet)
-Copyright (c) 2006-2010 NEC Laboratories America (Ronan Collobert, Leon Bottou, Iain Melvin, Jason Weston)
-Copyright (c) 2006      Idiap Research Institute (Samy Bengio)
-Copyright (c) 2001-2004 Idiap Research Institute (Ronan Collobert, Samy Bengio, Johnny Mariethoz)
-Copyright (c) 2015      Google Inc.
-Copyright (c) 2015      Yangqing Jia
-Copyright (c) 2013-2016 The Caffe contributors
-All rights reserved.
-
-Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
-
-GOVERNING TERMS: The software and materials are governed by the NVIDIA Software License Agreement
-(found at https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-software-license-agreement/)
-and the Product-Specific Terms for NVIDIA AI Products
-(found at https://www.nvidia.com/en-us/agreements/enterprise-software/product-specific-terms-for-ai-products/).
-
-NOTE: CUDA Forward Compatibility mode ENABLED.
-  Using CUDA 13.1 driver version 590.48.01 with kernel driver version 580.159.03.
-  See https://docs.nvidia.com/deploy/cuda-compatibility/ for details.
-
-[stage] install-deps 07:39:21
-WARNING: The directory '/root/.cache/pip' or its parent directory is not owned or is not writable by the current user. The cache has been disabled. Check the permissions and owner of that directory. If executing pip with sudo, you should use sudo's -H flag.
-Collecting peft
-  Downloading peft-0.19.1-py3-none-any.whl.metadata (15 kB)
-Collecting bitsandbytes
-  Downloading bitsandbytes-0.49.2-py3-none-manylinux_2_24_aarch64.whl.metadata (10 kB)
-Collecting unsloth
-  Downloading unsloth-2026.6.7-py3-none-any.whl.metadata (58 kB)
-Collecting diffusers
-  Downloading diffusers-0.38.0-py3-none-any.whl.metadata (20 kB)
-Collecting datasets<4.4.0,>=3.4.1
-  Downloading datasets-4.3.0-py3-none-any.whl.metadata (18 kB)
-Collecting trl
-  Downloading trl-1.6.0-py3-none-any.whl.metadata (11 kB)
-Downloading datasets-4.3.0-py3-none-any.whl (506 kB)
-Downloading peft-0.19.1-py3-none-any.whl (680 kB)
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 680.7/680.7 kB 10.4 MB/s  0:00:00
-Downloading bitsandbytes-0.49.2-py3-none-manylinux_2_24_aarch64.whl (31.4 MB)
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 31.4/31.4 MB 14.3 MB/s  0:00:02
-Downloading unsloth-2026.6.7-py3-none-any.whl (73.4 MB)
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 73.4/73.4 MB 14.8 MB/s  0:00:04
-Downloading diffusers-0.38.0-py3-none-any.whl (5.2 MB)
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.2/5.2 MB 14.9 MB/s  0:00:00
-Downloading trl-1.6.0-py3-none-any.whl (825 kB)
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 825.1/825.1 kB 14.4 MB/s  0:00:00
-Installing collected packages: unsloth, trl, peft, diffusers, datasets, bitsandbytes
-  Attempting uninstall: datasets
-    Found existing installation: datasets 4.5.0
-    Uninstalling datasets-4.5.0:
-      Successfully uninstalled datasets-4.5.0
-
-WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
-Successfully installed bitsandbytes-0.49.2 datasets-4.3.0 diffusers-0.38.0 peft-0.19.1 trl-1.6.0 unsloth-2026.6.7
-WARNING: The directory '/root/.cache/pip' or its parent directory is not owned or is not writable by the current user. The cache has been disabled. Check the permissions and owner of that directory. If executing pip with sudo, you should use sudo's -H flag.
-Collecting trl!=0.19.0,<=0.24.0,>=0.18.2
-  Downloading trl-0.24.0-py3-none-any.whl.metadata (11 kB)
-Collecting transformers!=4.52.0,!=4.52.1,!=4.52.2,!=4.52.3,!=4.53.0,!=4.54.0,!=4.55.0,!=4.55.1,!=4.57.0,!=4.57.4,!=4.57.5,!=5.0.0,!=5.1.0,<=5.5.0,>=4.51.3
-  Downloading transformers-5.5.0-py3-none-any.whl.metadata (32 kB)
-Collecting accelerate>=0.21.0,>=0.34.1
-  Downloading accelerate-1.14.0-py3-none-any.whl.metadata (19 kB)
-Collecting safetensors>=0.8.0-rc.0
-  Downloading safetensors-0.8.0-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (4.2 kB)
-Collecting unsloth_zoo>=2026.6.5
-  Downloading unsloth_zoo-2026.6.5-py3-none-any.whl.metadata (33 kB)
-Collecting triton>=3.0.0
-  Downloading triton-3.7.0-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl.metadata (1.7 kB)
-Collecting sentencepiece>=0.2.0
-  Downloading sentencepiece-0.2.1-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl.metadata (10 kB)
-Collecting hf_transfer
-  Downloading hf_transfer-0.1.9-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (1.7 kB)
-Collecting multiprocess<0.70.17
-  Downloading multiprocess-0.70.16-py312-none-any.whl.metadata (7.2 kB)
-Downloading trl-0.24.0-py3-none-any.whl (423 kB)
-Downloading transformers-5.5.0-py3-none-any.whl (10.2 MB)
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10.2/10.2 MB 13.7 MB/s  0:00:00
-Downloading multiprocess-0.70.16-py312-none-any.whl (146 kB)
-Downloading accelerate-1.14.0-py3-none-any.whl (389 kB)
-Downloading safetensors-0.8.0-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (502 kB)
-Downloading unsloth_zoo-2026.6.5-py3-none-any.whl (1.0 MB)
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.0/1.0 MB 15.1 MB/s  0:00:00
-Downloading triton-3.7.0-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl (188.5 MB)
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 188.5/188.5 MB 15.2 MB/s  0:00:12
-Downloading sentencepiece-0.2.1-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl (1.3 MB)
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 15.4 MB/s  0:00:00
-Downloading hf_transfer-0.1.9-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (3.7 MB)
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.7/3.7 MB 15.6 MB/s  0:00:00
-Installing collected packages: unsloth_zoo, trl, triton, transformers, sentencepiece, safetensors, multiprocess, hf_transfer, accelerate
-  Attempting uninstall: trl
-    Found existing installation: trl 1.6.0
-    Uninstalling trl-1.6.0:
-      Successfully uninstalled trl-1.6.0
-  Attempting uninstall: safetensors
-    Found existing installation: safetensors 0.7.0
-    Uninstalling safetensors-0.7.0:
-      Successfully uninstalled safetensors-0.7.0
-  Attempting uninstall: multiprocess
-    Found existing installation: multiprocess 0.70.18
-    Uninstalling multiprocess-0.70.18:
-      Successfully uninstalled multiprocess-0.70.18
-
-Successfully installed accelerate-1.14.0 hf_transfer-0.1.9 multiprocess-0.70.16 safetensors-0.8.0 sentencepiece-0.2.1 transformers-5.5.0 triton-3.7.0 trl-0.24.0 unsloth_zoo-2026.6.5
-WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
-WARNING: The directory '/root/.cache/pip' or its parent directory is not owned or is not writable by the current user. The cache has been disabled. Check the permissions and owner of that directory. If executing pip with sudo, you should use sudo's -H flag.
-Collecting huggingface_hub<2.0,>=0.21.0,>=0.25.0,>=0.34.0,>=1.5.0
-  Downloading huggingface_hub-1.19.0-py3-none-any.whl.metadata (14 kB)
-Collecting cut_cross_entropy
-  Downloading cut_cross_entropy-25.1.1-py3-none-any.whl.metadata (9.3 kB)
-Collecting msgspec
-  Downloading msgspec-0.21.1-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl.metadata (5.8 kB)
-Downloading huggingface_hub-1.19.0-py3-none-any.whl (693 kB)
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 693.4/693.4 kB 8.3 MB/s  0:00:00
-Downloading cut_cross_entropy-25.1.1-py3-none-any.whl (22 kB)
-Downloading msgspec-0.21.1-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (218 kB)
-Installing collected packages: msgspec, huggingface_hub, cut_cross_entropy
-  Attempting uninstall: huggingface_hub
-    Found existing installation: huggingface_hub 1.4.1
-    Uninstalling huggingface_hub-1.4.1:
-      Successfully uninstalled huggingface_hub-1.4.1
-
-WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
-Successfully installed cut_cross_entropy-25.1.1 huggingface_hub-1.19.0 msgspec-0.21.1
-install-deps: installing 6 top-level package(s) with --no-deps
-install-deps: skipping dep walk for 'trl' (no-walk)
-install-deps: installing 9 package(s) with --no-deps:
-  - trl!=0.19.0,<=0.24.0,>=0.18.2
-  - transformers!=4.52.0,!=4.52.1,!=4.52.2,!=4.52.3,!=4.53.0,!=4.54.0,!=4.55.0,!=4.55.1,!=4.57.0,!=4.57.4,!=4.57.5,!=5.0.0,!=5.1.0,<=5.5.0,>=4.51.3
-  - accelerate>=0.21.0,>=0.34.1
-  - safetensors>=0.8.0-rc.0
-  - unsloth_zoo>=2026.6.5
-  - triton>=3.0.0
-  - sentencepiece>=0.2.0
-  - hf_transfer
-  - multiprocess<0.70.17
-install-deps: installing 3 package(s) with --no-deps:
-  - huggingface_hub<2.0,>=0.21.0,>=0.25.0,>=0.34.0,>=1.5.0
-  - cut_cross_entropy
-  - msgspec
-[stage] env-check 07:39:56
-transformers 5.5.0 torch 2.11.0a0+eb65b36914.nv26.02 cuda True
-model_type qwen3_moe num_experts 128 layers 48
-[stage] profiling-start 07:40:03
-Loading merged model from /workspace/models/qwen3-30b-wp-30_70-reasoning-merged-v4 ...
-Loading weights:   0%|          | 0/531 [00:00<?, ?it/s]Loading weights:   0%|          | 1/531 [00:03<27:17,  3.09s/it]Loading weights:   0%|          | 2/531 [00:06<30:17,  3.44s/it]Loading weights:   1%|          | 4/531 [00:13<30:35,  3.48s/it]Loading weights:   1%|          | 5/531 [00:13<21:32,  2.46s/it]Loading weights:   3%|▎         | 15/531 [00:21<08:50,  1.03s/it]Loading weights:   3%|▎         | 16/531 [00:21<08:11,  1.05it/s]Loading weights:   5%|▍         | 26/531 [00:28<06:41,  1.26it/s]Loading weights:   5%|▌         | 27/531 [00:28<06:14,  1.35it/s]Loading weights:   7%|▋         | 37/531 [00:34<05:32,  1.49it/s]Loading weights:   7%|▋         | 38/531 [00:34<05:18,  1.55it/s]Loading weights:   9%|▉         | 48/531 [00:41<05:14,  1.54it/s]Loading weights:   9%|▉         | 49/531 [00:41<05:02,  1.59it/s]Loading weights:  11%|█         | 59/531 [00:48<05:04,  1.55it/s]Loading weights:  11%|█▏        | 60/531 [00:48<04:54,  1.60it/s]Loading weights:  13%|█▎        | 70/531 [00:54<04:50,  1.59it/s]Loading weights:  13%|█▎        | 71/531 [00:55<04:40,  1.64it/s]Loading weights:  15%|█▌        | 81/531 [01:01<04:33,  1.65it/s]Loading weights:  15%|█▌        | 82/531 [01:01<04:21,  1.72it/s]Loading weights:  17%|█▋        | 92/531 [01:08<04:40,  1.56it/s]Loading weights:  18%|█▊        | 93/531 [01:08<04:27,  1.64it/s]Loading weights:  19%|█▉        | 103/531 [01:14<04:22,  1.63it/s]Loading weights:  20%|█▉        | 104/531 [01:15<04:12,  1.69it/s]Loading weights:  21%|██▏       | 114/531 [01:21<04:19,  1.61it/s]Loading weights:  22%|██▏       | 115/531 [01:21<04:07,  1.68it/s]Loading weights:  24%|██▎       | 125/531 [01:27<04:02,  1.68it/s]Loading weights:  24%|██▎       | 126/531 [01:28<03:53,  1.73it/s]Loading weights:  26%|██▌       | 136/531 [01:34<03:54,  1.68it/s]Loading weights:  26%|██▌       | 137/531 [01:34<03:49,  1.72it/s]Loading weights:  28%|██▊       | 147/531 [01:41<03:59,  1.60it/s]Loading weights:  28%|██▊       | 148/531 [01:41<03:50,  1.66it/s]Loading weights:  30%|██▉       | 158/531 [01:48<03:59,  1.55it/s]Loading weights:  30%|██▉       | 159/531 [01:48<03:47,  1.63it/s]Loading weights:  32%|███▏      | 169/531 [01:54<03:41,  1.63it/s]Loading weights:  32%|███▏      | 170/531 [01:55<03:32,  1.70it/s]Loading weights:  34%|███▍      | 180/531 [02:02<03:52,  1.51it/s]Loading weights:  34%|███▍      | 181/531 [02:02<03:40,  1.58it/s]Loading weights:  36%|███▌      | 191/531 [02:09<03:43,  1.52it/s]Loading weights:  36%|███▌      | 192/531 [02:09<03:35,  1.57it/s]Loading weights:  38%|███▊      | 202/531 [02:16<03:35,  1.53it/s]Loading weights:  38%|███▊      | 203/531 [02:16<03:26,  1.59it/s]Loading weights:  40%|████      | 213/531 [02:22<03:11,  1.66it/s]Loading weights:  40%|████      | 214/531 [02:22<03:04,  1.72it/s]Loading weights:  42%|████▏     | 224/531 [02:29<03:05,  1.66it/s]Loading weights:  42%|████▏     | 225/531 [02:29<02:57,  1.72it/s]Loading weights:  44%|████▍     | 235/531 [02:36<03:08,  1.57it/s]Loading weights:  44%|████▍     | 236/531 [02:36<03:02,  1.62it/s]Loading weights:  46%|████▋     | 246/531 [02:43<03:09,  1.51it/s]Loading weights:  47%|████▋     | 247/531 [02:44<03:00,  1.57it/s]Loading weights:  48%|████▊     | 257/531 [02:50<02:50,  1.61it/s]Loading weights:  49%|████▊     | 258/531 [02:50<02:41,  1.69it/s]Loading weights:  50%|█████     | 268/531 [02:56<02:45,  1.59it/s]Loading weights:  51%|█████     | 269/531 [02:57<02:38,  1.66it/s]Loading weights:  53%|█████▎    | 279/531 [03:03<02:40,  1.57it/s]Loading weights:  53%|█████▎    | 280/531 [03:04<02:32,  1.64it/s]Loading weights:  55%|█████▍    | 290/531 [03:10<02:34,  1.56it/s]Loading weights:  55%|█████▍    | 291/531 [03:11<02:28,  1.61it/s]Loading weights:  57%|█████▋    | 301/531 [03:16<02:08,  1.79it/s]Loading weights:  57%|█████▋    | 302/531 [03:16<02:04,  1.84it/s]Loading weights:  59%|█████▉    | 312/531 [03:22<02:10,  1.68it/s]Loading weights:  59%|█████▉    | 313/531 [03:23<02:05,  1.73it/s]Loading weights:  61%|██████    | 323/531 [03:30<02:12,  1.57it/s]Loading weights:  61%|██████    | 324/531 [03:30<02:08,  1.61it/s]Loading weights:  63%|██████▎   | 334/531 [03:37<02:08,  1.54it/s]Loading weights:  65%|██████▍   | 345/531 [03:43<01:51,  1.67it/s]Loading weights:  65%|██████▌   | 346/531 [03:43<01:47,  1.72it/s]Loading weights:  67%|██████▋   | 356/531 [03:50<01:47,  1.62it/s]Loading weights:  67%|██████▋   | 357/531 [03:50<01:44,  1.67it/s]Loading weights:  69%|██████▉   | 367/531 [03:57<01:44,  1.57it/s]Loading weights:  69%|██████▉   | 368/531 [03:57<01:39,  1.63it/s]Loading weights:  71%|███████   | 378/531 [04:04<01:38,  1.55it/s]Loading weights:  71%|███████▏  | 379/531 [04:04<01:34,  1.61it/s]Loading weights:  73%|███████▎  | 389/531 [04:10<01:26,  1.64it/s]Loading weights:  73%|███████▎  | 390/531 [04:10<01:23,  1.70it/s]Loading weights:  75%|███████▌  | 400/531 [04:17<01:19,  1.65it/s]Loading weights:  76%|███████▌  | 401/531 [04:17<01:16,  1.70it/s]Loading weights:  77%|███████▋  | 411/531 [04:24<01:14,  1.61it/s]Loading weights:  78%|███████▊  | 412/531 [04:24<01:10,  1.69it/s]Loading weights:  79%|███████▉  | 422/531 [04:31<01:09,  1.58it/s]Loading weights:  82%|████████▏ | 433/531 [04:37<00:58,  1.66it/s]Loading weights:  82%|████████▏ | 434/531 [04:37<00:56,  1.70it/s]Loading weights:  84%|████████▎ | 444/531 [04:43<00:53,  1.64it/s]Loading weights:  84%|████████▍ | 445/531 [04:44<00:51,  1.68it/s]Loading weights:  86%|████████▌ | 455/531 [04:50<00:47,  1.60it/s]Loading weights:  86%|████████▌ | 456/531 [04:51<00:45,  1.65it/s]Loading weights:  88%|████████▊ | 466/531 [04:57<00:40,  1.62it/s]Loading weights:  88%|████████▊ | 467/531 [04:57<00:37,  1.69it/s]Loading weights:  90%|████████▉ | 477/531 [05:03<00:31,  1.70it/s]Loading weights:  90%|█████████ | 478/531 [05:03<00:30,  1.75it/s]Loading weights:  92%|█████████▏| 488/531 [05:10<00:26,  1.63it/s]Loading weights:  92%|█████████▏| 489/531 [05:10<00:25,  1.68it/s]Loading weights:  94%|█████████▍| 499/531 [05:17<00:20,  1.55it/s]Loading weights:  94%|█████████▍| 500/531 [05:18<00:19,  1.63it/s]Loading weights:  96%|█████████▌| 510/531 [05:24<00:13,  1.58it/s]Loading weights:  96%|█████████▌| 511/531 [05:24<00:12,  1.62it/s]Loading weights:  98%|█████████▊| 521/531 [05:31<00:06,  1.56it/s]Loading weights:  98%|█████████▊| 522/531 [05:31<00:05,  1.61it/s]Loading weights: 100%|██████████| 531/531 [05:31<00:00,  1.60it/s]
-[stage] profiling-exit rc=0 14:09:57

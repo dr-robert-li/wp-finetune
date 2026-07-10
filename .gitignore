@@ -70,6 +70,9 @@ output/
 # Telemetry output (ephemeral run data)
 telemetry/
 
+# Run logs (ephemeral, regenerable) — swept in Phase 16 cleanup
+logs/
+
 # wp-bench (cloned repo, re-cloneable)
 wp-bench/
 

@@ -1,3 +1,0 @@
-[capture-tinker] sampler path: tinker://a37be9b1-a0d2-5c8a-b9c0-670a59244cf8:train:0/sampler_weights/wp-reasoning-v2-ep3
-[capture-tinker] 24 examples (filter=all)
-[capture-tinker] DONE n=24 close_tag=21 judge_output=21 -> output/eval_reasoning/reasoning_v2_tinker/sentinel_responses.jsonl

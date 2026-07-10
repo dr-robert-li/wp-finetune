@@ -1,9 +1,0 @@
-[capture] resolved model-dir: models/_staging/qwen3-30b-wp-30_70-reasoning-ckpt50-merged
-[capture] resolved served-name: wp-30_70  port: 8021
-[capture] histogram: {"n_total": 120, "n_with_close_tag": 42, "n_with_judge_output": 42, "n_with_corrected_code": 0, "n_parseable_scores": 119, "parseable_rate": 0.9916666666666667}
-[capture] OK — 120 rows, parseable_rate 0.992 -> /home/robert_li/Desktop/projects/wp-finetune/output/format_stability/checkpoint_curve/ckpt50.jsonl
-[vllm] booting wp-eval-reasoning-vllm on :8021 model=models/_staging/qwen3-30b-wp-30_70-reasoning-ckpt50-merged gpu_mem_util=0.55
-[vllm] healthy after 477s; served model=wp-30_70
-[vllm] stopped wp-eval-reasoning-vllm
-CAPTURE_EXIT=0
-HISTOGRAM_RENAMED -> ckpt50_histogram.json

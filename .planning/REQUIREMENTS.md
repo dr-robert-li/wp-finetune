@@ -216,6 +216,12 @@ Sub-experiment: Does WordPress domain specialization create enough routing conce
 - [x] **PKG-04**: Model card with full compression lineage (base -> RL rejected -> MoE-Sieve full -> merge -> AIMER/REAP no_winner -> quantization) + usage — `output/packaging/MODEL_CARD.md`. Upload push is human-authorized final step.
 - [x] **PKG-05**: E2E inference validation — bf16 shipped format VALIDATED (gen 10/10, judge 10/10, routing 20/20, `output/packaging/pkg05_e2e_validation.json`); quantized tier pending toolchain.
 
+### Pipeline Lockdown & Repo Cleanup (Phase 16)
+
+- [x] **PIPE-01**: `PIPELINE.md` documents every stage end-to-end with runnable entrypoint, gate, and known Qwen3-30B-A3B result; no-winner gates (RL/Sieve/prune) kept as conditional re-test stages for the next base.
+- [x] **PIPE-02**: 95 one-off scripts moved to `deprecated/` with a README; grep confirms 0 active imports of a moved file; 3 misclassified active deps caught and retained; `py_compile` clean.
+- [x] **PIPE-03**: `logs/` gitignored, root stray deprecated, README links PIPELINE.md + deprecated/; layout parseable by outside users.
+
 ## v4 Requirements (deferred)
 
 Deferred to future release. Tracked but not in current roadmap.

@@ -1,3 +1,0 @@
-[vllm] booting wp-revl04-iter-vllm on :8021 model=models/qwen3-30b-wp-30_70-reasoning-merged gpu_mem_util=0.55
-[vllm] healthy after 489s; served model=wp-30_70
-served: wp-30_70

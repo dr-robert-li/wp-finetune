@@ -4,7 +4,33 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
-## 2026-07-10 — Phase 15: packaging, and quantization as the last size lever standing (with one tier already dead).
+## 2026-07-10 — Phase 16: locking the pipeline down so the next base model can walk it in a day.
+
+**Why add a phase after packaging.** The whole point of this project was never one model. It was a
+method: take a task-token MoE base, teach it to write and review WordPress code, then try to shrink it.
+v3.0 ran that method to the end and learned that this particular base (Qwen3-30B-A3B) won't shrink and
+its judge tops out around rho 0.80. Fine. The interesting question is what happens when Qwen3.6 lands with
+the same architecture, possibly a higher achievable rho and more concentrated routing that finally makes
+pruning pay. I don't want to re-derive the pipeline from a scatter of `_04.4_*.py` and seedA launch
+scripts when that day comes. So Phase 16 freezes the pipeline into one document an outside person can
+follow, and clears the experiment wreckage out of the way.
+
+**The honest shape of the pipeline includes its dead ends.** A repeatable pipeline that hides the phases
+that returned nothing is a lie by omission, and worse, it invites the next person to skip the gates that
+matter. RL got rejected. Expert-drop found no headroom. Weight-norm pruning found no winner. Those aren't
+detours to delete; they're gates with a known result on this base and an open question on the next one.
+The locked pipeline keeps them as conditional stages: run the gate, and on Qwen3-30B-A3B expect
+`no_winner`; on a higher-rho base, re-test, because the answer might flip. That's the part worth
+preserving. The gate, not the verdict.
+
+**Cleanup rule I'm holding myself to.** Nothing that an active script or skill references gets moved.
+Deprecation is a `deprecated/` folder plus stripping dead references, not `rm`. The one-off drivers
+(`_04.4_*`, `_p0_*`, `_rlev01_*`, the seedA/v3/v4 experiment launchers, the stale smoke scripts) go there
+with a README explaining what each was and why it's frozen. The model tombstones stay where they are, too
+big to move and useful as evidence. Root-level stray logs and a stray `judge_batch_18.py` get swept. When
+I'm done the top level should read like a project someone can clone and understand, not an archaeology dig.
+
+
 
 **The setup.** Pruning gave nothing, so the model ships at its full 57 GB bf16 footprint per checkpoint.
 That's a problem for serving, not just aesthetics. The GB10 has 121 GB of unified memory. The single-seed

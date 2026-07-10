@@ -1,6 +1,0 @@
-[fs-gate] checkpoint: tinker://a37be9b1-a0d2-5c8a-b9c0-670a59244cf8:train:0/sampler_weights/wp-reasoning-v2-ep3
-[fs-gate] streams: ['cot', 'ctf']
-[fs-gate] 120 cot+ctf rows
-[fs-gate] temp0.0 terse=7/120 rate=0.0583 wilson_upper=0.1155 -> PASS
-[fs-gate] temp0.7 terse=20/360 rate=0.0556 wilson_upper=0.0842 -> PASS
-FS_GATE PASS -> output/format_stability/fs_gate/wp-reasoning-v2/summary.json

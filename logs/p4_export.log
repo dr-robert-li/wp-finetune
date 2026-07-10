@@ -1,7 +1,0 @@
-[export] checkpoint: tinker://a37be9b1-a0d2-5c8a-b9c0-670a59244cf8:train:0/sampler_weights/wp-reasoning-v2-ep3
-[export] requesting archive URL (server packs the archive — may take a while)...
-Creating checkpoint archive for run id: a37be9b1-a0d2-5c8a-b9c0-670a59244cf8:train:0 checkpoint id: sampler_weights/wp-reasoning-v2-ep3 (this may take a while)
-[export] signed URL acquired (expires=None)
-[export] downloading -> models/tinker_export/wp-reasoning-v2/checkpoint.tar.gz
-[export] downloaded 1976.5 MB
-[export] FAIL: archive not a valid gzip tar: not a gzip file

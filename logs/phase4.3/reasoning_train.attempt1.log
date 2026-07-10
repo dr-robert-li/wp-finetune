@@ -1,88 +1,0 @@
-/usr/local/lib/python3.12/dist-packages/unsloth/__init__.py:144: UserWarning: WARNING: Unsloth should be imported before [transformers, peft] to ensure all optimizations are applied. Your code may run slower or encounter memory issues without these optimizations.
-
-Please restructure your imports with 'import unsloth' at the top of your file.
-  from ._gpu_init import *
-
-============================================================
-  MEMORY PRE-CHECK
-============================================================
-  Total system memory: 121.7 GB
-  Available memory:    112.0 GB
-  Required minimum:    70 GB
-  Headroom:            42.0 GB
-  Status:              OK ✓
-============================================================
-
-🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
-🦥 Unsloth Zoo will now patch everything to make training faster!
-Loading model from /workspace/wp-finetune/models/qwen3-30b-wp-30_70-merged ...
-==((====))==  Unsloth 2026.5.7: Fast Qwen3_MoE patching. Transformers: 5.5.0.
-   \\   /|    NVIDIA GB10. Num GPUs = 1. Max memory: 121.689 GB. Platform: Linux.
-O^O/ \_/ \    Torch: 2.10.0a0+b558c986e8.nv25.11. CUDA: 12.1. CUDA Toolkit: 13.0. Triton: 3.7.0
-\        /    Bfloat16 = TRUE. FA [Xformers = None. FA2 = True]
- "-____-"     Free license: http://github.com/unslothai/unsloth
-Unsloth: Fast downloading is enabled - ignore downloading bars which are red colored!
-Loading weights:   0%|          | 0/531 [00:00<?, ?it/s]Unsloth: QLoRA and full finetuning all not selected. Switching to 16bit LoRA.
-Loading weights:   0%|          | 1/531 [00:07<1:06:48,  7.56s/it]Loading weights:   1%|          | 4/531 [00:15<31:09,  3.55s/it]  Loading weights:   1%|          | 5/531 [00:15<23:04,  2.63s/it]Loading weights:   3%|▎         | 15/531 [00:23<09:54,  1.15s/it]Loading weights:   3%|▎         | 16/531 [00:23<09:10,  1.07s/it]Loading weights:   5%|▍         | 26/531 [00:29<06:36,  1.27it/s]Loading weights:   5%|▌         | 27/531 [00:30<06:35,  1.28it/s]Loading weights:   7%|▋         | 37/531 [00:36<05:42,  1.44it/s]Loading weights:   7%|▋         | 38/531 [00:36<05:30,  1.49it/s]Loading weights:   9%|▉         | 48/531 [00:44<05:43,  1.40it/s]Loading weights:   9%|▉         | 49/531 [00:44<05:27,  1.47it/s]Loading weights:  11%|█         | 59/531 [00:51<05:18,  1.48it/s]Loading weights:  11%|█▏        | 60/531 [00:51<05:06,  1.54it/s]Loading weights:  13%|█▎        | 70/531 [00:59<05:20,  1.44it/s]Loading weights:  13%|█▎        | 71/531 [00:59<05:09,  1.49it/s]Loading weights:  15%|█▌        | 81/531 [01:06<05:15,  1.42it/s]Loading weights:  15%|█▌        | 82/531 [01:07<05:03,  1.48it/s]Loading weights:  17%|█▋        | 92/531 [01:14<05:01,  1.45it/s]Loading weights:  18%|█▊        | 93/531 [01:14<04:47,  1.53it/s]Loading weights:  19%|█▉        | 103/531 [01:21<04:48,  1.49it/s]Loading weights:  20%|█▉        | 104/531 [01:21<04:39,  1.53it/s]Loading weights:  21%|██▏       | 114/531 [01:29<04:52,  1.43it/s]Loading weights:  22%|██▏       | 115/531 [01:29<04:39,  1.49it/s]Loading weights:  24%|██▎       | 125/531 [01:36<04:44,  1.43it/s]Loading weights:  24%|██▎       | 126/531 [01:37<04:34,  1.48it/s]Loading weights:  26%|██▌       | 136/531 [01:44<04:48,  1.37it/s]Loading weights:  26%|██▌       | 137/531 [01:45<04:34,  1.44it/s]Loading weights:  28%|██▊       | 147/531 [01:52<04:35,  1.40it/s]Loading weights:  28%|██▊       | 148/531 [01:52<04:25,  1.44it/s]Loading weights:  30%|██▉       | 158/531 [02:00<04:31,  1.37it/s]Loading weights:  32%|███▏      | 169/531 [02:07<04:11,  1.44it/s]Loading weights:  32%|███▏      | 170/531 [02:08<04:05,  1.47it/s]Loading weights:  34%|███▍      | 180/531 [02:15<04:07,  1.42it/s]Loading weights:  34%|███▍      | 181/531 [02:15<03:59,  1.46it/s]Loading weights:  36%|███▌      | 191/531 [02:22<03:53,  1.46it/s]Loading weights:  36%|███▌      | 192/531 [02:22<03:44,  1.51it/s]Loading weights:  38%|███▊      | 202/531 [02:29<03:41,  1.49it/s]Loading weights:  38%|███▊      | 203/531 [02:30<03:31,  1.55it/s]Loading weights:  40%|████      | 213/531 [02:36<03:30,  1.51it/s]Loading weights:  40%|████      | 214/531 [02:37<03:21,  1.57it/s]Loading weights:  42%|████▏     | 224/531 [02:44<03:28,  1.48it/s]Loading weights:  42%|████▏     | 225/531 [02:44<03:20,  1.53it/s]Loading weights:  44%|████▍     | 235/531 [02:51<03:24,  1.45it/s]Loading weights:  44%|████▍     | 236/531 [02:52<03:16,  1.50it/s]Loading weights:  46%|████▋     | 246/531 [02:59<03:19,  1.43it/s]Loading weights:  47%|████▋     | 247/531 [03:00<03:12,  1.48it/s]Loading weights:  48%|████▊     | 257/531 [03:07<03:15,  1.40it/s]Loading weights:  49%|████▊     | 258/531 [03:07<03:05,  1.47it/s]Loading weights:  50%|█████     | 268/531 [03:15<03:06,  1.41it/s]Loading weights:  51%|█████     | 269/531 [03:15<02:57,  1.48it/s]Loading weights:  53%|█████▎    | 279/531 [03:22<02:56,  1.42it/s]Loading weights:  53%|█████▎    | 280/531 [03:23<02:50,  1.47it/s]Loading weights:  55%|█████▍    | 290/531 [03:30<02:46,  1.45it/s]Loading weights:  55%|█████▍    | 291/531 [03:30<02:39,  1.50it/s]Loading weights:  57%|█████▋    | 301/531 [03:37<02:42,  1.42it/s]Loading weights:  57%|█████▋    | 302/531 [03:38<02:35,  1.47it/s]Loading weights:  59%|█████▉    | 312/531 [03:44<02:28,  1.47it/s]Loading weights:  59%|█████▉    | 313/531 [03:45<02:23,  1.52it/s]Loading weights:  61%|██████    | 323/531 [03:52<02:24,  1.44it/s]Loading weights:  61%|██████    | 324/531 [03:52<02:18,  1.49it/s]Loading weights:  63%|██████▎   | 334/531 [04:00<02:17,  1.43it/s]Loading weights:  63%|██████▎   | 335/531 [04:00<02:10,  1.50it/s]Loading weights:  65%|██████▍   | 345/531 [04:07<02:06,  1.48it/s]Loading weights:  65%|██████▌   | 346/531 [04:07<02:00,  1.53it/s]Loading weights:  67%|██████▋   | 356/531 [04:15<02:03,  1.42it/s]Loading weights:  67%|██████▋   | 357/531 [04:15<01:56,  1.49it/s]Loading weights:  69%|██████▉   | 367/531 [04:22<01:53,  1.44it/s]Loading weights:  69%|██████▉   | 368/531 [04:22<01:48,  1.50it/s]Loading weights:  71%|███████   | 378/531 [04:30<01:47,  1.42it/s]Loading weights:  71%|███████▏  | 379/531 [04:30<01:44,  1.46it/s]Loading weights:  73%|███████▎  | 389/531 [04:37<01:39,  1.43it/s]Loading weights:  73%|███████▎  | 390/531 [04:38<01:35,  1.48it/s]Loading weights:  75%|███████▌  | 400/531 [04:45<01:34,  1.39it/s]Loading weights:  76%|███████▌  | 401/531 [04:46<01:30,  1.44it/s]Loading weights:  77%|███████▋  | 411/531 [04:53<01:24,  1.42it/s]Loading weights:  78%|███████▊  | 412/531 [04:53<01:20,  1.47it/s]Loading weights:  79%|███████▉  | 422/531 [05:00<01:16,  1.43it/s]Loading weights:  80%|███████▉  | 423/531 [05:01<01:12,  1.48it/s]Loading weights:  82%|████████▏ | 433/531 [05:07<01:05,  1.49it/s]Loading weights:  82%|████████▏ | 434/531 [05:08<01:02,  1.54it/s]Loading weights:  84%|████████▎ | 444/531 [05:15<00:58,  1.48it/s]Loading weights:  84%|████████▍ | 445/531 [05:15<00:56,  1.53it/s]Loading weights:  86%|████████▌ | 455/531 [05:23<00:53,  1.42it/s]Loading weights:  86%|████████▌ | 456/531 [05:23<00:51,  1.47it/s]Loading weights:  88%|████████▊ | 466/531 [05:31<00:47,  1.37it/s]Loading weights:  88%|████████▊ | 467/531 [05:31<00:45,  1.41it/s]Loading weights:  90%|████████▉ | 477/531 [05:39<00:38,  1.39it/s]Loading weights:  90%|█████████ | 478/531 [05:39<00:37,  1.43it/s]Loading weights:  92%|█████████▏| 488/531 [05:47<00:31,  1.36it/s]Loading weights:  92%|█████████▏| 489/531 [05:47<00:29,  1.40it/s]Loading weights:  94%|█████████▍| 499/531 [05:54<00:23,  1.38it/s]Loading weights:  94%|█████████▍| 500/531 [05:55<00:21,  1.43it/s]Loading weights:  96%|█████████▌| 510/531 [06:02<00:14,  1.42it/s]Loading weights:  96%|█████████▌| 511/531 [06:02<00:13,  1.47it/s]Loading weights:  98%|█████████▊| 521/531 [06:09<00:06,  1.45it/s]Loading weights:  98%|█████████▊| 522/531 [06:10<00:06,  1.49it/s]Loading weights: 100%|██████████| 531/531 [06:10<00:00,  1.43it/s]
-Traceback (most recent call last):
-  File "<frozen runpy>", line 198, in _run_module_as_main
-  File "<frozen runpy>", line 88, in _run_code
-  File "/workspace/wp-finetune/scripts/train_model.py", line 660, in <module>
-    train(args)
-  File "/workspace/wp-finetune/scripts/train_model.py", line 535, in train
-    trainer = build_trainer(model, tokenizer, train_dataset, val_dataset, config)
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/workspace/wp-finetune/scripts/train_model.py", line 354, in build_trainer
-    import mlflow  # noqa: PLC0415
-    ^^^^^^^^^^^^^
-ModuleNotFoundError: No module named 'mlflow'
-  output_router_logits = True (MoE load balancing monitoring enabled)
-Loading extended tokenizer from /workspace/wp-finetune/adapters/tokenizer ...
-  <wp_gen> -> token ID 151669 (OK)
-  <wp_judge> -> token ID 151670 (OK)
-Loading train dataset from /workspace/wp-finetune/data/reasoning_dataset/openai_train.jsonl ...
-Loading val dataset from /workspace/wp-finetune/data/reasoning_dataset/openai_val.jsonl ...
-  Train: 563 examples
-  Val:   141 examples
-============================================================
-TRAINING CONFIGURATION SUMMARY
-============================================================
-  Model:        Qwen/Qwen3-30B-A3B
-  LoRA r:       32
-  LoRA alpha:   64
-  Dropout:      0.0
-  Target mods:  ['q_proj', 'k_proj', 'v_proj', 'o_proj', 'gate_up_proj', 'down_proj']
-  Modules save: omitted
-  Epochs:       2
-  LR:           2e-05
-  Batch size:   1
-  Grad accum:   16
-  Eff batch:    16
-  LR schedule:  cosine
-  Warmup ratio: n/a
-  Warmup steps: 20
-  BF16:         True
-  Max seq len:  8192
-  Train size:   563
-  Val size:     141
-  Output dir:   ./adapters/qwen3-30b-wp-30_70-reasoning
-  Tracking:     MLflow (local file store)
-============================================================
-=== Phase 4.3 Reasoning Training Launcher ===
-Experiment: qwen3-30b-wp-30_70-reasoning
-Config:     config/train_config_reasoning.yaml
-Adapter:    /home/robert_li/Desktop/projects/wp-finetune/adapters/qwen3-30b-wp-30_70-reasoning
-
-Pre-flight validation: PASSED
-Ensuring unsloth_studio container is ready ...
-  Installing pinned dependencies...
-Container: READY
-Training command: python -m scripts.train_model --config config/train_config_reasoning.yaml
-
-Launching training (streaming output — DO NOT capture) ...
-To stop: kill this process, then run:
-  docker exec unsloth-headless pkill -f 'scripts.train_model'
-
-
-=== Training launcher: FAILED ===
-FAILED (exit 1) [417.3s] scripts.train_model --config config/train_config_reasoning.yaml
