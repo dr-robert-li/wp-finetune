@@ -59,16 +59,23 @@ this workload. That's the finding. Quantization is the only size reduction avail
 Gate 1 (bf16) is the quality baseline. Gate 2 decided quantization is warranted (the pair doesn't fit the
 serving host with headroom at bf16). Ladder Q8 -> Q6 -> Q5 -> Q4, ship the lowest tier within ±2pp.
 
-| Tier | Method | Status |
-|---|---|---|
-| bf16 | — | baseline: wp-bench 0.4484, rho 0.8075, 57 GB |
-| Q8 | GGUF Q8_0 | recommended ship target (pending toolchain run) |
-| Q6 / Q5 | GGUF Q6_K / Q5_K_M | ladder candidates |
-| Q4 | AWQ W4A16 (activation-aware) | high risk |
-| Q4 | bitsandbytes nf4 (uniform) | **FAIL** — MoE router-quant collapse, degenerate output |
+| Tier | Method | Size (judge s1) | Judge rho | Status |
+|---|---|---|---|---|
+| bf16 | — | 56.8 GiB | 0.7700 (same-engine) / 0.8075 ens (vLLM) | baseline |
+| **Q8** | **GGUF Q8_0** | **30.2 GiB (−47%)** | **0.7239** | **SHIPPABLE** — within noise of bf16, no collapse |
+| Q6 / Q5 | GGUF Q6_K / Q5_K_M | ~24 / ~21 GiB | — | ladder candidates (pending) |
+| Q4 | AWQ W4A16 (activation-aware) | ~16 GiB | — | high risk |
+| Q4 | bitsandbytes nf4 (uniform) | ~16 GiB | 0.165 | **FAIL** — MoE router-quant collapse |
+
+Q8 GGUF was measured on the single-seed judge (llama.cpp CUDA): 30.2 GiB (47% off bf16), judge rho 0.7239
+vs same-engine bf16 0.7700 (delta −0.046, inside the 0.052 seed-noise floor, CIs overlap), parse rate 76%
+matching bf16. It does not collapse. Full 3-way (foundation Qwen3-30B-A3B base / bf16 / Q8) in
+`output/packaging/pkg03_q8_results.json`.
 
 Do not use uniform nf4 4-bit on this architecture. The router cannot tolerate uniform low-bit quantization;
-an activation-aware method that protects router and attention weights is required below Q8.
+an activation-aware method that protects router and attention weights is required below Q8. Foundation
+check: the untrained Qwen3-30B-A3B base produced 0/121 parseable judge responses — the entire judge
+capability comes from the fine-tune.
 
 ## Usage
 

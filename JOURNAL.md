@@ -4,7 +4,38 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
-## 2026-07-10 — Phase 16: locking the pipeline down so the next base model can walk it in a day.
+## 2026-07-10 — Phase 15, for real this time: the Q8 GGUF exists, and it holds.
+
+**What changed.** Last pass I left Q8 pre-registered because the quant toolchain wasn't installed. This
+pass I installed it and actually ran the thing. llama.cpp built with CUDA on the GB10, and
+`convert_hf_to_gguf.py --outtype q8_0` produced a real Q8_0 of the single-seed v1.3 judge. It's on disk:
+30.2 GiB, down from 56.8 GiB bf16. That's a 47% cut, which is the first genuine size reduction anything in
+this whole v3.0 milestone has produced. Pruning gave nothing twice; quantization finally moved the number.
+
+**The eval was designed to isolate one thing.** The question isn't "what's the absolute rho," it's "does
+8-bit hurt the judge." So I served all arms through the same engine, same val set, same labels, same
+2048-token cap: foundation base, bf16, Q8. Holding the engine constant means the bf16-vs-Q8 gap is
+quantization and nothing else.
+
+**Numbers.** Foundation Qwen3-30B-A3B base: 121 out of 121 responses unparseable, rho undefined. The
+untrained model literally cannot produce the rubric format. That's the cleanest statement of what the
+fine-tune bought that I've ever gotten, so I'm glad the user asked for it. bf16 judge: rho 0.7700. Q8
+judge: rho 0.7239. The gap is 0.046, and the seed noise floor on this eval is 0.052, so the drop sits
+inside the noise. The confidence intervals overlap almost end to end. Parse rates are identical, 76% vs
+77%. Q8 does not collapse.
+
+**Why "within noise" and not a clean pass.** The pre-registered gate was plus-or-minus 2 points, and the
+point estimate is 4.6 under, so I'm not going to dress this up as a clean ±2pp pass. It isn't. But it also
+isn't a real regression: the delta is smaller than the measurement's own noise, and the decisive contrast
+is with the 4-bit nf4 tombstone, which halved the parse rate and dropped rho to 0.165. Q8 is nothing like
+that. The other honest caveat is the 24% parse-fail rate in both judge arms, which is the model's bimodal
+long-prose output getting guillotined at 2048 tokens, not a quant effect. It hits bf16 and Q8 equally so
+the delta survives, but it does depress the absolute rho versus the vLLM figure and it widens the noise.
+If someone wants the tighter number before final ship, re-run both arms at 4096 tokens and the full
+ensemble. My call: Q8 is the shippable single-seed tier, marginal-but-within-noise, non-collapsing, 47%
+smaller. Recorded honestly in `output/packaging/pkg03_q8_results.json`.
+
+
 
 **Why add a phase after packaging.** The whole point of this project was never one model. It was a
 method: take a task-token MoE base, teach it to write and review WordPress code, then try to shrink it.

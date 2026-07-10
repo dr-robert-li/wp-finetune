@@ -91,3 +91,6 @@ unsloth_compiled_cache/
 # Nohup output
 nohup.out
 .venv-tinker/
+
+# GGUF convert/eval run logs (ephemeral)
+/logs_gguf_*.log

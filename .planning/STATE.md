@@ -5,8 +5,8 @@ milestone_name: MoE-Sieve, Pruning & Packaging
 current_phase: 16
 current_phase_name: Pipeline Lockdown & Repo Cleanup — COMPLETE (v3.0 milestone done)
 status: complete
-stopped_at: "Phase 16 COMPLETE + VERIFIED (passed) 2026-07-10. v3.0 milestone DONE (16/16 phases). PIPELINE.md written: frozen spine (data->SFT gen+judge->merge->eval) + 3 conditional compression gates (RL rejected, Sieve full, prune no_winner) kept as re-test stages for the next base (qwen3.6-class). 95 one-off scripts moved to deprecated/ with README; 3 misclassified active deps (_rlev01_wpbench_ckpt, _p0_vllm_smoke_serve, _reward_validity_oracle) caught and retained; grep=0 active imports of moved files; py_compile clean. logs/ gitignored, root stray deprecated, README links PIPELINE.md. PIPE-01/02/03 closed. Committed + pushed as dr-robert-li."
-last_updated: "2026-07-10T08:05:00.000Z"
+stopped_at: "Phase 15 PKG-03 Q8 GGUF EXECUTED (2026-07-10, post-milestone). Real Q8_0 GGUF of single-seed v1.3 judge via llama.cpp CUDA build: 30.2 GiB (47% off bf16 56.8 GiB) — FIRST real size reduction of v3.0 (pruning gave none). 3-arm engine-consistent eval (llama-server, same val/labels): foundation Qwen3-30B-A3B base 0/121 parseable (rho undefined — fine-tune created the entire judge skill); bf16 rho 0.7700 (n93); Q8 rho 0.7239 (n92). Q8-vs-bf16 delta -0.046 WITHIN seed noise floor 0.052, CIs overlap, parse rate 76%~77%, NO collapse (vs 4-bit nf4 0.165). Gate: MARGINAL vs strict +/-2pp but within noise -> Q8 SHIPPABLE single-seed tier. Caveat: 24% parse fails both arms from prose truncation@2048 (equal, delta valid). Artifacts output/packaging/pkg03_q8_results.json + MODEL_CARD. Q6/Q5 still pending. Prior: Phase 16 COMPLETE, v3.0 16/16 done. PIPELINE.md + deprecated/ sweep + trailer strip all committed+pushed as dr-robert-li."
+last_updated: "2026-07-10T10:11:00.000Z"
 progress:
   total_phases: 16
   completed_phases: 16

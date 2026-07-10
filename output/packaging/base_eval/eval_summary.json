@@ -1,0 +1,14 @@
+{
+  "capture": "output/packaging/base_eval/judge_responses.jsonl",
+  "rho_new": NaN,
+  "n": 0,
+  "ci": [
+    NaN,
+    NaN
+  ],
+  "baseline_rho": 0.7476689625425029,
+  "delta_vs_baseline": NaN,
+  "ceiling": 0.9844009569826934,
+  "gap_to_ceiling": NaN,
+  "parse_fail": 121
+}
