@@ -9,6 +9,11 @@ in here.
 Nothing in `deprecated/` is imported or called by any active script or `wp-finetune:*` skill. That was
 verified by grep before the move: every file here returned zero references from the active tree.
 
+**Correction (Phase 17-01):** the grep checked Python `import` statements only, which missed two helper
+dirs referenced via runtime string-path construction (`PROJECT_ROOT / "scripts" / "_wpbench_pth"` in
+`scripts/run_eval_reasoning.py`'s `_run_wpbench()`), not a static import. `_wpbench_pth/` and
+`_wpbench_shim/` were restored to `scripts/` — see below.
+
 ## What's here (`deprecated/scripts/`, 95 files)
 
 - **`_04.4_*`** — reasoning-merge fidelity/equivalence experiments (v3/v4 winner probes, byte-identity
@@ -32,3 +37,9 @@ verified by grep before the move: every file here returned zero references from 
 Three underscore-prefixed files are real, imported dependencies and stayed in `scripts/`:
 `_rlev01_wpbench_ckpt.py`, `_p0_vllm_smoke_serve.py` (vLLM boot/health/stop helper used by the eval, sieve,
 and prune drivers), and `_reward_validity_oracle.py` (used by the active reward-validity gate).
+
+Two more were restored to `scripts/` in Phase 17-01 after being wrongly archived here in Phase 16:
+`_wpbench_pth/usercustomize.py` (PYTHONPATH-loaded monkeypatch that threads `enable_thinking=false` into
+wp-bench's litellm calls and strips residual `<think>` blocks) and `_wpbench_shim/npx` (PATH shim so
+wp-bench's `npx wp-env` calls resolve to the globally-installed `wp-env` bin). Both are required by every
+full wp-bench run against this Qwen3 reasoning model — see `scripts/run_eval_reasoning.py::_run_wpbench`.
