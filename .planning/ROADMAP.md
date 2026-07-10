@@ -786,7 +786,13 @@ project folder so it is clean and parseable by outside followers.
   1. A full (unlimited) wp-bench run completes on the v1.2 gen model via the shipping stack, score recorded with config + seed, and compared against the 0.4484 Gate-1 receipt
   2. A SWE-bench generation-mode eval (patch generation, non-agentic) runs at the largest scope the DGX Spark (aarch64) toolchain can honestly evaluate — scope, harness constraints, and any subset choice recorded BEFORE results are read
   3. MODEL_CARD.md gains a Benchmarks section with both results, including the honest caveat that the model is WordPress-specialized and SWE-bench is out-of-domain
-**Plans**: TBD at planning
+**Plans**: 3 plans
+
+Plans:
+
+- [ ] 17-01-PLAN.md — BENCH-01: full 344-test wp-bench run on v1.2 gen model via vLLM bf16, receipt + delta vs 0.4484 (Wave 1)
+- [ ] 17-02-PLAN.md — BENCH-02 part 1: arm64 Docker + throughput feasibility probes, arm64 make_test_spec wrapper, scope pre-registration committed before results (Wave 1, checkpoint)
+- [ ] 17-03-PLAN.md — BENCH-02 part 2 + BENCH-03: SWE-bench generation + arm64 eval at locked scope, then MODEL_CARD Benchmarks section + docs, commit/push as dr-robert-li (Wave 2)
 
 ### Phase 18: Production Sweep & HuggingFace Publication
 
