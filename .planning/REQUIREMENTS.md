@@ -224,7 +224,7 @@ Sub-experiment: Does WordPress domain specialization create enough routing conce
 
 ### v3.1 Benchmark Expansion (Phase 17)
 
-- [ ] **BENCH-01**: Full (unlimited) wp-bench run on the v1.2 gen model via the shipping stack; score + config + seed recorded and compared to the 0.4484 Gate-1 receipt.
+- [x] **BENCH-01**: Full (unlimited) wp-bench run on the v1.2 gen model via the shipping stack; score + config + seed recorded and compared to the 0.4484 Gate-1 receipt.
 - [ ] **BENCH-02**: SWE-bench generation-mode (non-agentic patch generation) eval at the largest scope the aarch64 toolchain can honestly evaluate; scope and harness constraints pre-registered before results are read.
 - [ ] **BENCH-03**: MODEL_CARD.md Benchmarks section updated with both results + out-of-domain caveat for SWE-bench.
 
@@ -384,7 +384,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PKG-03 | Phase 15 | Complete (2026-07-11) — Q8 LOSSLESS ship tier (30.2 GiB −47%; ens@8192 0.8056 vs bf16 0.8100, Δ−0.4pp, 0 parse fails); Q6/Q5 descent deferred, no deployment need |
 | PKG-04 | Phase 15 | Complete (model card; upload human-authorized) |
 | PKG-05 | Phase 15 | Complete (bf16); quantized pending |
-| BENCH-01 | Phase 17 | Pending |
+| BENCH-01 | Phase 17 | Complete |
 | BENCH-02 | Phase 17 | Pending |
 | BENCH-03 | Phase 17 | Pending |
 | PUB-01 | Phase 18 | Pending |

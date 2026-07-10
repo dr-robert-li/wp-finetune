@@ -765,8 +765,10 @@ project folder so it is clean and parseable by outside followers.
      router-profiling -> sieve k-sweep gate -> merge+AIMER prune gate -> packaging quant gates) with the
      runnable entrypoint for each, the pass/fail gate, and the known Qwen3-30B-A3B result. Gates that
      returned no winner are kept as conditional re-test stages for the next base, not removed.
+
   2. Dead one-off experiment drivers are moved to `deprecated/` with a README explaining each; no active
      script or skill still references a moved file (verified by grep).
+
   3. The project root and folder layout read cleanly: stray logs/artifacts swept, semantic grouping, so an
      outside user can clone and follow along.
 
@@ -786,11 +788,12 @@ project folder so it is clean and parseable by outside followers.
   1. A full (unlimited) wp-bench run completes on the v1.2 gen model via the shipping stack, score recorded with config + seed, and compared against the 0.4484 Gate-1 receipt
   2. A SWE-bench generation-mode eval (patch generation, non-agentic) runs at the largest scope the DGX Spark (aarch64) toolchain can honestly evaluate — scope, harness constraints, and any subset choice recorded BEFORE results are read
   3. MODEL_CARD.md gains a Benchmarks section with both results, including the honest caveat that the model is WordPress-specialized and SWE-bench is out-of-domain
-**Plans**: 3 plans
+
+**Plans**: 1/3 plans executed
 
 Plans:
 
-- [ ] 17-01-PLAN.md — BENCH-01: full 344-test wp-bench run on v1.2 gen model via vLLM bf16, receipt + delta vs 0.4484 (Wave 1)
+- [x] 17-01-PLAN.md — BENCH-01: full 344-test wp-bench run on v1.2 gen model via vLLM bf16, receipt + delta vs 0.4484 (Wave 1)
 - [ ] 17-02-PLAN.md — BENCH-02 part 1: arm64 Docker + throughput feasibility probes, arm64 make_test_spec wrapper, scope pre-registration committed before results (Wave 1, checkpoint)
 - [ ] 17-03-PLAN.md — BENCH-02 part 2 + BENCH-03: SWE-bench generation + arm64 eval at locked scope, then MODEL_CARD Benchmarks section + docs, commit/push as dr-robert-li (Wave 2)
 
@@ -804,6 +807,7 @@ Plans:
   1. README/PROJECT/PIPELINE/STATE agree with each other and with the shipped artifacts; stale files are in deprecated/ with README notes; root is clean
   2. A single HF repo (or paired repos) carries both models with the MODEL_CARD.md lineage, quantization ladder results, and usage examples for both task tokens
   3. Post-upload validation: files download, GGUF loads, and a smoke gen/judge prompt round-trips from the published artifact
+
 **Plans**: TBD at planning
 
 ### Phase 19: Next-Base Rerun Roadmap
@@ -815,6 +819,7 @@ Plans:
 
   1. The candidate base is selected from current Qwen releases with documented rationale (architecture match, size class, routing concentration prospects, license)
   2. A roadmap document maps every PIPELINE.md stage to the new base with expected deltas, the conditional re-test gates (RL, Sieve, prune) explicitly carried forward, and rough compute/cost estimates
+
 **Plans**: TBD at planning
 
 ## Progress
@@ -851,6 +856,6 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 14. Final Comparative Evaluation | v3.0 | 1/1 | Complete (re-confirmation; no pruned/RL variant) | 2026-07-10 |
 | 15. Packaging | v3.0 | 1/1 | Complete (Gates 1-2 + card + bf16 E2E; Q8 GGUF LOSSLESS ship tier; Q6/Q5 deferred) | 2026-07-11 |
 | 16. Pipeline Lockdown & Repo Cleanup | v3.0 | 1/1 | Complete (PIPELINE.md + 95 files deprecated + cleanup) | 2026-07-10 |
-| 17. Benchmark Expansion (wp-bench + SWE-bench gen) | v3.1 | - | Planned | - |
+| 17. Benchmark Expansion (wp-bench + SWE-bench gen) | v3.1 | 1/3 | In Progress|  |
 | 18. Production Sweep & HuggingFace Publication | v3.1 | - | Planned | - |
 | 19. Next-Base Rerun Roadmap | v3.1 | - | Planned | - |
