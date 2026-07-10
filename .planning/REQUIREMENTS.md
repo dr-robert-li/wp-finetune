@@ -212,7 +212,7 @@ Sub-experiment: Does WordPress domain specialization create enough routing conce
 
 - [x] **PKG-01**: Gate 1 — Eval bf16 model: record size, inference speed, all 9 dimensions as quality baseline — `output/packaging/gate1_bf16_baseline.json` (57 GB, wp-bench 0.4484, judge rho 0.8075). On unpruned pair (no pruned model).
 - [x] **PKG-02**: Gate 2 — Assess whether quantization is needed — WARRANTED (121 GB host vs 114/228 GB pair); uniform nf4 excluded by measured collapse; start Q8, activation-aware below. `output/packaging/gate2_quantization_decision.md`
-- [~] **PKG-03**: Incremental Q8→Q6→Q5→Q4 with ±2pp stop rule — **Q8 MEASURED**: real Q8_0 GGUF of single-seed judge, 30.2 GiB (47% off bf16), rho 0.7239 vs same-engine bf16 0.7700 (Δ−0.046, within 0.052 noise floor, no collapse); foundation base 0/121 parseable. `output/packaging/pkg03_q8_results.json`. Q4-nf4 FAIL recorded. Q6/Q5 still pending (Q8 is the safe ship tier). Recipe `scripts/run_packaging_recipe.md`.
+- [~] **PKG-03**: Incremental Q8→Q6→Q5→Q4 with ±2pp stop rule — **Q8 MEASURED, LOSSLESS**: Q8_0 GGUF, 30.2 GiB (47% off bf16). Full 3-seed ensemble @8192 tokens, 0/121 parse fails all arms: Q8 ens rho 0.8056 vs bf16 ens 0.8100 (Δ−0.4pp, clean ±2pp pass); bf16 ens matches vLLM 0.8075. `output/packaging/pkg03_ens8192_results.json`. (Earlier single-seed@2048 −4.6pp was a truncation artifact.) Foundation base 0/121 parseable. Q4-nf4 FAIL recorded. Q6/Q5 pending. Recipe `scripts/run_packaging_recipe.md`.
 - [x] **PKG-04**: Model card with full compression lineage (base -> RL rejected -> MoE-Sieve full -> merge -> AIMER/REAP no_winner -> quantization) + usage — `output/packaging/MODEL_CARD.md`. Upload push is human-authorized final step.
 - [x] **PKG-05**: E2E inference validation — bf16 shipped format VALIDATED (gen 10/10, judge 10/10, routing 20/20, `output/packaging/pkg05_e2e_validation.json`); quantized tier pending toolchain.
 
@@ -364,7 +364,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EVAL3-02 | Phase 14 | Complete (2026-07-10) |
 | PKG-01 | Phase 15 | Complete (2026-07-10) |
 | PKG-02 | Phase 15 | Complete (2026-07-10) |
-| PKG-03 | Phase 15 | Q8 MEASURED (30.2 GiB, −47%, rho within noise, no collapse); Q6/Q5 pending |
+| PKG-03 | Phase 15 | Q8 MEASURED LOSSLESS (30.2 GiB −47%; ens@8192 0.8056 vs bf16 0.8100, Δ−0.4pp, 0 parse fails); Q6/Q5 pending |
 | PKG-04 | Phase 15 | Complete (model card; upload human-authorized) |
 | PKG-05 | Phase 15 | Complete (bf16); quantized pending |
 

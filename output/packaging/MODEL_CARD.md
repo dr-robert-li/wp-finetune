@@ -61,16 +61,18 @@ serving host with headroom at bf16). Ladder Q8 -> Q6 -> Q5 -> Q4, ship the lowes
 
 | Tier | Method | Size (judge s1) | Judge rho | Status |
 |---|---|---|---|---|
-| bf16 | — | 56.8 GiB | 0.7700 (same-engine) / 0.8075 ens (vLLM) | baseline |
-| **Q8** | **GGUF Q8_0** | **30.2 GiB (−47%)** | **0.7239** | **SHIPPABLE** — within noise of bf16, no collapse |
+| bf16 | — | 56.8 GiB | 0.8100 ens (llama.cpp@8192) / 0.8075 ens (vLLM) | baseline |
+| **Q8** | **GGUF Q8_0** | **30.2 GiB (−47%)** | **0.8056 ens** | **SHIPPABLE — LOSSLESS** (Δ−0.4pp vs bf16, 0 parse fails) |
 | Q6 / Q5 | GGUF Q6_K / Q5_K_M | ~24 / ~21 GiB | — | ladder candidates (pending) |
 | Q4 | AWQ W4A16 (activation-aware) | ~16 GiB | — | high risk |
 | Q4 | bitsandbytes nf4 (uniform) | ~16 GiB | 0.165 | **FAIL** — MoE router-quant collapse |
 
-Q8 GGUF was measured on the single-seed judge (llama.cpp CUDA): 30.2 GiB (47% off bf16), judge rho 0.7239
-vs same-engine bf16 0.7700 (delta −0.046, inside the 0.052 seed-noise floor, CIs overlap), parse rate 76%
-matching bf16. It does not collapse. Full 3-way (foundation Qwen3-30B-A3B base / bf16 / Q8) in
-`output/packaging/pkg03_q8_results.json`.
+Q8 GGUF is lossless for the judge. Full 3-seed ensemble at max_tokens=8192 (llama.cpp CUDA), 0/121 parse
+failures on every arm: Q8 ensemble rho 0.8056 vs bf16 ensemble 0.8100 (delta −0.4pp, clean ±2pp pass), at
+47% smaller (30.2 vs 56.8 GiB per seed). The bf16 ensemble at 8192 (0.8100) matches the vLLM reference
+(0.8075), validating the harness. An earlier single-seed read at max_tokens=2048 looked marginal (0.7239,
+−4.6pp) but that was pure prose truncation — raising the cap to 8192 removed all parse failures and the gap.
+Details: `output/packaging/pkg03_ens8192_results.json` (full 3-way with foundation in `pkg03_q8_results.json`).
 
 Do not use uniform nf4 4-bit on this architecture. The router cannot tolerate uniform low-bit quantization;
 an activation-aware method that protects router and attention weights is required below Q8. Foundation

@@ -4,7 +4,38 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
-## 2026-07-10 — Phase 15, for real this time: the Q8 GGUF exists, and it holds.
+## 2026-07-10 — Q8 rerun at 8192 tokens: the "degradation" was truncation, and it's gone.
+
+**The doubt.** The first Q8 read came in at rho 0.7239 against bf16 0.7700, a 4.6pp gap that squeaked past
+the ±2pp bar. I flagged it as marginal and blamed the 24% parse failures on the model's long prose getting
+guillotined at 2048 tokens. That was a hypothesis, not a proof. So I raised the cap to 8192 and ran the
+whole thing again, this time the full three-seed ensemble on both Q8 and bf16, six arms, same engine.
+
+**What 8192 did.** Every single arm came back with zero parse failures. Not "fewer," zero. 0/121 on all
+six. The 24-29 fails at 2048 were entirely the tail of a prose judgment getting cut before it closed its
+JSON. Give the model room to finish and it finishes every time. That alone was worth the rerun.
+
+**The clean numbers.** Q8 ensemble 0.8056, bf16 ensemble 0.8100. The gap is 0.4 points. Per seed the two
+sit right on top of each other (Q8 mean 0.786, bf16 mean 0.772; Q8 is actually a hair higher, which is
+just seed noise). The confidence intervals are basically the same interval. Q8 is lossless for the judge,
+full stop. And the bf16 ensemble at 8192 landed at 0.8100, which matches the vLLM ensemble reference of
+0.8075 I've been quoting all campaign. That's the harness validating itself end to end. The depressed
+0.72-0.77 absolutes from the first pass were never real, just the truncation dragging the parseable set
+down and adding noise.
+
+**One serving bug worth remembering.** The first 8192 attempt produced 91 empty responses, worse than
+2048. Not truncation this time, a load race: the capture fires 121 concurrent requests the instant
+`/health` says ok, but `/health` returns ok while the 30B is still loading into the GPU, so the flood got
+503'd into empties. The fix is to gate the capture on a real one-token generation succeeding, not on
+`/health`. Also learned, painfully, that `--parallel N` splits the context window N ways, so asking for
+8192 output with `-c 12288` and 8 slots gives you 1536 per slot. Size the context as parallel times
+per-slot need.
+
+**Where this leaves Q8.** 47% smaller, lossless, zero parse failures, and the 4-bit-nf4 tombstone still
+sitting there at 0.165 for contrast. Q8 GGUF is the ship tier for the judge and I'm no longer hedging on
+it. Numbers in `output/packaging/pkg03_ens8192_results.json`.
+
+
 
 **What changed.** Last pass I left Q8 pre-registered because the quant toolchain wasn't installed. This
 pass I installed it and actually ran the thing. llama.cpp built with CUDA on the GB10, and

@@ -12,7 +12,7 @@
   },
   "stop_rule": "Descend Q8->Q6->Q5->Q4. Ship the lowest tier whose wp-bench and judge rho are both within 2pp of the Gate 1 baseline. Halt descent at the first tier that drops >2pp.",
   "ladder": [
-    {"tier": "Q8", "method": "GGUF Q8_0 (llama.cpp)", "status": "MEASURED", "result": "SHIPPABLE (marginal, within noise)", "measured": {"model": "v1.3 judge s1", "size_gib": 30.2, "size_reduction_pct": 46.8, "judge_rho": 0.7239, "bf16_same_engine_rho": 0.7700, "delta": -0.0461, "within_seed_noise_floor": true, "collapse": false, "parse_rate": 0.760, "detail": "output/packaging/pkg03_q8_results.json"}},
+    {"tier": "Q8", "method": "GGUF Q8_0 (llama.cpp)", "status": "MEASURED", "result": "SHIPPABLE — LOSSLESS (clean ensemble@8192)", "measured": {"model": "v1.3 judge 3-seed ensemble", "size_gib_per_seed": 30.2, "size_reduction_pct": 46.8, "q8_ensemble_rho": 0.8056, "bf16_ensemble_rho": 0.8100, "delta": -0.0044, "gate_pm2pp": "CLEAN PASS", "parse_fail_all_arms": 0, "max_tokens": 8192, "collapse": false, "detail": "output/packaging/pkg03_ens8192_results.json", "note": "Supersedes the single-seed@2048 read (rho 0.7239, -4.6pp) which was a prose-truncation artifact; at 8192 all 6 arms have 0 parse failures and Q8==bf16."}},
     {"tier": "Q6", "method": "GGUF Q6_K", "status": "pending-toolchain", "measured": null},
     {"tier": "Q5", "method": "GGUF Q5_K_M", "status": "pending-toolchain", "measured": null},
     {"tier": "Q4-awq", "method": "AWQ W4A16 (activation-aware)", "status": "pending-toolchain", "risk": "high", "measured": null},

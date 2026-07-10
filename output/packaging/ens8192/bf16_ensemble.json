@@ -1,0 +1,22 @@
+{
+  "captures": [
+    "output/packaging/ens8192/bf16_s0/judge_responses.jsonl",
+    "output/packaging/ens8192/bf16_s1/judge_responses.jsonl",
+    "output/packaging/ens8192/bf16_s2/judge_responses.jsonl"
+  ],
+  "ensemble_rho": 0.8099643951411636,
+  "n": 121,
+  "ci": [
+    0.736363393708735,
+    0.8635254528641864
+  ],
+  "parse_fail_per_seed": [
+    0,
+    0,
+    0
+  ],
+  "baseline_rho": 0.7476689625425029,
+  "ceiling": 0.9844009569826934,
+  "delta_vs_baseline": 0.06229543259866066,
+  "min_seeds_required": 2
+}
