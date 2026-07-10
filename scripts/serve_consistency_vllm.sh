@@ -5,9 +5,9 @@
 # under the served name "wp_consistency" on :8001, so it coexists with the v4
 # fix-scoring judge (wp_judge on :8000). scripts/rl_judge_dispatch.py points the
 # consistency scorer here via --consistency-base-url http://localhost:8001/v1,
-# replacing the paid `claude -p` path (D-09-05 / 09-HANDOFF Option 1).
+# replacing the paid `claude -p` path (D-09-05 / deprecated/planning-handoffs/09-HANDOFF.md Option 1).
 #
-# MODEL NOTE: the 09-HANDOFF named nvidia/Nemotron-3-Nano-Omni-...-NVFP4, but that
+# MODEL NOTE: the deprecated/planning-handoffs/09-HANDOFF.md named nvidia/Nemotron-3-Nano-Omni-...-NVFP4, but that
 # is a VISION (Omni) multimodal model — wrong for a pure text 0-1 consistency score
 # and heavier on the shared GB10 memory pool. This script uses the TEXT-ONLY sibling
 # (NemotronHForCausalLM, no vision tower, 19.4GB). Both are vLLM-servable; the

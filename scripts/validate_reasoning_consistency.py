@@ -183,7 +183,7 @@ def validate(source, auto_regenerate, limit=None):
     ctf_ex = [ex for _, ex in all_examples if "reasoning" not in ex]
 
     # Batched parallel validation (mega-prompts time out past ~10 examples — see
-    # 04.2/.continue-here.md). Small batches + ThreadPoolExecutor keep each
+    # phase 04.2 planning notes). Small batches + ThreadPoolExecutor keep each
     # claude --print call under the context/timeout ceiling. Backend stays haiku
     # per D-01 (no deterministic rules; every example still routed to an agent).
     from concurrent.futures import ThreadPoolExecutor, as_completed

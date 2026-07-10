@@ -8,7 +8,7 @@ Two scoring backends, selected per-call by ``base_url``:
   - ``base_url is None`` (legacy): scripts.claude_agent.generate_json — the
     subprocess Claude path (``claude -p``). Per the 2026-06-22 billing-policy
     change this ALWAYS bills paid API, so it is no longer the default for the
-    unattended RL run (see 09-HANDOFF Option 1).
+    unattended RL run (see deprecated/planning-handoffs/09-HANDOFF.md Option 1).
   - ``base_url`` set (Phase 09 Option 1, $0): a LOCAL vLLM OpenAI-compatible
     endpoint (e.g. http://localhost:8001/v1). Model-agnostic — works with any
     chat model served there (Nemotron-3-Nano text NVFP4, or a reused wp_judge).
