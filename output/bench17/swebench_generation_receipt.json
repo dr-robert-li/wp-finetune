@@ -1,0 +1,53 @@
+{
+  "task": "swebench_generate_predictions",
+  "model_dir": "models/qwen3-30b-wp-30_70-reasoning-merged-v4",
+  "model_name_or_path": "qwen3-30b-wp-30_70-reasoning-merged-v4",
+  "served_model_name": "wp-30_70",
+  "serving_config": {
+    "engine": "vLLM",
+    "dtype": "bf16",
+    "max_model_len": 24576,
+    "gpu_memory_utilization": 0.55,
+    "concurrency": 2,
+    "port": 8020
+  },
+  "sampling_config": {
+    "temperature": 0.0,
+    "max_tokens": 2048,
+    "seed": 0,
+    "enable_thinking": false,
+    "retrieval_style": "oracle"
+  },
+  "prompt_construction": {
+    "lite300": "princeton-nlp/SWE-bench_Lite_oracle 'text' field verbatim (official style-2 oracle prompt)",
+    "php43": "swebench.inference.make_datasets.create_instance.add_text_inputs(file_source='oracle', prompt_style='style-2') -- official pipeline, oracle-equivalent"
+  },
+  "patch_postprocessing": "extract_diff -> extract_minimal_patch (swebench.inference.make_datasets.utils, official pipeline, run_live.py order)",
+  "warmup": {
+    "gated_on_real_generation": true
+  },
+  "variants": [
+    {
+      "label": "lite300",
+      "instances_scoped": 300,
+      "instances_already_done_at_start": 0,
+      "instances_attempted_this_run": 300,
+      "ok": 219,
+      "over_length": 80,
+      "error_non_over_length": 1,
+      "wall_clock_s_this_run": 3770.8
+    },
+    {
+      "label": "php43",
+      "instances_scoped": 43,
+      "instances_already_done_at_start": 0,
+      "instances_attempted_this_run": 43,
+      "ok": 26,
+      "over_length": 17,
+      "error_non_over_length": 0,
+      "wall_clock_s_this_run": 614.8
+    }
+  ],
+  "total_wall_clock_s": 4907.1,
+  "total_wall_clock_h": 1.36
+}
