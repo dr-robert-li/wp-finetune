@@ -82,3 +82,13 @@ models/_staging/qwen3-30b-wp-v1.3-s2-merged 128 True
 
 (`num_hidden_layers` checked identically = 48 for all 4; omitted from the plan's one-line print but
 verified separately during this record's authoring — see table above.)
+
+## Final lineage (13-07, PRUNE-06 close)
+
+`selection.json` verdict `no_winner`; human sign-off `ship_unpruned` (Dr. Robert
+Li, 2026-07-10). No physical surgery ran — 13-07 executed the ship-unpruned
+branch. Final compression lineage: `base -> reasoning-merge (this record) -> [no
+RL, no Sieve LoRA] -> AIMER/REAP pruning evaluation (no_winner) -> ship unpruned
+at full 128-expert width`. All 4 checkpoints in the table above remain the
+ship-final artifacts; zero weight was physically removed anywhere in this
+lineage. Full detail: `output/prune/prune_methodology.md`.
