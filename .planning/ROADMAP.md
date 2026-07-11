@@ -823,9 +823,15 @@ Plans:
   1. The candidate base is selected from current Qwen releases with documented rationale (architecture match, size class, routing concentration prospects, license)
   2. A roadmap document maps every PIPELINE.md stage to the new base with expected deltas, the conditional re-test gates (RL, Sieve, prune) explicitly carried forward, and rough compute/cost estimates
 
-**Plans**: 1 plan
+**Plans**: 1/1 plans executed — Phase 19 COMPLETE 2026-07-11
 
-- [ ] 19-01-PLAN.md — NEXT-01: verify + lock the next base (Qwen3.6-35B-A3B front-runner) with source-cited five-axis rationale; NEXT-02: write `.planning/V4-RERUN-ROADMAP.md` (every PIPELINE stage mapped, three no-winner gates carried forward as re-test stages, architecture-delta work items, cost estimates, carry-forward lessons, pre-registered judge-rho success criteria); closeout + push (Wave 1)
+Plans:
+
+- [x] 19-01-PLAN.md — NEXT-01: verify + lock the next base (Qwen3.6-35B-A3B front-runner) with source-cited five-axis rationale; NEXT-02: write `.planning/V4-RERUN-ROADMAP.md` (every PIPELINE stage mapped, three no-winner gates carried forward as re-test stages, architecture-delta work items, cost estimates, carry-forward lessons, pre-registered judge-rho success criteria); closeout + push (Wave 1)
+
+**Outputs:** base locked in `.planning/phases/19-next-base-rerun-roadmap/19-NEXT-BASE-SELECTION.md`
+(`Qwen/Qwen3.6-35B-A3B`, live-verified); full stage map in `.planning/V4-RERUN-ROADMAP.md`. v4.0 execution
+is a FUTURE milestone requiring explicit human sign-off — no downloads/training happened in this phase.
 
 ## Progress
 
@@ -863,4 +869,4 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 16. Pipeline Lockdown & Repo Cleanup | v3.0 | 1/1 | Complete (PIPELINE.md + 95 files deprecated + cleanup) | 2026-07-10 |
 | 17. Benchmark Expansion (wp-bench + SWE-bench gen) | v3.1 | 2/3 | In Progress|  |
 | 18. Production Sweep & HuggingFace Publication | v3.1 | - | Planned | - |
-| 19. Next-Base Rerun Roadmap | v3.1 | - | Planned | - |
+| 19. Next-Base Rerun Roadmap | v3.1 | 1/1 | Complete (base locked: Qwen3.6-35B-A3B; V4-RERUN-ROADMAP.md written) | 2026-07-11 |

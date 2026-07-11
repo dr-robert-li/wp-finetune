@@ -236,8 +236,8 @@ Sub-experiment: Does WordPress domain specialization create enough routing conce
 
 ### v3.1 Next-Base Rerun Roadmap (Phase 19)
 
-- [ ] **NEXT-01**: Latest Qwen-family base researched and selected with documented rationale (architecture match, size class, routing concentration, license).
-- [ ] **NEXT-02**: Roadmap doc maps every PIPELINE.md stage to the new base with expected deltas, conditional re-test gates carried forward, and rough compute/cost estimates.
+- [x] **NEXT-01**: Latest Qwen-family base researched and selected with documented rationale (architecture match, size class, routing concentration, license). `Qwen/Qwen3.6-35B-A3B` LOCKED, live-verified — `.planning/phases/19-next-base-rerun-roadmap/19-NEXT-BASE-SELECTION.md`.
+- [x] **NEXT-02**: Roadmap doc maps every PIPELINE.md stage to the new base with expected deltas, conditional re-test gates carried forward, and rough compute/cost estimates. `.planning/V4-RERUN-ROADMAP.md`.
 
 ## v4 Requirements (deferred)
 
@@ -390,8 +390,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PUB-01 | Phase 18 | Pending |
 | PUB-02 | Phase 18 | Pending |
 | PUB-03 | Phase 18 | Pending |
-| NEXT-01 | Phase 19 | Pending |
-| NEXT-02 | Phase 19 | Pending |
+| NEXT-01 | Phase 19 | Complete (base locked: `19-NEXT-BASE-SELECTION.md`) |
+| NEXT-02 | Phase 19 | Complete (`.planning/V4-RERUN-ROADMAP.md`) |
 
 **Coverage:**
 

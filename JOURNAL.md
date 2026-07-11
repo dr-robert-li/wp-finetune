@@ -4,6 +4,56 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-07-11 — Phase 19: I locked the next base, and it does not fit on the host at bf16.
+
+I spent this session on a planning-only phase, so nothing got downloaded and nothing trained. The
+motivation is the judge rho ceiling from the gap-closure investigation on 2026-07-08: the 0.157 gap to
+the attenuation ceiling is a real wall for SFT on Qwen3-30B-A3B, and the only lever left untested was a
+stronger base. My job was to pick that base, verify the claims about it live rather than trust the
+research doc from earlier this session, and write out exactly what rerunning the whole locked pipeline on
+it would look like.
+
+I locked `Qwen/Qwen3.6-35B-A3B`. Before locking, I re-fetched the model card directly (not from memory,
+not from the earlier research pass) and checked every load-bearing claim against the raw text: 35B total
+with 3B active, 256 experts with 8 routed plus 1 always-on shared, the hybrid layout of Gated DeltaNet and
+Gated Attention blocks, Apache 2.0, and the coding benchmarks (SWE-bench Verified 73.4, LiveCodeBench v6
+80.4, Terminal-Bench 2.0 51.5). I also checked Tinker's live model table (it is there, same LoRA price
+tier as our current base, though its training context cap is 64K rather than the model's native 262K,
+which does not matter for function-level PHP examples), and I checked the HuggingFace ecosystem for
+Unsloth and llama.cpp support (both exist, day-of-release conversions, plus an NVIDIA official NVFP4
+build). Everything checked out.
+
+One thing did not check out cleanly, and I think it is the most useful finding of the session. I did the
+arithmetic on bf16 memory: this base is 65.2 GiB per checkpoint against the old base's 56.8 GiB. Two
+checkpoints, one for generation and one for judging, come to 130.4 GiB, and the GB10 host has 121 GB. The
+pair fit with headroom on the old base. It does not fit at all on the new one, not concurrently. That
+converts Stage 5 quantization from an optional size lever, which is how it behaved in v3.0, into a hard
+memory prerequisite for the new base. I wrote that into the roadmap rather than letting it surface later
+as a surprise during an actual GPU run.
+
+The rest of the roadmap doc maps every stage and every conditional gate from PIPELINE.md onto this base:
+expected delta, the exact known result carried forward from the old base, the re-test gate that has to
+fire, and a cost estimate anchored to an actual number we already measured (Tinker spend, GB10 wall-clock,
+GGUF conversion time). The three no-winner gates, RL, MoE-Sieve, and pruning, all get carried forward as
+conditional re-tests rather than dropped, because a higher-rho and more concentrated base is exactly the
+condition PIPELINE.md itself says might flip them. I also scheduled the two known architecture headaches
+as explicit work items ahead of the stages that depend on them: the Sieve tooling needs to understand
+mixed DeltaNet and attention layers plus a shared expert it cannot mask, and there is a known eos/pad
+token mismatch on this model line that has to be fixed before any SFT starts.
+
+I made two calls the plan left to my discretion. First, I proposed a v4.0 phase structure that mirrors the
+pipeline stages in dependency order. Second, I recommended reusing the existing 603-item human relabel
+set rather than re-running that campaign, since the labels are human judgments of code quality and have
+nothing base-specific baked into them. I wrote down the condition under which that reasoning would be
+wrong (if the new base's judge saturates below the pre-registered target on the reused labels even after
+the usual training-recipe diagnostics rule out other causes), so it is a real trigger and not a permanent
+excuse to skip relabeling.
+
+What I did not do is authorize any of it. The roadmap ends with the same sentence it starts with: this is
+a plan, and v4.0 starts only when I decide to start it.
+
+---
+
 ## 2026-07-11 — Phase 17: the pair gets public numbers, and the low one is the honest one.
 
 **What ran.** Two benchmarks, both on the shipping stack, both receipt-backed. First the full 344-test

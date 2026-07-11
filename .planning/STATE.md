@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v3.1
 milestone_name: Benchmark, Publish & Next Base
-current_phase: 17
-current_phase_name: wp-bench full + SWE-bench generation-mode eval (COMPLETE)
-status: phase-17-complete
-stopped_at: "Phase 17 COMPLETE 2026-07-11 (BENCH-01..03): full wp-bench rerun 0.4365 (delta -1.19pp vs 0.4484, inside 5.20pp noise floor, clears 0.4286 bar); SWE-bench generation-mode at pre-registered scope — Lite-300 5/300 resolved (1.67%; 3.82% on 131-evaluated subset), PHP-43 0/43; oracle retrieval, native arm64 local Docker (swebench 4.1.0), all non-resolutions disclosed by category (80 over-length, 59 apply-fail, 29 arm64-unbuildable envs, 1 unparseable). MODEL_CARD Benchmarks section added with out-of-domain caveat. Actual wall-clock ~3.5h vs 16.93h projection. Next: Phase 18 (production sweep + HF publication)."
-last_updated: "2026-07-11T00:20:00.000Z"
+current_phase: 19
+current_phase_name: Next-Base Rerun Roadmap (COMPLETE)
+status: phase-19-complete
+stopped_at: "Phase 19 COMPLETE 2026-07-11 (NEXT-01/02, express path per user goal directive, run ahead of Phase 18 completion): base LOCKED Qwen/Qwen3.6-35B-A3B, all five rationale axes live-verified (architecture, GB10 memory budget, Tinker/Unsloth/vLLM/llama.cpp support, license, coding-benchmark deltas) — `19-NEXT-BASE-SELECTION.md`. `.planning/V4-RERUN-ROADMAP.md` maps all 8 PIPELINE stages/gates with deltas, carried-forward known results, re-test gates, cost estimates, two architecture-delta work items, six carry-forward lessons, pre-registered judge-rho success criteria (>0.85 single-seed / >0.87 ensemble), proposed v4.0 phase structure, relabel-reuse recommendation. v4.0 execution is a FUTURE milestone gated on explicit human sign-off — no downloads/training happened in this phase. Phase 18 (production sweep + HF publication) status untouched by this update; see its own docs/session for current state."
+last_updated: "2026-07-11T01:00:00.000Z"
 progress:
   total_phases: 3
   completed_phases: 1
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 
 ## Current Position
 
-Phase: 17 — Benchmark Expansion — COMPLETE 2026-07-11 (wp-bench 0.4365 full rerun; SWE-bench Lite-300 1.67% / PHP-43 0%, pre-registered, disclosed). Next: Phase 18 — Production Sweep & HF Publication. v3.1 milestone active.
-Prev: v3.0 CLOSED 2026-07-11 (Phases 11-16 complete: Sieve full, prune no_winner, Q8 GGUF lossless ship tier, PIPELINE.md locked). Phase 18 = production sweep + HF publication of the two-model pair; Phase 19 = next-base (latest Qwen MoE) rerun roadmap.
+Phase: 19 — Next-Base Rerun Roadmap — COMPLETE 2026-07-11 (base LOCKED Qwen/Qwen3.6-35B-A3B; `.planning/V4-RERUN-ROADMAP.md` maps full PIPELINE.md rerun). v4.0 execution gated on human sign-off, not yet started. v3.1 milestone active; Phase 18 (production sweep + HF publication) remains open and is tracked independently — this update does not change its status.
+Prev: Phase 17 — Benchmark Expansion — COMPLETE 2026-07-11 (wp-bench 0.4365 full rerun; SWE-bench Lite-300 1.67% / PHP-43 0%, pre-registered, disclosed). v3.0 CLOSED 2026-07-11 (Phases 11-16 complete: Sieve full, prune no_winner, Q8 GGUF lossless ship tier, PIPELINE.md locked).
 Historical (v3.0 entry point):
 Phase: 11 — Compression & Packaging
 Prev: Phases 09 (GSPO), 08.2 (reward-validity), 10 (RL comparative eval) — all CLOSED. RL rejected; gap-closure investigation CLOSED 2026-07-08.
