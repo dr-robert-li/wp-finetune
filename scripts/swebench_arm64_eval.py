@@ -79,29 +79,62 @@ def main():
     predictions = {p[KEY_INSTANCE_ID]: p for p in predictions}
 
     full_dataset = load_swebench_dataset(args.dataset, args.split, args.instance_ids)
-    instances = [i for i in full_dataset if i[KEY_INSTANCE_ID] in predictions]
-    if not instances:
+    # Mirror upstream run_evaluation.get_dataset_from_preds: exclude empty-patch
+    # predictions from the container runs (make_run_report still counts them as
+    # empty_patch_ids / not-resolved from the full predictions dict) and skip
+    # instances whose per-instance report already exists (resume-safe).
+    empty_patch_ids = {
+        k for k, v in predictions.items() if not v.get("model_patch")
+    }
+    from swebench.harness.constants import RUN_EVALUATION_LOG_DIR, LOG_REPORT
+
+    completed_ids = {
+        iid
+        for iid, p in predictions.items()
+        if (
+            RUN_EVALUATION_LOG_DIR
+            / args.run_id
+            / p["model_name_or_path"].replace("/", "__")
+            / iid
+            / LOG_REPORT
+        ).exists()
+    }
+    if empty_patch_ids:
+        print(f"Skipping {len(empty_patch_ids)} empty-patch instance(s) (scored unresolved in report).")
+    if completed_ids:
+        print(f"Skipping {len(completed_ids)} already-completed instance(s) (resume).")
+    instances = [
+        i
+        for i in full_dataset
+        if i[KEY_INSTANCE_ID] in predictions
+        and i[KEY_INSTANCE_ID] not in empty_patch_ids
+        and i[KEY_INSTANCE_ID] not in completed_ids
+    ]
+    if not any(i[KEY_INSTANCE_ID] in predictions for i in full_dataset):
         raise SystemExit("No matching instances between dataset and predictions.")
 
-    print(f"Building arm64 test specs for {len(instances)} instance(s)...")
-    test_specs = build_arm64_specs(instances)
+    if instances:
+        print(f"Building arm64 test specs for {len(instances)} instance(s)...")
+        test_specs = build_arm64_specs(instances)
 
-    client = docker.from_env()
-    print("Building env images (native arm64, local build, namespace=None)...")
-    build_env_images(client, test_specs, args.force_rebuild, args.max_workers)
+        client = docker.from_env()
+        print("Building env images (native arm64, local build, namespace=None)...")
+        build_env_images(client, test_specs, args.force_rebuild, args.max_workers)
 
-    print(f"Running {len(instances)} instance(s)...")
-    run_instances(
-        predictions,
-        test_specs,
-        cache_level="env",
-        clean=False,
-        force_rebuild=args.force_rebuild,
-        max_workers=args.max_workers,
-        run_id=args.run_id,
-        timeout=args.timeout,
-        namespace=None,
-    )
+        print(f"Running {len(instances)} instance(s)...")
+        run_instances(
+            predictions,
+            test_specs,
+            cache_level="env",
+            clean=False,
+            force_rebuild=args.force_rebuild,
+            max_workers=args.max_workers,
+            run_id=args.run_id,
+            timeout=args.timeout,
+            namespace=None,
+        )
+    else:
+        print("Nothing left to run; producing report only.")
 
     # client=None here: make_run_report's client-based bookkeeping recomputes
     # test specs with the x86_64 default (it doesn't accept an arch override),
