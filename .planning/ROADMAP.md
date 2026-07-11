@@ -808,7 +808,10 @@ Plans:
   2. A single HF repo (or paired repos) carries both models with the MODEL_CARD.md lineage, quantization ladder results, and usage examples for both task tokens
   3. Post-upload validation: files download, GGUF loads, and a smoke gen/judge prompt round-trips from the published artifact
 
-**Plans**: TBD at planning
+**Plans**: 2 plans
+
+- [ ] 18-01-PLAN.md — PUB-01: production sweep — README/PROJECT/PIPELINE currency vs Phase 17 numbers + MODEL_CARD, archive stale artifacts to deprecated/ via mandatory double-grep, clean root (Wave 1)
+- [ ] 18-02-PLAN.md — PUB-02+03: package the two-model pair, publish two PUBLIC HF repos under iamchum (gen bf16 + judge Q8 GGUF) with cross-linked cards, post-upload download/GGUF-load/gen+judge round-trip validation (Wave 2)
 
 ### Phase 19: Next-Base Rerun Roadmap
 
