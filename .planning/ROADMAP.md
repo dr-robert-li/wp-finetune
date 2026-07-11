@@ -823,7 +823,9 @@ Plans:
   1. The candidate base is selected from current Qwen releases with documented rationale (architecture match, size class, routing concentration prospects, license)
   2. A roadmap document maps every PIPELINE.md stage to the new base with expected deltas, the conditional re-test gates (RL, Sieve, prune) explicitly carried forward, and rough compute/cost estimates
 
-**Plans**: TBD at planning
+**Plans**: 1 plan
+
+- [ ] 19-01-PLAN.md — NEXT-01: verify + lock the next base (Qwen3.6-35B-A3B front-runner) with source-cited five-axis rationale; NEXT-02: write `.planning/V4-RERUN-ROADMAP.md` (every PIPELINE stage mapped, three no-winner gates carried forward as re-test stages, architecture-delta work items, cost estimates, carry-forward lessons, pre-registered judge-rho success criteria); closeout + push (Wave 1)
 
 ## Progress
 
