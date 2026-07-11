@@ -31,28 +31,59 @@ Source URLs and raw evidence are cited per claim. No weights were downloaded.
   vocab-append pattern used on Qwen3-30B-A3B; transferable.
 - Context: 262,144 native, extensible to 1,010,000 via YaRN.
 
+**Modality sub-finding (added 2026-07-11 after verification flagged the omission):** this checkpoint is a
+**vision-language model**, not text-only. Verified from primary sources: `pipeline_tag: image-text-to-text`
+in the README frontmatter, "Type: Causal Language Model with Vision Encoder" in the model overview,
+`architectures: ["Qwen3_5MoeForConditionalGeneration"]` with a `vision_config` block in `config.json`
+(SigLIP-class tower: depth 27, hidden 1152), and 333 `model.visual.*` tensors in
+`model.safetensors.index.json`. The current production base (`Qwen3-30B-A3B`) is `text-generation` /
+text-only, so this is a real modality change. Three findings, none blocking:
+
+- **No text-only sibling exists.** Checked the full Qwen org via the HF API (`?author=Qwen&search=Qwen3.6`):
+  all four 3.6 repos (35B-A3B, 27B, and their FP8 twins) are `image-text-to-text`, and the fallback
+  `Qwen3.5-35B-A3B` is ALSO "Causal Language Model with Vision Encoder" — the entire current Qwen
+  generation is VL. The ranking does not flip; there is no text-only candidate to prefer.
+- **Text-only serving is a vendor-documented mode.** The model card's own vLLM section provides
+  `--language-model-only` ("skips the vision encoder and multimodal profiling to free up memory for
+  additional KV cache") — the vision tower is excludable at load for our text-only pipeline.
+- **Text-only LoRA SFT leaves the tower untouched.** The pipeline's MoE-only rank-32 LoRA targets
+  language-model expert weights; text-only training data never activates the vision path, and Tinker
+  lists this exact checkpoint as a supported LoRA target (its "Hybrid + Vision" row, Axis 3). A one-time
+  bring-up check (Tinker adapter export + `merge_adapter.py` handle the VL checkpoint's
+  `model.language_model.*` key prefix correctly — the old base's keys were unprefixed `model.layers.*`)
+  is scheduled in `V4-RERUN-ROADMAP.md` Phase 20.
+
 **PIPELINE.md fit:** task-token MoE routing is preserved (Prerequisites: "A task-token MoE base"). The
 architecture is NOT a drop-in match to the current 128-expert/no-shared/uniform-attention base — see the
 two LOCKED architecture-delta work items carried into `V4-RERUN-ROADMAP.md` (Sieve/protected-mask tooling
-must handle mixed DeltaNet/Attention layers + an always-on shared expert; eos/pad token-ID alignment).
+must handle mixed DeltaNet/Attention layers + an always-on shared expert; eos/pad token-ID alignment),
+plus the VL merge-path bring-up check above.
 
 ## Axis 2 — GB10 121 GB memory budget
 
-**Verified arithmetic (bf16 = 2 bytes/param, matches the exact Qwen3-30B-A3B precedent: 30.5B x 2 /
-1024^3 = 56.8 GiB, which is the measured figure in `output/packaging/MODEL_CARD.md`):**
+**Measured, not derived (revised 2026-07-11):** the authoritative full-checkpoint size comes from the
+repo's own `model.safetensors.index.json` `metadata.total_size` = 71,903,645,408 bytes = **67.0 GiB** —
+this INCLUDES the vision tower (`model.visual.*`, 333 tensors, ~0.8 GiB at bf16) and the MTP head
+(`model.mtp.*`), on top of the 35B language model (35B x 2 bytes = 65.2 GiB, the LM-only lower bound the
+first draft of this doc used). Current-base precedent for the method: Qwen3-30B-A3B's 30.5B x 2 = 56.8 GiB
+matches the measured figure in `output/packaging/MODEL_CARD.md` exactly.
 
-| Checkpoint | Params | bf16 size | Two-checkpoint pair (gen+judge, bf16) |
-|---|---|---|---|
-| Qwen3-30B-A3B (current) | 30.5B | 56.8 GiB | 113.6 GiB (fits 121 GB with ~7 GiB headroom) |
-| Qwen3.6-35B-A3B (candidate) | 35B | **65.2 GiB** | **130.4 GiB — exceeds the 121 GB host** |
+| Checkpoint | bf16 size | Two-checkpoint pair (gen+judge, bf16) |
+|---|---|---|
+| Qwen3-30B-A3B (current, text-only) | 56.8 GiB | 113.6 GiB (fits 121 GB with ~7 GiB headroom) |
+| Qwen3.6-35B-A3B full checkpoint (LM + vision + MTP, measured) | **67.0 GiB** | **134.0 GiB — exceeds the 121 GB host** |
+| Qwen3.6-35B-A3B served `--language-model-only` (vision tower skipped at load) | ~65.2 GiB | ~130.4 GiB — still exceeds |
 
 **Finding (new, not in RESEARCH-BASESCAN):** unlike the current base, the Qwen3.6 pair does NOT fit
-concurrently at bf16 on GB10. This makes Stage 5 quantization a **hard prerequisite for concurrent
-pair-serving**, not an optional size optimization. Scaling the v3.0 Q8 GGUF ratio (30.2 GiB / 56.8 GiB =
-53.2% of bf16) to the candidate: ~34.7 GiB/checkpoint, ~69.4 GiB for the pair at Q8 — comfortably inside
-121 GB. This is captured as a memory-driven (not quality-driven) packaging requirement in
-`V4-RERUN-ROADMAP.md` Stage 5. Sequential (load-one-at-a-time) serving is the bf16 fallback if a
-pre-quantized dev loop is needed before Stage 5 runs.
+concurrently at bf16 on GB10 — true both for the full VL checkpoint (134.0 GiB) and even with the vision
+tower excluded at serve time via vLLM `--language-model-only` (~130.4 GiB). This makes Stage 5
+quantization a **hard prerequisite for concurrent pair-serving**, not an optional size optimization.
+Scaling the v3.0 Q8 GGUF ratio (30.2 GiB / 56.8 GiB = 53.2% of bf16) to the measured 67.0 GiB:
+~35.6 GiB/checkpoint, ~71.3 GiB for the pair at Q8 — comfortably inside 121 GB (and GGUF conversion of the
+text pipeline would drop or externalize the vision tower anyway, making this an upper bound). Captured as
+a memory-driven (not quality-driven) packaging requirement in `V4-RERUN-ROADMAP.md` Stage 5. Sequential
+(load-one-at-a-time) serving is the bf16 fallback if a pre-quantized dev loop is needed before Stage 5
+runs.
 
 ## Axis 3 — Tinker / Unsloth / vLLM / llama.cpp support
 
@@ -134,7 +165,8 @@ Stage 5 quantization from a size optimization into a memory-driven hard prerequi
 
 **`Qwen/Qwen3.5-35B-A3B`** — same 35B/3B, 256-expert, hybrid-attention architecture family (verified
 live: identical param counts, identical MoE config, identical Apache-2.0 license, same 262,144/1,010,000
-context). Older/safer twin with more third-party REAP-pruned variants in the wild (per
+context; ALSO a vision-language checkpoint — "Causal Language Model with Vision Encoder" — so falling back
+does not avoid the VL modality delta). Older/safer twin with more third-party REAP-pruned variants in the wild (per
 RESEARCH-BASESCAN). **Fallback trigger:** switch to this base only if Qwen3.6-35B-A3B fails at
 download/load time on GB10 (a live-verification blind spot — HF card claims cannot confirm aarch64/Blackwell
 runtime behavior without downloading weights, which this phase explicitly does not do) or if Tinker
@@ -156,7 +188,8 @@ if a future milestone explicitly wants to test the dense-methodology hypothesis,
 
 ## Sources
 
-- https://huggingface.co/Qwen/Qwen3.6-35B-A3B (README.md, fetched 2026-07-11)
+- https://huggingface.co/Qwen/Qwen3.6-35B-A3B (README.md, config.json, model.safetensors.index.json — fetched 2026-07-11)
+- https://huggingface.co/api/models?author=Qwen&search=Qwen3.6 (org-wide text-only-sibling check, fetched 2026-07-11)
 - https://huggingface.co/Qwen/Qwen3.5-35B-A3B (README.md, fetched 2026-07-11)
 - https://huggingface.co/Qwen/Qwen3-30B-A3B (README.md, fetched 2026-07-11)
 - https://huggingface.co/api/models?search=Qwen3.6-35B-A3B (ecosystem scan, fetched 2026-07-11)

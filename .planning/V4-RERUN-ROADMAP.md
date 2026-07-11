@@ -158,10 +158,14 @@ called out qualitatively (rough estimate, not a fabricated number) rather than i
 
 - **(a) Expected delta:** **memory-driven, not just quality-driven, this time.** Task 1 verification found
   that unlike Qwen3-30B-A3B (56.8 GiB/checkpoint bf16, pair fits 121 GB with ~7 GiB headroom),
-  Qwen3.6-35B-A3B is 65.2 GiB/checkpoint bf16 — the gen+judge pair at bf16 is **130.4 GiB, which does NOT
-  fit the GB10 121 GB host concurrently.** Quantization is therefore a hard prerequisite for
-  concurrent-pair serving on this base, not an optional size lever. Scaling the v3.0 Q8 ratio (30.2/56.8 =
-  53.2% of bf16) projects ~34.7 GiB/checkpoint at Q8, ~69.4 GiB for the pair — fits comfortably.
+  Qwen3.6-35B-A3B measures **67.0 GiB/checkpoint bf16** (safetensors-index `total_size`; includes the
+  vision tower + MTP head — this is a VL checkpoint, see the selection doc's modality sub-finding; ~65.2
+  GiB with the tower excluded at load via vLLM `--language-model-only`) — the gen+judge pair at bf16 is
+  **134.0 GiB full / ~130.4 GiB LM-only, either way exceeding the GB10 121 GB host.** Quantization is
+  therefore a hard prerequisite for concurrent-pair serving on this base, not an optional size lever.
+  Scaling the v3.0 Q8 ratio (30.2/56.8 = 53.2% of bf16) to the measured 67.0 GiB projects ~35.6
+  GiB/checkpoint at Q8, ~71.3 GiB for the pair — fits comfortably (an upper bound; text-pipeline GGUF
+  conversion drops the vision tower anyway).
 - **(b) Carried-forward known result:** bf16 57 GB/checkpoint (old base); Q4-nf4 uniform quantization is
   DEAD (measured router collapse, rho 0.165); Q8 GGUF is the recommended lossless ship tier (rho 0.8056
   ensemble vs bf16 0.8100, -0.4pp, 47% smaller, 0 parse failures at 8192-token cap).
@@ -236,7 +240,7 @@ precedent):
 
 | Phase | Content | Depends on |
 |---|---|---|
-| 20 | Base bring-up: download/load smoke test, eos/pad token-ID alignment (work item 2), DeltaNet-on-aarch64 op smoke check | Phase 19 sign-off |
+| 20 | Base bring-up: download/load smoke test, eos/pad token-ID alignment (work item 2), DeltaNet-on-aarch64 op smoke check, VL merge-path check (Tinker adapter export + `merge_adapter.py` handle the VL checkpoint's `model.language_model.*` key prefix; serve text-only via `--language-model-only`) | Phase 19 sign-off |
 | 21 | Stage 2 — SFT generation model (reasoning mix, reuse Stage 1 data) | 20 |
 | 22 | Stage 3 — SFT judge model (relabel-SFT, reuse or re-run per discretion item 2 below) | 20 (parallel-safe with 21) |
 | 23 | Stage 4 — Final eval (wp-bench + judge rho A/B vs v3.0 shipping figures; pre-registered criteria gate) | 21, 22 |

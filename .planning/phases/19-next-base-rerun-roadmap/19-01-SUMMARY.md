@@ -24,7 +24,8 @@ key-files:
 decisions:
   - "Base LOCKED: Qwen/Qwen3.6-35B-A3B (35B/3B, 256 experts 8-routed+1-shared, hybrid Gated-DeltaNet/Gated-Attention, Apache-2.0) — all five rationale axes live-verified via direct HF/Tinker fetches, not inherited from prior research"
   - "Fallback pre-authorized: Qwen/Qwen3.5-35B-A3B (same family, live-verified); dense Qwen3.6-27B documented as a methodology-change alternative, not equated"
-  - "New finding: gen+judge pair no longer fits GB10 concurrently at bf16 (65.2 GiB/checkpoint vs old base's 56.8 GiB; 130.4 GiB pair exceeds 121 GB host) — Stage 5 quantization becomes a memory-driven hard prerequisite, not an optional size lever"
+  - "New finding: gen+judge pair no longer fits GB10 concurrently at bf16 (measured 67.0 GiB/checkpoint incl. vision tower + MTP, vs old base's 56.8 GiB; 134.0 GiB pair — or ~130.4 GiB LM-only — exceeds 121 GB host) — Stage 5 quantization becomes a memory-driven hard prerequisite, not an optional size lever"
+  - "Gap fix (post-verification): Qwen3.6-35B-A3B is a vision-language checkpoint, as is the fallback and the entire current Qwen generation (no text-only sibling exists in the Qwen org); modality sub-finding added to Axis 1, memory figures re-derived from the measured safetensors total_size, VL merge-path check added to the proposed v4.0 Phase 20; selection UNCHANGED"
   - "Relabel-campaign reuse recommended (v1.3's 603-item human-relabeled set is base-agnostic) with an explicit re-open condition, not silently deferred"
   - "Execution is a FUTURE v4.0 milestone gated on explicit human sign-off; this phase produced the plan only"
 metrics:
@@ -74,15 +75,29 @@ finding, and the roadmap. Committed as Dr. Robert Li (no AI co-author trailer), 
 ## Key finding beyond the plan's literal ask
 
 Live verification surfaced a real, previously-undocumented constraint: at bf16, the Qwen3.6-35B-A3B
-gen+judge pair is 130.4 GiB, exceeding the GB10 host's 121 GB — unlike the current base's pair (113.6 GiB,
-fits with headroom). This converts Stage 5 quantization from an optional size lever into a hard
-concurrent-serving prerequisite for v4.0. Captured in both the selection doc (Axis 2) and the roadmap
-(Stage 5), not left for a future session to discover mid-run.
+gen+judge pair is 134.0 GiB measured (safetensors-index total; ~130.4 GiB with the vision tower excluded
+at load), exceeding the GB10 host's 121 GB — unlike the current base's pair (113.6 GiB, fits with
+headroom). This converts Stage 5 quantization from an optional size lever into a hard concurrent-serving
+prerequisite for v4.0. Captured in both the selection doc (Axis 2) and the roadmap (Stage 5), not left for
+a future session to discover mid-run.
 
 ## Deviations from Plan
 
 None — plan executed as written. The bf16 memory-budget finding above was produced by the plan's own
 required arithmetic (Axis 2 verification), not an out-of-scope addition.
+
+## Post-verification gap fix (2026-07-11)
+
+Phase verification (19-VERIFICATION.md) flagged one gap: the selection doc's Axis 1 omitted that
+Qwen3.6-35B-A3B is a **vision-language** checkpoint (`image-text-to-text`, Causal LM + Vision Encoder)
+while the current base is text-only, and Axis 2's bf16 arithmetic counted only the language-model params.
+Fixed with fresh primary-source fetches (`config.json`, `model.safetensors.index.json`, Qwen-org HF API
+scan): (1) VL confirmed — 333 `model.visual.*` tensors, `Qwen3_5MoeForConditionalGeneration`; (2) no
+text-only sibling exists anywhere in the Qwen 3.5/3.6 generation (the fallback is also VL), so the
+**selection is unchanged**; (3) vendor documents text-only serving (`--language-model-only`) and text-only
+MoE-LoRA SFT leaves the tower untouched — a VL merge-path bring-up check was added to the proposed v4.0
+Phase 20; (4) Axis 2 and Roadmap Stage 5 re-stated with the measured 67.0 GiB/checkpoint (134.0 GiB pair)
+— the quantization-is-mandatory conclusion is unchanged and slightly strengthened.
 
 ## Verification
 
