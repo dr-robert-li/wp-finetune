@@ -104,7 +104,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 <details open>
 <summary>v3.1 Benchmark, Publish & Next Base (Phases 17-19) — ACTIVE</summary>
 
-- [ ] **Phase 17: Benchmark Expansion — wp-bench + SWE-bench Generation Eval** - Full wp-bench run on the shipped gen model plus a SWE-bench generation-mode eval to position the model against a public coding benchmark; document scores honestly in the model card
+- [x] **Phase 17: Benchmark Expansion — wp-bench + SWE-bench Generation Eval** - Full wp-bench run on the shipped gen model plus a SWE-bench generation-mode eval to position the model against a public coding benchmark; document scores honestly in the model card
 - [ ] **Phase 18: Production Sweep & HuggingFace Publication** - Full repo sweep (docs current, stale artifacts to deprecated/, streamlined layout), then package the two-model pair (v1.2 gen + v1.3 judge ensemble, Q8 GGUF ship tier) and publish to HuggingFace
 - [ ] **Phase 19: Next-Base Rerun Roadmap** - Plan the full pipeline rerun on the latest Qwen-family base (research current best same-class MoE), producing a costed roadmap for the next milestone
 
@@ -789,13 +789,13 @@ project folder so it is clean and parseable by outside followers.
   2. A SWE-bench generation-mode eval (patch generation, non-agentic) runs at the largest scope the DGX Spark (aarch64) toolchain can honestly evaluate — scope, harness constraints, and any subset choice recorded BEFORE results are read
   3. MODEL_CARD.md gains a Benchmarks section with both results, including the honest caveat that the model is WordPress-specialized and SWE-bench is out-of-domain
 
-**Plans**: 2/3 plans executed
+**Plans**: 3/3 plans executed — Phase 17 COMPLETE 2026-07-11
 
 Plans:
 
 - [x] 17-01-PLAN.md — BENCH-01: full 344-test wp-bench run on v1.2 gen model via vLLM bf16, receipt + delta vs 0.4484 (Wave 1)
 - [x] 17-02-PLAN.md — BENCH-02 part 1: arm64 Docker + throughput feasibility probes, arm64 make_test_spec wrapper, scope pre-registration committed before results (Wave 1, checkpoint)
-- [ ] 17-03-PLAN.md — BENCH-02 part 2 + BENCH-03: SWE-bench generation + arm64 eval at locked scope, then MODEL_CARD Benchmarks section + docs, commit/push as dr-robert-li (Wave 2)
+- [x] 17-03-PLAN.md — BENCH-02 part 2 + BENCH-03: SWE-bench generation + arm64 eval at locked scope, then MODEL_CARD Benchmarks section + docs, commit/push as dr-robert-li (Wave 2)
 
 ### Phase 18: Production Sweep & HuggingFace Publication
 

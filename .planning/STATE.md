@@ -3,16 +3,16 @@ gsd_state_version: 1.0
 milestone: v3.1
 milestone_name: Benchmark, Publish & Next Base
 current_phase: 17
-current_phase_name: wp-bench full + SWE-bench generation-mode eval
-status: ready-to-plan
-stopped_at: "Phase 15 CLOSED COMPLETE 2026-07-11: PKG-03 ladder closed at Q8 (LOSSLESS ship tier, 30.2 GiB, -47%; ens@8192 rho 0.8056 vs bf16 0.8100, delta -0.4pp, 0/121 parse fails all 6 arms). Q6/Q5 descent DEFERRED — Q8 already fits the 121 GB host with pair headroom; ladder re-opens only for a smaller target host. HF upload moved from PKG-04 rider to Phase 18 (PUB-03). v3.0 milestone fully closed (Phases 11-16). NEW v3.1 milestone opened (Phases 17-19): 17 = full wp-bench + SWE-bench generation-mode eval (BENCH-01..03), 18 = production repo sweep + two-model-pair HF publication (PUB-01..03), 19 = next-base (latest Qwen MoE) rerun roadmap over locked PIPELINE.md (NEXT-01..02). Prior context: Q8 rerun lessons — gate capture on real-generation warmup not /health; --parallel N splits n_ctx N ways."
-last_updated: "2026-07-10T19:38:41.018Z"
+current_phase_name: wp-bench full + SWE-bench generation-mode eval (COMPLETE)
+status: phase-17-complete
+stopped_at: "Phase 17 COMPLETE 2026-07-11 (BENCH-01..03): full wp-bench rerun 0.4365 (delta -1.19pp vs 0.4484, inside 5.20pp noise floor, clears 0.4286 bar); SWE-bench generation-mode at pre-registered scope — Lite-300 5/300 resolved (1.67%; 3.82% on 131-evaluated subset), PHP-43 0/43; oracle retrieval, native arm64 local Docker (swebench 4.1.0), all non-resolutions disclosed by category (80 over-length, 59 apply-fail, 29 arm64-unbuildable envs, 1 unparseable). MODEL_CARD Benchmarks section added with out-of-domain caveat. Actual wall-clock ~3.5h vs 16.93h projection. Next: Phase 18 (production sweep + HF publication)."
+last_updated: "2026-07-11T00:20:00.000Z"
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 2
-  percent: 0
+  completed_plans: 3
+  percent: 33
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 
 ## Current Position
 
-Phase: 17 — Benchmark Expansion (wp-bench full + SWE-bench generation-mode eval). v3.1 milestone active.
+Phase: 17 — Benchmark Expansion — COMPLETE 2026-07-11 (wp-bench 0.4365 full rerun; SWE-bench Lite-300 1.67% / PHP-43 0%, pre-registered, disclosed). Next: Phase 18 — Production Sweep & HF Publication. v3.1 milestone active.
 Prev: v3.0 CLOSED 2026-07-11 (Phases 11-16 complete: Sieve full, prune no_winner, Q8 GGUF lossless ship tier, PIPELINE.md locked). Phase 18 = production sweep + HF publication of the two-model pair; Phase 19 = next-base (latest Qwen MoE) rerun roadmap.
 Historical (v3.0 entry point):
 Phase: 11 — Compression & Packaging

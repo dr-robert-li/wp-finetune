@@ -4,6 +4,48 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-07-11 — Phase 17: the pair gets public numbers, and the low one is the honest one.
+
+**What ran.** Two benchmarks, both on the shipping stack, both receipt-backed. First the full 344-test
+wp-bench rerun: 0.4365 overall, 1.19pp under the 0.4484 Gate-1 reference and well inside the 5.20pp
+seed-noise floor, clearing the 0.4286 bar. The old number reproduces; no stack anomaly, no regression.
+Second, the one I have been promising these entries for a while: SWE-bench, generation-mode, run
+entirely locally on the GB10.
+
+**The pre-registration held.** Scope was locked and committed before a single eval result existed:
+Lite-300 primary plus the Multilingual PHP-43 subset, oracle retrieval, one prompt in and one
+unified-diff out, native arm64 Docker, 20-hour budget. Nothing got re-decided after seeing numbers.
+The projection said 16.93 hours; the actual end-to-end was about 3.5 (generation 1.36h, eval roughly
+2.2h including a fix pass). The gap is almost all the 180s-per-instance Python Docker estimate, which
+was flagged as a conservative literature guess and proved about right in spirit but heavy in practice,
+plus fast-failing instances that never reached their test suites.
+
+**The numbers, plainly.** Lite-300: 5 resolved of 300, 1.67 percent. On the 131 instances that
+actually ran to a test verdict inside a container, 3.82 percent. PHP-43: zero of 43. Every
+non-resolution is disclosed by category in the receipt: 80 Lite prompts simply do not fit the 24k
+serving context and were scored unresolved per the pre-registration; 59 patches failed to apply; 29
+instances sit in 2018-era Python environments that will not build on an arm64 host with 2026
+toolchains (cdms2 has no aarch64 conda build, py3.6 setuptools pins are gone, old scipy will not
+compile, pip removed --no-use-pep517). Those 29 count against the model too. Conservative, disclosed,
+done.
+
+**What I actually learned.** A WordPress-specialized 30B resolving anything on Django and pytest
+issues via bare single-shot patch generation is mildly surprising; the five wins are real
+FAIL_TO_PASS flips through the official harness. The PHP zero is the more interesting null: being
+in-language does not help when the domain is framework internals and the patch format discipline is
+the bottleneck. Most failures die at git apply, not at test time. That is a diff-formatting and
+context-budget problem, not a knowledge problem, and it is exactly what the out-of-domain caveat on
+the card says it is.
+
+**One infrastructure gotcha worth writing down.** This host had swebench images from a November 2024
+install. The 4.1.0 harness happily reused them, and the old layout bakes the repo into /testbed where
+the new instance build expects to clone fresh. Fifteen instances failed on that collision and one
+completed instance had silently run inside a stale image. Purged every 2024-dated sweb image, reran
+the affected instances, and the fix pass promoted one of them (requests-2674) to resolved. Lesson:
+before trusting a harness that caches Docker images by name, check the dates on what it finds.
+
+---
+
 ## 2026-07-11 — Phase 15 closed, v3.0 done. The ladder stops at Q8 on purpose.
 
 **Why I'm not running Q6 and Q5.** The ladder spec says descend until a tier breaks the ±2pp gate. Q8

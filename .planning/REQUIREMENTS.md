@@ -225,8 +225,8 @@ Sub-experiment: Does WordPress domain specialization create enough routing conce
 ### v3.1 Benchmark Expansion (Phase 17)
 
 - [x] **BENCH-01**: Full (unlimited) wp-bench run on the v1.2 gen model via the shipping stack; score + config + seed recorded and compared to the 0.4484 Gate-1 receipt.
-- [ ] **BENCH-02**: SWE-bench generation-mode (non-agentic patch generation) eval at the largest scope the aarch64 toolchain can honestly evaluate; scope and harness constraints pre-registered before results are read.
-- [ ] **BENCH-03**: MODEL_CARD.md Benchmarks section updated with both results + out-of-domain caveat for SWE-bench.
+- [x] **BENCH-02**: SWE-bench generation-mode (non-agentic patch generation) eval at the largest scope the aarch64 toolchain can honestly evaluate; scope and harness constraints pre-registered before results are read.
+- [x] **BENCH-03**: MODEL_CARD.md Benchmarks section updated with both results + out-of-domain caveat for SWE-bench.
 
 ### v3.1 Production Sweep & Publication (Phase 18)
 
@@ -385,8 +385,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PKG-04 | Phase 15 | Complete (model card; upload human-authorized) |
 | PKG-05 | Phase 15 | Complete (bf16); quantized pending |
 | BENCH-01 | Phase 17 | Complete |
-| BENCH-02 | Phase 17 | Pending |
-| BENCH-03 | Phase 17 | Pending |
+| BENCH-02 | Phase 17 | Complete |
+| BENCH-03 | Phase 17 | Complete |
 | PUB-01 | Phase 18 | Pending |
 | PUB-02 | Phase 18 | Pending |
 | PUB-03 | Phase 18 | Pending |
@@ -401,7 +401,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 - v2.0 requirements: 16 total (0 complete) — PROF(5) + GATE-01(1) + GRPO(8) + RLEV(2) [Phases 7-10]
 - v3.0 requirements: 21 total (0 complete) — SIEVE(5) + EVAL2(2) + MERGE(1) + PRUNE(6) + EVAL3(2) + PKG(5) [Phases 11-15]
 - DPLT requirements: 7 total (deferred -> v3.0 PKG/PRUNE)
-- v3.1 requirements: 8 total (0 complete) — BENCH(3) + PUB(3) + NEXT(2) [Phases 17-19]
+- v3.1 requirements: 8 total (3 complete: BENCH-01..03) — BENCH(3) + PUB(3) + NEXT(2) [Phases 17-19]
 - Total mapped to phases: 109 active + 7 deferred (all requirements mapped, 0 unmapped)
 
 ---

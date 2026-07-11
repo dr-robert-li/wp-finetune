@@ -99,9 +99,44 @@ Serve `<wp_gen>` and `<wp_judge>` as the same base with the appropriate merged c
 served checkpoints. The judge ensemble runs 3 seeds sequentially and takes the median; the single-seed s1
 fallback trades ~0.006 rho for one-third the serve cost.
 
+## Benchmarks
+
+Both numbers below are fresh, receipt-backed measurements on the shipping stack (vLLM bf16,
+`models/qwen3-30b-wp-30_70-reasoning-merged-v4`, temperature 0.0), taken 2026-07-11.
+
+| Benchmark | Score | Scope / config |
+|---|---|---|
+| **wp-bench** (in-domain) | **0.4365** overall | full 344-test wp-core-v1 suite, unlimited; knowledge 0.4906, correctness 0.3958 |
+| **SWE-bench Lite** (out-of-domain) | **1.67%** resolved (5/300) | generation-mode (non-agentic), oracle retrieval, 24k context, native arm64 local Docker eval |
+| **SWE-bench-Multilingual PHP subset** (in-language, out-of-domain) | **0%** resolved (0/43) | same protocol; 4 PHP repos (phpspreadsheet, laravel, php-cs-fixer, carbon) |
+
+**wp-bench.** The fresh full-suite score (0.4365) sits 1.19pp below the 0.4484 Gate-1 reference
+figure, well inside the project's measured 5.20pp seed-noise floor, and clears the 0.4286 acceptance
+bar. Same stack both sides (vLLM bf16, identical checkpoint and sampling); no regression signal.
+Receipt: `output/bench17/wpbench_full_gate_rerun.json`.
+
+**SWE-bench, and why the number is low.** SWE-bench Lite is Python-repository patch generation;
+this model is WordPress/PHP-specialized. A low out-of-domain number is expected and is not a quality
+defect: the model was never trained to patch Django or sympy, and the score is published for honest
+positioning, not vanity. Protocol: one oracle-retrieval prompt in, one unified-diff patch out (no
+agent scaffold, no retries), temperature 0.0, seed 0, max_model_len 24576, evaluated with the
+official swebench 4.1.0 containerized harness built natively for arm64. The scope (Lite-300 + PHP-43)
+was pre-registered and committed before any result existed
+(`output/bench17/swebench_scope_preregistration.md`).
+
+Full-scope denominators count everything against the model, disclosed in the receipt
+(`output/bench17/swebench_eval_report.json`): of Lite's 300, 80 prompts exceeded the 24k serving
+context (scored unresolved), 1 generation was unparseable, 59 patches failed to apply, and 29
+instances could not be evaluated because their 2018-era Python environments cannot build on
+arm64/2026 toolchains (also scored unresolved, conservative against the model). On the 131 instances
+that ran to a test verdict the resolved rate is 3.82% (5/131). The PHP-Multilingual subset is
+in-language but still out-of-domain (framework libraries, not WordPress): 0/43 full-scope, 0/20
+evaluated; 17 over-length, 6 apply-failures.
+
 ## Evaluation
 
-- **wp-bench** (WordPress code correctness/knowledge/quality): generation 0.4484 (bar 0.4286).
+- **wp-bench** (WordPress code correctness/knowledge/quality): generation 0.4484 (bar 0.4286);
+  fresh full-suite rerun on the shipping stack 0.4365 (within seed noise — see Benchmarks).
 - **Judge rho** (Spearman vs human-relabeled 9-dim scores): ensemble 0.8075, single-seed 0.8017
   (recalibrated floors 0.7554 / 0.7497). Attenuation ceiling for the noisy val set is ~0.984; the ~0.16
   residual is a genuine capability wall for SFT on this base, not a bug.
