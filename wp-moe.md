@@ -1,3 +1,10 @@
+> **Note (Phase 18-01, 2026-07-11):** this is the original v1.0-era design spec (April 2026) — background
+> and rationale only. Several of its "Planned" sections describe work that has since run and returned a
+> negative result: MoE-Sieve expert-drop (§5) found no compression, and REAP/AIMER pruning (§5) found no
+> winner. Judge rho landed at 0.8075 ensemble, short of the >0.85 target in §4/§8. For the actual shipped
+> configuration, results, and quantization ladder, see
+> [MODEL_CARD.md](output/packaging/MODEL_CARD.md) and [PIPELINE.md](PIPELINE.md).
+
 # WordPress Best-Practice MoE Model: Project Specification
 
 **Project Goal:** Fine-tune Qwen3-30B-A3B into an opinionated WordPress code model that generates and judges PHP code against strict WordPress Coding Standards, using task-token routing (`<wp_gen>`, `<wp_judge>`) within a single MoE network. Built and served entirely on the [DGX Toolbox](https://github.com/dr-robert-li/dgx-toolbox) stack.

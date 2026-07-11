@@ -8,7 +8,7 @@
 
 **Author:** [Dr. Robert Li](https://github.com/dr-robert-li)
 
-An open-weight Mixture-of-Experts model that generates and judges WordPress code according to strict WordPress Coding Standards. A single model, two modes: `<wp_gen>` for code generation, `<wp_judge>` for structured critique with 9-dimension rubric scoring.
+An open-weight two-model pair, both fine-tuned from the same Qwen3-30B-A3B Mixture-of-Experts base, that generates and judges WordPress code according to strict WordPress Coding Standards: `<wp_gen>` for code generation, `<wp_judge>` for structured critique with 9-dimension rubric scoring.
 
 No open-source model existed for this. The tools in this space are wrappers around closed-source frontier models (OpenAI, Claude, etc.). This project builds one from scratch — open weights, self-hostable, no vendor lock-in.
 
@@ -19,9 +19,9 @@ No open-source model existed for this. The tools in this space are wrappers arou
 | Base model | Qwen3-30B-A3B (native MoE, 128 experts, top-8 routing) |
 | Total params | ~30B |
 | Active params | ~3B per forward pass |
-| Task routing | First-token: `<wp_gen>` or `<wp_judge>` |
+| Task routing | First-token: `<wp_gen>` or `<wp_judge>`, served as two separate merged checkpoints |
 | Training | LoRA SFT via Unsloth on DGX Spark |
-| Serving | vLLM, Ollama, GGUF, AWQ |
+| Serving | vLLM (bf16 gen), llama.cpp/Ollama (Q8_0 GGUF judge, lossless — see Benchmarks) |
 | Infrastructure | [DGX Toolbox](https://github.com/dr-robert-li/dgx-toolbox) |
 
 See [wp-moe.md](wp-moe.md) for the full model specification, and **[PIPELINE.md](PIPELINE.md)** for the
@@ -49,17 +49,48 @@ The judge returns structured scores across 9 dimensions: WPCS compliance, SQL sa
 | v1.0 MVP | 1. Pipeline Ready | Complete |
 | | 2. Dataset Production (267K examples, 5 ratio exports) | Complete |
 | | 3. Model Prep & Training (60/40 LoRA complete, 43h on DGX Spark) | Complete |
-| | 4. Eval Triage — 30/70 wins (gen 0.99+, judge Spearman 0.57) | **Complete** |
+| | 4. Eval Triage — 30/70 wins (gen 0.99+, judge Spearman 0.57) | Complete |
 | | 5. Packaging & Deployment | Deferred to v3.0 |
 | v1.1 Adaptive Training | 6. Adaptive Training Planner (power-primary, memory watchdog) | Complete |
-| v1.2 Judge Reasoning | 4.1 Seed Curation + Data Gen → 4.2 Dataset Assembly → 4.3 Reasoning Fine-Tune → 4.4 Eval & Merge | **Complete** |
-| v2.0 RL Alignment | 7. Router Profiling (expert mask) | **Complete** |
-| | 8. Reward Infrastructure (composite 70/30, security gate, MO-GRPO, VeRPO) | **Complete** |
-| | 9. GSPO Training | **Next** |
-| | 10. RL Eval | Planned |
-| v3.0 MoE-Sieve, Pruning & Packaging | 11. Post-RL MoE-Sieve → 12. Sieve Eval → 13. Merge + Pruning → 14. Final Eval → 15. Package | Planned |
+| v1.2 Judge Reasoning | 4.1 Seed Curation + Data Gen → 4.2 Dataset Assembly → 4.3 Reasoning Fine-Tune → 4.4 Eval & Merge | Complete |
+| v2.0 RL Alignment | 7. Router Profiling (expert mask) | Complete |
+| | 8. Reward Infrastructure (composite 70/30, security gate, MO-GRPO, VeRPO) | Complete |
+| | 9. GSPO Training | **REJECTED** — killed 6/6 dead checkpoint reads, 2026-07-05 |
+| | 10. RL Eval | N/A (no RL checkpoint promoted) |
+| v3.0 MoE-Sieve, Pruning & Packaging | 11. MoE-Sieve expert-drop | **No compression** — optimal_k = full (128 experts) |
+| | 12. Sieve Eval | Folded into Phase 11 (no candidate to eval) |
+| | 13. LoRA merge + AIMER/REAP pruning | **No winner** — ships unpruned at full width |
+| | 14. Final Eval | Complete — pair clears all bars |
+| | 15. Packaging | **Complete** — Q8_0 GGUF is the lossless ship tier (−47% size) |
+| | 16. Pipeline Lockdown | Complete — `PIPELINE.md` frozen, `deprecated/` sweep |
+| v3.1 Benchmark, Publish & Next Base | 17. wp-bench full rerun + SWE-bench generation-mode eval | **Complete** — see Benchmarks below |
+| | 18. Production Sweep & HuggingFace Publication | **In progress** |
 
-**Current:** v1.2 Judge Reasoning complete — v4-winner promoted to `models/qwen3-30b-wp-30_70-reasoning-merged-v4` (D-V4-10 waiver + REVL-05 sign-off 2026-06-14). Phase 7 Router Profiling closed 2026-06-19: 1,480 experts protected, CI-aware Jaccard gate passed (`jaccard_ci_lower=0.9426≥0.94`), council-approved. Phase 8 Reward Infrastructure complete: composite reward pipeline built and tested (424 tests green), live endpoint UAT deferred to Phase 9 vLLM infra. Next: Phase 9 GSPO Training.
+**Current:** v3.0 CLOSED 2026-07-11. The compression campaign confirmed the model cannot be shrunk by
+expert-count or weight-norm methods on this base — RL, MoE-Sieve, and pruning each returned no gain, and
+that negative result is recorded rather than hidden (see [MODEL_CARD.md](output/packaging/MODEL_CARD.md)).
+Quantization is the sole size lever: Q8_0 GGUF ships lossless. Phase 17 added fresh full-suite wp-bench
+(0.4365) and out-of-domain SWE-bench numbers on the shipping stack. Phase 18 (this phase) brings the repo
+docs current and publishes the two-model pair to HuggingFace.
+
+## Benchmarks
+
+Numbers below are receipt-backed, taken on the shipping stack 2026-07-11. Full detail, receipts, and the
+out-of-domain protocol: [MODEL_CARD.md](output/packaging/MODEL_CARD.md#benchmarks) (single source of truth
+for all scores in this repo).
+
+| Benchmark | Score | Notes |
+|---|---|---|
+| wp-bench (in-domain, full 344-test suite) | **0.4365** | 1.19pp below the 0.4484 Gate-1 reference, inside the 5.20pp seed-noise floor |
+| Judge Spearman rho, 3-seed ensemble | **0.8075** | single-seed s1 fallback: 0.8017 |
+| Q8_0 GGUF judge (ship tier) | **0.8056 ens rho, −47% size** | lossless vs bf16 (Δ−0.4pp), 0/121 parse failures |
+| SWE-bench Lite (out-of-domain) | **1.67%** resolved (5/300) | generation-mode, oracle retrieval, native arm64 |
+| SWE-bench-Multilingual PHP subset | **0%** resolved (0/43) | in-language, still out-of-domain (framework libs, not WordPress) |
+
+**Why the SWE-bench numbers are low, on purpose:** this model is WordPress/PHP-specialized; SWE-bench Lite
+is Python-repository patch generation the model was never trained for. The out-of-domain scores are
+published for honest positioning, not vanity — a low number here is expected and is not a quality defect
+in the model's actual domain.
 
 **Building in public.** Read the [Engineering Journal](JOURNAL.md) for real-time decisions, tradeoffs, failures, and lessons learned as the project evolves.
 

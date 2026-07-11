@@ -2,7 +2,12 @@
 
 ## Vision
 
-A single Qwen3-based Mixture-of-Experts model that both **generates** and **judges** WordPress code according to strict WordPress Coding Standards. Task tokens (`<wp_gen>`, `<wp_judge>`) route input to specialized expert pathways within the same network. Built and served on the [DGX Toolbox](~/dgx-toolbox) infrastructure stack.
+A two-model pair, both fine-tuned from the same Qwen3-based Mixture-of-Experts base, that **generates** and **judges** WordPress code according to strict WordPress Coding Standards. Task tokens (`<wp_gen>`, `<wp_judge>`) mark which mode a served checkpoint should run. Built and served on the [DGX Toolbox](~/dgx-toolbox) infrastructure stack.
+
+**Shipped reality (v3.0, closed 2026-07-11):** RL alignment was rejected, MoE-Sieve found no expert-count
+compression, and weight-level pruning found no winner — quantization is the only size lever, and Q8_0 GGUF
+is the lossless ship tier. Full lineage: [MODEL_CARD.md](output/packaging/MODEL_CARD.md). The sections
+below describe the original phased plan; see "Current Status" for what each phase actually produced.
 
 ## Architecture
 
@@ -114,7 +119,9 @@ E_eff_l = exp(H_l)                   (effective expert count — how many expert
 
 ### Phase D: MoE-Sieve Selective Training (v2.0)
 
-*Planned. Depends on Phase C (surviving ratios with eval scores + base-model E_eff).*
+*Complete (v3.0, closed 2026-07). Result: **no compression** — routing profile shows ~88-99 effective
+experts/layer of 128; every masked-k budget collapses wp-bench (0.4484 full → 0.2275 at k=64 → 0.0546 at
+k=32). `optimal_k = full`, nothing dropped. Full outcome and receipts: [PIPELINE.md](PIPELINE.md#conditional-gate-b--moe-sieve-expert-drop-phases-11-12).*
 
 | Step | Description |
 |------|-------------|
@@ -125,7 +132,12 @@ E_eff_l = exp(H_l)                   (effective expert count — how many expert
 
 ### Phase E: GRPO & Production Deployment (v3.0)
 
-*Planned. Depends on Phase D (MoE-Sieve eval results).*
+*Complete (v3.0, closed 2026-07-11). Actual scope was narrower than originally planned: GSPO (RL) was
+**rejected** in Phase 9 (6/6 dead checkpoint reads), so there was no RL checkpoint to merge or prune against.
+AIMER/REAP pruning on the SFT-only merged pair found **no winner** (AIMER@25% collapses gen to wp-bench
+0.1577 and judge ensemble rho to 0.1651) — the model ships unpruned at full 128-expert width. Packaging
+(E6) shipped Q8_0 GGUF as the lossless tier (−47% size). Full lineage and both negative pruning results:
+[MODEL_CARD.md](output/packaging/MODEL_CARD.md), `output/prune/prune_methodology.md`.*
 
 | Step | Description |
 |------|-------------|
@@ -250,10 +262,13 @@ Judge training data is additionally sanity-checked: high-quality source code mus
 - [x] Phase C: Judge reasoning fine-tune — v4-winner promoted, +3.58 calibration locked (v1.2 Phases 4.1-4.4, complete 2026-06-14)
 - [x] Phase 7: Router profiling — 1,480 experts protected, CI-aware Jaccard gate passed, council-approved (v2.0, closed 2026-06-19)
 - [x] Phase 8: Reward infrastructure — composite 70/30 pipeline, security terminal gate, MO-GRPO, VeRPO, anti-hack eval set; 424 tests green (v2.0, complete 2026-06-20)
-- [ ] Phase 9: GSPO Training — **next step** (v2.0)
-- [ ] Phase 10: RL Eval (v2.0)
-- [ ] Phase D: MoE-Sieve selective training + eval + merge + pruning (v3.0 Phases 11-13)
-- [ ] Phase E: Final eval + packaging (v3.0 Phases 14-15)
+- [x] Phase 9: GSPO Training — **REJECTED**, killed 6/6 dead checkpoint reads (v2.0, 2026-07-05)
+- [x] Phase 10: RL Eval — N/A, no RL checkpoint promoted (v2.0)
+- [x] Phase D: MoE-Sieve selective training — **no compression**, optimal_k = full (v3.0 Phases 11-12)
+- [x] Phase E: LoRA merge + pruning + final eval + packaging — **no prune winner**, Q8 GGUF ships lossless (v3.0 Phases 13-15)
+- [x] Phase 16: Pipeline lockdown — `PIPELINE.md` frozen, `deprecated/` sweep (v3.0, closed 2026-07-11)
+- [x] Phase 17: Benchmark expansion — wp-bench full rerun 0.4365, SWE-bench out-of-domain 1.67%/0% (v3.1, closed 2026-07-11)
+- [ ] Phase 18: Production sweep + HuggingFace publication — **in progress** (v3.1)
 
 ## Dependencies
 
