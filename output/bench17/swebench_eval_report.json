@@ -235,7 +235,7 @@
         "psf__requests-2674",
         "pytest-dev__pytest-5227"
       ],
-      "harness_report_file": "qwen3-30b-wp-30_70-reasoning-merged-v4.lite300_v1.json",
+      "harness_report_file": "output/bench17/swebench_harness_report_lite300_v1.json",
       "per_instance_fail_to_pass_pass_to_pass": "logs/run_evaluation/lite300_v1/qwen3-30b-wp-30_70-reasoning-merged-v4/<instance_id>/report.json (harness-produced, not re-derived)"
     },
     "php43": {
@@ -284,7 +284,7 @@
         "harness_env_failed_ids": []
       },
       "resolved_ids": [],
-      "harness_report_file": "qwen3-30b-wp-30_70-reasoning-merged-v4.php43_v1.json",
+      "harness_report_file": "output/bench17/swebench_harness_report_php43_v1.json",
       "per_instance_fail_to_pass_pass_to_pass": "logs/run_evaluation/php43_v1/qwen3-30b-wp-30_70-reasoning-merged-v4/<instance_id>/report.json (harness-produced, not re-derived)"
     }
   },

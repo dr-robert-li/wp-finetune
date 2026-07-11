@@ -20,7 +20,7 @@ GEN_RECEIPT = json.loads((ROOT / "output/bench17/swebench_generation_receipt.jso
 
 LEGS = {
     "lite300": {
-        "harness_report": ROOT / "qwen3-30b-wp-30_70-reasoning-merged-v4.lite300_v1.json",
+        "harness_report": ROOT / "output/bench17/swebench_harness_report_lite300_v1.json",
         "predictions": ROOT / "output/bench17/swebench_predictions.jsonl",
         "run_id": "lite300_v1",
         "dataset": "SWE-bench/SWE-bench_Lite",
@@ -28,7 +28,7 @@ LEGS = {
         "scoped_n": 300,
     },
     "php43": {
-        "harness_report": ROOT / "qwen3-30b-wp-30_70-reasoning-merged-v4.php43_v1.json",
+        "harness_report": ROOT / "output/bench17/swebench_harness_report_php43_v1.json",
         "predictions": ROOT / "output/bench17/swebench_predictions_php.jsonl",
         "run_id": "php43_v1",
         "dataset": "SWE-bench/SWE-bench_Multilingual (PHP-repo subset: phpoffice/phpspreadsheet, laravel/framework, php-cs-fixer/php-cs-fixer, briannesbitt/carbon)",
