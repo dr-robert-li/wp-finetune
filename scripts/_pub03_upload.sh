@@ -5,6 +5,10 @@
 # Log: logs/hf_upload_18_02.log
 set -uo pipefail
 cd /home/robert_li/Desktop/projects/wp-finetune
+# Xet backend wedged on aarch64 (10 workers stuck "pre-uploading" 0 bytes for 1h, 2026-07-11).
+# Force classic LFS multipart via hf_transfer instead.
+unset HF_XET_HIGH_PERFORMANCE
+export HF_HUB_DISABLE_XET=1
 export HF_HUB_ENABLE_HF_TRANSFER=1
 
 GEN_REPO=iamchum/wp-qwen3-30b-a3b-wp-gen-v1.2
