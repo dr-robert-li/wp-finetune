@@ -1,0 +1,83 @@
+{
+  "requirement": "PUB-03",
+  "title": "Post-upload validation \u2014 round-trip from DOWNLOADED HF artifacts",
+  "generated_utc": "2026-07-12",
+  "downloaded_from_hf": true,
+  "scratch_paths": {
+    "judge_gguf": "models/_hf_dl_scratch/judge/wp-v1.3-judge-s1.Q8_0.gguf",
+    "gen_dir": "models/_hf_dl_scratch/gen",
+    "note": "scratch cleaned after validation; re-download to reproduce"
+  },
+  "api_listing": {
+    "ok": true,
+    "repos": {
+      "iamchum/wp-qwen3-30b-a3b-wp-gen-v1.2": {
+        "public": true,
+        "files": {
+          "README.md": 7507,
+          "chat_template.jinja": 4168,
+          "config.json": 1020,
+          "generation_config.json": 213,
+          "model-00001-of-00013.safetensors": 4983533312,
+          "model-00002-of-00013.safetensors": 4985158216,
+          "model-00003-of-00013.safetensors": 4985158600,
+          "model-00004-of-00013.safetensors": 4985159792,
+          "model-00005-of-00013.safetensors": 4985159792,
+          "model-00006-of-00013.safetensors": 4985159792,
+          "model-00007-of-00013.safetensors": 4985159792,
+          "model-00008-of-00013.safetensors": 4985159792,
+          "model-00009-of-00013.safetensors": 4985159792,
+          "model-00010-of-00013.safetensors": 4985159792,
+          "model-00011-of-00013.safetensors": 4985159792,
+          "model-00012-of-00013.safetensors": 4985159792,
+          "model-00013-of-00013.safetensors": 1246289424,
+          "model.safetensors.index.json": 1699795,
+          "tokenizer.json": 11422650,
+          "tokenizer_config.json": 664
+        },
+        "matches_manifest": true
+      },
+      "iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf": {
+        "public": true,
+        "files": {
+          "README.md": 8942,
+          "wp-v1.3-judge-s0.Q8_0.gguf": 32483931840,
+          "wp-v1.3-judge-s1.Q8_0.gguf": 32483931840,
+          "wp-v1.3-judge-s2.Q8_0.gguf": 32483931840
+        },
+        "matches_manifest": true
+      }
+    }
+  },
+  "gguf_load": {
+    "ok": true,
+    "engine": "llama.cpp llama-server (~/llama.cpp/build/bin), -ngl 999 -c 12288 --jinja",
+    "header": {
+      "magic": "GGUF",
+      "version": 3,
+      "n_tensors": 579,
+      "arch": "qwen3moe",
+      "expert_count": 128,
+      "block_count": 48,
+      "file_type": "7 (Q8_0)",
+      "size_bytes": 32483931840
+    },
+    "judge_smoke_parsed": true,
+    "judge_smoke": {
+      "prompt_source": "data/phase4_4/smoke_prompts.json idx 0",
+      "parse_format": "json",
+      "prose_rubric_dims": 9,
+      "overall_score": 74.0,
+      "response_file": "output/packaging/pub03_smoke/judge_smoke_response.json"
+    }
+  },
+  "gen_smoke": {
+    "ok": true,
+    "php_produced": true,
+    "routing_correct": true,
+    "engine": "vLLM (serve_30_70_vllm.sh, MODEL_DIR=downloaded copy, enable_thinking=false, temperature 0.0)",
+    "prompt_source": "data/phase4_4/smoke_prompts.json idx 121 (<wp_gen> process refund)",
+    "evidence": "WPCS-shaped PHP: snake_case, tab indent, wc_get_order/WP_Error/__()-i18n with translators comments",
+    "response_file": "output/packaging/pub03_smoke/gen_smoke_response.json"
+  }
+}
