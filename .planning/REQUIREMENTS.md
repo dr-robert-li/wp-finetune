@@ -393,6 +393,50 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NEXT-01 | Phase 19 | Complete (base locked: `19-NEXT-BASE-SELECTION.md`) |
 | NEXT-02 | Phase 19 | Complete (`.planning/V4-RERUN-ROADMAP.md`) |
 
+## v4.0 Requirements — Pipeline Rerun on Qwen3.6-35B-A3B
+
+Master plan: `.planning/V4-RERUN-ROADMAP.md` (locked 2026-07-11, re-verified 2026-07-12 — `.planning/research/SUMMARY.md`).
+Pre-registered success criteria: judge rho **>0.85 single-seed OR >0.87 3-seed ensemble** (vs 0.8075 wall); wp-bench **≥0.4286** floor. All gates CI-aware (bootstrap lower bound clears the bar). Cost note: Tinker price rise 2026-07-17 (train ~+10%).
+
+### Base Bring-Up (Stage 1.5 + smoke gates)
+
+- [ ] **BASE-01**: Qwen3.6-35B-A3B downloads and loads on GB10 (trust_remote_code on model+tokenizer, transformers 5.x import check, `Qwen3_5MoeForConditionalGeneration` class resolution)
+- [ ] **BASE-02**: eos/pad token-ID alignment gate passes — `model.config.eos_token_id`/`pad_token_id` assert-match tokenizer special tokens + stop-token smoke generate; SFT blocked on failure (QwenLM #96, WAI upstream)
+- [ ] **BASE-03**: DeltaNet aarch64 serving smoke passes WITH CUDA-graph capture enabled (vLLM ≥0.19.0; vLLM #35945 risk; `--enforce-eager` fallback documented; `use_kernels` decision recorded)
+- [ ] **BASE-04**: VL merge-path validated end-to-end — Tinker LoRA export → merge onto `model.language_model.*` keys → vLLM serve (`--language-model-only`) → real generation round-trip; Tinker LoRA target-module resolution logged (dual key-prefix silent-partial-load risk)
+
+### SFT Generation Model (Stage 2)
+
+- [ ] **GEN-01**: Thinking-mode/`<think>` SFT data-format decision recorded + rendered-example spot-check (no spurious empty `<think></think>` blocks, QwenLM #131; max tokenized length asserted under Tinker 64K cap) before any training data feeds
+- [ ] **GEN-02**: Generation model SFT completes on reasoning mix (reuse Stage-1 data, MoE-only LoRA r32, LR ≤2e-5, frozen router, `output_router_logits=True`)
+- [ ] **GEN-03**: Gen model clears wp-bench floor 0.4286 (CI lower bound; or freshly-measured noise-adjusted floor, measured not assumed)
+
+### SFT Judge Model (Stage 3 — the crux)
+
+- [ ] **JUDGE-01**: Judge-output-format-compliance smoke on the raw pre-SFT base early (community-reported 18% noncompliance — the failure mode that killed 3/4 ratios on the old base)
+- [ ] **JUDGE-02**: 3-seed relabel-SFT (seeds {1,0,2}) completes reusing v1.3 labels (`data/relabel_v1/`; re-open condition per V4-RERUN-ROADMAP discretion item 2)
+- [ ] **JUDGE-03**: Judge rho measured vs held-out relabeled val (`scripts/relabel/eval_relabel.py`, vLLM-served, 8192-token cap) against pre-registered targets; failure disposition recorded as valid outcome if unmet
+
+### Final Evaluation (Stage 4)
+
+- [ ] **EVAL4-01**: A/B eval vs v3.0 shipping figures (wp-bench + judge rho, same harness) under pre-registered criteria; results committed before any packaging decision
+
+### Conditional Gates (re-tests, no_winner is a result)
+
+- [ ] **GATE4-01**: RL re-test ONLY with a materially different reward family (execution-grounded/preference/multi-turn); pre-registered kill criterion carried (validated teacher-Spearman over warm-start noise + codegen Goodhart trip-wire); smoke-scale before full budget
+- [ ] **GATE4-02**: Sieve/protected-mask tooling adapted BEFORE Gate B — profiler traversal `model.model.language_model.layers`, n_experts 128→256 across 4 scripts, DeltaNet/Attention strata split, empirical shared-expert-exclusion-from-router_logits verification
+- [ ] **GATE4-03**: MoE-Sieve k-sweep re-test (TOST ε=2pp, CI-aware) on adapted tooling
+- [ ] **GATE4-04**: Merge + prune re-test (AIMER/REAP, gate-before-remove, per-dimension retention esp. D2_security)
+
+### Packaging (Stage 5 — quantization mandatory)
+
+- [ ] **PKG4-01**: Q8 GGUF pair conversion (llama.cpp ≥b9180 pin; GGUF block-count sanity vs safetensors index; concurrent-sequence CUDA-backend smoke; shared-expert quant-type metadata independently verified)
+- [ ] **PKG4-02**: Cascading compression gates re-run (Gate 1 bf16 baseline / Gate 2 pre-determined "warranted" for pair serving — 134 GiB bf16 > 121 GB host / ladder Q8→Q6→Q5 within ±2pp; NO uniform 4-bit nf4; below-Q8 requires DeltaNet recurrent-state tensor precision check)
+
+### Publication Refresh
+
+- [ ] **PUB4-01**: HF publication refresh — cards updated with v4.0 lineage + benchmark deltas vs v3.0, post-upload validation round-trip (same PUB-03 discipline)
+
 **Coverage:**
 
 - v1 requirements: 39 total (32 complete, 7 eval pending)
@@ -401,9 +445,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 - v2.0 requirements: 16 total (0 complete) — PROF(5) + GATE-01(1) + GRPO(8) + RLEV(2) [Phases 7-10]
 - v3.0 requirements: 21 total (0 complete) — SIEVE(5) + EVAL2(2) + MERGE(1) + PRUNE(6) + EVAL3(2) + PKG(5) [Phases 11-15]
 - DPLT requirements: 7 total (deferred -> v3.0 PKG/PRUNE)
-- v3.1 requirements: 8 total (3 complete: BENCH-01..03) — BENCH(3) + PUB(3) + NEXT(2) [Phases 17-19]
-- Total mapped to phases: 109 active + 7 deferred (all requirements mapped, 0 unmapped)
+- v3.1 requirements: 8 total (8 complete) — BENCH(3) + PUB(3) + NEXT(2) [Phases 17-19]
+- v4.0 requirements: 18 total (0 complete) — BASE(4) + GEN(3) + JUDGE(3) + EVAL4(1) + GATE4(4) + PKG4(2) + PUB4(1) — traceability to phases filled by v4.0 roadmap
+- Total mapped to phases: 109 active + 7 deferred + 18 v4.0 pending roadmap mapping
 
 ---
 *Requirements defined: 2026-03-26*
-*Last updated: 2026-04-08 — Pipeline reordered per Issue #1 (D-07): RL before MoE-Sieve; GRPO-01-04 moved to Phase 8, GRPO-05-08 to Phase 9, SIEVE to Phase 11, EVAL2 to Phase 12, MERGE/PRUNE to Phase 13, EVAL3 to Phase 14, PKG to Phase 15; GRPO-05/06 updated for full-MoE RL + GSPO primary (D-08); RLEV-01/02 added for Phase 10; SIEVE updated for post-RL context; AIMER primary (D-09), REAP optional*
+*Last updated: 2026-07-12 — v4.0 requirements added (Pipeline Rerun on Qwen3.6-35B-A3B): BASE/GEN/JUDGE/EVAL4/GATE4/PKG4/PUB4, 18 REQ-IDs from V4-RERUN-ROADMAP.md + 2026-07-12 research re-verification*
