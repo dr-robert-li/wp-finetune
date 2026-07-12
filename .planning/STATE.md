@@ -1,18 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.1
-milestone_name: Benchmark, Publish & Next Base
-current_phase: 19
-current_phase_name: base LOCKED Qwen/Qwen3.6-35B-A3B; `.planning/V4-RERUN-ROADMAP.md` maps full PIPELINE.md rerun
-status: phase-18-complete
-stopped_at: "Phase 18 COMPLETE 2026-07-12 (PUB-01..03) — v3.1 MILESTONE COMPLETE (17/18/19 all verified). Two-model pair PUBLISHED PUBLIC on HF: iamchum/wp-qwen3-30b-a3b-wp-gen-v1.2 (57.0 GB, 20 files, bf16 + tokenizer + card) + iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf (90.7 GB, 3x Q8_0 seeds + card). Validated from DOWNLOADED artifacts: API listing exact-match vs manifest, GGUF loads (qwen3moe 128-expert Q8_0), judge smoke parses (overall 74 PASS), gen smoke returns WPCS PHP — receipt output/packaging/pub03_validation_receipt.json. Upload interventions (18-02-SUMMARY): read-token 403 -> user write token; upload-large-folder worker-pool deadlock x2 -> sequential per-file hf upload + io-stall watchdog; background-process reaping -> setsid nohup detached relaunches. Next: v4.0 rerun on Qwen3.6-35B-A3B per .planning/V4-RERUN-ROADMAP.md, gated on explicit human sign-off. Prior context: Phase 19 COMPLETE 2026-07-11 (NEXT-01/02, express path per user goal directive, run ahead of Phase 18 completion): base LOCKED Qwen/Qwen3.6-35B-A3B, all five rationale axes live-verified (architecture, GB10 memory budget, Tinker/Unsloth/vLLM/llama.cpp support, license, coding-benchmark deltas) — `19-NEXT-BASE-SELECTION.md`. `.planning/V4-RERUN-ROADMAP.md` maps all 8 PIPELINE stages/gates with deltas, carried-forward known results, re-test gates, cost estimates, two architecture-delta work items, six carry-forward lessons, pre-registered judge-rho success criteria (>0.85 single-seed / >0.87 ensemble), proposed v4.0 phase structure, relabel-reuse recommendation. v4.0 execution is a FUTURE milestone gated on explicit human sign-off — no downloads/training happened in this phase. Phase 18 (production sweep + HF publication) status untouched by this update; see its own docs/session for current state."
-last_updated: "2026-07-12T00:56:45.344Z"
+milestone: v4.0
+milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
+status: planning
+last_updated: "2026-07-12T12:54:09.194Z"
+last_activity: 2026-07-12
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 6
-  completed_plans: 6
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -26,13 +24,10 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 
 ## Current Position
 
-Phase: 19 — Next-Base Rerun Roadmap — COMPLETE 2026-07-11 (base LOCKED Qwen/Qwen3.6-35B-A3B; `.planning/V4-RERUN-ROADMAP.md` maps full PIPELINE.md rerun). v4.0 execution gated on human sign-off, not yet started. v3.1 milestone active; Phase 18 (production sweep + HF publication) remains open and is tracked independently — this update does not change its status.
-Prev: Phase 17 — Benchmark Expansion — COMPLETE 2026-07-11 (wp-bench 0.4365 full rerun; SWE-bench Lite-300 1.67% / PHP-43 0%, pre-registered, disclosed). v3.0 CLOSED 2026-07-11 (Phases 11-16 complete: Sieve full, prune no_winner, Q8 GGUF lossless ship tier, PIPELINE.md locked).
-Historical (v3.0 entry point):
-Phase: 11 — Compression & Packaging
-Prev: Phases 09 (GSPO), 08.2 (reward-validity), 10 (RL comparative eval) — all CLOSED. RL rejected; gap-closure investigation CLOSED 2026-07-08.
-Ship artifact: **v1.3 3-seed median ensemble judge** (rho 0.842; single-seed s1 0.827 fallback if 3x serve unacceptable) + **v1.2 generation model** (codegen bar 0.4616). Both frozen; no further training on this base.
-Requirements (v3.0, per ROADMAP Phases 11-15): MoE-Sieve routing profile on v1.2 SFT policy → sieved-model eval → LoRA merge + AIMER prune on protected mask → eval vs baseline → package for serving.
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-07-12 — Milestone v4.0 started
 
 ### 2026-07-08 — Gap-closure investigation (judge reasoning ceiling)
 
