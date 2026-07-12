@@ -4,6 +4,42 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-07-12 — Phase 18: the models are public. The upload fought back the whole way.
+
+**What shipped.** Both halves of the pair are live on HuggingFace under iamchum:
+`wp-qwen3-30b-a3b-wp-gen-v1.2` (57 GB of bf16 safetensors plus the task-token tokenizer) and
+`wp-qwen3-30b-a3b-wp-judge-v1.3-gguf` (all three Q8_0 ensemble seeds, 90.7 GB, with the single-seed
+fallback documented on the card). Nothing shipped that shouldn't have: the bf16 judge GGUFs and the
+base-model GGUF stayed home, enforced by an allowlist manifest rather than good intentions. And the
+validation wasn't a vibe check on local files. We pulled the artifacts back down from the Hub and made
+the downloaded copies prove themselves: the GGUF loads, a judge prompt comes back as a parseable
+9-dimension critique, and the gen model serves WPCS-shaped PHP through vLLM. The receipt is in
+output/packaging/pub03_validation_receipt.json.
+
+**The upload deserves its own paragraph, because 147 GiB did not want to leave this machine.** First
+the cached token turned out to be a June read-only leftover, which cost half a day waiting on a write
+token. Then `hf upload-large-folder`, the tool built for exactly this job, deadlocked twice: ten
+workers parked at "pre-uploading" with zero bytes read for an hour, once with the Xet backend and once
+without it. A single-file probe went through cleanly, which pinned the fault on the tool's worker pool
+rather than the network. So the shipping path ended up being the boring one: a shell loop uploading one
+file at a time with a three-attempt retry and a watchdog that kills any transfer showing no io growth
+for five minutes. The third failure mode was self-inflicted: background processes launched from
+subagent contexts get reaped when the context ends, which silently killed the loop mid-shard and later
+a validation download. The fix, detached setsid relaunches owned by the session, is worth remembering
+for every long-running job this project starts from an agent.
+
+**Sweep half.** Before any of that, 18-01 reconciled README, PROJECT.md, and wp-moe.md against the
+model card as the single source of truth, gave the README an honest Benchmarks section, archived ten
+one-off scripts, and, satisfyingly, caught six files an earlier sweep had wrongly deprecated while they
+were still load-bearing. The double-grep rule (imports and string literals both) came out of Phase 17's
+bruise and it earned its keep on the very first use.
+
+**Where that leaves things.** v3.1 is done: benchmarks measured, pair published, next-base roadmap
+locked. The project's active work now stops at a clean edge. The only thing on the other side of that
+edge is v4.0, the Qwen3.6-35B-A3B rerun, and that starts with a human saying go.
+
+---
+
 ## 2026-07-11 — Phase 19: I locked the next base, and it does not fit on the host at bf16.
 
 I spent this session on a planning-only phase, so nothing got downloaded and nothing trained. The
