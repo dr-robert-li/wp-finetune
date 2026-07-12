@@ -808,10 +808,10 @@ Plans:
   2. A single HF repo (or paired repos) carries both models with the MODEL_CARD.md lineage, quantization ladder results, and usage examples for both task tokens
   3. Post-upload validation: files download, GGUF loads, and a smoke gen/judge prompt round-trips from the published artifact
 
-**Plans**: 2 plans
+**Plans**: 2/2 plans complete
 
-- [ ] 18-01-PLAN.md — PUB-01: production sweep — README/PROJECT/PIPELINE currency vs Phase 17 numbers + MODEL_CARD, archive stale artifacts to deprecated/ via mandatory double-grep, clean root (Wave 1)
-- [ ] 18-02-PLAN.md — PUB-02+03: package the two-model pair, publish two PUBLIC HF repos under iamchum (gen bf16 + judge Q8 GGUF) with cross-linked cards, post-upload download/GGUF-load/gen+judge round-trip validation (Wave 2)
+- [x] 18-01-PLAN.md — PUB-01: production sweep — README/PROJECT/PIPELINE currency vs Phase 17 numbers + MODEL_CARD, archive stale artifacts to deprecated/ via mandatory double-grep, clean root (Wave 1)
+- [x] 18-02-PLAN.md — PUB-02+03: package the two-model pair, publish two PUBLIC HF repos under iamchum (gen bf16 + judge Q8 GGUF) with cross-linked cards, post-upload download/GGUF-load/gen+judge round-trip validation (Wave 2)
 
 ### Phase 19: Next-Base Rerun Roadmap
 
@@ -868,5 +868,5 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 15. Packaging | v3.0 | 1/1 | Complete (Gates 1-2 + card + bf16 E2E; Q8 GGUF LOSSLESS ship tier; Q6/Q5 deferred) | 2026-07-11 |
 | 16. Pipeline Lockdown & Repo Cleanup | v3.0 | 1/1 | Complete (PIPELINE.md + 95 files deprecated + cleanup) | 2026-07-10 |
 | 17. Benchmark Expansion (wp-bench + SWE-bench gen) | v3.1 | 2/3 | In Progress|  |
-| 18. Production Sweep & HuggingFace Publication | v3.1 | - | Planned | - |
+| 18. Production Sweep & HuggingFace Publication | v3.1 | 2/2 | Complete   | 2026-07-12 |
 | 19. Next-Base Rerun Roadmap | v3.1 | 1/1 | Complete (base locked: Qwen3.6-35B-A3B; V4-RERUN-ROADMAP.md written) | 2026-07-11 |

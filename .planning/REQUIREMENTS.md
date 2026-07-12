@@ -231,8 +231,8 @@ Sub-experiment: Does WordPress domain specialization create enough routing conce
 ### v3.1 Production Sweep & Publication (Phase 18)
 
 - [ ] **PUB-01**: Repo sweep — README/PROJECT/PIPELINE/STATE mutually consistent; stale artifacts to deprecated/ with README notes; clean root.
-- [ ] **PUB-02**: Two-model pair packaged together (v1.2 gen + v1.3 3-seed ensemble judge, Q8 GGUF ship tier) with full-lineage model card.
-- [ ] **PUB-03**: HuggingFace upload + post-upload validation (download, GGUF load, gen/judge smoke round-trip).
+- [x] **PUB-02**: Two-model pair packaged together (v1.2 gen + v1.3 3-seed ensemble judge, Q8 GGUF ship tier) with full-lineage model card.
+- [x] **PUB-03**: HuggingFace upload + post-upload validation (download, GGUF load, gen/judge smoke round-trip).
 
 ### v3.1 Next-Base Rerun Roadmap (Phase 19)
 
@@ -388,8 +388,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BENCH-02 | Phase 17 | Complete |
 | BENCH-03 | Phase 17 | Complete |
 | PUB-01 | Phase 18 | Pending |
-| PUB-02 | Phase 18 | Pending |
-| PUB-03 | Phase 18 | Pending |
+| PUB-02 | Phase 18 | Complete |
+| PUB-03 | Phase 18 | Complete |
 | NEXT-01 | Phase 19 | Complete (base locked: `19-NEXT-BASE-SELECTION.md`) |
 | NEXT-02 | Phase 19 | Complete (`.planning/V4-RERUN-ROADMAP.md`) |
 

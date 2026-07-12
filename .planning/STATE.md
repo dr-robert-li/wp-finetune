@@ -3,16 +3,16 @@ gsd_state_version: 1.0
 milestone: v3.1
 milestone_name: Benchmark, Publish & Next Base
 current_phase: 19
-current_phase_name: Next-Base Rerun Roadmap (COMPLETE)
+current_phase_name: base LOCKED Qwen/Qwen3.6-35B-A3B; `.planning/V4-RERUN-ROADMAP.md` maps full PIPELINE.md rerun
 status: phase-18-blocked-on-hf-write-token
 stopped_at: "SESSION PAUSE 2026-07-11 (user cleared goal): Phases 15/17/19 COMPLETE + VERIFIED + PUSHED. Phase 18 PARTIAL: 18-01 sweep DONE; 18-02 Task 1 DONE (HF cards + upload manifest, commit 72771a9); Tasks 2-3 (create 2 public repos, ~155 GB upload, downloaded-artifact validation) BLOCKED at the executor's auth checkpoint — cached HF token (~/.cache/huggingface/token, dated Jun 6, name 'autoresearch') is role:read; repos create 403s. RESUME: mint Write-scope token as iamchum, `hf auth login`, then re-run 18-02 Tasks 2-3 per .planning/phases/18-production-sweep-huggingface-publication/18-02-PLAN.md (manifest output/packaging/pub03_upload_manifest.json, cards output/packaging/hf_cards/), then phase 18 verification + closeout. Prior context: Phase 19 COMPLETE 2026-07-11 (NEXT-01/02, express path per user goal directive, run ahead of Phase 18 completion): base LOCKED Qwen/Qwen3.6-35B-A3B, all five rationale axes live-verified (architecture, GB10 memory budget, Tinker/Unsloth/vLLM/llama.cpp support, license, coding-benchmark deltas) — `19-NEXT-BASE-SELECTION.md`. `.planning/V4-RERUN-ROADMAP.md` maps all 8 PIPELINE stages/gates with deltas, carried-forward known results, re-test gates, cost estimates, two architecture-delta work items, six carry-forward lessons, pre-registered judge-rho success criteria (>0.85 single-seed / >0.87 ensemble), proposed v4.0 phase structure, relabel-reuse recommendation. v4.0 execution is a FUTURE milestone gated on explicit human sign-off — no downloads/training happened in this phase. Phase 18 (production sweep + HF publication) status untouched by this update; see its own docs/session for current state."
-last_updated: "2026-07-11T01:00:00.000Z"
+last_updated: "2026-07-12T00:56:45.344Z"
 progress:
   total_phases: 3
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
-  percent: 33
+  completed_phases: 3
+  total_plans: 6
+  completed_plans: 6
+  percent: 100
 ---
 
 # Project State
@@ -226,6 +226,7 @@ Progress: [██████████] 100%
 | Phase 13 P07 | 10min | 1 tasks | 2 files |
 | Phase 17 P01 | 25min | 2 tasks | 8 files |
 | Phase 17 P02 | 40min | 4 tasks | 6 files |
+| Phase 18 P02 | ~13h | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -292,6 +293,7 @@ Recent decisions affecting current work:
 - [Phase 17]: [Phase 17-01]: BENCH-01 fresh full wp-bench (0.4365) reproduces 0.4484 Gate-1 within the 5.20pp seed-noise floor — no regression, same vLLM bf16 stack confirmed
 - [Phase ?]: [Phase 17-02]: SWE-bench scope pre-registered before results: Lite-300 primary + PHP-43 secondary, oracle, generation-mode, native arm64 local Docker (<=20h rule; Verified-500 out at 27.21h projected)
 - [Phase ?]: [Phase 17-02]: Native arm64 SWE-bench eval CONFIRMED working (gold patches resolve via make_test_spec arch=arm64 wrapper); amd64 fails fast on this host (no QEMU) — sb-cli/cloud fallback not needed
+- [Phase ?]: HF publication: two cross-linked PUBLIC model repos under iamchum (gen bf16 safetensors, judge Q8_0 GGUF-only); Xet disabled + sequential per-file upload on this host
 
 ### Pending Todos
 
@@ -337,7 +339,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-10T19:38:20.960Z
+Last session: 2026-07-12T00:56:34.570Z
 Stopped at: Completed 11-05-PLAN.md — Phase 11 Sieve chain CLOSED: optimal_k=FULL locked (human sign-off 2026-07-10), prune_set_for_phase13.json emitted, SIEVE-02/03/05 documented
 
 Prior session: 2026-07-08T00:00:00.000Z
