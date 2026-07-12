@@ -7,7 +7,7 @@
 - ✅ **v1.2 Judge Reasoning Fine-Tune** - Phases 4.1-4.4 (complete; relabel SFT → v1.3 judge promoted 2026-07-04)
 - ❌ **v2.0 RL Alignment** - Phases 7-10 (infra COMPLETE; RL REJECTED at Phase 10 gate, closed 2026-07-05)
 - ✅ **v3.0 MoE-Sieve, Pruning & Packaging** - Phases 11-16 (complete 2026-07-11 — Sieve full, prune no_winner, Q8 GGUF lossless ship tier, pipeline locked in PIPELINE.md)
-- 🚧 **v3.1 Benchmark, Publish & Next Base** - Phases 17-19 (active — wp-bench + SWE-bench gen eval, HF publication, next-base rerun roadmap)
+- ✅ **v3.1 Benchmark, Publish & Next Base** - Phases 17-19 (complete 2026-07-12 — wp-bench + SWE-bench gen eval, HF pair published PUBLIC, V4 rerun roadmap locked on Qwen3.6-35B-A3B)
 
 ## Overview
 
@@ -102,11 +102,11 @@ Decimal phases appear between their surrounding integers in numeric order.
 </details>
 
 <details open>
-<summary>v3.1 Benchmark, Publish & Next Base (Phases 17-19) — ACTIVE</summary>
+<summary>v3.1 Benchmark, Publish & Next Base (Phases 17-19) — COMPLETE 2026-07-12</summary>
 
 - [x] **Phase 17: Benchmark Expansion — wp-bench + SWE-bench Generation Eval** - Full wp-bench run on the shipped gen model plus a SWE-bench generation-mode eval to position the model against a public coding benchmark; document scores honestly in the model card
-- [ ] **Phase 18: Production Sweep & HuggingFace Publication** - Full repo sweep (docs current, stale artifacts to deprecated/, streamlined layout), then package the two-model pair (v1.2 gen + v1.3 judge ensemble, Q8 GGUF ship tier) and publish to HuggingFace
-- [ ] **Phase 19: Next-Base Rerun Roadmap** - Plan the full pipeline rerun on the latest Qwen-family base (research current best same-class MoE), producing a costed roadmap for the next milestone
+- [x] **Phase 18: Production Sweep & HuggingFace Publication** - Full repo sweep (docs current, stale artifacts to deprecated/, streamlined layout), then package the two-model pair (v1.2 gen + v1.3 judge ensemble, Q8 GGUF ship tier) and publish to HuggingFace (COMPLETE 2026-07-12 — both HF repos PUBLIC, verification PASSED 7/7)
+- [x] **Phase 19: Next-Base Rerun Roadmap** - Plan the full pipeline rerun on the latest Qwen-family base (research current best same-class MoE), producing a costed roadmap for the next milestone (COMPLETE 2026-07-11 — base LOCKED Qwen3.6-35B-A3B, V4-RERUN-ROADMAP.md)
 
 </details>
 
