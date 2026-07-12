@@ -4,6 +4,29 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-07-12: the base anchor lands, and it keeps the gen story honest.
+
+One number was missing from the benchmark table: what the untrained base scores on wp-bench. The judge
+side already had its anchor (the raw base produces 0 parseable verdicts out of 121, so the trained
+judge's 0.8075 rho is a capability created from nothing). The gen side had 0.4365 for v1.2 but nothing
+to subtract from it. So I served `Qwen3-30B-A3B` itself, no task tokens, `<wp_gen>` hitting it as plain
+text, on the exact same vLLM bf16 stack, seed 1337, full 344-test suite, real-generation warm-up gate,
+and let the harness run unmodified.
+
+The base scored 0.4033 overall, knowledge 0.4688, execution 0.3542. That makes the fine-tune's lift
++3.32pp fresh-vs-fresh, +4.51pp against the Gate-1 figure, and both deltas sit inside our own 5.20pp
+seed-noise floor. I want to say that plainly rather than dress it up: on this benchmark, the gen
+fine-tune's measurable lift over the base is modest, and I cannot claim it clears noise. What the
+anchor also shows is why: Qwen3-30B already ships with a lot of WordPress. Most of the base's score
+comes from the knowledge MCQ split, where it lands within ~2pp of the trained model; the execution
+split is where the fine-tune pulls its largest gap (+4.17pp), which at least points in the direction
+the training aimed. The contrast with the judge could not be sharper. The judge is a created
+capability; the gen model is a polished one. The receipts say exactly that now, and I would rather the
+table read honestly at 0.4033 vs 0.4365 than imply the fine-tune invented WordPress competence the
+base already had. Receipt: `output/bench17/wpbench_base_anchor.json`.
+
+---
+
 ## 2026-07-12 — Phase 18: the models are public. The upload fought back the whole way.
 
 **What shipped.** Both halves of the pair are live on HuggingFace under iamchum:

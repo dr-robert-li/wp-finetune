@@ -82,6 +82,7 @@ for all scores in this repo).
 | Benchmark | Score | Notes |
 |---|---|---|
 | wp-bench (in-domain, full 344-test suite) | **0.4365** | 1.19pp below the 0.4484 Gate-1 reference, inside the 5.20pp seed-noise floor |
+| wp-bench, untrained base anchor (Qwen3-30B-A3B) | **0.4033** | same suite/stack/seed (2026-07-12); fine-tune lift +3.32pp, inside the noise floor — the judge, not gen, carries the training's clearest gain |
 | Judge Spearman rho, 3-seed ensemble | **0.8075** | single-seed s1 fallback: 0.8017 |
 | Q8_0 GGUF judge (ship tier) | **0.8056 ens rho, −47% size** | lossless vs bf16 (Δ−0.4pp), 0/121 parse failures |
 | SWE-bench Lite (out-of-domain) | **1.67%** resolved (5/300) | generation-mode, oracle retrieval, native arm64 |

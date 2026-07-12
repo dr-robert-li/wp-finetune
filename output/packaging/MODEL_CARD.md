@@ -101,12 +101,14 @@ fallback trades ~0.006 rho for one-third the serve cost.
 
 ## Benchmarks
 
-Both numbers below are fresh, receipt-backed measurements on the shipping stack (vLLM bf16,
-`models/qwen3-30b-wp-30_70-reasoning-merged-v4`, temperature 0.0), taken 2026-07-11.
+Numbers below are fresh, receipt-backed measurements on the shipping stack (vLLM bf16,
+`models/qwen3-30b-wp-30_70-reasoning-merged-v4`, temperature 0.0), taken 2026-07-11; the base
+anchor row serves the untrained `models/Qwen3-30B-A3B` on the same stack (2026-07-12).
 
 | Benchmark | Score | Scope / config |
 |---|---|---|
 | **wp-bench** (in-domain) | **0.4365** overall | full 344-test wp-core-v1 suite, unlimited; knowledge 0.4906, correctness 0.3958 |
+| **wp-bench, untrained base anchor** (Qwen3-30B-A3B) | **0.4033** overall | same suite/stack/seed, 2026-07-12; knowledge 0.4688, correctness 0.3542 |
 | **SWE-bench Lite** (out-of-domain) | **1.67%** resolved (5/300) | generation-mode (non-agentic), oracle retrieval, 24k context, native arm64 local Docker eval |
 | **SWE-bench-Multilingual PHP subset** (in-language, out-of-domain) | **0%** resolved (0/43) | same protocol; 4 PHP repos (phpspreadsheet, laravel, php-cs-fixer, carbon) |
 
@@ -114,6 +116,15 @@ Both numbers below are fresh, receipt-backed measurements on the shipping stack 
 figure, well inside the project's measured 5.20pp seed-noise floor, and clears the 0.4286 acceptance
 bar. Same stack both sides (vLLM bf16, identical checkpoint and sampling); no regression signal.
 Receipt: `output/bench17/wpbench_full_gate_rerun.json`.
+
+**Base anchor.** The untrained foundation model (`models/Qwen3-30B-A3B`, no task-token embeddings,
+`<wp_gen>` hitting it as plain text) scores 0.4033 on the identical harness, stack, and seed. The
+fine-tune's lift is +3.32pp fresh-vs-fresh (0.4365 vs 0.4033), +4.51pp vs the Gate-1 figure — both
+inside the 5.20pp seed-noise floor. Most of the base's score comes from the knowledge MCQ split
+(0.4688) rather than execution (0.3542): Qwen3-30B already knows a lot of WordPress out of the box.
+On this benchmark the gen fine-tune's measurable lift over base is modest; the training's clearest
+demonstrated capability gain is the judge (untrained base: 0/121 parseable verdicts). Receipt:
+`output/bench17/wpbench_base_anchor.json`.
 
 **SWE-bench, and why the number is low.** SWE-bench Lite is Python-repository patch generation;
 this model is WordPress/PHP-specialized. A low out-of-domain number is expected and is not a quality

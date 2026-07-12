@@ -1,0 +1,14 @@
+{
+  "wpbench_score": 0.4033,
+  "scores": {
+    "knowledge": 0.46875,
+    "correctness": 0.3541666666666667,
+    "quality": null,
+    "overall": 0.4033
+  },
+  "results_file": "/home/robert_li/Desktop/projects/wp-finetune/output/bench17/base_anchor/wp_bench_results_20260712_190952.json",
+  "ran": true,
+  "served_model_dir": "models/Qwen3-30B-A3B",
+  "port": 8020,
+  "wall_clock_s": 701.8
+}

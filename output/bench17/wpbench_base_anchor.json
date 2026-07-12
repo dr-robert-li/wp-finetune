@@ -1,0 +1,76 @@
+{
+  "title": "wp-bench base anchor: full 344-test run on the UNTRAINED foundation model (Qwen3-30B-A3B), vLLM bf16, same stack as the v1.2 gen-model rerun",
+  "generated_utc": "2026-07-12",
+  "purpose": "The gen model's comparative story lacked a base anchor: v1.2 scored 0.4365 (fresh, BENCH-01) / 0.4484 (Gate-1) on wp-bench, but no untrained-base number existed on the same stack to show what the fine-tune actually bought. The judge already has its anchor (base: 0/121 parseable verdicts). This run gives the gen side the equivalent: the untrained foundation model measured on the identical harness, config, and seed.",
+  "served_model": {
+    "path": "models/Qwen3-30B-A3B",
+    "role": "untrained foundation base (NOT any merged/fine-tuned variant)",
+    "quantization": "none — bf16 safetensors",
+    "served_model_name": "wp-30_70 (serve_30_70_vllm.sh hardcodes the served name regardless of MODEL_DIR; cosmetic)",
+    "task_token_note": "The base lacks the extended <wp_gen>/<wp_judge> task-token embeddings; harness prompts carry <wp_gen> as plain text. That is the point of the anchor — the harness ran unmodified."
+  },
+  "serving_stack": {
+    "engine": "vLLM",
+    "dtype": "bf16",
+    "image": "ghcr.io/spark-arena/dgx-vllm-eugr-nightly:latest",
+    "container": "wp-bench-base-anchor-vllm",
+    "port": 8020,
+    "max_model_len": 8192,
+    "gpu_memory_utilization": 0.55,
+    "tensor_parallel": 1,
+    "enable_thinking": false,
+    "enable_thinking_mechanism": "scripts/_wpbench_pth/usercustomize.py — same PYTHONPATH monkeypatch as every prior wp-bench measurement",
+    "driver": "scripts/bench_wpbench_base_anchor.py (clone of the archived Phase 17 driver deprecated/scripts/bench17_wpbench_full_rerun.py with MODEL_DIR swapped to the base)"
+  },
+  "warmup_gate": {
+    "method": "real_generation",
+    "not_health_check": true,
+    "result": "PASS — non-empty completion observed before the wp-bench run started",
+    "note": "The warm-up helper (scripts/_p0_vllm_smoke_serve.generate) does not carry the enable_thinking=false patch, so the base's warm-up reply opened a <think> block — expected Qwen3 default behavior, gate only requires non-empty output. The wp-bench run itself applies enable_thinking=false via _wpbench_pth, identical to the v1.2 measurement."
+  },
+  "sampling_config": {
+    "temperature": 0.0,
+    "max_tokens": 2048,
+    "request_timeout_s": 1800.0,
+    "wp_bench_run_seed": 1337,
+    "concurrency": 4
+  },
+  "run_config": {
+    "suite": "wp-core-v1",
+    "test_count": 344,
+    "test_breakdown": { "knowledge": 320, "execution": 24 },
+    "limit": null
+  },
+  "result": {
+    "wp_bench_overall": 0.4033,
+    "wp_bench_knowledge": 0.46875,
+    "wp_bench_correctness": 0.3541666666666667,
+    "wp_bench_quality": null,
+    "raw_results_file": "output/bench17/base_anchor/wp_bench_results_20260712_190952.json",
+    "raw_run_log": "output/bench17/base_anchor/wp_bench_run.log",
+    "driver_log": "logs/bench_base_anchor_run.log"
+  },
+  "wall_clock": {
+    "total_s": 701.8,
+    "total_human": "~11.7 min",
+    "includes": "vLLM boot (~533s) + real-generation warm-up + full 344-test run + container teardown"
+  },
+  "comparison": {
+    "v12_fresh_receipt": "output/bench17/wpbench_full_gate_rerun.json",
+    "v12_fresh_overall": 0.4365,
+    "gate1_overall": 0.4484,
+    "base_overall": 0.4033,
+    "delta_vs_v12_fresh": 0.0332,
+    "delta_vs_v12_fresh_pct_points": 3.32,
+    "delta_vs_gate1": 0.0451,
+    "delta_vs_gate1_pct_points": 4.51,
+    "split_deltas_vs_v12_fresh": {
+      "knowledge": { "base": 0.46875, "v12": 0.490625, "delta_pct_points": 2.19 },
+      "correctness": { "base": 0.3541666666666667, "v12": 0.3958333333333333, "delta_pct_points": 4.17 }
+    },
+    "seed_noise_floor_reference": 0.05203641569469587,
+    "seed_noise_floor_source": "output/sieve/optimal_k.json",
+    "same_stack_attestation": "Confirmed same stack as the v1.2 fresh measurement (BENCH-01): vLLM engine, bf16 dtype, same image, same port 8020, same enable_thinking=false injection, same sampling config (temp 0.0, max_tokens 2048, timeout 1800s, concurrency 4, seed 1337), same wp-core-v1 344-test suite unlimited, same real-generation warm-up gate, same _run_wpbench() code path. Only MODEL_DIR differs. No GGUF/llama.cpp path anywhere.",
+    "honest_reading": "The untrained base already scores 0.4033 on wp-bench, carried mostly by the knowledge MCQ split (0.469 of its performance vs 0.354 on execution) — Qwen3-30B ships with substantial WordPress knowledge out of the box. The gen fine-tune's lift is +3.32pp over base (fresh-vs-fresh, same stack) or +4.51pp vs the Gate-1 figure, both inside the project's own 5.20pp seed-noise floor. On this benchmark the fine-tune's measurable lift over base is modest; the training's demonstrated value is concentrated in the judge (base: 0/121 parseable verdicts, trained: full rubric compliance), not in a large wp-bench gen delta."
+  }
+}
