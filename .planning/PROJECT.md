@@ -193,4 +193,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-12 — v4.0 milestone started (Pipeline Rerun on Qwen3.6-35B-A3B); v1.2/v2.0/v3.0 milestone sections demoted to Past*
+*Last updated: 2026-07-13 — Phase 20 (Base Bring-Up) COMPLETE: BASE-01..04 verified 4/4 (download/load, eos/pad Stage 1.5 gate, DeltaNet CUDA-graph smoke, VL merge round-trip via real Tinker probe); code review 11 findings fixed. Next: Phase 21 SFT (gen+judge)*
