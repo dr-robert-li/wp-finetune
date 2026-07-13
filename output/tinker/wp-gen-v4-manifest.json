@@ -1,0 +1,68 @@
+{
+  "save_name": "wp-gen-v4",
+  "base_model": "Qwen/Qwen3.6-35B-A3B",
+  "rank": 32,
+  "train_attn": false,
+  "train_unembed": false,
+  "renderer": "qwen3_5_disable_thinking",
+  "epochs": 3,
+  "checkpoints": [
+    {
+      "epoch": 1,
+      "name": "wp-gen-v4-ep1",
+      "sampler_path": "tinker://05590ab9-4d38-57fc-bb2f-53a445891caa:train:0/sampler_weights/wp-gen-v4-ep1"
+    },
+    {
+      "epoch": 2,
+      "name": "wp-gen-v4-ep2",
+      "sampler_path": "tinker://05590ab9-4d38-57fc-bb2f-53a445891caa:train:0/sampler_weights/wp-gen-v4-ep2"
+    },
+    {
+      "epoch": 3,
+      "name": "wp-gen-v4-ep3",
+      "sampler_path": "tinker://05590ab9-4d38-57fc-bb2f-53a445891caa:train:0/sampler_weights/wp-gen-v4-ep3"
+    }
+  ],
+  "promoted": "wp-gen-v4-ep3",
+  "state_path": null,
+  "created": "2026-07-13T12:43:33.511210+00:00",
+  "fs_gate": {
+    "checkpoint": "tinker://05590ab9-4d38-57fc-bb2f-53a445891caa:train:0/sampler_weights/wp-gen-v4-ep3",
+    "streams": [
+      "cot",
+      "ctf"
+    ],
+    "gate_n": 300,
+    "threshold_rate": 0.1,
+    "threshold_wilson_upper": 0.15,
+    "arms": [
+      {
+        "temp": 0.0,
+        "terse": 0,
+        "n": 120,
+        "rate": 0.0,
+        "wilson_upper": 0.031020271055929513,
+        "pass": true
+      },
+      {
+        "temp": 0.7,
+        "terse": 3,
+        "n": 360,
+        "rate": 0.008333333333333333,
+        "wilson_upper": 0.024211132411548104,
+        "pass": true
+      }
+    ],
+    "pass": true,
+    "scope": "cot+ctf (REOPEN pre-registered terse metric; scripts/tinker_fs_gate.py standalone re-score)",
+    "in_driver_full_val_arm": {
+      "temp": 0.0,
+      "terse": 20,
+      "n": 141,
+      "rate": 0.1418,
+      "wilson_upper": 0.209,
+      "pass": false,
+      "disposition": "KNOWN MEASUREMENT ARTIFACT, not format collapse: the in-driver gate scores all 141 val rows including the 21 replay (code-gen) rows that legitimately carry no [/REASONING] (all 21 no-[/REASONING] val targets are stream=replay; 20/141 terse is bounded by that set). Documented in scripts/tinker_fs_gate.py's docstring since the v1.2 run -- the canonical REOPEN metric is cot+ctf only. The in-driver temp0.7 arm never ran (process killed mid-arm after training + temp0.0 arm completed); the canonical standalone gate above covers both temps on the persisted ep3 checkpoint."
+    }
+  }
+}
