@@ -395,7 +395,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BASE-01 | Phase 20 | Complete |
 | BASE-02 | Phase 20 | Complete |
 | BASE-03 | Phase 20 | Complete |
-| BASE-04 | Phase 20 | Pending |
+| BASE-04 | Phase 20 | Complete |
 | GEN-01 | Phase 21 | Pending |
 | GEN-02 | Phase 21 | Pending |
 | GEN-03 | Phase 21 | Pending |
@@ -421,7 +421,7 @@ Pre-registered success criteria: judge rho **>0.85 single-seed OR >0.87 3-seed e
 - [x] **BASE-01**: Qwen3.6-35B-A3B downloads and loads on GB10 (trust_remote_code on model+tokenizer, transformers 5.x import check, `Qwen3_5MoeForConditionalGeneration` class resolution)
 - [x] **BASE-02**: eos/pad token-ID alignment gate passes — `model.config.eos_token_id`/`pad_token_id` assert-match tokenizer special tokens + stop-token smoke generate; SFT blocked on failure (QwenLM #96, WAI upstream)
 - [x] **BASE-03**: DeltaNet aarch64 serving smoke passes WITH CUDA-graph capture enabled (vLLM ≥0.19.0; vLLM #35945 risk; `--enforce-eager` fallback documented; `use_kernels` decision recorded)
-- [ ] **BASE-04**: VL merge-path validated end-to-end — Tinker LoRA export → merge onto `model.language_model.*` keys → vLLM serve (`--language-model-only`) → real generation round-trip; Tinker LoRA target-module resolution logged (dual key-prefix silent-partial-load risk)
+- [x] **BASE-04**: VL merge-path validated end-to-end — Tinker LoRA export → merge onto `model.language_model.*` keys → vLLM serve (`--language-model-only`) → real generation round-trip; Tinker LoRA target-module resolution logged (dual key-prefix silent-partial-load risk)
 
 ### SFT Generation Model (Stage 2)
 

@@ -4,17 +4,17 @@ milestone: v4.0
 milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
 current_phase: 20
 current_phase_name: Base Bring-Up
-status: executing
-stopped_at: "Completed 20-03-PLAN.md — BASE-03 satisfied: DeltaNet serving smoke passed with CUDA-graph capture enabled (vllm 0.20.2rc1, use_kernels=false recorded)"
-last_updated: "2026-07-13T02:24:04.895Z"
+status: verifying
+stopped_at: "Completed 20-04-PLAN.md -- BASE-04 satisfied: VL merge-path round-trip passed (prefix-aware merge + base-vs-merged diff). Phase 20 (Base Bring-Up) COMPLETE (BASE-01/02/03/04 all satisfied)."
+last_updated: "2026-07-13T03:39:55.982Z"
 last_activity: 2026-07-13
 last_activity_desc: Phase 20 execution started
 progress:
   total_phases: 8
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
-  completed_plans: 3
-  percent: 0
+  completed_plans: 4
+  percent: 13
 ---
 
 # Project State
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-07-12)
 
 Phase: 20 (Base Bring-Up) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-13 — Phase 20 execution started
 
 ### 2026-07-08 — Gap-closure investigation (judge reasoning ceiling)
@@ -229,6 +229,7 @@ Progress: [██████████] 100%
 | Phase 20 P01 | 11min | 2 tasks | 6 files |
 | Phase 20-base-bring-up P02 | 8min | 2 tasks | 4 files |
 | Phase 20-base-bring-up P03 | 16min | 2 tasks | 5 files |
+| Phase 20 P04 | 72min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -303,6 +304,9 @@ Recent decisions affecting current work:
 - [Phase ?]: 20-02: BASE-02 satisfied — eos/pad aligned (text_config.eos_token_id 248044->248046, pad_token_id None->248044), real stop-token generation confirmed natural stop (19/64 tokens), output/base20/token_alignment.json status=pass is the Stage 1.5 gate Phase 21 must consume
 - [Phase ?]: 20-03: use_kernels=False locked — Atlas-Inference/gdn community kernel (SUS, non-allowlisted trust_remote_code) declined for 1.38x prefill-only gain; flipping to True requires a blocking-human checkpoint per T-20-03a
 - [Phase ?]: 20-03: BASE-03 satisfied — DeltaNet serves on GB10/aarch64 via vLLM 0.20.2rc1 WITH CUDA-graph capture enabled on first attempt (vLLM #35945 did not reproduce, fallback_used=false); v4 serving harness ready for 20-04
+- [Phase ?]: 20-04: AutoModelForCausalLM resolves this VL checkpoint to the flattened Qwen3_5MoeForCausalLM class -- live tree is flat model.layers.*, matching Tinker's raw export as-is; model.language_model.* is the on-disk-only convention
+- [Phase ?]: 20-04: 90/190 Tinker-attached DeltaNet modules (in_proj_q/k/v split) have no live-model equivalent (checkpoint fuses in_proj_qkv) -- documented drop, not silent loss; merge guard checks the mergeable 100-module subset
+- [Phase ?]: 20-04: BASE-04 satisfied -- merge_adapter.py is prefix-aware + VL-config-repairing; merged model served via vLLM --language-model-only and produced empty output vs base's verbose response, proving the adapter delta landed
 
 ### Pending Todos
 
@@ -349,8 +353,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-13T02:23:55.571Z
-Stopped at: Completed 20-03-PLAN.md — BASE-03 satisfied: DeltaNet serving smoke passed with CUDA-graph capture enabled (vllm 0.20.2rc1, use_kernels=false recorded)
+Last session: 2026-07-13T03:39:55.975Z
+Stopped at: Completed 20-04-PLAN.md -- BASE-04 satisfied: VL merge-path round-trip passed (prefix-aware merge + base-vs-merged diff). Phase 20 (Base Bring-Up) COMPLETE (BASE-01/02/03/04 all satisfied).
 
 Prior session: 2026-07-08T00:00:00.000Z
 Stopped at: Path A executed (regen v4 save_state → gated smoke). Smoke KILLED at step 50: hybrid@0.8 did not move validated teacher-Spearman above warm-start noise (Δ+0.015 < +0.02 bar; ρ_initial 0.6243), while forbidden fix_correctness proxy rose +0.025 = Goodhart-consistent. Kill-at-50 fired as designed. Reject-RL reinforced → ship v1.2 SFT for v3.0. Loadable v4 save_state now exists (reusable). Artifacts: logs/phase09_rerun/SMOKE_READS_TALLY.md. Resume = ./.continue-here.md (user decides: accept verdict → v3.0 packaging, OR refine non-code-blind reward + re-smoke with Gate-2 armed).
@@ -475,7 +479,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Ready to execute
+**Status:** Phase complete — ready for verification
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)
