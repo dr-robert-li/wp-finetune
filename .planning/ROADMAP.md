@@ -886,7 +886,11 @@ risk (token alignment, DeltaNet kernel, VL merge path) is smoke-tested and resol
      keys -> vLLM serve (`--language-model-only`) -> real generation returns coherent output, with the dual
      key-prefix silent-partial-load risk explicitly checked
 
-**Plans**: TBD
+**Plans**: 4 plans (waves 1-4, sequential — single GB10 GPU / 121 GiB unified memory forbids concurrent 67 GiB model residency)
+- [ ] 20-01-PLAN.md — BASE-01: v4 config sibling + download/load smoke (class resolution, forward, receipt)
+- [ ] 20-02-PLAN.md — BASE-02: eos/pad alignment gate (fix + natural-stop smoke + Stage 1.5 blocking receipt)
+- [ ] 20-03-PLAN.md — BASE-03: bf16 recipe + v4 serve script + DeltaNet vLLM smoke (CUDA-graph capture, use_kernels=False, vLLM ver log)
+- [ ] 20-04-PLAN.md — BASE-04: prefix-aware merge + serve round-trip (base-vs-merged diff, Tinker target-module log)
 
 ### Phase 21: SFT Training — Generation & Judge Models
 
