@@ -21,13 +21,25 @@ lora:
   - embed_tokens
   - lm_head
   r: 32
+  # CR-01 fix: verified against models/Qwen3.6-35B-A3B/model.safetensors.index.json.
+  # gate_up_proj/down_proj (the v3.x dense-FFN names) do NOT match this MoE
+  # checkpoint's shared_expert.{gate,up,down}_proj nn.Linear submodules, and the
+  # routed experts (mlp.experts.gate_up_proj / mlp.experts.down_proj) are fused
+  # raw nn.Parameter tensors invisible to target_modules -- they need PEFT's
+  # target_parameters mechanism instead (see below). Pattern matches the
+  # existing config/train_config_reasoning.yaml, which targets the same
+  # A3B-family fused-expert architecture.
   target_modules:
   - q_proj
   - k_proj
   - v_proj
   - o_proj
-  - gate_up_proj
+  - gate_proj
+  - up_proj
   - down_proj
+  target_parameters:
+  - mlp.experts.gate_up_proj
+  - mlp.experts.down_proj
 model:
   local_dir: ./models/Qwen3.6-35B-A3B
   max_seq_length: 4096
