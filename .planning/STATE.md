@@ -6,14 +6,14 @@ current_phase: 21
 current_phase_name: SFT Training — Generation & Judge Models
 status: executing
 stopped_at: "Phase 21 Plan 01 COMPLETE (gap closed 2026-07-13): routed MoE-expert merge proven -- merge_adapter.py routes train_mlp=True adapters through tinker_cookbook build_hf_model (240/240, w1/w3/w2->gate/up/down vendor-authoritative), ground-truth verified vs Tinker sampler. GEN-02/JUDGE-02 Tinker spend UNBLOCKED."
-last_updated: "2026-07-13T14:32:44.503Z"
+last_updated: "2026-07-13T15:05:00.732Z"
 last_activity: 2026-07-13
 last_activity_desc: Phase 21 execution started
 progress:
   total_phases: 8
   completed_phases: 1
   total_plans: 10
-  completed_plans: 6
+  completed_plans: 7
   percent: 13
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-12)
 ## Current Position
 
 Phase: 21 (SFT Training — Generation & Judge Models) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 Status: Ready to execute
 Last activity: 2026-07-13 — Phase 21 execution started
 
@@ -233,6 +233,7 @@ Progress: [██████████] 100%
 | Phase 20 P04 | 72min | 2 tasks | 6 files |
 | Phase 21-sft-training-generation-judge-models P01 | 105min | 2 tasks | 7 files |
 | Phase 21-sft-training-generation-judge-models P02 | 95min | 2 tasks | 4 files |
+| Phase 21 P03 | 30min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -316,6 +317,8 @@ Recent decisions affecting current work:
 - [Phase ?]: [21-01 gap-closure]: Tinker's w1/w2/w3 <-> gate/down/up mapping IS in the installed tinker_cookbook source (weights/_merge.py MergeProfile.expert_key_remaps: w1->gate_proj, w3->up_proj, w2->down_proj) -- the vendor also ships a full verified merge for Qwen3.5/3.6 MoE (weights.build_hf_model, fused_concatenated [gate|up]). Reused it instead of hand-implementing composition math; merge_adapter.py routes routed-expert adapters there via a safetensors header scan. Proven by trained-prompt token-for-token match vs Tinker SamplingClient.
 - [Phase ?]: [21-02]: In-driver terse gate FAIL (20/141 @temp0) dispositioned as the pre-documented replay-row measurement artifact (all 21 no-[/REASONING] val targets are stream=replay); canonical cot+ctf gate re-scored on the persisted ep3 checkpoint -> PASS both arms (0/120 @temp0.0, 3/360 @temp0.7). Both measurements recorded.
 - [Phase ?]: [21-02]: GEN-02 satisfied -- full gen SFT on Qwen3.6-35B-A3B, v1.2 recipe (3 epochs per wp-reasoning-v2/v3 manifests), MoE-only LoRA r32, auto-LR 4.99e-4, loss 7.97->1.46; all 3 per-epoch ttl=None sampler checkpoints persisted in wp-gen-v4-manifest.json for GEN-03 selection.
+- [Phase 21]: JUDGE-02: 3 seeds ran concurrently as independent Tinker jobs (satisfies plan's resilience intent as well as sequential launch)
+- [Phase 21]: judge02_run.json sampler-path resolution verified by actually calling capture_judge_responses_tinker._resolve_tinker_path against each manifest, not just asserted
 
 ### Pending Todos
 
@@ -363,7 +366,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-13T14:32:11.381Z
+Last session: 2026-07-13T15:03:54.793Z
 Stopped at: Phase 21 Plan 01 COMPLETE — 21-01 Task 2 Rule-4 gap CLOSED: routed MoE-expert merge proven (tinker_cookbook build_hf_model route, 240/240, ground-truth vs Tinker sampler verdict_pass=true). GEN-02/JUDGE-02 real Tinker spend UNBLOCKED; next: 21-02 gen SFT / 21-03 judge SFT.
 
 Prior session: 2026-07-13T11:52:35.100Z
