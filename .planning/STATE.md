@@ -6,14 +6,14 @@ current_phase: 20
 current_phase_name: Base Bring-Up
 status: executing
 stopped_at: "Completed 20-01-PLAN.md — BASE-01 satisfied: Qwen3.6-35B-A3B downloaded (26 shards, 67.0 GB) and load-verified (Qwen3_5MoeForConditionalGeneration, forward pass OK)"
-last_updated: "2026-07-13T01:54:25.074Z"
+last_updated: "2026-07-13T02:05:04.129Z"
 last_activity: 2026-07-13
 last_activity_desc: Phase 20 execution started
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 4
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-12)
 ## Current Position
 
 Phase: 20 (Base Bring-Up) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-07-13 — Phase 20 execution started
 
@@ -227,6 +227,7 @@ Progress: [██████████] 100%
 | Phase 17 P02 | 40min | 4 tasks | 6 files |
 | Phase 18 P02 | ~13h | 3 tasks | 8 files |
 | Phase 20 P01 | 11min | 2 tasks | 6 files |
+| Phase 20-base-bring-up P02 | 8min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -297,6 +298,8 @@ Recent decisions affecting current work:
 - [Phase ?]: 20-01: Upgraded torchvision 0.25.0->0.27.1 (exact match for installed torch==2.12.1) — pre-existing mismatch broke every peft/transformers.PreTrainedModel import chain, unrelated to this plan
 - [Phase ?]: 20-01: Upgraded pytest 6.0.0rc2.dev33->9.1.1 — pre-existing dev build could not collect ANY test file (Python 3.13 ast-rewrite incompatibility), blocking the whole tests/ suite
 - [Phase ?]: 20-01: config/train_config_v4.yaml is a non-destructive sibling of config/train_config.yaml; v4.0 scripts take --config-path rather than mutating the v3.x default
+- [Phase ?]: 20-02: model.config on the loaded VL checkpoint unwraps to the plain text-only sub-config (get_text_config() returns self) — model.config.save_pretrained() silently drops vision_config/architectures/image_token_id, so config.json fixes must use direct JSON surgery against the original file instead
+- [Phase ?]: 20-02: BASE-02 satisfied — eos/pad aligned (text_config.eos_token_id 248044->248046, pad_token_id None->248044), real stop-token generation confirmed natural stop (19/64 tokens), output/base20/token_alignment.json status=pass is the Stage 1.5 gate Phase 21 must consume
 
 ### Pending Todos
 
@@ -343,7 +346,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-13T01:54:25.066Z
+Last session: 2026-07-13T02:04:37.064Z
 Stopped at: Completed 20-01-PLAN.md — BASE-01 satisfied: Qwen3.6-35B-A3B downloaded (26 shards, 67.0 GB) and load-verified (Qwen3_5MoeForConditionalGeneration, forward pass OK)
 
 Prior session: 2026-07-08T00:00:00.000Z
