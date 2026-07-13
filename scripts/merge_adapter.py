@@ -392,6 +392,22 @@ def merge_adapter(adapter_dir: str, output_dir: str, config: dict,
         # Quick verification — are special tokens intact?
         from transformers import AutoTokenizer as _AT  # noqa: PLC0415
         try:
+            local_dir_probe = str(resolve_path(config["model"]["local_dir"]))
+            # WR-04: reuse the SAME base/extended-tokenizer compatibility check
+            # _select_serving_tokenizer/_verify_merged_model use later in this
+            # function (Rule 1), so a base without the extended vocab (like
+            # this v4 base -- "no task-token extension yet") can still
+            # short-circuit here instead of always falling through to a full
+            # re-merge. base_vocab_size comes from the base's own tokenizer
+            # (cheap: tokenizer files only, no model weights loaded).
+            base_tok_probe = _AT.from_pretrained(local_dir_probe, trust_remote_code=True)
+            _, check_special_tokens = _select_serving_tokenizer(
+                config, local_dir_probe, len(base_tok_probe)
+            )
+            if not check_special_tokens:
+                print(f"Merged model already exists at {merged_path} (extended tokenizer not "
+                      f"applicable to this base -- special-token check not required). Skipping.")
+                return
             verify_tok = _AT.from_pretrained(str(merged_path), trust_remote_code=True)
             special_tokens = config.get("tokenizer", {}).get("special_tokens", ["<wp_gen>", "<wp_judge>"])
             all_single = all(
