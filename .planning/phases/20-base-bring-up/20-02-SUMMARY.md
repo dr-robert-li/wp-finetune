@@ -149,3 +149,7 @@ None - no external service configuration required.
 ---
 *Phase: 20-base-bring-up*
 *Completed: 2026-07-13*
+
+## Self-Check: PASSED
+
+All created files verified present on disk (`scripts/check_token_alignment.py`, `tests/test_check_token_alignment.py`, `output/base20/token_alignment.json`, this SUMMARY); all 4 commit hashes (93fd831, e99f539, 55ff811, 49aad99) verified present in git log.
