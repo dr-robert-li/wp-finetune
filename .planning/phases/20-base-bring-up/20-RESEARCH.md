@@ -501,9 +501,10 @@ smoke-test requirements on top of an otherwise-reused harness.
 forward from "this infra worked for the old base," not claims about the new base's architecture (those are all
 `[VERIFIED]`/`[CITED]` per the upstream research docs).
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **How to cheaply exercise BASE-04 (VL merge path) before any real Stage 2/3 SFT run exists?**
+   RESOLVED: 20-04-PLAN.md Task 1 implements the recommended minimal real Tinker run (primary) with local zero-init adapter fallback (reduced-confidence flag).
    - What we know: The roadmap task framing suggests either "a tiny throwaway Tinker run" or "a zero-init
      adapter constructed locally." ARCHITECTURE.md §6 identifies the actual unresolved risk as: "if Tinker's
      LoRA was trained with target modules resolved against `model.layers.N...` [old convention], merge will
@@ -530,6 +531,7 @@ forward from "this infra worked for the old base," not claims about the new base
 
 2. **Does the Phase 0 FP8 recipe's container image (`ghcr.io/spark-arena/dgx-vllm-eugr-nightly:latest`) need
    an explicit vLLM version bump, or does `:latest`/nightly already clear the `>=0.19.0` floor?**
+   RESOLVED: 20-03-PLAN.md Task 2 logs the resolved vLLM version as the FIRST smoke action and asserts >=0.19.0 in the gate receipt.
    - What we know: The recipe is real, committed, and was used successfully in production (Phase 0 rubric
      checks) for the SAME model family on the SAME container tag.
    - What's unclear: Exact vLLM version currently resolved by that `:latest` tag as of Phase 20's execution
@@ -541,6 +543,7 @@ forward from "this infra worked for the old base," not claims about the new base
 
 3. **Does `config/train_config.yaml` need a v4-specific sibling file now, or can Phase 20 defer that to Phase
    21?**
+   RESOLVED: 20-01-PLAN.md Task 1 creates `config/train_config_v4.yaml` + `--config-path` flag now; v3.x config untouched (git diff --exit-code asserted).
    - What we know: `download_model.py` and `merge_adapter.py` both read `model.local_dir`/`model.name` from
      `config/train_config.yaml` via `load_config()`. Editing that file in place would break v3.x
      scripts/tests that still reference the old base's paths (the merge report/tinker-export receipts under
