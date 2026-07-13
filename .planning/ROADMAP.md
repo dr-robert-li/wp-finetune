@@ -936,13 +936,13 @@ miss is recorded as a valid, measured outcome
 v1.3's $1.83 actual). **Tinker's price rise lands 2026-07-17** — if this phase's runs start on/after that
 date, budget the ~10% training-cost increase (prefill/sample ~50% up but minor for this workload).
 
-**Plans**: 6 plans (4 waves; remote-Tinker parallel / local-GB10 serial)
+**Plans**: 1/6 plans executed
 
 Plans:
 
 **Wave 1** *(gates all real Tinker spend)*
 
-- [ ] 21-01-PLAN.md — GEN-01 + MoE-merge probe: fork v4 data-adapter/driver siblings, record renderer/LR/format decision (auto-LR ~4.99e-4 supersedes ≤2e-5 spec), prove the `train_mlp=True` fused-expert merge path (discharges 20-VERIFICATION CR-01 + merge-smoke carry-forwards)
+- [x] 21-01-PLAN.md — GEN-01 + MoE-merge probe: fork v4 data-adapter/driver siblings, record renderer/LR/format decision (auto-LR ~4.99e-4 supersedes ≤2e-5 spec), prove the `train_mlp=True` fused-expert merge path (discharges 20-VERIFICATION CR-01 + merge-smoke carry-forwards)
 
 **Wave 2** *(all Tinker spend front-loaded before 2026-07-17; JUDGE-01 sole GB10 user)*
 
@@ -1124,7 +1124,7 @@ Note: v4.0 (Phases 20-27) starts after Phase 19 sign-off. Phase 22 (Sieve toolin
 | 18. Production Sweep & HuggingFace Publication | v3.1 | 2/2 | Complete   | 2026-07-12 |
 | 19. Next-Base Rerun Roadmap | v3.1 | 1/1 | Complete (base locked: Qwen3.6-35B-A3B; V4-RERUN-ROADMAP.md written) | 2026-07-11 |
 | 20. Base Bring-Up | v4.0 | 4/4 | Complete    | 2026-07-13 |
-| 21. SFT Training — Generation & Judge Models | v4.0 | 0/6 | Planned | - |
+| 21. SFT Training — Generation & Judge Models | v4.0 | 1/6 | In Progress|  |
 | 22. Sieve/Protected-Mask Tooling Adaptation | v4.0 | 0/TBD | Not started | - |
 | 23. Final Evaluation | v4.0 | 0/TBD | Not started | - |
 | 24. Conditional Gate A — RL Re-Test | v4.0 | 0/TBD | Not started | - |

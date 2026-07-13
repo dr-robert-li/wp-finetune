@@ -5,15 +5,15 @@ milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
 current_phase: 21
 current_phase_name: SFT Training — Generation & Judge Models
 status: executing
-stopped_at: "Completed 20-04-PLAN.md -- BASE-04 satisfied: VL merge-path round-trip passed (prefix-aware merge + base-vs-merged diff). Phase 20 (Base Bring-Up) COMPLETE (BASE-01/02/03/04 all satisfied)."
-last_updated: "2026-07-13T10:52:15.989Z"
+stopped_at: "Phase 21 Plan 01: GEN-01 satisfied; MoE train_mlp=True merge-path gap found (merge_ok=false, human decision required before GEN-02/JUDGE-02 real Tinker spend). See 21-01-SUMMARY.md + output/base21/moe_merge_probe.json."
+last_updated: "2026-07-13T11:52:57.614Z"
 last_activity: 2026-07-13
-last_activity_desc: Phase 20 complete, transitioned to Phase 21
+last_activity_desc: Phase 21 execution started
 progress:
   total_phases: 8
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 10
+  completed_plans: 5
   percent: 13
 ---
 
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-12)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 20 — Base Bring-Up
+**Current focus:** Phase 21 — SFT Training — Generation & Judge Models
 
 ## Current Position
 
-Phase: 21 — SFT Training — Generation & Judge Models
-Plan: Not started
+Phase: 21 (SFT Training — Generation & Judge Models) — EXECUTING
+Plan: 2 of 6
 Status: Ready to execute
-Last activity: 2026-07-13 — Phase 20 complete, transitioned to Phase 21
+Last activity: 2026-07-13 — Phase 21 execution started
 
 ### 2026-07-08 — Gap-closure investigation (judge reasoning ceiling)
 
@@ -231,6 +231,7 @@ Progress: [██████████] 100%
 | Phase 20-base-bring-up P02 | 8min | 2 tasks | 4 files |
 | Phase 20-base-bring-up P03 | 16min | 2 tasks | 5 files |
 | Phase 20 P04 | 72min | 2 tasks | 6 files |
+| Phase 21-sft-training-generation-judge-models P01 | 105min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -308,6 +309,9 @@ Recent decisions affecting current work:
 - [Phase ?]: 20-04: AutoModelForCausalLM resolves this VL checkpoint to the flattened Qwen3_5MoeForCausalLM class -- live tree is flat model.layers.*, matching Tinker's raw export as-is; model.language_model.* is the on-disk-only convention
 - [Phase ?]: 20-04: 90/190 Tinker-attached DeltaNet modules (in_proj_q/k/v split) have no live-model equivalent (checkpoint fuses in_proj_qkv) -- documented drop, not silent loss; merge guard checks the mergeable 100-module subset
 - [Phase ?]: 20-04: BASE-04 satisfied -- merge_adapter.py is prefix-aware + VL-config-repairing; merged model served via vLLM --language-model-only and produced empty output vs base's verbose response, proving the adapter delta landed
+- [Phase ?]: [21-01]: RENDERER_NAME resolved to qwen3_5_disable_thinking (source=registry) via runtime probing, not the Phase-20-precedent qwen3_disable_thinking -- matches this base's actual resolved class (Qwen3_5MoeForCausalLM)
+- [Phase ?]: [21-01]: Kept hp.get_lr auto-LR (resolved 4.99e-4) over GEN-02's literal <=2e-5 text -- stale DGX/Unsloth-era carry-over per ROADMAP.md Phase 4.3 supersession note
+- [Phase ?]: [21-01]: MoE (train_mlp=True) merge probe found a genuine architectural gap -- merge_adapter.py has zero PEFT target_parameters support, so Tinker's routed-expert fused deltas are silently excluded while the module-count guard still reports a clean pass. Recorded merge_ok=false honestly (Rule 4, not auto-fixed -- semantic w1/w2/w3 mapping unconfirmable from any available source).
 
 ### Pending Todos
 
@@ -329,6 +333,7 @@ Recent decisions affecting current work:
 - [Phase 11]: Phase 10 (RL eval) must confirm readiness before Phase 11 (post-RL MoE-Sieve) begins — fresh RL-policy routing profiling required
 - [Phase 13]: LoRA merge (MERGE-01) must complete before pruning — strictly sequential within the phase; AIMER primary (D-09)
 - [Phase 15]: Quantization (PKG-03) is gated by Gate 2 decision — verify AWQ support for Qwen3-30B-A3B in vLLM (likely native)
+- [Phase 21 21-01 Task 2]: merge_adapter.py cannot merge Tinker's routed MoE-expert (train_mlp=True) fused-tensor deltas via PEFT target_parameters -- GEN-02/JUDGE-02 real Tinker spend BLOCKED pending a human decision on Tinker's w1/w2/w3 gate/up/down semantic mapping + a target_parameters-aware merge fix. See output/base21/moe_merge_probe.json (merge_ok=false) and 21-01-SUMMARY.md.
 
 ### Quick Tasks Completed
 
@@ -354,8 +359,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-13T03:39:55.975Z
-Stopped at: Completed 20-04-PLAN.md -- BASE-04 satisfied: VL merge-path round-trip passed (prefix-aware merge + base-vs-merged diff). Phase 20 (Base Bring-Up) COMPLETE (BASE-01/02/03/04 all satisfied).
+Last session: 2026-07-13T11:52:35.100Z
+Stopped at: Phase 21 Plan 01: GEN-01 satisfied; MoE train_mlp=True merge-path gap found (merge_ok=false, human decision required before GEN-02/JUDGE-02 real Tinker spend). See 21-01-SUMMARY.md + output/base21/moe_merge_probe.json.
 
 Prior session: 2026-07-08T00:00:00.000Z
 Stopped at: Path A executed (regen v4 save_state → gated smoke). Smoke KILLED at step 50: hybrid@0.8 did not move validated teacher-Spearman above warm-start noise (Δ+0.015 < +0.02 bar; ρ_initial 0.6243), while forbidden fix_correctness proxy rose +0.025 = Goodhart-consistent. Kill-at-50 fired as designed. Reject-RL reinforced → ship v1.2 SFT for v3.0. Loadable v4 save_state now exists (reusable). Artifacts: logs/phase09_rerun/SMOKE_READS_TALLY.md. Resume = ./.continue-here.md (user decides: accept verdict → v3.0 packaging, OR refine non-code-blind reward + re-smoke with Gate-2 armed).
