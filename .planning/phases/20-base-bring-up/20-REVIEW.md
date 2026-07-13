@@ -23,6 +23,9 @@ findings:
   info: 5
   total: 16
 status: issues_found
+fix_status: all_fixed
+fix_report: .planning/phases/20-base-bring-up/20-REVIEW-FIX.md
+fixed_at: 2026-07-13T04:02:51Z
 ---
 
 # Phase 20: Code Review Report
@@ -56,6 +59,11 @@ warnings cover a broken idempotency check in `download_model.py`, a
 completeness guard that only checks for *missing* modules and not *extra*
 ones, non-atomic config writes, discarded subprocess diagnostics, and other
 robustness gaps. Five info-level items cover dead code and minor style.
+
+**Fix status (2026-07-13, iteration 1):** All 11 in-scope findings (CR-01,
+WR-01 through WR-10) fixed and committed. See
+[20-REVIEW-FIX.md](20-REVIEW-FIX.md) for the full per-finding report. Info
+findings (IN-01 through IN-05) are out of scope and untouched.
 
 ## Critical Issues
 
@@ -121,6 +129,14 @@ At minimum, add a startup assertion in the training script comparable to
 `merge_adapter.py`'s module-count guard, so a target_modules/architecture
 mismatch fails loudly instead of silently training a near-empty adapter.
 
+**Fix status:** fixed (commit `1703cc3`) — `target_modules` corrected to
+`shared_expert.{gate_proj,up_proj,down_proj}` + `target_parameters` for
+`mlp.experts.{gate_up_proj,down_proj}`, matching the working precedent in
+`config/train_config_reasoning.yaml`. Requires human verification: the
+actual LoRA attach count can only be confirmed by a GPU/CPU dry-run load
+(`train_model.py --dry-run` → `assert_router_frozen_and_report`); this fix
+was verified against `model.safetensors.index.json` only, no weights loaded.
+
 ## Warnings
 
 ### WR-01: `download_model.py` idempotency check treats any partial download as complete
@@ -153,6 +169,10 @@ if index_path.exists():
         return local_dir
 ```
 
+**Fix status:** fixed (commit `6947148`) — added `expected_shard_count()`;
+`download_model()` only skips when `existing_shards >= expected_shards`.
+Two new tests added; all 9 tests in `tests/test_download_model_v4.py` pass.
+
 ### WR-02: `merge_adapter.py` narrows `target_modules` to bare leaf names, not scoped per-layer paths
 
 **File:** `scripts/merge_adapter.py:181-198`
@@ -177,6 +197,10 @@ dict keys in `remapped`) as `target_modules` instead of just their leaf
 names, or pass `layers_to_transform`/exact paths so PEFT's exact-key branch
 (`key in config.target_modules`) is used instead of the suffix-match branch.
 
+**Fix status:** fixed (commit `558d783`) — `kept_leaf_names` replaced with
+`kept_module_paths` (full dotted per-layer paths), routing PEFT through the
+exact-key match branch.
+
 ### WR-03: Module-count guard only checks for missing modules, not unexpected/extra ones
 
 **File:** `scripts/merge_adapter.py:244-250`
@@ -195,6 +219,9 @@ as untrustworthy as a partial one and should also raise.
 **Fix:** `if unexpected_modules: raise SystemExit(...)` alongside the
 existing missing-modules check, or fold `len(unexpected_modules)` into the
 guard condition.
+
+**Fix status:** fixed (commit `fa60ea2`) — `unexpected_modules` now folded
+into the abort condition, plus added to the written guard receipt.
 
 ### WR-04: Merge idempotency short-circuit is effectively dead for the v4 base
 
@@ -220,6 +247,10 @@ invocation, regardless of whether a correct merge already exists on disk.
 `check_special_tokens` flag) in the idempotency probe so it can actually
 short-circuit for bases without the extended vocab.
 
+**Fix status:** fixed (commit `660130b`) — idempotency probe now calls
+`_select_serving_tokenizer` (base tokenizer only, no model weights loaded)
+and short-circuits correctly when `check_special_tokens` is False.
+
 ### WR-05: `merge_adapter.py` has no top-level failure handling / receipt, unlike sibling gate scripts
 
 **File:** `scripts/merge_adapter.py:598-600`
@@ -243,6 +274,11 @@ mode a failure leaves no `output/base20/*.json` trail at all.
 **Fix:** Wrap `main(args)` in the same try/except + fail-receipt pattern used
 by the sibling gate scripts, or explicitly document that this script relies
 on its caller for receipts.
+
+**Fix status:** fixed (commit `d15c2e0`) — `__main__` now wraps `main(args)`
+in try/except, writing `output/base20/_merge_adapter_result.json` on
+unhandled exceptions; `SystemExit` from the script's own diagnosed abort
+paths is re-raised unchanged.
 
 ### WR-06: Non-atomic config.json rewrites risk leaving a corrupted config on crash
 
@@ -272,6 +308,9 @@ tmp.write_text(json.dumps(raw_config, indent=2))
 tmp.replace(CONFIG_JSON_PATH)
 ```
 
+**Fix status:** fixed (commit `3ec4b80`) — both write sites now use a
+`.json.tmp` sibling + `Path.replace()` (atomic).
+
 ### WR-07: `boot_vllm()` discards the launch subprocess's stdout/stderr
 
 **File:** `scripts/_p0_vllm_smoke_serve.py:68-69`
@@ -290,6 +329,9 @@ missing `docker`) surfaces as a bare "command returned non-zero exit status"
 with no indication why.
 **Fix:** Capture output (`capture_output=True, text=True`) and include it in
 a raised error, or at least print/log it before re-raising.
+
+**Fix status:** fixed (commit `91c818b`) — captures stdout/stderr and raises
+a `RuntimeError` including them on non-zero exit.
 
 ### WR-08: Container-liveness check uses substring containment, not exact match
 
@@ -311,6 +353,9 @@ false-negative risk (e.g. a container literally named `base20-vllm` would
 register as "alive" merely because `base20-vllm-2` is running).
 **Fix:** `if name not in alive.splitlines():`.
 
+**Fix status:** fixed (commit `91c818b`, same commit as WR-07 — same file,
+adjacent lines) — exact per-line match now used.
+
 ### WR-09: `recipes/qwen3.6-35b-a3b-vllm.yaml` documents settings that don't match the script actually used for these smoke tests
 
 **File:** `recipes/qwen3.6-35b-a3b-vllm.yaml:24-25` vs `scripts/serve_base20_vllm.sh:34`
@@ -328,6 +373,11 @@ recipe would use a different `max-model-len` than the passing gate run did.
 **Fix:** Either update the recipe's `max_model_len`/`max_num_batched_tokens`
 to `8192` to match `serve_base20_vllm.sh`'s actual default, or make
 `serve_base20_vllm.sh`'s default `16384` to match the recipe.
+
+**Fix status:** fixed (commit `364c8bc`) — updated the recipe's
+`max_model_len`/`max_num_batched_tokens` to `8192` (matches the actual
+passing BASE-03/BASE-04 gate runs; did not change the script's default,
+avoiding an unvalidated memory/timing profile).
 
 ### WR-10: Tar extraction in the Tinker probe adapter download doesn't validate member type
 
@@ -350,6 +400,9 @@ archive comes from an authenticated Tinker API response, so this is
 low-likelihood, but it's a straightforward defense-in-depth gap for code
 that already goes out of its way to prevent path traversal.
 **Fix:** `if name in (...) and m.isfile(): ...` before extracting.
+
+**Fix status:** fixed (commit `0161ebd`) — added `and m.isfile()` to the
+extraction condition.
 
 ## Info
 
