@@ -397,7 +397,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BASE-03 | Phase 20 | Complete |
 | BASE-04 | Phase 20 | Complete |
 | GEN-01 | Phase 21 | Complete |
-| GEN-02 | Phase 21 | Pending |
+| GEN-02 | Phase 21 | Complete |
 | GEN-03 | Phase 21 | Pending |
 | JUDGE-01 | Phase 21 | Pending |
 | JUDGE-02 | Phase 21 | Pending |
@@ -426,7 +426,7 @@ Pre-registered success criteria: judge rho **>0.85 single-seed OR >0.87 3-seed e
 ### SFT Generation Model (Stage 2)
 
 - [x] **GEN-01**: Thinking-mode/`<think>` SFT data-format decision recorded + rendered-example spot-check (no spurious empty `<think></think>` blocks, QwenLM #131; max tokenized length asserted under Tinker 64K cap) before any training data feeds
-- [ ] **GEN-02**: Generation model SFT completes on reasoning mix (reuse Stage-1 data, MoE-only LoRA r32, LR ≤2e-5, frozen router, `output_router_logits=True`)
+- [x] **GEN-02**: Generation model SFT completes on reasoning mix (reuse Stage-1 data, MoE-only LoRA r32, LR ≤2e-5, frozen router, `output_router_logits=True`)
 - [ ] **GEN-03**: Gen model clears wp-bench floor 0.4286 (CI lower bound; or freshly-measured noise-adjusted floor, measured not assumed)
 
 ### SFT Judge Model (Stage 3 — the crux)
