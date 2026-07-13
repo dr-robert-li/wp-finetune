@@ -629,4 +629,17 @@ def _build_parser() -> argparse.ArgumentParser:
 
 if __name__ == "__main__":
     args = _build_parser().parse_args()
-    main(args)
+    try:
+        main(args)
+    except SystemExit:
+        # Already an intentional, diagnosed exit (e.g. _guard_merge_completeness's
+        # abort or _verify_merged_model's failure) — both print their own
+        # diagnostics/receipts. Re-raise unchanged (WR-05 only covers the
+        # "no receipt at all" case below).
+        raise
+    except Exception as exc:  # noqa: BLE001 -- gate script: any exception is a merge failure
+        receipt_path = PROJECT_ROOT / "output" / "base20" / "_merge_adapter_result.json"
+        receipt_path.parent.mkdir(parents=True, exist_ok=True)
+        receipt_path.write_text(json.dumps({"status": "fail", "error": str(exc)}, indent=2))
+        print(f"MERGE ADAPTER FAILED: {exc}")
+        sys.exit(1)
