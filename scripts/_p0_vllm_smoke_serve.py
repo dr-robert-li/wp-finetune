@@ -65,8 +65,17 @@ def boot_vllm(
     full_env = {**os.environ, **env}
     print(f"[vllm] booting {name} on :{port} model={model_dir} gpu_mem_util={gpu_mem_util} "
           f"serve_script={serve_script} extra_env={extra_env or {}}")
-    subprocess.run(["bash", serve_script], env=full_env, check=True,
-                   stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    # WR-07: capture output instead of DEVNULL -- serve_base20_vllm.sh prints
+    # useful diagnostics on failure (e.g. "model dir not found") before
+    # exiting non-zero, and there's no container yet for `docker logs` to
+    # recover it from at this point.
+    result = subprocess.run(["bash", serve_script], env=full_env,
+                             capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"[vllm] launch failed for {name} (exit {result.returncode}):\n"
+            f"{result.stdout}{result.stderr}"
+        )
 
 
 def wait_healthy(port: int, name: str, timeout: int = BOOT_TIMEOUT_SEC) -> str:
@@ -83,7 +92,10 @@ def wait_healthy(port: int, name: str, timeout: int = BOOT_TIMEOUT_SEC) -> str:
         alive = subprocess.run(
             ["docker", "ps", "--format", "{{.Names}}"], capture_output=True, text=True,
         ).stdout
-        if name not in alive:
+        # WR-08: exact per-line match, not substring containment -- `name not
+        # in alive` would false-negative "alive" for e.g. "base20-vllm" merely
+        # because "base20-vllm-2" is running.
+        if name not in alive.splitlines():
             log_tail = _dump_boot_log(name)
             raise VllmBootTimeout(
                 f"container {name} exited during boot; last log lines:\n{log_tail}"
