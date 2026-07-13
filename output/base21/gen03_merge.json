@@ -1,0 +1,12 @@
+{
+  "promoted_sampler_path": "tinker://05590ab9-4d38-57fc-bb2f-53a445891caa:train:0/sampler_weights/wp-gen-v4-ep3",
+  "adapter_dir": "/home/robert_li/Desktop/projects/wp-finetune/output/base21/gen03_gen_adapter",
+  "merged_dir": "models/Qwen3.6-35B-A3B-gen-v4-merged",
+  "merge_ok": true,
+  "merged_target_module_count": 240,
+  "expected_target_module_count": 240,
+  "base_vs_merged_differs": true,
+  "merged_size_gib": 66.99,
+  "config_path": "config/train_config_v4.yaml",
+  "merge_engine": "tinker_cookbook.weights.build_hf_model (routed MoE-expert path, 21-01 gap-closure)"
+}
