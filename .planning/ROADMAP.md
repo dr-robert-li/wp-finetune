@@ -936,7 +936,7 @@ miss is recorded as a valid, measured outcome
 v1.3's $1.83 actual). **Tinker's price rise lands 2026-07-17** — if this phase's runs start on/after that
 date, budget the ~10% training-cost increase (prefill/sample ~50% up but minor for this workload).
 
-**Plans**: 3/6 plans executed
+**Plans**: 4/6 plans executed
 
 Plans:
 
@@ -948,7 +948,7 @@ Plans:
 
 - [x] 21-02-PLAN.md — GEN-02: full generation-model SFT on the reused reasoning-mix (MoE-only LoRA r32, frozen router, auto-LR) + terse gate (remote Tinker)
 - [x] 21-03-PLAN.md — JUDGE-02: 3-seed relabel-SFT {1,0,2} reusing v1.3 labels (remote Tinker)
-- [ ] 21-04-PLAN.md — JUDGE-01: raw-base judge-format-compliance smoke vs 18% anchor (local GB10)
+- [x] 21-04-PLAN.md — JUDGE-01: raw-base judge-format-compliance smoke vs 18% anchor (local GB10)
 
 **Wave 3** *(local GB10 serial)*
 
@@ -1124,7 +1124,7 @@ Note: v4.0 (Phases 20-27) starts after Phase 19 sign-off. Phase 22 (Sieve toolin
 | 18. Production Sweep & HuggingFace Publication | v3.1 | 2/2 | Complete   | 2026-07-12 |
 | 19. Next-Base Rerun Roadmap | v3.1 | 1/1 | Complete (base locked: Qwen3.6-35B-A3B; V4-RERUN-ROADMAP.md written) | 2026-07-11 |
 | 20. Base Bring-Up | v4.0 | 4/4 | Complete    | 2026-07-13 |
-| 21. SFT Training — Generation & Judge Models | v4.0 | 3/6 | In Progress|  |
+| 21. SFT Training — Generation & Judge Models | v4.0 | 4/6 | In Progress|  |
 | 22. Sieve/Protected-Mask Tooling Adaptation | v4.0 | 0/TBD | Not started | - |
 | 23. Final Evaluation | v4.0 | 0/TBD | Not started | - |
 | 24. Conditional Gate A — RL Re-Test | v4.0 | 0/TBD | Not started | - |
