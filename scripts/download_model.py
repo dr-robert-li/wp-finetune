@@ -1,18 +1,35 @@
-"""Download Qwen3-30B-A3B model from HuggingFace Hub with resume support.
+"""Download a base model from HuggingFace Hub with resume support.
+
+Reads model.name/model.local_dir from a train_config.yaml-shaped file (default
+config/train_config.yaml, the v3.x pipeline's config). Pass --config-path to
+target a different config (e.g. config/train_config_v4.yaml for the v4.0 base)
+without touching the default.
 
 Usage:
     python -m scripts.download_model
     python scripts/download_model.py
+    python scripts/download_model.py --config-path config/train_config_v4.yaml
 """
 
+import argparse
+import sys
 from pathlib import Path
 
 import yaml
 from huggingface_hub import snapshot_download
 
-from scripts.dgx_toolbox import get_toolbox  # noqa: F401 — establishes DGX pattern
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+# `python scripts/download_model.py` (direct execution) puts scripts/ on
+# sys.path, not the repo root, breaking the `scripts.*` absolute import below.
+# `python -m scripts.download_model` doesn't need this (repo root already on
+# path via __package__). Rule 3 fix — pre-existing, blocks --help acceptance
+# criterion for direct invocation.
+if __package__ in (None, ""):
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from scripts.dgx_toolbox import get_toolbox  # noqa: F401,E402 — establishes DGX pattern
+
 CONFIG_PATH = PROJECT_ROOT / "config" / "train_config.yaml"
 
 
@@ -70,5 +87,18 @@ def download_model(config: dict | None = None, config_path: Path = CONFIG_PATH) 
     return local_dir
 
 
+def build_arg_parser() -> argparse.ArgumentParser:
+    """Build the CLI arg parser for this script."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--config-path",
+        type=Path,
+        default=CONFIG_PATH,
+        help=f"Path to train_config.yaml-shaped config (default: {CONFIG_PATH})",
+    )
+    return parser
+
+
 if __name__ == "__main__":
-    download_model()
+    args = build_arg_parser().parse_args()
+    download_model(config_path=args.config_path)
