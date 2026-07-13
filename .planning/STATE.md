@@ -6,14 +6,14 @@ current_phase: 21
 current_phase_name: SFT Training — Generation & Judge Models
 status: executing
 stopped_at: "Phase 21 Plan 01 COMPLETE (gap closed 2026-07-13): routed MoE-expert merge proven -- merge_adapter.py routes train_mlp=True adapters through tinker_cookbook build_hf_model (240/240, w1/w3/w2->gate/up/down vendor-authoritative), ground-truth verified vs Tinker sampler. GEN-02/JUDGE-02 Tinker spend UNBLOCKED."
-last_updated: "2026-07-13T20:35:33.571Z"
+last_updated: "2026-07-13T23:53:35.882Z"
 last_activity: 2026-07-13
 last_activity_desc: Phase 21 execution started
 progress:
   total_phases: 8
   completed_phases: 1
   total_plans: 10
-  completed_plans: 8
+  completed_plans: 9
   percent: 13
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-12)
 ## Current Position
 
 Phase: 21 (SFT Training — Generation & Judge Models) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 Status: Ready to execute
 Last activity: 2026-07-13 — Phase 21 execution started
 
@@ -235,6 +235,7 @@ Progress: [██████████] 100%
 | Phase 21-sft-training-generation-judge-models P02 | 95min | 2 tasks | 4 files |
 | Phase 21 P03 | 30min | 2 tasks | 4 files |
 | Phase 21-sft-training-generation-judge-models P04 | ~55min | 1 tasks | 2 files |
+| Phase 21-sft-training-generation-judge-models P05 | ~150min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -321,6 +322,8 @@ Recent decisions affecting current work:
 - [Phase 21]: JUDGE-02: 3 seeds ran concurrently as independent Tinker jobs (satisfies plan's resilience intent as well as sequential launch)
 - [Phase 21]: judge02_run.json sampler-path resolution verified by actually calling capture_judge_responses_tinker._resolve_tinker_path against each manifest, not just asserted
 - [Phase ?]: [21-04]: JUDGE-01 raw-base parse_fail_rate 1.0 (30/30) vs 0.18 community anchor recorded as untrained baseline BEFORE any judge SFT result read -- root cause: Qwen3.6 always-on thinking mode exhausts 2048 tokens in prose before any rubric JSON; diagnostic anchor, NOT a gate (judge SFT trains this away)
+- [Phase ?]: [21-05]: GEN-03 RECORDED MISS -- merged gen model wp-bench 0.372 (CI lower 0.2847) < floor 0.4286; fresh raw new-base anchor 0.4897 is ABOVE the floor so the fresh-floor escape hatch does not apply, inherited floor stands. Reasoning-mix SFT regressed codegen ~11.8pp vs the raw new base (beyond the 5.2pp seed-noise floor) -- v1.2 RC-B interference signature on Qwen3.6.
+- [Phase ?]: [21-05]: wp-bench harness hardcodes served model name wp-30_70 -- serve_base20_vllm.sh gained a SERVED_MODEL_NAME env toggle (default unset); any future bench against a serve_base20-served model must set it
 
 ### Pending Todos
 
@@ -368,7 +371,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-13T20:35:06.372Z
+Last session: 2026-07-13T23:52:47.260Z
 Stopped at: Phase 21 Plan 01 COMPLETE — 21-01 Task 2 Rule-4 gap CLOSED: routed MoE-expert merge proven (tinker_cookbook build_hf_model route, 240/240, ground-truth vs Tinker sampler verdict_pass=true). GEN-02/JUDGE-02 real Tinker spend UNBLOCKED; next: 21-02 gen SFT / 21-03 judge SFT.
 
 Prior session: 2026-07-13T11:52:35.100Z
