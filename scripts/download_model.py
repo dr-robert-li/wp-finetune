@@ -12,6 +12,7 @@ Usage:
 """
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -46,6 +47,17 @@ def count_safetensors(model_dir: Path) -> int:
     return len(list(model_dir.glob("*.safetensors")))
 
 
+def expected_shard_count(model_dir: Path) -> int | None:
+    """Return the total shard count declared by model.safetensors.index.json,
+    or None if the index isn't present (nothing to compare against -- WR-01)."""
+    index_path = model_dir / "model.safetensors.index.json"
+    if not index_path.exists():
+        return None
+    with open(index_path) as f:
+        index = json.load(f)
+    return len(set(index.get("weight_map", {}).values()))
+
+
 def download_model(config: dict | None = None, config_path: Path = CONFIG_PATH) -> Path:
     """Download model to local_dir with resume support.
 
@@ -65,9 +77,12 @@ def download_model(config: dict | None = None, config_path: Path = CONFIG_PATH) 
         local_dir = PROJECT_ROOT / local_dir
 
     existing_shards = count_safetensors(local_dir)
-    if existing_shards > 0:
+    expected_shards = expected_shard_count(local_dir)
+    if existing_shards > 0 and (expected_shards is None or existing_shards >= expected_shards):
         print(f"Model already present at {local_dir} ({existing_shards} safetensors shards). Skipping download.")
         return local_dir
+    if existing_shards > 0:
+        print(f"Incomplete download at {local_dir} ({existing_shards}/{expected_shards} shards) — resuming.")
 
     print(f"Downloading {model_name} to {local_dir} ...")
     print("This is a ~60 GB model. Ensure sufficient disk space.")

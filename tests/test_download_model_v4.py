@@ -6,6 +6,7 @@ tests/test_prepare_tokenizer.py's mock-only structure.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from unittest.mock import patch
 
@@ -61,6 +62,47 @@ class TestDownloadIdempotency:
         _, kwargs = mock_snapshot.call_args
         assert kwargs["repo_id"] == "Qwen/Qwen3.6-35B-A3B"
         assert kwargs["resume_download"] is True
+
+    def test_resumes_when_index_json_shows_incomplete_download(self, tmp_path):
+        """WR-01: a single shard present but the index.json declares more —
+        must NOT be treated as complete."""
+        local_dir = tmp_path / "Qwen3.6-35B-A3B"
+        local_dir.mkdir()
+        (local_dir / "model-00001-of-00002.safetensors").write_bytes(b"stub")
+        (local_dir / "model.safetensors.index.json").write_text(json.dumps({
+            "weight_map": {
+                "a": "model-00001-of-00002.safetensors",
+                "b": "model-00002-of-00002.safetensors",
+            }
+        }))
+
+        config = {"model": {"name": "Qwen/Qwen3.6-35B-A3B", "local_dir": str(local_dir)}}
+
+        with patch("scripts.download_model.snapshot_download") as mock_snapshot:
+            download_model(config=config)
+
+        mock_snapshot.assert_called_once()
+
+    def test_skips_when_index_json_confirms_complete_download(self, tmp_path):
+        """WR-01: all shards declared by index.json are present — skip is still correct."""
+        local_dir = tmp_path / "Qwen3.6-35B-A3B"
+        local_dir.mkdir()
+        (local_dir / "model-00001-of-00002.safetensors").write_bytes(b"stub")
+        (local_dir / "model-00002-of-00002.safetensors").write_bytes(b"stub")
+        (local_dir / "model.safetensors.index.json").write_text(json.dumps({
+            "weight_map": {
+                "a": "model-00001-of-00002.safetensors",
+                "b": "model-00002-of-00002.safetensors",
+            }
+        }))
+
+        config = {"model": {"name": "Qwen/Qwen3.6-35B-A3B", "local_dir": str(local_dir)}}
+
+        with patch("scripts.download_model.snapshot_download") as mock_snapshot:
+            result = download_model(config=config)
+
+        mock_snapshot.assert_not_called()
+        assert result == local_dir
 
 
 class TestConfigPathFlag:
