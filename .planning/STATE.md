@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
-current_phase: 20
-current_phase_name: Base Bring-Up
-status: verifying
+current_phase: 21
+current_phase_name: SFT Training — Generation & Judge Models
+status: planning
 stopped_at: "Completed 20-04-PLAN.md -- BASE-04 satisfied: VL merge-path round-trip passed (prefix-aware merge + base-vs-merged diff). Phase 20 (Base Bring-Up) COMPLETE (BASE-01/02/03/04 all satisfied)."
-last_updated: "2026-07-13T03:39:55.982Z"
+last_updated: "2026-07-13T08:07:16.167Z"
 last_activity: 2026-07-13
-last_activity_desc: Phase 20 execution started
+last_activity_desc: Phase 20 complete, transitioned to Phase 21
 progress:
   total_phases: 8
   completed_phases: 1
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-07-12)
 
 ## Current Position
 
-Phase: 20 (Base Bring-Up) — EXECUTING
-Plan: 4 of 4
+Phase: 21 — SFT Training — Generation & Judge Models
+Plan: Not started
 Status: Phase complete — ready for verification
-Last activity: 2026-07-13 — Phase 20 execution started
+Last activity: 2026-07-13 — Phase 20 complete, transitioned to Phase 21
 
 ### 2026-07-08 — Gap-closure investigation (judge reasoning ceiling)
 
@@ -162,7 +162,7 @@ Progress: [██████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 30
+- Total plans completed: 34
 - Average duration: 9 min
 - Total execution time: 0.62 hours
 
@@ -178,6 +178,7 @@ Progress: [██████████] 100%
 | 09 | 6 | - | - |
 | 08.1 | 4 | - | - |
 | 08.2 | 5 | - | - |
+| 20 | 4 | - | - |
 
 **Recent Trend:**
 
@@ -479,7 +480,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Phase complete — ready for verification
+**Status:** Ready to plan
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)

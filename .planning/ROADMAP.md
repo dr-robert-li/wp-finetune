@@ -114,7 +114,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 <details open>
 <summary>v4.0 Pipeline Rerun on Qwen3.6-35B-A3B (Phases 20-27) — ACTIVE</summary>
 
-- [ ] **Phase 20: Base Bring-Up** - Download/load smoke, eos/pad token-ID alignment (Stage 1.5), DeltaNet-aarch64 serving smoke, VL merge-path round-trip check
+- [x] **Phase 20: Base Bring-Up** - Download/load smoke, eos/pad token-ID alignment (Stage 1.5), DeltaNet-aarch64 serving smoke, VL merge-path round-trip check (completed 2026-07-13)
 - [ ] **Phase 21: SFT Training — Generation & Judge Models** - Stage 2/3 SFT on reused data (reasoning-mix gen, 3-seed relabel judge); pre-registered rho/wp-bench targets measured
 - [ ] **Phase 22: Sieve Tooling Adaptation** - Adapt MoE-Sieve profiler + protected-mask pipeline for 256-expert/shared-expert/mixed-strata routing, ready before Gate B
 - [ ] **Phase 23: Final Evaluation** - A/B eval vs v3.0 shipping figures under pre-registered criteria — the milestone's primary verdict
@@ -1103,7 +1103,7 @@ Note: v4.0 (Phases 20-27) starts after Phase 19 sign-off. Phase 22 (Sieve toolin
 | 17. Benchmark Expansion (wp-bench + SWE-bench gen) | v3.1 | 2/3 | In Progress|  |
 | 18. Production Sweep & HuggingFace Publication | v3.1 | 2/2 | Complete   | 2026-07-12 |
 | 19. Next-Base Rerun Roadmap | v3.1 | 1/1 | Complete (base locked: Qwen3.6-35B-A3B; V4-RERUN-ROADMAP.md written) | 2026-07-11 |
-| 20. Base Bring-Up | v4.0 | 4/4 | Complete   | 2026-07-13 |
+| 20. Base Bring-Up | v4.0 | 4/4 | Complete    | 2026-07-13 |
 | 21. SFT Training — Generation & Judge Models | v4.0 | 0/TBD | Not started | - |
 | 22. Sieve/Protected-Mask Tooling Adaptation | v4.0 | 0/TBD | Not started | - |
 | 23. Final Evaluation | v4.0 | 0/TBD | Not started | - |
