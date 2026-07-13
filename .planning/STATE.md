@@ -4,9 +4,9 @@ milestone: v4.0
 milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
 current_phase: 21
 current_phase_name: SFT Training — Generation & Judge Models
-status: planning
+status: executing
 stopped_at: "Completed 20-04-PLAN.md -- BASE-04 satisfied: VL merge-path round-trip passed (prefix-aware merge + base-vs-merged diff). Phase 20 (Base Bring-Up) COMPLETE (BASE-01/02/03/04 all satisfied)."
-last_updated: "2026-07-13T08:07:16.167Z"
+last_updated: "2026-07-13T10:52:15.989Z"
 last_activity: 2026-07-13
 last_activity_desc: Phase 20 complete, transitioned to Phase 21
 progress:
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-07-12)
 
 Phase: 21 — SFT Training — Generation & Judge Models
 Plan: Not started
-Status: Phase complete — ready for verification
+Status: Ready to execute
 Last activity: 2026-07-13 — Phase 20 complete, transitioned to Phase 21
 
 ### 2026-07-08 — Gap-closure investigation (judge reasoning ceiling)
@@ -480,7 +480,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Ready to plan
+**Status:** Ready to execute
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)

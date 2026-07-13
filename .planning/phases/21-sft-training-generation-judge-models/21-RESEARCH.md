@@ -455,7 +455,9 @@ prose + `[/REASONING]` + `<judge_output>` JSON), so QwenLM issue #131 (empty `<t
 turns) likely doesn't apply — but this must be confirmed against whatever renderer the new base actually
 uses, not carried over unverified, per PITFALLS.md's own explicit caveat on this exact point.
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+All four questions are resolved as executable plan content: Q1 (LR supersession), Q2 (renderer), Q3 (output_router_logits) → 21-01-PLAN.md Task 1, recorded in `output/sft21/gen01_format_decision.json`; Q4 (fused-expert export convention) → 21-01-PLAN.md Task 2, recorded in `output/sft21/moe_merge_probe.json`.
 
 1. **GEN-02's "LR ≤2e-5" vs the actual Tinker-regime ~4.99e-4 — which governs the new-base run?**
    - What we know: the literal REQUIREMENTS.md/ROADMAP.md text for GEN-02 says "LR ≤2e-5"; the actual
