@@ -375,7 +375,8 @@ def _select_serving_tokenizer(config: dict, local_dir: str, base_vocab_size: int
 
 
 def merge_adapter(adapter_dir: str, output_dir: str, config: dict,
-                   expected_modules_manifest: Path | None = None) -> None:
+                   expected_modules_manifest: Path | None = None,
+                   guard_receipt_path: Path | None = None) -> None:
     """Load base model + adapter, merge, save, and verify special tokens.
 
     Args:
@@ -385,10 +386,18 @@ def merge_adapter(adapter_dir: str, output_dir: str, config: dict,
         expected_modules_manifest: Optional path to a Task-1-style receipt
             (attached_modules list) used for the merged-target-module-count
             partial-load guard. Guard is skipped if the file is absent.
+        guard_receipt_path: Where to write the merged-target-module-count guard
+            result. Defaults to output/base20/_merge_guard_result.json (the
+            original Phase-20 location) for backward compatibility -- callers
+            outside Phase 20 (e.g. a later phase's own probe/real merge) MUST
+            pass their own path here, otherwise every merge silently
+            overwrites Phase 20's already-committed receipt (Rule 3: this was
+            a real, load-bearing hardcode, not a hypothetical).
 
     Raises:
         SystemExit(1) on verification failure (prints vLLM fallback command).
     """
+    guard_receipt_path = guard_receipt_path or (PROJECT_ROOT / "output" / "base20" / "_merge_guard_result.json")
     # --- Idempotency check: skip if merged model already exists and verified ---
     merged_path = Path(output_dir)
     if merged_path.exists() and (merged_path / "config.json").exists():
@@ -471,7 +480,7 @@ def merge_adapter(adapter_dir: str, output_dir: str, config: dict,
         mergeable_expected_count = raw_expected_count - len(dropped_modules)
         _guard_merge_completeness(
             load_result, mergeable_expected_count,
-            guard_receipt_path=PROJECT_ROOT / "output" / "base20" / "_merge_guard_result.json",
+            guard_receipt_path=guard_receipt_path,
             raw_expected_count=raw_expected_count,
             dropped_modules=dropped_modules,
         )
@@ -566,6 +575,7 @@ def main(args: argparse.Namespace) -> None:
         args.output_dir if args.output_dir else config["model"]["local_dir"] + "-merged"
     ))
     expected_modules_manifest = resolve_path(args.expected_modules_manifest) if args.expected_modules_manifest else None
+    guard_receipt_path = resolve_path(args.guard_receipt_path) if args.guard_receipt_path else None
 
     print("=" * 60)
     print("MERGE ADAPTER CONFIGURATION")
@@ -576,7 +586,8 @@ def main(args: argparse.Namespace) -> None:
     print(f"  Output dir:  {output_dir}")
     print("=" * 60)
 
-    merge_adapter(adapter_dir, output_dir, config, expected_modules_manifest=expected_modules_manifest)
+    merge_adapter(adapter_dir, output_dir, config, expected_modules_manifest=expected_modules_manifest,
+                  guard_receipt_path=guard_receipt_path)
     print(f"\nMerged model ready at: {output_dir}")
 
 
@@ -625,6 +636,18 @@ def _build_parser() -> argparse.ArgumentParser:
             "merged-target-module-count partial-load guard. Defaults to "
             "output/base20/lora_target_modules.json if present; guard is "
             "skipped if no manifest is found."
+        ),
+    )
+    parser.add_argument(
+        "--guard-receipt-path",
+        default=None,
+        metavar="PATH",
+        help=(
+            "Where to write the merged-target-module-count guard result. "
+            "Defaults to output/base20/_merge_guard_result.json (backward "
+            "compatible). Callers outside Phase 20 (a later phase's own "
+            "probe/real merge) should pass their own path so they don't "
+            "silently overwrite Phase 20's already-committed receipt."
         ),
     )
     return parser
