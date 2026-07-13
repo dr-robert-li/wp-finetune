@@ -1,0 +1,41 @@
+recipe_version: "2"
+model: models/Qwen3.6-35B-A3B
+runtime: vllm
+container: ghcr.io/spark-arena/dgx-vllm-eugr-nightly:latest
+
+metadata:
+  description: >
+    Qwen3.6-35B-A3B bf16 (LOCAL checkpoint, downloaded via scripts/download_model.py
+    --config-path config/train_config_v4.yaml) served via vLLM for Phase 20 base
+    bring-up smoke tests (BASE-03 DeltaNet-on-aarch64 serving smoke, BASE-04 VL
+    merge-path round-trip). Sibling of recipes/qwen3.6-35b-a3b-fp8-vllm.yaml, which
+    serves the Hub FP8 checkpoint for in-pipeline batch generation — this recipe is
+    bf16 (no quantization) and points at the local download.
+  maintainers:
+    - wp-finetune (Robert Li)
+  source: https://huggingface.co/Qwen/Qwen3.6-35B-A3B
+
+defaults:
+  port: 8000
+  host: 0.0.0.0
+  tensor_parallel: 1
+  pipeline_parallel: 1
+  gpu_memory_utilization: 0.80
+  max_model_len: 16384
+  max_num_batched_tokens: 16384
+  trust_remote_code: true
+
+env:
+  HF_HUB_ENABLE_HF_TRANSFER: "1"
+
+command: |
+  vllm serve {model} \
+    --host {host} \
+    --port {port} \
+    --max-model-len {max_model_len} \
+    --max-num-batched-tokens {max_num_batched_tokens} \
+    --gpu-memory-utilization {gpu_memory_utilization} \
+    --trust-remote-code \
+    --enable-prefix-caching \
+    -tp {tensor_parallel} \
+    -pp {pipeline_parallel}

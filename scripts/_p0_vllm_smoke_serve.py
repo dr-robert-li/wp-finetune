@@ -36,18 +36,36 @@ def _dump_boot_log(name: str) -> str:
     return "\n".join(full.splitlines()[-30:]) if full else "(no log output captured)"
 
 
-def boot_vllm(model_dir: str, name: str, port: int, gpu_mem_util: float = 0.55) -> None:
-    """Launch vLLM container (detached) for model_dir."""
+def boot_vllm(
+    model_dir: str,
+    name: str,
+    port: int,
+    gpu_mem_util: float = 0.55,
+    serve_script: str = SERVE_SCRIPT,
+    extra_env: dict | None = None,
+) -> None:
+    """Launch vLLM container (detached) for model_dir.
+
+    serve_script: which serve_*_vllm.sh to run (default: serve_30_70_vllm.sh,
+        the pre-existing SERVE_SCRIPT constant). Phase 20 callers pass
+        scripts/serve_base20_vllm.sh to get its LANGUAGE_MODEL_ONLY/
+        ENFORCE_EAGER toggles.
+    extra_env: additional env vars merged into the launch env (e.g.
+        {"LANGUAGE_MODEL_ONLY": "1"}). Additive-only, backward compatible —
+        existing callers passing neither param are unaffected.
+    """
     env = {
         "CONTAINER_NAME": name,
         "PORT": str(port),
         "MODEL_DIR": str(PROJECT_ROOT / model_dir) if not str(model_dir).startswith("/") else model_dir,
         "GPU_MEM_UTIL": str(gpu_mem_util),
+        **(extra_env or {}),
     }
     import os
     full_env = {**os.environ, **env}
-    print(f"[vllm] booting {name} on :{port} model={model_dir} gpu_mem_util={gpu_mem_util}")
-    subprocess.run(["bash", SERVE_SCRIPT], env=full_env, check=True,
+    print(f"[vllm] booting {name} on :{port} model={model_dir} gpu_mem_util={gpu_mem_util} "
+          f"serve_script={serve_script} extra_env={extra_env or {}}")
+    subprocess.run(["bash", serve_script], env=full_env, check=True,
                    stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
 
