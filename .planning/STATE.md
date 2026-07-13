@@ -2,9 +2,12 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
-status: planning
-last_updated: "2026-07-12T13:30:00.000Z"
+current_phase: 20
+status: executing
+stopped_at: "Completed 11-05-PLAN.md — Phase 11 Sieve chain CLOSED: optimal_k=FULL locked (human sign-off 2026-07-10), prune_set_for_phase13.json emitted, SIEVE-02/03/05 documented"
+last_updated: "2026-07-13T00:50:03.506Z"
 last_activity: 2026-07-12
+last_activity_desc: v4.0 ROADMAP.md written (Phases 20-27, 18 requirements mapped, 100% coverage), REQUIREMENTS.md traceability filled
 progress:
   total_phases: 8
   completed_phases: 0
@@ -461,7 +464,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Ready to plan
+**Status:** Ready to execute
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)

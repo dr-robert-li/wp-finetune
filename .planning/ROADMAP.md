@@ -877,19 +877,33 @@ risk (token alignment, DeltaNet kernel, VL merge path) is smoke-tested and resol
 
   1. Qwen3.6-35B-A3B downloads and loads on the GB10 host with `trust_remote_code` on model+tokenizer,
      transformers 5.x import succeeds, and `Qwen3_5MoeForConditionalGeneration` resolves correctly
+
   2. eos/pad token-ID alignment gate passes — `model.config.eos_token_id`/`pad_token_id` assert-match the
      tokenizer's special tokens, confirmed by a stop-token smoke generation; Stage 2/3 SFT is blocked from
      starting until this gate is green
+
   3. DeltaNet aarch64 serving smoke passes with vLLM CUDA-graph capture enabled (vLLM >=0.19.0); if capture
      fails, `--enforce-eager` fallback is documented and the `use_kernels` decision is recorded
+
   4. A full VL merge-path round-trip succeeds: Tinker LoRA export -> merge onto `model.language_model.*`
      keys -> vLLM serve (`--language-model-only`) -> real generation returns coherent output, with the dual
      key-prefix silent-partial-load risk explicitly checked
 
 **Plans**: 4 plans (waves 1-4, sequential — single GB10 GPU / 121 GiB unified memory forbids concurrent 67 GiB model residency)
+**Wave 1**
+
 - [ ] 20-01-PLAN.md — BASE-01: v4 config sibling + download/load smoke (class resolution, forward, receipt)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 20-02-PLAN.md — BASE-02: eos/pad alignment gate (fix + natural-stop smoke + Stage 1.5 blocking receipt)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 20-03-PLAN.md — BASE-03: bf16 recipe + v4 serve script + DeltaNet vLLM smoke (CUDA-graph capture, use_kernels=False, vLLM ver log)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 20-04-PLAN.md — BASE-04: prefix-aware merge + serve round-trip (base-vs-merged diff, Tinker target-module log)
 
 ### Phase 21: SFT Training — Generation & Judge Models
@@ -904,11 +918,14 @@ miss is recorded as a valid, measured outcome
   1. The thinking-mode/`<think>` SFT data-format decision is recorded and a rendered-example spot-check
      confirms no spurious empty `<think></think>` blocks and max tokenized length stays under Tinker's 64K
      training-context cap
+
   2. Generation model SFT completes (MoE-only LoRA r32, LR <=2e-5, frozen router, `output_router_logits=True`)
      on the reused reasoning-mix data and clears the wp-bench floor 0.4286 (CI lower bound, or a
      freshly-measured noise-adjusted floor)
+
   3. A judge-output-format-compliance smoke on the raw pre-SFT base is run and recorded before bulk judge
      training — guards against the 18%-noncompliance failure mode that killed 3/4 ratios on the old base
+
   4. 3-seed relabel-SFT (seeds {1,0,2}) completes reusing the v1.3 human-relabeled data (`data/relabel_v1/`)
   5. Judge rho vs held-out relabeled val is measured (vLLM-served, 8192-token cap,
      `scripts/relabel/eval_relabel.py`) against the pre-registered targets (>0.85 single-seed OR >0.87
@@ -932,10 +949,13 @@ tooling instead of tooling built for the old 128-expert uniform-attention base
 
   1. Profiler module-traversal path is corrected to `model.model.language_model.layers` and `n_experts` is
      bumped from 128 to 256 across all 4 affected scripts
+
   2. DeltaNet-MoE layers and Gated-Attention-MoE layers are treated as separate strata in the per-layer
      E_eff computation and k-sweep masking logic, not one uniform stack
+
   3. An empirical check confirms the shared expert never appears in `router_logits` and is excluded from
      the sweepable/prunable expert set
+
   4. The adapted tooling is verified ready before Conditional Gate B (Phase 25) consumes it — this phase
      closes independently of the RL gate's outcome
 
@@ -951,8 +971,10 @@ committed — this is the single result the whole v4.0 rerun exists to produce
 
   1. An A/B eval of the new pair against v3.0 shipping figures runs on wp-bench and judge rho using the
      identical harness (`scripts/relabel/eval_relabel.py`, vLLM-served, 8192-token cap)
+
   2. Results are committed to disk (`output/eval4/...`) before any packaging or conditional-gate-continuation
      decision is made
+
   3. The pre-registered acceptance criteria (judge rho >0.85 single-seed OR >0.87 ensemble; wp-bench
      >=0.4286) are applied mechanically against the measured numbers, and the outcome — met or not met — is
      recorded as the milestone's primary verdict
@@ -970,8 +992,10 @@ recorded result for this phase — not a failure to force.**
 
   1. A materially different reward family (execution-grounded, preference-based, or multi-turn — not more
      steps of the old calibration reward) is selected and documented before any run starts
+
   2. The pre-registered kill criterion (validated teacher-Spearman improvement over warm-start noise, plus
      the codegen Goodhart trip-wire) is carried forward unchanged and wired into the run
+
   3. A smoke-scale probe runs and is evaluated against the kill criterion before any full-budget commitment
   4. The gate closes with one of two equally valid dispositions — RL adopted (kill criterion cleared) or RL
      rejected/`no_winner` (kill criterion not cleared) — either outcome unblocks Phase 25
@@ -990,8 +1014,10 @@ policy), Phase 22 (adapted tooling)
 
   1. Routing is re-profiled on Phase 24's final policy using the Phase 22-adapted tooling (not the
      unaudited 128-expert-era tooling)
+
   2. A k-sweep runs at multiple expert budgets with the same TOST equivalence gate (epsilon=2pp) and
      CI-aware (bootstrap lower bound) disposition used on the old base
+
   3. The gate closes with one of two equally valid dispositions — an optimal k below full-LoRA is adopted,
      or `no_winner` (optimal_k=full) is recorded — either outcome unblocks Phase 26
 
@@ -1010,6 +1036,7 @@ for this phase.**
   2. AIMER (primary) and optionally REAP (domain-aware comparison) are scored at the same compression
      ratios used on the old base, with per-dimension retention — especially D2_security — evaluated via
      gate-before-remove (no physical weight removal before the eval passes)
+
   3. The gate closes with one of two equally valid dispositions — a winning method+ratio ships pruned, or
      `no_winner` ships the merged-unpruned model — either outcome unblocks Phase 27
 
@@ -1027,9 +1054,11 @@ format, validated end-to-end, and published to HuggingFace with an honest, full-
   1. Q8 GGUF pair conversion completes (llama.cpp >=b9180) with GGUF block-count verified against the
      safetensors index, concurrent-sequence CUDA-backend smoke passing, and shared-expert quant-type
      metadata independently verified (does not inherit from Phase 22's Sieve-side protection)
+
   2. Cascading compression gates re-run — Gate 1 bf16 baseline, Gate 2 (pre-determined "warranted" since
      the bf16 pair at 134 GiB exceeds the 121 GB GB10 host), ladder Q8->Q6->Q5 within +/-2pp, no uniform
      4-bit nf4
+
   3. HuggingFace model cards are updated with the full v4.0 lineage and benchmark deltas vs v3.0, and a
      post-upload round-trip (download, GGUF load, gen/judge smoke) validates the published artifact — same
      discipline as v3.1's PUB-03
