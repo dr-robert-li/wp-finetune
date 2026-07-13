@@ -5,15 +5,15 @@ milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
 current_phase: 20
 current_phase_name: Base Bring-Up
 status: executing
-stopped_at: "Completed 20-01-PLAN.md — BASE-01 satisfied: Qwen3.6-35B-A3B downloaded (26 shards, 67.0 GB) and load-verified (Qwen3_5MoeForConditionalGeneration, forward pass OK)"
-last_updated: "2026-07-13T02:05:04.129Z"
+stopped_at: "Completed 20-03-PLAN.md — BASE-03 satisfied: DeltaNet serving smoke passed with CUDA-graph capture enabled (vllm 0.20.2rc1, use_kernels=false recorded)"
+last_updated: "2026-07-13T02:24:04.895Z"
 last_activity: 2026-07-13
 last_activity_desc: Phase 20 execution started
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 4
-  completed_plans: 2
+  completed_plans: 3
   percent: 0
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-12)
 ## Current Position
 
 Phase: 20 (Base Bring-Up) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-07-13 — Phase 20 execution started
 
@@ -228,6 +228,7 @@ Progress: [██████████] 100%
 | Phase 18 P02 | ~13h | 3 tasks | 8 files |
 | Phase 20 P01 | 11min | 2 tasks | 6 files |
 | Phase 20-base-bring-up P02 | 8min | 2 tasks | 4 files |
+| Phase 20-base-bring-up P03 | 16min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -300,6 +301,8 @@ Recent decisions affecting current work:
 - [Phase ?]: 20-01: config/train_config_v4.yaml is a non-destructive sibling of config/train_config.yaml; v4.0 scripts take --config-path rather than mutating the v3.x default
 - [Phase ?]: 20-02: model.config on the loaded VL checkpoint unwraps to the plain text-only sub-config (get_text_config() returns self) — model.config.save_pretrained() silently drops vision_config/architectures/image_token_id, so config.json fixes must use direct JSON surgery against the original file instead
 - [Phase ?]: 20-02: BASE-02 satisfied — eos/pad aligned (text_config.eos_token_id 248044->248046, pad_token_id None->248044), real stop-token generation confirmed natural stop (19/64 tokens), output/base20/token_alignment.json status=pass is the Stage 1.5 gate Phase 21 must consume
+- [Phase ?]: 20-03: use_kernels=False locked — Atlas-Inference/gdn community kernel (SUS, non-allowlisted trust_remote_code) declined for 1.38x prefill-only gain; flipping to True requires a blocking-human checkpoint per T-20-03a
+- [Phase ?]: 20-03: BASE-03 satisfied — DeltaNet serves on GB10/aarch64 via vLLM 0.20.2rc1 WITH CUDA-graph capture enabled on first attempt (vLLM #35945 did not reproduce, fallback_used=false); v4 serving harness ready for 20-04
 
 ### Pending Todos
 
@@ -346,8 +349,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-13T02:04:37.064Z
-Stopped at: Completed 20-01-PLAN.md — BASE-01 satisfied: Qwen3.6-35B-A3B downloaded (26 shards, 67.0 GB) and load-verified (Qwen3_5MoeForConditionalGeneration, forward pass OK)
+Last session: 2026-07-13T02:23:55.571Z
+Stopped at: Completed 20-03-PLAN.md — BASE-03 satisfied: DeltaNet serving smoke passed with CUDA-graph capture enabled (vllm 0.20.2rc1, use_kernels=false recorded)
 
 Prior session: 2026-07-08T00:00:00.000Z
 Stopped at: Path A executed (regen v4 save_state → gated smoke). Smoke KILLED at step 50: hybrid@0.8 did not move validated teacher-Spearman above warm-start noise (Δ+0.015 < +0.02 bar; ρ_initial 0.6243), while forbidden fix_correctness proxy rose +0.025 = Goodhart-consistent. Kill-at-50 fired as designed. Reject-RL reinforced → ship v1.2 SFT for v3.0. Loadable v4 save_state now exists (reusable). Artifacts: logs/phase09_rerun/SMOKE_READS_TALLY.md. Resume = ./.continue-here.md (user decides: accept verdict → v3.0 packaging, OR refine non-code-blind reward + re-smoke with Gate-2 armed).

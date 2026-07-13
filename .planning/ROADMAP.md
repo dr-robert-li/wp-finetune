@@ -889,7 +889,7 @@ risk (token alignment, DeltaNet kernel, VL merge path) is smoke-tested and resol
      keys -> vLLM serve (`--language-model-only`) -> real generation returns coherent output, with the dual
      key-prefix silent-partial-load risk explicitly checked
 
-**Plans**: 2/4 plans executed
+**Plans**: 3/4 plans executed
 **Wave 1**
 
 - [x] 20-01-PLAN.md — BASE-01: v4 config sibling + download/load smoke (class resolution, forward, receipt)
@@ -900,7 +900,7 @@ risk (token alignment, DeltaNet kernel, VL merge path) is smoke-tested and resol
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 20-03-PLAN.md — BASE-03: bf16 recipe + v4 serve script + DeltaNet vLLM smoke (CUDA-graph capture, use_kernels=False, vLLM ver log)
+- [x] 20-03-PLAN.md — BASE-03: bf16 recipe + v4 serve script + DeltaNet vLLM smoke (CUDA-graph capture, use_kernels=False, vLLM ver log)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -1103,7 +1103,7 @@ Note: v4.0 (Phases 20-27) starts after Phase 19 sign-off. Phase 22 (Sieve toolin
 | 17. Benchmark Expansion (wp-bench + SWE-bench gen) | v3.1 | 2/3 | In Progress|  |
 | 18. Production Sweep & HuggingFace Publication | v3.1 | 2/2 | Complete   | 2026-07-12 |
 | 19. Next-Base Rerun Roadmap | v3.1 | 1/1 | Complete (base locked: Qwen3.6-35B-A3B; V4-RERUN-ROADMAP.md written) | 2026-07-11 |
-| 20. Base Bring-Up | v4.0 | 2/4 | In Progress|  |
+| 20. Base Bring-Up | v4.0 | 3/4 | In Progress|  |
 | 21. SFT Training — Generation & Judge Models | v4.0 | 0/TBD | Not started | - |
 | 22. Sieve/Protected-Mask Tooling Adaptation | v4.0 | 0/TBD | Not started | - |
 | 23. Final Evaluation | v4.0 | 0/TBD | Not started | - |
