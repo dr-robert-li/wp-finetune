@@ -163,7 +163,10 @@ def run_tinker_probe() -> dict:
     with tarfile.open(tar_path, "r:*") as tf:
         for m in tf.getmembers():
             name = os.path.basename(m.name)
-            if name in ("adapter_config.json", "adapter_model.safetensors"):
+            # WR-10: require a regular file -- m.name already neutralizes
+            # path traversal, but a symlink/hardlink/device entry named
+            # adapter_config.json would otherwise still be extracted as such.
+            if name in ("adapter_config.json", "adapter_model.safetensors") and m.isfile():
                 m.name = name
                 tf.extract(m, ADAPTER_DIR)
 
