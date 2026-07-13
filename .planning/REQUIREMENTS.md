@@ -392,6 +392,24 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PUB-03 | Phase 18 | Complete |
 | NEXT-01 | Phase 19 | Complete (base locked: `19-NEXT-BASE-SELECTION.md`) |
 | NEXT-02 | Phase 19 | Complete (`.planning/V4-RERUN-ROADMAP.md`) |
+| BASE-01 | Phase 20 | Pending |
+| BASE-02 | Phase 20 | Pending |
+| BASE-03 | Phase 20 | Pending |
+| BASE-04 | Phase 20 | Pending |
+| GEN-01 | Phase 21 | Pending |
+| GEN-02 | Phase 21 | Pending |
+| GEN-03 | Phase 21 | Pending |
+| JUDGE-01 | Phase 21 | Pending |
+| JUDGE-02 | Phase 21 | Pending |
+| JUDGE-03 | Phase 21 | Pending |
+| GATE4-02 | Phase 22 | Pending |
+| EVAL4-01 | Phase 23 | Pending |
+| GATE4-01 | Phase 24 | Pending |
+| GATE4-03 | Phase 25 | Pending |
+| GATE4-04 | Phase 26 | Pending |
+| PKG4-01 | Phase 27 | Pending |
+| PKG4-02 | Phase 27 | Pending |
+| PUB4-01 | Phase 27 | Pending |
 
 ## v4.0 Requirements — Pipeline Rerun on Qwen3.6-35B-A3B
 
@@ -446,9 +464,10 @@ Pre-registered success criteria: judge rho **>0.85 single-seed OR >0.87 3-seed e
 - v3.0 requirements: 21 total (0 complete) — SIEVE(5) + EVAL2(2) + MERGE(1) + PRUNE(6) + EVAL3(2) + PKG(5) [Phases 11-15]
 - DPLT requirements: 7 total (deferred -> v3.0 PKG/PRUNE)
 - v3.1 requirements: 8 total (8 complete) — BENCH(3) + PUB(3) + NEXT(2) [Phases 17-19]
-- v4.0 requirements: 18 total (0 complete) — BASE(4) + GEN(3) + JUDGE(3) + EVAL4(1) + GATE4(4) + PKG4(2) + PUB4(1) — traceability to phases filled by v4.0 roadmap
-- Total mapped to phases: 109 active + 7 deferred + 18 v4.0 pending roadmap mapping
+- v4.0 requirements: 18 total (0 complete) — BASE(4)->Ph20 + GEN(3)+JUDGE(3)->Ph21 + GATE4-02(1)->Ph22 + EVAL4(1)->Ph23 + GATE4-01(1)->Ph24 + GATE4-03(1)->Ph25 + GATE4-04(1)->Ph26 + PKG4(2)+PUB4(1)->Ph27 (ROADMAP.md v4.0 milestone, Phases 20-27)
+- Total mapped to phases: 127 active (109 + 18 v4.0, now phase-mapped) + 7 deferred
 
 ---
 *Requirements defined: 2026-03-26*
 *Last updated: 2026-07-12 — v4.0 requirements added (Pipeline Rerun on Qwen3.6-35B-A3B): BASE/GEN/JUDGE/EVAL4/GATE4/PKG4/PUB4, 18 REQ-IDs from V4-RERUN-ROADMAP.md + 2026-07-12 research re-verification*
+*Last updated: 2026-07-12 — v4.0 traceability filled: 18 REQ-IDs mapped to Phases 20-27 (ROADMAP.md v4.0 milestone appended, STATE.md advanced)*

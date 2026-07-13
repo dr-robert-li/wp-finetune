@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
 status: planning
-last_updated: "2026-07-12T12:54:09.194Z"
+last_updated: "2026-07-12T13:30:00.000Z"
 last_activity: 2026-07-12
 progress:
-  total_phases: 0
+  total_phases: 8
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,17 +17,17 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-05)
+See: .planning/PROJECT.md (updated 2026-07-12)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 11 — Compression & Packaging (two-model pair)
+**Current focus:** Phase 20 — Base Bring-Up (Qwen3.6-35B-A3B)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-07-12 — Milestone v4.0 started
+Phase: 20 — Base Bring-Up (not started)
+Plan: — (no plans yet — roadmap complete, ready to plan)
+Status: Roadmap complete — ready to plan Phase 20
+Last activity: 2026-07-12 — v4.0 ROADMAP.md written (Phases 20-27, 18 requirements mapped, 100% coverage), REQUIREMENTS.md traceability filled
 
 ### 2026-07-08 — Gap-closure investigation (judge reasoning ceiling)
 
@@ -331,6 +331,7 @@ Recent decisions affecting current work:
 ### Roadmap Evolution
 
 - Phase 08.2 inserted after Phase 08.1: Reward Validity Gate — offline reward<->teacher-Spearman oracle + calibration reward + codegen trip-wire (Phase 10 Goodhart trigger) (URGENT)
+- v4.0 roadmap (2026-07-12): compressed V4-RERUN-ROADMAP.md's 10-phase (20-29) sketch to 8 phases (20-27) — merged Stage 2/3 SFT (gen+judge, parallel-safe, single shared Phase-20 dependency) and merged Packaging+Publication (strictly sequential, small scope); kept the 3 conditional gates (RL/Sieve/Prune) and Sieve-tooling adaptation as separate phases to preserve independent no_winner dispositions and the Sieve-tooling-must-not-block-SFT dependency
 
 ## Session Continuity
 

@@ -8,6 +8,7 @@
 - ❌ **v2.0 RL Alignment** - Phases 7-10 (infra COMPLETE; RL REJECTED at Phase 10 gate, closed 2026-07-05)
 - ✅ **v3.0 MoE-Sieve, Pruning & Packaging** - Phases 11-16 (complete 2026-07-11 — Sieve full, prune no_winner, Q8 GGUF lossless ship tier, pipeline locked in PIPELINE.md)
 - ✅ **v3.1 Benchmark, Publish & Next Base** - Phases 17-19 (complete 2026-07-12 — wp-bench + SWE-bench gen eval, HF pair published PUBLIC, V4 rerun roadmap locked on Qwen3.6-35B-A3B)
+- 🚧 **v4.0 Pipeline Rerun on Qwen3.6-35B-A3B** - Phases 20-27 (ACTIVE — started 2026-07-12; base Qwen/Qwen3.6-35B-A3B LOCKED; targets judge rho >0.85 single-seed / >0.87 ensemble vs the 0.8075 wall, wp-bench floor 0.4286)
 
 ## Overview
 
@@ -101,12 +102,26 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 </details>
 
-<details open>
+<details>
 <summary>v3.1 Benchmark, Publish & Next Base (Phases 17-19) — COMPLETE 2026-07-12</summary>
 
 - [x] **Phase 17: Benchmark Expansion — wp-bench + SWE-bench Generation Eval** - Full wp-bench run on the shipped gen model plus a SWE-bench generation-mode eval to position the model against a public coding benchmark; document scores honestly in the model card
 - [x] **Phase 18: Production Sweep & HuggingFace Publication** - Full repo sweep (docs current, stale artifacts to deprecated/, streamlined layout), then package the two-model pair (v1.2 gen + v1.3 judge ensemble, Q8 GGUF ship tier) and publish to HuggingFace (COMPLETE 2026-07-12 — both HF repos PUBLIC, verification PASSED 7/7)
 - [x] **Phase 19: Next-Base Rerun Roadmap** - Plan the full pipeline rerun on the latest Qwen-family base (research current best same-class MoE), producing a costed roadmap for the next milestone (COMPLETE 2026-07-11 — base LOCKED Qwen3.6-35B-A3B, V4-RERUN-ROADMAP.md)
+
+</details>
+
+<details open>
+<summary>v4.0 Pipeline Rerun on Qwen3.6-35B-A3B (Phases 20-27) — ACTIVE</summary>
+
+- [ ] **Phase 20: Base Bring-Up** - Download/load smoke, eos/pad token-ID alignment (Stage 1.5), DeltaNet-aarch64 serving smoke, VL merge-path round-trip check
+- [ ] **Phase 21: SFT Training — Generation & Judge Models** - Stage 2/3 SFT on reused data (reasoning-mix gen, 3-seed relabel judge); pre-registered rho/wp-bench targets measured
+- [ ] **Phase 22: Sieve Tooling Adaptation** - Adapt MoE-Sieve profiler + protected-mask pipeline for 256-expert/shared-expert/mixed-strata routing, ready before Gate B
+- [ ] **Phase 23: Final Evaluation** - A/B eval vs v3.0 shipping figures under pre-registered criteria — the milestone's primary verdict
+- [ ] **Phase 24: Conditional Gate A — RL Re-Test** - RL re-test only with a materially different reward family; no_winner is a valid result
+- [ ] **Phase 25: Conditional Gate B — MoE-Sieve Re-Test** - k-sweep re-test on adapted tooling (TOST, CI-aware); no_winner is a valid result
+- [ ] **Phase 26: Conditional Gate C — Merge + Prune Re-Test** - AIMER/REAP gate-before-remove re-test; no_winner is a valid result
+- [ ] **Phase 27: Packaging & Publication Refresh** - Q8 GGUF pair conversion + cascading compression gates + HF card lineage refresh
 
 </details>
 
@@ -833,6 +848,190 @@ Plans:
 (`Qwen/Qwen3.6-35B-A3B`, live-verified); full stage map in `.planning/V4-RERUN-ROADMAP.md`. v4.0 execution
 is a FUTURE milestone requiring explicit human sign-off — no downloads/training happened in this phase.
 
+### v4.0 Pipeline Rerun on Qwen3.6-35B-A3B
+
+**Milestone Goal:** Rerun the locked PIPELINE.md on Qwen/Qwen3.6-35B-A3B (base LOCKED, Phase 19) to break the
+judge-rho 0.8075 SFT wall. Pre-registered success: judge rho >0.85 single-seed OR >0.87 3-seed ensemble;
+wp-bench >=0.4286 floor (CI-aware — bootstrap lower bound must clear the bar; all six v3.0 carry-forward
+lessons apply: truncation-aware evals, warm-up gating, --parallel splitting, CI-aware gates, benchmark
+pre-registration, double-grep archive rule). Master plan: `.planning/V4-RERUN-ROADMAP.md`.
+
+**Dependency:** Phase 19 (base locked, roadmap costed) + explicit human sign-off to open v4.0 GPU/Tinker
+spend. No downloads/training happen until that sign-off is given.
+
+**Structure note:** This milestone compresses V4-RERUN-ROADMAP.md's proposed 10-phase (20-29) sketch to 8
+phases (20-27) by merging Stage 2 (gen SFT) and Stage 3 (judge SFT) into one phase — they share Phase 20 as
+their only dependency and run parallel-safe — and merging Packaging with Publication Refresh (strictly
+sequential, small scope). The three conditional gates (RL/Sieve/Prune) and the Sieve-tooling work item are
+kept as separate phases — each has an independent "no_winner is a result" disposition and distinct,
+non-overlapping dependencies (Sieve tooling is explicitly independent of SFT and must not be gated behind
+RL) that a merge would blur.
+
+### Phase 20: Base Bring-Up
+
+**Goal**: Qwen3.6-35B-A3B is downloaded, loads correctly, and every architecture-specific serving/training
+risk (token alignment, DeltaNet kernel, VL merge path) is smoke-tested and resolved before any SFT run starts
+**Depends on**: Phase 19 sign-off (nothing within v4.0 — first phase)
+**Requirements**: BASE-01, BASE-02, BASE-03, BASE-04
+**Success Criteria** (what must be TRUE):
+
+  1. Qwen3.6-35B-A3B downloads and loads on the GB10 host with `trust_remote_code` on model+tokenizer,
+     transformers 5.x import succeeds, and `Qwen3_5MoeForConditionalGeneration` resolves correctly
+  2. eos/pad token-ID alignment gate passes — `model.config.eos_token_id`/`pad_token_id` assert-match the
+     tokenizer's special tokens, confirmed by a stop-token smoke generation; Stage 2/3 SFT is blocked from
+     starting until this gate is green
+  3. DeltaNet aarch64 serving smoke passes with vLLM CUDA-graph capture enabled (vLLM >=0.19.0); if capture
+     fails, `--enforce-eager` fallback is documented and the `use_kernels` decision is recorded
+  4. A full VL merge-path round-trip succeeds: Tinker LoRA export -> merge onto `model.language_model.*`
+     keys -> vLLM serve (`--language-model-only`) -> real generation returns coherent output, with the dual
+     key-prefix silent-partial-load risk explicitly checked
+
+**Plans**: TBD
+
+### Phase 21: SFT Training — Generation & Judge Models
+
+**Goal**: Both the generation and judge pathways are fine-tuned on the new base using the existing
+reasoning-mix and relabel data (no regeneration), and each clears its pre-registered acceptance bar — or the
+miss is recorded as a valid, measured outcome
+**Depends on**: Phase 20
+**Requirements**: GEN-01, GEN-02, GEN-03, JUDGE-01, JUDGE-02, JUDGE-03
+**Success Criteria** (what must be TRUE):
+
+  1. The thinking-mode/`<think>` SFT data-format decision is recorded and a rendered-example spot-check
+     confirms no spurious empty `<think></think>` blocks and max tokenized length stays under Tinker's 64K
+     training-context cap
+  2. Generation model SFT completes (MoE-only LoRA r32, LR <=2e-5, frozen router, `output_router_logits=True`)
+     on the reused reasoning-mix data and clears the wp-bench floor 0.4286 (CI lower bound, or a
+     freshly-measured noise-adjusted floor)
+  3. A judge-output-format-compliance smoke on the raw pre-SFT base is run and recorded before bulk judge
+     training — guards against the 18%-noncompliance failure mode that killed 3/4 ratios on the old base
+  4. 3-seed relabel-SFT (seeds {1,0,2}) completes reusing the v1.3 human-relabeled data (`data/relabel_v1/`)
+  5. Judge rho vs held-out relabeled val is measured (vLLM-served, 8192-token cap,
+     `scripts/relabel/eval_relabel.py`) against the pre-registered targets (>0.85 single-seed OR >0.87
+     3-seed ensemble); if unmet, the miss is recorded as a valid outcome per the milestone's
+     failure-disposition rule, not forced
+
+**Cost note**: First real Tinker spend in v4.0 (~$2/run gen, ~$6 for the 3-seed judge ensemble, anchored to
+v1.3's $1.83 actual). **Tinker's price rise lands 2026-07-17** — if this phase's runs start on/after that
+date, budget the ~10% training-cost increase (prefill/sample ~50% up but minor for this workload).
+
+**Plans**: TBD
+
+### Phase 22: Sieve/Protected-Mask Tooling Adaptation
+
+**Goal**: The MoE-Sieve profiler and protected-mask pipeline are adapted for the new base's 256-expert,
+shared-expert, mixed-DeltaNet/Attention-strata architecture, so Conditional Gate B can run against audited
+tooling instead of tooling built for the old 128-expert uniform-attention base
+**Depends on**: Phase 20 (parallel-safe with Phase 21 — does not block or wait on SFT training)
+**Requirements**: GATE4-02
+**Success Criteria** (what must be TRUE):
+
+  1. Profiler module-traversal path is corrected to `model.model.language_model.layers` and `n_experts` is
+     bumped from 128 to 256 across all 4 affected scripts
+  2. DeltaNet-MoE layers and Gated-Attention-MoE layers are treated as separate strata in the per-layer
+     E_eff computation and k-sweep masking logic, not one uniform stack
+  3. An empirical check confirms the shared expert never appears in `router_logits` and is excluded from
+     the sweepable/prunable expert set
+  4. The adapted tooling is verified ready before Conditional Gate B (Phase 25) consumes it — this phase
+     closes independently of the RL gate's outcome
+
+**Plans**: TBD
+
+### Phase 23: Final Evaluation
+
+**Goal**: The new gen+judge pair's actual performance against v3.0's shipping figures is measured and
+committed — this is the single result the whole v4.0 rerun exists to produce
+**Depends on**: Phase 21
+**Requirements**: EVAL4-01
+**Success Criteria** (what must be TRUE):
+
+  1. An A/B eval of the new pair against v3.0 shipping figures runs on wp-bench and judge rho using the
+     identical harness (`scripts/relabel/eval_relabel.py`, vLLM-served, 8192-token cap)
+  2. Results are committed to disk (`output/eval4/...`) before any packaging or conditional-gate-continuation
+     decision is made
+  3. The pre-registered acceptance criteria (judge rho >0.85 single-seed OR >0.87 ensemble; wp-bench
+     >=0.4286) are applied mechanically against the measured numbers, and the outcome — met or not met — is
+     recorded as the milestone's primary verdict
+
+**Plans**: TBD
+
+### Phase 24: Conditional Gate A — RL Re-Test
+
+**Goal**: Determine whether RL is worth re-attempting on the new, higher-rho judge — and only with a
+materially different reward family than the one that failed on the old base. **`no_winner` is a valid,
+recorded result for this phase — not a failure to force.**
+**Depends on**: Phase 23
+**Requirements**: GATE4-01
+**Success Criteria** (what must be TRUE):
+
+  1. A materially different reward family (execution-grounded, preference-based, or multi-turn — not more
+     steps of the old calibration reward) is selected and documented before any run starts
+  2. The pre-registered kill criterion (validated teacher-Spearman improvement over warm-start noise, plus
+     the codegen Goodhart trip-wire) is carried forward unchanged and wired into the run
+  3. A smoke-scale probe runs and is evaluated against the kill criterion before any full-budget commitment
+  4. The gate closes with one of two equally valid dispositions — RL adopted (kill criterion cleared) or RL
+     rejected/`no_winner` (kill criterion not cleared) — either outcome unblocks Phase 25
+
+**Plans**: TBD
+
+### Phase 25: Conditional Gate B — MoE-Sieve Re-Test
+
+**Goal**: Determine whether the new base's 256-expert routing has enough redundancy for MoE-Sieve
+expert-drop to beat full-LoRA at equivalent quality, using tooling already adapted for this architecture.
+**`no_winner` (optimal_k=full) is a valid, recorded result for this phase.**
+**Depends on**: Phase 24 (RL-before-Sieve precedent — sieve profiling reflects the RL-or-no-RL final
+policy), Phase 22 (adapted tooling)
+**Requirements**: GATE4-03
+**Success Criteria** (what must be TRUE):
+
+  1. Routing is re-profiled on Phase 24's final policy using the Phase 22-adapted tooling (not the
+     unaudited 128-expert-era tooling)
+  2. A k-sweep runs at multiple expert budgets with the same TOST equivalence gate (epsilon=2pp) and
+     CI-aware (bootstrap lower bound) disposition used on the old base
+  3. The gate closes with one of two equally valid dispositions — an optimal k below full-LoRA is adopted,
+     or `no_winner` (optimal_k=full) is recorded — either outcome unblocks Phase 26
+
+**Plans**: TBD
+
+### Phase 26: Conditional Gate C — Merge + Prune Re-Test
+
+**Goal**: Determine whether AIMER/REAP weight-level pruning finally pays off on a base whose Gate B result
+(if positive) indicates real expert redundancy. **`no_winner` (ship unpruned) is a valid, recorded result
+for this phase.**
+**Depends on**: Phase 25
+**Requirements**: GATE4-04
+**Success Criteria** (what must be TRUE):
+
+  1. LoRA adapters are merged into base weights before any pruning scoring runs
+  2. AIMER (primary) and optionally REAP (domain-aware comparison) are scored at the same compression
+     ratios used on the old base, with per-dimension retention — especially D2_security — evaluated via
+     gate-before-remove (no physical weight removal before the eval passes)
+  3. The gate closes with one of two equally valid dispositions — a winning method+ratio ships pruned, or
+     `no_winner` ships the merged-unpruned model — either outcome unblocks Phase 27
+
+**Plans**: TBD
+
+### Phase 27: Packaging & Publication Refresh
+
+**Goal**: The final shipping artifact (whatever Phases 23-26 produced) is quantized to a memory-feasible
+format, validated end-to-end, and published to HuggingFace with an honest, full-lineage model card
+**Depends on**: Phase 23 (bf16 pair minimum — packaging can proceed even if all conditional gates land on
+`no_winner`); Phase 25/26 if either produced a compression winner
+**Requirements**: PKG4-01, PKG4-02, PUB4-01
+**Success Criteria** (what must be TRUE):
+
+  1. Q8 GGUF pair conversion completes (llama.cpp >=b9180) with GGUF block-count verified against the
+     safetensors index, concurrent-sequence CUDA-backend smoke passing, and shared-expert quant-type
+     metadata independently verified (does not inherit from Phase 22's Sieve-side protection)
+  2. Cascading compression gates re-run — Gate 1 bf16 baseline, Gate 2 (pre-determined "warranted" since
+     the bf16 pair at 134 GiB exceeds the 121 GB GB10 host), ladder Q8->Q6->Q5 within +/-2pp, no uniform
+     4-bit nf4
+  3. HuggingFace model cards are updated with the full v4.0 lineage and benchmark deltas vs v3.0, and a
+     post-upload round-trip (download, GGUF load, gen/judge smoke) validates the published artifact — same
+     discipline as v3.1's PUB-03
+
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
@@ -844,6 +1043,7 @@ Note: Phase 7 profiles the v1.2 reasoning adapter (from Phase 4.4), not the v1.0
 Note: RL (Phases 8-9) runs BEFORE MoE-Sieve (Phase 11) per Issue #1 — routing statistics should reflect reward-aligned behavior.
 Note: Phase 10 gates Phase 11 — RL eval results must confirm readiness before MoE-Sieve begins.
 Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitudes require the unified model.
+Note: v4.0 (Phases 20-27) starts after Phase 19 sign-off. Phase 22 (Sieve tooling) depends only on Phase 20 and runs parallel-safe with Phase 21 (SFT) — it does not block SFT start. Phases 24/25/26 (Conditional Gates A/B/C) are sequential re-tests where `no_winner` closes the phase validly; Phase 27 (Packaging) proceeds on the Phase 23 bf16 pair regardless of gate outcomes.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -870,3 +1070,11 @@ Note: Phase 13 MERGE-01 must complete before pruning runs — activation magnitu
 | 17. Benchmark Expansion (wp-bench + SWE-bench gen) | v3.1 | 2/3 | In Progress|  |
 | 18. Production Sweep & HuggingFace Publication | v3.1 | 2/2 | Complete   | 2026-07-12 |
 | 19. Next-Base Rerun Roadmap | v3.1 | 1/1 | Complete (base locked: Qwen3.6-35B-A3B; V4-RERUN-ROADMAP.md written) | 2026-07-11 |
+| 20. Base Bring-Up | v4.0 | 0/TBD | Not started | - |
+| 21. SFT Training — Generation & Judge Models | v4.0 | 0/TBD | Not started | - |
+| 22. Sieve/Protected-Mask Tooling Adaptation | v4.0 | 0/TBD | Not started | - |
+| 23. Final Evaluation | v4.0 | 0/TBD | Not started | - |
+| 24. Conditional Gate A — RL Re-Test | v4.0 | 0/TBD | Not started | - |
+| 25. Conditional Gate B — MoE-Sieve Re-Test | v4.0 | 0/TBD | Not started | - |
+| 26. Conditional Gate C — Merge + Prune Re-Test | v4.0 | 0/TBD | Not started | - |
+| 27. Packaging & Publication Refresh | v4.0 | 0/TBD | Not started | - |
