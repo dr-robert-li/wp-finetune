@@ -213,6 +213,123 @@ def _make_prefix_aware_adapter(adapter_dir: str, model) -> tuple[str, list[str]]
     return work_dir, dropped_modules
 
 
+def _adapter_has_routed_expert_params(adapter_dir: str) -> bool:
+    """Detect Tinker's routed-MoE-expert (PEFT target_parameters) export.
+
+    Tinker's train_mlp=True export attaches per-expert-batched 3D LoRA
+    tensors under `mlp.experts.{w1,w2,w3}` -- structurally distinct from
+    ordinary target_modules nn.Linear tensors (e.g. mlp.shared_expert.*,
+    self_attn.*). merge_adapter.py's PEFT-based merge_and_unload() path
+    walks only the live model's submodule tree, which cannot reach these
+    (moe_merge_probe.json finding, 21-01-SUMMARY.md). Cheap header-only
+    check (no tensor data loaded) to route such adapters through the
+    tinker_cookbook-based merge path instead.
+    """
+    from safetensors import safe_open
+
+    path = Path(adapter_dir) / "adapter_model.safetensors"
+    with safe_open(str(path), framework="pt", device="cpu") as f:
+        return any(".mlp.experts." in k for k in f.keys())
+
+
+def _merge_via_tinker_cookbook(
+    adapter_dir: str,
+    output_dir: str,
+    local_base_dir: str,
+    guard_receipt_path: Path | None = None,
+    expected_modules_manifest: Path | None = None,
+) -> None:
+    """Merge a routed-MoE-expert Tinker LoRA adapter via tinker_cookbook's
+    own OFFICIAL, vendor-tested `build_hf_model` merge path.
+
+    Why not hand-roll the composition math: this project's OWN installed
+    Tinker dependency (`tinker_cookbook.weights`, already required for
+    every Tinker training/probe call in this repo) ships a maintained,
+    tested merge implementation for exactly this model family --
+    `tinker_cookbook/weights/README.md`'s support matrix lists "Qwen3.5 MoE
+    (35B-A3B, 397B-A17B)" as Merge=verified end-to-end with vLLM 0.18, and
+    its `_merge_qwen3_5.py`/`_merge.py` modules hardcode the
+    w1/w2/w3 -> gate_proj/up_proj/down_proj semantic mapping (confirmed
+    identical to scripts/merge_tinker_v3.py's independently-proven old-base
+    convention) that this project's own probe could not otherwise confirm
+    from any source. Reusing it is strictly safer than re-deriving untested
+    composition math for a correctness-critical path (Rule 4 gap closure).
+
+    Also sidesteps the VL composite-config-flattening pitfall
+    (`_repair_vl_config`'s docstring) entirely: `build_hf_model`'s
+    shard-by-shard strategy never instantiates `AutoModelForCausalLM`, it
+    reads/writes safetensors shards directly and raw-copies config.json
+    from the source model -- so the wrapper is never touched.
+
+    Raises SystemExit if the completeness guard fails (module-count
+    mismatch against `expected_modules_manifest`, when provided).
+    """
+    from tinker_cookbook import weights as tcw  # noqa: PLC0415
+    from tinker_cookbook.weights._artifacts import (  # noqa: PLC0415
+        get_model_state_keys,
+        load_adapter_weights,
+    )
+    from tinker_cookbook.weights._merge import detect_merge_profile, plan_merge_ops  # noqa: PLC0415
+    from tinker_cookbook.weights._merge_utils import extract_adapter_weight_names  # noqa: PLC0415
+
+    base_dir = Path(local_base_dir)
+    model_state_keys = get_model_state_keys(base_dir)
+    adapter_weights, adapter_cfg = load_adapter_weights(Path(adapter_dir))
+    with open(base_dir / "config.json") as f:
+        model_config = json.load(f)
+    profile = detect_merge_profile(model_config, model_state_keys)
+
+    # Completeness guard BY CONSTRUCTION (stronger than a post-hoc missing/
+    # unexpected-key count): plan_merge_ops (via plan_standard_op /
+    # plan_expert_ops) raises WeightsMergeError for ANY adapter LoRA module
+    # that doesn't map to a real target key in the model -- so success here
+    # proves every routed-expert AND shared-expert/attention module (not
+    # just the target_modules-reachable subset) is mergeable, no silent
+    # partial drops. This closes the exact gap moe_merge_probe.json recorded.
+    ops = plan_merge_ops(adapter_weights, adapter_cfg, model_state_keys, profile)
+    merged_target_module_count = len(extract_adapter_weight_names(adapter_weights))
+
+    manifest_path = expected_modules_manifest or (
+        PROJECT_ROOT / "output" / "base20" / "lora_target_modules.json"
+    )
+    expected_count = _load_expected_module_count(manifest_path)
+
+    if guard_receipt_path is not None:
+        guard_receipt_path.parent.mkdir(parents=True, exist_ok=True)
+        guard_receipt_path.write_text(json.dumps({
+            "merged_target_module_count": merged_target_module_count,
+            "expected_target_module_count": expected_count,
+            "raw_expected_module_count": expected_count,
+            "dropped_module_count": 0,
+            "merge_engine": "tinker_cookbook.weights.build_hf_model",
+            "expert_layout": profile.expert_layout,
+            "planned_target_keys": len(ops),
+        }, indent=2))
+
+    if expected_count is not None and merged_target_module_count != expected_count:
+        raise SystemExit(
+            f"MERGE ABORT: tinker_cookbook plan_merge_ops mapped "
+            f"{merged_target_module_count} adapter LoRA modules but the expected-modules "
+            f"manifest ({manifest_path}) lists {expected_count} -- module count mismatch, "
+            f"not trustworthy."
+        )
+
+    print(f"  [tinker_cookbook guard] planned merge ops for {merged_target_module_count}"
+          f"{'/' + str(expected_count) if expected_count is not None else ''} adapter LoRA "
+          f"modules (expert_layout={profile.expert_layout}, {len(ops)} distinct target keys) "
+          f"-- covers routed MoE experts AND shared_expert/attention modules, no silent drops")
+
+    print(f"Merging via tinker_cookbook.weights.build_hf_model ({adapter_dir} -> {output_dir}) ...")
+    if Path(output_dir).exists():
+        shutil.rmtree(output_dir)  # build_hf_model requires output_path to not exist
+    tcw.build_hf_model(
+        base_model=local_base_dir,
+        adapter_path=adapter_dir,
+        output_path=output_dir,
+        trust_remote_code=True,
+    )
+
+
 def _load_expected_module_count(manifest_path: Path) -> int | None:
     """Read attached_modules count from a Task-1-style receipt (e.g.
     output/base20/lora_target_modules.json). Returns None if the file is
@@ -431,9 +548,28 @@ def merge_adapter(adapter_dir: str, output_dir: str, config: dict,
         except Exception:
             pass  # Fall through to re-merge
 
-    from transformers import AutoModelForCausalLM  # noqa: PLC0415
-
     local_dir = str(resolve_path(config["model"]["local_dir"]))
+
+    if _adapter_has_routed_expert_params(adapter_dir):
+        print(f"  [merge-path] routed MoE-expert (target_parameters) LoRA tensors detected in "
+              f"{adapter_dir} -- the target_modules-only PEFT path cannot reach these (T-21-01); "
+              f"routing through tinker_cookbook.weights.build_hf_model instead")
+        _merge_via_tinker_cookbook(
+            adapter_dir, output_dir, local_dir,
+            guard_receipt_path=guard_receipt_path,
+            expected_modules_manifest=expected_modules_manifest,
+        )
+        merged_path = output_dir
+        from transformers import AutoTokenizer as _AT  # noqa: PLC0415
+        base_tok = _AT.from_pretrained(local_dir, trust_remote_code=True)
+        serving_tok, check_special_tokens = _select_serving_tokenizer(config, local_dir, len(base_tok))
+        serving_tok.save_pretrained(merged_path)
+        print(f"Tokenizer saved to {merged_path}")
+        print("Running verification roundtrip ...")
+        _verify_merged_model(merged_path, adapter_dir, config, check_special_tokens=check_special_tokens)
+        return
+
+    from transformers import AutoModelForCausalLM  # noqa: PLC0415
 
     print(f"Loading base model from {local_dir} ...")
     model = AutoModelForCausalLM.from_pretrained(
