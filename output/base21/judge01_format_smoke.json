@@ -1,0 +1,18 @@
+{
+  "n_prompts": 30,
+  "n_parse_ok": 0,
+  "n_parse_fail": 30,
+  "parse_fail_rate": 1.0,
+  "community_anchor_rate": 0.18,
+  "vs_anchor": "above",
+  "max_tokens": 2048,
+  "temperature": 0.0,
+  "served_model_dir": "models/Qwen3.6-35B-A3B",
+  "sample_failures": [
+    "Here's a thinking process:\n\n1.  **Analyze User Input:**\n   - **Code:** A PHP function `html_instructor_main( $course, $user ): string`\n   - **Context:** Appears to be from a WordPress plugin (likely LearnPress, given the filter names `learn-press/single-course/model/section-instructor/right` and `learn-press/single-course/model/section-instructor`).\n   - **Task:** Evaluate against the strict WordPress Code Quality Judge criteria.\n\n2.  **Evaluate Dimensions:**\n\n   *1. WordPress Coding Standards (",
+    "Here's a thinking process:\n\n1.  **Analyze User Input:**\n   - Code snippet:\n     ```php\n     function getConfigDirAbs()\n         {\n             return self::getWebPExpressContentDirAbs() . '/config';\n         }\n     ```\n   - It's a PHP function, likely part of a class (uses `self::`).\n   - No file path provided, but I'll assume it's from a plugin/theme.\n   - I need to evaluate it against the 9 dimensions.\n\n2.  **Evaluate Dimensions:**\n   - **1. WordPress Coding Standards (WPCS):**\n     - Naming: ",
+    "Here's a thinking process:\n\n1.  **Analyze User Input:**\n   - The user provided a snippet of PHP code for a WordPress function `get_snippet_details( $post_id )`.\n   - The code is incomplete/cut off: `SELECT p.ID, pm.meta_value FROM {$wpdb->postmeta}`\n   - I need to evaluate it based on the strict criteria provided.\n\n2.  **Identify Key Issues in the Snippet:**\n   - **Incompleteness:** The code is truncated. It cuts off mid-query. This is a major red flag. I cannot fully assess SQL safety, performa",
+    "Here's a thinking process:\n\n1.  **Analyze User Input:**\n   - The user provides a PHP function `forward_prompt( $request )` from a WordPress context.\n   - I need to evaluate it against the provided rubric (9 dimensions).\n   - Return a JSON object with scores, verdict, critical failures, dependencies, training tags, and notes.\n\n2.  **Initial Code Scan & Context:**\n   - Function name: `forward_prompt`\n   - It's a REST API handler (takes `$request` of type `\\WP_REST_Request`, returns `\\WP_REST_Respo",
+    "Here's a thinking process:\n\n1.  **Analyze User Input:**\n   - Code snippet: A PHP function `set_jetpack_connected( bool $connected )`\n   - It uses `$this->getContainer()->get( OptionsInterface::class )`\n   - It gets an option, updates it, and calls another method if the value changed.\n   - It's clearly part of a class (uses `$this`).\n   - No WordPress-specific functions are used directly (like `get_option`, `update_option`, `wp_verify_nonce`, etc.). It uses dependency injection (`$this->getContai"
+  ]
+}
