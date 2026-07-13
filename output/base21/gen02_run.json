@@ -1,0 +1,13 @@
+{
+  "train_path": "data/reasoning_dataset/openai_train.jsonl",
+  "base_model": "Qwen/Qwen3.6-35B-A3B",
+  "smoke": {
+    "smoke_ok": true,
+    "smoke_steps": 4,
+    "smoke_losses": [7.972951173782349, 6.23743349313736, 5.3168293833732605, 6.240422964096069],
+    "smoke_sampler_path": "tinker://932fa490-23a3-54c6-bfdf-a48f75263755:train:0/sampler_weights/wp-gen-v4-smoke-ep1",
+    "smoke_manifest_path": "output/tinker/wp-gen-v4-smoke-manifest.json",
+    "terse_rate_at_temp0": 0.5,
+    "note": "4-step MoE-only (train_mlp=True) smoke on the real gen reasoning-mix (data/reasoning_dataset/openai_train.jsonl, NOT the 21-01 probe's toy example), new base Qwen/Qwen3.6-35B-A3B, rank32. Loss trends down across the 4 steps. terse_rate 0.5 at n=4/temp0 is expected noise at this sample size (not the Step-6 gate, which runs in the full stage at n>=300); confirms the data->forward_backward->optim_step->sampler-export path works end to end. 21-01 gate confirmed before this run: moe_merge_probe.json merge_ok=true."
+  }
+}
