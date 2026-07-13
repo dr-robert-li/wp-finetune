@@ -1,0 +1,30 @@
+{
+  "wpbench_overall": 0.372,
+  "wpbench_ci_lower": 0.2847,
+  "wpbench_ci_upper": 0.4753,
+  "floor": 0.4286,
+  "floor_source": "inherited",
+  "pass": false,
+  "n_tests": 344,
+  "n_knowledge": 320,
+  "n_execution": 24,
+  "seed": 1337,
+  "max_tokens": 2048,
+  "enable_thinking": false,
+  "concurrency": 4,
+  "temperature": 0.0,
+  "request_timeout_s": 1800.0,
+  "n_boot": 1000,
+  "alpha": 0.05,
+  "served_model_dir": "models/Qwen3.6-35B-A3B-gen-v4-merged",
+  "results_file": "/home/robert_li/Desktop/projects/wp-finetune/output/base21/gen03_full/wp_bench_results_20260714_081354.json",
+  "wall_clock_s": 1557.4,
+  "fresh_new_base_anchor": {
+    "served_model_dir": "models/Qwen3.6-35B-A3B",
+    "wpbench_overall": 0.4897,
+    "results_file": "/home/robert_li/Desktop/projects/wp-finetune/output/base21/gen03_fresh_new_base_anchor/wp_bench_results_20260714_082330.json",
+    "seed_noise_floor_reference": 0.05203641569469587,
+    "material_shift": false,
+    "justification": "raw new-base anchor 0.4897 vs inherited floor 0.4286: gap -0.0611 does NOT exceed the seed-noise-floor reference 0.05203641569469587 -- no evidence of a material noise-band shift; the inherited floor stands and this miss is recorded as a valid, non-forced outcome."
+  }
+}
