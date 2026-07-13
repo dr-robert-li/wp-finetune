@@ -237,8 +237,12 @@ def run_gate() -> dict:
     target = raw_config["text_config"] if "text_config" in raw_config else raw_config
     target["eos_token_id"] = aligned_eos_id
     target["pad_token_id"] = aligned_pad_id
-    with open(CONFIG_JSON_PATH, "w") as f:
-        json.dump(raw_config, f, indent=2)
+    # WR-06: write to a temp file in the same directory, then os.replace() it
+    # into place -- atomic, so a mid-write kill (OOM/disk-full/SIGKILL) can't
+    # leave a truncated/invalid config.json.
+    tmp_config_path = CONFIG_JSON_PATH.with_suffix(".json.tmp")
+    tmp_config_path.write_text(json.dumps(raw_config, indent=2))
+    tmp_config_path.replace(CONFIG_JSON_PATH)
 
     # generation_config.json: align pad_token_id and ensure tokenizer's eos
     # is present in the (possibly multi-stop) eos list, if the file exists.

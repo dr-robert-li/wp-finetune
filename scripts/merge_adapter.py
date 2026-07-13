@@ -327,8 +327,11 @@ def _repair_vl_config(merged_path: str, local_dir: str) -> None:
 
     wrapper_fields = {k: v for k, v in original_config.items() if k != "text_config"}
     composite = {**wrapper_fields, "text_config": flat_config}
-    with open(merged_config_path, "w") as f:
-        json.dump(composite, f, indent=2)
+    # WR-06: atomic write — temp file in the same directory, then os.replace()
+    # into place, so a mid-write kill can't leave a truncated/invalid config.json.
+    tmp_config_path = merged_config_path.with_suffix(".json.tmp")
+    tmp_config_path.write_text(json.dumps(composite, indent=2))
+    tmp_config_path.replace(merged_config_path)
     print(f"  [vl-config-repair] restored composite VL config.json wrapper "
           f"({sorted(wrapper_fields.keys())}) around the merged text_config -- "
           f"matches 20-02's JSON-surgery lesson, not model.save_pretrained()")
