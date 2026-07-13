@@ -178,24 +178,33 @@ def _make_prefix_aware_adapter(adapter_dir: str, model) -> tuple[str, list[str]]
               f"checkpoint fuses in_proj_qkv): {dropped_modules[:5]}"
               f"{' ...' if len(dropped_modules) > 5 else ''}")
 
-    # Narrow target_modules to the EXACT leaf names we're keeping. Tinker's
-    # exported adapter_config.json says target_modules="all-linear" -- taken
-    # literally, PEFT would re-wrap EVERY nn.Linear in the ENTIRE local model
-    # (mlp.shared_expert.*, every linear_attn.in_proj_{a,b,qkv}, etc.), most
-    # of which we have no trained weights for. That inflates the missing-keys
-    # count into the thousands and makes the completeness guard meaningless.
-    # Only the (small, closed) set of leaf names actually present in the
-    # kept tensors should be targeted.
-    kept_leaf_names = sorted({_lora_module_path_of(k).rsplit(".", 1)[-1] for k in remapped})
+    # Narrow target_modules to the EXACT per-layer module paths we're keeping.
+    # Tinker's exported adapter_config.json says target_modules="all-linear" --
+    # taken literally, PEFT would re-wrap EVERY nn.Linear in the ENTIRE local
+    # model (mlp.shared_expert.*, every linear_attn.in_proj_{a,b,qkv}, etc.),
+    # most of which we have no trained weights for. That inflates the
+    # missing-keys count into the thousands and makes the completeness guard
+    # meaningless.
+    #
+    # WR-02 fix: use the FULL dotted module path (e.g.
+    # "model.language_model.layers.11.self_attn.q_proj"), not just the bare
+    # leaf name ("q_proj"). PEFT's check_target_module_exists matches via
+    # `key in config.target_modules` (exact) before falling back to
+    # `key.endswith(f".{target_key}")` (suffix) -- a full path hits the exact
+    # branch, so a future checkpoint/adapter combo that reuses a leaf name
+    # elsewhere in the model tree (out_proj, down_proj, etc.) can't get
+    # accidentally swept in via suffix matching.
+    kept_module_paths = sorted({_lora_module_path_of(k) for k in remapped})
     with open(Path(adapter_dir) / "adapter_config.json") as f:
         adapter_cfg = json.load(f)
     if adapter_cfg.get("target_modules") in ("all-linear", None) or not isinstance(
         adapter_cfg.get("target_modules"), list
     ):
         print(f"  [prefix-fix] narrowing target_modules from "
-              f"{adapter_cfg.get('target_modules')!r} to the {len(kept_leaf_names)} leaf "
-              f"name(s) actually present in the kept tensors: {kept_leaf_names}")
-        adapter_cfg["target_modules"] = kept_leaf_names
+              f"{adapter_cfg.get('target_modules')!r} to the {len(kept_module_paths)} exact "
+              f"module path(s) actually present in the kept tensors "
+              f"(sample: {kept_module_paths[:3]})")
+        adapter_cfg["target_modules"] = kept_module_paths
 
     work_dir = tempfile.mkdtemp(prefix="merge_adapter_prefix_fixed_")
     save_file(remapped, os.path.join(work_dir, "adapter_model.safetensors"))
