@@ -221,10 +221,24 @@ def run_gate() -> dict:
     aligned_eos_id = text_config.eos_token_id
     aligned_pad_id = text_config.pad_token_id
 
-    # Persist the fix: model.config.save_pretrained writes the FULL nested
-    # config.json (including the text_config block we just mutated).
-    print(f"Persisting aligned config to {CONFIG_JSON_PATH} ...")
-    model.config.save_pretrained(str(MODEL_DIR))
+    # Persist the fix via direct JSON read-modify-write against the ORIGINAL
+    # on-disk config.json (not model.config.save_pretrained()). Verified
+    # empirically this session: AutoModelForCausalLM.from_pretrained() on
+    # this VL checkpoint unwraps model.config to a plain text-only config
+    # object (get_text_config() returns self on it) — calling
+    # save_pretrained() on THAT object silently drops vision_config /
+    # architectures / image_token_id / video_token_id / vision_*_token_id,
+    # corrupting the VL wrapper structure 20-04's merge path depends on.
+    # JSON surgery preserves every byte of the original except the two
+    # target fields.
+    print(f"Persisting aligned config to {CONFIG_JSON_PATH} (JSON surgery, preserving VL wrapper structure) ...")
+    with open(CONFIG_JSON_BACKUP_PATH) as f:
+        raw_config = json.load(f)
+    target = raw_config["text_config"] if "text_config" in raw_config else raw_config
+    target["eos_token_id"] = aligned_eos_id
+    target["pad_token_id"] = aligned_pad_id
+    with open(CONFIG_JSON_PATH, "w") as f:
+        json.dump(raw_config, f, indent=2)
 
     # generation_config.json: align pad_token_id and ensure tokenizer's eos
     # is present in the (possibly multi-stop) eos list, if the file exists.
