@@ -34,6 +34,11 @@ GPU_MEM_UTIL="${GPU_MEM_UTIL:-0.80}"
 MAX_MODEL_LEN="${MAX_MODEL_LEN:-8192}"
 LANGUAGE_MODEL_ONLY="${LANGUAGE_MODEL_ONLY:-}"
 ENFORCE_EAGER="${ENFORCE_EAGER:-}"
+# Optional --served-model-name override. The wp-bench harness
+# (run_eval_reasoning._run_wpbench) hardcodes model name wp-30_70 (the name
+# serve_30_70_vllm.sh always sets). Default UNSET preserves this script's
+# existing served identity (/workspace/model) for all prior callers.
+SERVED_MODEL_NAME="${SERVED_MODEL_NAME:-}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MODEL_DIR="${MODEL_DIR:-$REPO_ROOT/models/Qwen3.6-35B-A3B}"
@@ -47,6 +52,10 @@ fi
 if [ -n "$ENFORCE_EAGER" ]; then
   EXTRA_ARGS+=(--enforce-eager)
   echo "  enforce-eager: CUDA-graph capture DISABLED (documented fallback path)"
+fi
+if [ -n "$SERVED_MODEL_NAME" ]; then
+  EXTRA_ARGS+=(--served-model-name "$SERVED_MODEL_NAME")
+  echo "  served-model-name: $SERVED_MODEL_NAME"
 fi
 
 if [ ! -d "$MODEL_DIR" ]; then
