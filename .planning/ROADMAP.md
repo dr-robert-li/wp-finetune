@@ -936,7 +936,27 @@ miss is recorded as a valid, measured outcome
 v1.3's $1.83 actual). **Tinker's price rise lands 2026-07-17** — if this phase's runs start on/after that
 date, budget the ~10% training-cost increase (prefill/sample ~50% up but minor for this workload).
 
-**Plans**: TBD
+**Plans**: 6 plans (4 waves; remote-Tinker parallel / local-GB10 serial)
+
+Plans:
+
+**Wave 1** *(gates all real Tinker spend)*
+
+- [ ] 21-01-PLAN.md — GEN-01 + MoE-merge probe: fork v4 data-adapter/driver siblings, record renderer/LR/format decision (auto-LR ~4.99e-4 supersedes ≤2e-5 spec), prove the `train_mlp=True` fused-expert merge path (discharges 20-VERIFICATION CR-01 + merge-smoke carry-forwards)
+
+**Wave 2** *(all Tinker spend front-loaded before 2026-07-17; JUDGE-01 sole GB10 user)*
+
+- [ ] 21-02-PLAN.md — GEN-02: full generation-model SFT on the reused reasoning-mix (MoE-only LoRA r32, frozen router, auto-LR) + terse gate (remote Tinker)
+- [ ] 21-03-PLAN.md — JUDGE-02: 3-seed relabel-SFT {1,0,2} reusing v1.3 labels (remote Tinker)
+- [ ] 21-04-PLAN.md — JUDGE-01: raw-base judge-format-compliance smoke vs 18% anchor (local GB10)
+
+**Wave 3** *(local GB10 serial)*
+
+- [ ] 21-05-PLAN.md — GEN-03: merge gen adapter → vLLM serve → wp-bench CI-aware vs 0.4286 floor
+
+**Wave 4** *(local GB10 serial; bumped from W3 for single-residency serialization vs 21-05)*
+
+- [ ] 21-06-PLAN.md — JUDGE-03: 3-seed 8192-cap Tinker-capture rho + ensemble → merge promoted seed → vLLM-served 8192-cap rho, CI-aware vs pre-registered >0.85 single / >0.87 ensemble
 
 ### Phase 22: Sieve/Protected-Mask Tooling Adaptation
 
@@ -1104,7 +1124,7 @@ Note: v4.0 (Phases 20-27) starts after Phase 19 sign-off. Phase 22 (Sieve toolin
 | 18. Production Sweep & HuggingFace Publication | v3.1 | 2/2 | Complete   | 2026-07-12 |
 | 19. Next-Base Rerun Roadmap | v3.1 | 1/1 | Complete (base locked: Qwen3.6-35B-A3B; V4-RERUN-ROADMAP.md written) | 2026-07-11 |
 | 20. Base Bring-Up | v4.0 | 4/4 | Complete    | 2026-07-13 |
-| 21. SFT Training — Generation & Judge Models | v4.0 | 0/TBD | Not started | - |
+| 21. SFT Training — Generation & Judge Models | v4.0 | 0/6 | Planned | - |
 | 22. Sieve/Protected-Mask Tooling Adaptation | v4.0 | 0/TBD | Not started | - |
 | 23. Final Evaluation | v4.0 | 0/TBD | Not started | - |
 | 24. Conditional Gate A — RL Re-Test | v4.0 | 0/TBD | Not started | - |
