@@ -3,16 +3,17 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
 current_phase: 20
+current_phase_name: Base Bring-Up
 status: executing
-stopped_at: "Completed 11-05-PLAN.md — Phase 11 Sieve chain CLOSED: optimal_k=FULL locked (human sign-off 2026-07-10), prune_set_for_phase13.json emitted, SIEVE-02/03/05 documented"
-last_updated: "2026-07-13T00:50:03.506Z"
-last_activity: 2026-07-12
-last_activity_desc: v4.0 ROADMAP.md written (Phases 20-27, 18 requirements mapped, 100% coverage), REQUIREMENTS.md traceability filled
+stopped_at: "Completed 20-01-PLAN.md — BASE-01 satisfied: Qwen3.6-35B-A3B downloaded (26 shards, 67.0 GB) and load-verified (Qwen3_5MoeForConditionalGeneration, forward pass OK)"
+last_updated: "2026-07-13T01:54:25.074Z"
+last_activity: 2026-07-13
+last_activity_desc: Phase 20 execution started
 progress:
   total_phases: 8
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 4
+  completed_plans: 1
   percent: 0
 ---
 
@@ -23,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-12)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 20 — Base Bring-Up (Qwen3.6-35B-A3B)
+**Current focus:** Phase 20 — Base Bring-Up
 
 ## Current Position
 
-Phase: 20 — Base Bring-Up (not started)
-Plan: — (no plans yet — roadmap complete, ready to plan)
-Status: Roadmap complete — ready to plan Phase 20
-Last activity: 2026-07-12 — v4.0 ROADMAP.md written (Phases 20-27, 18 requirements mapped, 100% coverage), REQUIREMENTS.md traceability filled
+Phase: 20 (Base Bring-Up) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-07-13 — Phase 20 execution started
 
 ### 2026-07-08 — Gap-closure investigation (judge reasoning ceiling)
 
@@ -225,6 +226,7 @@ Progress: [██████████] 100%
 | Phase 17 P01 | 25min | 2 tasks | 8 files |
 | Phase 17 P02 | 40min | 4 tasks | 6 files |
 | Phase 18 P02 | ~13h | 3 tasks | 8 files |
+| Phase 20 P01 | 11min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -292,6 +294,9 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 17-02]: SWE-bench scope pre-registered before results: Lite-300 primary + PHP-43 secondary, oracle, generation-mode, native arm64 local Docker (<=20h rule; Verified-500 out at 27.21h projected)
 - [Phase ?]: [Phase 17-02]: Native arm64 SWE-bench eval CONFIRMED working (gold patches resolve via make_test_spec arch=arm64 wrapper); amd64 fails fast on this host (no QEMU) — sb-cli/cloud fallback not needed
 - [Phase ?]: HF publication: two cross-linked PUBLIC model repos under iamchum (gen bf16 safetensors, judge Q8_0 GGUF-only); Xet disabled + sequential per-file upload on this host
+- [Phase ?]: 20-01: Upgraded torchvision 0.25.0->0.27.1 (exact match for installed torch==2.12.1) — pre-existing mismatch broke every peft/transformers.PreTrainedModel import chain, unrelated to this plan
+- [Phase ?]: 20-01: Upgraded pytest 6.0.0rc2.dev33->9.1.1 — pre-existing dev build could not collect ANY test file (Python 3.13 ast-rewrite incompatibility), blocking the whole tests/ suite
+- [Phase ?]: 20-01: config/train_config_v4.yaml is a non-destructive sibling of config/train_config.yaml; v4.0 scripts take --config-path rather than mutating the v3.x default
 
 ### Pending Todos
 
@@ -338,8 +343,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-12T00:56:34.570Z
-Stopped at: Completed 11-05-PLAN.md — Phase 11 Sieve chain CLOSED: optimal_k=FULL locked (human sign-off 2026-07-10), prune_set_for_phase13.json emitted, SIEVE-02/03/05 documented
+Last session: 2026-07-13T01:54:25.066Z
+Stopped at: Completed 20-01-PLAN.md — BASE-01 satisfied: Qwen3.6-35B-A3B downloaded (26 shards, 67.0 GB) and load-verified (Qwen3_5MoeForConditionalGeneration, forward pass OK)
 
 Prior session: 2026-07-08T00:00:00.000Z
 Stopped at: Path A executed (regen v4 save_state → gated smoke). Smoke KILLED at step 50: hybrid@0.8 did not move validated teacher-Spearman above warm-start noise (Δ+0.015 < +0.02 bar; ρ_initial 0.6243), while forbidden fix_correctness proxy rose +0.025 = Goodhart-consistent. Kill-at-50 fired as designed. Reject-RL reinforced → ship v1.2 SFT for v3.0. Loadable v4 save_state now exists (reusable). Artifacts: logs/phase09_rerun/SMOKE_READS_TALLY.md. Resume = ./.continue-here.md (user decides: accept verdict → v3.0 packaging, OR refine non-code-blind reward + re-smoke with Gate-2 armed).
