@@ -266,17 +266,24 @@ def _guard_merge_completeness(load_result, expected_count: int,
             "raw_expected_module_count": raw_expected_count,
             "dropped_module_count": len(dropped_modules) if dropped_modules is not None else None,
             "dropped_modules_sample": (dropped_modules or [])[:10],
+            "unexpected_module_count": len(unexpected_modules),
+            "unexpected_modules_sample": sorted(unexpected_modules)[:10],
         }, indent=2))
-    if merged_count != expected_count or merged_count <= 0:
+    # WR-03: an over-broad merge (extra LoRA keys attached beyond the expected
+    # scope) is exactly as untrustworthy as a partial one -- fold it into the
+    # abort condition instead of only warning.
+    if merged_count != expected_count or merged_count <= 0 or unexpected_modules:
         raise SystemExit(
-            f"MERGE ABORT: silent partial LoRA load detected -- merged {merged_count}/"
-            f"{expected_count} MERGEABLE target modules (missing modules sample: "
-            f"{sorted(missing_modules)[:5]}). A merge that exits 0 here would NOT be "
-            f"trustworthy (Pitfall 3 / T-20-04a)."
+            f"MERGE ABORT: silent partial or over-broad LoRA load detected -- merged "
+            f"{merged_count}/{expected_count} MERGEABLE target modules (missing modules "
+            f"sample: {sorted(missing_modules)[:5]})"
+            + (f"; {len(unexpected_modules)} UNEXPECTED module(s) attached beyond scope "
+               f"(sample: {sorted(unexpected_modules)[:5]})" if unexpected_modules else "")
+            + ". A merge that exits 0 here would NOT be trustworthy (Pitfall 3 / T-20-04a)."
         )
     print(f"  [guard] merged {merged_count}/{expected_count} mergeable target modules "
           f"({len(dropped_modules or [])} documented drop(s) excluded) -- OK, no silent "
-          f"UNDOCUMENTED partial load")
+          f"UNDOCUMENTED partial or over-broad load")
     return merged_count
 
 
