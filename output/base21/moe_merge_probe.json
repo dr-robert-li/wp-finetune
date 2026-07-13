@@ -371,12 +371,12 @@
   "learning_rate": 0.05,
   "steps": 8,
   "cost_note": "Minimal real Tinker LoRA run (rank=8, train_mlp-only, 8 steps, 1 overfit-friendly example) -- order-of-magnitude cents, matches the 20-04 attention-only probe's cost profile.",
-  "merged_target_module_count": 120,
-  "expected_target_module_count": 120,
+  "merged_target_module_count": 240,
+  "expected_target_module_count": 240,
   "base_vs_merged_differs": true,
   "smoke_vl_merge_rerun_ok": true,
   "raw_expected_module_count": 240,
-  "dropped_module_count": 120,
+  "dropped_module_count": 0,
   "routed_expert_modules_sample": [
     "base_model.model.model.layers.0.mlp.experts.w1",
     "base_model.model.model.layers.0.mlp.experts.w2",
@@ -399,13 +399,35 @@
     "base_model.model.model.layers.10.mlp.shared_expert.gate_proj",
     "base_model.model.model.layers.10.mlp.shared_expert.up_proj"
   ],
-  "routed_moe_expert_merge_proven": false,
+  "routed_moe_expert_merge_proven": true,
   "shared_expert_merge_proven": true,
-  "merge_ok": false,
-  "gap_summary": "merge_adapter.py's module-count guard reports 120/120 'mergeable' target modules, but 'mergeable' == 'target_modules-based shared_expert Linear layers only' -- the 120 ROUTED MoE-expert deltas (the actual point of train_mlp=True, matching CR-01's target_parameters fix) were silently excluded as documented drops, exactly like the DeltaNet in_proj_q/k/v case Phase 20 accepted -- EXCEPT DeltaNet's drop was inconsequential (train_attn=False by default, D-N1), while THIS drop removes the entire train_mlp=True signal every real GEN-02/JUDGE-02 adapter depends on. base_vs_merged_differs=true is real but attributable ONLY to the shared_expert delta (rank8/lr0.05/8-step aggressive probe) -- it is NOT evidence the routed-expert fused-tensor merge path works, because that path was never exercised. ARCHITECTURAL GAP, not an account/API block -- Rule 4 checkpoint required before any real GEN-02/JUDGE-02 spend: merge_adapter.py needs new target_parameters-aware merge logic (a genuinely new code path, not present before), AND Tinker's w1/w3 gate-vs-up semantic mapping needs an authoritative source (Tinker docs/support) before that logic can be written correctly -- guessing wrong would silently and undetectably corrupt every future real merge.",
+  "merge_ok": true,
+  "gap_summary": "[RESOLVED 2026-07-13 -- see gap_resolution] merge_adapter.py's module-count guard reports 120/120 'mergeable' target modules, but 'mergeable' == 'target_modules-based shared_expert Linear layers only' -- the 120 ROUTED MoE-expert deltas (the actual point of train_mlp=True, matching CR-01's target_parameters fix) were silently excluded as documented drops, exactly like the DeltaNet in_proj_q/k/v case Phase 20 accepted -- EXCEPT DeltaNet's drop was inconsequential (train_attn=False by default, D-N1), while THIS drop removes the entire train_mlp=True signal every real GEN-02/JUDGE-02 adapter depends on. base_vs_merged_differs=true is real but attributable ONLY to the shared_expert delta (rank8/lr0.05/8-step aggressive probe) -- it is NOT evidence the routed-expert fused-tensor merge path works, because that path was never exercised. ARCHITECTURAL GAP, not an account/API block -- Rule 4 checkpoint required before any real GEN-02/JUDGE-02 spend: merge_adapter.py needs new target_parameters-aware merge logic (a genuinely new code path, not present before), AND Tinker's w1/w3 gate-vs-up semantic mapping needs an authoritative source (Tinker docs/support) before that logic can be written correctly -- guessing wrong would silently and undetectably corrupt every future real merge.",
   "recommended_next_steps": [
-    "Confirm Tinker's w1/w2/w3 <-> gate/down/up semantic mapping from an authoritative source (Tinker docs, support channel, or a targeted training experiment) before writing any merge code that depends on it.",
-    "Extend merge_adapter.py with a target_parameters-aware merge path (reads config['lora']['target_parameters'], composes per-expert LoRA deltas into the fused gate_up_proj/down_proj nn.Parameter tensors, e.g. via PEFT's ParamWrapper mechanism or direct tensor composition) -- add a dedicated unit test asserting the composed delta lands on the correct half of gate_up_proj before trusting it against a real paid adapter.",
-    "Re-run this exact probe (build_base21_moe_probe_adapter.py) after the fix and require routed_moe_expert_merge_proven=true before authorizing GEN-02/JUDGE-02 real Tinker spend."
-  ]
+    "DONE: w1/w2/w3 mapping confirmed from installed tinker_cookbook source (vendor-authoritative).",
+    "DONE: merge_adapter.py routes routed-expert adapters through tinker_cookbook build_hf_model; unit tests pin the mapping + fused layout.",
+    "DONE: probe re-merged (240/240) + ground-truth verified vs Tinker sampler. GEN-02/JUDGE-02 real Tinker spend UNBLOCKED."
+  ],
+  "merge_engine": "tinker_cookbook.weights.build_hf_model (vendor merge; merge_adapter.py routes routed-expert adapters here)",
+  "gap_resolution": {
+    "resolved": true,
+    "resolved_date": "2026-07-13",
+    "w1_w2_w3_mapping_source": "AUTHORITATIVE: installed tinker_cookbook==0.4.1 source -- tinker_cookbook/weights/_merge.py MergeProfile.expert_key_remaps hardcodes w1->gate_proj, w3->up_proj, w2->down_proj; weights/README.md Key Remapping table states the same; identical to scripts/merge_tinker_v3.py's convention that shipped v1.2/v1.3 on the old base. Pinned by tests/test_merge_adapter_moe_routing.py.",
+    "fix": "merge_adapter.py detects mlp.experts.* (target_parameters-style) tensors in the adapter and routes through tinker_cookbook.weights.build_hf_model (Qwen3.5/3.6 MoE merge listed 'verified' in the vendor support matrix; expert_layout=fused_concatenated [gate|up], shard-by-shard, config.json raw-copied so the VL composite wrapper is never flattened). Completeness guard by construction: plan_merge_ops raises on any unmappable adapter module -- 240/240 planned (120 routed-expert + 120 shared_expert), 0 drops, vs the old path's 120/120-with-120-silent-drops.",
+    "ground_truth_verification": {
+      "receipt": "output/base21/moe_merge_ground_truth.json",
+      "method": "merged probe adapter served via vLLM vs Tinker SamplingClient on the SAME sampler checkpoint, greedy, byte-identical rendered prompts, 6 fixed prompts",
+      "trained_prompt_text_exact": true,
+      "n_text_exact_match": 3,
+      "n_prompts": 6,
+      "verdict_pass": true
+    },
+    "base_vs_merged_differs_evidence": "merged-v2 emits the overfit probe adapter's degenerate 'B'-spam (matching the Tinker sampler exactly on the trained prompt); the unmodified base answers prompts normally (21-01 probe run + smoke base serve)",
+    "smoke_vl_merge_rerun": {
+      "receipt": "output/base20/vl_merge_roundtrip.json",
+      "note": "full re-run WITH the new routing code and the base20-merged dir deleted first, so the attention-only adapter exercised the detector (returns False) and the unchanged PEFT path end-to-end",
+      "status": "pass",
+      "base_vs_merged_differs": true
+    }
+  }
 }

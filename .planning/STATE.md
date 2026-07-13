@@ -5,7 +5,7 @@ milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
 current_phase: 21
 current_phase_name: SFT Training — Generation & Judge Models
 status: executing
-stopped_at: "Phase 21 Plan 01: GEN-01 satisfied; MoE train_mlp=True merge-path gap found (merge_ok=false, human decision required before GEN-02/JUDGE-02 real Tinker spend). See 21-01-SUMMARY.md + output/base21/moe_merge_probe.json."
+stopped_at: "Phase 21 Plan 01 COMPLETE (gap closed 2026-07-13): routed MoE-expert merge proven -- merge_adapter.py routes train_mlp=True adapters through tinker_cookbook build_hf_model (240/240, w1/w3/w2->gate/up/down vendor-authoritative), ground-truth verified vs Tinker sampler. GEN-02/JUDGE-02 Tinker spend UNBLOCKED."
 last_updated: "2026-07-13T11:52:57.614Z"
 last_activity: 2026-07-13
 last_activity_desc: Phase 21 execution started
@@ -312,6 +312,7 @@ Recent decisions affecting current work:
 - [Phase ?]: [21-01]: RENDERER_NAME resolved to qwen3_5_disable_thinking (source=registry) via runtime probing, not the Phase-20-precedent qwen3_disable_thinking -- matches this base's actual resolved class (Qwen3_5MoeForCausalLM)
 - [Phase ?]: [21-01]: Kept hp.get_lr auto-LR (resolved 4.99e-4) over GEN-02's literal <=2e-5 text -- stale DGX/Unsloth-era carry-over per ROADMAP.md Phase 4.3 supersession note
 - [Phase ?]: [21-01]: MoE (train_mlp=True) merge probe found a genuine architectural gap -- merge_adapter.py has zero PEFT target_parameters support, so Tinker's routed-expert fused deltas are silently excluded while the module-count guard still reports a clean pass. Recorded merge_ok=false honestly (Rule 4, not auto-fixed -- semantic w1/w2/w3 mapping unconfirmable from any available source).
+- [Phase ?]: [21-01 gap-closure]: Tinker's w1/w2/w3 <-> gate/down/up mapping IS in the installed tinker_cookbook source (weights/_merge.py MergeProfile.expert_key_remaps: w1->gate_proj, w3->up_proj, w2->down_proj) -- the vendor also ships a full verified merge for Qwen3.5/3.6 MoE (weights.build_hf_model, fused_concatenated [gate|up]). Reused it instead of hand-implementing composition math; merge_adapter.py routes routed-expert adapters there via a safetensors header scan. Proven by trained-prompt token-for-token match vs Tinker SamplingClient.
 
 ### Pending Todos
 
@@ -333,7 +334,7 @@ Recent decisions affecting current work:
 - [Phase 11]: Phase 10 (RL eval) must confirm readiness before Phase 11 (post-RL MoE-Sieve) begins — fresh RL-policy routing profiling required
 - [Phase 13]: LoRA merge (MERGE-01) must complete before pruning — strictly sequential within the phase; AIMER primary (D-09)
 - [Phase 15]: Quantization (PKG-03) is gated by Gate 2 decision — verify AWQ support for Qwen3-30B-A3B in vLLM (likely native)
-- [Phase 21 21-01 Task 2]: merge_adapter.py cannot merge Tinker's routed MoE-expert (train_mlp=True) fused-tensor deltas via PEFT target_parameters -- GEN-02/JUDGE-02 real Tinker spend BLOCKED pending a human decision on Tinker's w1/w2/w3 gate/up/down semantic mapping + a target_parameters-aware merge fix. See output/base21/moe_merge_probe.json (merge_ok=false) and 21-01-SUMMARY.md.
+- [Phase 21 21-01 Task 2 -- RESOLVED 2026-07-13]: routed MoE-expert (train_mlp=True) merge gap CLOSED. w1/w3/w2 -> gate/up/down mapping confirmed vendor-authoritative (installed tinker_cookbook==0.4.1 _merge.py expert_key_remaps + weights/README.md, matching merge_tinker_v3.py's shipped convention); merge_adapter.py now routes routed-expert adapters through tinker_cookbook.weights.build_hf_model (240/240 modules, 0 drops); ground-truth verified vs Tinker SamplingClient (trained-prompt token-for-token match, output/base21/moe_merge_ground_truth.json verdict_pass=true); smoke_vl_merge re-run PASSED (attention-only path regression-free). moe_merge_probe.json merge_ok=true, routed_moe_expert_merge_proven=true. GEN-02/JUDGE-02 real Tinker spend UNBLOCKED. Commits 8c7d539, c4be0d3.
 
 ### Quick Tasks Completed
 
@@ -359,7 +360,10 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-13T11:52:35.100Z
+Last session: 2026-07-13T12:35:00.000Z
+Stopped at: Phase 21 Plan 01 COMPLETE — 21-01 Task 2 Rule-4 gap CLOSED: routed MoE-expert merge proven (tinker_cookbook build_hf_model route, 240/240, ground-truth vs Tinker sampler verdict_pass=true). GEN-02/JUDGE-02 real Tinker spend UNBLOCKED; next: 21-02 gen SFT / 21-03 judge SFT.
+
+Prior session: 2026-07-13T11:52:35.100Z
 Stopped at: Phase 21 Plan 01: GEN-01 satisfied; MoE train_mlp=True merge-path gap found (merge_ok=false, human decision required before GEN-02/JUDGE-02 real Tinker spend). See 21-01-SUMMARY.md + output/base21/moe_merge_probe.json.
 
 Prior session: 2026-07-08T00:00:00.000Z

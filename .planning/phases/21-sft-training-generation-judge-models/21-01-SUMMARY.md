@@ -12,7 +12,7 @@ provides:
   - "scripts/tinker_reasoning_data_v4.py -- v4 data adapter, renderer resolved at runtime (qwen3_5_disable_thinking), GEN-01 spot-check (max-len/empty-think)"
   - "scripts/tinker_reasoning_sft_v4.py -- v4 SFT driver sibling"
   - "output/base21/gen01_format_decision.json -- GEN-01 decision receipt (COMPLETE, all fields pass)"
-  - "output/base21/moe_merge_probe.json -- MoE merge-path probe receipt: merge_ok=false, a REAL architectural gap found and documented, NOT a clean pass"
+  - "output/base21/moe_merge_probe.json -- MoE merge-path probe receipt: merge_ok=true after the 2026-07-13 gap-closure (routed-expert merge via tinker_cookbook build_hf_model, 240/240, ground-truth verified vs Tinker sampler)"
   - "scripts/merge_adapter.py --guard-receipt-path flag (backward compatible)"
 affects: [21-02-gen-sft, 21-03-judge-sft, "any future real GEN-02/JUDGE-02 Tinker merge"]
 
@@ -45,7 +45,7 @@ metrics:
   duration: 105min
   completed: 2026-07-13
 
-status: blocked
+status: complete
 ---
 
 # Phase 21 Plan 01: Wave-0 SFT Pre-Training De-Risking Gate Summary
@@ -121,7 +121,41 @@ See `key-decisions` in frontmatter.
 - **Verification:** Re-ran from the already-produced artifacts (no re-spend); diff + smoke-rerun completed successfully.
 - **Committed in:** `3179c8b` (Task 2 commit)
 
-### NOT Auto-Fixed — Rule 4 Architectural Gap (requires human decision)
+### Rule 4 Architectural Gap — **RESOLVED 2026-07-13 (follow-up gap-closure session)**
+
+**RESOLUTION:** The blocking unknown (Tinker's `w1`/`w3` gate-vs-up semantic mapping) was found in an
+AUTHORITATIVE source the original session's search missed: the installed `tinker_cookbook==0.4.1`
+package itself ships a vendor-maintained merge implementation in `tinker_cookbook/weights/` —
+`_merge.py`'s `MergeProfile.expert_key_remaps` hardcodes **`w1`→`gate_proj`, `w3`→`up_proj`,
+`w2`→`down_proj`** (`weights/README.md`'s Key Remapping table states the same), identical to
+`scripts/merge_tinker_v3.py`'s convention that shipped v1.2/v1.3 on the old base. Its support matrix
+lists Qwen3.5/3.6 MoE (35B-A3B) merge as verified, `expert_layout=fused_concatenated` (`[gate | up]`)
+matching `modeling_qwen3_5_moe.py`'s traced `chunk(2)` order.
+
+**Fix (commit `8c7d539`):** rather than hand-implementing the composition math, `merge_adapter.py` now
+detects routed-expert (`mlp.experts.*`, PEFT `target_parameters`-style) tensors in the adapter (cheap
+safetensors header scan) and routes the merge through `tinker_cookbook.weights.build_hf_model` —
+completeness guard by construction (`plan_merge_ops` raises on any unmappable module): **240/240
+modules planned (120 routed-expert + 120 shared_expert), 0 drops**, vs the old path's
+120/120-with-120-silent-drops. The vendor's shard-by-shard path also never flattens the VL composite
+config (raw-copies config.json). `tests/test_merge_adapter_moe_routing.py` (4 tests) pins the
+detector, the vendor mapping, and the gate-first fused layout against future upgrades.
+
+**Ground-truth proof (commit `c4be0d3`, `output/base21/moe_merge_ground_truth.json`):** the 21-01 probe
+adapter was re-merged with the new path and served via vLLM; greedy generations on 6 fixed prompts were
+compared against Tinker's own SamplingClient on the SAME sampler checkpoint (byte-identical rendered
+prompts, `qwen3_5_disable_thinking` both sides). The exact probe TRAINING prompt — the only prompt with
+a decisive learned margin under the deliberately-overfit rank8/lr0.05/8-step adapter — matches the
+sampler **token-for-token for all 40 generated tokens** (a gate/up swap could not survive this); 3/6
+prompts byte-identical overall; the remaining 3 share the sampler's degenerate output family, diverging
+only inside near-tie junk logits (bf16 kernel-order across two unrelated serving stacks).
+`verdict_pass=true`. `smoke_vl_merge_base20.py` was fully re-run (merged dir deleted first, so the
+attention-only adapter exercised the new detector + unchanged PEFT path end-to-end): **PASSED**, no
+regression. `moe_merge_probe.json` now records `merge_ok=true`, `routed_moe_expert_merge_proven=true`,
+240/240, and the plan's original Task 2 verify assertion passes. **GEN-02/JUDGE-02 real Tinker spend is
+UNBLOCKED.**
+
+Original gap record (kept for history):
 
 **merge_adapter.py cannot merge Tinker's routed MoE-expert (`train_mlp=True`) fused-tensor deltas.**
 
@@ -150,7 +184,7 @@ None beyond what was already approved (Tinker spend for the MoE probe, ~cents, m
 ## Next Phase Readiness
 
 - **GEN-01 requirement: SATISFIED.** Format/renderer/LR/router-logits decision recorded with real, measured evidence (renderer resolves, max-len < 64K, no empty-think leakage into the loss target).
-- **MoE merge-path gate: NOT satisfied.** The routed-expert (`train_mlp=True`) fused-tensor merge path is UNPROVEN — this GATES 21-02 (gen SFT) and 21-03 (judge SFT), both of which depend on merging a real `train_mlp=True` adapter. Real Tinker spend for either should not proceed until this gap is resolved (see `recommended_next_steps` in `output/base21/moe_merge_probe.json`).
+- **MoE merge-path gate: SATISFIED (2026-07-13 gap-closure).** The routed-expert (`train_mlp=True`) fused-tensor merge path is PROVEN — merged via `tinker_cookbook.weights.build_hf_model` (240/240 modules, 0 drops) and ground-truth verified against Tinker's SamplingClient (trained-prompt token-for-token match; `output/base21/moe_merge_ground_truth.json` `verdict_pass=true`). 21-02 (gen SFT) and 21-03 (judge SFT) real Tinker spend UNBLOCKED.
 - Phase 20 carry-forward 2 (fresh `smoke_vl_merge_base20.py` re-run) is now DISCHARGED — confirmed byte-identical pass, no regression in the post-review-fix merge code for the attention-only case.
 - Phase 20 carry-forward 1 (CR-01 dry-run confirmation) remains open — the MoE probe here is stronger evidence than a static dry-run would have been (it's a REAL empirical run), and it found the exact gap CR-01's config anticipated but `merge_adapter.py` never implemented; this satisfies the SPIRIT of carry-forward 1's ask (empirically confirm the fused target_parameters path) while surfacing that the CODE side of that fix was never done.
 
