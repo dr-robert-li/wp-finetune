@@ -21,8 +21,10 @@ defaults:
   tensor_parallel: 1
   pipeline_parallel: 1
   gpu_memory_utilization: 0.80
-  max_model_len: 16384
-  max_num_batched_tokens: 16384
+  # WR-09: matches serve_base20_vllm.sh's actual MAX_MODEL_LEN default (8192)
+  # -- this is what the passing BASE-03/BASE-04 gate runs actually used.
+  max_model_len: 8192
+  max_num_batched_tokens: 8192
   trust_remote_code: true
 
 env:
