@@ -999,7 +999,11 @@ committed — this is the single result the whole v4.0 rerun exists to produce
      >=0.4286) are applied mechanically against the measured numbers, and the outcome — met or not met — is
      recorded as the milestone's primary verdict
 
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+
+- [ ] 23-01-PLAN.md — Final-eval A/B verdict: receipt-comparability audit + offline raw-base CI backfill, then eval4_final_comparison.json (dual-gen A/B raw-base vs best-trained + judge A/B) with the pre-registered criteria applied mechanically, + VERDICT-EVAL4.md milestone verdict
 
 ### Phase 24: Conditional Gate A — RL Re-Test
 
