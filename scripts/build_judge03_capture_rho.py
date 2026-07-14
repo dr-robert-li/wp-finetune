@@ -109,11 +109,29 @@ def main() -> int:
         per_seed.append(_eval_seed(cap, seed))
 
     ensemble = _ensemble(cap_paths)
-    best = max(per_seed, key=lambda s: s["rho"])
+    per_seed_by_rho = sorted(per_seed, key=lambda s: s["rho"], reverse=True)
+    best = per_seed_by_rho[0]
+    runner_up = per_seed_by_rho[1] if len(per_seed_by_rho) > 1 else None
+    # WR-05: best_single_seed is picked by raw point-estimate rho alone (a
+    # winner's-curse-prone choice with only 3 seeds); at minimum, log whether
+    # the top seed's CI overlaps the runner-up's, so a human reviewing this
+    # receipt before the costly JUDGE-03 merge+serve spend can see if the
+    # "best" seed's advantage is inside the noise band.
+    ci_overlaps_runner_up = (
+        max(best["ci_lower"], runner_up["ci_lower"]) <= min(best["ci_upper"], runner_up["ci_upper"])
+        if runner_up is not None else None
+    )
 
     result = {
         "per_seed": per_seed,
-        "best_single_seed": {"seed": best["seed"], "rho": best["rho"], "ci_lower": best["ci_lower"]},
+        "best_single_seed": {"seed": best["seed"], "rho": best["rho"],
+                              "ci_lower": best["ci_lower"], "ci_upper": best["ci_upper"]},
+        "runner_up_seed": (
+            {"seed": runner_up["seed"], "rho": runner_up["rho"],
+             "ci_lower": runner_up["ci_lower"], "ci_upper": runner_up["ci_upper"]}
+            if runner_up is not None else None
+        ),
+        "ci_overlaps_runner_up": ci_overlaps_runner_up,
         "ensemble_median": ensemble,
         "max_tokens": MAX_TOKENS,
         "method": "tinker_capture",
