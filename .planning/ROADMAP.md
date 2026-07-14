@@ -117,7 +117,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 20: Base Bring-Up** - Download/load smoke, eos/pad token-ID alignment (Stage 1.5), DeltaNet-aarch64 serving smoke, VL merge-path round-trip check (completed 2026-07-13)
 - [x] **Phase 21: SFT Training — Generation & Judge Models** - Stage 2/3 SFT on reused data (reasoning-mix gen, 3-seed relabel judge); pre-registered rho/wp-bench targets measured (completed 2026-07-14)
 - [ ] **Phase 22: Sieve Tooling Adaptation** - Adapt MoE-Sieve profiler + protected-mask pipeline for 256-expert/shared-expert/mixed-strata routing, ready before Gate B
-- [ ] **Phase 23: Final Evaluation** - A/B eval vs v3.0 shipping figures under pre-registered criteria — the milestone's primary verdict
+- [x] **Phase 23: Final Evaluation** - A/B eval vs v3.0 shipping figures under pre-registered criteria — the milestone's primary verdict (completed 2026-07-14)
 - [ ] **Phase 24: Conditional Gate A — RL Re-Test** - RL re-test only with a materially different reward family; no_winner is a valid result
 - [ ] **Phase 25: Conditional Gate B — MoE-Sieve Re-Test** - k-sweep re-test on adapted tooling (TOST, CI-aware); no_winner is a valid result
 - [ ] **Phase 26: Conditional Gate C — Merge + Prune Re-Test** - AIMER/REAP gate-before-remove re-test; no_winner is a valid result
@@ -1130,7 +1130,7 @@ Note: v4.0 (Phases 20-27) starts after Phase 19 sign-off. Phase 22 (Sieve toolin
 | 20. Base Bring-Up | v4.0 | 4/4 | Complete    | 2026-07-13 |
 | 21. SFT Training — Generation & Judge Models | v4.0 | 6/6 | Complete    | 2026-07-14 |
 | 22. Sieve/Protected-Mask Tooling Adaptation | v4.0 | 0/TBD | Not started | - |
-| 23. Final Evaluation | v4.0 | 1/1 | Complete   | 2026-07-14 |
+| 23. Final Evaluation | v4.0 | 1/1 | Complete    | 2026-07-14 |
 | 24. Conditional Gate A — RL Re-Test | v4.0 | 0/TBD | Not started | - |
 | 25. Conditional Gate B — MoE-Sieve Re-Test | v4.0 | 0/TBD | Not started | - |
 | 26. Conditional Gate C — Merge + Prune Re-Test | v4.0 | 0/TBD | Not started | - |
