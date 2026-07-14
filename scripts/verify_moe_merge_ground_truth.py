@@ -113,9 +113,9 @@ def run_vllm_side(rows: list[dict], tok) -> list[dict]:
     port = 8033
     container = "base21-moe-groundtruth"
 
-    boot_vllm(str(MERGED_MODEL_DIR), container, port, 0.80,
-              serve_script=serve_script, extra_env={"LANGUAGE_MODEL_ONLY": "1"})
     try:
+        boot_vllm(str(MERGED_MODEL_DIR), container, port, 0.80,
+                  serve_script=serve_script, extra_env={"LANGUAGE_MODEL_ONLY": "1"})
         served = wait_healthy(port, container, timeout=1200)
         client = openai.OpenAI(base_url=f"http://localhost:{port}/v1", api_key="none")
         for row in rows:

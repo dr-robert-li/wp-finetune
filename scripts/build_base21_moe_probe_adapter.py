@@ -261,9 +261,9 @@ def run_base_vs_merged_diff() -> bool:
     port = 8022
 
     def _serve(model_dir: str, container: str, allow_empty: bool) -> str:
-        boot_vllm(model_dir, container, port, 0.80,
-                  serve_script=serve_script, extra_env={"LANGUAGE_MODEL_ONLY": "1"})
         try:
+            boot_vllm(model_dir, container, port, 0.80,
+                      serve_script=serve_script, extra_env={"LANGUAGE_MODEL_ONLY": "1"})
             served = wait_healthy(port, container, timeout=1200)
             out = generate(port, served,
                             [{"instruction": PROBE_PROMPT, "source_val_idx": "moe_merge_probe"}],

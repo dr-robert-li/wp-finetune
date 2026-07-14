@@ -143,10 +143,10 @@ def _run_base_vs_merged_diff(merged_dir: str) -> bool:
     from scripts._p0_vllm_smoke_serve import boot_vllm, wait_healthy, generate, stop_vllm
 
     def _serve(model_dir: str, container: str, allow_empty: bool) -> str:
-        boot_vllm(model_dir, container, PORT, GPU_MEM_UTIL,
-                  serve_script=SERVE_SCRIPT,
-                  extra_env={"LANGUAGE_MODEL_ONLY": "1", "MAX_MODEL_LEN": str(MAX_MODEL_LEN)})
         try:
+            boot_vllm(model_dir, container, PORT, GPU_MEM_UTIL,
+                      serve_script=SERVE_SCRIPT,
+                      extra_env={"LANGUAGE_MODEL_ONLY": "1", "MAX_MODEL_LEN": str(MAX_MODEL_LEN)})
             served = wait_healthy(PORT, container, timeout=BOOT_TIMEOUT_SEC)
             out = generate(PORT, served,
                             [{"instruction": DIFF_PROMPT, "source_val_idx": "judge03_merge_diff"}],
@@ -179,10 +179,10 @@ def _capture_and_score(merged_dir: str, seed: int) -> dict:
 
     container = "judge03-served-eval"
     cap_path = OUT_DIR / f"judge_capture_vllm_s{seed}.jsonl"
-    boot_vllm(merged_dir, container, PORT, GPU_MEM_UTIL,
-              serve_script=SERVE_SCRIPT,
-              extra_env={"LANGUAGE_MODEL_ONLY": "1", "MAX_MODEL_LEN": str(MAX_MODEL_LEN)})
     try:
+        boot_vllm(merged_dir, container, PORT, GPU_MEM_UTIL,
+                  serve_script=SERVE_SCRIPT,
+                  extra_env={"LANGUAGE_MODEL_ONLY": "1", "MAX_MODEL_LEN": str(MAX_MODEL_LEN)})
         served = wait_healthy(PORT, container, timeout=BOOT_TIMEOUT_SEC)
         warm = generate(PORT, served,
                          [{"instruction": "Reply with exactly one word: OK", "source_val_idx": "warmup"}],
