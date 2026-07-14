@@ -4,9 +4,9 @@ milestone: v4.0
 milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
 current_phase: 22
 current_phase_name: Sieve/Protected-Mask Tooling Adaptation
-status: planning
+status: executing
 stopped_at: "Phase 21 Plan 01 COMPLETE — 21-01 Task 2 Rule-4 gap CLOSED: routed MoE-expert merge proven (tinker_cookbook build_hf_model route, 240/240, ground-truth vs Tinker sampler verdict_pass=true). GEN-02/JUDGE-02 real Tinker spend UNBLOCKED; next: 21-02 gen SFT / 21-03 judge SFT."
-last_updated: "2026-07-14T02:36:38.080Z"
+last_updated: "2026-07-14T22:02:29.334Z"
 last_activity: 2026-07-14
 last_activity_desc: Phase 21 complete, transitioned to Phase 22
 progress:
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-07-12)
 
 Phase: 22 — Sieve/Protected-Mask Tooling Adaptation
 Plan: Not started
-Status: Phase complete — ready for verification
+Status: Ready to execute
 Last activity: 2026-07-14 — Phase 21 complete, transitioned to Phase 22
 
 ### 2026-07-08 — Gap-closure investigation (judge reasoning ceiling)
@@ -504,7 +504,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Ready to plan
+**Status:** Ready to execute
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)
