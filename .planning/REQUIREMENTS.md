@@ -401,7 +401,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GEN-03 | Phase 21 | Complete |
 | JUDGE-01 | Phase 21 | Complete |
 | JUDGE-02 | Phase 21 | Complete |
-| JUDGE-03 | Phase 21 | Pending |
+| JUDGE-03 | Phase 21 | Complete |
 | GATE4-02 | Phase 22 | Pending |
 | EVAL4-01 | Phase 23 | Pending |
 | GATE4-01 | Phase 24 | Pending |
@@ -433,7 +433,7 @@ Pre-registered success criteria: judge rho **>0.85 single-seed OR >0.87 3-seed e
 
 - [x] **JUDGE-01**: Judge-output-format-compliance smoke on the raw pre-SFT base early (community-reported 18% noncompliance — the failure mode that killed 3/4 ratios on the old base)
 - [x] **JUDGE-02**: 3-seed relabel-SFT (seeds {1,0,2}) completes reusing v1.3 labels (`data/relabel_v1/`; re-open condition per V4-RERUN-ROADMAP discretion item 2)
-- [ ] **JUDGE-03**: Judge rho measured vs held-out relabeled val (`scripts/relabel/eval_relabel.py`, vLLM-served, 8192-token cap) against pre-registered targets; failure disposition recorded as valid outcome if unmet
+- [x] **JUDGE-03**: Judge rho measured vs held-out relabeled val (`scripts/relabel/eval_relabel.py`, vLLM-served, 8192-token cap) against pre-registered targets; failure disposition recorded as valid outcome if unmet
 
 ### Final Evaluation (Stage 4)
 
