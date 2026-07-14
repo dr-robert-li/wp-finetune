@@ -64,14 +64,22 @@ The judge returns structured scores across 9 dimensions: WPCS compliance, SQL sa
 | | 15. Packaging | **Complete** — Q8_0 GGUF is the lossless ship tier (−47% size) |
 | | 16. Pipeline Lockdown | Complete — `PIPELINE.md` frozen, `deprecated/` sweep |
 | v3.1 Benchmark, Publish & Next Base | 17. wp-bench full rerun + SWE-bench generation-mode eval | **Complete** — see Benchmarks below |
-| | 18. Production Sweep & HuggingFace Publication | **In progress** |
+| | 18. Production Sweep & HuggingFace Publication | **Complete** — pair PUBLIC on HuggingFace |
+| | 19. Next-Base Rerun Roadmap | **Complete** — Qwen3.6-35B-A3B locked, V4-RERUN-ROADMAP.md |
+| v4.0 Pipeline Rerun (Qwen3.6-35B-A3B) | 20. Base Bring-Up (token gate, DeltaNet smoke, VL merge probe) | **Complete** — 4/4 gates green |
+| | 21. SFT Gen & Judge | **Complete** — both pre-registered bars missed, recorded honestly (see JOURNAL 2026-07-14/15) |
+| | 22. Sieve Tooling Adaptation | Pending |
+| | 23. Final Evaluation (A/B vs v3.0) | **Next** — dual gen candidates: raw base + fine-tune |
+| | 24-27. Conditional gates + Packaging/Publication | Pending |
 
-**Current:** v3.0 CLOSED 2026-07-11. The compression campaign confirmed the model cannot be shrunk by
-expert-count or weight-norm methods on this base — RL, MoE-Sieve, and pruning each returned no gain, and
-that negative result is recorded rather than hidden (see [MODEL_CARD.md](output/packaging/MODEL_CARD.md)).
-Quantization is the sole size lever: Q8_0 GGUF ships lossless. Phase 17 added fresh full-suite wp-bench
-(0.4365) and out-of-domain SWE-bench numbers on the shipping stack. Phase 18 (this phase) brings the repo
-docs current and publishes the two-model pair to HuggingFace.
+**Current:** v4.0 is mid-flight on `Qwen3.6-35B-A3B`. Phase 21 trained the pair and missed both
+pre-registered bars: the judge improved where it counts (capture-path rho 0.8358 vs the old base's
+0.8274) but reads 0.7872 through the merged/vLLM serving stack, a numerics ceiling both bases share;
+the gen fine-tune regressed below the raw base (0.372 vs 0.4897) because the training targets are
+structurally weaker than what this base already writes. A five-experiment diagnostic
+(`output/base21/diagnostic/DIAGNOSTIC_SYNTHESIS.md`) pinned all of it down. Phase 23 runs the A/B with
+the raw base as a first-class gen candidate. The v3.x pair below remains the published, shipping
+artifact.
 
 ## Benchmarks
 

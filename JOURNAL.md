@@ -4,6 +4,104 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-07-15: five experiments later, I know exactly why the rebase disappointed. Mostly it didn't.
+
+The Phase 21 misses bothered me enough to stop and run the full diagnostic before touching Phase 23.
+Three forensics passes over artifacts already on disk, then five experiments, all receipted under
+`output/base21/diagnostic/`. Total marginal cost: about $2 of Tinker and a day of GB10 time.
+
+The judge story flipped first. The capture-path rho on the new base is 0.8358, which beats the old
+base's 0.8274 under the identical recipe. The training worked. What eats the gain is the serve step:
+merge the adapter, serve it through vLLM, and the same checkpoint reads 0.7872. I assumed the merge was
+the culprit, so experiment 3 rewrote the delta application with fp32 accumulation and re-measured:
+0.7823. No change, and it turns out the real merge path (the vendor's own `build_hf_model`) was already
+accumulating in fp32; the forensics doc had analyzed a legacy code path nothing uses. So the drop is
+engine numerics, Tinker's serving stack versus vLLM's kernels, flipping a handful of borderline greedy
+decodes whose long chains then wander. Recomputing the old base the same paired way gives 0.7888 served,
+statistically the same as our 0.7872. The wall we thought we hit at 0.85 is partly a measurement
+ceiling that both bases share. Experiment 2, which would have separated merge from engine by serving
+the adapter unmerged, got blocked: vLLM's `--enable-lora` rejects Tinker's `w1/w2/w3` expert naming.
+Filed as a tooling gap, recorded, moved on.
+
+The gen story is less flattering and more interesting. Experiment 5 scored the 73 training targets
+against what the raw base already writes: the targets lose on every structural axis that matters
+(hook wiring 8% vs 46%, `<?php` self-containment 8% vs 50%). One target literally says "TODO: Copied
+from section.php". We trained a strong model on code weaker than its own output, and it obliged us by
+getting worse. Experiment 1 benched the preserved ep1 checkpoint at 0.4381, recovering over half the
+gap from ep3's 0.372, so three epochs on 563 rows also overcooked it. Experiment 4 rebuilt the mix
+properly, wired full-file targets sampled from the 66K-function human-written corpus, gen share up,
+replay stream dropped, two epochs, canonical terse gate clean. It benched 0.4022. Better than the
+original, still 8.8pp under the raw base's 0.4897.
+
+That last number is the real finding of the week. On a base this strong, SFT-for-codegen has negative
+headroom against wp-bench: nothing in our corpus teaches it anything the benchmark can see, and any
+tuning pass risks dragging it toward the training data's shape. The honest gen candidate for Phase 23
+is the raw base itself, with the fine-tune as the B arm. The judge is the opposite case, a genuinely
+created capability that got measurably better on the new base, and its promotion call should read the
+capture-path number with the serving caveat attached. Synthesis: `DIAGNOSTIC_SYNTHESIS.md`.
+
+---
+
+## 2026-07-14 — Phase 21: both pre-registered bars missed, and the receipts say so.
+
+The whole SFT phase ran end to end on the new base: six plans, four waves, about $8 of Tinker, all of
+it landed before the July 17 price rise. The recipe was deliberately the v1.2/v1.3 one, reused data,
+same LoRA shape, Tinker's own auto LR, with only the deltas Phase 20 and the research pass forced.
+
+The Wave-0 probe earned its place before a dollar of real training moved. A cheap `train_mlp=True`
+probe revealed that Tinker exports routed experts as per-expert-batched `w1/w2/w3` tensors that our
+merge code silently dropped, 90 modules gone while the guard reported a clean pass. The fix turned out
+to be sitting in the vendor's own cookbook: `build_hf_model` ships a verified merge for exactly this
+model, fused `[gate|up]` layout and all. We proved it by merging the probe and comparing generations
+token for token against Tinker's own sampler serving the same adapter. Forty tokens, identical. That
+merge path then carried every real adapter in the phase, 240 of 240 modules each time.
+
+Training itself was uneventful in the good way. Gen SFT: loss 7.97 down to 1.46, terse gate clean once
+the known replay-row measurement artifact was rescoped out (the in-driver gate counts raw-code replay
+targets as "terse", same as it did on v1.2; the canonical cot+ctf gate is the honest one). Judge SFT:
+three seeds, run concurrently, thirty minutes wall-clock. The raw-base baseline for judge format came
+in at 30 of 30 unparseable, thinking-mode prose that exhausts the token budget before any JSON, which
+makes the trained result of 0 parse failures in 121 across all three seeds the clearest single win of
+the phase.
+
+Then the two numbers that matter. Gen: the merged model benched 0.372 against a 0.4286 floor, while a
+fresh anchor put the raw untrained base at 0.4897. The fine-tune made the new base worse at the thing
+it was tuned for. Judge: served single-seed 0.7872 against the 0.85 target, capture ensemble 0.8160
+against 0.87. Both recorded as misses, mechanically, CI-aware, per the pre-registration. No floor got
+quietly swapped, no re-run until it passed. The failure-disposition rule exists for exactly this, and
+writing "miss" twice in one day is easier when the alternative is lying to the next phase. Why the
+misses happened is the next entry up.
+
+---
+
+## 2026-07-13 — v4.0 opens: Phase 20 clears every architecture trap before the money moves.
+
+v4.0 got its sign-off, so the first real work on Qwen3.6-35B-A3B was bring-up: prove the download, the
+tokens, the DeltaNet serving path, and the VL merge path before any SFT spend. Four gates, four
+receipts under `output/base20/`, all green by end of day.
+
+The eos/pad mismatch from the roadmap was real and exactly as documented: config says 248044, tokenizer
+says 248046, pad is null. The gate fixed it with direct JSON surgery after catching a nastier trap on
+the way: `save_pretrained()` on this VL checkpoint silently strips `vision_config` because the loaded
+model's config object unwraps to the text-only sub-config. That one is now written down where Phases 21
+through 27 will see it. The DeltaNet smoke ran with CUDA-graph capture deliberately enabled, since the
+open vLLM crash (#35945) only fires during capture and an eager-only test would have false-passed. It
+didn't fire; vLLM 0.20.2 on the GB10 boots healthy in about six and a half minutes. The community
+kernel that promises 1.38x prefill stays off, since it wants `trust_remote_code` against a repo nobody
+has audited.
+
+The merge-path check used a real Tinker run costing cents, and it was worth every cent given what the
+same trick caught in Phase 21 a day later. Findings that surprised me: the flattened text-only class
+means Tinker's export already matches our module tree with no prefix remapping, and the model's
+always-on thinking mode showed up in the very first warm-up generation ("Here's a thinking process:"),
+a preview of the format decisions Phase 21 would have to make. Post-execution code review found one
+real landmine, the v4 config's `lora.target_modules` matching zero routed-expert modules on the fused
+architecture, which would have silently no-opped the LoRA. Fixed with `target_parameters` before it
+could bite. Milestone plumbing: 18 requirements, phases 20 through 27, roadmap committed. The plan
+survives contact so far.
+
+---
+
 ## 2026-07-12: the base anchor lands, and it keeps the gen story honest.
 
 One number was missing from the benchmark table: what the untrained base scores on wp-bench. The judge

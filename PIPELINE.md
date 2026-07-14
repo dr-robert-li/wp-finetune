@@ -136,15 +136,26 @@ return nothing.
 
 ---
 
-## Running it on the next base (Qwen3.6-class)
+## Running it on the next base (Qwen3.6-class) — now with v4.0 actuals
 
 1. Swap the base in Stage 1-3 configs. Keep the task tokens and the frozen-router discipline.
+   v4.0 actuals: run the eos/pad token-ID gate before any SFT (this line's config/tokenizer mismatch is
+   real and working-as-intended upstream); never call `save_pretrained()` on the VL checkpoint's config
+   (it silently strips `vision_config`); merge routed-expert LoRA through
+   `tinker_cookbook.weights.build_hf_model` (Tinker exports per-expert-batched `w1/w2/w3` that the naive
+   PEFT path silently drops).
 2. Rerun the spine (Stages 1-4). The number to beat is judge rho 0.8075 and the attenuation ceiling ~0.98.
+   v4.0 actuals: compare on the CAPTURE path — the merged/vLLM serve step costs ~0.05 rho on either base
+   (engine numerics, not model quality). The judge recipe ports upward (0.8358 capture on Qwen3.6); the
+   gen recipe does NOT — a base whose raw wp-bench exceeds the training targets' quality regresses under
+   this SFT (0.4897 raw vs 0.372 tuned). Anchor the raw base FIRST and treat "raw base wins" as a live
+   outcome for the gen role.
 3. Rerun all three conditional gates. They returned nothing on Qwen3-30B-A3B; a higher-rho, more
    concentrated base is precisely where they might flip. Treat a `no_winner` as a valid, recorded outcome,
    not a failure to force.
 4. Package with the same ladder. If the base is smaller or routing is prunable, the size story finally
-   improves.
+   improves. On Qwen3.6-35B the pair no longer fits GB10 at bf16, so quantization is a memory
+   prerequisite, not a preference.
 
 Deprecated one-off experiment drivers from the v3.0 run live in `deprecated/` with their own README. They
 are not part of this pipeline; they are the archaeology of how the gates above were established.
