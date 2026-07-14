@@ -848,7 +848,13 @@ if __name__ == "__main__":
         # "no receipt at all" case below).
         raise
     except Exception as exc:  # noqa: BLE001 -- gate script: any exception is a merge failure
-        receipt_path = PROJECT_ROOT / "output" / "base20" / "_merge_adapter_result.json"
+        # WR-03: prefer the caller's own --guard-receipt-path directory so an
+        # unhandled exception's fail receipt lands next to the phase's other
+        # receipts instead of always overwriting Phase 20's hardcoded path.
+        if args.guard_receipt_path:
+            receipt_path = resolve_path(args.guard_receipt_path).parent / "_merge_adapter_result.json"
+        else:
+            receipt_path = PROJECT_ROOT / "output" / "base20" / "_merge_adapter_result.json"
         receipt_path.parent.mkdir(parents=True, exist_ok=True)
         receipt_path.write_text(json.dumps({"status": "fail", "error": str(exc)}, indent=2))
         print(f"MERGE ADAPTER FAILED: {exc}")
