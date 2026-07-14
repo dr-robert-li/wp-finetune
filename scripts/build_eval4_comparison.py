@@ -176,7 +176,8 @@ def emit_verdict() -> dict:
         "ci_lower": audit["raw_base_ci_lower"],
         "ci_upper": audit["raw_base_ci_upper"],
         "clears_floor_ci_aware": audit["raw_base_ci_lower"] >= floor,
-        "source_receipt": rel(GEN03) + "#fresh_new_base_anchor (CI backfilled offline, see comparability_audit.json)",
+        "source_receipt": rel(GEN03),
+        "source_receipt_note": "fresh_new_base_anchor block; CI backfilled offline, see comparability_audit.json",
     }
     candidate_B_best_trained = {
         "label": "ep1 (best trained gen variant)",
@@ -252,7 +253,8 @@ def emit_verdict() -> dict:
         "rho": judge_rho["ensemble_figure"]["rho"],
         "ci_lower": judge_rho["ensemble_figure"]["ci_lower"],
         "target": 0.87,
-        "source_receipt": rel(JUDGE03_RHO) + " / " + rel(JUDGE03_CAPTURE),
+        "source_receipt": rel(JUDGE03_RHO),
+        "source_receipt_secondary": rel(JUDGE03_CAPTURE),
     }
     capture_s1_reference = {
         "methodology": "tinker_capture",

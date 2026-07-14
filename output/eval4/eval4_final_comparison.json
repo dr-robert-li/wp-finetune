@@ -1,0 +1,110 @@
+{
+  "phase": 23,
+  "title": "v4.0 Final Evaluation -- EVAL4-01 primary A/B verdict",
+  "generated_utc": "2026-07-15",
+  "provenance_note": "This is a consolidation report. Every quality number below is copied from an existing measured Phase 21 / diagnostic artifact under output/base21/ (same-harness, same-stack, taken 2026-07-14), with a `source_receipt` on every gating row. No new GPU eval was run for Phase 23; the single offline addition is the raw-base CI backfill (see comparability_audit.json), computed via the identical stratified bootstrap already used for every other arm.",
+  "shipping_stack": {
+    "generation_role": {
+      "winner": "raw_base",
+      "name": "Qwen3.6-35B-A3B raw base (no gen adapter)",
+      "role": "wp_gen"
+    },
+    "judge_role": {
+      "name": "v4 relabel-SFT judge, s1 served / 3-seed capture ensemble",
+      "role": "wp_judge"
+    }
+  },
+  "comparison_arms_status": {
+    "gen_arm": "Dual-candidate A/B per USER DIRECTIVE: raw base (candidate A) vs best trained ep1 (candidate B), both framed against the 0.4286 floor and v3.0 shipping gen. ep3 (shipped/promoted) and v4b (rebuilt-mix) carried as reference rows.",
+    "judge_arm": "v4 SFT judge (served s1 / 3-seed capture ensemble) vs v3.0 shipping judge figures, with the cross-base + engine-numerics-ceiling caveats."
+  },
+  "gen_ab": {
+    "floor": 0.4286,
+    "candidate_A_raw_base": {
+      "label": "raw base (Qwen3.6-35B-A3B, no adapter)",
+      "overall": 0.4897,
+      "ci_lower": 0.3812,
+      "ci_upper": 0.5983,
+      "clears_floor_ci_aware": false,
+      "source_receipt": "output/base21/gen03_wpbench.json",
+      "source_receipt_note": "fresh_new_base_anchor block; CI backfilled offline, see comparability_audit.json"
+    },
+    "candidate_B_best_trained": {
+      "label": "ep1 (best trained gen variant)",
+      "overall": 0.4381,
+      "ci_lower": 0.3295,
+      "ci_upper": 0.5504,
+      "clears_floor_ci_aware": false,
+      "candidate_B_selection_rationale": "ep1 is the best trained gen variant -- highest trained point estimate of {ep3 0.372, ep1 0.4381, v4b 0.4022}; exp1 confirmed ep3 overtraining (ep1 recovers 56% of the ep3->raw gap); exp4 confirmed the rebuilt-mix v4b (0.4022) lands below ep1.",
+      "source_receipt": "output/base21/diagnostic/exp1_ep1_wpbench.json"
+    },
+    "reference_ep3": {
+      "label": "ep3 (shipped/promoted, overtrained)",
+      "overall": 0.372,
+      "ci_lower": 0.2847,
+      "ci_upper": 0.4753,
+      "clears_floor_ci_aware": false,
+      "source_receipt": "output/base21/gen03_wpbench.json"
+    },
+    "reference_v4b": {
+      "label": "v4b (rebuilt-mix, 2 epochs)",
+      "overall": 0.4022,
+      "ci_lower": 0.2924,
+      "ci_upper": 0.5122,
+      "clears_floor_ci_aware": false,
+      "source_receipt": "output/base21/diagnostic/exp4_bench.json"
+    },
+    "v30_shipping_gen": {
+      "fresh_full_rerun": 0.4365,
+      "gate1_reference": 0.4484,
+      "cross_base_caveat": true,
+      "note": "both OLD base (Qwen3-30B-A3B); Phase 17 fresh full re-run figure is primary"
+    },
+    "gen_role_winner": "raw_base",
+    "gen_role_winner_rationale": "raw base dominates every trained variant on BOTH point estimate (0.4897 > ep1 0.4381 > v4b 0.4022 > ep3 0.372) AND CI-lower (0.3812 > ep1 0.3295), exceeds the v3.0 shipping gen figure (0.4365), and the diagnostic's final verdict is that the v1.2 SFT-for-codegen recipe has NEGATIVE headroom on this stronger base (the model's raw coding ability exceeds anything the current corpus teaches). This gen-role-winner call is robust regardless of whether the raw-base CI-lower itself clears the floor, because it is a relative A/B and raw base wins both metrics."
+  },
+  "judge_ab": {
+    "served_s1": {
+      "methodology": "vllm_served",
+      "rho": 0.7872053287497484,
+      "ci_lower": 0.7125475563884955,
+      "target": 0.85,
+      "source_receipt": "output/base21/judge03_rho.json"
+    },
+    "capture_ensemble": {
+      "methodology": "tinker_capture",
+      "rho": 0.8160452097775477,
+      "ci_lower": 0.756291877837854,
+      "target": 0.87,
+      "source_receipt": "output/base21/judge03_rho.json",
+      "source_receipt_secondary": "output/base21/judge03_capture_rho.json"
+    },
+    "capture_s1_reference": {
+      "methodology": "tinker_capture",
+      "rho": 0.8358149892119933,
+      "note": "NON-GATING promotion-path reference",
+      "source_receipt": "output/base21/judge03_rho.json"
+    },
+    "framed_vs": {
+      "v30_ensemble_served": 0.8075,
+      "v30_single_served": 0.8017,
+      "capture_vs_capture": {
+        "new": 0.8358149892119933,
+        "old": 0.8274,
+        "note": "the rebase DID improve raw judge capability (+0.0084 capture), masked by the ~0.78-0.79 served engine-numerics ceiling common to both bases"
+      },
+      "ceiling": 0.984
+    },
+    "relabel_reopen_condition_met": false,
+    "judge_cross_base_caveat": true,
+    "judge_engine_numerics_ceiling": true
+  },
+  "pre_registered_verdict": {
+    "judge_single_met": false,
+    "judge_ensemble_met": false,
+    "primary_judge_target_met": false,
+    "wpbench_floor_met_by_gen_role_winner": false,
+    "milestone_primary_verdict": "PRIMARY TARGET (judge rho > 0.85 single OR > 0.87 ensemble, CI-aware) NOT MET (served s1 ci_lower=0.7125; capture ensemble ci_lower=0.7563). Recorded as the valid, pre-registered failure disposition (\"no_winner is a result\"), not a forced pass.",
+    "disposition": "valid_recorded_miss"
+  }
+}
