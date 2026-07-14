@@ -214,6 +214,86 @@ def _make_prefix_aware_adapter(adapter_dir: str, model) -> tuple[str, list[str]]
     return work_dir, dropped_modules
 
 
+# ---------------------------------------------------------------------------
+# Phase 21 diagnostic Experiment 3 -- fp32-accumulation merge fix
+#
+# judge_attenuation_forensics.md's top hypothesis was "merge/serving numerics
+# (bf16 LoRA-merge rounding)". Investigation of the ACTUAL merge engine used
+# for every real Phase 21 adapter (all are routed-MoE-expert -- train_mlp=True
+# -- so merge_adapter() always routes through _merge_via_tinker_cookbook, never
+# the legacy PEFT path below) found tinker_cookbook.weights' own
+# apply_merged_weight() ALREADY upcasts the base weight + LoRA delta to fp32
+# for the ADDITION step (`target.float() + merged_lora.float()`, then casts
+# back to bf16) -- see tinker_cookbook/weights/_merge.py. What it does NOT do
+# is compute the LoRA delta itself (lora_B @ lora_A / the 3D expert bmm) in
+# fp32 -- that matmul runs in whatever dtype the adapter's safetensors are
+# stored in (bf16, per Tinker's export). _fp32_upcast_adapter_copy() closes
+# this remaining gap by upcasting the adapter tensors to fp32 BEFORE handing
+# them to build_hf_model, so the whole delta-compute-then-add chain is fp32
+# throughout, closing at the final bf16 cast build_hf_model already performs
+# on save. No vendor code is monkeypatched -- we compose a new (small, LoRA-
+# rank-sized) fp32 adapter copy, which is "OUR code" applying the upcast.
+#
+# The legacy (non-routed) PEFT path has the mirror-image gap: PEFT's own
+# get_delta_weight() already computes weight_B @ weight_A in fp32 when
+# device.type=="cpu" and the LoRA dtype is fp16/bf16 (peft/tuners/lora/
+# layer.py's `cast_to_fp32` branch) -- but it then casts the result BACK to
+# bf16 before returning, and merge()'s `base_layer.weight.data += delta_weight`
+# is therefore a bf16 accumulation. _upcast_lora_layers_to_fp32() closes this
+# by upcasting just the (small, rank-sized) lora_A/lora_B parameter tensors to
+# fp32 in-place before merge_and_unload() runs: with the LoRA dtype no longer
+# fp16/bf16, PEFT's cast_to_fp32 guard evaluates False and the delta stays
+# fp32 all the way to the in-place `+=` into the (bf16) base weight, which
+# PyTorch computes via implicit fp32 promotion before storing back to the
+# bf16 buffer -- genuine fp32 accumulation, without loading the whole
+# (~67 GiB) base model in fp32 (memory-unsafe on this box) and without
+# monkeypatching PEFT internals. This path is UNEXERCISED by any real v4
+# adapter in this project (every trained adapter here is routed-MoE, per
+# train_mlp=True) -- fixed for correctness/completeness per the diagnostic's
+# explicit ask, not because it is reachable today.
+# ---------------------------------------------------------------------------
+
+
+def _fp32_upcast_adapter_copy(adapter_dir: str) -> str:
+    """Return a path to a NEW adapter directory whose safetensors tensors are
+    upcast to float32 (adapter_config.json copied verbatim). LoRA adapter
+    tensors are small (rank-sized), so this costs little memory/disk even for
+    a 240-module routed-expert export."""
+    from safetensors import safe_open
+    from safetensors.torch import save_file
+
+    src_path = Path(adapter_dir) / "adapter_model.safetensors"
+    with safe_open(str(src_path), framework="pt", device="cpu") as f:
+        tensors = {k: f.get_tensor(k).float() for k in f.keys()}
+
+    work_dir = tempfile.mkdtemp(prefix="merge_adapter_fp32_")
+    save_file(tensors, os.path.join(work_dir, "adapter_model.safetensors"))
+    shutil.copy(Path(adapter_dir) / "adapter_config.json", Path(work_dir) / "adapter_config.json")
+    print(f"  [fp32-merge] upcast {len(tensors)} adapter tensors to float32 -> {work_dir} "
+          f"(Experiment 3: fp32 LoRA-delta computation, closes the gap tinker_cookbook's own "
+          f"fp32-accumulated ADD does not cover)")
+    return work_dir
+
+
+def _upcast_lora_layers_to_fp32(peft_model, adapter_name: str) -> int:
+    """In-place upcast every LoRA lora_A/lora_B weight tensor (for
+    `adapter_name`) on `peft_model` to float32. Small tensors only (LoRA
+    rank-sized) -- does NOT touch the (large) base model weights, so this is
+    memory-safe even without a device_map change. Returns the number of LoRA
+    layers upcast (0 if none found -- caller should treat that as a bug, not
+    silently proceed)."""
+    n = 0
+    for module in peft_model.modules():
+        lora_a = getattr(module, "lora_A", None)
+        lora_b = getattr(module, "lora_B", None)
+        if not (isinstance(lora_a, torch.nn.ModuleDict) and adapter_name in lora_a):
+            continue
+        lora_a[adapter_name].weight.data = lora_a[adapter_name].weight.data.float()
+        lora_b[adapter_name].weight.data = lora_b[adapter_name].weight.data.float()
+        n += 1
+    return n
+
+
 def _adapter_has_routed_expert_params(adapter_dir: str) -> bool:
     """Detect Tinker's routed-MoE-expert (PEFT target_parameters) export.
 
@@ -335,12 +415,14 @@ def _merge_via_tinker_cookbook(
           f"modules (expert_layout={profile.expert_layout}, {len(ops)} distinct target keys) "
           f"-- covers routed MoE experts AND shared_expert/attention modules, no silent drops")
 
-    print(f"Merging via tinker_cookbook.weights.build_hf_model ({adapter_dir} -> {output_dir}) ...")
+    fp32_adapter_dir = _fp32_upcast_adapter_copy(adapter_dir)
+    print(f"Merging via tinker_cookbook.weights.build_hf_model ({fp32_adapter_dir} -> {output_dir}) "
+          f"[Experiment 3: fp32-upcast adapter] ...")
     if Path(output_dir).exists():
         shutil.rmtree(output_dir)  # build_hf_model requires output_path to not exist
     tcw.build_hf_model(
         base_model=local_base_dir,
-        adapter_path=adapter_dir,
+        adapter_path=fp32_adapter_dir,
         output_path=output_dir,
         trust_remote_code=True,
     )
@@ -680,6 +762,22 @@ def merge_adapter(adapter_dir: str, output_dir: str, config: dict,
         )
     else:
         print("  [guard] no expected-modules manifest found -- skipping merged-target-module-count guard")
+
+    # Experiment 3: upcast LoRA weight tensors to fp32 in-place before merging
+    # -- with the LoRA dtype no longer fp16/bf16, PEFT's own get_delta_weight()
+    # cast_to_fp32 guard (peft/tuners/lora/layer.py) no longer downcasts the
+    # delta before merge()'s `base_layer.weight.data += delta_weight`, so the
+    # addition into the (bf16) base weight is genuinely fp32-accumulated.
+    # Small tensors only (LoRA rank-sized) -- does not touch the (~67 GiB)
+    # base model weights, so this stays memory-safe.
+    n_upcast = _upcast_lora_layers_to_fp32(peft_model, "default")
+    if n_upcast == 0:
+        raise RuntimeError(
+            "Experiment 3 fp32-upcast found ZERO LoRA layers to upcast on this PeftModel -- "
+            "adapter_name mismatch or no LoRA layers attached; refusing to merge at (possibly) "
+            "unfixed bf16 precision silently."
+        )
+    print(f"  [fp32-merge] upcast {n_upcast} LoRA layer(s) to float32 before merge")
 
     # Attempt merge
     print("Merging adapter into base model ...")
