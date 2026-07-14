@@ -109,7 +109,7 @@ def main() -> int:
     print(f"[capture-tinker] {len(examples)} examples (filter={args.filter})", flush=True)
 
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
-    n_close = n_jo = 0
+    n_close = n_jo = n_infra_error = 0
     with open(args.out, "w") as fh:
         fh.write(json.dumps({"__provenance__": tinker_path, "dataset": args.dataset,
                              "base_model": base_model, "renderer": renderer_name,
@@ -118,20 +118,36 @@ def main() -> int:
         for idx, r in enumerate(examples):
             user_msgs = [m for m in r["messages"] if m["role"] == "user"]
             prompt = renderer.build_generation_prompt(user_msgs)
+            infra_error = False
             try:
                 resp = sampling_client.sample(prompt=prompt, num_samples=1, sampling_params=sp)
                 text = _decode_first(resp, tok)
             except Exception as e:  # noqa: BLE001
                 print(f"[capture-tinker] sample error idx {idx}: {e}", flush=True)
                 text = ""
+                infra_error = True
+                n_infra_error += 1
             n_close += "[/REASONING]" in text
             n_jo += "<judge_output>" in text
-            fh.write(json.dumps({"index": idx, "response": text}) + "\n")
+            # WR-04: "infra_error" is an additive field -- eval_relabel.py
+            # (unmodified) only reads "index"/"response" per row and ignores
+            # unknown keys, so a transient sampling-API error stays
+            # distinguishable from a genuine judge-format non-compliance
+            # without changing the downstream scorer.
+            fh.write(json.dumps({"index": idx, "response": text, "infra_error": infra_error}) + "\n")
             if (idx + 1) % 25 == 0:
                 print(f"[capture-tinker] {idx + 1}/{len(examples)} "
-                      f"close={n_close} judge_output={n_jo}", flush=True)
+                      f"close={n_close} judge_output={n_jo} infra_error={n_infra_error}", flush=True)
+    # WR-04: sidecar summary carrying n_infra_error alongside n (total) --
+    # written last so streaming per-row writes above stay crash-resilient
+    # (a killed mid-run process still leaves a usable partial capture file;
+    # only this final summary would be missing).
+    summary_path = args.out + ".capture_summary.json"
+    with open(summary_path, "w") as f:
+        json.dump({"n": len(examples), "n_infra_error": n_infra_error,
+                   "n_close_tag": n_close, "n_judge_output_tag": n_jo}, f, indent=2)
     print(f"[capture-tinker] DONE n={len(examples)} close_tag={n_close} "
-          f"judge_output={n_jo} -> {args.out}", flush=True)
+          f"judge_output={n_jo} infra_error={n_infra_error} -> {args.out}", flush=True)
     return 0
 
 

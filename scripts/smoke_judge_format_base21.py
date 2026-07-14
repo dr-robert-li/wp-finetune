@@ -77,13 +77,22 @@ def load_wp_judge_prompts(n: int) -> list[str]:
 
 
 def judge_generate(port: int, served_model: str, system_prompt: str,
-                    user_prompts: list[str], max_tokens: int, temperature: float) -> list[str]:
+                    user_prompts: list[str], max_tokens: int, temperature: float
+                    ) -> tuple[list[str], set[int]]:
     """Chat-completion generate with a system message (the judge rubric) — the
     shared generate() helper is user-only, so this is a local, script-specific
-    variant rather than a change to shared infra used by many other callers."""
+    variant rather than a change to shared infra used by many other callers.
+
+    WR-04: returns (outs, infra_error_idx) so a caller can tell a genuine
+    judge-format non-compliance (parseable response, wrong shape) apart from
+    an empty "" caused by a transient generation/sampling infra error --
+    both currently collapse into the same "" placeholder here, but the
+    infra-error INDEX is now tracked so downstream can separate the counts.
+    """
     import openai
     client = openai.OpenAI(base_url=f"http://localhost:{port}/v1", api_key="none")
     outs = []
+    infra_error_idx: set[int] = set()
     for i, user_prompt in enumerate(user_prompts):
         try:
             resp = client.chat.completions.create(
@@ -99,7 +108,8 @@ def judge_generate(port: int, served_model: str, system_prompt: str,
         except Exception as e:  # noqa: BLE001
             print(f"[judge01-smoke] gen error idx {i}: {e}")
             outs.append("")
-    return outs
+            infra_error_idx.add(i)
+    return outs, infra_error_idx
 
 
 def run_smoke() -> dict:
@@ -120,10 +130,11 @@ def run_smoke() -> dict:
         raise RuntimeError(f"real-generation warm-up returned empty output: {warm!r}")
     print(f"[warmup] real-generation OK (served_model={served!r}): {warm[0].strip()[:80]!r}")
 
-    completions = judge_generate(PORT, served, system_prompt, prompts, MAX_TOKENS, TEMPERATURE)
+    completions, infra_error_idx = judge_generate(PORT, served, system_prompt, prompts, MAX_TOKENS, TEMPERATURE)
 
     n_parse_ok = 0
     n_parse_fail = 0
+    n_infra_error = len(infra_error_idx)
     sample_failures = []
     for text in completions:
         parsed = parse_judge_scores(text, "auto")
@@ -147,6 +158,7 @@ def run_smoke() -> dict:
         "n_prompts": len(prompts),
         "n_parse_ok": n_parse_ok,
         "n_parse_fail": n_parse_fail,
+        "n_infra_error": n_infra_error,  # WR-04: subset of n_parse_fail caused by a generation/sampling error, not genuine format non-compliance
         "parse_fail_rate": parse_fail_rate,
         "community_anchor_rate": COMMUNITY_ANCHOR_RATE,
         "vs_anchor": vs_anchor,
