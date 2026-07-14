@@ -1,0 +1,22 @@
+{
+  "captures": [
+    "/home/robert_li/Desktop/projects/wp-finetune/output/base21/judge_capture_s1.jsonl",
+    "/home/robert_li/Desktop/projects/wp-finetune/output/base21/judge_capture_s0.jsonl",
+    "/home/robert_li/Desktop/projects/wp-finetune/output/base21/judge_capture_s2.jsonl"
+  ],
+  "ensemble_rho": 0.8160452097775477,
+  "n": 121,
+  "ci": [
+    0.756291877837854,
+    0.8585138000687434
+  ],
+  "parse_fail_per_seed": [
+    0,
+    0,
+    0
+  ],
+  "baseline_rho": 0.7476689625425029,
+  "ceiling": 0.9844009569826934,
+  "delta_vs_baseline": 0.06837624723504476,
+  "min_seeds_required": 2
+}

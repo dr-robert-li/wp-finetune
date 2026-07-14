@@ -65,13 +65,36 @@ def main() -> int:
     ap.add_argument("--filter", default="wp_judge_startswith",
                     choices=["wp_judge_startswith", "all"],
                     help="row filter; wp_judge_startswith mirrors eval_judge._run_eval_reasoning")
+    ap.add_argument("--base-model", default=None,
+                    help="override BASE_MODEL for tokenizer+renderer resolution (default: this "
+                         "module's v3 BASE_MODEL). Pass the v4 base "
+                         "(tinker_reasoning_data_v4.BASE_MODEL) to sample a v4-trained sampler "
+                         "checkpoint under its own renderer -- back-compat: omitting this flag "
+                         "reproduces the original v3-only behavior exactly.")
+    ap.add_argument("--renderer", default=None,
+                    help="override RENDERER_NAME explicitly (default: resolved from --base-model, "
+                         "or this module's v3 RENDERER_NAME if --base-model is also omitted)")
     args = ap.parse_args()
 
     tinker_path = _resolve_tinker_path(args.tinker_path, args.manifest)
     print(f"[capture-tinker] sampler path: {tinker_path}", flush=True)
 
-    tok = get_tokenizer(BASE_MODEL)
-    renderer = renderers.get_renderer(RENDERER_NAME, tokenizer=tok)
+    base_model = args.base_model or BASE_MODEL
+    renderer_name = args.renderer
+    if renderer_name is None:
+        if base_model == BASE_MODEL:
+            renderer_name = RENDERER_NAME
+        else:
+            from tinker_reasoning_data_v4 import BASE_MODEL as V4_BASE_MODEL, RENDERER_NAME as V4_RENDERER_NAME
+            if base_model != V4_BASE_MODEL:
+                raise SystemExit(f"--base-model {base_model!r} has no known renderer "
+                                  f"(known: {BASE_MODEL!r} -> {RENDERER_NAME!r}, "
+                                  f"{V4_BASE_MODEL!r} -> {V4_RENDERER_NAME!r}); pass --renderer explicitly")
+            renderer_name = V4_RENDERER_NAME
+    print(f"[capture-tinker] base_model={base_model} renderer={renderer_name}", flush=True)
+
+    tok = get_tokenizer(base_model)
+    renderer = renderers.get_renderer(renderer_name, tokenizer=tok)
     sc = tinker.ServiceClient()
     sampling_client = sc.create_sampling_client(model_path=tinker_path)
     sp = tinker.SamplingParams(max_tokens=args.max_tokens, temperature=args.temperature,
@@ -89,7 +112,8 @@ def main() -> int:
     n_close = n_jo = 0
     with open(args.out, "w") as fh:
         fh.write(json.dumps({"__provenance__": tinker_path, "dataset": args.dataset,
-                             "renderer": RENDERER_NAME, "max_tokens": args.max_tokens,
+                             "base_model": base_model, "renderer": renderer_name,
+                             "max_tokens": args.max_tokens,
                              "temperature": args.temperature, "n": len(examples)}) + "\n")
         for idx, r in enumerate(examples):
             user_msgs = [m for m in r["messages"] if m["role"] == "user"]
