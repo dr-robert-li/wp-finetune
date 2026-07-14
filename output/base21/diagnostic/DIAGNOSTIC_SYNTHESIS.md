@@ -61,6 +61,33 @@ amplified by ep3 overtraining (terminal loss 1.46 vs the old base's 2.40 on the 
 | 4 | Rebuild gen mix: full-file wired targets (self-distill from raw base's own 0.4897 outputs, Claude-gated), rebalance gen share, 1-2 epochs | ~$2 Tinker + pipeline work | regression-to-teacher |
 | 5 | Score 73 replay targets vs raw-base completions on same prompts | analysis-only | target-quality-below-base quantification |
 
+## Experiment Results (2026-07-14, all five run — Tinker spend approved)
+
+| # | Experiment | Result | Verdict |
+|---|---|---|---|
+| 5 | Replay-target quality vs raw-base outputs | targets lose on every axis: wiring 8.2% vs 45.8%, `<?php` 8.2% vs 50%, docblocks 8.2% vs 29.2% | **Regression-to-teacher CONFIRMED** |
+| 2 | Judge s1 unmerged via vLLM `--enable-lora` | BLOCKED — vLLM `add_lora` rejects Tinker's w1/w2/w3 routed-expert naming (tooling-convention mismatch, not "MoE LoRA unsupported") | inconclusive by blockage |
+| 3 | fp32-accumulation merge + re-serve | rho 0.7823 [0.7119, 0.8307] ≈ original 0.7872; real merge path was ALREADY fp32-accumulating (forensics premise analyzed dead legacy code) | **Engine numerics dominate** — served ~0.78-0.79 is a serving-stack ceiling on this stack, not model quality; capture 0.8358 stands |
+| 1 | Gen ep1 checkpoint full wp-bench | **0.4381** [0.3295, 0.5504] vs ep3 0.372 | **Overtraining CONFIRMED** — ep1 recovers 56% of the ep3→raw gap |
+| 4 | Rebuilt gen mix (wired human-written corpus units, gen ≥50%, replay stream dropped, 2 epochs) + retrain + bench | canonical fs-gate PASS (0/120, 0/360); wp-bench **0.4022** [0.2924, 0.5122] | **Partial fix** — beats ep3 (+3.0pp) but ≈ ep1 and still below raw 0.4897; data-shape fix + fewer epochs each help, neither closes the gap |
+
+### Final causal verdict
+
+1. **Judge:** the rebase WORKED (capture 0.8358 > old 0.8274; ensemble 0.8160 > 0.8075). The served figure
+   (~0.78) is bounded by Tinker-vs-vLLM engine numerics — a measurement/serving ceiling common to both
+   bases (old base recomputed served-equivalent 0.7888), NOT a training or label deficiency. The relabel
+   re-open condition should be evaluated against the CAPTURE path or a fixed serving stack.
+2. **Gen:** three stacked causes, all now measured: (a) regression-to-teacher — training targets are
+   structurally below the raw base's own output (exp5); (b) overtraining — ep3 vs ep1 costs ~6.6pp (exp1);
+   (c) mix composition — rebuilt wired mix at 2 epochs lands 0.4022 (exp4), better than the original ep3
+   but still ~8.8pp below raw. **Conclusion: on a base this strong, the SFT-for-codegen approach itself has
+   negative headroom on wp-bench — the model's raw coding ability exceeds anything the current corpus can
+   teach it.** The gen role's best v4.0 artifact may be the RAW base (0.4897) with prompt-side task
+   framing, with SFT reserved for the judge role where it demonstrably works (+0.084 capture).
+3. **Recommended disposition for Phase 23:** A/B the raw base as the gen candidate vs the SFT variants;
+   judge promotion decided on capture-path rho with the serving-numerics caveat documented; carry the
+   vLLM-LoRA naming mismatch (exp2) upstream as a known tooling gap.
+
 ## Disposition
 
 Feeds Phase 23 (EVAL4-01 A/B verdict) and the V4-RERUN-ROADMAP failure-disposition/re-open machinery:
