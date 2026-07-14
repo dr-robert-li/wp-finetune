@@ -131,10 +131,14 @@ def _bootstrap_ci_lower(results_json_path: Path, n_boot: int = N_BOOT, alpha: fl
     for i in range(n_boot):
         k_resample = rng.choice(knowledge, size=knowledge.size, replace=True) if knowledge.size else knowledge
         c_resample = rng.choice(correctness, size=correctness.size, replace=True) if correctness.size else correctness
+        # WR-02: resample quality like knowledge/correctness instead of
+        # holding it fixed at its sample mean -- a fixed component understates
+        # the true sampling uncertainty of the weighted "overall" statistic.
+        q_resample = rng.choice(quality, size=quality.size, replace=True) if quality.size else quality
         boot_overall[i] = _wp_bench_overall(
             float(k_resample.mean()) if k_resample.size else None,
             float(c_resample.mean()) if c_resample.size else None,
-            quality_mean,  # quality held fixed (no per-test quality signal here; null across the run)
+            float(q_resample.mean()) if q_resample.size else None,
         )
 
     lo = float(np.percentile(boot_overall, 100 * alpha / 2))
