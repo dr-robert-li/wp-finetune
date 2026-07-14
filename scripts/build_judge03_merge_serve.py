@@ -166,6 +166,8 @@ def _run_base_vs_merged_diff(merged_dir: str) -> bool:
     base_out = _serve("models/Qwen3.6-35B-A3B", "judge03-base-diff", allow_empty=False)
     print(f"[judge03-serve] base output: {base_out[:200]!r}", flush=True)
 
+    if not merged_out:
+        return False  # empty output is never valid evidence the merge "worked"
     return merged_out != base_out
 
 

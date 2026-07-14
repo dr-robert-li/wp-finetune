@@ -283,6 +283,8 @@ def run_base_vs_merged_diff() -> bool:
     base_out = _serve("models/Qwen3.6-35B-A3B", "base21-moe-probe-base", allow_empty=False)
     print(f"[serve] base output: {base_out!r}", flush=True)
 
+    if not merged_out:
+        return False  # empty output is never valid evidence the merge "worked"
     return merged_out != base_out
 
 
