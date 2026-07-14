@@ -341,6 +341,30 @@ the stale name to `capture_judge_responses_tinker.py --base-model`.
 
 ---
 
+## Fix Outcomes (2026-07-14)
+
+All 3 CRITICAL findings and all 6 WARNING findings were fixed. IN-01 was
+skipped -- see reason below. Full detail in `21-REVIEW-FIX.md`.
+
+| Finding | Status | Commit | Notes |
+|---|---|---|---|
+| CR-01 | fixed | `c036487` | `boot_vllm()` moved inside `try:` at all 5 sites |
+| CR-02 | fixed | `b440e22` | empty merged output now short-circuits to `False` |
+| CR-03 | fixed | `3b11939` | adapter-content-hash marker gates the idempotency skip |
+| WR-01 | fixed | `903c344` | bootstrap RNG seeded (1337), seed recorded in receipt |
+| WR-02 | fixed | `4df4483` | quality dimension now resampled per bootstrap iteration |
+| WR-03 | fixed | `200b380` | fail receipt derived from `--guard-receipt-path` when given |
+| WR-04 | fixed | `c20bd12` | infra-error count tracked separately from parse-fail count |
+| WR-05 | fixed | `09b96f0` | CI overlap vs runner-up seed logged in `judge03_capture_rho.json` |
+| WR-06 | fixed | `3608b42` | routed-MoE merge path fails fast on missing manifest (PEFT path's fallback left as-is -- architecturally correct there, see commit message) |
+| IN-01 | skipped | -- | `tinker_reasoning_data_v4.py` does a top-level `from tinker_cookbook import renderers`; `build_judge03_capture_rho.py` explicitly runs under the project/conda env (not `.venv-tinker`), where `tinker_cookbook` is NOT installed (verified: `ModuleNotFoundError` in this repo's conda env). Importing `BASE_MODEL` from that module would introduce a hard dependency this script currently avoids by design -- the "duplicated literal" is deliberate, not an oversight. |
+
+No historical Phase 21 receipts were rewritten -- all fixes change behavior
+only on future re-runs.
+
+---
+
 _Reviewed: 2026-07-14T12:11:00Z_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
+_Fixed: 2026-07-14 (gsd-code-fixer)_
