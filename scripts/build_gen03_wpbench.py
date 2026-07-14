@@ -125,7 +125,8 @@ def _bootstrap_ci_lower(results_json_path: Path, n_boot: int = N_BOOT, alpha: fl
         quality_mean,
     )
 
-    rng = np.random.default_rng()
+    bootstrap_seed = 1337  # WR-01: seeded for reproducibility (matches the generation seed below)
+    rng = np.random.default_rng(bootstrap_seed)
     boot_overall = np.empty(n_boot, dtype=float)
     for i in range(n_boot):
         k_resample = rng.choice(knowledge, size=knowledge.size, replace=True) if knowledge.size else knowledge
@@ -146,6 +147,7 @@ def _bootstrap_ci_lower(results_json_path: Path, n_boot: int = N_BOOT, alpha: fl
         "n_execution": int(correctness.size),
         "n_boot": n_boot,
         "alpha": alpha,
+        "bootstrap_seed": bootstrap_seed,
     }
 
 
@@ -235,6 +237,7 @@ def main() -> int:
         "request_timeout_s": 1800.0,
         "n_boot": ci["n_boot"],
         "alpha": ci["alpha"],
+        "bootstrap_seed": ci["bootstrap_seed"],
         "served_model_dir": merged_dir,
         "results_file": str(results_json),
         "wall_clock_s": round(time.time() - t0, 1),
