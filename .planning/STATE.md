@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
-current_phase: 21
-current_phase_name: SFT Training — Generation & Judge Models
-status: verifying
-stopped_at: "Phase 21 Plan 01 COMPLETE (gap closed 2026-07-13): routed MoE-expert merge proven -- merge_adapter.py routes train_mlp=True adapters through tinker_cookbook build_hf_model (240/240, w1/w3/w2->gate/up/down vendor-authoritative), ground-truth verified vs Tinker sampler. GEN-02/JUDGE-02 Tinker spend UNBLOCKED."
-last_updated: "2026-07-14T02:09:43.819Z"
-last_activity: 2026-07-13
-last_activity_desc: Phase 21 execution started
+current_phase: 22
+current_phase_name: Sieve/Protected-Mask Tooling Adaptation
+status: planning
+stopped_at: "Phase 21 Plan 01 COMPLETE — 21-01 Task 2 Rule-4 gap CLOSED: routed MoE-expert merge proven (tinker_cookbook build_hf_model route, 240/240, ground-truth vs Tinker sampler verdict_pass=true). GEN-02/JUDGE-02 real Tinker spend UNBLOCKED; next: 21-02 gen SFT / 21-03 judge SFT."
+last_updated: "2026-07-14T02:36:38.080Z"
+last_activity: 2026-07-14
+last_activity_desc: Phase 21 complete, transitioned to Phase 22
 progress:
   total_phases: 8
   completed_phases: 2
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-07-12)
 
 ## Current Position
 
-Phase: 21 (SFT Training — Generation & Judge Models) — EXECUTING
-Plan: 6 of 6
+Phase: 22 — Sieve/Protected-Mask Tooling Adaptation
+Plan: Not started
 Status: Phase complete — ready for verification
-Last activity: 2026-07-13 — Phase 21 execution started
+Last activity: 2026-07-14 — Phase 21 complete, transitioned to Phase 22
 
 ### 2026-07-08 — Gap-closure investigation (judge reasoning ceiling)
 
@@ -162,7 +162,7 @@ Progress: [██████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 34
+- Total plans completed: 40
 - Average duration: 9 min
 - Total execution time: 0.62 hours
 
@@ -179,6 +179,7 @@ Progress: [██████████] 100%
 | 08.1 | 4 | - | - |
 | 08.2 | 5 | - | - |
 | 20 | 4 | - | - |
+| 21 | 6 | - | - |
 
 **Recent Trend:**
 
@@ -503,7 +504,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Phase complete — ready for verification
+**Status:** Ready to plan
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)
