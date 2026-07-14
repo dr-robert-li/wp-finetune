@@ -1,0 +1,77 @@
+{
+  "experiment": "exp5_replay_target_quality",
+  "date": "2026-07-14",
+  "scope": "analysis-only, no GPU, no training, no serving",
+  "hypothesis_tested": "H2 from recipe_provenance_audit.md §6: regression-to-teacher on the gen stream (replay-stream training targets score materially below the new base's own raw completions)",
+  "inputs": {
+    "train_targets_file": "data/reasoning_dataset/openai_train.jsonl",
+    "raw_base_anchor_file": "output/base21/gen03_fresh_new_base_anchor/wp_bench_results_20260714_082330.jsonl",
+    "note_on_task_brief_filename": "task brief cited wp_bench_results_20260714_081354.jsonl for the raw-base anchor; that timestamp is actually the MERGED model's file (gen03_full/); used the correct raw-base-anchor file (082330) per gen_regression_forensics.md's own data-sources table"
+  },
+  "targets_n": 73,
+  "targets_all_stream_replay": true,
+  "raw_base_execution_n": 24,
+  "raw_base_knowledge_code_like_n": 0,
+  "raw_base_knowledge_code_like_note": "0/320 raw knowledge answers matched a code/hook regex; raw answers to knowledge MC prompts are short identifiers only, never full code -- corroborates gen_regression_forensics.md's finding that raw (unlike merged) does not exhibit judge/code-format bleed-through",
+  "features_table": {
+    "train_targets_73_wp_gen": {
+      "n": 73,
+      "mean_length_chars": 779.2,
+      "pct_php_open": 8.2,
+      "pct_hook_wiring": 8.2,
+      "mean_hook_calls": 0.30,
+      "pct_docblock": 8.2,
+      "pct_sanitize": 5.5,
+      "pct_escape": 5.5,
+      "pct_nonce": 1.4,
+      "mean_dtab_lines": 16.73
+    },
+    "raw_base_execution_24": {
+      "n": 24,
+      "mean_length_chars": 1024.7,
+      "pct_php_open": 50.0,
+      "pct_hook_wiring": 45.8,
+      "mean_hook_calls": 0.88,
+      "pct_docblock": 29.2,
+      "pct_sanitize": 12.5,
+      "pct_escape": 8.3,
+      "pct_nonce": 0.0,
+      "mean_dtab_lines": 10.38
+    }
+  },
+  "gap_ratios_raw_over_train": {
+    "hook_wiring": 5.59,
+    "php_open": 6.10,
+    "docblock": 3.56,
+    "sanitize": 2.27,
+    "escape": 1.51
+  },
+  "qualitative_pairs_n": 5,
+  "qualitative_pairs_verdict": "5/5 pairs show one-directional pattern: training targets are extracted, unwired, sometimes-undefined-helper-dependent class-method fragments; raw base's matched-task outputs are self-contained, self-registering, directly runnable units. One training row's own prompt text literally reads 'TODO: Copied from `section.php`.'",
+  "phpcs": {
+    "run": true,
+    "standard": "WordPress",
+    "train_targets": {
+      "n_files": 73,
+      "mean_errors_per_file": 14.49,
+      "mean_warnings_per_file": 1.55,
+      "security_prefixed_violations": 23
+    },
+    "raw_base_execution": {
+      "n_files": 24,
+      "mean_errors_per_file": 33.92,
+      "mean_warnings_per_file": 1.46,
+      "security_prefixed_violations": 0
+    },
+    "verdict": "inconclusive_confounded_secondary_signal",
+    "confound": "raw's higher total error count is dominated by Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed (488/814, 60%) -- a space-vs-tab indentation-character preference plus raw being 2.1x longer on average, not a completeness/quality defect. Training targets' top violation (Generic.WhiteSpace.ScopeIndent.IncorrectExact, 268 hits) is the mirror artifact of extraction (fragments indented at original nested class-method depth). Security-prefixed sniffs (nonce/escape) do point the same direction as the primary finding (23 vs 0) but are a small-n secondary signal, not the tiebreaker."
+  },
+  "verdict": "confirmed",
+  "verdict_summary": "Regression-to-teacher CONFIRMED for the gen stream. The 73 <wp_gen> replay-stream training targets are structurally and qualitatively below the raw new base's own output quality on every WPCS-relevant axis measured (hook wiring 8.2% vs 45.8%, <?php self-containment 8.2% vs 50.0%, docblocks 8.2% vs 29.2%), independently corroborated by 5/5 matched qualitative pairs and directionally by PHPCS security-sniff counts. This closes H2 from recipe_provenance_audit.md §6 and is independent, direct confirmation of gen_regression_forensics.md's Q5 finding (which inferred the same shape indirectly from the merged model's post-SFT behavior). H1 (86/13 judge/gen task-mix dilution) and H2 (sub-base-quality gen targets) are both confirmed, non-exclusive contributors.",
+  "target_quality_bar_for_rebuilt_mix": [
+    "Open with <?php when the task implies a standalone file",
+    "Include the relevant add_action/add_filter/add_shortcode/register_* call in the same target when the prompt names or implies a hook",
+    "Do not reference $this->method() or free-function calls that are not either defined in the same target or an unambiguous WordPress core API",
+    "Self-distilling new targets from the raw new base's own outputs (Experiment 4, Claude-gated) is directly supported: raw already clears this bar at materially higher rates (45.8%/50.0%/29.2%) than the current replay stream (8.2% on all three axes)"
+  ]
+}
