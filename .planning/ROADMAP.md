@@ -999,11 +999,11 @@ committed — this is the single result the whole v4.0 rerun exists to produce
      >=0.4286) are applied mechanically against the measured numbers, and the outcome — met or not met — is
      recorded as the milestone's primary verdict
 
-**Plans**: 1 plan
+**Plans**: 1/1 plans complete
 
 Plans:
 
-- [ ] 23-01-PLAN.md — Final-eval A/B verdict: receipt-comparability audit + offline raw-base CI backfill, then eval4_final_comparison.json (dual-gen A/B raw-base vs best-trained + judge A/B) with the pre-registered criteria applied mechanically, + VERDICT-EVAL4.md milestone verdict
+- [x] 23-01-PLAN.md — Final-eval A/B verdict: receipt-comparability audit + offline raw-base CI backfill, then eval4_final_comparison.json (dual-gen A/B raw-base vs best-trained + judge A/B) with the pre-registered criteria applied mechanically, + VERDICT-EVAL4.md milestone verdict
 
 ### Phase 24: Conditional Gate A — RL Re-Test
 
@@ -1130,7 +1130,7 @@ Note: v4.0 (Phases 20-27) starts after Phase 19 sign-off. Phase 22 (Sieve toolin
 | 20. Base Bring-Up | v4.0 | 4/4 | Complete    | 2026-07-13 |
 | 21. SFT Training — Generation & Judge Models | v4.0 | 6/6 | Complete    | 2026-07-14 |
 | 22. Sieve/Protected-Mask Tooling Adaptation | v4.0 | 0/TBD | Not started | - |
-| 23. Final Evaluation | v4.0 | 0/TBD | Not started | - |
+| 23. Final Evaluation | v4.0 | 1/1 | Complete   | 2026-07-14 |
 | 24. Conditional Gate A — RL Re-Test | v4.0 | 0/TBD | Not started | - |
 | 25. Conditional Gate B — MoE-Sieve Re-Test | v4.0 | 0/TBD | Not started | - |
 | 26. Conditional Gate C — Merge + Prune Re-Test | v4.0 | 0/TBD | Not started | - |

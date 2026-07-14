@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
-current_phase: 22
-current_phase_name: Sieve/Protected-Mask Tooling Adaptation
-status: executing
+current_phase: 23
+current_phase_name: Final Evaluation
+status: verifying
 stopped_at: "Phase 21 Plan 01 COMPLETE — 21-01 Task 2 Rule-4 gap CLOSED: routed MoE-expert merge proven (tinker_cookbook build_hf_model route, 240/240, ground-truth vs Tinker sampler verdict_pass=true). GEN-02/JUDGE-02 real Tinker spend UNBLOCKED; next: 21-02 gen SFT / 21-03 judge SFT."
-last_updated: "2026-07-14T22:02:29.334Z"
+last_updated: "2026-07-14T22:08:23.182Z"
 last_activity: 2026-07-14
-last_activity_desc: Phase 21 complete, transitioned to Phase 22
+last_activity_desc: Phase 23 execution started
 progress:
   total_phases: 8
-  completed_phases: 2
-  total_plans: 10
-  completed_plans: 10
-  percent: 25
+  completed_phases: 3
+  total_plans: 11
+  completed_plans: 11
+  percent: 38
 ---
 
 # Project State
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-12)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 21 — SFT Training — Generation & Judge Models
+**Current focus:** Phase 23 — Final Evaluation
 
 ## Current Position
 
-Phase: 22 — Sieve/Protected-Mask Tooling Adaptation
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-07-14 — Phase 21 complete, transitioned to Phase 22
+Phase: 23 (Final Evaluation) — EXECUTING
+Plan: 1 of 1
+Status: Phase complete — ready for verification
+Last activity: 2026-07-14 — Phase 23 execution started
 
 ### 2026-07-08 — Gap-closure investigation (judge reasoning ceiling)
 
@@ -238,6 +238,7 @@ Progress: [██████████] 100%
 | Phase 21-sft-training-generation-judge-models P04 | ~55min | 1 tasks | 2 files |
 | Phase 21-sft-training-generation-judge-models P05 | ~150min | 2 tasks | 5 files |
 | Phase 21-sft-training-generation-judge-models P06 | ~120min | 3 tasks | 10 files |
+| Phase 23-final-evaluation P01 | 12min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -328,6 +329,7 @@ Recent decisions affecting current work:
 - [Phase ?]: [21-05]: wp-bench harness hardcodes served model name wp-30_70 -- serve_base20_vllm.sh gained a SERVED_MODEL_NAME env toggle (default unset); any future bench against a serve_base20-served model must set it
 - [Phase ?]: [21-06]: JUDGE-03 VALID RECORDED MISS -- vLLM-served s1 rho 0.7872 (CI-lower 0.7125 < 0.85), cheap-path 3-seed ensemble 0.8160 (CI-lower 0.7563 < 0.87); parse 0/121 on all paths (vs raw 30/30 fail -- format landed); discretion-item-2 re-open condition NOT met (gap-closure diagnostic not yet run on this base); all 3 seed checkpoints preserved for Phase 27 packaging ensemble
 - [Phase ?]: [21-06]: vLLM serve for 8192-cap judge capture needs MAX_MODEL_LEN=16384 -- an 8192-context serve silently re-truncates long prompts under an 8192 completion cap (Pitfall 4 moved to the serve side)
+- [Phase ?]: [Phase 23-01]: EVAL4-01 milestone verdict recorded -- gen_role_winner=raw_base (dominates every trained variant on point AND CI-lower); primary_judge_target_met=false, disposition=valid_recorded_miss (served s1 CI-lower 0.7125<0.85, capture ensemble CI-lower 0.7563<0.87); relabel_reopen_condition_met=false (gap-closure diagnostic not yet run on this base)
 
 ### Pending Todos
 
@@ -375,7 +377,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-14T02:09:18.500Z
+Last session: 2026-07-14T22:07:54.771Z
 Stopped at: Phase 21 Plan 01 COMPLETE — 21-01 Task 2 Rule-4 gap CLOSED: routed MoE-expert merge proven (tinker_cookbook build_hf_model route, 240/240, ground-truth vs Tinker sampler verdict_pass=true). GEN-02/JUDGE-02 real Tinker spend UNBLOCKED; next: 21-02 gen SFT / 21-03 judge SFT.
 
 Prior session: 2026-07-13T11:52:35.100Z
@@ -504,7 +506,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Ready to execute
+**Status:** Phase complete — ready for verification
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)

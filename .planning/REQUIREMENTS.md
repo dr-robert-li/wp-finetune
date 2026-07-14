@@ -403,7 +403,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | JUDGE-02 | Phase 21 | Complete |
 | JUDGE-03 | Phase 21 | Complete |
 | GATE4-02 | Phase 22 | Pending |
-| EVAL4-01 | Phase 23 | Pending |
+| EVAL4-01 | Phase 23 | Complete |
 | GATE4-01 | Phase 24 | Pending |
 | GATE4-03 | Phase 25 | Pending |
 | GATE4-04 | Phase 26 | Pending |
@@ -437,7 +437,7 @@ Pre-registered success criteria: judge rho **>0.85 single-seed OR >0.87 3-seed e
 
 ### Final Evaluation (Stage 4)
 
-- [ ] **EVAL4-01**: A/B eval vs v3.0 shipping figures (wp-bench + judge rho, same harness) under pre-registered criteria; results committed before any packaging decision
+- [x] **EVAL4-01**: A/B eval vs v3.0 shipping figures (wp-bench + judge rho, same harness) under pre-registered criteria; results committed before any packaging decision
 
 ### Conditional Gates (re-tests, no_winner is a result)
 
