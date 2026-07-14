@@ -39,6 +39,13 @@ ENFORCE_EAGER="${ENFORCE_EAGER:-}"
 # serve_30_70_vllm.sh always sets). Default UNSET preserves this script's
 # existing served identity (/workspace/model) for all prior callers.
 SERVED_MODEL_NAME="${SERVED_MODEL_NAME:-}"
+# Diagnostic Exp-2 (unmerged-LoRA-via-vLLM): optional --enable-lora toggle.
+# LORA_ADAPTER_DIR (host path) is bind-mounted read-only at /workspace/lora
+# and registered as --lora-modules "$LORA_NAME"=/workspace/lora. Default
+# UNSET preserves the existing no-LoRA serve for all prior callers.
+LORA_ADAPTER_DIR="${LORA_ADAPTER_DIR:-}"
+LORA_NAME="${LORA_NAME:-adapter}"
+LORA_MAX_RANK="${LORA_MAX_RANK:-32}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MODEL_DIR="${MODEL_DIR:-$REPO_ROOT/models/Qwen3.6-35B-A3B}"
@@ -56,6 +63,12 @@ fi
 if [ -n "$SERVED_MODEL_NAME" ]; then
   EXTRA_ARGS+=(--served-model-name "$SERVED_MODEL_NAME")
   echo "  served-model-name: $SERVED_MODEL_NAME"
+fi
+LORA_MOUNT_ARGS=()
+if [ -n "$LORA_ADAPTER_DIR" ]; then
+  EXTRA_ARGS+=(--enable-lora --lora-modules "${LORA_NAME}=/workspace/lora" --max-lora-rank "$LORA_MAX_RANK")
+  LORA_MOUNT_ARGS+=(-v "${LORA_ADAPTER_DIR}:/workspace/lora:ro")
+  echo "  enable-lora: ${LORA_NAME} <- ${LORA_ADAPTER_DIR} (max-lora-rank ${LORA_MAX_RANK})"
 fi
 
 if [ ! -d "$MODEL_DIR" ]; then
@@ -86,6 +99,7 @@ docker run -d \
   --ipc=host \
   -p "${PORT}:${PORT}" \
   -v "${MODEL_DIR}:/workspace/model:ro" \
+  "${LORA_MOUNT_ARGS[@]}" \
   -e HF_HUB_ENABLE_HF_TRANSFER=1 \
   "$IMAGE" \
   vllm serve /workspace/model \
