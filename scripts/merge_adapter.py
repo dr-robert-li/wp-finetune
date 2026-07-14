@@ -290,9 +290,24 @@ def _merge_via_tinker_cookbook(
     ops = plan_merge_ops(adapter_weights, adapter_cfg, model_state_keys, profile)
     merged_target_module_count = len(extract_adapter_weight_names(adapter_weights))
 
-    manifest_path = expected_modules_manifest or (
-        PROJECT_ROOT / "output" / "base20" / "lora_target_modules.json"
-    )
+    # WR-06: this function only runs for routed-MoE-expert adapters (the only
+    # caller, merge_adapter(), routes here iff _adapter_has_routed_expert_params
+    # is True) -- output/base20/lora_target_modules.json describes Phase 20's
+    # attention-only probe (a small module count, wrong architecture), so a
+    # caller that forgets --expected-modules-manifest must fail fast with a
+    # clear "no manifest" message instead of silently resolving to numbers
+    # from a completely different architecture and aborting on a confusing
+    # module-count mismatch.
+    if expected_modules_manifest is None:
+        raise SystemExit(
+            "MERGE ABORT: routed-MoE-expert adapter detected but no "
+            "--expected-modules-manifest was provided -- refusing to fall back to "
+            "output/base20/lora_target_modules.json (Phase 20's attention-only probe "
+            "manifest, the wrong architecture for this merge path). Pass an "
+            "architecture-matching manifest explicitly (e.g. the Phase 21 MoE probe "
+            "receipt, output/base21/moe_merge_probe.json)."
+        )
+    manifest_path = expected_modules_manifest
     expected_count = _load_expected_module_count(manifest_path)
 
     if guard_receipt_path is not None:
