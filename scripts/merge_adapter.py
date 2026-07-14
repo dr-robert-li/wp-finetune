@@ -26,6 +26,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -491,6 +492,23 @@ def _select_serving_tokenizer(config: dict, local_dir: str, base_vocab_size: int
 # ---------------------------------------------------------------------------
 
 
+def _adapter_content_hash(adapter_dir: str) -> str:
+    """CR-03: cheap content marker for the idempotency check.
+
+    Every Phase 21 caller downloads a promoted checkpoint's adapter tensors
+    into a FIXED, non-adapter-scoped adapter_dir AND merges into a fixed,
+    non-adapter-scoped output_dir -- so directory-existence alone can't tell
+    "already merged THIS checkpoint" from "merged dir left over from an
+    earlier, different checkpoint promotion". Hashing the actual tensor
+    bytes scopes the check to checkpoint content, not any path.
+    """
+    h = hashlib.sha256()
+    with open(Path(adapter_dir) / "adapter_model.safetensors", "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
 def merge_adapter(adapter_dir: str, output_dir: str, config: dict,
                    expected_modules_manifest: Path | None = None,
                    guard_receipt_path: Path | None = None) -> None:
@@ -515,38 +533,57 @@ def merge_adapter(adapter_dir: str, output_dir: str, config: dict,
         SystemExit(1) on verification failure (prints vLLM fallback command).
     """
     guard_receipt_path = guard_receipt_path or (PROJECT_ROOT / "output" / "base20" / "_merge_guard_result.json")
-    # --- Idempotency check: skip if merged model already exists and verified ---
+    # CR-03: hash the adapter being merged THIS call, used both to gate the
+    # idempotency short-circuit below and to stamp the marker after a fresh
+    # merge (so the NEXT call can tell whether a reused output_dir still
+    # matches).
+    adapter_content_hash = _adapter_content_hash(adapter_dir)
+    # --- Idempotency check: skip only if merged model already exists,
+    # verified, AND its marker proves it was built from THIS adapter ---
     merged_path = Path(output_dir)
+    marker_path = merged_path / ".merged_from.json"
     if merged_path.exists() and (merged_path / "config.json").exists():
-        # Quick verification — are special tokens intact?
-        from transformers import AutoTokenizer as _AT  # noqa: PLC0415
-        try:
-            local_dir_probe = str(resolve_path(config["model"]["local_dir"]))
-            # WR-04: reuse the SAME base/extended-tokenizer compatibility check
-            # _select_serving_tokenizer/_verify_merged_model use later in this
-            # function (Rule 1), so a base without the extended vocab (like
-            # this v4 base -- "no task-token extension yet") can still
-            # short-circuit here instead of always falling through to a full
-            # re-merge. base_vocab_size comes from the base's own tokenizer
-            # (cheap: tokenizer files only, no model weights loaded).
-            base_tok_probe = _AT.from_pretrained(local_dir_probe, trust_remote_code=True)
-            _, check_special_tokens = _select_serving_tokenizer(
-                config, local_dir_probe, len(base_tok_probe)
-            )
-            if not check_special_tokens:
-                print(f"Merged model already exists at {merged_path} (extended tokenizer not "
-                      f"applicable to this base -- special-token check not required). Skipping.")
-                return
-            verify_tok = _AT.from_pretrained(str(merged_path), trust_remote_code=True)
-            special_tokens = config.get("tokenizer", {}).get("special_tokens", ["<wp_gen>", "<wp_judge>"])
-            all_single = all(
-                len(verify_tok.encode(t, add_special_tokens=False)) == 1 for t in special_tokens
-            )
-            if all_single:
-                print(f"Merged model already exists at {merged_path} with verified special tokens. Skipping.")
-                return
-        except Exception:
-            pass  # Fall through to re-merge
+        prior_hash = None
+        if marker_path.exists():
+            try:
+                prior_hash = json.loads(marker_path.read_text()).get("adapter_content_hash")
+            except Exception:
+                prior_hash = None
+        if prior_hash != adapter_content_hash:
+            print(f"Merged model at {merged_path} does not match the adapter being merged this "
+                  f"run ({adapter_dir}) -- marker missing/unreadable or content-hash mismatch "
+                  f"(stale merge from an earlier checkpoint promotion at this fixed, "
+                  f"non-adapter-scoped output_dir, CR-03) -- re-merging instead of skipping.")
+        else:
+            # Quick verification — are special tokens intact?
+            from transformers import AutoTokenizer as _AT  # noqa: PLC0415
+            try:
+                local_dir_probe = str(resolve_path(config["model"]["local_dir"]))
+                # WR-04: reuse the SAME base/extended-tokenizer compatibility check
+                # _select_serving_tokenizer/_verify_merged_model use later in this
+                # function (Rule 1), so a base without the extended vocab (like
+                # this v4 base -- "no task-token extension yet") can still
+                # short-circuit here instead of always falling through to a full
+                # re-merge. base_vocab_size comes from the base's own tokenizer
+                # (cheap: tokenizer files only, no model weights loaded).
+                base_tok_probe = _AT.from_pretrained(local_dir_probe, trust_remote_code=True)
+                _, check_special_tokens = _select_serving_tokenizer(
+                    config, local_dir_probe, len(base_tok_probe)
+                )
+                if not check_special_tokens:
+                    print(f"Merged model already exists at {merged_path} (extended tokenizer not "
+                          f"applicable to this base -- special-token check not required). Skipping.")
+                    return
+                verify_tok = _AT.from_pretrained(str(merged_path), trust_remote_code=True)
+                special_tokens = config.get("tokenizer", {}).get("special_tokens", ["<wp_gen>", "<wp_judge>"])
+                all_single = all(
+                    len(verify_tok.encode(t, add_special_tokens=False)) == 1 for t in special_tokens
+                )
+                if all_single:
+                    print(f"Merged model already exists at {merged_path} with verified special tokens. Skipping.")
+                    return
+            except Exception:
+                pass  # Fall through to re-merge
 
     local_dir = str(resolve_path(config["model"]["local_dir"]))
 
@@ -567,6 +604,12 @@ def merge_adapter(adapter_dir: str, output_dir: str, config: dict,
         print(f"Tokenizer saved to {merged_path}")
         print("Running verification roundtrip ...")
         _verify_merged_model(merged_path, adapter_dir, config, check_special_tokens=check_special_tokens)
+        # CR-03: stamp the marker AFTER a verified merge so a future call
+        # against this same (fixed, non-adapter-scoped) output_dir can tell
+        # whether it's still merging the same adapter checkpoint.
+        Path(merged_path, ".merged_from.json").write_text(json.dumps(
+            {"adapter_content_hash": adapter_content_hash, "adapter_dir": str(adapter_dir)}, indent=2
+        ))
         return
 
     from transformers import AutoModelForCausalLM  # noqa: PLC0415
@@ -642,6 +685,11 @@ def merge_adapter(adapter_dir: str, output_dir: str, config: dict,
     # Verification roundtrip — reload from disk and check special tokens
     print("Running verification roundtrip ...")
     _verify_merged_model(merged_path, adapter_dir, config, check_special_tokens=check_special_tokens)
+    # CR-03: stamp the marker AFTER a verified merge (see tinker_cookbook
+    # branch above for rationale).
+    Path(merged_path, ".merged_from.json").write_text(json.dumps(
+        {"adapter_content_hash": adapter_content_hash, "adapter_dir": str(adapter_dir)}, indent=2
+    ))
 
 
 def _verify_merged_model(merged_path: str, adapter_dir: str, config: dict,
