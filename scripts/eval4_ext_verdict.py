@@ -3,9 +3,10 @@
 (output/eval4/ext_q8_preregistration.md) to v4's Q8 GGUF 3-seed ensemble vs
 v3's shipped Q8 ensemble (0.8056, output/packaging/pkg03_ens8192_results.json).
 
-Reuses eval_relabel_ensemble.py's own parse_capture()/index-join logic
-(imported, not reimplemented) so v3 and v4 per-item scores are derived
-identically. Adds the paired item-resample bootstrap of the rho delta.
+Mirrors eval_relabel_ensemble.py's parse_capture()/index-join logic verbatim
+(inlined -- that script executes its whole body at import time, so it cannot
+be imported) so v3 and v4 per-item scores are derived identically. Adds the
+paired item-resample bootstrap of the rho delta.
 
 Usage:
   python3 scripts/eval4_ext_verdict.py
@@ -20,7 +21,31 @@ os.environ.setdefault("REWARD_SKIP_PHPCS_ASSERT", "1")
 import numpy as np
 from scipy.stats import spearmanr
 
-from scripts.relabel.eval_relabel_ensemble import parse_capture
+from eval.eval_judge import _derive_prose_overall
+from eval.output_parsers import load_dim_map, parse_judge_scores
+
+_DM = load_dim_map()
+_DW = {k: v for k, v in _DM["dimension_weights"].items() if not k.startswith("_")}
+_ROWS = [json.loads(l) for l in open("data/reasoning_dataset/openai_val.jsonl") if l.strip()]
+_WJ_ROWS = [i for i, r in enumerate(_ROWS)
+            if next((m["content"] for m in r["messages"] if m["role"] == "user"), "").startswith("<wp_judge>")]
+
+
+def parse_capture(path):
+    """Verbatim mirror of scripts/relabel/eval_relabel_ensemble.py:parse_capture."""
+    d = {}
+    pf = 0
+    for line in open(path):
+        r = json.loads(line)
+        if "index" not in r:
+            continue
+        parsed = parse_judge_scores(r["response"], "auto")
+        if not parsed or not parsed.get("dimension_scores"):
+            pf += 1
+            continue
+        o = float(parsed["overall"]) if "overall" in parsed else _derive_prose_overall(parsed["dimension_scores"], _DW)
+        d[f"val:{_WJ_ROWS[r['index']]}"] = o
+    return d, pf
 
 V3_CAPS = [f"output/packaging/ens8192/q8_s{i}/judge_responses.jsonl" for i in range(3)]
 V4_CAPS = [f"output/eval4/ext_q8/q8_s{i}/judge_responses.jsonl" for i in range(3)]
