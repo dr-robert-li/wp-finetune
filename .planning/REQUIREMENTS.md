@@ -402,7 +402,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | JUDGE-01 | Phase 21 | Complete |
 | JUDGE-02 | Phase 21 | Complete |
 | JUDGE-03 | Phase 21 | Complete |
-| GATE4-02 | Phase 22 | Pending |
+| GATE4-02 | Phase 22 | Complete |
 | EVAL4-01 | Phase 23 | Complete |
 | GATE4-01 | Phase 24 | Pending |
 | GATE4-03 | Phase 25 | Pending |
@@ -442,7 +442,7 @@ Pre-registered success criteria: judge rho **>0.85 single-seed OR >0.87 3-seed e
 ### Conditional Gates (re-tests, no_winner is a result)
 
 - [ ] **GATE4-01**: RL re-test ONLY with a materially different reward family (execution-grounded/preference/multi-turn); pre-registered kill criterion carried (validated teacher-Spearman over warm-start noise + codegen Goodhart trip-wire); smoke-scale before full budget
-- [ ] **GATE4-02**: Sieve/protected-mask tooling adapted BEFORE Gate B — profiler traversal `model.model.language_model.layers`, n_experts 128→256 across 4 scripts, DeltaNet/Attention strata split, empirical shared-expert-exclusion-from-router_logits verification
+- [x] **GATE4-02**: Sieve/protected-mask tooling adapted BEFORE Gate B — profiler traversal `model.model.language_model.layers`, n_experts 128→256 across 4 scripts, DeltaNet/Attention strata split, empirical shared-expert-exclusion-from-router_logits verification
 - [ ] **GATE4-03**: MoE-Sieve k-sweep re-test (TOST ε=2pp, CI-aware) on adapted tooling
 - [ ] **GATE4-04**: Merge + prune re-test (AIMER/REAP, gate-before-remove, per-dimension retention esp. D2_security)
 
