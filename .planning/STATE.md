@@ -5,15 +5,15 @@ milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
 current_phase: 24
 current_phase_name: Conditional Gate A — RL Re-Test
 status: planning
-stopped_at: "Phase 21 Plan 01 COMPLETE — 21-01 Task 2 Rule-4 gap CLOSED: routed MoE-expert merge proven (tinker_cookbook build_hf_model route, 240/240, ground-truth vs Tinker sampler verdict_pass=true). GEN-02/JUDGE-02 real Tinker spend UNBLOCKED; next: 21-02 gen SFT / 21-03 judge SFT."
-last_updated: "2026-07-14T22:13:55.799Z"
+stopped_at: "Phase 23-02 EXTENSION COMPLETE — shipped-stack (llama.cpp Q8) verdict: NOT unequivocal, v3 pair stays canonical"
+last_updated: "2026-07-15T03:24:47.728Z"
 last_activity: 2026-07-14
 last_activity_desc: Phase 23 complete, transitioned to Phase 24
 progress:
   total_phases: 8
   completed_phases: 3
   total_plans: 11
-  completed_plans: 11
+  completed_plans: 12
   percent: 38
 ---
 
@@ -331,6 +331,7 @@ Recent decisions affecting current work:
 - [Phase ?]: [21-06]: JUDGE-03 VALID RECORDED MISS -- vLLM-served s1 rho 0.7872 (CI-lower 0.7125 < 0.85), cheap-path 3-seed ensemble 0.8160 (CI-lower 0.7563 < 0.87); parse 0/121 on all paths (vs raw 30/30 fail -- format landed); discretion-item-2 re-open condition NOT met (gap-closure diagnostic not yet run on this base); all 3 seed checkpoints preserved for Phase 27 packaging ensemble
 - [Phase ?]: [21-06]: vLLM serve for 8192-cap judge capture needs MAX_MODEL_LEN=16384 -- an 8192-context serve silently re-truncates long prompts under an 8192 completion cap (Pitfall 4 moved to the serve side)
 - [Phase ?]: [Phase 23-01]: EVAL4-01 milestone verdict recorded -- gen_role_winner=raw_base (dominates every trained variant on point AND CI-lower); primary_judge_target_met=false, disposition=valid_recorded_miss (served s1 CI-lower 0.7125<0.85, capture ensemble CI-lower 0.7563<0.87); relabel_reopen_condition_met=false (gap-closure diagnostic not yet run on this base)
+- [Phase ?]: 23-02 EXT: v4 judge on shipped llama.cpp Q8 stack NOT unequivocal (ens 0.8067 vs v3 0.8056, paired CI spans 0) — v3 pair stays canonical; judge-only v4 ship rejected; serving ceiling engine-independent (Q8-llama.cpp 0.7877 ≈ bf16-vLLM 0.7872)
 
 ### Pending Todos
 
@@ -378,8 +379,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-14T22:07:54.771Z
-Stopped at: Phase 21 Plan 01 COMPLETE — 21-01 Task 2 Rule-4 gap CLOSED: routed MoE-expert merge proven (tinker_cookbook build_hf_model route, 240/240, ground-truth vs Tinker sampler verdict_pass=true). GEN-02/JUDGE-02 real Tinker spend UNBLOCKED; next: 21-02 gen SFT / 21-03 judge SFT.
+Last session: 2026-07-15T03:24:47.720Z
+Stopped at: Phase 23-02 EXTENSION COMPLETE — shipped-stack (llama.cpp Q8) verdict: NOT unequivocal, v3 pair stays canonical
 
 Prior session: 2026-07-13T11:52:35.100Z
 Stopped at: Phase 21 Plan 01: GEN-01 satisfied; MoE train_mlp=True merge-path gap found (merge_ok=false, human decision required before GEN-02/JUDGE-02 real Tinker spend). See 21-01-SUMMARY.md + output/base21/moe_merge_probe.json.

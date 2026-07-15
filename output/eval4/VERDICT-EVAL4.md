@@ -90,3 +90,43 @@ consume this verdict as an input.
   sole data source).
 - `output/eval4/VERDICT-EVAL4.md` — this file.
 - `scripts/build_eval4_comparison.py` — the synthesis script (`--emit audit`, `--emit verdict`).
+
+## 6. Extension: shipped-stack (llama.cpp Q8) comparison (23-02)
+
+Section 3's judge figures were measured on bf16 vLLM — a stack v3's judge never shipped on. This
+extension (pre-registered **before** measurement in `output/eval4/ext_q8_preregistration.md`) re-ran
+the v4 judge on **v3's exact shipped stack**: Q8_0 GGUF via llama.cpp (build `8f114a9`, 2026-07-10,
+well past the b9180 architecture floor), 3-seed median ensemble, same 121 val items, 8192-token cap,
+temp 0, the unmodified `eval_relabel*` scorers. Machine-readable receipt:
+`output/eval4/ext_q8_results.json`.
+
+| Figure | v4 (this run) | v3 shipped | Note |
+|---|---|---|---|
+| Q8 s0 / s1 / s2 | 0.7360 / 0.7877 / 0.7758 | 0.7744 / 0.7928 / 0.7894 | 0 parse failures, both milestones |
+| **Q8 3-seed ensemble** | **0.8067** [0.7356, 0.8526] | **0.8056** [0.7381, 0.8577] | same harness, same items |
+| Paired per-item bootstrap Δ(v4−v3) | +0.0010 [−0.0512, +0.0565] | — | 10k resamples, seed 1337 |
+
+**Pre-registered rule applied (rule_fired = `paired_bootstrap`; no fallback needed — the 121-item
+join is exact, and v3 recomputed from its raw captures reproduces 0.8056 to 4 decimals):**
+
+- (a) v4 ensemble point 0.8067 > 0.8056: **TRUE** (by +0.0011)
+- (b) paired bootstrap CI-lower > 0: **FALSE** (CI spans zero almost symmetrically)
+- **UNEQUIVOCAL WIN = FALSE.** Per the pre-registered failure disposition, **the v3 pair stays
+  canonical**; judge-only shipping of the v4 judge is **not** justified by this measurement.
+
+**What the secondary reads say.** llama.cpp does NOT lift v4's serving ceiling: v4 s1 on Q8-llama.cpp
+(0.7877) is statistically identical to v4 s1 on bf16-vLLM (0.7872) — the ~0.79 single-seed served
+figure is engine-independent, confirming DIAGNOSTIC_SYNTHESIS.md's "engine numerics dominate" verdict
+generalizes across serving stacks. The ensemble mechanism recovers the same ~+2pp on both milestones
+(v4: 0.7877→0.8067; v3: 0.7928→0.8056). The capture-path gain (+0.0084) simply does not survive any
+real serving stack measured so far: on the stack that matters for shipping, v4 ≈ v3 (Δ +0.10pp,
+paired CI [−5.1pp, +5.7pp]).
+
+**Implication for judge-only shipping.** The v4 judge offers no measurable serving-time advantage
+over the already-shipped v3 judge, while requiring the larger 35B base (37.8 GiB Q8 vs 30.2 GiB).
+A judge-only v4 ship would carry cost without measured benefit. The v4 judge's real, measured
+improvement remains capture-path-only (0.8358 vs 0.8274), which no examined serving stack realizes.
+
+Extension artifacts: `output/eval4/ext_q8_preregistration.md`, `output/eval4/ext_q8_results.json`,
+`output/eval4/ext_q8/` (per-seed captures + scores + ensemble), `scripts/eval4_ext_{merge_seeds.py,
+gguf_convert.sh,q8_run.sh,verdict.py}`, `models/_gguf/wp-v4-judge-s{0,1,2}.Q8_0.gguf`.
