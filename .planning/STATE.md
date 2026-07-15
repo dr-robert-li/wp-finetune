@@ -5,10 +5,10 @@ milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
 current_phase: 24
 current_phase_name: Conditional Gate A — RL Re-Test
 status: planning
-stopped_at: "Phase 23-02 EXTENSION COMPLETE — shipped-stack (llama.cpp Q8) verdict: NOT unequivocal, v3 pair stays canonical"
-last_updated: "2026-07-15T03:24:47.728Z"
-last_activity: 2026-07-14
-last_activity_desc: Phase 23 complete, transitioned to Phase 24
+stopped_at: "Phase 23-03 EXTENSION COMPLETE — unmerged runtime-LoRA judge serving verdict: H1 rejected, last lever exhausted, v3 pair stays canonical"
+last_updated: "2026-07-15T04:12:00.000Z"
+last_activity: 2026-07-15
+last_activity_desc: Phase 23-03 extension complete (unmerged runtime-LoRA judge serving, H1 rejected), Phase 24 unaffected
 progress:
   total_phases: 8
   completed_phases: 3
@@ -31,7 +31,41 @@ See: .planning/PROJECT.md (updated 2026-07-12)
 Phase: 24 — Conditional Gate A — RL Re-Test
 Plan: Not started
 Status: Phase complete — ready for verification
-Last activity: 2026-07-14 — Phase 23 complete, transitioned to Phase 24
+Last activity: 2026-07-15 — Phase 23-03 extension complete (unmerged runtime-LoRA judge serving, H1 rejected)
+
+### 2026-07-15 — Phase 23-03 EXTENSION: unmerged runtime-LoRA judge serving — last lever, H1 REJECTED
+
+Tested the final untested lever for beating v3's judge: serve the v4 judge adapter **unmerged**
+(native runtime LoRA, never baked into base weights) to test whether that recovers the
+Tinker-capture rho (0.8358) the merge step was hypothesized to destroy via bf16 precision-swamping
+(H1). Pre-registered before measurement (`output/eval4/ext_unmerged_preregistration.md`).
+
+- **vLLM `--enable-lora`:** source-level derivation of the nightly build's exact PEFT convention
+  (`mlp.experts.base_layer`/`mlp.experts`) let a correctly-converted adapter **load without any
+  naming error** — resolves the naming blockage from `exp2_unmerged_lora_rho.json`. A robust
+  3-prompt diff gate then showed 0/3 differ from raw base on a clean boot: the kernel accepts the
+  adapter but doesn't measurably apply it. Recorded `blocked_deeper_than_naming` (pre-release
+  kernel, not debugged further).
+- **llama.cpp `--lora`:** converted to the base checkpoint's own fused naming
+  (`mlp.experts.gate_up_proj`/`down_proj`), fixed two genuine previously-unexercised upstream
+  `convert_lora_to_gguf.py` bugs (missing `LoraTorchTensor.ndim`; an ellipsis-expansion off-by-N),
+  built a raw (unadapted) base Q8_0 GGUF, and served with `--lora`. An in-process
+  scale-0-vs-scale-1 diff gate gave dramatic confirmation (adapter off = generic rambling;
+  adapter on = correct 9-dimension WPCS judge rubric). Full 121-item capture: **rho = 0.7833**
+  (n=121, parse_fail=0).
+- **H1 REJECTED:** 0.7833 lands essentially on the served-merged ceiling (0.7872, +0.39pp), 5.25pp
+  below the capture anchor (0.8358) — despite the adapter being verifiably, dramatically active.
+  Precision-swamping-at-merge-time does not explain the serving ceiling. Per pre-registration,
+  s0/s2 capture and ensemble were correctly skipped (stop condition fires at s1).
+- **Verdict unchanged: `unequivocal_win = FALSE`.** v3's judge (v1.3, Q8 ensemble 0.8056) stays
+  canonical. **Last-lever status: EXHAUSTED** — all three pre-registered serving configurations
+  (bf16-vLLM-merged 0.7872, Q8-llama.cpp-merged 0.7877, Q8-llama.cpp-unmerged 0.7833) land within a
+  0.44pp band; only the Tinker capture harness (0.8358) sits meaningfully above it. Whatever
+  separates capture from every served configuration is not a merge-precision artifact and is out
+  of scope for this milestone.
+- Receipts: `output/eval4/ext_unmerged_results.json`, `output/eval4/VERDICT-EVAL4.md` §7,
+  `.planning/phases/23-final-evaluation/23-03-SUMMARY.md`. Commits: `687aee7` (pre-reg), `d67eee7`
+  (converters+harnesses), `f7e1a56` (results+VERDICT), `db1e694` (SUMMARY).
 
 ### 2026-07-08 — Gap-closure investigation (judge reasoning ceiling)
 
