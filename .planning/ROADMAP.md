@@ -979,12 +979,12 @@ tooling instead of tooling built for the old 128-expert uniform-attention base
   4. The adapted tooling is verified ready before Conditional Gate B (Phase 25) consumes it — this phase
      closes independently of the RL gate's outcome
 
-**Plans**: 1/2 plans executed
+**Plans**: 2/2 plans complete
 
 Plans:
 
 - [x] 22-01-PLAN.md — [W1, GPU-free] Architecture-parameterize the Sieve profiler + protected-mask + k-sweep stack: new scripts/sieve_arch.py (config/data-derived dims, layer_types strata, hook-count-verified traversal, jsonl dim inference), wire into the 6 consumer scripts + adapt the vLLM router-mask patch class, all under mock pytest (v3 [48,128] + v4 [40,256] fixtures)
-- [ ] 22-02-PLAN.md — [W2, GB10] Bounded single-load tooling smoke on models/Qwen3.6-35B-A3B-judge-v4-s1-merged → output/sieve-v4/tooling_smoke.json receipt proving 40 hooks (SC1), router_logits last-dim 256 with shared expert absent (SC3), strata 30 DeltaNet/10 Attention (SC2), tooling ready for Gate B (SC4)
+- [x] 22-02-PLAN.md — [W2, GB10] Bounded single-load tooling smoke on models/Qwen3.6-35B-A3B-judge-v4-s1-merged → output/sieve-v4/tooling_smoke.json receipt proving 40 hooks (SC1), router_logits last-dim 256 with shared expert absent (SC3), strata 30 DeltaNet/10 Attention (SC2), tooling ready for Gate B (SC4)
 
 ### Phase 23: Final Evaluation
 
@@ -1134,7 +1134,7 @@ Note: v4.0 (Phases 20-27) starts after Phase 19 sign-off. Phase 22 (Sieve toolin
 | 19. Next-Base Rerun Roadmap | v3.1 | 1/1 | Complete (base locked: Qwen3.6-35B-A3B; V4-RERUN-ROADMAP.md written) | 2026-07-11 |
 | 20. Base Bring-Up | v4.0 | 4/4 | Complete    | 2026-07-13 |
 | 21. SFT Training — Generation & Judge Models | v4.0 | 6/6 | Complete    | 2026-07-14 |
-| 22. Sieve/Protected-Mask Tooling Adaptation | v4.0 | 1/2 | In Progress|  |
+| 22. Sieve/Protected-Mask Tooling Adaptation | v4.0 | 2/2 | Complete   | 2026-07-15 |
 | 23. Final Evaluation | v4.0 | 1/1 | Complete    | 2026-07-14 |
 | 24. Conditional Gate A — RL Re-Test | v4.0 | 0/TBD | Not started | - |
 | 25. Conditional Gate B — MoE-Sieve Re-Test | v4.0 | 0/TBD | Not started | - |

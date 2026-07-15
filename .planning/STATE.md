@@ -4,17 +4,17 @@ milestone: v4.0
 milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
 current_phase: 22
 current_phase_name: Sieve/Protected-Mask Tooling Adaptation
-status: executing
+status: verifying
 stopped_at: v4.0 back-half REOPENED 2026-07-15 — attempting MoE-Sieve + prune on the v4 Qwen3.6 judge's 256 experts before a v4 publish decision. v4 judge ties v3 on the shipped Q8 stack (0.8067 vs 0.8056) but is +25% size; 256 experts (vs 128 in v3.0) is the one lever that could shrink it below v3 = unequivocal. Renamed to Qwen 3 WP Judge; gen retired regardless. Skipping Phase 24 (RL — no new reward family). Docs synced, wp-moe.md retired to deprecated/.
-last_updated: "2026-07-15T06:06:00.230Z"
+last_updated: "2026-07-15T06:26:00.074Z"
 last_activity: 2026-07-15
 last_activity_desc: Phase 22 execution started
 progress:
   total_phases: 8
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 13
-  completed_plans: 14
-  percent: 38
+  completed_plans: 15
+  percent: 50
 ---
 
 # Project State
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-07-12)
 
 Phase: 22 (Sieve/Protected-Mask Tooling Adaptation) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-15 — Phase 22 execution started
 
 ### 2026-07-15 — reopened v4.0 back-half: Sieve/prune on the 256-expert v4 judge; renamed to Qwen 3 WP Judge
@@ -292,6 +292,7 @@ Progress: [██████████] 100%
 | Phase 21-sft-training-generation-judge-models P06 | ~120min | 3 tasks | 10 files |
 | Phase 23-final-evaluation P01 | 12min | 3 tasks | 4 files |
 | Phase 22 P01 | 20min | 3 tasks | 11 files |
+| Phase 22 P02 | 35min | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -386,6 +387,8 @@ Recent decisions affecting current work:
 - [Phase ?]: 23-02 EXT: v4 judge on shipped llama.cpp Q8 stack NOT unequivocal (ens 0.8067 vs v3 0.8056, paired CI spans 0) — v3 pair stays canonical; judge-only v4 ship rejected; serving ceiling engine-independent (Q8-llama.cpp 0.7877 ≈ bf16-vLLM 0.7872)
 - [Phase ?]: resolve_moe_layers candidate order is flat-first (model.layers -> model.language_model.layers -> language_model.layers), per 20-04 empirical LIVE-tree fact, not the ROADMAP literal nested-path guess
 - [Phase ?]: sieve_protected_retention.py mask.shape==(48,128)/sum==1480 asserts replaced with dtype==bool + non-empty -- v4 mask is a fresh Phase-25 profile of unknown shape/count
+- [Phase ?]: 22-02: Used AutoModelForImageTextToText instead of AutoModelForCausalLM — meta-device key diff proved AutoModelForCausalLM leaves the v4 judge text backbone randomly initialized (692/693 keys missing); AutoModelForImageTextToText (Qwen3_5MoeForConditionalGeneration) matches the checkpoint exactly (0 missing keys).
+- [Phase ?]: 22-02: resolved_traversal_root == model.language_model.layers for the v4 judge VL-composite checkpoint, empirically confirmed via a bounded GB10 forward pass (not the flat model.layers root).
 
 ### Pending Todos
 
@@ -433,7 +436,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-15T06:05:15.419Z
+Last session: 2026-07-15T06:24:51.269Z
 Stopped at: Phase 23-02 EXTENSION COMPLETE — shipped-stack (llama.cpp Q8) verdict: NOT unequivocal, v3 pair stays canonical
 
 Prior session: 2026-07-13T11:52:35.100Z
@@ -562,7 +565,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Ready to execute
+**Status:** Phase complete — ready for verification
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)
