@@ -1,4 +1,4 @@
-# wp-qwen3-moe
+# Qwen 3 WP Judge (formerly wp-qwen3-moe)
 
 ## What This Is
 
@@ -193,4 +193,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-15 — Phase 21 diagnostic (experiments 1-5) COMPLETE: judge rebase WORKED (capture 0.8358 > old 0.8274; served ~0.78 is an engine-numerics ceiling both bases share — old recomputed 0.7888); gen SFT has negative wp-bench headroom on this base (exp5 regression-to-teacher confirmed, exp1 ep1=0.4381 overtraining confirmed, exp4 rebuilt-mix=0.4022 still < raw 0.4897). Phase 23 A/B runs TWO gen candidates: raw base + fine-tune. Synthesis: output/base21/diagnostic/DIAGNOSTIC_SYNTHESIS.md. Prior: Phase 21 verified 6/6 (both bars missed, recorded); Phase 20 verified 4/4. ~$10 total Tinker spend.*
+*Last updated: 2026-07-15 — **PROJECT COMPLETE**, renamed to Qwen 3 WP Judge. Canonical deliverable = the v1.3 WP Judge (`iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf`, Q8 GGUF, rho 0.8056). Gen retired: v4.0 proved raw Qwen3.6-35B-A3B (0.4897) out-generates every fine-tune. Judge: v4 tied v3 on the shipped Q8 stack (0.8067 vs 0.8056, paired CI spans zero, +25% size) — v3 stays canonical, v4.0 recorded as a diagnostic milestone. Phases 24-27 not run (no new artifact to gate/ship). Evidence: output/base21/diagnostic/DIAGNOSTIC_SYNTHESIS.md, output/eval4/VERDICT-EVAL4.md.*

@@ -1,13 +1,23 @@
-# PROJECT: WordPress Best-Practice MoE Model (wp-qwen3-moe)
+# PROJECT: Qwen 3 WP Judge (formerly wp-qwen3-moe)
 
 ## Vision
 
-A two-model pair, both fine-tuned from the same Qwen3-based Mixture-of-Experts base, that **generates** and **judges** WordPress code according to strict WordPress Coding Standards. Task tokens (`<wp_gen>`, `<wp_judge>`) mark which mode a served checkpoint should run. Built and served on the [DGX Toolbox](~/dgx-toolbox) infrastructure stack.
+An open-weight WordPress code **reviewer**: given a PHP function, score it against a strict 9-dimension
+WordPress-quality rubric and explain the defects. Built and served on the [DGX Toolbox](~/dgx-toolbox)
+infrastructure stack.
 
-**Shipped reality (v3.0, closed 2026-07-11):** RL alignment was rejected, MoE-Sieve found no expert-count
-compression, and weight-level pruning found no winner — quantization is the only size lever, and Q8_0 GGUF
-is the lossless ship tier. Full lineage: [MODEL_CARD.md](output/packaging/MODEL_CARD.md). The sections
-below describe the original phased plan; see "Current Status" for what each phase actually produced.
+**Canonical deliverable (2026-07-15):** the **WP Judge** —
+[`iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf`](https://huggingface.co/iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf),
+a 3-epoch MoE-only LoRA fine-tune of Qwen3-30B-A3B, shipped as a lossless Q8_0 GGUF ensemble (rho 0.8056).
+The judge is a *created* capability — the untrained base produces 0 parseable verdicts out of 121.
+
+The generation half was **retired as a deliverable**. The project began as a two-model pair
+(`<wp_gen>` + `<wp_judge>`); the v4.0 study on Qwen3.6-35B-A3B showed a raw modern base out-generates every
+gen fine-tune we trained (0.4897 vs best 0.4381), so generation is now a solved problem best served by a
+current base model directly. The v1.2 gen checkpoint remains published for provenance but is not the
+recommendation. Full lineage: [MODEL_CARD.md](output/packaging/MODEL_CARD.md); v4.0 evidence:
+[output/base21/diagnostic/DIAGNOSTIC_SYNTHESIS.md](output/base21/diagnostic/DIAGNOSTIC_SYNTHESIS.md). The
+sections below describe the original phased plan; see "Current Status" for what each phase produced.
 
 ## Architecture
 
@@ -16,7 +26,8 @@ below describe the original phased plan; see "Current Status" for what each phas
 - **Compatibility:** HuggingFace `AutoModelForCausalLM`, standard transformers tooling
 - **Infrastructure:** DGX Toolbox — Unsloth Studio (fine-tuning), vLLM/Ollama (inference), eval-toolbox (benchmarks), safety harness (guardrails)
 
-See [wp-moe.md](wp-moe.md) for full model specification.
+See [PIPELINE.md](PIPELINE.md) for the frozen end-to-end method. (The original model spec, `wp-moe.md`, is
+retired in [deprecated/](deprecated/).)
 
 ## Execution Model
 
@@ -268,7 +279,13 @@ Judge training data is additionally sanity-checked: high-quality source code mus
 - [x] Phase E: LoRA merge + pruning + final eval + packaging — **no prune winner**, Q8 GGUF ships lossless (v3.0 Phases 13-15)
 - [x] Phase 16: Pipeline lockdown — `PIPELINE.md` frozen, `deprecated/` sweep (v3.0, closed 2026-07-11)
 - [x] Phase 17: Benchmark expansion — wp-bench full rerun 0.4365, SWE-bench out-of-domain 1.67%/0% (v3.1, closed 2026-07-11)
-- [ ] Phase 18: Production sweep + HuggingFace publication — **in progress** (v3.1)
+- [x] Phase 18: Production sweep + HuggingFace publication — two-model pair PUBLIC on HuggingFace (v3.1, closed 2026-07-12)
+- [x] Phase 19: Next-base rerun roadmap — Qwen3.6-35B-A3B locked, V4-RERUN-ROADMAP.md (v3.1, closed 2026-07-11)
+- [x] Phase 20: v4.0 base bring-up — 4/4 gates green on Qwen3.6-35B-A3B (v4.0, closed 2026-07-13)
+- [x] Phase 21: v4.0 SFT gen & judge — both pre-registered bars missed, recorded honestly (v4.0, closed 2026-07-14)
+- [x] Phase 21 diagnostic (exp 1-5) + Phase 23 final eval — gen regression + judge serving-ceiling root-caused; gen-role winner = raw base; judge tie vs v3 on the shipped stack (v4.0, closed 2026-07-15)
+- [ ] Phases 22/25/26: MoE-Sieve + prune on the v4 judge's **256 experts** — the one unexplored lever (256 vs 128) that could shrink v4 below v3 and make it unequivocally better. **In progress (reopened 2026-07-15).** Gen stays retired regardless; only the v4-judge publish decision hangs on this.
+- Canonical *recommendation* today = the v1.3 WP Judge. v4 judge publishes as an alternative if Sieve/prune flips the size math; otherwise v4.0 closes as a diagnostic milestone.
 
 ## Dependencies
 

@@ -25,7 +25,7 @@ def test_scores_shape():
 
 
 def test_hand_computed_saliency_mean():
-    """S_j = mean over active tokens of g_j(x) * ||f_j(x)||_2 (wp-moe.md REAP formula)."""
+    """S_j = mean over active tokens of g_j(x) * ||f_j(x)||_2 (deprecated/wp-moe.md REAP formula)."""
     c = reap_prune.REAPCollector(n_layers=2, n_experts=4)
     # Expert (layer=0, expert=1) activated by 3 tokens: gate*norm products 0.4, 1.2, 0.8
     events = [

@@ -159,8 +159,30 @@ evaluated; 17 over-length, 6 apply-failures.
 - Two-model pair, not a single unified model. Both share the base; route by task token.
 - No RL enhancement (rejected). No pruning speedup (no viable prune). Size reduction depends entirely on
   quantization, and the naive 4-bit tier is unavailable.
-- Judge rho plateaus around 0.80-0.83; a materially better judge needs a stronger base (Qwen3.6-class),
-  which is the intended next iteration of this exact pipeline.
+- Judge rho plateaus around 0.80-0.83; a materially better judge needs a stronger base (Qwen3.6-class).
+  That iteration was run — see "v4.0 outcome" below — and did not beat this checkpoint on any
+  self-hostable serving stack.
+
+## v4.0 outcome (Qwen3.6-35B-A3B) — why v1.3 is still canonical
+
+The entire pipeline was rerun on `Qwen3.6-35B-A3B` to try to supersede this pair. Result, receipt-backed
+(`output/base21/diagnostic/DIAGNOSTIC_SYNTHESIS.md`, `output/eval4/VERDICT-EVAL4.md`):
+
+- **Generation is retired as a deliverable.** The raw Qwen3.6 base scored wp-bench **0.4897**; every gen
+  fine-tune regressed below it (best 0.4381) because the reasoning-mix targets are structurally weaker than
+  what a modern base already writes. For generation, use a current base with prompt-side task framing — no
+  fine-tune needed.
+- **The judge improved but is a shipped-stack tie.** The Qwen3.6 judge beats this one on the Tinker capture
+  path (rho 0.8358 vs 0.8274), but a serving-numerics ceiling (~0.79, identical across vLLM-merged,
+  llama.cpp-Q8-merged, and llama.cpp-unmerged runtime-LoRA) eats the gain. On the shipped Q8 stack it read
+  **0.8067 vs this model's 0.8056** — a statistical tie (paired bootstrap CI spans zero) at +25% size. Per
+  the pre-registered rule, **v1.3 stays canonical.**
+
+The canonical *recommendation* is therefore this WP Judge; the gen checkpoint is kept for provenance only.
+One v4 lever remains open: the 256-expert Qwen3.6 judge has never been through MoE-Sieve or weight-prune
+(v3.0 found no winner on 128 experts, but 256 + a shared expert is where the roadmap predicted it might
+flip). If that compresses the v4 judge below this one's 30.2 GiB, it ships as an alternative on a newer
+base. That attempt is in progress (Phases 22/25/26).
 
 ## Provenance
 

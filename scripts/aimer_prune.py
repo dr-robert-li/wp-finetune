@@ -1,7 +1,7 @@
 """AIMER weight-norm expert importance scorer (PRUNE-01).
 
 Calibration-free, weight-only per-expert importance score (arxiv 2603.18492,
-formula pinned in wp-moe.md): for each (layer, expert), concatenate that
+formula pinned in deprecated/wp-moe.md): for each (layer, expert), concatenate that
 expert's gate/up/down projection weights and score them as
 
     score = P / sqrt(N * Q)

@@ -90,3 +90,10 @@ outside the moved set itself.
   manual-invocation cluster (`run_judge_batch5.py` and `run_judge_chunk.py` import
   `generate_judge_batch.py`; `run_judge_batch_loop.sh` shells out to it) with no external caller — ephemeral
   run orchestration for a dataset-build job that already produced its recorded results.
+
+## Added 2026-07-15
+
+- `wp-moe.md` — the original two-model-pair project specification. Superseded by `PIPELINE.md` (the frozen
+  method) and the judge-first `README.md`. Kept for provenance; the REAP/AIMER pruning formulae it pins are
+  still referenced by comment in `scripts/{reap,aimer}_prune.py`. Retired when the project narrowed to the
+  WP Judge as its canonical deliverable.

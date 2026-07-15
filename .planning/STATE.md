@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
-current_phase: 24
-current_phase_name: Conditional Gate A — RL Re-Test
+current_phase: 22
+current_phase_name: Sieve/Protected-Mask Tooling Adaptation (256-expert v4 judge)
 status: planning
-stopped_at: "Phase 23-03 EXTENSION COMPLETE — unmerged runtime-LoRA judge serving verdict: H1 rejected, last lever exhausted, v3 pair stays canonical"
-last_updated: "2026-07-15T04:12:00.000Z"
+stopped_at: "v4.0 back-half REOPENED 2026-07-15 — attempting MoE-Sieve + prune on the v4 Qwen3.6 judge's 256 experts before a v4 publish decision. v4 judge ties v3 on the shipped Q8 stack (0.8067 vs 0.8056) but is +25% size; 256 experts (vs 128 in v3.0) is the one lever that could shrink it below v3 = unequivocal. Renamed to Qwen 3 WP Judge; gen retired regardless. Skipping Phase 24 (RL — no new reward family). Docs synced, wp-moe.md retired to deprecated/."
+last_updated: "2026-07-15T05:30:00.000Z"
 last_activity: 2026-07-15
-last_activity_desc: Phase 23-03 extension complete (unmerged runtime-LoRA judge serving, H1 rejected), Phase 24 unaffected
+last_activity_desc: Renamed to Qwen 3 WP Judge; v4.0 back-half reopened for Sieve/prune on the 256-expert v4 judge
 progress:
   total_phases: 8
   completed_phases: 3
@@ -28,10 +28,23 @@ See: .planning/PROJECT.md (updated 2026-07-12)
 
 ## Current Position
 
-Phase: 24 — Conditional Gate A — RL Re-Test
+Phase: 22 — Sieve/Protected-Mask Tooling Adaptation (256-expert v4 judge)
 Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-07-15 — Phase 23-03 extension complete (unmerged runtime-LoRA judge serving, H1 rejected)
+Status: v4.0 back-half reopened — attempting Sieve/prune on the v4 judge's 256 experts before a v4 publish decision. Renamed to Qwen 3 WP Judge; gen retired; v1.3 judge is the canonical recommendation today.
+Last activity: 2026-07-15 — rename + docs sync committed; starting Phase 22
+
+### 2026-07-15 — reopened v4.0 back-half: Sieve/prune on the 256-expert v4 judge; renamed to Qwen 3 WP Judge
+
+The v4.0 milestone's final-eval verdict (v4 judge ties v3 on the shipped Q8 stack, 0.8067 vs 0.8056, +25%
+size; gen fine-tunes all regress below the raw Qwen3.6 base) reframed the project around the judge and drove
+the rename. Gen is retired as a deliverable regardless. But a fair question reopened one lever: the v4 judge
+was *trained* and is tied-quality on a *newer* base — the only thing v3 wins on is the 30.2-vs-37.8 GiB size.
+The v4 judge's 256 experts have never been through MoE-Sieve or weight-prune; v3.0 found no winner on 128
+experts, but the roadmap flagged 256 + shared expert as where it might flip. If it compresses below v3, the
+v4 judge becomes unequivocally better (newer base, tied quality, smaller) and publishes. So Phases 22 (256-expert
+Sieve tooling) → 25 (k-sweep) → 26 (prune) are reopened; Phase 24 (RL) skipped (no new reward family). Docs
+(README judge-first, JOURNAL, PROJECT/MODEL_CARD/CHANGELOG) synced; `wp-moe.md` retired to `deprecated/`.
+Evidence: `output/base21/diagnostic/DIAGNOSTIC_SYNTHESIS.md`, `output/eval4/VERDICT-EVAL4.md`.
 
 ### 2026-07-15 — Phase 23-03 EXTENSION: unmerged runtime-LoRA judge serving — last lever, H1 REJECTED
 

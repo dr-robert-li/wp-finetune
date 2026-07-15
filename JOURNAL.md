@@ -1,6 +1,26 @@
-# Engineering Journal — wp-qwen3-moe
+# Engineering Journal — Qwen 3 WP Judge (formerly wp-qwen3-moe)
 
 Decisions, reasoning, and observations logged as the project evolves.
+
+---
+
+## 2026-07-15 — the project narrows to a judge, not a pair (with one lever still to pull).
+
+I set out to build two models. I'm shipping one. This is the entry where I write down why, and why I think that's the right call rather than a retreat.
+
+**The generator is done, and not by me.** The v4.0 study asked a simple question: does a newer base close the gaps the old one couldn't? For generation the answer was blunt. Raw Qwen3.6-35B-A3B, with no fine-tuning and `<wp_gen>` hitting it as plain text, scores 0.4897 on wp-bench. Every generator I trained on top of it came out worse: ep3 at 0.372, the ep1 checkpoint at 0.4381, even a carefully rebuilt mix at 0.4022. Five experiments (`output/base21/diagnostic/DIAGNOSTIC_SYNTHESIS.md`) explain the drop the same way each time. Our gen targets are structurally weaker than what the base already writes: the training set is 86% judge-shaped, and 92% of the actual gen targets are bare unwired function fragments, no `<?php`, no `add_action`, one literally labelled "TODO: Copied from section.php". The old Qwen3-30B base improved on that data because its own raw output was weaker still. A stronger base has nothing to learn from targets it already beats. So I'm not shipping a generator. If you need WordPress code generated, point a current base model at the task and frame the prompt. That problem aged out of this project.
+
+**The judge is the thing that was ever really mine.** The clearest number in the whole project is still the ugliest one: the untrained base produces zero parseable rubric verdicts out of 121. The judge is a capability created from nothing, and on Qwen3.6 the training worked, measurably. Capture-path rho hit 0.8358, past the old base's 0.8274. For a while I thought that meant a new shipped judge.
+
+It didn't, and chasing that down was the real work of the last two days. Every time I merge the adapter and serve it, the number falls to ~0.79 and stays there. I tested this to exhaustion because the user asked for an unequivocal win and I wanted to give them one. bf16 merged on vLLM: 0.7872. Q8 GGUF merged on llama.cpp: 0.7877. Q8 with the adapter served unmerged as a runtime LoRA, verified active by a scale-0-vs-1 diff: 0.7833. An fp32-accumulation merge fix that turned out to be a no-op because the real merge path was already fp32. Three engines, three serving configs, one ceiling inside a half-point band. The 0.8358 lives only inside Tinker's own serving stack, and I can't ship Tinker. On the stack users actually run, the v4 judge scored 0.8067 against v3's 0.8056 — a paired-bootstrap tie with the confidence interval sitting square across zero, at 25% more disk. I pre-registered the rule that would let me call it a win before I measured, and the rule said no. So v1.3 stays canonical.
+
+I keep wanting to soften that and I won't. The stronger base did make a better judge; I just can't get the better judge out of the lab and onto a self-hostable stack, and "better in a place nobody can run it" is not better. Whatever eats the 0.05 lives in the merge-then-serve pathway on every engine, for both bases. That's a genuinely interesting open problem and it is not one I'm going to pretend I solved.
+
+**So the project renames and narrows.** It was `wp-qwen3-moe`, a two-model pair. It's now Qwen 3 WP Judge, and the canonical deliverable is exactly one artifact: `iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf`, the v1.3 relabel-SFT judge, Q8_0 GGUF ensemble, rho 0.8056, lossless against bf16. The gen checkpoint stays published so the provenance is honest, but it's a footnote now, not a headline. The README got rewritten around the judge and the operator: pull the GGUF, serve it with llama.cpp, hand it a snippet, read the rubric back. Everything a reader needs to reproduce the pipeline points at PIPELINE.md; everything that was archaeology moved to `deprecated/`, including the old `wp-moe.md` spec that described the pair I'm no longer shipping.
+
+What v4.0 produced, so far, is knowledge rather than a checkpoint: the capture-versus-served ceiling quantified across three engines, the routed-expert merge tooling hardened, two upstream llama.cpp bugs found and patched, and a negative result recorded in full instead of buried. I would rather stand on a clean "no" I can defend than a soft "maybe" I can't. The judge works, it's public, and the number is real.
+
+There is one lever I haven't pulled, and a fair question made me go back for it: I trained a tied-quality judge on a newer base and left it on the shelf because it's 25% bigger. But "not canonical" is a different verdict from "not worth shipping," and I'd collapsed the two. The v4 judge's 256 experts have never been through MoE-Sieve or a weight-prune. On the old base's 128 experts that pipeline found nothing to cut, but the whole v4 roadmap flagged 256-plus-a-shared-expert as the one place it might finally bite. If it does, the v4 judge drops below v3's 30.2 GiB and the only thing v3 still wins on evaporates: same quality, newer base, smaller. So I'm reopening the back half of the roadmap to try exactly that before I call anything final. Sieve, then prune, then a publish decision that's earned rather than assumed. If the experts don't compress, the story above stands unchanged and v3 stays canonical. Either way the answer will be measured, not guessed.
 
 ---
 

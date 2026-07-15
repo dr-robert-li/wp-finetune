@@ -1,6 +1,6 @@
 """REAP calibration-saliency expert scorer (PRUNE-02, arxiv 2510.13999).
 
-Domain-aware, calibration-based per-expert importance score (wp-moe.md):
+Domain-aware, calibration-based per-expert importance score (deprecated/wp-moe.md):
 
     S_j = mean_{x in active(j)}( g_j(x) * ||f_j(x)||_2 )
 
