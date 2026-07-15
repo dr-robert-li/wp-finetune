@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
-current_phase: 22
-current_phase_name: Sieve/Protected-Mask Tooling Adaptation
-status: verifying
-stopped_at: v4.0 back-half REOPENED 2026-07-15 — attempting MoE-Sieve + prune on the v4 Qwen3.6 judge's 256 experts before a v4 publish decision. v4 judge ties v3 on the shipped Q8 stack (0.8067 vs 0.8056) but is +25% size; 256 experts (vs 128 in v3.0) is the one lever that could shrink it below v3 = unequivocal. Renamed to Qwen 3 WP Judge; gen retired regardless. Skipping Phase 24 (RL — no new reward family). Docs synced, wp-moe.md retired to deprecated/.
-last_updated: "2026-07-15T06:26:00.074Z"
+current_phase: 23
+current_phase_name: Final Evaluation
+status: planning
+stopped_at: "Phase 23-02 EXTENSION COMPLETE — shipped-stack (llama.cpp Q8) verdict: NOT unequivocal, v3 pair stays canonical"
+last_updated: "2026-07-15T06:31:33.745Z"
 last_activity: 2026-07-15
-last_activity_desc: Phase 22 execution started
+last_activity_desc: Phase 22 complete, transitioned to Phase 23
 progress:
   total_phases: 8
   completed_phases: 4
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-07-12)
 
 ## Current Position
 
-Phase: 22 (Sieve/Protected-Mask Tooling Adaptation) — EXECUTING
-Plan: 2 of 2
+Phase: 23 — Final Evaluation
+Plan: Not started
 Status: Phase complete — ready for verification
-Last activity: 2026-07-15 — Phase 22 execution started
+Last activity: 2026-07-15 — Phase 22 complete, transitioned to Phase 23
 
 ### 2026-07-15 — reopened v4.0 back-half: Sieve/prune on the 256-expert v4 judge; renamed to Qwen 3 WP Judge
 
@@ -213,7 +213,7 @@ Progress: [██████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 41
+- Total plans completed: 43
 - Average duration: 9 min
 - Total execution time: 0.62 hours
 
@@ -232,6 +232,7 @@ Progress: [██████████] 100%
 | 20 | 4 | - | - |
 | 21 | 6 | - | - |
 | 23 | 1 | - | - |
+| 22 | 2 | - | - |
 
 **Recent Trend:**
 
@@ -565,7 +566,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Phase complete — ready for verification
+**Status:** Ready to plan
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)
