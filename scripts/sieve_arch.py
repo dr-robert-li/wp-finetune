@@ -162,6 +162,59 @@ def resolve_task_token_ids(
     return (None, None)
 
 
+def _disable_gb10_load_amplifiers() -> None:
+    """Neutralize two from_pretrained memory-amplification mechanisms that recur
+    even under a correct single-device placement (GATE4-03 rerun, PID 2683356
+    killed at 66% -- the single-device fix alone was necessary but NOT sufficient).
+
+    TRAP 2 -- eager caching-allocator warmup: `transformers.modeling_utils.
+    caching_allocator_warmup()` runs unconditionally whenever `device_map is not
+    None` (true for our single-device dict) and issues ONE `torch.empty()` sized
+    to (up to) the model's FULL byte count on the target device, BEFORE any shard
+    streams. Confirmed empirically on this GB10: a `torch.empty(10GiB,
+    device=cuda:0)` call moves system `free`'s used by +10.4 GiB INSTANTLY (eager
+    physical commit, not lazy/demand-paged) while moving the allocating process's
+    OWN /proc/self/status VmRSS by only ~93 MB -- i.e. the reservation is real,
+    immediate, unified-pool memory that is invisible to the process's own
+    anon-rss, so a kernel OOM-kill log's anon-rss figure under-reports this
+    process's true footprint by ~the reservation size. A live instrumented trace
+    confirmed cuda_reserved_gb jumping 0->70.2 GB in the first 3 seconds -- before
+    "Loading weights: 0/1026" even printed -- then staying perfectly flat while
+    cuda_free_gb collapsed toward zero by just ~28% shard-copy progress. It is a
+    pure loading-SPEED optimization (its own docstring: "cudaMalloc is not a
+    bottleneck at all anymore") with no correctness effect, so disabling it is
+    safe: cuda memory then grows incrementally with shard progress instead of
+    being front-loaded, freeing ~50-60 GiB of headroom during the streaming phase.
+
+    TRAP 3 -- threaded shard materializer: the (up to 4-worker) ThreadPoolExecutor
+    in transformers/core_model_loading.py submits every tensor's CPU-materialize
+    + device-copy job before consuming any of them. Host anon-rss was observed
+    climbing to a ~24-25 GiB plateau during the threaded phase instead of staying
+    bounded to a couple of in-flight tensors. `HF_DEACTIVATE_ASYNC_LOAD` is an
+    already-shipped, documented transformers env var for exactly this class of
+    memory-constrained load (its own comment: "if we have to offload... we need
+    to be sequential") -- forcing the synchronous one-tensor-at-a-time path.
+
+    Both are pure loading-time behaviors with zero effect on the loaded weights;
+    safe to apply globally, and idempotent (patches once, no-ops on repeat calls).
+    """
+    import os
+
+    import transformers.modeling_utils as _mu
+
+    if getattr(_mu.caching_allocator_warmup, "_gb10_noop", False):
+        pass  # already patched
+    else:
+
+        def _gb10_noop_warmup(*_args, **_kwargs) -> None:
+            return None
+
+        _gb10_noop_warmup._gb10_noop = True
+        _mu.caching_allocator_warmup = _gb10_noop_warmup
+
+    os.environ.setdefault("HF_DEACTIVATE_ASYNC_LOAD", "1")
+
+
 def gb10_load_kwargs() -> dict:
     """Return from_pretrained kwargs that are OOM-safe on GB10 unified memory.
 
@@ -180,6 +233,13 @@ def gb10_load_kwargs() -> dict:
     instead of a full CPU materialization. A 67 GiB bf16 model then occupies the
     unified pool once (~67 GiB of 121 GiB), leaving room for bs=1 activations.
 
+    RECURRENCE (GATE4-03 rerun, PID 2683356 killed at 66%): the single-device
+    placement alone was NOT sufficient -- see `_disable_gb10_load_amplifiers()`
+    for the two additional from_pretrained memory-amplification mechanisms
+    (eager caching-allocator warmup + threaded shard materializer) this helper
+    now also neutralizes as a side effect, as this function is the established
+    single choke-point every GB10 full-model load already routes through.
+
     CUDA-absent (CPU-only test/merge host) -> {"": "cpu"}, mirroring the merge
     scripts' proven placement.
 
@@ -189,6 +249,8 @@ def gb10_load_kwargs() -> dict:
     owns both) -- a duplicate keyword is a TypeError, caught by the load-safety test.
     """
     import torch
+
+    _disable_gb10_load_amplifiers()
 
     device = 0 if torch.cuda.is_available() else "cpu"
     return {"device_map": {"": device}, "low_cpu_mem_usage": True}

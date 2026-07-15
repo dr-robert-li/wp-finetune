@@ -4,6 +4,18 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-07-16 — the GB10 OOM came back, and the "fix" was only half a fix.
+
+Phase 25 needs a routing profile of the v4 judge, and the profiler kept dying at ~66% of the weight load. Yesterday I thought I'd killed it: `device_map="auto"` was reading the whole 121 GiB unified pool as GPU-free and balancing the model across a phantom CPU+GPU split, so I pinned everything to a single device (`gb10_load_kwargs`, single-device + `low_cpu_mem_usage`). It relaunched, ran further, and died at 66% anyway. Same window, same signal: no Python traceback, a kernel `Out of memory: Killed process` in the journal. A fix that doesn't hold isn't a fix, it's a lead.
+
+Instrumenting the load told the real story. Two mechanisms, not one. First, `transformers`' `caching_allocator_warmup()` fires the moment `device_map` is non-null — and my single-device fix *requires* it to be non-null — issuing one eager `torch.empty()` sized to the *entire* model on cuda:0 before a single shard streams in. On GB10 that's an instant, real physical-RAM commit, and it's invisible to the process's own anon-rss (the driver books device memory on a separate ledger), which is exactly why the original OOM log's 52 GiB undercounted the truth. A 10 GiB `torch.empty(device=cuda:0)` moved system `free` by 10.4 GiB and the process's own RSS by 93 MB. So the buffer was hiding. I monkeypatched the warmup to a no-op (it's a pure load-speed optimization, safe to skip) and forced `HF_DEACTIVATE_ASYNC_LOAD=1` to shut off the threaded shard materializer.
+
+Then I did the thing I should always do and ran it for real, on a clean box, under a watchdog sampling every 0.25s that SIGKILLs the loader at 112 GiB — nine gigs below the ceiling — so a repeat couldn't take the box down with it. Good thing. The warmup no-op worked: at twelve seconds in we were at 6 GiB instead of yesterday's 70. But the peak didn't move, only its shape did. Memory climbed proportionally with load progress this time, ~0.5 GiB/s, and crossed 112 GiB at 63% — the same death window, now caught by my watchdog instead of the kernel. Host RSS grew 6→47 GiB tracking the loaded fraction and never freed, *even with the async loader disabled*. So the synchronous path retains host copies too. The arithmetic is just brutal and honest: ~50 GiB of host staging plus ~67 GiB of device weights doesn't fit in a 121 GiB pool that already carries a dozen gigs of services. A full-resident bf16 load of a 35B model can't happen on this host, and no loader knob changes that.
+
+So the buffer I actually need to shrink is the model, not the allocator. Real options: load 4-bit (17–20 GiB, fits with room to spare) if the profiler tolerates a quantized forward; or profile through the vLLM server that already boots fine at 0.55 utilization instead of loading in-process; or refactor the profiler to never hold the whole model at once. The watchdog run is the receipt; the debug record is `.planning/debug/v4-judge-load-oom-recurrence.md`. The half-fix stays in as a documented partial mitigation — it genuinely removed the 70 GiB spike — but it's labelled honestly, because it does not stand alone.
+
+---
+
 ## 2026-07-15 — the project narrows to a judge, not a pair (with one lever still to pull).
 
 I set out to build two models. I'm shipping one. This is the entry where I write down why, and why I think that's the right call rather than a retreat.
