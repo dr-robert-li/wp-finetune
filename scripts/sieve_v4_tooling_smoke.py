@@ -109,7 +109,7 @@ def run_smoke(
     model = AutoModelForImageTextToText.from_pretrained(
         str(model_path),
         dtype=torch.bfloat16,
-        device_map="auto",
+        **sieve_arch.gb10_load_kwargs(),  # single-device + low_cpu_mem_usage; NOT device_map="auto" (GB10 OOM trap)
         trust_remote_code=True,
     )
     model.eval()

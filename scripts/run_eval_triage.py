@@ -58,6 +58,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from scripts import sieve_arch  # noqa: E402 — GB10-safe from_pretrained kwargs
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -408,7 +410,7 @@ def run_profiling(
     model = AutoModelForCausalLM.from_pretrained(
         str(abs_model_path),
         dtype=torch.bfloat16,
-        device_map="auto",
+        **sieve_arch.gb10_load_kwargs(),  # single-device + low_cpu_mem_usage; NOT device_map="auto" (GB10 OOM trap)
     )
 
     try:

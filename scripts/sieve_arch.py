@@ -162,6 +162,38 @@ def resolve_task_token_ids(
     return (None, None)
 
 
+def gb10_load_kwargs() -> dict:
+    """Return from_pretrained kwargs that are OOM-safe on GB10 unified memory.
+
+    THE TRAP (root cause of the Phase-25-01 profiler OOM, PID 2474645 killed at
+    ~62% of a 67 GiB load): `device_map="auto"` inspects available memory via
+    torch.cuda.mem_get_info(), which on a GB10 reports the WHOLE 121 GiB unified
+    pool as GPU-free. accelerate then treats "cuda:0 ~118 GiB" and "cpu ~110 GiB"
+    as two independent pools (~230 GiB) and balances the model across BOTH --
+    reserving GPU headroom means part of the model is placed on "cpu". But CPU
+    and GPU are the SAME physical RAM here, so the CPU-resident shards (~54 GiB
+    anon at death) plus the unified-GPU shards collide and the kernel OOM-kills
+    the load. GPU-mapped pages are pinned/unswappable, so swap cannot rescue it.
+
+    THE FIX: pin every module to a SINGLE device so there is no CPU+GPU split,
+    and set low_cpu_mem_usage=True so shards stream to that device via meta-init
+    instead of a full CPU materialization. A 67 GiB bf16 model then occupies the
+    unified pool once (~67 GiB of 121 GiB), leaving room for bs=1 activations.
+
+    CUDA-absent (CPU-only test/merge host) -> {"": "cpu"}, mirroring the merge
+    scripts' proven placement.
+
+    Splat into from_pretrained:  AutoModelForX.from_pretrained(path, dtype=...,
+    **sieve_arch.gb10_load_kwargs(), trust_remote_code=True)
+    Never combine with a separate device_map=/low_cpu_mem_usage= kwarg (the splat
+    owns both) -- a duplicate keyword is a TypeError, caught by the load-safety test.
+    """
+    import torch
+
+    device = 0 if torch.cuda.is_available() else "cpu"
+    return {"device_map": {"": device}, "low_cpu_mem_usage": True}
+
+
 # ---------------------------------------------------------------------------
 # Self-check (--self-check): assert-based, no GPU, no network
 # ---------------------------------------------------------------------------
@@ -237,6 +269,20 @@ def demo() -> None:
             return {"<wp_gen>": 151669, "<wp_judge>": 151670}
 
     assert resolve_task_token_ids(StubTokWithTaskTokens(), 151669, 151670) == (151669, 151670)
+
+    # gb10_load_kwargs: single-device placement + streaming, never bare "auto"
+    # (torch-optional env: skip if torch is absent, the helper needs torch.cuda)
+    try:
+        import torch  # noqa: F401
+    except ImportError:
+        pass
+    else:
+        kw = gb10_load_kwargs()
+        assert set(kw) == {"device_map", "low_cpu_mem_usage"}, kw
+        assert kw["low_cpu_mem_usage"] is True
+        assert list(kw["device_map"].keys()) == [""], kw
+        assert kw["device_map"][""] in (0, "cpu"), kw
+        assert kw["device_map"] != "auto"
 
     print("OK")
 
