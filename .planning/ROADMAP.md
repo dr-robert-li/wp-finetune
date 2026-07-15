@@ -1050,7 +1050,13 @@ policy), Phase 22 (adapted tooling)
   3. The gate closes with one of two equally valid dispositions — an optimal k below full-LoRA is adopted,
      or `no_winner` (optimal_k=full) is recorded — either outcome unblocks Phase 26
 
-**Plans**: TBD
+**Note (SC1 supersession):** Phase 24 (RL) is SKIPPED this milestone (no new reward family), so "Phase 24's
+final policy" == the v4 judge SFT s1 checkpoint (`models/Qwen3.6-35B-A3B-judge-v4-s1-merged`) — documented in
+25-01 and its pre-registration receipt, not silently ignored.
+
+**Plans**: 2 plans
+- [ ] 25-01-PLAN.md — [W1] Profile the v4 judge s1 over a bounded judge stimulus (AutoModelForImageTextToText loader guard) → fresh protected mask [40,256] + per-stratum E_eff report + stage-1 k-sweep grid pre-registration
+- [ ] 25-02-PLAN.md — [W2] Judge-only k-sweep driver + TOST verdict scorer; detached sweep (full arm = live vLLM patch confirm + same-stack TOST reference, then descending k @8192) → optimal_k_v4.json (optimal_k or no_winner), human sign-off
 
 ### Phase 26: Conditional Gate C — Merge + Prune Re-Test
 
