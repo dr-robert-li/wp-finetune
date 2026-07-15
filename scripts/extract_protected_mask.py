@@ -29,6 +29,7 @@ from pathlib import Path
 import numpy as np
 
 from scripts.compute_concentration import bootstrap_ci
+from scripts.sieve_arch import infer_dims_from_records
 
 
 # ---------------------------------------------------------------------------
@@ -191,10 +192,11 @@ def extract_and_report(
                 except json.JSONDecodeError as e:
                     print(f"WARNING: Skipping malformed record: {e}")
 
-    n_layers = 48
-    n_experts = 128
+    # Arch-derive dims from the JSONL itself (GATE4-02 SC1) -- (40, 256) for a v4
+    # report, (48, 128) for a v3 report; both round-trip, no hardcoded dim.
+    n_layers, n_experts = infer_dims_from_records(records)
 
-    # Build [48, 128] count arrays per split
+    # Build [n_layers, n_experts] count arrays per split
     counts_gen = np.zeros((n_layers, n_experts), dtype=float)
     counts_judge = np.zeros((n_layers, n_experts), dtype=float)
 

@@ -13,6 +13,7 @@ import numpy as np
 import pytest
 
 from scripts.extract_protected_mask import (
+    extract_and_report,
     extract_protected_mask,
     sensitivity_table,
     export_mask,
@@ -47,11 +48,19 @@ class TestExtractProtectedMask:
         assert mask[0, 1] == False, "High judge only should NOT be masked"
 
     def test_mask_shape_and_dtype(self):
-        """Output mask shape is [n_layers, n_experts], dtype bool."""
+        """Output mask shape is [n_layers, n_experts], dtype bool (v3 scale)."""
         gen = np.ones((48, 128))
         judge = np.ones((48, 128))
         mask = extract_protected_mask(gen, judge)
         assert mask.shape == (48, 128), f"Expected (48, 128), got {mask.shape}"
+        assert mask.dtype == bool, f"Expected bool dtype, got {mask.dtype}"
+
+    def test_mask_shape_and_dtype_v4_scale(self):
+        """Same shape-genericity check at v4 scale (40 layers, 256 experts)."""
+        gen = np.ones((40, 256))
+        judge = np.ones((40, 256))
+        mask = extract_protected_mask(gen, judge)
+        assert mask.shape == (40, 256), f"Expected (40, 256), got {mask.shape}"
         assert mask.dtype == bool, f"Expected bool dtype, got {mask.dtype}"
 
     def test_all_equal_counts_no_mask(self):
@@ -170,3 +179,35 @@ class TestExportMask:
             assert 2 in sidecar["0"]
             assert 0 in sidecar["1"]
             assert 3 in sidecar["1"]
+
+
+# ---------------------------------------------------------------------------
+# Tests: extract_and_report — dims inferred from the JSONL (GATE4-02 SC1)
+# ---------------------------------------------------------------------------
+
+
+class TestExtractAndReportDimInference:
+    def test_v4_scale_dims_inferred_from_jsonl(self):
+        """A [40, 256]-scale routing report round-trips with no hardcoded (48,128)."""
+        records = [
+            {
+                "layer_idx": 0,
+                "expert_counts_wp_gen": {"0": 100, "255": 5},
+                "expert_counts_wp_judge": {"0": 100, "1": 5},
+            },
+            {
+                "layer_idx": 39,
+                "expert_counts_wp_gen": {"10": 50},
+                "expert_counts_wp_judge": {"10": 50},
+            },
+        ]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            jsonl_path = Path(tmpdir) / "routing_report.jsonl"
+            with open(jsonl_path, "w") as f:
+                for rec in records:
+                    f.write(json.dumps(rec) + "\n")
+            result = extract_and_report(str(jsonl_path), tmpdir)
+            assert result["n_layers"] == 40
+            assert result["n_experts"] == 256
+            mask = np.load(Path(tmpdir) / "protected_expert_mask.npy")
+            assert mask.shape == (40, 256)

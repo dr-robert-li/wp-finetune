@@ -78,3 +78,18 @@ class TestKsweepMaskUnion:
         assert masked_out_counts.max() < kept_counts.min(), (
             "Every masked-out expert should have a strictly lower routing count than every kept expert"
         )
+
+
+class TestKsweepMaskV4Scale:
+    def test_v4_scale_256_experts_shape_generic(self):
+        """build_ksweep_mask is shape-driven off the arrays passed in -- no
+        hardcoded 128 -- so it works unchanged at the v4 256-expert scale."""
+        n_experts = 256
+        row = np.arange(n_experts, 0, -1, dtype=float)
+        counts = np.stack([row, row])
+        protected = np.zeros((2, n_experts), dtype=bool)
+        protected[1, 255] = True  # coldest v4 expert, protected -> must survive
+
+        kept = sieve_mask_inf.build_ksweep_mask(counts, protected, k=32)
+        assert kept[1, 255] == True  # noqa: E712
+        assert kept[1].sum() == 33  # top-32 hot + 1 protected outlier

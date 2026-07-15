@@ -26,6 +26,8 @@ from typing import Optional
 
 import numpy as np
 
+from scripts import sieve_arch
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -117,11 +119,17 @@ class RoutingCollector:
         n_experts: int = 128,
         top_k: int = 8,
         pad_token_id: int = PAD_TOKEN_ID,
+        gen_id: int | None = WP_GEN_ID,
+        judge_id: int | None = WP_JUDGE_ID,
     ):
         self.n_layers = n_layers
         self.n_experts = n_experts
         self.top_k = top_k
         self.pad_token_id = pad_token_id
+        # None/None (v4 judge -- no task-token extension, see sieve_arch.resolve_task_token_ids)
+        # degrades tagging to total-only: every non-pad token stays "other".
+        self.gen_id = gen_id
+        self.judge_id = judge_id
 
         # Per-layer expert count dicts
         self._counts_total: list[dict] = [defaultdict(int) for _ in range(n_layers)]
@@ -170,9 +178,9 @@ class RoutingCollector:
                 # Padding always tagged as "pad" regardless of context
                 types.append("pad")
                 continue
-            if tid == WP_GEN_ID:
+            if self.gen_id is not None and tid == self.gen_id:
                 current_type = "wp_gen"
-            elif tid == WP_JUDGE_ID:
+            elif self.judge_id is not None and tid == self.judge_id:
                 current_type = "wp_judge"
             types.append(current_type)
         self._current_token_types = types
@@ -445,20 +453,25 @@ def profile_base_model(
     jsonl_path = output_dir / "base_model_eeff.jsonl"
     summary_path = output_dir / "base_model_eeff_summary.md"
 
-    # Initialize collector using runtime tokenizer pad_token_id
+    # Arch-derive dims + task-token IDs from the loaded model/tokenizer (GATE4-02
+    # SC1) -- 40/256 on the v4 base, 48/128 on v3; no hardcoded dim survives.
+    n_layers, n_experts = sieve_arch.arch_dims(model.config)
+    gen_id, judge_id = sieve_arch.resolve_task_token_ids(tokenizer, WP_GEN_ID, WP_JUDGE_ID)
     pad_id = getattr(tokenizer, "pad_token_id", PAD_TOKEN_ID) or PAD_TOKEN_ID
     collector = RoutingCollector(
-        n_layers=48, n_experts=128, top_k=8, pad_token_id=pad_id
+        n_layers=n_layers, n_experts=n_experts, top_k=8, pad_token_id=pad_id,
+        gen_id=gen_id, judge_id=judge_id,
     )
 
-    # Unwrap PeftModel if present so model.model.layers works in both cases.
-    base = model.get_base_model() if hasattr(model, "get_base_model") else model
-    # Register hooks on all MoE layers
+    # Register hooks on every resolved MoE layer (handles PeftModel unwrap +
+    # candidate root traversal internally) -- raises if zero hooks would result
+    # (the exact 20-04 silent-failure mode), and we additionally assert the
+    # hook count matches n_layers exactly.
     hooks = []
-    for i, layer in enumerate(base.model.layers):
-        if hasattr(layer, "mlp") and hasattr(layer.mlp, "gate"):
-            h = layer.mlp.gate.register_forward_hook(collector.make_hook(i))
-            hooks.append(h)
+    for layer_idx, mlp in sieve_arch.resolve_moe_layers(model):
+        h = mlp.gate.register_forward_hook(collector.make_hook(layer_idx))
+        hooks.append(h)
+    assert len(hooks) == n_layers, f"hook count {len(hooks)} != n_layers {n_layers}"
 
     model.eval()
     all_ratio_eeffs = {}
@@ -533,7 +546,7 @@ def profile_base_model(
             eeffs_total = []
             eeffs_gen = []
             eeffs_judge = []
-            for layer_idx in range(48):
+            for layer_idx in range(collector.n_layers):
                 et, eg, ej = collector.get_layer_eeffs(layer_idx)
                 eeffs_total.append(et)
                 eeffs_gen.append(eg)

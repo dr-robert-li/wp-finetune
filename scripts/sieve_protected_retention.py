@@ -17,13 +17,19 @@ Usage:
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
 
-from scripts.sieve_cross_seed_overlap import SEED_DIRS, load_seed_counts, topk_sets
-
+# Bootstrap for direct `python scripts/sieve_protected_retention.py` execution
+# (established repo convention, e.g. scripts/sieve_ksweep_run.py).
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from scripts.sieve_cross_seed_overlap import SEED_DIRS, load_seed_counts, topk_sets  # noqa: E402
+
 MASK_DIR = PROJECT_ROOT / "output/profiling/reasoning-merged-v4"
 CANDIDATE_KS = (13, 32, 64)
 
@@ -74,11 +80,13 @@ def build_retained_sets(seed_counts: dict[str, np.ndarray], mode: str, k: int) -
 
 
 def main():
-    # --- Load + assert the immutable Phase-7 mask (read-only) ---
+    # --- Load + assert the immutable protected-expert mask (read-only) ---
+    # Shape/count are derived from the loaded mask itself (GATE4-02): the v3
+    # mask is [48,128]/1480, the v4 mask is a fresh Phase-25 profile of unknown
+    # count/shape -- only dtype and non-emptiness are universal invariants.
     mask = np.load(MASK_DIR / "protected_expert_mask.npy")
-    assert mask.shape == (48, 128), f"mask shape {mask.shape} != (48, 128)"
     assert mask.dtype == bool, f"mask dtype {mask.dtype} != bool"
-    assert mask.sum() == 1480, f"mask sum {mask.sum()} != 1480"
+    assert mask.sum() > 0, "protected mask is empty"
 
     mask_json = json.loads((MASK_DIR / "protected_expert_mask.json").read_text())
     layer_stability_notes = mask_json.get("layer_stability_notes")

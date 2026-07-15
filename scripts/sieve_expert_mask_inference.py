@@ -35,12 +35,22 @@ Usage (CLI, build a mask file for one k):
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 import numpy as np
 
-from scripts.sieve_cross_seed_overlap import load_seed_counts
+# Bootstrap for direct `python scripts/sieve_expert_mask_inference.py` execution
+# (established repo convention, e.g. scripts/sieve_ksweep_run.py).
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
+from scripts.sieve_cross_seed_overlap import load_seed_counts  # noqa: E402
+
+# Import-back-compat only (NOT load-bearing): build_ksweep_mask/apply_mask are
+# already shape-driven off the arrays passed in (128 experts for v3, 256 for
+# v4 -- GATE4-02 SC1); neither constant is read by any function in this module.
 N_LAYERS = 48
 N_EXPERTS = 128
 NEG_INF = -1.0e9

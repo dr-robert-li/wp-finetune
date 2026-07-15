@@ -8,6 +8,8 @@ is absent (lands in a later wave).
 """
 from __future__ import annotations
 
+import json
+
 import pytest
 
 sieve_overlap = pytest.importorskip("scripts.sieve_cross_seed_overlap")
@@ -54,3 +56,26 @@ class TestPairwiseLayerJaccard:
         s0_vs_s1 = result[("s0", "s1")]
         assert s0_vs_s1[0] == pytest.approx(0.5)
         assert s0_vs_s1[1] == pytest.approx(1.0)
+
+
+class TestLoadSeedCounts:
+    def test_infers_dims_from_v4_scale_records(self, tmp_path):
+        """load_seed_counts sizes its array from the file itself, not the
+        module N_LAYERS/N_EXPERTS constants (GATE4-02 SC1)."""
+        records = [
+            {"layer_idx": 0, "expert_counts_total": {"0": 5, "255": 3}},
+            {"layer_idx": 39, "expert_counts_total": {"10": 2}},
+        ]
+        jsonl_path = tmp_path / "routing_report.jsonl"
+        jsonl_path.write_text("\n".join(json.dumps(r) for r in records))
+
+        counts = sieve_overlap.load_seed_counts(jsonl_path)
+        assert counts.shape == (40, 256)
+        assert counts[0, 255] == 3
+        assert counts[39, 10] == 2
+
+    def test_empty_file_falls_back_to_module_defaults(self, tmp_path):
+        jsonl_path = tmp_path / "empty.jsonl"
+        jsonl_path.write_text("")
+        counts = sieve_overlap.load_seed_counts(jsonl_path)
+        assert counts.shape == (sieve_overlap.N_LAYERS, sieve_overlap.N_EXPERTS)

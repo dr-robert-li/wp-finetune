@@ -22,10 +22,22 @@ from __future__ import annotations
 import argparse
 import itertools
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
 
+# Bootstrap for direct `python scripts/sieve_cross_seed_overlap.py` execution
+# (established repo convention, e.g. scripts/sieve_ksweep_run.py) -- `scripts`
+# is only importable as a package once the project root is on sys.path.
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from scripts.sieve_arch import infer_dims_from_records  # noqa: E402
+
+# Import-back-compat only (NOT load-bearing): load_seed_counts infers dims
+# from the file itself (GATE4-02 SC1); these are the empty-file fallback only.
 N_LAYERS = 48
 N_EXPERTS = 128
 DEFAULT_TOP_K = 32
@@ -47,21 +59,34 @@ def jaccard(a: set, b: set) -> float:
 
 
 def load_seed_counts(jsonl_path: str | Path) -> np.ndarray:
-    """Load a routing_report.jsonl into a [N_LAYERS, N_EXPERTS] total-count array."""
-    counts = np.zeros((N_LAYERS, N_EXPERTS), dtype=float)
+    """Load a routing_report.jsonl into a [n_layers, n_experts] total-count array.
+
+    Dims are inferred from the file's own layer_idx/expert-id range (GATE4-02
+    SC1) -- (40, 256) for a v4 report, (48, 128) for a v3 report. Falls back to
+    the module N_LAYERS/N_EXPERTS defaults only for an empty file.
+    """
+    records = []
     with open(jsonl_path) as f:
         for line in f:
             line = line.strip()
             if not line:
                 continue
-            rec = json.loads(line)
-            layer_idx = int(rec["layer_idx"])
-            if not 0 <= layer_idx < N_LAYERS:
-                continue
-            for k, v in rec.get("expert_counts_total", {}).items():
-                e = int(k)
-                if 0 <= e < N_EXPERTS:
-                    counts[layer_idx, e] = float(v)
+            records.append(json.loads(line))
+
+    if records:
+        n_layers, n_experts = infer_dims_from_records(records)
+    else:
+        n_layers, n_experts = N_LAYERS, N_EXPERTS
+
+    counts = np.zeros((n_layers, n_experts), dtype=float)
+    for rec in records:
+        layer_idx = int(rec["layer_idx"])
+        if not 0 <= layer_idx < n_layers:
+            continue
+        for k, v in rec.get("expert_counts_total", {}).items():
+            e = int(k)
+            if 0 <= e < n_experts:
+                counts[layer_idx, e] = float(v)
     return counts
 
 

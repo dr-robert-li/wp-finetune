@@ -63,3 +63,17 @@ class TestRetentionCheck:
         mask = self._tiny_mask()
         retained = {0: {0, 1, 2}, 1: {1, 3}}  # superset: includes all protected experts
         assert sieve_retention.retention_check(retained, mask) is True
+
+    def test_v4_scale_256_experts_retention(self):
+        """retention_check/at_risk_count are shape-generic -- no hardcoded 128 --
+        so they work unchanged at the v4 256-expert scale."""
+        sieve_retention = pytest.importorskip("scripts.sieve_protected_retention")
+        mask = np.zeros((3, 256), dtype=bool)
+        mask[2, 255] = True
+        retained_ok = {2: {255, 1, 2}}
+        assert sieve_retention.retention_check(retained_ok, mask) is True
+        assert sieve_retention.at_risk_count(retained_ok, mask) == 0
+
+        retained_missing = {2: {1, 2}}
+        assert sieve_retention.retention_check(retained_missing, mask) is False
+        assert sieve_retention.at_risk_count(retained_missing, mask) == 1

@@ -28,11 +28,13 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import math
 import sys
 from pathlib import Path
 
 import numpy as np
 
+from scripts import sieve_arch
 from scripts.profile_base_model import (
     RoutingCollector,
     PAD_TOKEN_ID,
@@ -155,20 +157,24 @@ def profile_merged_model(
     jsonl_path = output_dir_path / "routing_report.jsonl"
     jaccard_path = output_dir_path / "jaccard_stability.json"
 
-    # Initialize collector
+    # Arch-derive dims + task-token IDs from the loaded model/tokenizer (GATE4-02 SC1).
+    n_layers, n_experts = sieve_arch.arch_dims(model.config)
+    gen_id, judge_id = sieve_arch.resolve_task_token_ids(tokenizer, WP_GEN_ID, WP_JUDGE_ID)
     pad_id = getattr(tokenizer, "pad_token_id", PAD_TOKEN_ID) or PAD_TOKEN_ID
     collector = RoutingCollector(
-        n_layers=48, n_experts=128, top_k=top_k_jaccard, pad_token_id=pad_id
+        n_layers=n_layers, n_experts=n_experts, top_k=top_k_jaccard, pad_token_id=pad_id,
+        gen_id=gen_id, judge_id=judge_id,
     )
 
-    # Register hooks — merged model has no PEFT wrapper
-    base = model.get_base_model() if hasattr(model, "get_base_model") else model
+    # Register hooks — merged model has no PEFT wrapper. resolve_moe_layers
+    # asserts (below) the resolved hook count equals n_layers, raising rather
+    # than silently mis-profiling (0 or a partial count both fail loudly).
     hooks = []
-    for i, layer in enumerate(base.model.layers):
-        if hasattr(layer, "mlp") and hasattr(layer.mlp, "gate"):
-            h = layer.mlp.gate.register_forward_hook(collector.make_hook(i))
-            hooks.append(h)
-    logger.info(f"Registered {len(hooks)} hooks (expected 48)")
+    for layer_idx, mlp in sieve_arch.resolve_moe_layers(model):
+        h = mlp.gate.register_forward_hook(collector.make_hook(layer_idx))
+        hooks.append(h)
+    assert len(hooks) == n_layers, f"hook count {len(hooks)} != n_layers {n_layers}"
+    logger.info(f"Registered {len(hooks)} hooks (expected {n_layers})")
 
     model.eval()
 
@@ -178,7 +184,7 @@ def profile_merged_model(
     logger.info(f"Loaded {len(examples)} examples from {data_path}")
 
     def _run_pass(sample: list) -> np.ndarray:
-        """Run a forward pass over sample and return [48, 128] count array."""
+        """Run a forward pass over sample and return [n_layers, n_experts] count array."""
         collector.reset()
         for batch_start in range(0, len(sample), batch_size):
             batch = sample[batch_start: batch_start + batch_size]
@@ -206,11 +212,11 @@ def profile_merged_model(
             with torch.no_grad():
                 model(input_ids=input_ids.to(model.device))
 
-        # Build [48, 128] count array from collector
-        counts = np.zeros((48, 128), dtype=float)
-        for layer_idx in range(48):
+        # Build [n_layers, n_experts] count array from collector
+        counts = np.zeros((collector.n_layers, collector.n_experts), dtype=float)
+        for layer_idx in range(collector.n_layers):
             for expert_id, count in collector._counts_total[layer_idx].items():
-                if 0 <= int(expert_id) < 128:
+                if 0 <= int(expert_id) < collector.n_experts:
                     counts[layer_idx, int(expert_id)] = count
         return counts
 
@@ -236,6 +242,33 @@ def profile_merged_model(
         )
         logger.info(f"Wrote routing JSONL: {jsonl_path}")
 
+        # --- PER-STRATUM E_eff (GATE4-02 SC2) ---
+        # Capture per-layer eeff_total from the FULL-pass collector state before
+        # the subsample pass below resets it. Reported per stratum (DeltaNet-MoE
+        # vs Gated-Attention-MoE), NOT collapsed into one mean -- added alongside
+        # the existing collapsed stats, not replacing them.
+        full_eeffs_total = [
+            collector.get_layer_eeffs(layer_idx)[0] for layer_idx in range(collector.n_layers)
+        ]
+        strata = sieve_arch.layer_strata(model.config)
+        strata_eeff: dict = {}
+        for stratum_name in (sieve_arch.DELTANET_STRATUM, sieve_arch.ATTENTION_STRATUM):
+            stratum_vals = [
+                full_eeffs_total[i] for i in range(len(strata)) if strata[i] == stratum_name
+            ]
+            valid = [v for v in stratum_vals if not (isinstance(v, float) and math.isnan(v))]
+            if valid:
+                arr = np.array(valid)
+                strata_eeff[stratum_name] = {
+                    "mean": float(arr.mean()),
+                    "max": float(arr.max()),
+                    "var": float(arr.var()),
+                    "n_layers": len(valid),
+                }
+            else:
+                strata_eeff[stratum_name] = {"mean": None, "max": None, "var": None, "n_layers": 0}
+        logger.info(f"Per-stratum E_eff: {strata_eeff}")
+
         # --- SUBSAMPLE PASS (Jaccard test) ---
         n_subsample = max(1, int(len(examples) * subsample_frac))
         random.shuffle(examples)
@@ -255,7 +288,8 @@ def profile_merged_model(
         jaccard_data = {
             "per_layer_jaccard": jaccards.tolist(),
             "top_k": top_k_jaccard,
-            "n_layers": 48,
+            "n_layers": collector.n_layers,
+            "strata_eeff": strata_eeff,
         }
         with open(jaccard_path, "w") as f:
             json.dump(jaccard_data, f, indent=2)
@@ -269,6 +303,7 @@ def profile_merged_model(
         "full_counts": full_counts,
         "subsample_counts": subsample_counts,
         "jaccards": jaccards,
+        "strata_eeff": strata_eeff,
     }
 
 
