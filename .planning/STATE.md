@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
 current_phase: 22
-current_phase_name: Sieve/Protected-Mask Tooling Adaptation (256-expert v4 judge)
-status: planning
-stopped_at: "v4.0 back-half REOPENED 2026-07-15 — attempting MoE-Sieve + prune on the v4 Qwen3.6 judge's 256 experts before a v4 publish decision. v4 judge ties v3 on the shipped Q8 stack (0.8067 vs 0.8056) but is +25% size; 256 experts (vs 128 in v3.0) is the one lever that could shrink it below v3 = unequivocal. Renamed to Qwen 3 WP Judge; gen retired regardless. Skipping Phase 24 (RL — no new reward family). Docs synced, wp-moe.md retired to deprecated/."
-last_updated: "2026-07-15T05:30:00.000Z"
+current_phase_name: 256-expert v4 judge
+status: executing
+stopped_at: v4.0 back-half REOPENED 2026-07-15 — attempting MoE-Sieve + prune on the v4 Qwen3.6 judge's 256 experts before a v4 publish decision. v4 judge ties v3 on the shipped Q8 stack (0.8067 vs 0.8056) but is +25% size; 256 experts (vs 128 in v3.0) is the one lever that could shrink it below v3 = unequivocal. Renamed to Qwen 3 WP Judge; gen retired regardless. Skipping Phase 24 (RL — no new reward family). Docs synced, wp-moe.md retired to deprecated/.
+last_updated: "2026-07-15T05:49:36.186Z"
 last_activity: 2026-07-15
-last_activity_desc: Renamed to Qwen 3 WP Judge; v4.0 back-half reopened for Sieve/prune on the 256-expert v4 judge
+last_activity_desc: rename + docs sync committed; starting Phase 22
 progress:
   total_phases: 8
   completed_phases: 3
@@ -59,6 +59,7 @@ Tinker-capture rho (0.8358) the merge step was hypothesized to destroy via bf16 
   3-prompt diff gate then showed 0/3 differ from raw base on a clean boot: the kernel accepts the
   adapter but doesn't measurably apply it. Recorded `blocked_deeper_than_naming` (pre-release
   kernel, not debugged further).
+
 - **llama.cpp `--lora`:** converted to the base checkpoint's own fused naming
   (`mlp.experts.gate_up_proj`/`down_proj`), fixed two genuine previously-unexercised upstream
   `convert_lora_to_gguf.py` bugs (missing `LoraTorchTensor.ndim`; an ellipsis-expansion off-by-N),
@@ -66,16 +67,19 @@ Tinker-capture rho (0.8358) the merge step was hypothesized to destroy via bf16 
   scale-0-vs-scale-1 diff gate gave dramatic confirmation (adapter off = generic rambling;
   adapter on = correct 9-dimension WPCS judge rubric). Full 121-item capture: **rho = 0.7833**
   (n=121, parse_fail=0).
+
 - **H1 REJECTED:** 0.7833 lands essentially on the served-merged ceiling (0.7872, +0.39pp), 5.25pp
   below the capture anchor (0.8358) — despite the adapter being verifiably, dramatically active.
   Precision-swamping-at-merge-time does not explain the serving ceiling. Per pre-registration,
   s0/s2 capture and ensemble were correctly skipped (stop condition fires at s1).
+
 - **Verdict unchanged: `unequivocal_win = FALSE`.** v3's judge (v1.3, Q8 ensemble 0.8056) stays
   canonical. **Last-lever status: EXHAUSTED** — all three pre-registered serving configurations
   (bf16-vLLM-merged 0.7872, Q8-llama.cpp-merged 0.7877, Q8-llama.cpp-unmerged 0.7833) land within a
   0.44pp band; only the Tinker capture harness (0.8358) sits meaningfully above it. Whatever
   separates capture from every served configuration is not a merge-precision artifact and is out
   of scope for this milestone.
+
 - Receipts: `output/eval4/ext_unmerged_results.json`, `output/eval4/VERDICT-EVAL4.md` §7,
   `.planning/phases/23-final-evaluation/23-03-SUMMARY.md`. Commits: `687aee7` (pre-reg), `d67eee7`
   (converters+harnesses), `f7e1a56` (results+VERDICT), `db1e694` (SUMMARY).
@@ -555,7 +559,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Ready to plan
+**Status:** Ready to execute
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)
