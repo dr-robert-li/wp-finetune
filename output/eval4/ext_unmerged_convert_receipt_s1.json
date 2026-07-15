@@ -1,0 +1,60 @@
+{
+  "src_dir": "/home/robert_li/Desktop/projects/wp-finetune/output/base21/judge03_s1_adapter",
+  "dst_dir": "/home/robert_li/Desktop/projects/wp-finetune/output/eval4/ext_unmerged/judge03_s1_adapter_vllm_peft",
+  "n_layers_converted": 40,
+  "n_output_keys": 400,
+  "n_input_keys": 480,
+  "other_keys_copied_unchanged": 240,
+  "sample_shapes": {
+    "base_model.model.model.layers.0.mlp.shared_expert.down_proj.lora_A.weight": [
+      32,
+      512
+    ],
+    "base_model.model.model.layers.0.mlp.shared_expert.down_proj.lora_B.weight": [
+      2048,
+      32
+    ],
+    "base_model.model.model.layers.0.mlp.shared_expert.gate_proj.lora_A.weight": [
+      32,
+      2048
+    ],
+    "base_model.model.model.layers.0.mlp.shared_expert.gate_proj.lora_B.weight": [
+      512,
+      32
+    ],
+    "base_model.model.model.layers.0.mlp.shared_expert.up_proj.lora_A.weight": [
+      32,
+      2048
+    ],
+    "base_model.model.model.layers.0.mlp.shared_expert.up_proj.lora_B.weight": [
+      512,
+      32
+    ],
+    "base_model.model.model.layers.0.mlp.experts.base_layer.lora_A.weight": [
+      256,
+      32,
+      2048
+    ],
+    "base_model.model.model.layers.0.mlp.experts.base_layer.lora_B.weight": [
+      1024,
+      32,
+      256
+    ],
+    "base_model.model.model.layers.0.mlp.experts.lora_A.weight": [
+      256,
+      32,
+      512
+    ],
+    "base_model.model.model.layers.0.mlp.experts.lora_B.weight": [
+      2048,
+      32,
+      256
+    ]
+  },
+  "validation": {
+    "total_modules": 200,
+    "routed_expert_modules": 80,
+    "shared_expert_modules": 120,
+    "coverage_ok": true
+  }
+}

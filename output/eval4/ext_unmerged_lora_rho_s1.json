@@ -1,0 +1,38 @@
+{
+  "experiment": "ext_unmerged_lora_vllm_s1",
+  "base_model_dir": "models/Qwen3.6-35B-A3B",
+  "max_tokens": 8192,
+  "max_model_len_served": 16384,
+  "temperature": 0.0,
+  "adapter_dir": "/home/robert_li/Desktop/projects/wp-finetune/output/eval4/ext_unmerged/judge03_s1_adapter_vllm_peft",
+  "boot": {
+    "boot_ok": true
+  },
+  "diff_gate": {
+    "per_prompt": [
+      {
+        "lora_output": "Here's a thinking process:\n\n1.  **Analyze User Input:**\n   - **Role:** `<wp_judge>` (implies I should evaluate WordPress-specific code)\n   - **Code:** \n     ```php\n     function f() { return 1; }\n     ```\n   - **Task:** Evaluate this WordPress code.\n\n2.  **Identify Key Aspects for WordPress Code Eva",
+        "base_output": "Here's a thinking process:\n\n1.  **Analyze User Input:**\n   - **Role:** `<wp_judge>` (implies I should evaluate WordPress-specific code)\n   - **Code:** \n     ```php\n     function f() { return 1; }\n     ```\n   - **Task:** Evaluate this WordPress code.\n\n2.  **Identify Key Aspects for WordPress Code Eva",
+        "lora_output_empty": false,
+        "differs_from_base": false
+      },
+      {
+        "lora_output": "Here's a thinking process:\n\n1.  **Analyze User Input:**\n   - **Role:** `<wp_judge>` (implies I should evaluate WordPress-specific code)\n   - **Code:** `$wpdb->query(\"SELECT * FROM wp_posts WHERE id = \" . $_GET['id']);`\n   - **Task:** Evaluate the code for security, best practices, WordPress compatib",
+        "base_output": "Here's a thinking process:\n\n1.  **Analyze User Input:**\n   - **Role:** `<wp_judge>` (implies I should evaluate WordPress-specific code)\n   - **Code:** `$wpdb->query(\"SELECT * FROM wp_posts WHERE id = \" . $_GET['id']);`\n   - **Task:** Evaluate the code for security, best practices, WordPress compatib",
+        "lora_output_empty": false,
+        "differs_from_base": false
+      },
+      {
+        "lora_output": "Here's a thinking process:\n\n1.  **Analyze User Input:**\n   - **Role:** `<wp_judge>` (implies I should act as a WordPress code reviewer/judge)\n   - **Code:** \n     ```php\n     function wpcs_get_option( $key ) {\n         return get_option( $key, false );\n     }\n     ```\n   - **Task:** Evaluate this Wo",
+        "base_output": "Here's a thinking process:\n\n1.  **Analyze User Input:**\n   - **Role:** `<wp_judge>` (implies I should act as a WordPress code reviewer/judge)\n   - **Code:** \n     ```php\n     function wpcs_get_option( $key ) {\n         return get_option( $key, false );\n     }\n     ```\n   - **Task:** Evaluate this Wo",
+        "lora_output_empty": false,
+        "differs_from_base": false
+      }
+    ],
+    "lora_output_empty": false,
+    "differs_from_base": false
+  },
+  "status": "blocked",
+  "blocked_reason": "vLLM booted with --enable-lora but the real-generation diff gate shows the LoRA adapter had NO measurable effect vs the raw base -- refusing to spend a 121-item capture on a degraded/no-op adapter load.",
+  "wall_clock_s": 497.9
+}

@@ -130,3 +130,68 @@ improvement remains capture-path-only (0.8358 vs 0.8274), which no examined serv
 Extension artifacts: `output/eval4/ext_q8_preregistration.md`, `output/eval4/ext_q8_results.json`,
 `output/eval4/ext_q8/` (per-seed captures + scores + ensemble), `scripts/eval4_ext_{merge_seeds.py,
 gguf_convert.sh,q8_run.sh,verdict.py}`, `models/_gguf/wp-v4-judge-s{0,1,2}.Q8_0.gguf`.
+
+## 7. Extension part 2: judge served UNMERGED (runtime LoRA) — the last lever (23-03)
+
+Part 1 (§6) measured the judge served **merged** on both bf16-vLLM and Q8-llama.cpp. The one
+remaining untested lever was whether serving the adapter **unmerged** (native runtime LoRA,
+`W·x + B·A·x` computed as two separate ops, never baked into the base weights) recovers the
+Tinker-capture rho (0.8358) that the merge step was hypothesized to destroy via bf16
+precision-swamping (H1). Pre-registered **before** measurement:
+`output/eval4/ext_unmerged_preregistration.md`. Machine-readable receipt:
+`output/eval4/ext_unmerged_results.json`.
+
+**Engine 1 — vLLM `--enable-lora`.** Source-level inspection of the installed nightly build
+(`vllm 0.20.2rc1.dev196`) found a genuine PEFT convention (`mlp.experts.base_layer` /
+`mlp.experts` for fused gate-up/down) that a correctly-derived, lossless rename of Tinker's
+`w1/w2/w3` export satisfies — the adapter **loaded without error**
+(`MoE model detected. Using fused MoE LoRA implementation.`), confirming the naming blocker from
+`output/base21/diagnostic/exp2_unmerged_lora_rho.json` is fixable. However, a 3-distinct-prompt
+real-generation diff gate showed **0/3 outputs differ** from the raw base on a clean re-boot — the
+adapter loads but its delta is not measurably applied by this pre-release kernel path. Recorded as
+`blocked_deeper_than_naming`, falling through to the pre-registered llama.cpp fallback rather than
+debugging further into an unreleased kernel.
+
+**Engine 2 — llama.cpp `--lora`.** A parallel lossless rename (matching the base checkpoint's own
+`mlp.experts.gate_up_proj`/`down_proj` fused-tensor naming, verified directly against
+`models/Qwen3.6-35B-A3B/model.safetensors.index.json`) plus two small, correct upstream compat
+patches to the local `convert_lora_to_gguf.py` (a missing `LoraTorchTensor.ndim` property, and an
+ellipsis-expansion off-by-N bug in `__getitem__` — both previously unexercised, since no prior
+LoRA-to-GGUF conversion had exercised a fused-MoE-checkpoint architecture's gate-up chunking path)
+produced a working GGUF LoRA adapter. Serving it via `llama-server --lora` over a fresh raw-base
+Q8_0 GGUF (`models/_gguf/wp-v4-base-raw.Q8_0.gguf`, no adapter baked in) **worked**: an in-process
+scale-0-vs-scale-1 diff gate (`POST /lora-adapters`) gave dramatic, unambiguous confirmation — with
+the adapter off, the model rambles a generic "thinking process"; with it on, it emits the exact
+trained 9-dimension WPCS judge rubric (WPCS Compliance / SQL Safety / Security / Performance / WP
+API Usage / Code Quality / Dependency Integrity / i18n, each scored X/10). The LoRA delta **is**
+being correctly applied at inference via `ggml_mul_mat_id`.
+
+**Result: H1 REJECTED.** The full 121-item, 8192-token, temp-0 capture on this verified,
+genuinely-unmerged serving path scored **rho = 0.7833** (n=121, parse_fail=0, CI [0.7134, 0.8346]).
+This lands essentially **on** the served-merged ceiling (0.7872, Δ +0.39pp) and **5.25pp below**
+the capture anchor (0.8358) — well outside any reasonable noise band, despite the adapter being
+verifiably, dramatically active. Precision-swamping-at-merge-time does **not** explain the ceiling:
+three engine/precision/merge-status combinations now measured (bf16-vLLM-merged 0.7872,
+Q8-llama.cpp-merged 0.7877, Q8-llama.cpp-**unmerged** 0.7833) all land in the same narrow ~0.78–0.79
+band, while only the Tinker capture harness (0.8358) sits meaningfully above it. Per the
+pre-registered decision rule, this negative H1 result **stops the run at s1** — no s0/s2 capture,
+no ensemble, no verdict flip.
+
+**UNEQUIVOCAL WIN = FALSE (unchanged).** The v3 pair (v1.3, Q8 ensemble 0.8056) stays canonical.
+**Last-lever status: EXHAUSTED.** All three pre-registered serving configurations across
+23-01/23-02/23-03 have now been measured; none unequivocally beats v3. The v4 judge's
+reproducible advantage remains capture-path-only (0.8358 vs v3's 0.8274) and does not survive any
+serving configuration examined in this milestone — vLLM bf16, llama.cpp Q8 merged, or llama.cpp Q8
+unmerged. Whatever separates the Tinker capture harness from every served configuration is not a
+merge-precision artifact; it is unexplained by anything tested here and is out of scope for this
+milestone (a candidate for a future gap-closure diagnostic on the serving-vs-capture harness
+itself, not a training or label defect per `DIAGNOSTIC_SYNTHESIS.md`).
+
+Extension artifacts: `output/eval4/ext_unmerged_preregistration.md`,
+`output/eval4/ext_unmerged_results.json`, `output/eval4/ext_unmerged_lora_rho_s1.json` (vLLM
+attempt), `output/eval4/ext_unmerged/` (converted adapters, GGUF LoRA, capture, diff-gate logs),
+`scripts/eval4_ext_unmerged_lora_convert.py` (vLLM PEFT-convention converter),
+`scripts/eval4_ext_unmerged_lora_convert_llamacpp.py` (llama.cpp GGUF-convention converter),
+`scripts/eval4_ext_unmerged_lora_rho.py` (vLLM boot/diff-gate/capture harness),
+`scripts/eval4_ext_unmerged_llamacpp_run.sh` (llama.cpp serve/diff-gate/capture harness),
+`models/_gguf/wp-v4-base-raw.Q8_0.gguf` (raw, unadapted base GGUF).

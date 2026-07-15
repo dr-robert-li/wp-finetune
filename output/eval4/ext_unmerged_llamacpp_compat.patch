@@ -1,0 +1,41 @@
+convert_lora_to_gguf.py | 22 +++++++++++++++++++++-
+ 1 file changed, 21 insertions(+), 1 deletion(-)
+
+--- Changes ---
+
+convert_lora_to_gguf.py
+  @@ -79,11 +79,22 @@ class LoraTorchTensor:
+  +            # wp-finetune 23-03 compat patch: the implicit-dim count an
+  +            # Ellipsis expands to is (total tensor dims) - (explicit,
+  +            # non-Ellipsis indices given), NOT len(indices) - 1. The
+  +            # previous formula only happened to be correct for the
+  +            # 2-element (Ellipsis, x) case; it silently over-expands for
+  +            # indices like [..., :n, :] against a 3-dim tensor (n_expert
+  +            # gate_up_proj chunking, the first LoRA-to-GGUF conversion of a
+  +            # fused-MoE-checkpoint architecture to exercise this path),
+  +            # which raised "too many indices for tensor of dimension 3".
+  +            n_explicit = sum(1 for i in indices if i is not Ellipsis)
+  +            n_implicit = len(shape) - n_explicit
+               indices = tuple(
+                   u
+                   for v in (
+                       (
+  -                        (slice(None, None) for _ in range(len(indices) - 1))
+  +                        (slice(None, None) for _ in range(n_implicit))
+                           if i is Ellipsis
+                           else (i,)
+                       )
+  @@ -118,6 +129,15 @@ class LoraTorchTensor:
+  +    @property
+  +    def ndim(self) -> int:
+  +        # wp-finetune 23-03 compat patch: never exercised upstream (no prior
+  +        # LoRA-to-GGUF conversion exists for a fused-MoE-checkpoint
+  +        # architecture's gate_up_proj chunking path, which calls
+  +        # data_torch.ndim). torch.Tensor.ndim == len(shape); expose the same
+  +        # here so conversion/qwen.py's Qwen3.5-MoE modify_tensors() works.
+  +        return len(self.shape)
+  +
+       @property
+       def shape(self) -> tuple[int, ...]:
+           assert len(self._lora_A.shape) == len(self._lora_B.shape)
+  +21 -1
