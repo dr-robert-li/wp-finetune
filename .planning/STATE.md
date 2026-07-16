@@ -5,16 +5,16 @@ milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
 current_phase: 25
 current_phase_name: Conditional Gate B — MoE-Sieve Re-Test
 status: executing
-stopped_at: "Phase 23-02 EXTENSION COMPLETE — shipped-stack (llama.cpp Q8) verdict: NOT unequivocal, v3 pair stays canonical"
-last_updated: "2026-07-15T06:46:24.732Z"
-last_activity: 2026-07-15
-last_activity_desc: Phase 25 execution started
+stopped_at: Completed 25-02-PLAN.md (Gate B closed, no_winner)
+last_updated: "2026-07-16T20:06:56.230Z"
+last_activity: 2026-07-16
+last_activity_desc: v4 judge routing profiled on the served model (34,855-example canonical stimulus)
 progress:
   total_phases: 8
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 15
   completed_plans: 15
-  percent: 50
+  percent: 63
 ---
 
 # Project State
@@ -29,25 +29,30 @@ See: .planning/PROJECT.md (updated 2026-07-12)
 ## Current Position
 
 Phase: 25 (Conditional Gate B — MoE-Sieve Re-Test) — EXECUTING
-Plan: 1 of 2
-Status: Executing Phase 25 — routing profile PRODUCED via served-model path
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-07-16 — v4 judge routing profiled on the served model (34,855-example canonical stimulus)
 
 ### 2026-07-16 — Phase 25 routing profile PRODUCED (served path); routing is diffuse, likely resists pruning
 
 Ran the served-model profiler end-to-end on the GB10 (no OOM, no extra hardware). Two passes:
+
 - Smoke (563-example relabel_v1): validated the path, surfaced + fixed 3 bugs (flush np.save name-munging,
   enforce-eager warmup contamination, prompt-length 400s). Jaccard mean 0.9111, 15/40 layers <0.94.
+
 - Canonical (34,855-example ratio_30_70, the v3-comparable stimulus; 17.4M tokens/layer): **563/563 then
   34,855/34,855 + 3,485 subsample, 0 request failures.**
 
 RESULT (output/sieve-v4/routing_report.jsonl + jaccard_stability.json):
+
 - **E_eff mean 144.3 / 256** (min 106.7, max 224.5). Per-stratum uniform: DeltaNet 144.1 (30 layers),
   attention 145.0 (10). ~56% of experts effectively active per layer -> DIFFUSE routing.
+
 - **Jaccard mean 0.9722** (up from 0.9111 at 563; 10 of 15 unstable layers stabilized with 60x data),
   min 0.7778, **5/40 layers <0.94** (0,4,15,25,26). Gate (all >=0.94) FALSE. The 5 residual layers are the
   highest-E_eff / flattest-routing ones (layer 0 = 221.9/256): their top-8 boundary is an intrinsic
   multi-way tie, NOT a data shortfall (confirmed by boundary-margin diagnostic: rank8-vs-rank9 gap ~0.02%).
+
 - READ for the Sieve/prune decision: diffuse routing + no clean keep/drop cliff + the flattest layers being
   the unstabilizable ones all point to **the 256-expert v4 judge resisting expert-drop pruning**, echoing
   128-expert v3 (which found no winner). Phase 25 k-sweep / Phase 26 prune now have the saturated profile to
@@ -65,10 +70,13 @@ loader knob fixes it (verified by a supervised watchdog run to 112 GiB @ 63%;
 weights (boots clean) and profile through it. Implemented as a READ-side sibling of the existing SIEVE mask
 patch — same MoE-block class resolver, same `self.gate` forward-hook point — but accumulating per-layer/
 per-expert top-k selection counts instead of writing an -inf mask:
+
   - `scripts/_sieve_profile_vllm_patch/sitecustomize.py` — the counting hook (CUDA-graph-safe via
     `--enforce-eager`; atomic periodic + atexit .npy dump).
+
   - `scripts/serve_v4_profile_vllm.sh` — profiling launcher (`--enforce-eager --language-model-only`,
     prefix-caching OFF so every token re-routes, GPU_MEM_UTIL 0.85).
+
   - `scripts/drive_v4_routing_profile.py` — thin stdlib client: renders prompts identically to the reference,
     fires prefill-only (`max_tokens=1`) requests, derives the Jaccard subsample by count-subtraction (counts
     are additive — no restart), and finalizes through the UNCHANGED `RoutingCollector`/`compute_eeff`/
@@ -339,6 +347,11 @@ Progress: [██████████] 100%
 | Phase 23-final-evaluation P01 | 12min | 3 tasks | 4 files |
 | Phase 22 P01 | 20min | 3 tasks | 11 files |
 | Phase 22 P02 | 35min | 1 tasks | 2 files |
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 25 P02 | 172 | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -435,6 +448,8 @@ Recent decisions affecting current work:
 - [Phase ?]: sieve_protected_retention.py mask.shape==(48,128)/sum==1480 asserts replaced with dtype==bool + non-empty -- v4 mask is a fresh Phase-25 profile of unknown shape/count
 - [Phase ?]: 22-02: Used AutoModelForImageTextToText instead of AutoModelForCausalLM — meta-device key diff proved AutoModelForCausalLM leaves the v4 judge text backbone randomly initialized (692/693 keys missing); AutoModelForImageTextToText (Qwen3_5MoeForConditionalGeneration) matches the checkpoint exactly (0 missing keys).
 - [Phase ?]: 22-02: resolved_traversal_root == model.language_model.layers for the v4 judge VL-composite checkpoint, empirically confirmed via a bounded GB10 forward pass (not the flat model.layers root).
+- [Phase ?]: Phase 25 Gate B: v4 judge k-sweep verdict no_winner (optimal_k=full) per pre-registered two-sided CI-aware TOST eps=2pp vs same-stack full arm 0.7935; no sub-full k equivalent
+- [Phase ?]: Phase 26 routing (relayed via orchestrator): attempt prune at k=224 (non-inferior, point-better, parseable) with 3-seed ensemble confirm before publish; ~12.5% drop unlikely to close 37.8->30.2 GiB gap
 
 ### Pending Todos
 
@@ -482,8 +497,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-15T06:24:51.269Z
-Stopped at: Phase 23-02 EXTENSION COMPLETE — shipped-stack (llama.cpp Q8) verdict: NOT unequivocal, v3 pair stays canonical
+Last session: 2026-07-16T20:06:56.221Z
+Stopped at: Completed 25-02-PLAN.md (Gate B closed, no_winner)
 
 Prior session: 2026-07-13T11:52:35.100Z
 Stopped at: Phase 21 Plan 01: GEN-01 satisfied; MoE train_mlp=True merge-path gap found (merge_ok=false, human decision required before GEN-02/JUDGE-02 real Tinker spend). See 21-01-SUMMARY.md + output/base21/moe_merge_probe.json.
@@ -611,7 +626,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Executing Phase 25
+**Status:** Ready to execute
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)

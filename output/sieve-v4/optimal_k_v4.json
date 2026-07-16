@@ -79,5 +79,6 @@
   "no_equivalent_k": true,
   "no_winner": true,
   "disposition": "no_winner",
-  "phase26_routing": "no_winner (optimal_k=full): no sub-full k is CI-aware-equivalent to the same-stack full arm. Phase 26 prune may still be attempted per ROADMAP, or the reopened v4 compression question closes with v3 (30.2 GiB Q8) staying canonical."
+  "signoff_status": "presented for human sign-off; routing relayed via GSD orchestrator (not an independently-verified human signature)",
+  "phase26_routing": "no_winner (optimal_k=full) locked per the pre-registered two-sided TOST. Recorded routing = B (non-inferiority read): Phase 26 SHOULD attempt a prune at k=224 as a compression candidate — non-inferior (CI lower -0.018 clears -2pp), point-better (+0.0195), fully parseable (0/121) — CONFIRMING with the reserved 3-seed ensemble (s0/s1/s2) at k=224 BEFORE any publish decision. Caveat: k=224 drops only ~12.5% of experts, so it is unlikely to close the 37.8->30.2 GiB gap vs v3's Q8; the aggressive ks that could (144/112) degrade quality ~4pp. The compression lever probably does not pay, but Phase 26 probes k=224 rather than assuming."
 }
