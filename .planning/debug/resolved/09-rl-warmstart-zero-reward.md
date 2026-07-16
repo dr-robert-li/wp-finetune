@@ -157,3 +157,12 @@ Pick one (consistency is only the 0.3-weight, capped component; fix_correctness 
 
 Until one of these is chosen + wired, do NOT relaunch RL with the consistency
 scorer active — it bills API per call.
+
+---
+## FINAL RESOLUTION (archived 2026-07-16) — superseded, RL line closed
+
+status: resolved (superseded). This Phase-9 zero-reward blocker is moot: the RL
+approach was ultimately rejected for both v3 and v4 (Conditional Gate A / Phase 24
+SKIPPED — no reward family provably tracks judge-Spearman; STATE reopened-scope
+note). The shipped deliverable is the v3 relabel-SFT judge (rho 0.8056), no RL.
+Archived for provenance; not a live blocker.
