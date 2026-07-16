@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
-current_phase: 23
-current_phase_name: Final Evaluation
+current_phase: 25
+current_phase_name: Conditional Gate B — MoE-Sieve Re-Test
 status: executing
 stopped_at: "Phase 23-02 EXTENSION COMPLETE — shipped-stack (llama.cpp Q8) verdict: NOT unequivocal, v3 pair stays canonical"
-last_updated: "2026-07-15T06:46:24.585Z"
+last_updated: "2026-07-15T06:46:24.732Z"
 last_activity: 2026-07-15
-last_activity_desc: Phase 22 complete, transitioned to Phase 23
+last_activity_desc: Phase 25 execution started
 progress:
   total_phases: 8
   completed_phases: 4
-  total_plans: 13
+  total_plans: 15
   completed_plans: 15
   percent: 50
 ---
@@ -24,14 +24,36 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-12)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 22 — Sieve/Protected-Mask Tooling Adaptation
+**Current focus:** Phase 25 — Conditional Gate B — MoE-Sieve Re-Test
 
 ## Current Position
 
-Phase: 23 — Final Evaluation
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-07-15 — Phase 22 complete, transitioned to Phase 23
+Phase: 25 (Conditional Gate B — MoE-Sieve Re-Test) — EXECUTING
+Plan: 1 of 2
+Status: Executing Phase 25 — routing profiler UNBLOCKED via served-model path
+Last activity: 2026-07-16 — served-vLLM routing profiler implemented (replaces OOMing in-process load)
+
+### 2026-07-16 — Phase 25 profiler unblocked: profile via the SERVED model, not in-process
+
+`profile_v4_judge.py`'s in-process `from_pretrained` OOMs on the GB10: full-resident bf16 of the
+35B/256-expert judge peaks ~117 GiB (host staging ~50 + device ~67) vs the 121 GiB unified pool, and no
+loader knob fixes it (verified by a supervised watchdog run to 112 GiB @ 63%;
+`.planning/debug/v4-judge-load-oom-recurrence.md`). The fix is to let vLLM's own memory manager hold the
+weights (boots clean) and profile through it. Implemented as a READ-side sibling of the existing SIEVE mask
+patch — same MoE-block class resolver, same `self.gate` forward-hook point — but accumulating per-layer/
+per-expert top-k selection counts instead of writing an -inf mask:
+  - `scripts/_sieve_profile_vllm_patch/sitecustomize.py` — the counting hook (CUDA-graph-safe via
+    `--enforce-eager`; atomic periodic + atexit .npy dump).
+  - `scripts/serve_v4_profile_vllm.sh` — profiling launcher (`--enforce-eager --language-model-only`,
+    prefix-caching OFF so every token re-routes, GPU_MEM_UTIL 0.85).
+  - `scripts/drive_v4_routing_profile.py` — thin stdlib client: renders prompts identically to the reference,
+    fires prefill-only (`max_tokens=1`) requests, derives the Jaccard subsample by count-subtraction (counts
+    are additive — no restart), and finalizes through the UNCHANGED `RoutingCollector`/`compute_eeff`/
+    `write_profiling_jsonl`/`compute_jaccard_stability` so outputs match the merged-model profiler.
+Equivalence PROVEN offline: served hook counts == in-process `RoutingCollector` counts, byte-identical; driver
+`--self-check` passes. Remaining: run it in the container (GPU) to produce `routing_report.jsonl` +
+`jaccard_stability.json` for the k-sweep — the operator step, mirroring the mask patch's "confirmed in
+container" discipline.
 
 ### 2026-07-15 — reopened v4.0 back-half: Sieve/prune on the 256-expert v4 judge; renamed to Qwen 3 WP Judge
 
@@ -566,7 +588,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Ready to execute
+**Status:** Executing Phase 25
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)
