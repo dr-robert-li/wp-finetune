@@ -1,9 +1,9 @@
 ---
 slug: v4-judge-load-oom-recurrence
-status: awaiting_human_verify
+status: resolved
 trigger: "determine why last run failed — profile_v4_judge.py rerun (the GB10-safe relaunch) died mid-load again"
 created: 2026-07-15
-updated: 2026-07-15
+updated: 2026-07-16
 ---
 
 # Debug: v4 judge profiler load OOM — RECURRENCE after single-device fix
@@ -318,3 +318,26 @@ verification: |
 
 files_changed:
   - scripts/sieve_arch.py
+
+## FINAL RESOLUTION (2026-07-16) — served-model pivot, verified
+
+status: RESOLVED. The definitive fix was NOT a loader tweak but an ARCHITECTURE
+change: stop loading the 35B judge in-process at all. A full-resident bf16 load
+(host staging ~50 GiB + device ~67 GiB) structurally exceeds the 121 GiB unified
+pool; the warmup no-op + HF_DEACTIVATE_ASYNC_LOAD mitigation removed the upfront
+70 GiB spike but a supervised watchdog run still hit 112 GiB at 63% (peak, not
+loader knob). So the routing profile is now produced by SERVING the model — vLLM's
+own memory manager holds the weights (boots clean, KV ~36 GiB) and a read-side
+hook (scripts/_sieve_profile_vllm_patch) accumulates per-expert counts, driven by
+scripts/drive_v4_routing_profile.py. Served-hook counting is byte-identical to the
+in-process RoutingCollector (proven offline).
+
+verified: the 34,855-example served profile completed on the GB10 with 0/38,340
+request failures, no OOM, no extra hardware. Artifacts: output/sieve-v4/
+routing_report.jsonl, jaccard_stability.json, protected_expert_mask.npy,
+eeff_report.json. The warmup no-op stays in scripts/sieve_arch.py as a documented
+partial mitigation for any lighter in-process load, labelled as insufficient alone.
+
+superseded_plan_step: Plan 25-01 Task 1 specifies the in-process profile_v4_judge.py
+loader; that path is retained (loader-guard still valid) but the profile of record
+is the served-path output. Recorded as an approved deviation in 25-01-SUMMARY.md.

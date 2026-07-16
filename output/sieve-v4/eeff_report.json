@@ -1,0 +1,29 @@
+{
+  "deltanet": {
+    "mean": 144.11584956976398,
+    "max": 224.46555607653409,
+    "var": 815.1532228879233,
+    "n_layers": 30,
+    "eeff_over_n_experts_ratio": 0.5629525373818905
+  },
+  "attention": {
+    "mean": 145.02999840493425,
+    "max": 175.21917328994962,
+    "var": 312.3438322907112,
+    "n_layers": 10,
+    "eeff_over_n_experts_ratio": 0.5665234312692744
+  },
+  "overall": {
+    "mean": 144.34438677855655,
+    "max": 224.46555607653409,
+    "var": 689.6075630060284,
+    "n_layers": 40,
+    "eeff_over_n_experts_ratio": 0.5638452608537365
+  },
+  "protected_per_layer": {
+    "mean": 78.675,
+    "min": 65,
+    "max": 98
+  },
+  "n_experts": 256
+}
