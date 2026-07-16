@@ -1076,7 +1076,9 @@ for this phase.**
   3. The gate closes with one of two equally valid dispositions — a winning method+ratio ships pruned, or
      `no_winner` ships the merged-unpruned model — either outcome unblocks Phase 27
 
-**Plans**: TBD
+**Plans**: 2 plans
+- [ ] 26-01-PLAN.md — Adapt stacked-tensor AIMER + judge-only gate driver; verify merge-of-record (SC1); score AIMER@k=224; run gate-before-remove eval (s1 TOST vs same-stack full arm 0.7935 + D2_security), no weight removed (Wave 1)
+- [ ] 26-02-PLAN.md — Stacked-tensor surgery script (gate-before-remove guard); conditional 3-seed ensemble confirm + disposition; blocking human sign-off → winner ships pruned OR no_winner ships merged-unpruned (Wave 2)
 
 ### Phase 27: Packaging & Publication Refresh
 
