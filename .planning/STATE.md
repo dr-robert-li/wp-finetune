@@ -30,8 +30,31 @@ See: .planning/PROJECT.md (updated 2026-07-12)
 
 Phase: 25 (Conditional Gate B — MoE-Sieve Re-Test) — EXECUTING
 Plan: 1 of 2
-Status: Executing Phase 25 — routing profiler UNBLOCKED via served-model path
-Last activity: 2026-07-16 — served-vLLM routing profiler implemented (replaces OOMing in-process load)
+Status: Executing Phase 25 — routing profile PRODUCED via served-model path
+Last activity: 2026-07-16 — v4 judge routing profiled on the served model (34,855-example canonical stimulus)
+
+### 2026-07-16 — Phase 25 routing profile PRODUCED (served path); routing is diffuse, likely resists pruning
+
+Ran the served-model profiler end-to-end on the GB10 (no OOM, no extra hardware). Two passes:
+- Smoke (563-example relabel_v1): validated the path, surfaced + fixed 3 bugs (flush np.save name-munging,
+  enforce-eager warmup contamination, prompt-length 400s). Jaccard mean 0.9111, 15/40 layers <0.94.
+- Canonical (34,855-example ratio_30_70, the v3-comparable stimulus; 17.4M tokens/layer): **563/563 then
+  34,855/34,855 + 3,485 subsample, 0 request failures.**
+
+RESULT (output/sieve-v4/routing_report.jsonl + jaccard_stability.json):
+- **E_eff mean 144.3 / 256** (min 106.7, max 224.5). Per-stratum uniform: DeltaNet 144.1 (30 layers),
+  attention 145.0 (10). ~56% of experts effectively active per layer -> DIFFUSE routing.
+- **Jaccard mean 0.9722** (up from 0.9111 at 563; 10 of 15 unstable layers stabilized with 60x data),
+  min 0.7778, **5/40 layers <0.94** (0,4,15,25,26). Gate (all >=0.94) FALSE. The 5 residual layers are the
+  highest-E_eff / flattest-routing ones (layer 0 = 221.9/256): their top-8 boundary is an intrinsic
+  multi-way tie, NOT a data shortfall (confirmed by boundary-margin diagnostic: rank8-vs-rank9 gap ~0.02%).
+- READ for the Sieve/prune decision: diffuse routing + no clean keep/drop cliff + the flattest layers being
+  the unstabilizable ones all point to **the 256-expert v4 judge resisting expert-drop pruning**, echoing
+  128-expert v3 (which found no winner). Phase 25 k-sweep / Phase 26 prune now have the saturated profile to
+  quantify this against actual judge quality before the publish decision.
+
+Tooling (committed): scripts/_sieve_profile_vllm_patch/sitecustomize.py, scripts/serve_v4_profile_vllm.sh
+(+ MAX_NUM_BATCHED throughput knob), scripts/drive_v4_routing_profile.py.
 
 ### 2026-07-16 — Phase 25 profiler unblocked: profile via the SERVED model, not in-process
 

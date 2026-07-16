@@ -27,6 +27,11 @@ PORT="${PORT:-8010}"
 # so we can hand vLLM most of the pool. Override if other services are resident.
 GPU_MEM_UTIL="${GPU_MEM_UTIL:-0.85}"
 MAX_MODEL_LEN="${MAX_MODEL_LEN:-2048}"   # matches profile_v4_judge.py max_seq_len
+# Decoupled from MAX_MODEL_LEN: prefill-only profiling batches many prompts per
+# engine step, so a larger batched-token budget is the throughput lever for a
+# big stimulus (e.g. the 34,855-example ratio_30_70 set). Default = MAX_MODEL_LEN
+# (1 long prompt/step, serialized) unless raised.
+MAX_NUM_BATCHED="${MAX_NUM_BATCHED:-$MAX_MODEL_LEN}"
 SERVED_NAME="${SERVED_NAME:-judge-v4-s1}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -73,7 +78,7 @@ docker run -d \
     --host 0.0.0.0 \
     --port "$PORT" \
     --max-model-len "$MAX_MODEL_LEN" \
-    --max-num-batched-tokens "$MAX_MODEL_LEN" \
+    --max-num-batched-tokens "$MAX_NUM_BATCHED" \
     --gpu-memory-utilization "$GPU_MEM_UTIL" \
     --trust-remote-code \
     --enforce-eager \

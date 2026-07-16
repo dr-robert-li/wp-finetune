@@ -140,8 +140,13 @@ class _CountStore:
         arr = self._snapshot()
         if arr is None:
             return
+        # np.save(path_str) APPENDS ".npy" unless the name already ends in it,
+        # so a bare "<out>.tmp" string would be written as "<out>.tmp.npy" and
+        # the os.replace source would not exist. Write through a file handle
+        # (no name munging) then atomically rename.
         tmp = self.out_path + ".tmp"
-        np.save(tmp, arr)
+        with open(tmp, "wb") as fh:
+            np.save(fh, arr)
         os.replace(tmp, self.out_path)
 
     def _flush_loop(self):

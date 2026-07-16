@@ -65,7 +65,11 @@ DEFAULT_COUNTS = "output/sieve-v4/profile/routing_counts.npy"
 # HTTP (stdlib only)
 # --------------------------------------------------------------------------- #
 
-def _post_completion(base_url: str, model: str, prompt: str, timeout: float) -> None:
+def _post_completion(base_url: str, model: str, prompt, timeout: float) -> None:
+    # prompt is a list[int] of (already-truncated) token ids -- vLLM /v1/completions
+    # accepts token ids directly, which reproduces the reference profiler's exact
+    # tokenization (same tokenizer, same max_length truncation) and avoids a
+    # server-side re-tokenize that could exceed max_model_len.
     body = json.dumps({
         "model": model, "prompt": prompt, "max_tokens": 1, "temperature": 0.0,
     }).encode()
@@ -93,28 +97,44 @@ def _wait_ready(base_url: str, timeout_s: float = 600.0) -> None:
 # Prompt rendering + sending
 # --------------------------------------------------------------------------- #
 
-def _render(examples: list, tokenizer) -> list[str]:
-    texts = []
+def _encode(examples: list, tokenizer, max_seq_len: int) -> list[list[int]]:
+    """Render each example and tokenize+truncate to max_seq_len token ids.
+
+    Mirrors the reference profiler: apply_chat_template(tokenize=False) then
+    tokenizer(text, max_length=max_seq_len, truncation=True). Sending the token
+    ids (not text) guarantees the served prompt never exceeds max_model_len.
+    """
+    out = []
     for ex in examples:
         messages = ex.get("messages", [])
-        if messages:
-            texts.append(tokenizer.apply_chat_template(
-                messages, tokenize=False, add_generation_prompt=False))
-        else:
-            texts.append(ex.get("text", ""))
-    return texts
+        text = (tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False)
+                if messages else ex.get("text", ""))
+        ids = tokenizer(text, max_length=max_seq_len, truncation=True)["input_ids"]
+        if ids:
+            out.append(ids)
+    return out
 
 
-def _send_all(base_url: str, model: str, texts: list[str], concurrency: int,
-              timeout: float) -> None:
-    done = 0
+def _send_all(base_url: str, model: str, prompts: list, concurrency: int,
+              timeout: float) -> int:
+    """Fire all prompts; tolerate per-request failures (log, continue). Returns
+    the failure count. A single bad prompt must not abort a profiling pass."""
+    done = failed = 0
     with ThreadPoolExecutor(max_workers=concurrency) as pool:
-        futs = [pool.submit(_post_completion, base_url, model, t, timeout) for t in texts]
+        futs = [pool.submit(_post_completion, base_url, model, p, timeout) for p in prompts]
         for fut in as_completed(futs):
-            fut.result()  # re-raise transport errors loudly
+            try:
+                fut.result()
+            except Exception as exc:
+                failed += 1
+                if failed <= 5:
+                    print(f"  request failed (continuing): {exc}", file=sys.stderr, flush=True)
             done += 1
             if done % 200 == 0:
-                print(f"  ...{done}/{len(texts)} prompts routed", flush=True)
+                print(f"  ...{done}/{len(prompts)} prompts routed ({failed} failed)", flush=True)
+    if failed:
+        print(f"  pass complete with {failed}/{len(prompts)} failures", file=sys.stderr, flush=True)
+    return failed
 
 
 # --------------------------------------------------------------------------- #
@@ -232,12 +252,26 @@ def run(args) -> None:
     _wait_ready(base_url)
     print("server ready")
 
+    # Warmup baseline: vLLM's enforce-eager warmup runs dummy forwards BEFORE we
+    # send anything, and those fire the counting hook too. Snapshot that (post-
+    # warmup, pre-request) contribution and subtract it so counts reflect only
+    # real prompts. File may not exist yet -> baseline 0.
+    baseline = _read_counts(counts_path)
+    baseline = baseline.astype(float) if baseline is not None else None
+    if baseline is not None:
+        print(f"warmup baseline subtracted: {int(baseline.sum())} top-k increments")
+
+    def _debase(raw: np.ndarray) -> np.ndarray:
+        if baseline is not None and baseline.shape == raw.shape:
+            return np.clip(raw - baseline, 0, None)
+        return raw
+
     n_full = len(examples) if args.full_limit is None else max(1, min(args.full_limit, len(examples)))
     full_sample = examples[:n_full]
     print(f"FULL pass: {n_full} prompts")
-    _send_all(base_url, args.served_name, _render(full_sample, tokenizer),
+    _send_all(base_url, args.served_name, _encode(full_sample, tokenizer, args.max_seq_len),
               args.concurrency, args.timeout)
-    full_counts = _wait_stable(counts_path, args.flush_secs).astype(float)
+    full_counts = _debase(_wait_stable(counts_path, args.flush_secs).astype(float))
 
     rng = random.Random(args.seed)
     shuffled = examples[:]
@@ -245,9 +279,9 @@ def run(args) -> None:
     n_sub = max(1, int(len(examples) * args.subsample_frac))
     sub_sample = shuffled[:n_sub]
     print(f"SUBSAMPLE pass: {n_sub} prompts (frac={args.subsample_frac}, seed={args.seed})")
-    _send_all(base_url, args.served_name, _render(sub_sample, tokenizer),
+    _send_all(base_url, args.served_name, _encode(sub_sample, tokenizer, args.max_seq_len),
               args.concurrency, args.timeout)
-    cumulative = _wait_stable(counts_path, args.flush_secs).astype(float)
+    cumulative = _debase(_wait_stable(counts_path, args.flush_secs).astype(float))
     subsample_counts = np.clip(cumulative - full_counts, 0, None)
 
     finalize(full_counts, subsample_counts, output_dir=str(PROJECT_ROOT / args.output_dir),
@@ -306,6 +340,7 @@ def main() -> None:
     p.add_argument("--full-limit", type=int, default=None)
     p.add_argument("--subsample-frac", type=float, default=0.10)
     p.add_argument("--top-k", type=int, default=8)
+    p.add_argument("--max-seq-len", type=int, default=2048)
     p.add_argument("--concurrency", type=int, default=4)
     p.add_argument("--flush-secs", type=float, default=5.0)
     p.add_argument("--timeout", type=float, default=600.0)
