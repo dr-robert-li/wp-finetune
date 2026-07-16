@@ -61,6 +61,16 @@ if [ -n "$SIEVE_MASK_NPY" ]; then
   echo "  expert mask: $SIEVE_MASK_NPY (SIEVE-04 k-sweep)"
 fi
 
+# Phase 25 k-sweep (25-02): the v4 judge is a VL checkpoint; serve text-only.
+# LANGUAGE_MODEL_ONLY=1 appends --language-model-only (additive, backward-compatible;
+# unset -> unchanged behavior for every prior caller).
+LANGUAGE_MODEL_ONLY="${LANGUAGE_MODEL_ONLY:-}"
+LMO_ARGS=()
+if [ -n "$LANGUAGE_MODEL_ONLY" ]; then
+  LMO_ARGS+=(--language-model-only)
+  echo "  language-model-only: ON (VL checkpoint served text-only)"
+fi
+
 if [ ! -d "$MODEL_DIR" ]; then
   echo "ERROR: model dir not found: $MODEL_DIR" >&2
   echo "Expected merged checkpoint at: $MODEL_DIR" >&2
@@ -99,6 +109,7 @@ docker run -d \
     --gpu-memory-utilization "$GPU_MEM_UTIL" \
     --trust-remote-code \
     --enable-prefix-caching \
+    "${LMO_ARGS[@]}" \
     --served-model-name wp-30_70 \
     -tp 1 -pp 1
 
