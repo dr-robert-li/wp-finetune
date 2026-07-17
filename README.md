@@ -1,8 +1,8 @@
 # Qwen 3 WP Judge
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Model on HuggingFace](https://img.shields.io/badge/%F0%9F%A4%97%20Model-wp--judge--v1.3--gguf-yellow.svg)](https://huggingface.co/iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf)
-[![Base Model: Qwen3-30B-A3B](https://img.shields.io/badge/Base-Qwen3--30B--A3B-purple.svg)](https://huggingface.co/Qwen/Qwen3-30B-A3B)
+[![Model on HuggingFace](https://img.shields.io/badge/%F0%9F%A4%97%20Model-wp--judge--v4--gguf-yellow.svg)](https://huggingface.co/iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf)
+[![Base Model: Qwen3.6-35B-A3B](https://img.shields.io/badge/Base-Qwen3.6--35B--A3B-purple.svg)](https://huggingface.co/Qwen/Qwen3.6-35B-A3B)
 [![Infrastructure: DGX Spark](https://img.shields.io/badge/Infrastructure-DGX_Spark-76b900.svg)](https://github.com/dr-robert-li/dgx-toolbox)
 [![Built with Claude Code](https://img.shields.io/badge/Built_with-Claude_Code-orange.svg)](https://claude.com/claude-code)
 
@@ -12,39 +12,42 @@ An open-weight WordPress code **reviewer**. Give it a PHP function, it returns a
 scored across 9 WordPress-quality dimensions (WPCS compliance, SQL safety, security, performance, WP API
 usage, code quality, dependencies, i18n, accessibility) and tells you what is wrong and why.
 
-The model is `iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf` — a LoRA fine-tune of Qwen3-30B-A3B, shipped as
-a lossless Q8_0 GGUF. It is self-hostable, needs no external API, and is deliberately opinionated: it
-pushes back on unsafe SQL, missing nonce checks, and poor architecture instead of rubber-stamping.
+The model is `iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf` — a fine-tune of Qwen3.6-35B-A3B, expert-pruned
+to 224/256 experts, shipped as a Q6_K GGUF (23.47 GiB). It is self-hostable, needs no external API, and is
+deliberately opinionated: it pushes back on unsafe SQL, missing nonce checks, and poor architecture instead
+of rubber-stamping. Measured judge rho on the shipped stack (single-seed, Q6_K GGUF/llama.cpp): **0.8063**.
+
+The prior `iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf` (Qwen3-30B-A3B base) remains available on
+HuggingFace as the superseded prior artifact — it is not updated or removed by this release.
 
 > **Why a judge and not a generator?** Reviewing is the capability worth training. The untrained base
 > produces **0 parseable rubric verdicts out of 121** — the judge is a capability created from nothing.
 > Code *generation*, by contrast, is already solved by strong base models: in the v4.0 study a raw
 > Qwen3.6-35B-A3B out-scored every fine-tuned generator we produced. So this project ships the judge and
-> recommends a current base model for generation. See [The v4.0 finding](#the-v40-finding-qwen36).
+> recommends a current base model for generation. See [MODEL_CARD.md](output/packaging/MODEL_CARD.md).
 
 ## The model
 
 | Property | Value |
 |----------|-------|
-| Repository | [`iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf`](https://huggingface.co/iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf) |
-| Base | Qwen3-30B-A3B (native MoE, 128 experts, top-8 routing, ~3B active) |
-| Training | 3-epoch rank-32 MoE-only LoRA on 603 human-relabeled 9-dim scores |
-| Ship tier | Q8_0 GGUF, 30.2 GiB/seed (−47% vs bf16, lossless) |
-| Serving | llama.cpp / Ollama (GGUF), or vLLM (bf16) |
-| Ensemble | 3 seeds (s0/s1/s2), median score; single-seed **s1** is the documented fallback |
+| Repository | [`iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf`](https://huggingface.co/iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf) |
+| Base | Qwen3.6-35B-A3B (native MoE, expert-pruned 256→224, top-8 routing) |
+| Training | relabel-SFT judge fine-tune, AIMER weight-prune post-merge (k=224) |
+| Ship tier | Q6_K GGUF, 23.47 GiB — smallest tier with zero parse failures |
+| Serving | llama.cpp (GGUF) |
+| Judge rho | **0.8063**, single-seed s1, shipped Q6_K/llama.cpp stack |
+| Prior release | [`iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf`](https://huggingface.co/iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf) — superseded, Qwen3-30B-A3B base, stays live untouched |
 | Model card | [output/packaging/MODEL_CARD.md](output/packaging/MODEL_CARD.md) |
 
 ## Quickstart
 
-Download the ensemble and serve one seed with llama.cpp (single-seed `s1` is the cheapest usable config):
-
 ```bash
-# 1. pull the GGUFs (three Q8_0 seeds, ~30 GiB each)
-huggingface-cli download iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf \
-  wp-v1.3-judge-s1.Q8_0.gguf --local-dir ./judge
+# 1. pull the GGUF
+hf download iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf \
+  wp-judge-v4-pruned-k224.Q6_K.gguf --local-dir ./judge
 
 # 2. serve (llama.cpp b9180+; -c 16384 so long critiques never truncate)
-llama-server -m ./judge/wp-v1.3-judge-s1.Q8_0.gguf --host 127.0.0.1 --port 8020 \
+llama-server -m ./judge/wp-judge-v4-pruned-k224.Q6_K.gguf --host 127.0.0.1 --port 8020 \
   -ngl 999 -c 16384 --jinja
 ```
 
@@ -60,22 +63,21 @@ curl -s http://127.0.0.1:8020/v1/chat/completions -d '{
 #   overall PASS/FAIL verdict. Parse the JSON block from the response.
 ```
 
-For the full-fidelity number, run all three seeds and take the per-item median (see
-[PIPELINE.md](PIPELINE.md) → *Stage 4 / packaging eval*). `<wp_judge>` is a plain-text prompt prefix, not
-a special token — no tokenizer surgery is required to use the model.
+`<wp_judge>` is a plain-text prompt prefix, not a special token — no tokenizer surgery is required. v4
+ships as a single-seed checkpoint (no 3-seed ensemble measured at this base).
 
 ## Benchmarks
 
-Receipt-backed, shipping stack, 0/121 parse failures. Full detail and the out-of-domain protocol:
-[MODEL_CARD.md](output/packaging/MODEL_CARD.md#benchmarks).
+Receipt-backed, shipping stack, 0/121 parse failures. Full detail: [MODEL_CARD.md](output/packaging/MODEL_CARD.md#benchmarks).
 
 | Metric | Score | Notes |
 |---|---|---|
-| **Judge rho** — Q8 GGUF 3-seed ensemble | **0.8056** | shipping tier; lossless vs bf16 (0.8100), −47% size |
-| Judge rho — bf16 ensemble (vLLM ref) | 0.8075 | single-seed s1 fallback 0.8017 |
+| **Judge rho** — Q6_K GGUF, single-seed s1 (shipped) | **0.8063** | 0/121 parse failures |
+| Judge rho — f16 GGUF, single-seed s1 (uncompressed floor) | 0.8002 | statistically tied with Q6_K |
 | Judge rho — untrained base | **0/121 parseable** | the entire judge capability is the fine-tune |
-| Attenuation ceiling (noisy val set) | ~0.984 | the ~0.16 residual is a genuine SFT wall on this base, not a bug |
 
+All three GGUF rungs measured (f16/Q8_0/Q6_K) are statistically indistinguishable at n=121 (95% CI
+half-widths ~7-8pp); Q6_K ships as the smallest zero-parse-failure tier, not the highest-scoring one.
 Spearman rho is measured against human-relabeled 9-dimension scores on a held-out set of 121 items.
 
 ## How it was built (and how to recreate it)
@@ -107,20 +109,23 @@ v4.0 reran the entire pipeline on the newer `Qwen3.6-35B-A3B` to try to beat the
   fine-tune we trained *regressed* below it (best 0.4381), because the training targets are structurally
   weaker than what a modern base already writes. So the project drops the gen model as a deliverable — for
   generation, use a strong current base with prompt-side task framing.
-- **The judge did improve, but not enough to re-ship.** The Qwen3.6 judge beats the old base on the
+- **The judge did improve, but not enough to re-ship as-is.** The Qwen3.6 judge beats the old base on the
   capture path (rho 0.8358 vs 0.8274), but a serving-stack numerics ceiling (~0.79, identical across
   vLLM-merged, llama.cpp-Q8-merged, and llama.cpp-unmerged-LoRA) eats the gain. On the shipped Q8 stack it
   scored **0.8067 vs v3's 0.8056** — a statistical tie (paired bootstrap CI spans zero) at +25% artifact
-  size. Per the pre-registered rule, **v1.3 stays canonical.**
+  size. Per the pre-registered rule, **v1.3 stayed canonical at that point** — this was resolved by the
+  prune below.
 
-One lever is still in play. v4's judge is a tie on **128**-vs-**256** experts the compression pipeline has
-never touched on a 256-expert base. v3.0 found no MoE-Sieve or prune winner on 128 experts; the v4 roadmap
-flagged 256 experts + a shared expert as exactly the architecture where that might flip. If Sieve/prune
-shrinks the v4 judge below v3's 30.2 GiB, it becomes unequivocally better (newer base, tied quality,
-smaller) and gets published. That attempt is **in progress** (Phases 22/25/26). Until it resolves, v1.3
-stays the canonical recommendation and the v4 judge stays on the bench. Either way, v4.0 already produced
-durable knowledge: the capture-vs-served ceiling quantified across three engines, hardened routed-expert
-merge tooling, and a fully recorded negative result.
+That lever resolved. v4's judge had a tie on **128**-vs-**256** experts the compression pipeline had never
+touched on a 256-expert base; v3.0 found no MoE-Sieve or prune winner on 128 experts, and the v4 roadmap
+flagged 256 experts + a shared expert as exactly the architecture where that might flip — it did. AIMER
+weight-pruning at k=224 passed gate-before-remove (Phases 22/25/26), producing a 224/256-expert checkpoint
+that ships at **Q6_K, 23.47 GiB** — smaller than v3's 30.2 GiB, on the newer base, at statistically tied
+quality (judge rho 0.8063 single-seed vs v3's 0.8056 3-seed ensemble — different configurations, not a
+clean delta). **Canonical flips to v4 (2026-07-17);** v1.3 remains published as the superseded prior
+release. Either way, v4.0 already produced durable knowledge: the capture-vs-served ceiling quantified
+across three engines, hardened routed-expert merge tooling, and a fully recorded negative result on the
+un-pruned checkpoint.
 
 ## Repository layout
 
@@ -145,7 +150,8 @@ PROJECT.md  project spec + status               CHANGELOG.md
 
 ## License
 
-Apache 2.0. Base model Qwen3-30B-A3B is Apache 2.0.
+Apache 2.0. Base models Qwen3.6-35B-A3B (v4, canonical) and Qwen3-30B-A3B (v1.3, superseded prior release)
+are both Apache 2.0.
 
 **Building in public.** [JOURNAL.md](JOURNAL.md) is the unedited decision log — every tradeoff, dead end,
 and recorded miss across four milestones.

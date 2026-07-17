@@ -6,10 +6,14 @@ An open-weight WordPress code **reviewer**: given a PHP function, score it again
 WordPress-quality rubric and explain the defects. Built and served on the [DGX Toolbox](~/dgx-toolbox)
 infrastructure stack.
 
-**Canonical deliverable (2026-07-15):** the **WP Judge** —
-[`iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf`](https://huggingface.co/iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf),
-a 3-epoch MoE-only LoRA fine-tune of Qwen3-30B-A3B, shipped as a lossless Q8_0 GGUF ensemble (rho 0.8056).
-The judge is a *created* capability — the untrained base produces 0 parseable verdicts out of 121.
+**Canonical deliverable (2026-07-17):** the **WP Judge v4** —
+[`iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf`](https://huggingface.co/iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf),
+a relabel-SFT fine-tune of Qwen3.6-35B-A3B, expert-pruned 256→224 (AIMER, gate-before-remove PASS), shipped
+as a Q6_K GGUF, 23.47 GiB (rho 0.8063, single-seed s1, shipped Q6_K/llama.cpp stack — statistically tied
+with the f16 floor and with v3's 3-seed-ensemble 0.8056, ~22% smaller than v3's 30.2 GiB). The prior
+[`iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf`](https://huggingface.co/iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf)
+(Qwen3-30B-A3B base) remains published as the superseded prior artifact. The judge is a *created*
+capability — the untrained base produces 0 parseable verdicts out of 121.
 
 The generation half was **retired as a deliverable**. The project began as a two-model pair
 (`<wp_gen>` + `<wp_judge>`); the v4.0 study on Qwen3.6-35B-A3B showed a raw modern base out-generates every

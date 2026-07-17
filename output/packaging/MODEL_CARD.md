@@ -15,6 +15,12 @@ pipeline_tag: text-generation
 
 # wp-qwen3-moe — WordPress code generation + review (Qwen3-30B-A3B)
 
+> **Superseded (2026-07-17):** the canonical judge deliverable is now the **v4 WP Judge**
+> (`iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf`, Qwen3.6-35B-A3B base) — see
+> "[v4 outcome and lineage](#v40-outcome-qwen36-35b-a3b--why-v4-now-ships)" below. This v3.0 pair remains
+> **published and untouched** on HuggingFace (`iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf`); the section
+> below is its full, unedited lineage record, kept for provenance.
+
 A two-model pair fine-tuned from Qwen3-30B-A3B for WordPress work: one model generates WPCS-compliant
 PHP, the other reviews code against a 9-dimension rubric and explains what's wrong. Routing is by task
 token: prepend `<wp_gen>` for generation, `<wp_judge>` for review.
@@ -163,29 +169,63 @@ evaluated; 17 over-length, 6 apply-failures.
   That iteration was run — see "v4.0 outcome" below — and did not beat this checkpoint on any
   self-hostable serving stack.
 
-## v4.0 outcome (Qwen3.6-35B-A3B) — why v1.3 is still canonical
+## v4.0 outcome (Qwen3.6-35B-A3B) — why v4 now ships
 
-The entire pipeline was rerun on `Qwen3.6-35B-A3B` to try to supersede this pair. Result, receipt-backed
-(`output/base21/diagnostic/DIAGNOSTIC_SYNTHESIS.md`, `output/eval4/VERDICT-EVAL4.md`):
+The entire pipeline was rerun on `Qwen3.6-35B-A3B` to try to supersede this pair. First result,
+receipt-backed (`output/base21/diagnostic/DIAGNOSTIC_SYNTHESIS.md`, `output/eval4/VERDICT-EVAL4.md`):
 
 - **Generation is retired as a deliverable.** The raw Qwen3.6 base scored wp-bench **0.4897**; every gen
   fine-tune regressed below it (best 0.4381) because the reasoning-mix targets are structurally weaker than
   what a modern base already writes. For generation, use a current base with prompt-side task framing — no
-  fine-tune needed.
-- **The judge improved but is a shipped-stack tie.** The Qwen3.6 judge beats this one on the Tinker capture
-  path (rho 0.8358 vs 0.8274), but a serving-numerics ceiling (~0.79, identical across vLLM-merged,
-  llama.cpp-Q8-merged, and llama.cpp-unmerged runtime-LoRA) eats the gain. On the shipped Q8 stack it read
-  **0.8067 vs this model's 0.8056** — a statistical tie (paired bootstrap CI spans zero) at +25% size. Per
-  the pre-registered rule, **v1.3 stays canonical.**
+  fine-tune needed. This holds for v4 as well; v4 ships judge-only.
+- **The judge improved but was, at that point, a shipped-stack tie.** The Qwen3.6 judge beat this one on
+  the Tinker capture path (rho 0.8358 vs 0.8274), but a serving-numerics ceiling (~0.79, identical across
+  vLLM-merged, llama.cpp-Q8-merged, and llama.cpp-unmerged runtime-LoRA) ate the gain. On the shipped Q8
+  stack it read **0.8067 vs this model's 0.8056** — a statistical tie (paired bootstrap CI spans zero) at
+  +25% size. Per the pre-registered rule, **v1.3 stayed canonical at that point.**
 
-The canonical *recommendation* is therefore this WP Judge; the gen checkpoint is kept for provenance only.
-One v4 lever remains open: the 256-expert Qwen3.6 judge has never been through MoE-Sieve or weight-prune
-(v3.0 found no winner on 128 experts, but 256 + a shared expert is where the roadmap predicted it might
-flip). If that compresses the v4 judge below this one's 30.2 GiB, it ships as an alternative on a newer
-base. That attempt is in progress (Phases 22/25/26).
+One v4 lever was still open at that point: the 256-expert Qwen3.6 judge had never been through MoE-Sieve
+or weight-prune (v3.0 found no winner on 128 experts, but 256 + a shared expert is where the roadmap
+predicted it might flip). Phases 22/25/26 (2026-07-16/17) resolved it:
+
+- **Routing profile (Phase 25):** diffuse, no clean keep/drop cliff (E_eff mean 144.3/256) — the profile
+  shape predicted the checkpoint would *resist* pruning.
+- **AIMER weight-prune at k=224 (Phase 26) passed gate-before-remove anyway**, contradicting that
+  prediction: pruned checkpoint rho **0.8134** (bf16-vLLM, single-seed s1) vs the same-stack full-width arm
+  0.7935 — **+0.020, non-inferior, point-better** (ci_lower slack 0.001, thin but held). D2_security
+  retained (6.326 ≥ 6.115 baseline). Surgery: stacked-tensor axis-0 slice 256→224 experts/layer
+  (`shared_expert.*`/`mtp.*` untouched); `models/Qwen3.6-35B-A3B-judge-v4-pruned-k224`, 60 GB bf16.
+- **GGUF conversion + quantization ladder (Phase 27):** converted with `--no-mtp` (the MTP/nextn layer was
+  left at 256 experts by the prune surgery; GGUF's `expert_count` metadata is a single global field, so the
+  mixed-count checkpoint would not load — the shipped GGUF has no MTP/speculative-decoding head). Full
+  ladder measured on the shipped GGUF/llama.cpp stack, single-seed s1, n=121, gated against the frozen f16
+  floor:
+
+  | Tier | Judge rho | Δ vs f16 floor | Parse fail | Size |
+  |---|---|---|---|---|
+  | f16 (floor) | 0.8002 | — | 0/121 | 57.10 GiB |
+  | Q8_0 | 0.7851 | −1.51pp | 0/121 | 30.37 GiB |
+  | **Q6_K (ships)** | **0.8063** | **+0.61pp** | **0/121** | **23.47 GiB** |
+  | Q5_K_M | 0.8060 | +0.58pp | 1/121 | 20.36 GiB |
+
+  All four rungs are statistically indistinguishable (95% CI half-widths ~7-8pp) — Q6_K scoring above its
+  own f16 source is proof the rung-to-rung spread is single-seed sampling noise, not a real
+  quantization-sensitivity signal (a lossy compression cannot legitimately exceed its source). Q6_K ships
+  as the smallest of the two zero-parse-failure tiers, not as the highest-rho tier. Full derivation:
+  `output/pkg-v4/pkg4_quantization_ladder.json` `noise_floor_finding` + `ship_rationale`.
+
+- **Ship policy (human-confirmed 2026-07-17):** canonical flips **v3 → v4**. Q6_K at 23.47 GiB is **~22%
+  smaller** than v3's 30.2 GiB — the size tradeoff v3.0 originally accepted (v4 "stays larger") is void;
+  v4 is smaller, on the newer base, at tied quality. `iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf` (this
+  pair) stays live, untouched, as the superseded prior artifact — it is not deprecated, deleted, or
+  rewritten by the v4 publish.
+
+Full v4 packaging receipts: `output/pkg-v4/` (`gate1_f16_baseline_v4.json`, `pkg4_quantization_ladder.json`,
+`conversion_receipt_v4.json`); v4 HF card: `output/pkg-v4/hf_cards/judge_v4_README.md`; prune gate:
+`output/prune-v4/selection_v4.json`.
 
 ## Provenance
 
 Full training/eval history: `JOURNAL.md`, `.planning/ROADMAP.md`, `PIPELINE.md`. Pruning methodology and
-both negative pruning results: `output/prune/prune_methodology.md`. Final comparison:
-`output/eval3/eval3_final_comparison.json`.
+both negative v3.0 pruning results: `output/prune/prune_methodology.md`. v3.0 final comparison:
+`output/eval3/eval3_final_comparison.json`. v4 prune/pack lineage: `output/prune-v4/`, `output/pkg-v4/`.
