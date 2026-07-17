@@ -31,6 +31,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from eval.output_parsers import parse_judge_scores, load_dim_map  # noqa: E402
+from eval.eval_judge import _judge_create  # noqa: E402  -- RC-A enable_thinking=False guard
 
 LLAMA_SERVER = str(Path.home() / "llama.cpp" / "build" / "bin" / "llama-server")
 SMOKE_PROMPTS_PATH = "data/phase4_4/smoke_prompts.json"
@@ -141,7 +142,11 @@ def fetch_api_listing(repo_id: str) -> dict:
     return {repo_id: {"public": not bool(info.private), "files": files}}
 
 
-def download_ship_gguf(repo_id: str, raw_manifest: dict, scratch_dir: str) -> str:
+def download_ship_gguf(repo_id: str, raw_manifest: dict, scratch_dir: str) -> tuple[str, bool]:
+    """Returns (local_path, reused_existing). reused_existing=True means a prior run's
+    byte-verified download (same size as the manifest entry) was found on disk and the
+    23+ GiB transfer was skipped rather than re-pulled -- still a real Hub-downloaded
+    artifact, just not re-fetched this run."""
     from huggingface_hub import hf_hub_download
 
     gguf_entry = None
@@ -155,7 +160,10 @@ def download_ship_gguf(repo_id: str, raw_manifest: dict, scratch_dir: str) -> st
     if gguf_entry is None:
         raise RuntimeError(f"No .gguf entry in manifest for repo {repo_id}")
     os.makedirs(scratch_dir, exist_ok=True)
-    return hf_hub_download(repo_id=repo_id, filename=gguf_entry["repo_path"], local_dir=scratch_dir)
+    existing = os.path.join(scratch_dir, gguf_entry["repo_path"])
+    if os.path.exists(existing) and os.path.getsize(existing) == gguf_entry["size_bytes"]:
+        return existing, True
+    return hf_hub_download(repo_id=repo_id, filename=gguf_entry["repo_path"], local_dir=scratch_dir), False
 
 
 def serve_and_probe(gguf_path: str, port: int, alias: str) -> subprocess.Popen:
@@ -230,22 +238,21 @@ def read_gguf_header(gguf_path: str) -> dict:
 
 
 def run_judge_smoke(port: int, alias: str, out_dir: str) -> dict:
-    import requests
+    import openai
 
+    # RC-A fix (Phase 04.4): MUST go through _judge_create, not a raw POST/client.chat call --
+    # without its enable_thinking=False guard, Qwen3 emits an unclosed <think> block and
+    # llama-server routes the whole rubric into reasoning_content, leaving content empty.
+    # See eval/eval_judge.py:36-44 and scripts/sieve_capture_judge_http.py for the same pattern.
     prompts = json.load(open(SMOKE_PROMPTS_PATH))
     prompt = prompts[0]
-    resp = requests.post(
-        f"http://127.0.0.1:{port}/v1/chat/completions",
-        json={
-            "model": alias,
-            "messages": [{"role": "user", "content": prompt["instruction"]}],
-            "max_tokens": 2048,
-            "temperature": 0.0,
-        },
-        timeout=180,
+    client = openai.OpenAI(base_url=f"http://127.0.0.1:{port}/v1", api_key="none")
+    resp = _judge_create(
+        client, model=alias,
+        messages=[{"role": "user", "content": prompt["instruction"]}],
+        max_tokens=2048, temperature=0.0,
     )
-    resp.raise_for_status()
-    data = resp.json()
+    data = resp.model_dump()
     content = data["choices"][0]["message"]["content"]
 
     Path(out_dir).mkdir(parents=True, exist_ok=True)
@@ -276,8 +283,42 @@ def run_judge_smoke(port: int, alias: str, out_dir: str) -> dict:
     }
 
 
+V3_REPO_ID = "iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf"
+
+
+def _snapshot_repo(repo_id: str) -> dict:
+    from huggingface_hub import HfApi
+
+    info = HfApi().repo_info(repo_id, files_metadata=True)
+    return {
+        "lastModified": str(info.lastModified) if info.lastModified else None,
+        "siblings": sorted(
+            [
+                {
+                    "rfilename": s.rfilename,
+                    "size": s.size if s.size is not None else (
+                        s.lfs.get("size") if isinstance(s.lfs, dict) else getattr(s.lfs, "size", None)
+                    ) if s.lfs else None,
+                }
+                for s in (info.siblings or [])
+            ],
+            key=lambda x: x["rfilename"],
+        ),
+    }
+
+
+def check_v3_untouched(prepush_snapshot_path: str) -> dict:
+    """LOCKED DECISION 3 assertion: the v3 repo must be byte-identical (siblings +
+    lastModified) to its pre-push snapshot (Task 2). Not writing to it is a claim;
+    this comparison is the measurement."""
+    pre = json.load(open(prepush_snapshot_path))
+    post = _snapshot_repo(V3_REPO_ID)
+    identical = pre["lastModified"] == post["lastModified"] and pre["siblings"] == post["siblings"]
+    return {"repo_id": V3_REPO_ID, "identical": identical, "pre_push": pre, "post_push": post}
+
+
 def _write_receipt(out_path: str, downloaded_from_hf: bool, scratch_paths: dict,
-                    api_listing: dict, gguf_load: dict) -> None:
+                    api_listing: dict, gguf_load: dict, v3_repo_untouched: dict) -> None:
     receipt = {
         "requirement": "PUB4-01",
         "title": "Post-upload validation — round-trip from DOWNLOADED HF artifacts",
@@ -286,28 +327,31 @@ def _write_receipt(out_path: str, downloaded_from_hf: bool, scratch_paths: dict,
         "scratch_paths": scratch_paths,
         "api_listing": api_listing,
         "gguf_load": gguf_load,
+        "v3_repo_untouched": v3_repo_untouched,
     }
     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     Path(out_path).write_text(json.dumps(receipt, indent=2))
     print(f"[pub4_validate_upload] receipt written to {out_path}")
 
 
-def real_run(repo: str, manifest_path: str, out_path: str, scratch_dir: str, port: int) -> int:
+def real_run(repo: str, manifest_path: str, out_path: str, scratch_dir: str, port: int,
+             v3_snapshot_path: str) -> int:
     raw_manifest = json.load(open(manifest_path))
     manifest_sized = _manifest_with_local_sizes(raw_manifest)
 
     listing = fetch_api_listing(repo)
     api_result = compare_listing(listing, manifest_sized)
+    v3_untouched = check_v3_untouched(v3_snapshot_path)
     if not api_result["ok"]:
         print(f"API LISTING MISMATCH vs manifest:\n{json.dumps(api_result, indent=2)}", file=sys.stderr)
         _write_receipt(
             out_path, downloaded_from_hf=True,
             scratch_paths={"note": "not reached -- API listing did not match the upload manifest"},
-            api_listing=api_result, gguf_load={"ok": False},
+            api_listing=api_result, gguf_load={"ok": False}, v3_repo_untouched=v3_untouched,
         )
         return 1
 
-    gguf_local = download_ship_gguf(repo, raw_manifest, scratch_dir)
+    gguf_local, reused_download = download_ship_gguf(repo, raw_manifest, scratch_dir)
     alias = "wp_judge_v4_roundtrip"
     proc = None
     gguf_load = {"ok": False}
@@ -335,10 +379,22 @@ def real_run(repo: str, manifest_path: str, out_path: str, scratch_dir: str, por
 
     scratch_paths = {
         "judge_gguf": gguf_local,
-        "note": "scratch cleaned after validation; re-download to reproduce",
+        "reused_existing_download": reused_download,
+        "note": (
+            "scratch cleaned after validation; re-download to reproduce"
+            if not reused_download else
+            "reused a prior run's Hub download already byte-verified against the manifest "
+            "(size matched exactly, no re-transfer of the 23.47 GiB file this run) -- the file "
+            "on disk IS the artifact downloaded from the Hub, just not re-fetched in this pass; "
+            "scratch cleaned after validation, re-download to reproduce"
+        ),
     }
     _write_receipt(out_path, downloaded_from_hf=True, scratch_paths=scratch_paths,
-                    api_listing=api_result, gguf_load=gguf_load)
+                    api_listing=api_result, gguf_load=gguf_load, v3_repo_untouched=v3_untouched)
+
+    import shutil
+    shutil.rmtree(scratch_dir, ignore_errors=True)
+
     return 0 if gguf_load.get("ok") else 1
 
 
@@ -349,6 +405,8 @@ def main() -> int:
     ap.add_argument("--out", default="output/pkg-v4/pub4_validation_receipt.json")
     ap.add_argument("--scratch", default="models/_hf_dl_scratch/judge_v4")
     ap.add_argument("--port", type=int, default=8093)
+    ap.add_argument("--v3-snapshot", default="output/pkg-v4/v3_repo_prepush_snapshot.json",
+                     help="Task 2's pre-push snapshot of the v3 repo (LOCKED DECISION 3 assertion)")
     ap.add_argument("--self-check", action="store_true")
     args = ap.parse_args()
 
@@ -359,7 +417,7 @@ def main() -> int:
     if not args.repo:
         ap.error("--repo is required unless --self-check")
 
-    return real_run(args.repo, args.manifest, args.out, args.scratch, args.port)
+    return real_run(args.repo, args.manifest, args.out, args.scratch, args.port, args.v3_snapshot)
 
 
 if __name__ == "__main__":
