@@ -1101,7 +1101,15 @@ format, validated end-to-end, and published to HuggingFace with an honest, full-
      post-upload round-trip (download, GGUF load, gen/judge smoke) validates the published artifact — same
      discipline as v3.1's PUB-03
 
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+
+- [ ] 27-01-PLAN.md — Wave 0: correct the stale "pair" scope + dead Gate-2 justification in ROADMAP/REQUIREMENTS; expert-count sanity check in the conversion driver; pkg4_quant_type_check.py; pub4_validate_upload.py (wave 0)
+- [ ] 27-02-PLAN.md — Convert to f16 master + Q8_0, all four sanity checks, measure the REAL Q8 size; Gate-1 baseline on the shipped stack; Q8 rung + concurrent-sequence CUDA smoke (wave 1)
+- [ ] 27-03-PLAN.md — Re-derive the Gate 2 warrant honestly; freeze the ladder bands; descend Q6_K → Q5_K_M with the ±2pp stop rule + DeltaNet below-Q8 check; select the ship tier (wave 2)
+- [ ] 27-04-PLAN.md — Fresh operator-only v4 HF card; canonical v3→v4 flip across PROJECT/README/MODEL_CARD; upload manifest + _pub4_upload.sh (prepared, not run) (wave 3)
+- [ ] 27-05-PLAN.md — Blocking human authorization → push to the new v4 repo → post-upload round-trip receipt (wave 4, autonomous: false)
 
 ## Progress
 
