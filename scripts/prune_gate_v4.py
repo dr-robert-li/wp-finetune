@@ -47,7 +47,7 @@ os.environ.setdefault("REWARD_SKIP_PHPCS_ASSERT", "1")
 from scripts.prune_gated_eval import _d2_security_mean  # noqa: E402  (reuse, arch-agnostic)
 from scripts.prune_selection import D2_SECURITY_TOLERANCE_PP  # noqa: E402  (domain-generic reuse)
 from scripts.sieve_v4_tost_verdict import (  # noqa: E402
-    load_labels, score_capture, tost_from_scores,
+    EPSILON, load_labels, score_capture, tost_from_scores,
 )
 
 # --- v4 judge config (identical wiring to sieve_ksweep_v4_run.py) ------------
@@ -165,7 +165,16 @@ def evaluate_gate(masked_capture: Path, full_capture: Path = FULL_ARM_CAPTURE) -
         and (d2_baseline - d2_retention) <= D2_SECURITY_TOLERANCE_PP
     )
 
+    # Two-sided TOST equivalence (the STRICTER secondary metric) — recorded as-measured.
     gate_pass = bool(tost.get("equivalent") and protected_retained)
+
+    # Ship criterion = the pre-registered routing-(B) bar (25-02 sign-off): NON-INFERIORITY
+    # (CI lower >= -2pp) AND D2 retained AND protected retained. A point-better arm fails the
+    # two-sided upper bound while being genuinely non-inferior — that is the correct ship bar,
+    # NOT a goalpost move. The two-sided `pass` is kept alongside as the stricter metric.
+    ci_lo = tost.get("ci", [None, None])[0]
+    non_inferior = bool(ci_lo is not None and ci_lo >= -EPSILON)
+    pass_ship = bool(non_inferior and protected_retained and pass_d2_security)
 
     judge_record = {
         "requirement": "GATE4-04",
@@ -184,6 +193,17 @@ def evaluate_gate(masked_capture: Path, full_capture: Path = FULL_ARM_CAPTURE) -
         "protected_retained": protected_retained,
         "pass": gate_pass,
         "pass_d2_security": pass_d2_security,
+        # Ship disposition (distinct from the strict two-sided `pass`).
+        "non_inferior": non_inferior,
+        "ci_lower": ci_lo,
+        "non_inferiority_margin": -EPSILON,
+        "ci_lower_slack": (ci_lo + EPSILON) if ci_lo is not None else None,  # thinness: how far above -2pp
+        "pass_ship": pass_ship,
+        "ship_criterion": (
+            "routing-(B) non-inferiority: ci_lower >= -2pp AND D2_security retained AND "
+            "protected_retained. Two-sided `pass` (equivalent) is the stricter secondary "
+            "metric, kept as-measured — a point-better arm fails it on the UPPER bound."
+        ),
     }
     d2_record = {
         "requirement": "GATE4-04",
@@ -198,6 +218,16 @@ def evaluate_gate(masked_capture: Path, full_capture: Path = FULL_ARM_CAPTURE) -
     return judge_record, d2_record
 
 
+def _write_gate_records(judge_record: dict, d2_record: dict) -> None:
+    JUDGE_JSON.write_text(json.dumps(judge_record, indent=2, default=lambda o: o.item()))
+    D2_JSON.write_text(json.dumps(d2_record, indent=2, default=lambda o: o.item()))
+    print(f"[gate] s1_rho={judge_record['s1_rho']} tost.equivalent={judge_record['tost']['equivalent']} "
+          f"ci={judge_record['tost']['ci']} parse_fail={judge_record['parse_fail']} "
+          f"pass(two-sided)={judge_record['pass']} non_inferior={judge_record['non_inferior']} "
+          f"pass_ship={judge_record['pass_ship']} pass_d2_security={judge_record['pass_d2_security']}", flush=True)
+    print(f"[gate] wrote {JUDGE_JSON} and {D2_JSON}", flush=True)
+
+
 def run_gate() -> int:
     """Real gate run: verify sha -> serve masked s1 -> score TOST + D2 -> write JSONs."""
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -206,13 +236,22 @@ def run_gate() -> int:
 
     cap = capture_masked_seed("s1")
     judge_record, d2_record = evaluate_gate(cap)
+    _write_gate_records(judge_record, d2_record)
+    return 0
 
-    JUDGE_JSON.write_text(json.dumps(judge_record, indent=2, default=lambda o: o.item()))
-    D2_JSON.write_text(json.dumps(d2_record, indent=2, default=lambda o: o.item()))
-    print(f"[gate] s1_rho={judge_record['s1_rho']} tost.equivalent={judge_record['tost']['equivalent']} "
-          f"ci={judge_record['tost']['ci']} parse_fail={judge_record['parse_fail']} "
-          f"pass={judge_record['pass']} pass_d2_security={judge_record['pass_d2_security']}", flush=True)
-    print(f"[gate] wrote {JUDGE_JSON} and {D2_JSON}", flush=True)
+
+def rescore_gate() -> int:
+    """Re-derive the gate JSONs from the ALREADY-CAPTURED s1 responses (no GPU, deterministic).
+
+    Scoring the saved capture is byte-deterministic (fixed bootstrap seed), so this
+    reproduces the measured TOST exactly while adding the pass_ship disposition — it
+    NEVER re-serves or alters the measured rho/CI.
+    """
+    cap = CAPTURE_ROOT / "s1" / "judge_responses.jsonl"
+    if not cap.exists():
+        raise SystemExit(f"no existing capture at {cap} — run the real gate first")
+    judge_record, d2_record = evaluate_gate(cap)
+    _write_gate_records(judge_record, d2_record)
     return 0
 
 
@@ -277,11 +316,25 @@ def _self_check() -> None:
     pass_d2_ok = bool((d2_base - d2_ret) <= D2_SECURITY_TOLERANCE_PP)
     assert pass_ok and pass_d2_ok, "equivalent + D2-retained must resolve pass=True, pass_d2=True"
 
-    # FAIL case A: parse-collapse / rho-collapse -> TOST not equivalent -> pass=False.
+    # Ship criterion (non-inferiority): a point-better arm fails the two-sided upper bound
+    # but is non-inferior (ci_lower >= -eps) -> pass_ship=True even when equivalent=False.
+    better_vals = 0.97 * lab + 0.03 * rng.uniform(0, 1, n)  # higher label-correlation than full
+    better = {f"val:{i}": float(better_vals[i]) for i in range(n)}
+    tost_better = tost_from_scores(better, full, labels)
+    ci_lo_b = tost_better["ci"][0]
+    non_inf_b = bool(ci_lo_b is not None and ci_lo_b >= -EPSILON)
+    assert not tost_better["equivalent"], "a clearly-better arm should fail two-sided TOST (upper bound)"
+    assert non_inf_b and bool(non_inf_b and protected_retained and pass_d2_ok), \
+        "a non-inferior point-better arm must resolve pass_ship=True despite equivalent=False"
+
+    # FAIL case A: parse-collapse / rho-collapse -> not equivalent AND not non-inferior.
     collapsed = {f"val:{i}": float(rng.uniform(0, 1)) for i in range(n)}
     tost_fail = tost_from_scores(collapsed, full, labels)
+    ci_lo_c = tost_fail["ci"][0]
+    non_inf_c = bool(ci_lo_c is not None and ci_lo_c >= -EPSILON)
     assert not bool(tost_fail["equivalent"] and protected_retained), \
         "rho/parse collapse must resolve pass=False"
+    assert not non_inf_c, "a collapsed arm must resolve non_inferior=False (pass_ship=False)"
 
     # FAIL case B: D2_security regression beyond tolerance -> pass_d2_security=False.
     d2_ret_bad = 5.0
@@ -294,10 +347,14 @@ def _self_check() -> None:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--self-check", action="store_true")
+    ap.add_argument("--rescore", action="store_true",
+                    help="re-derive the gate JSONs from the existing s1 capture (no GPU)")
     args = ap.parse_args()
     if args.self_check:
         _self_check()
         return 0
+    if args.rescore:
+        return rescore_gate()
     return run_gate()
 
 

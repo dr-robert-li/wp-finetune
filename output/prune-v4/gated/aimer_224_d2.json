@@ -1,0 +1,10 @@
+{
+  "requirement": "GATE4-04",
+  "method": "aimer",
+  "k": 224,
+  "d2_security_retention": 6.325842696629214,
+  "d2_security_baseline": 6.114942528735632,
+  "d2_security_tolerance_pp": 0.02,
+  "pass_d2_security": true,
+  "protected_retained": true
+}
