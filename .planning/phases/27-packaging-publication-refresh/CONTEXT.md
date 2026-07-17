@@ -64,3 +64,15 @@ This **overrides** 27-03-PLAN's literal mechanical stop rule (lowest rho-passing
 **Consequence for LOCKED DECISION 1's tradeoff:** the "accepted tradeoff: larger artifact than v3's 30.2 GiB" is **void**. Q6_K at 23.47 GiB is ~22% SMALLER than v3's shipped artifact, at tied quality, on a newer base. The card must not repeat the "larger artifact" framing.
 
 **Superseded finding:** 27-02-SUMMARY.md's headline ("Q8 is NOT lossless / the prune increased quantization sensitivity") was **falsified** by the Q6 rung — see `ladder_q8.json`'s `revised_interpretation` and `pkg4_quantization_ladder.json`'s `noise_floor_finding`. Raw measurements are immutable; only the interpretation was corrected. Do not repeat the falsified claim anywhere, including the card.
+
+## PUBLISH AUTHORIZATION — granted 2026-07-17
+
+Human authorized the 27-05 push. This is the `autonomous: false` blocking human gate (T-27-02 / the v3 PKG-04 "upload push is human-authorized final step" precedent) — SATISFIED.
+
+Authorized scope, exactly:
+- **Push to:** `iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf` (NEW repo, public)
+- **Files:** `wp-judge-v4-pruned-k224.Q6_K.gguf` (23.47 GiB) + `output/pkg-v4/hf_cards/judge_v4_README.md` → `README.md`
+- **Then:** post-upload round-trip (download → GGUF load → judge smoke) → `pub4_validation_receipt.json`
+- **NOT authorized:** any write, edit, or deletion touching `iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf` (v3 stays live and untouched), and any repo other than the one named above.
+
+The human reviewed the ship tier (Q6_K), the measured evidence, the no-MTP limitation, and the operator card's honesty (no falsified claims, v3 comparison explicitly declined as non-comparable) before authorizing.
