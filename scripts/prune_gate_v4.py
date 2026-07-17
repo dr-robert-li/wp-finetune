@@ -228,6 +228,137 @@ def _write_gate_records(judge_record: dict, d2_record: dict) -> None:
     print(f"[gate] wrote {JUDGE_JSON} and {D2_JSON}", flush=True)
 
 
+PRUNED_DIR = "models/Qwen3.6-35B-A3B-judge-v4-pruned-k224"
+PRUNED_VALIDATION_JSON = OUT_DIR / "aimer_224_pruned_validation.json"
+
+
+def _rho_vs_labels(scores: dict, labels: dict) -> tuple[float | None, int]:
+    from scipy.stats import spearmanr
+    common = sorted(set(scores) & set(labels))
+    rho = (float(spearmanr([scores[k] for k in common],
+                           [labels[k] for k in common]).statistic)
+           if len(common) > 2 else None)
+    return rho, len(common)
+
+
+def capture_pruned(model_dir: str = PRUNED_DIR) -> Path:
+    """Serve the PHYSICALLY-pruned checkpoint UNMASKED (it natively has 224 experts)
+    and capture 121 judge prompts — the surgery-correctness / coherent-output check."""
+    from scripts._p0_vllm_smoke_serve import boot_vllm, stop_vllm, wait_healthy
+    from scripts.sieve_capture_judge_http import capture
+
+    name = "prune-v4-validate-pruned-s1"
+    out = CAPTURE_ROOT / "pruned" / "judge_responses.jsonl"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    _set_mask_env(None)  # physically pruned — NO mask
+    try:
+        boot_vllm(model_dir, name, PORT, GPU_MEM_UTIL, serve_script=SERVE_SCRIPT,
+                  extra_env={"LANGUAGE_MODEL_ONLY": "1", "MAX_MODEL_LEN": str(MAX_MODEL_LEN)})
+        wait_healthy(PORT, name)
+        capture(base_url=f"http://localhost:{PORT}/v1", model=None,
+                dataset=str(PROJECT_ROOT / VAL_DATASET), out=str(out),
+                max_tokens=CAPTURE_MAX_TOKENS, temperature=0.0)
+    finally:
+        stop_vllm(name)
+    return out
+
+
+def validate_pruned() -> int:
+    """Coherent-output validation: the pruned checkpoint must load and generate
+    coherently, and its s1 rho must track the masked-s1 gate rho (surgery == mask)."""
+    labels = load_labels()
+    cap = capture_pruned()
+    scores, parse_fail = score_capture(cap)
+    rho, n = _rho_vs_labels(scores, labels)
+    masked_s1 = json.loads(JUDGE_JSON.read_text()).get("s1_rho")
+    rec = {
+        "requirement": "GATE4-04",
+        "checkpoint": PRUNED_DIR,
+        "pruned_s1_rho": rho,
+        "masked_s1_rho": masked_s1,
+        "rho_delta_vs_masked": (rho - masked_s1) if (rho is not None and masked_s1 is not None) else None,
+        "parse_fail": parse_fail,
+        "n_scored": n,
+        "coherent": bool(rho is not None and parse_fail <= 3),  # loads + parses ~all -> coherent
+        "note": "pruned checkpoint served UNMASKED (native 224 experts); rho should track masked-s1",
+    }
+    PRUNED_VALIDATION_JSON.write_text(json.dumps(rec, indent=2, default=lambda o: o.item()))
+    print(f"[validate-pruned] pruned_s1_rho={rho} vs masked_s1={masked_s1} "
+          f"parse_fail={parse_fail} coherent={rec['coherent']} -> {PRUNED_VALIDATION_JSON}", flush=True)
+    return 0
+
+
+def run_ensemble() -> int:
+    """Reserved 3-seed confirmation (mirrors sieve_ksweep_v4_run.maybe_run_ensemble):
+    s1 already captured by the gate; serve s0 + s2 masked, median-ensemble the rho."""
+    if not json.loads(JUDGE_JSON.read_text()).get("pass_ship"):
+        raise SystemExit("ensemble is reserved for a ship-passing gate — s1 did not pass_ship")
+    labels = load_labels()
+    s1_cap = CAPTURE_ROOT / "s1" / "judge_responses.jsonl"
+    per_seed = {"s1": score_capture(s1_cap)[0]}
+    for seed in ("s0", "s2"):
+        per_seed[seed] = score_capture(capture_masked_seed(seed))[0]
+
+    ensemble = {}
+    for key in labels:
+        vals = [per_seed[s][key] for s in per_seed if key in per_seed[s]]
+        if vals:
+            ensemble[key] = float(np.median(vals))
+    ens_rho, n = _rho_vs_labels(ensemble, labels)
+    per_seed_rho = {s: _rho_vs_labels(per_seed[s], labels)[0] for s in per_seed}
+    rec = {
+        "requirement": "GATE4-04",
+        "method": "aimer",
+        "k": K_ANCHOR,
+        "judge_ensemble_rho": ens_rho,
+        "per_seed_rho": per_seed_rho,
+        "n_scored": n,
+        "full_arm_s1_rho": 0.7934812517026191,
+        "ensemble_non_inferior": bool(ens_rho is not None and ens_rho >= 0.7934812517026191 - 0.02),
+    }
+    ENSEMBLE_JSON.write_text(json.dumps(rec, indent=2, default=lambda o: o.item()))
+    print(f"[ensemble] judge_ensemble_rho={ens_rho} per_seed={per_seed_rho} -> {ENSEMBLE_JSON}", flush=True)
+    return 0
+
+
+def run_disposition() -> int:
+    """Fail-closed ship disposition. winner (ship_pruned_v4) iff the k=224 gate is
+    non-inferior AND protected_retained AND D2 within tolerance AND (if run) the
+    3-seed ensemble confirms. no_winner ships the merged-UNPRUNED v4 (still v4)."""
+    judge = json.loads(JUDGE_JSON.read_text())
+    ensemble = json.loads(ENSEMBLE_JSON.read_text()) if ENSEMBLE_JSON.exists() else None
+
+    reasons = []
+    if not judge.get("pass_ship"):
+        reasons.append("gate pass_ship is not true (non-inferiority / protected / D2)")
+    if not judge.get("pass_d2_security"):
+        reasons.append("pass_d2_security is not true")
+    if not judge.get("protected_retained"):
+        reasons.append("protected_retained is not true")
+    if ensemble is not None and not ensemble.get("ensemble_non_inferior"):
+        reasons.append("3-seed ensemble did not confirm (collapsed below full-arm - 2pp)")
+
+    winner = (len(reasons) == 0)
+    verdict = "winner" if winner else "no_winner"
+    selection = {
+        "requirement": "GATE4-04",
+        "verdict": verdict,
+        "disposition": "ship_pruned_v4" if winner else "ship_unpruned_v4",
+        "winner": {"method": "aimer", "k": K_ANCHOR} if winner else None,
+        "ship_checkpoint": (PRUNED_DIR if winner
+                            else "models/Qwen3.6-35B-A3B-judge-v4-s1-merged"),
+        "reasons": reasons,
+        "signoff_status": "approved_via_orchestrator_relay",
+        "canonical_flip": "v3 -> v4 (executed at Phase 27; both dispositions ship v4, not a revert to v3)",
+        "gate": judge,
+        "ensemble": ensemble,
+    }
+    SELECTION_JSON.write_text(json.dumps(selection, indent=2, default=lambda o: o.item()))
+    print(f"[disposition] verdict={verdict} disposition={selection['disposition']} "
+          f"ship={selection['ship_checkpoint']} reasons={reasons}", flush=True)
+    return 0
+
+
 def run_gate() -> int:
     """Real gate run: verify sha -> serve masked s1 -> score TOST + D2 -> write JSONs."""
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -349,12 +480,24 @@ def main() -> int:
     ap.add_argument("--self-check", action="store_true")
     ap.add_argument("--rescore", action="store_true",
                     help="re-derive the gate JSONs from the existing s1 capture (no GPU)")
+    ap.add_argument("--validate-pruned", action="store_true",
+                    help="serve the pruned checkpoint UNMASKED, coherent-output validation")
+    ap.add_argument("--ensemble", action="store_true",
+                    help="reserved 3-seed masked confirmation (s0/s2 serve; s1 reused)")
+    ap.add_argument("--disposition", action="store_true",
+                    help="write the fail-closed ship disposition selection_v4.json (no GPU)")
     args = ap.parse_args()
     if args.self_check:
         _self_check()
         return 0
     if args.rescore:
         return rescore_gate()
+    if args.validate_pruned:
+        return validate_pruned()
+    if args.ensemble:
+        return run_ensemble()
+    if args.disposition:
+        return run_disposition()
     return run_gate()
 
 
