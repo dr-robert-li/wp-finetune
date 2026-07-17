@@ -4,17 +4,17 @@ milestone: v4.0
 milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
 current_phase: 27
 current_phase_name: Packaging & Publication Refresh
-status: executing
-stopped_at: Completed 27-04-PLAN.md
-last_updated: "2026-07-17T11:02:17.313Z"
+status: verifying
+stopped_at: Completed 27-05-PLAN.md — Phase 27 fully executed
+last_updated: "2026-07-17T13:11:27.911Z"
 last_activity: 2026-07-17
 last_activity_desc: Phase 27 execution started
 progress:
   total_phases: 8
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 22
-  completed_plans: 21
-  percent: 75
+  completed_plans: 22
+  percent: 88
 ---
 
 # Project State
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-07-12)
 
 Phase: 27 (Packaging & Publication Refresh) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-17 — Phase 27 execution started
 
 ### 2026-07-17 — Phase 27 PLANNED: 5 plans, waves 0-4 (linear chain)
@@ -300,7 +300,7 @@ data: `scripts/build_reasoning_negatives.py` + `build_augmented_train.py`; gates
 Status: Ready to execute
 Note: Local artifacts `models/qwen3-30b-wp-30_70-merged-v2` + `...-reasoning-merged` + `adapters/.../checkpoint-72` are READ-ONLY references/fallback only (NOT promoted). The GB10 memory wall is documented in `output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md`. `04.3-REOPEN-PLAN.md` remains a 0-task brief — do not execute.
 
-Progress: [██████████] 95%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -396,6 +396,7 @@ Progress: [██████████] 95%
 | Phase 27 P02 | 70min | 3 tasks | 7 files |
 | Phase 27 P03 | 55min | 3 tasks | 11 files |
 | Phase 27-packaging-publication-refresh P04 | ~30min | 3 tasks | 7 files |
+| Phase 27 P05 | ~1h43m | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -504,6 +505,7 @@ Recent decisions affecting current work:
 - [Phase ?]: Canonical model flipped v3 -> v4 (README.md/PROJECT.md/.planning/PROJECT.md/output/packaging/MODEL_CARD.md) per LOCKED DECISION 1, corrected per LOCKED DECISION 5 (Q6_K is ~22% smaller than v3, not larger); v3 repo iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf stays live untouched as superseded prior artifact
 - [Phase ?]: Fresh operator-only v4 HF model card written from scratch (output/pkg-v4/hf_cards/judge_v4_README.md) per CONTEXT.md LOCKED DECISION 2 -- not adapted from the v3 card's negative-example body; every rho labelled with stack+seed config, no MTP-head disclosure included
 - [Phase ?]: HF Hub per-file upload limit confirmed live from huggingface.co/docs/hub/storage-limits (<200GB recommended split, 500GB hard cap) rather than assumed; 23.47 GiB ship GGUF needs no split -- recorded in pub4_upload_manifest.json's per_file_limit_checked block
+- [Phase ?]: 27-05: fixed pub4_validate_upload.py judge smoke to use eval.eval_judge._judge_create (RC-A enable_thinking=False guard) after a hand-rolled raw POST produced a false-negative round-trip result; v4 judge published to iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf with v3 repo proven untouched
 
 ### Pending Todos
 
@@ -551,8 +553,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-17T11:02:17.303Z
-Stopped at: Completed 27-04-PLAN.md
+Last session: 2026-07-17T13:11:27.901Z
+Stopped at: Completed 27-05-PLAN.md — Phase 27 fully executed
 
 Prior session: 2026-07-13T11:52:35.100Z
 Stopped at: Phase 21 Plan 01: GEN-01 satisfied; MoE train_mlp=True merge-path gap found (merge_ok=false, human decision required before GEN-02/JUDGE-02 real Tinker spend). See 21-01-SUMMARY.md + output/base21/moe_merge_probe.json.
@@ -680,7 +682,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Ready to execute
+**Status:** Phase complete — ready for verification
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)

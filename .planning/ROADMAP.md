@@ -1107,7 +1107,7 @@ HuggingFace with an honest, operator-first model card
      and untouched; a post-upload round-trip (download, GGUF load, judge smoke) validates the published
      artifact — same discipline as v3.1's PUB-03
 
-**Plans**: 4/5 plans executed
+**Plans**: 5/5 plans executed
 
 Plans:
 **Wave 1**
@@ -1125,7 +1125,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 27-05-PLAN.md — Blocking human authorization → push to the new v4 repo → post-upload round-trip receipt (wave 4, autonomous: false)
+- [x] 27-05-PLAN.md — Blocking human authorization → push to the new v4 repo → post-upload round-trip receipt (wave 4, autonomous: false)
 
 ## Progress
 
@@ -1172,4 +1172,4 @@ Note: v4.0 (Phases 20-27) starts after Phase 19 sign-off. Phase 22 (Sieve toolin
 | 24. Conditional Gate A — RL Re-Test | v4.0 | 0/TBD | Not started | - |
 | 25. Conditional Gate B — MoE-Sieve Re-Test | v4.0 | 2/2 | In Progress|  |
 | 26. Conditional Gate C — Merge + Prune Re-Test | v4.0 | 0/TBD | Not started | - |
-| 27. Packaging & Publication Refresh | v4.0 | 4/5 | In Progress|  |
+| 27. Packaging & Publication Refresh | v4.0 | 5/5 | In Progress|  |
