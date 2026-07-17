@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
-current_phase: 26
-current_phase_name: Conditional Gate C — Merge + Prune Re-Test
-status: complete
-stopped_at: Completed 26-02-PLAN.md (Gate C closed, ship_pruned_v4) — Phase 27 unblocked
-last_updated: "2026-07-17T00:40:00.000Z"
+current_phase: 27
+current_phase_name: Packaging & Publication Refresh
+status: Ready to execute
+stopped_at: Phase 27 planned (5 plans, waves 0-4) — ready for /gsd-execute-phase 27
+last_updated: "2026-07-17T07:15:00.000Z"
 last_activity: 2026-07-17
-last_activity_desc: "Gate C closed: AIMER@k=224 passed gate-before-remove, surgery applied, pruned v4 ships (canonical flips v3->v4)"
+last_activity_desc: "Phase 27 planned: 5 plans, waves 0-4, judge-only scope correction + f16 Gate-1 override; verification passed"
 progress:
   total_phases: 8
-  completed_phases: 5
-  total_plans: 15
-  completed_plans: 15
-  percent: 63
+  completed_phases: 6
+  total_plans: 22
+  completed_plans: 17
+  percent: 77
 ---
 
 # Project State
@@ -24,14 +24,37 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-12)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 25 — Conditional Gate B — MoE-Sieve Re-Test
+**Current focus:** Phase 27 — Packaging & Publication Refresh (final phase of v4.0)
 
 ## Current Position
 
-Phase: 25 (Conditional Gate B — MoE-Sieve Re-Test) — EXECUTING
-Plan: 2 of 2
+Phase: 27 (Packaging & Publication Refresh) — PLANNED
+Plan: 0 of 5
 Status: Ready to execute
-Last activity: 2026-07-16 — v4 judge routing profiled on the served model (34,855-example canonical stimulus)
+Last activity: 2026-07-17 — Phase 27 planned: 5 plans across waves 0-4; judge-only scope correction; f16 Gate-1 override recorded
+
+### 2026-07-17 — Phase 27 PLANNED: 5 plans, waves 0-4 (linear chain)
+
+Research + pattern-map + plan + check all passed. Three things worth carrying into execution:
+
+- **Scope correction (judge-only, not a pair).** ROADMAP/REQUIREMENTS PKG4-01/PKG4-02 carry stale v3.0 "pair"
+  wording; the gen role was retired as a deliverable 2026-07-15. Plan 27-01 corrects the docs rather than
+  planning around them. Ship target: the single pruned v4 judge (`models/Qwen3.6-35B-A3B-judge-v4-pruned-k224`,
+  60 GB bf16, 224/256 experts).
+- **Gate 1 is the f16 GGUF, not Q8** (planner override of 27-VALIDATION.md, upheld by the checker). A
+  Q8-anchored Gate 1 would make Q8 pass with delta 0 *by construction*, defining away the open question — is
+  Q8 lossless on a surgically-pruned 224-expert MoE? Costs one extra eval run. Recorded as assumption A1 in
+  27-02-PLAN.md with a non-silent OOM fallback (`f16_anchor_failure_evidence`).
+- **Gate 2's warrant is re-derived, not inherited.** The ROADMAP's "134 GiB bf16 pair > 121 GB host" rationale
+  is void for a judge-only ship (60 GB fits the 121 GiB host). Plan 27-03 voids it by name with numbers, then
+  rests the warrant on distribution size + operator memory budget + the measured-lossless Q8 precedent.
+
+The 33.6 GiB Q8 figure remains a **projection**; 27-02 measures it. Publish (27-05) is `autonomous: false` —
+human-authorized final step, per the v3 PKG-04 precedent.
+
+**Note:** the frontmatter `progress` block was drifting (it read 15/15 plans / 5 phases while disk showed 17
+summaries). Reset here to 17/22 plans, 6 phases complete, from `roadmap.analyze`. Phase 24 (RL re-test) is
+0 plans by design — skipped, no new reward family.
 
 ### 2026-07-17 — Phase 26 (Gate C) CLOSED: `ship_pruned_v4` — the pruned v4 judge ships, canonical flips v3→v4
 
