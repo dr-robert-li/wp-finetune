@@ -182,3 +182,20 @@ None - no external service configuration required. All work was local GGUF quant
 ---
 *Phase: 27-packaging-publication-refresh*
 *Completed: 2026-07-17*
+
+## Self-Check: PASSED
+
+- FOUND: `output/pkg-v4/gate2_quantization_decision_v4.md`
+- FOUND: `output/pkg-v4/pkg4_quantization_ladder.json`
+- FOUND: `output/pkg-v4/ladder_q6.json`
+- FOUND: `output/pkg-v4/ladder_q5.json`
+- FOUND: `output/pkg-v4/quant_type_q6.json`
+- FOUND: `output/pkg-v4/quant_type_q5.json`
+- FOUND: `output/pkg-v4/wp-judge-v4-pruned-k224.Q6_K.gguf`
+- FOUND: `output/pkg-v4/wp-judge-v4-pruned-k224.Q5_K_M.gguf`
+- FOUND: `scripts/pkg4_quant_type_check.py`
+- FOUND: `output/pkg-v4/ladder_q8.json`
+- FOUND commit `39048da` (Task 1)
+- FOUND commit `86adf82` (Task 2)
+- FOUND commit `0236742` (Task 3)
+- FOUND commit `476e305` (plan SUMMARY)
