@@ -457,7 +457,7 @@ Pre-registered success criteria: judge rho **>0.85 single-seed OR >0.87 3-seed e
 
 > Scope corrected 2026-07-17 (Phase 27 planning): the "pair" framing was stale v3.0 template text; gen retired as a deliverable 2026-07-15. See .planning/phases/27-packaging-publication-refresh/CONTEXT.md.
 
-- [ ] **PUB4-01**: HF publication refresh — NEW repo iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf published with an operator-first card (CONTEXT.md LOCKED DECISION 2); v3 repo untouched, post-upload validation round-trip (same PUB-03 discipline)
+- [x] **PUB4-01**: HF publication refresh — NEW repo iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf published with an operator-first card (CONTEXT.md LOCKED DECISION 2); v3 repo untouched, post-upload validation round-trip (same PUB-03 discipline)
 
 **Coverage:**
 
