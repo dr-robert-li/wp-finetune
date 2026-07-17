@@ -1,0 +1,29 @@
+{
+  "requirement": "PUB4-01",
+  "generated_utc": "2026-07-17T11:00:00.000000+00:00",
+  "per_file_limit_checked": {
+    "recommended_max_bytes": 200000000000,
+    "hard_max_bytes": 500000000000,
+    "source": "https://huggingface.co/docs/hub/storage-limits (fetched 2026-07-17: 'File size <200GB split data into chunked files' recommendation; 'no single file will exceed 500GB. I.e. 500GB is the hard limit for a single file size.')",
+    "ship_gguf_size_bytes": 25200652096,
+    "verdict": "ship_gguf (25200652096 bytes, ~23.47 GiB) is well under both the 200GB recommendation and the 500GB hard limit -- single file, no llama-gguf-split needed"
+  },
+  "repos": [
+    {
+      "repo_id": "iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf",
+      "private": false,
+      "files": [
+        {
+          "path": "output/pkg-v4/wp-judge-v4-pruned-k224.Q6_K.gguf",
+          "repo_path": "wp-judge-v4-pruned-k224.Q6_K.gguf",
+          "size_bytes": 25200652096
+        },
+        {
+          "path": "output/pkg-v4/hf_cards/judge_v4_README.md",
+          "repo_path": "README.md",
+          "size_bytes": 3761
+        }
+      ]
+    }
+  ]
+}
