@@ -1,0 +1,47 @@
+{
+  "requirement": "PKG4-02",
+  "tier": "Q6",
+  "method": "GGUF Q6_K (llama.cpp)",
+  "status": "MEASURED",
+  "generated_utc": "2026-07-17T19:05:00.000000+00:00",
+  "gate1_baseline_ref": "output/pkg-v4/gate1_f16_baseline_v4.json",
+  "anchor": "f16_gguf_llamacpp",
+  "stack": "Q6_K GGUF (--no-mtp, no MTP/speculative-decoding head, quantized from the f16 master), llama-server -ngl 999 --parallel 4 --jinja, CTX 20480",
+  "llamacpp_build": "version: 1 (8f114a9) built with GNU 13.3.0 for Linux aarch64",
+  "seeds": "single-seed s1",
+  "measured": {
+    "judge_rho": 0.8063205167262201,
+    "ci": [0.7284460453513544, 0.8600333727440801],
+    "n": 121,
+    "n_dataset_note": "same wp_judge-filtered subset of data/reasoning_dataset/openai_val.jsonl as gate1_f16_baseline_v4.json and ladder_q8.json (n=121) -- like-for-like.",
+    "parse_fail": 0,
+    "max_tokens": 2048,
+    "size_bytes": 25200652096,
+    "size_gib": 23.4699,
+    "capture": "output/pkg-v4/q6_eval/judge_responses.jsonl",
+    "summary": "output/pkg-v4/q6_eval/eval_summary.json"
+  },
+  "gate": {
+    "gate1_rho": 0.8001808600187146,
+    "delta": 0.006139656707505492,
+    "delta_pp": 0.6140,
+    "epsilon_pp": 2,
+    "bar": "delta >= -0.02 (inclusive, matching Phase 26's ci_lower >= -0.02 convention)",
+    "pass": true,
+    "slack_pp": 2.614
+  },
+  "deltanet_state_precision": {
+    "q8_types": ["F32", "Q8_0"],
+    "q6_types": ["F32", "Q6_K"],
+    "dropped_below_tier": false,
+    "pattern_matched_tensors": 210,
+    "note": "PKG4-02 below-Q8 clause. Q6's DeltaNet ssm_* tensors match the Q6_K tier exactly (120 stay F32, 90 track the tier -- identical split to Q8's 120 F32 / 90 Q8_0). No state tensor dropped below the requested tier."
+  },
+  "noise_floor_finding": {
+    "headline": "Q6 (0.8063) scored ABOVE the f16 master (0.8002, the same checkpoint's own uncompressed floor) and ABOVE Q8_0 (0.7851). This ordering is not physically possible as a true quantization effect -- a lossy compression of the f16 weights cannot carry more judge signal than its own source.",
+    "conclusion": "The +0.61pp Q6 surplus and the -1.51pp Q8 deficit are therefore both consistent with single-seed sampling noise at n=121, not with a real quantization-sensitivity mechanism. The three rungs (f16 0.8002, Q8 0.7851, Q6 0.8063) span 2.12 percentage points against each other while their 95% CI half-widths are each roughly 7-8pp -- the rung-to-rung deltas (1-2pp) are well inside single-run sampling noise, not outside it.",
+    "span_pp": 2.121125741325258,
+    "ci_half_widths_pp_approx": {"f16": 7.0, "q8": 7.5, "q6": 6.6},
+    "supersedes": "ladder_q8.json's headline_finding (\"Q8 is NOT lossless on this surgically-pruned MoE\" / \"the prune made it materially more quantization-sensitive\") is FALSIFIED by this rung -- see ladder_q8.json's revised_interpretation block and 27-03-SUMMARY.md. A real degradation mechanism predicts monotonic decay (f16 > Q8 > Q6); the measured ordering is Q6 > f16 > Q8, which a degradation mechanism cannot produce."
+  }
+}

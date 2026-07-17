@@ -1,0 +1,14 @@
+{
+  "capture": "output/pkg-v4/q6_eval/judge_responses.jsonl",
+  "rho_new": 0.8063205167262201,
+  "n": 121,
+  "ci": [
+    0.7284460453513544,
+    0.8600333727440801
+  ],
+  "baseline_rho": 0.7476689625425029,
+  "delta_vs_baseline": 0.05865155418371715,
+  "ceiling": 0.9844009569826934,
+  "gap_to_ceiling": 0.1780804402564733,
+  "parse_fail": 0
+}

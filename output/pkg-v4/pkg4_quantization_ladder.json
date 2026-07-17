@@ -38,11 +38,43 @@
         "bar": "delta >= -0.02 (inclusive, matching Phase 26's ci_lower >= -0.02 convention)",
         "pass": true,
         "slack_pp": 0.4928
-      }
+      },
+      "interpretation_note": "SUPERSEDED by the Q6 rung -- see ladder_q8.json's revised_interpretation block and this file's top-level noise_floor_finding. The -1.507pp delta is real (measured) but the 'Q8 is lossy / prune increased quantization sensitivity' READING of it is falsified: Q6 scored above both f16 and Q8, an ordering no degradation mechanism can produce."
     },
-    {"tier": "Q6", "method": "GGUF Q6_K", "status": "pending", "measured": null},
+    {
+      "tier": "Q6",
+      "method": "GGUF Q6_K",
+      "status": "MEASURED",
+      "measured": {
+        "judge_rho": 0.8063205167262201,
+        "ci": [0.7284460453513544, 0.8600333727440801],
+        "n": 121,
+        "parse_fail": 0,
+        "max_tokens": 2048,
+        "size_bytes": 25200652096,
+        "size_gib": 23.4699,
+        "capture": "output/pkg-v4/q6_eval/judge_responses.jsonl",
+        "summary": "output/pkg-v4/q6_eval/eval_summary.json"
+      },
+      "gate": {
+        "gate1_rho": 0.8001808600187146,
+        "delta": 0.006139656707505492,
+        "delta_pp": 0.6140,
+        "epsilon_pp": 2,
+        "bar": "delta >= -0.02 (inclusive, matching Phase 26's ci_lower >= -0.02 convention)",
+        "pass": true,
+        "slack_pp": 2.614
+      },
+      "interpretation_note": "This is the rung that falsifies the Q8 headline -- see top-level noise_floor_finding. Q6 scoring above f16 and above Q8 is not a real capability gain; it is sampling noise at n=121 single-seed."
+    },
     {"tier": "Q5", "method": "GGUF Q5_K_M", "status": "pending", "measured": null}
   ],
+  "noise_floor_finding": {
+    "headline": "Measured ordering is Q6 (0.8063) > f16 floor (0.8002) > Q8 (0.7851). A lossy compression of the f16 master (Q6_K or Q8_0) cannot legitimately carry MORE judge signal than its own uncompressed source -- Q6 scoring above f16 is not physically possible as a true quantization effect.",
+    "conclusion": "The rung-to-rung deltas (Q8 -1.51pp, Q6 +0.61pp, span 2.12pp) are well inside single-seed sampling noise at n=121 (95% CI half-widths ~7-8pp on every rung, including Gate 1 itself). f16, Q8, and Q6 are statistically indistinguishable on this measurement. This SUPERSEDES ladder_q8.json's original headline_finding (\"Q8 is NOT lossless / the prune increased quantization sensitivity\") -- that interpretation predicted monotonic decay (f16 > Q8 > Q6), and the measured ordering is the opposite. See ladder_q8.json's revised_interpretation and ladder_q6.json's noise_floor_finding for the full record.",
+    "span_pp": 2.121125741325258,
+    "consequence_for_ship_selection": "Because the rungs are statistically indistinguishable, ship_tier below cannot be read as 'the tier with the highest measured rho won' -- all passing tiers are equally supported by this evidence. Selection among them rests on size/robustness, not on which point estimate happened to be highest in this single run."
+  },
   "excluded": {
     "Q4-nf4": {
       "status": "measured FAIL (v3, carried forward)",

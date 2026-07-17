@@ -53,5 +53,12 @@
     "v3_q8_ensemble_rho": 0.8056,
     "v4_merged_unpruned_q8_rho": 0.8067,
     "note": "FIRST apples-to-apples v4-pruned-vs-v3 comparison -- all three are Q8 GGUF/llama.cpp. But v3's 0.8056 is a 3-SEED ENSEMBLE and this rung is SINGLE-SEED s1; the configurations differ and the gap is not a clean like-for-like. Recorded with that caveat, not as a headline. The headline is delta_vs_gate1 (Q8 vs the SAME checkpoint's own f16 master), not this cross-checkpoint comparison."
+  },
+  "revised_interpretation": {
+    "status": "headline_finding above is SUPERSEDED. The measured judge_rho (0.7851092593129675) and every other field in this file are UNCHANGED and remain the historical record of what was measured -- only the INTERPRETATION is corrected here, in Plan 27-03, after the Q6 rung came back.",
+    "what_falsified_it": "ladder_q6.json's Q6_K rung measured judge_rho 0.8063205167262201 -- ABOVE the f16 floor (0.8002) and ABOVE this Q8 rung (0.7851). Q6_K is a lossier compression of the SAME f16 master than Q8_0; it cannot legitimately carry more judge signal than its own source. A real quantization-sensitivity mechanism predicts monotonic decay (f16 > Q8 > Q6); the measured ordering is Q6 > f16 > Q8, which no degradation mechanism can produce.",
+    "corrected_conclusion": "The -1.507pp Q8 point estimate is NOT evidence that Q8 is lossy on this checkpoint, and NOT evidence the prune increased quantization sensitivity. At n=121 single-seed, rung-to-rung deltas of 1-2pp are well inside sampling noise (CI half-widths ~7-8pp; the three rungs span 2.12pp against each other). f16, Q8, and Q6 are statistically indistinguishable on this measurement. See output/pkg-v4/ladder_q6.json's noise_floor_finding block for the full argument.",
+    "correction_source": "27-03-SUMMARY.md and output/pkg-v4/ladder_q6.json (Plan 27-03, Task 2). Note that .planning/phases/27-packaging-publication-refresh/27-02-SUMMARY.md's headline (\"Q8 is NOT lossless\" / \"contradicts the v3 precedent\") is now known-superseded prose from before the Q6 measurement existed; it is left as-written in that file (historical record) but a reader following it forward must land here.",
+    "not_touched": "gate1_baseline_ref, measured, gate, concurrent_sequence_smoke, and the raw headline_finding text above are all UNCHANGED -- this block corrects the READING of those numbers, not the numbers themselves."
   }
 }
