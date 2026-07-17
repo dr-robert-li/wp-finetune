@@ -1107,7 +1107,7 @@ HuggingFace with an honest, operator-first model card
      and untouched; a post-upload round-trip (download, GGUF load, judge smoke) validates the published
      artifact — same discipline as v3.1's PUB-03
 
-**Plans**: 2/5 plans executed
+**Plans**: 3/5 plans executed
 
 Plans:
 **Wave 1**
@@ -1117,7 +1117,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 27-03-PLAN.md — Re-derive the Gate 2 warrant honestly; freeze the ladder bands; descend Q6_K → Q5_K_M with the ±2pp stop rule + DeltaNet below-Q8 check; select the ship tier (wave 2)
+- [x] 27-03-PLAN.md — Re-derive the Gate 2 warrant honestly; freeze the ladder bands; descend Q6_K → Q5_K_M with the ±2pp stop rule + DeltaNet below-Q8 check; select the ship tier (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -1172,4 +1172,4 @@ Note: v4.0 (Phases 20-27) starts after Phase 19 sign-off. Phase 22 (Sieve toolin
 | 24. Conditional Gate A — RL Re-Test | v4.0 | 0/TBD | Not started | - |
 | 25. Conditional Gate B — MoE-Sieve Re-Test | v4.0 | 2/2 | In Progress|  |
 | 26. Conditional Gate C — Merge + Prune Re-Test | v4.0 | 0/TBD | Not started | - |
-| 27. Packaging & Publication Refresh | v4.0 | 2/5 | In Progress|  |
+| 27. Packaging & Publication Refresh | v4.0 | 3/5 | In Progress|  |
