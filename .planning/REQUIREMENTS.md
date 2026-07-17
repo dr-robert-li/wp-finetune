@@ -406,7 +406,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EVAL4-01 | Phase 23 | Complete |
 | GATE4-01 | Phase 24 | Pending |
 | GATE4-03 | Phase 25 | Complete |
-| GATE4-04 | Phase 26 | Pending |
+| GATE4-04 | Phase 26 | Complete |
 | PKG4-01 | Phase 27 | Pending |
 | PKG4-02 | Phase 27 | Pending |
 | PUB4-01 | Phase 27 | Pending |
@@ -444,7 +444,7 @@ Pre-registered success criteria: judge rho **>0.85 single-seed OR >0.87 3-seed e
 - [ ] **GATE4-01**: RL re-test ONLY with a materially different reward family (execution-grounded/preference/multi-turn); pre-registered kill criterion carried (validated teacher-Spearman over warm-start noise + codegen Goodhart trip-wire); smoke-scale before full budget
 - [x] **GATE4-02**: Sieve/protected-mask tooling adapted BEFORE Gate B — profiler traversal `model.model.language_model.layers`, n_experts 128→256 across 4 scripts, DeltaNet/Attention strata split, empirical shared-expert-exclusion-from-router_logits verification
 - [x] **GATE4-03**: MoE-Sieve k-sweep re-test (TOST ε=2pp, CI-aware) on adapted tooling
-- [ ] **GATE4-04**: Merge + prune re-test (AIMER/REAP, gate-before-remove, per-dimension retention esp. D2_security)
+- [x] **GATE4-04**: Merge + prune re-test (AIMER/REAP, gate-before-remove, per-dimension retention esp. D2_security) — COMPLETE 2026-07-17: `ship_pruned_v4`. AIMER@k=224 passed gate-before-remove on the routing-(B) non-inferiority bar (pruned 0.8134 vs full 0.7935; ci_lower slack 0.001 — thin); D2_security retained 6.326 ≥ 6.115; surgery applied → models/Qwen3.6-35B-A3B-judge-v4-pruned-k224. REAP deferred (gated on AIMER failing; it passed). Receipt: output/prune-v4/selection_v4.json
 
 ### Packaging (Stage 5 — quantization mandatory)
 

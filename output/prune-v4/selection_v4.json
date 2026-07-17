@@ -1,0 +1,67 @@
+{
+  "requirement": "GATE4-04",
+  "phase": "26-conditional-gate-c-merge-prune-re-test",
+  "disposition": "ship_pruned_v4",
+  "method": "aimer",
+  "k": 224,
+  "n_experts_original": 256,
+  "checkpoint": "models/Qwen3.6-35B-A3B-judge-v4-pruned-k224",
+  "checkpoint_size_bf16_gb": 60,
+
+  "ship_criterion": "routing-(B) non-inferiority: ci_lower >= -2pp AND pass_d2_security AND protected_retained. The two-sided TOST `equivalent` is the stricter SECONDARY metric and is kept as-measured (a point-better arm fails it on the UPPER bound). Criterion locked at the 25-02 sign-off, reaffirmed at the 26-02 sign-off. NOT a goalpost move.",
+
+  "gate": {
+    "pass_ship": true,
+    "non_inferior": true,
+    "ci_lower": -0.01900351125394314,
+    "non_inferiority_margin": -0.02,
+    "ci_lower_slack": 0.0009964887460568589,
+    "slack_note": "THIN — clears the margin by 0.001 at n=120. An unluckier bootstrap would have flipped it. Recorded, not smoothed.",
+    "two_sided_tost_equivalent": false,
+    "two_sided_note": "kept as-measured; false because the arm may be MORE than 2pp better (upper bound 0.0768), not worse",
+    "pass_d2_security": true,
+    "d2_security_retention": 6.325842696629214,
+    "d2_security_baseline": 6.114942528735632,
+    "protected_retained": true,
+    "parse_fail": 1,
+    "n_scored": 120
+  },
+
+  "evidence": {
+    "primary_like_for_like_s1_vs_s1": {
+      "note": "THIS is the evidence the ship rests on — same seed, same stack, apples-to-apples.",
+      "full_arm_s1_rho": 0.7934812517026191,
+      "masked_s1_rho": 0.818446799620866,
+      "pruned_checkpoint_s1_rho": 0.8134073708876893,
+      "pruned_vs_full_delta": 0.019926119185070193
+    },
+    "pruned_checkpoint_validation": {
+      "coherent": true,
+      "rho_delta_vs_masked": -0.005039428733176643,
+      "note": "physically-pruned checkpoint served UNMASKED (native 224 experts) reproduces the masked-serve rho within noise -> surgery removed the intended tensors"
+    },
+    "ensemble_confirmation": {
+      "judge_ensemble_rho": 0.8533283115844795,
+      "per_seed_rho": { "s0": 0.7653487160503534, "s1": 0.818446799620866, "s2": 0.8263607258361042 },
+      "n_scored": 121,
+      "interpretation": "CONFIRMATORY ONLY — proves the pruned checkpoint ensembles without collapse. It is NOT a +6pp pruning gain: ensemble_non_inferior was computed against the SINGLE-SEED full arm (0.7935), and 3-seed ensembling lifts rho on its own. No pruning-attributable gain is claimed from this number."
+    },
+    "stack_caveat": "0.8533 / 0.8134 are bf16-vLLM numbers. v3's shipped 0.8056 and v4's 0.8067 are Q8 GGUF/llama.cpp. Different stacks — NOT comparable until the Phase-27 Q8 conversion measures the pruned v4 on the shipped stack."
+  },
+
+  "size": {
+    "pruned_bf16_gb": 60,
+    "unpruned_bf16_gb": 67,
+    "projected_q8_gib": 33.6,
+    "v3_shipped_q8_gib": 30.2,
+    "note": "Pruned v4 remains ~3.4 GiB LARGER than v3's Q8. Per the 2026-07-17 user directive this is NOT a ship disqualifier — the newer Qwen3.6 base is preferred over v3's smaller artifact. Projection is linear-scaling; real Q8 size measured at Phase 27."
+  },
+
+  "signoff": {
+    "signoff_status": "approved_via_orchestrator_relay",
+    "decision": "approve physical surgery -> ship pruned v4",
+    "note": "Human approval reached the executor RELAYED through the orchestrator. This is NOT an independently-verified cryptographic signature and is not recorded as one."
+  },
+
+  "routes_phase_27": "Package the PRUNED v4 (models/Qwen3.6-35B-A3B-judge-v4-pruned-k224). Canonical model flips v3 -> v4. See .planning/phases/27-packaging-publication-refresh/CONTEXT.md for the v4-canonical decision and the operator-only HF model-card spec."
+}

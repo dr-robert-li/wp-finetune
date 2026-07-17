@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
-current_phase: 25
-current_phase_name: Conditional Gate B — MoE-Sieve Re-Test
-status: executing
-stopped_at: Completed 25-02-PLAN.md (Gate B closed, no_winner)
-last_updated: "2026-07-16T20:06:56.230Z"
-last_activity: 2026-07-16
-last_activity_desc: v4 judge routing profiled on the served model (34,855-example canonical stimulus)
+current_phase: 26
+current_phase_name: Conditional Gate C — Merge + Prune Re-Test
+status: complete
+stopped_at: Completed 26-02-PLAN.md (Gate C closed, ship_pruned_v4) — Phase 27 unblocked
+last_updated: "2026-07-17T00:40:00.000Z"
+last_activity: 2026-07-17
+last_activity_desc: "Gate C closed: AIMER@k=224 passed gate-before-remove, surgery applied, pruned v4 ships (canonical flips v3->v4)"
 progress:
   total_phases: 8
   completed_phases: 5
@@ -32,6 +32,21 @@ Phase: 25 (Conditional Gate B — MoE-Sieve Re-Test) — EXECUTING
 Plan: 2 of 2
 Status: Ready to execute
 Last activity: 2026-07-16 — v4 judge routing profiled on the served model (34,855-example canonical stimulus)
+
+### 2026-07-17 — Phase 26 (Gate C) CLOSED: `ship_pruned_v4` — the pruned v4 judge ships, canonical flips v3→v4
+
+AIMER weight-prune at k=224 **passed** gate-before-remove, contradicting the profile-shape prediction (Gate B's diffuse routing suggested resistance; the measurement said otherwise — this is why we measure).
+
+- **Gate (like-for-like s1-vs-s1, the evidence the ship rests on):** pruned checkpoint rho **0.8134** (masked proxy 0.8184) vs the same-stack vLLM full arm **0.7935** → **+0.020, non-inferior, point-better**. ci_lower −0.019 vs the −0.020 margin — **slack 0.001, THIN**; an unluckier bootstrap flips it. Two-sided TOST `equivalent:false` kept as-measured (fails on the *upper* bound — the arm may be >2pp better, not worse).
+- **D2_security retained:** 6.326 ≥ 6.115 baseline (no security regression). protected_retained:true. parse_fail 1/120.
+- **Surgery:** stacked-tensor axis-0 slice 256→224 experts/layer (`shared_expert.*`/`mtp.*` untouched, `text_config.num_experts=224`) → `models/Qwen3.6-35B-A3B-judge-v4-pruned-k224` (60 GB bf16, from 67 GB). Gate-before-remove **code-enforced** (guard asserts pass_ship+D2 before any tensor write). Pruned checkpoint validated **coherent**, delta −0.005 vs masked.
+- **3-seed ensemble 0.8533** (s0 0.7653 / s1 0.8184 / s2 0.8264) — **CONFIRMATORY (no collapse), NOT a +6pp pruning gain**: it was computed against a single-seed arm, and ensembling lifts rho on its own. No pruning-attributable gain claimed from it.
+- **Stack caveat:** these are bf16-vLLM numbers; v3's 0.8056 / v4's 0.8067 are Q8 GGUF — not comparable until Phase 27's Q8 conversion.
+- **Ship policy (2026-07-17 user directive):** canonical flips **v3 → v4**. Size-vs-v3 demoted from a ship gate to a note — the pruned v4 (~33.6 GiB Q8 projected) stays ~3.4 GiB larger than v3's 30.2 GiB, accepted in exchange for the newer Qwen3.6 base. Ship criterion = routing-(B) non-inferiority (not two-sided TOST); `pass_ship` computed distinctly, measured `pass:false` preserved.
+- **Sign-off:** human approval relayed via orchestrator (`signoff_status: approved_via_orchestrator_relay`) — not recorded as a verified signature.
+- Receipts: `output/prune-v4/selection_v4.json`, `gated/{aimer_224_judge,aimer_224_d2,aimer_224_pruned_validation,aimer_224_ensemble}.json`. Plans 26-01/26-02 both closed.
+
+**Next: Phase 27** — package the PRUNED v4 (Q8 GGUF conversion measures the real size vs the 33.6 GiB projection), cascading compression gates, and the **operator-only** HF model card + v4 lineage. Spec locked in `.planning/phases/27-packaging-publication-refresh/CONTEXT.md`.
 
 ### 2026-07-16 — Phase 25 routing profile PRODUCED (served path); routing is diffuse, likely resists pruning
 

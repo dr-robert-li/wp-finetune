@@ -120,7 +120,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 23: Final Evaluation** - A/B eval vs v3.0 shipping figures under pre-registered criteria — the milestone's primary verdict (completed 2026-07-14)
 - [ ] **Phase 24: Conditional Gate A — RL Re-Test** - RL re-test only with a materially different reward family; no_winner is a valid result
 - [ ] **Phase 25: Conditional Gate B — MoE-Sieve Re-Test** - k-sweep re-test on adapted tooling (TOST, CI-aware); no_winner is a valid result
-- [ ] **Phase 26: Conditional Gate C — Merge + Prune Re-Test** - AIMER/REAP gate-before-remove re-test; no_winner is a valid result
+- [x] **Phase 26: Conditional Gate C — Merge + Prune Re-Test** - COMPLETE 2026-07-17 — **`ship_pruned_v4`**. AIMER@k=224 gate-before-remove PASSED on the pre-registered routing-(B) non-inferiority bar (pruned s1 rho 0.8134 vs same-stack full arm 0.7935, +0.020; ci_lower −0.019 vs −0.020 margin — thin, slack 0.001; two-sided TOST `equivalent:false` kept as-measured, fails on the *upper* bound). D2_security retained (6.326 ≥ 6.115). Physical surgery applied (256→224 experts/layer, stacked-tensor axis-0 slice) → `models/Qwen3.6-35B-A3B-judge-v4-pruned-k224` (60 GB bf16, ~33.6 GiB Q8 projected). Pruned checkpoint validated coherent (delta −0.005 vs masked); 3-seed ensemble 0.8533 = confirmatory no-collapse, NOT a pruning gain (computed vs a single-seed arm). Canonical flips **v3 → v4** per the 2026-07-17 directive (newer base preferred over v3's smaller artifact; size-vs-v3 demoted from ship gate to note). Receipts: `output/prune-v4/selection_v4.json`.
 - [ ] **Phase 27: Packaging & Publication Refresh** - Q8 GGUF pair conversion + cascading compression gates + HF card lineage refresh
 
 </details>
