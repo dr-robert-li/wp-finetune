@@ -4,17 +4,17 @@ milestone: v4.0
 milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
 current_phase: 27
 current_phase_name: Packaging & Publication Refresh
-status: Ready to execute
-stopped_at: Phase 27 planned (5 plans, waves 0-4) — ready for /gsd-execute-phase 27
-last_updated: "2026-07-17T07:15:00.000Z"
+status: executing
+stopped_at: Completed 27-01-PLAN.md
+last_updated: "2026-07-17T07:33:23.672Z"
 last_activity: 2026-07-17
-last_activity_desc: "Phase 27 planned: 5 plans, waves 0-4, judge-only scope correction + f16 Gate-1 override; verification passed"
+last_activity_desc: Phase 27 execution started
 progress:
   total_phases: 8
   completed_phases: 6
   total_plans: 22
-  completed_plans: 17
-  percent: 77
+  completed_plans: 18
+  percent: 75
 ---
 
 # Project State
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-12)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Phase 27 — Packaging & Publication Refresh (final phase of v4.0)
+**Current focus:** Phase 27 — Packaging & Publication Refresh
 
 ## Current Position
 
-Phase: 27 (Packaging & Publication Refresh) — PLANNED
-Plan: 0 of 5
+Phase: 27 (Packaging & Publication Refresh) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
-Last activity: 2026-07-17 — Phase 27 planned: 5 plans across waves 0-4; judge-only scope correction; f16 Gate-1 override recorded
+Last activity: 2026-07-17 — Phase 27 execution started
 
 ### 2026-07-17 — Phase 27 PLANNED: 5 plans, waves 0-4 (linear chain)
 
@@ -41,10 +41,12 @@ Research + pattern-map + plan + check all passed. Three things worth carrying in
   wording; the gen role was retired as a deliverable 2026-07-15. Plan 27-01 corrects the docs rather than
   planning around them. Ship target: the single pruned v4 judge (`models/Qwen3.6-35B-A3B-judge-v4-pruned-k224`,
   60 GB bf16, 224/256 experts).
+
 - **Gate 1 is the f16 GGUF, not Q8** (planner override of 27-VALIDATION.md, upheld by the checker). A
   Q8-anchored Gate 1 would make Q8 pass with delta 0 *by construction*, defining away the open question — is
   Q8 lossless on a surgically-pruned 224-expert MoE? Costs one extra eval run. Recorded as assumption A1 in
   27-02-PLAN.md with a non-silent OOM fallback (`f16_anchor_failure_evidence`).
+
 - **Gate 2's warrant is re-derived, not inherited.** The ROADMAP's "134 GiB bf16 pair > 121 GB host" rationale
   is void for a judge-only ship (60 GB fits the 121 GiB host). Plan 27-03 voids it by name with numbers, then
   rests the warrant on distribution size + operator memory budget + the measured-lossless Q8 precedent.
@@ -298,7 +300,7 @@ data: `scripts/build_reasoning_negatives.py` + `build_augmented_train.py`; gates
 Status: Ready to execute
 Note: Local artifacts `models/qwen3-30b-wp-30_70-merged-v2` + `...-reasoning-merged` + `adapters/.../checkpoint-72` are READ-ONLY references/fallback only (NOT promoted). The GB10 memory wall is documented in `output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md`. `04.3-REOPEN-PLAN.md` remains a 0-task brief — do not execute.
 
-Progress: [██████████] 100%
+Progress: [████████░░] 82%
 
 ## Performance Metrics
 
@@ -390,6 +392,7 @@ Progress: [██████████] 100%
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 25 P02 | 172 | 3 tasks | 5 files |
+| Phase 27-packaging-publication-refresh P01 | 25min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -488,6 +491,8 @@ Recent decisions affecting current work:
 - [Phase ?]: 22-02: resolved_traversal_root == model.language_model.layers for the v4 judge VL-composite checkpoint, empirically confirmed via a bounded GB10 forward pass (not the flat model.layers root).
 - [Phase ?]: Phase 25 Gate B: v4 judge k-sweep verdict no_winner (optimal_k=full) per pre-registered two-sided CI-aware TOST eps=2pp vs same-stack full arm 0.7935; no sub-full k equivalent
 - [Phase ?]: Phase 26 routing (relayed via orchestrator): attempt prune at k=224 (non-inferior, point-better, parseable) with 3-seed ensemble confirm before publish; ~12.5% drop unlikely to close 37.8->30.2 GiB gap
+- [Phase ?]: Phase 27 Wave 0: corrected stale gen+judge 'pair' scope to judge-only ship (pruned v4 at models/Qwen3.6-35B-A3B-judge-v4-pruned-k224) in ROADMAP.md/REQUIREMENTS.md; voided the dead 134 GiB pair-based Gate-2 rationale
+- [Phase ?]: Added expert-count sanity check to eval4_ext_gguf_convert.sh (hard subscript, no silent skip) + new pkg4_quant_type_check.py and pub4_validate_upload.py, both self-check-provable offline, closing T-27-01/T-27-02 before any conversion output is trusted
 
 ### Pending Todos
 
@@ -535,8 +540,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-16T20:06:56.221Z
-Stopped at: Completed 25-02-PLAN.md (Gate B closed, no_winner)
+Last session: 2026-07-17T07:33:23.662Z
+Stopped at: Completed 27-01-PLAN.md
 
 Prior session: 2026-07-13T11:52:35.100Z
 Stopped at: Phase 21 Plan 01: GEN-01 satisfied; MoE train_mlp=True merge-path gap found (merge_ok=false, human decision required before GEN-02/JUDGE-02 real Tinker spend). See 21-01-SUMMARY.md + output/base21/moe_merge_probe.json.

@@ -130,10 +130,18 @@ _No TDD RED/GREEN split — tasks 2/3 carry `tdd="true"` in frontmatter but thei
 - **Verification:** `sed -n '/### Phase 27:/,.../p' .planning/ROADMAP.md | grep -c '134 GiB'` returns `0`; full `<verify>` block passes.
 - **Committed in:** `7d109df` (Task 1 commit)
 
+**2. [Rule 1 - Bug] Reverted the standard-workflow `requirements.mark-complete` checkbox flip for PKG4-01/PUB4-01**
+- **Found during:** State-updates step (post-Task-3, plan-level)
+- **Issue:** This plan's frontmatter lists `requirements: [PKG4-01, PUB4-01]`, and the standard executor workflow runs `requirements.mark-complete` against that list unconditionally. Both requirements' actual acceptance criteria (Q8 GGUF conversion + concurrent-sequence smoke for PKG4-01; the real HF publish + round-trip for PUB4-01) are NOT met by this Wave-0 plan — only the sanity-check tooling that those later waves (27-02..27-05) depend on was built here. Checking `[x]` on either requirement now would be false documentation of the kind this project has explicitly been careful to avoid elsewhere (per 27-RESEARCH.md's Assumptions Log honesty precedent).
+- **Fix:** Ran `requirements.mark-complete PKG4-01 PUB4-01` as instructed, observed it flip both checkboxes to `[x]`, then reverted both back to `[ ]` via a scoped Edit before the final commit — REQUIREMENTS.md content is now byte-identical to what Task 1 committed for these two lines. `requirements-completed` is left `[PKG4-01, PUB4-01]` in this SUMMARY's frontmatter (documenting which requirements this plan's frontmatter *declared*, per template contract), but the REQUIREMENTS.md checkboxes are not flipped until 27-05 (or whichever plan actually satisfies each requirement's full acceptance bar) closes them.
+- **Files modified:** `.planning/REQUIREMENTS.md` (net no-op vs. pre-plan state on these two lines)
+- **Verification:** `git diff .planning/REQUIREMENTS.md` after the revert shows no changes to the PKG4-01/PUB4-01 lines.
+- **Committed in:** not separately committed (net no-op; folded into the final plan-completion commit's REQUIREMENTS.md content, which is unchanged from Task 1's commit)
+
 ---
 
-**Total deviations:** 1 auto-fixed (1 bug — plan self-contradiction)
-**Impact on plan:** No scope creep; the fix keeps the documented intent (void the stale rationale) while satisfying the plan's own machine-checkable acceptance criterion.
+**Total deviations:** 2 auto-fixed (2 bugs — plan self-contradiction; standard-workflow requirement-checkbox over-eagerness)
+**Impact on plan:** No scope creep. Both fixes keep documentation honest: the first satisfies the plan's own machine-checkable acceptance criterion, the second prevents REQUIREMENTS.md from claiming PKG4-01/PUB4-01 are done before the conversion (27-02) and publish (27-05) waves actually run.
 
 ## Issues Encountered
 - `pytest tests/` (plan verification step 4, explicitly documented as "a cheap guard, not a gate") surfaced 1 collection error (`tinker_cookbook` module not on this `python3`'s path) and 7 test failures in `test_reward_calibration.py`, `test_reward_form_sweep.py`, `test_reward_validity_gate.py`, `test_rl_judge_dispatch.py`, and `test_rl_train.py`. All confirmed pre-existing (git history on those test files last touches Phase 08.2, `e93f674`) and unrelated to this plan's files (docs + GGUF/quant-type/HF-publication scripts). Logged to `.planning/phases/27-packaging-publication-refresh/deferred-items.md` per the executor's SCOPE BOUNDARY rule; not fixed.
