@@ -66,15 +66,24 @@ def bits(type_name: str) -> float:
 
 def check_census(routed_types: set, shared_types: set, deltanet_types: set, expect: str) -> None:
     """Pure assertion body shared by the real read path AND --self-check --
-    a self-check that tests a copy of this logic tests nothing (per-plan requirement)."""
-    assert routed_types == {expect}, (
-        f"ROUTED EXPERT TYPE MISMATCH: got {routed_types} expected {{'{expect}'}}"
-    )
+    a self-check that tests a copy of this logic tests nothing (per-plan requirement).
+
+    ponytail: NOT a literal routed_types == {expect} match. llama.cpp's K-quant "M"/"L"
+    tiers (e.g. Q5_K_M) are deliberately MIXED-precision per tensor role -- ffn_down_exps
+    stays at the next type up (Q6_K) while gate/up drop to the nominal type (Q5_K). The
+    real T-27-01 invariant is (a) shared expert precision never diverges from routed expert
+    precision and (b) nothing drops BELOW the tier's nominal floor -- not "exactly one type".
+    """
+    assert routed_types, "ROUTED EXPERT TYPE CENSUS EMPTY -- pattern matched 0 tensors"
     assert shared_types == routed_types, (
         f"SHARED EXPERT TYPE DIVERGENCE: shared={shared_types} routed={routed_types}"
     )
-    assert deltanet_types, "DELTANET TENSOR PATTERN MATCHED 0 TENSORS -- fix the pattern"
     floor = bits(expect)
+    for t in routed_types:
+        assert bits(t) >= floor, (
+            f"ROUTED/SHARED EXPERT PRECISION BELOW {expect}: {t} ({bits(t)} bits) < floor ({floor} bits)"
+        )
+    assert deltanet_types, "DELTANET TENSOR PATTERN MATCHED 0 TENSORS -- fix the pattern"
     for t in deltanet_types:
         assert bits(t) >= floor, (
             f"DELTANET PRECISION BELOW {expect}: {t} ({bits(t)} bits) < floor ({floor} bits)"
