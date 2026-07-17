@@ -1077,6 +1077,7 @@ for this phase.**
      `no_winner` ships the merged-unpruned model — either outcome unblocks Phase 27
 
 **Plans**: 2 plans
+
 - [ ] 26-01-PLAN.md — Adapt stacked-tensor AIMER + judge-only gate driver; verify merge-of-record (SC1); score AIMER@k=224; run gate-before-remove eval (s1 TOST vs same-stack full arm 0.7935 + D2_security), no weight removed (Wave 1)
 - [ ] 26-02-PLAN.md — Stacked-tensor surgery script (gate-before-remove guard); conditional 3-seed ensemble confirm + disposition; blocking human sign-off → winner ships pruned OR no_winner ships merged-unpruned (Wave 2)
 
@@ -1104,11 +1105,21 @@ format, validated end-to-end, and published to HuggingFace with an honest, full-
 **Plans**: 5 plans
 
 Plans:
+**Wave 1**
 
 - [ ] 27-01-PLAN.md — Wave 0: correct the stale "pair" scope + dead Gate-2 justification in ROADMAP/REQUIREMENTS; expert-count sanity check in the conversion driver; pkg4_quant_type_check.py; pub4_validate_upload.py (wave 0)
 - [ ] 27-02-PLAN.md — Convert to f16 master + Q8_0, all four sanity checks, measure the REAL Q8 size; Gate-1 baseline on the shipped stack; Q8 rung + concurrent-sequence CUDA smoke (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 27-03-PLAN.md — Re-derive the Gate 2 warrant honestly; freeze the ladder bands; descend Q6_K → Q5_K_M with the ±2pp stop rule + DeltaNet below-Q8 check; select the ship tier (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 27-04-PLAN.md — Fresh operator-only v4 HF card; canonical v3→v4 flip across PROJECT/README/MODEL_CARD; upload manifest + _pub4_upload.sh (prepared, not run) (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 27-05-PLAN.md — Blocking human authorization → push to the new v4 repo → post-upload round-trip receipt (wave 4, autonomous: false)
 
 ## Progress
