@@ -1,0 +1,39 @@
+{
+  "requirement": "PKG4-02",
+  "title": "Gate 1 baseline \u2014 pruned v4 judge on the shipped GGUF/llama.cpp stack",
+  "generated_utc": "2026-07-17T08:24:43.081624+00:00",
+  "floor_frozen_utc": "2026-07-17T08:24:43.081624+00:00",
+  "floor_frozen_note": "Written BEFORE any Q6/Q5 ladder-tier byte exists (Plan 27-03) -- anti-goalpost-move mechanism. judge_rho below is the floor Plan 03's descent gates against; it must not be adjusted after seeing a later measurement.",
+  "anchor": "f16_gguf_llamacpp",
+  "stack": "f16 GGUF (--no-mtp, no MTP/speculative-decoding head -- see conversion_receipt_v4.json mtp_deviation_note), ~/llama.cpp/build/bin/llama-server, -ngl 999 --parallel 4 --jinja, CTX 20480",
+  "llamacpp_build": "version: 1 (8f114a9) built with GNU 13.3.0 for Linux aarch64",
+  "model": "models/Qwen3.6-35B-A3B-judge-v4-pruned-k224 (224/256 experts, AIMER k=224)",
+  "seeds": "single-seed s1 (the capture is one serve pass, not a 3-seed ensemble)",
+  "judge_rho": 0.8001808600187146,
+  "ci": [
+    0.7185748294388367,
+    0.8582269161943599
+  ],
+  "n": 121,
+  "n_dataset_note": "data/reasoning_dataset/openai_val.jsonl has 141 total lines; scripts.sieve_capture_judge_http filters to rows whose first user message starts with '<wp_judge>' (its documented index discipline -- eval_relabel.py/g1_read.py enumerate identically). The other 20 lines are <wp_gen>/other examples -- irrelevant to a judge-only ship (gen retired as a deliverable 2026-07-15). n=121 is the FULL wp_judge subset, not a truncation or a skipped-example artifact. Confirmed by direct count: wp_judge=121, other=20, 121+20=141.",
+  "parse_fail": 0,
+  "max_tokens": 2048,
+  "dataset": "data/reasoning_dataset/openai_val.jsonl",
+  "labels": "output/relabel/val_labels_v1.json",
+  "capture": "output/pkg-v4/f16_eval/judge_responses.jsonl",
+  "summary": "output/pkg-v4/f16_eval/eval_summary.json",
+  "epsilon_pp": 2,
+  "non_comparable_references": {
+    "bf16_vllm_s1_rho": 0.8134073708876893,
+    "bf16_vllm_ensemble_rho": 0.8533283115844795,
+    "note": "from output/prune-v4/selection_v4.json -- bf16-vLLM, a DIFFERENT STACK and (for the ensemble) a different seed configuration. Recorded for orientation only. NOT the gate floor and NOT comparable to any number in this file."
+  },
+  "rejected_floors": {
+    "v3_judge_ensemble_rho_floor": 0.7554276436552908,
+    "v3_wp_bench_floor": 0.4284,
+    "reason": "v1.3/v3 numbers on a different base model and an unpruned checkpoint; the codegen benchmark axis does not apply at all (judge-only ship, gen retired 2026-07-15). Recorded as explicitly REJECTED so a later reader cannot mistake their absence for an oversight."
+  },
+  "gate_floor": "judge_rho - 0.02",
+  "f16_anchor_attempted": true,
+  "f16_anchor_result": "SUCCEEDED -- no OOM. The f16 (~57 GiB, --no-mtp) served cleanly on the 121 GiB host (114 GiB at rest); A3's documented OOM-history fallback branch was NOT triggered. f16_anchor_failure_evidence intentionally omitted -- there is no failure to record."
+}

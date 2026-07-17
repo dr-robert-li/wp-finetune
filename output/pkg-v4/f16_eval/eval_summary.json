@@ -1,0 +1,14 @@
+{
+  "capture": "output/pkg-v4/f16_eval/judge_responses.jsonl",
+  "rho_new": 0.8001808600187146,
+  "n": 121,
+  "ci": [
+    0.7185748294388367,
+    0.8582269161943599
+  ],
+  "baseline_rho": 0.7476689625425029,
+  "delta_vs_baseline": 0.052511897476211655,
+  "ceiling": 0.9844009569826934,
+  "gap_to_ceiling": 0.18422009696397879,
+  "parse_fail": 0
+}
