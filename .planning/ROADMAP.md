@@ -1093,6 +1093,7 @@ HuggingFace with an honest, operator-first model card
   1. Q8 GGUF conversion of the single pruned v4 judge completes (llama.cpp >=b9180) with GGUF block-count
      verified against the safetensors index, concurrent-sequence CUDA-backend smoke passing, shared-expert
      quant-type metadata independently verified (does not inherit from Phase 22's Sieve-side protection),
+
      + GGUF expert_count verified against config.json text_config.num_experts (224)
 
   2. Cascading compression gates re-run — Gate 1 f16-GGUF/llama.cpp baseline (bf16-equivalent on the
@@ -1106,13 +1107,13 @@ HuggingFace with an honest, operator-first model card
      and untouched; a post-upload round-trip (download, GGUF load, judge smoke) validates the published
      artifact — same discipline as v3.1's PUB-03
 
-**Plans**: 1/5 plans executed
+**Plans**: 2/5 plans executed
 
 Plans:
 **Wave 1**
 
 - [x] 27-01-PLAN.md — Wave 0: correct the stale "pair" scope + dead Gate-2 justification in ROADMAP/REQUIREMENTS; expert-count sanity check in the conversion driver; pkg4_quant_type_check.py; pub4_validate_upload.py (wave 0)
-- [ ] 27-02-PLAN.md — Convert to f16 master + Q8_0, all four sanity checks, measure the REAL Q8 size; Gate-1 baseline on the shipped stack; Q8 rung + concurrent-sequence CUDA smoke (wave 1)
+- [x] 27-02-PLAN.md — Convert to f16 master + Q8_0, all four sanity checks, measure the REAL Q8 size; Gate-1 baseline on the shipped stack; Q8 rung + concurrent-sequence CUDA smoke (wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -1171,4 +1172,4 @@ Note: v4.0 (Phases 20-27) starts after Phase 19 sign-off. Phase 22 (Sieve toolin
 | 24. Conditional Gate A — RL Re-Test | v4.0 | 0/TBD | Not started | - |
 | 25. Conditional Gate B — MoE-Sieve Re-Test | v4.0 | 2/2 | In Progress|  |
 | 26. Conditional Gate C — Merge + Prune Re-Test | v4.0 | 0/TBD | Not started | - |
-| 27. Packaging & Publication Refresh | v4.0 | 1/5 | In Progress|  |
+| 27. Packaging & Publication Refresh | v4.0 | 2/5 | In Progress|  |

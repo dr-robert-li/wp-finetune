@@ -407,7 +407,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GATE4-01 | Phase 24 | Pending |
 | GATE4-03 | Phase 25 | Complete |
 | GATE4-04 | Phase 26 | Complete |
-| PKG4-01 | Phase 27 | Pending |
+| PKG4-01 | Phase 27 | Complete |
 | PKG4-02 | Phase 27 | Pending |
 | PUB4-01 | Phase 27 | Pending |
 
@@ -450,7 +450,7 @@ Pre-registered success criteria: judge rho **>0.85 single-seed OR >0.87 3-seed e
 
 > Scope corrected 2026-07-17 (Phase 27 planning): the "pair" framing was stale v3.0 template text; gen retired as a deliverable 2026-07-15. See .planning/phases/27-packaging-publication-refresh/CONTEXT.md.
 
-- [ ] **PKG4-01**: Q8 GGUF conversion of the pruned v4 judge (judge-only — the generation half was retired as a deliverable 2026-07-15, PROJECT.md:14) (llama.cpp ≥b9180 pin; GGUF block-count sanity vs safetensors index; concurrent-sequence CUDA-backend smoke; shared-expert quant-type metadata independently verified; GGUF expert_count sanity vs config.json text_config.num_experts (224 after AIMER k=224 surgery))
+- [x] **PKG4-01**: Q8 GGUF conversion of the pruned v4 judge (judge-only — the generation half was retired as a deliverable 2026-07-15, PROJECT.md:14) (llama.cpp ≥b9180 pin; GGUF block-count sanity vs safetensors index; concurrent-sequence CUDA-backend smoke; shared-expert quant-type metadata independently verified; GGUF expert_count sanity vs config.json text_config.num_experts (224 after AIMER k=224 surgery))
 - [ ] **PKG4-02**: Cascading compression gates re-run (Gate 1 f16-GGUF/llama.cpp baseline / Gate 2 warrant RE-DERIVED for a judge-only ship (the pair rationale is void — 60 GiB bf16 fits the 121 GiB host); the real warrant is distribution size + operator memory budget + the measured-lossless Q8 precedent / ladder Q8→Q6→Q5 within ±2pp; NO uniform 4-bit nf4; below-Q8 requires DeltaNet recurrent-state tensor precision check)
 
 ### Publication Refresh

@@ -5,15 +5,15 @@ milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
 current_phase: 27
 current_phase_name: Packaging & Publication Refresh
 status: executing
-stopped_at: Completed 27-01-PLAN.md
-last_updated: "2026-07-17T07:33:23.672Z"
+stopped_at: Completed 27-02-PLAN.md
+last_updated: "2026-07-17T08:47:58.231Z"
 last_activity: 2026-07-17
 last_activity_desc: Phase 27 execution started
 progress:
   total_phases: 8
   completed_phases: 6
   total_plans: 22
-  completed_plans: 18
+  completed_plans: 19
   percent: 75
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-12)
 ## Current Position
 
 Phase: 27 (Packaging & Publication Refresh) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-07-17 — Phase 27 execution started
 
@@ -300,7 +300,7 @@ data: `scripts/build_reasoning_negatives.py` + `build_augmented_train.py`; gates
 Status: Ready to execute
 Note: Local artifacts `models/qwen3-30b-wp-30_70-merged-v2` + `...-reasoning-merged` + `adapters/.../checkpoint-72` are READ-ONLY references/fallback only (NOT promoted). The GB10 memory wall is documented in `output/format_stability/discriminator/MEMORY-INVESTIGATION-bf16.md`. `04.3-REOPEN-PLAN.md` remains a 0-task brief — do not execute.
 
-Progress: [████████░░] 82%
+Progress: [█████████░] 86%
 
 ## Performance Metrics
 
@@ -393,6 +393,7 @@ Progress: [████████░░] 82%
 |------|----------|-------|-------|
 | Phase 25 P02 | 172 | 3 tasks | 5 files |
 | Phase 27-packaging-publication-refresh P01 | 25min | 3 tasks | 6 files |
+| Phase 27 P02 | 70min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -493,6 +494,8 @@ Recent decisions affecting current work:
 - [Phase ?]: Phase 26 routing (relayed via orchestrator): attempt prune at k=224 (non-inferior, point-better, parseable) with 3-seed ensemble confirm before publish; ~12.5% drop unlikely to close 37.8->30.2 GiB gap
 - [Phase ?]: Phase 27 Wave 0: corrected stale gen+judge 'pair' scope to judge-only ship (pruned v4 at models/Qwen3.6-35B-A3B-judge-v4-pruned-k224) in ROADMAP.md/REQUIREMENTS.md; voided the dead 134 GiB pair-based Gate-2 rationale
 - [Phase ?]: Added expert-count sanity check to eval4_ext_gguf_convert.sh (hard subscript, no silent skip) + new pkg4_quant_type_check.py and pub4_validate_upload.py, both self-check-provable offline, closing T-27-01/T-27-02 before any conversion output is trusted
+- [Phase ?]: [Phase 27 Plan 02]: Q8 is NOT lossless on the pruned v4 judge (Gate1 f16 rho 0.8002 vs Q8 rho 0.7851, delta -1.507pp) -- contradicts v3 precedent, visible only because Gate 1 was anchored to f16 (A1). Q8 PASSES the -2pp bar with 0.493pp slack; Q6/Q5 in Plan 03 unlikely to clear it.
+- [Phase ?]: [Phase 27 Plan 02]: --no-mtp GGUF conversion required -- Phase 26 prune left the MTP/nextn layer at 256 experts while trunk was pruned to 224; GGUF's global expert_count field made the mixed-count GGUF unloadable. Shipped GGUF has no MTP/speculative-decoding head.
 
 ### Pending Todos
 
@@ -540,8 +543,8 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-17T07:33:23.662Z
-Stopped at: Completed 27-01-PLAN.md
+Last session: 2026-07-17T08:47:58.221Z
+Stopped at: Completed 27-02-PLAN.md
 
 Prior session: 2026-07-13T11:52:35.100Z
 Stopped at: Phase 21 Plan 01: GEN-01 satisfied; MoE train_mlp=True merge-path gap found (merge_ok=false, human decision required before GEN-02/JUDGE-02 real Tinker spend). See 21-01-SUMMARY.md + output/base21/moe_merge_probe.json.
