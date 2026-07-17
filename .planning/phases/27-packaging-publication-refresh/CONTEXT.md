@@ -41,3 +41,26 @@ The card states the boundary (it judges, it does not generate) and points operat
 The ROADMAP Phase 27 section says "Q8 GGUF **pair** conversion" and cites a "134 GiB bf16 pair". **That wording is stale**, inherited from the v3.0 template. The gen role was retired as a deliverable on 2026-07-15 (`PROJECT.md:14`, `README.md`, `JOURNAL.md` — every fine-tuned gen candidate regressed below the raw Qwen3.6 base). Phase 27 packages and publishes **one model**: the pruned v4 judge at `models/Qwen3.6-35B-A3B-judge-v4-pruned-k224` (60 GB bf16 on disk, 224/256 experts). Phase 27 should correct the stale ROADMAP/REQUIREMENTS wording rather than silently plan around it.
 
 **~33.6 GiB Q8 is a PROJECTION, not a measurement** — `output/prune-v4/selection_v4.json` says so explicitly. Measuring it is this phase's job; no plan may treat it as a known value.
+
+## LOCKED DECISION 5 — ship tier is Q6_K, human-confirmed (2026-07-17)
+
+Ship: **Q6_K, 23.47 GiB** (`output/pkg-v4/wp-judge-v4-pruned-k224.Q6_K.gguf`). Human-confirmed after the executor flagged the call `human_judgment: true` in 27-03. This resolves that flag — Plans 27-04/27-05 consume `pkg4_quantization_ladder.json`'s `ship_tier`/`ship_gguf` as the single source.
+
+Measured ladder (all four rungs, single-seed s1, n=121 wp_judge subset, max_tokens 2048):
+
+| tier | rho | Δ vs f16 floor | n | parse_fail | size |
+|---|---|---|---|---|---|
+| f16 | 0.8002 | — (the floor) | 121 | 0 | 57.10 GiB |
+| Q8_0 | 0.7851 | −1.51pp | 121 | 0 | 30.37 GiB |
+| **Q6_K** | **0.8063** | **+0.61pp** | 121 | **0** | **23.47 GiB** ← ships |
+| Q5_K_M | 0.8060 | +0.58pp | 120 | 1 | 20.36 GiB |
+
+**Rationale — read this before citing any rho above.** All four rungs are **statistically indistinguishable**. Q6 scored *above* its own f16 source, which is impossible as a true effect (a lossy compression cannot exceed its source), proving the ~1–2pp spread is single-seed sampling noise, not signal. Selecting on "highest rho" would be selecting noise. The only discriminator that separates tiers is **parse_fail**: Q5_K_M alone produced a failure (1/121 — a degenerate repetition loop that never emitted a closing structured verdict). For a judge whose contract is a parseable rubric, that is a functional defect, not a quality wobble — though 1/121 is weak evidence in isolation. Q6_K is the smallest zero-parse-failure tier.
+
+One-line rationale: **smallest artifact at statistically-equal measured quality with zero parse failures** — explicitly NOT "highest rho won".
+
+This **overrides** 27-03-PLAN's literal mechanical stop rule (lowest rho-passing tier), which would have picked Q5_K_M.
+
+**Consequence for LOCKED DECISION 1's tradeoff:** the "accepted tradeoff: larger artifact than v3's 30.2 GiB" is **void**. Q6_K at 23.47 GiB is ~22% SMALLER than v3's shipped artifact, at tied quality, on a newer base. The card must not repeat the "larger artifact" framing.
+
+**Superseded finding:** 27-02-SUMMARY.md's headline ("Q8 is NOT lossless / the prune increased quantization sensitivity") was **falsified** by the Q6 rung — see `ladder_q8.json`'s `revised_interpretation` and `pkg4_quantization_ladder.json`'s `noise_floor_finding`. Raw measurements are immutable; only the interpretation was corrected. Do not repeat the falsified claim anywhere, including the card.
