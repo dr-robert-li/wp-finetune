@@ -1,0 +1,58 @@
+{
+  "requirement": "PKG4-02",
+  "title": "Incremental quantization ladder Q8->Q6->Q5 with +/-2pp stop rule (v4, judge-only)",
+  "generated_utc": "2026-07-17T08:55:00.000000+00:00",
+  "gate1_baseline_ref": "output/pkg-v4/gate1_f16_baseline_v4.json",
+  "gate2_decision_ref": "output/pkg-v4/gate2_quantization_decision_v4.md",
+  "model": "models/Qwen3.6-35B-A3B-judge-v4-pruned-k224",
+  "bands": {
+    "judge_rho_floor": "see gate1_baseline_ref",
+    "epsilon_pp": 2,
+    "bar": "delta >= -0.02, INCLUSIVE at exactly -0.02 (matches Phase 26 ci_lower >= -0.02, selection_v4.json)",
+    "tie_rule": "when two tiers' rho are exactly equal and both clear the bar, the LOWER tier ships -- the stop rule descends and ships the lowest tier within the band",
+    "null_rule": "a rung whose eval yields n_scored == 0 (all parse-fail) is status FAIL with judge_rho null -- never pending, never skipped, never a pass"
+  },
+  "stop_rule": "Descend Q8->Q6->Q5. Ship the lowest tier whose judge rho is within 2pp of the Gate 1 baseline. HALT descent at the first tier that drops >2pp; do not measure or ship any lower tier after a halt.",
+  "floor_frozen_utc": "2026-07-17T08:55:00.000000+00:00",
+  "ladder": [
+    {
+      "tier": "Q8",
+      "method": "GGUF Q8_0 (llama.cpp)",
+      "status": "MEASURED",
+      "measured": {
+        "judge_rho": 0.7851092593129675,
+        "ci": [0.6983942411407741, 0.8492152048156426],
+        "n": 121,
+        "parse_fail": 0,
+        "max_tokens": 2048,
+        "size_bytes": 32614463296,
+        "size_gib": 30.3746,
+        "capture": "output/pkg-v4/q8_eval/judge_responses.jsonl",
+        "summary": "output/pkg-v4/q8_eval/eval_summary.json"
+      },
+      "gate": {
+        "gate1_rho": 0.8001808600187146,
+        "delta": -0.01507160070574709,
+        "delta_pp": -1.5072,
+        "epsilon_pp": 2,
+        "bar": "delta >= -0.02 (inclusive, matching Phase 26's ci_lower >= -0.02 convention)",
+        "pass": true,
+        "slack_pp": 0.4928
+      }
+    },
+    {"tier": "Q6", "method": "GGUF Q6_K", "status": "pending", "measured": null},
+    {"tier": "Q5", "method": "GGUF Q5_K_M", "status": "pending", "measured": null}
+  ],
+  "excluded": {
+    "Q4-nf4": {
+      "status": "measured FAIL (v3, carried forward)",
+      "reason": "MoE router-quant collapse: router weights quantized at the same uniform width as the experts; sparse routing cannot tolerate the blur. Tombstone: models/qwen3-30b-wp-30_70-merged-v2-4bit. PKG4-02 forbids uniform 4-bit nf4.",
+      "reref": "output/packaging/pkg03_quantization_ladder.json"
+    },
+    "Q4-awq": {
+      "status": "out of scope",
+      "reason": "AWQ W4A16 is a vLLM artifact path, not a GGUF ship; judge-only GGUF ship does not need it."
+    }
+  },
+  "ship_tier": null
+}
