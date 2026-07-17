@@ -408,7 +408,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GATE4-03 | Phase 25 | Complete |
 | GATE4-04 | Phase 26 | Complete |
 | PKG4-01 | Phase 27 | Complete |
-| PKG4-02 | Phase 27 | Pending |
+| PKG4-02 | Phase 27 | Complete |
 | PUB4-01 | Phase 27 | Complete |
 
 ## v4.0 Requirements — Pipeline Rerun on Qwen3.6-35B-A3B

@@ -3,18 +3,18 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
 current_phase: 27
-current_phase_name: Packaging & Publication Refresh
-status: verifying
+status: completed
 stopped_at: Completed 27-05-PLAN.md — Phase 27 fully executed
-last_updated: "2026-07-17T13:11:27.911Z"
+last_updated: "2026-07-17T13:24:52.450Z"
 last_activity: 2026-07-17
-last_activity_desc: Phase 27 execution started
+last_activity_desc: Phase 27 marked complete
 progress:
   total_phases: 8
   completed_phases: 7
   total_plans: 22
   completed_plans: 22
   percent: 88
+current_phase_name: Conditional Gate A — RL Re-Test
 ---
 
 # Project State
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-07-12)
 
 ## Current Position
 
-Phase: 27 (Packaging & Publication Refresh) — EXECUTING
-Plan: 5 of 5
-Status: Phase complete — ready for verification
-Last activity: 2026-07-17 — Phase 27 execution started
+Phase: 27 — COMPLETE
+Plan: Not started
+Status: Phase 27 complete
+Last activity: 2026-07-17 — Phase 27 marked complete
 
 ### 2026-07-17 — Phase 27 PLANNED: 5 plans, waves 0-4 (linear chain)
 
@@ -306,7 +306,7 @@ Progress: [██████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 43
+- Total plans completed: 48
 - Average duration: 9 min
 - Total execution time: 0.62 hours
 
@@ -326,6 +326,7 @@ Progress: [██████████] 100%
 | 21 | 6 | - | - |
 | 23 | 1 | - | - |
 | 22 | 2 | - | - |
+| 27 | 5 | - | - |
 
 **Recent Trend:**
 
@@ -682,7 +683,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Phase complete — ready for verification
+**Status:** Phase 27 complete
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)
