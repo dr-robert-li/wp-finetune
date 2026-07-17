@@ -448,12 +448,16 @@ Pre-registered success criteria: judge rho **>0.85 single-seed OR >0.87 3-seed e
 
 ### Packaging (Stage 5 — quantization mandatory)
 
-- [ ] **PKG4-01**: Q8 GGUF pair conversion (llama.cpp ≥b9180 pin; GGUF block-count sanity vs safetensors index; concurrent-sequence CUDA-backend smoke; shared-expert quant-type metadata independently verified)
-- [ ] **PKG4-02**: Cascading compression gates re-run (Gate 1 bf16 baseline / Gate 2 pre-determined "warranted" for pair serving — 134 GiB bf16 > 121 GB host / ladder Q8→Q6→Q5 within ±2pp; NO uniform 4-bit nf4; below-Q8 requires DeltaNet recurrent-state tensor precision check)
+> Scope corrected 2026-07-17 (Phase 27 planning): the "pair" framing was stale v3.0 template text; gen retired as a deliverable 2026-07-15. See .planning/phases/27-packaging-publication-refresh/CONTEXT.md.
+
+- [ ] **PKG4-01**: Q8 GGUF conversion of the pruned v4 judge (judge-only — the generation half was retired as a deliverable 2026-07-15, PROJECT.md:14) (llama.cpp ≥b9180 pin; GGUF block-count sanity vs safetensors index; concurrent-sequence CUDA-backend smoke; shared-expert quant-type metadata independently verified; GGUF expert_count sanity vs config.json text_config.num_experts (224 after AIMER k=224 surgery))
+- [ ] **PKG4-02**: Cascading compression gates re-run (Gate 1 f16-GGUF/llama.cpp baseline / Gate 2 warrant RE-DERIVED for a judge-only ship (the pair rationale is void — 60 GiB bf16 fits the 121 GiB host); the real warrant is distribution size + operator memory budget + the measured-lossless Q8 precedent / ladder Q8→Q6→Q5 within ±2pp; NO uniform 4-bit nf4; below-Q8 requires DeltaNet recurrent-state tensor precision check)
 
 ### Publication Refresh
 
-- [ ] **PUB4-01**: HF publication refresh — cards updated with v4.0 lineage + benchmark deltas vs v3.0, post-upload validation round-trip (same PUB-03 discipline)
+> Scope corrected 2026-07-17 (Phase 27 planning): the "pair" framing was stale v3.0 template text; gen retired as a deliverable 2026-07-15. See .planning/phases/27-packaging-publication-refresh/CONTEXT.md.
+
+- [ ] **PUB4-01**: HF publication refresh — NEW repo iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf published with an operator-first card (CONTEXT.md LOCKED DECISION 2); v3 repo untouched, post-upload validation round-trip (same PUB-03 discipline)
 
 **Coverage:**
 

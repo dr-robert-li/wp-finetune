@@ -121,7 +121,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 24: Conditional Gate A — RL Re-Test** - RL re-test only with a materially different reward family; no_winner is a valid result
 - [ ] **Phase 25: Conditional Gate B — MoE-Sieve Re-Test** - k-sweep re-test on adapted tooling (TOST, CI-aware); no_winner is a valid result
 - [x] **Phase 26: Conditional Gate C — Merge + Prune Re-Test** - COMPLETE 2026-07-17 — **`ship_pruned_v4`**. AIMER@k=224 gate-before-remove PASSED on the pre-registered routing-(B) non-inferiority bar (pruned s1 rho 0.8134 vs same-stack full arm 0.7935, +0.020; ci_lower −0.019 vs −0.020 margin — thin, slack 0.001; two-sided TOST `equivalent:false` kept as-measured, fails on the *upper* bound). D2_security retained (6.326 ≥ 6.115). Physical surgery applied (256→224 experts/layer, stacked-tensor axis-0 slice) → `models/Qwen3.6-35B-A3B-judge-v4-pruned-k224` (60 GB bf16, ~33.6 GiB Q8 projected). Pruned checkpoint validated coherent (delta −0.005 vs masked); 3-seed ensemble 0.8533 = confirmatory no-collapse, NOT a pruning gain (computed vs a single-seed arm). Canonical flips **v3 → v4** per the 2026-07-17 directive (newer base preferred over v3's smaller artifact; size-vs-v3 demoted from ship gate to note). Receipts: `output/prune-v4/selection_v4.json`.
-- [ ] **Phase 27: Packaging & Publication Refresh** - Q8 GGUF pair conversion + cascading compression gates + HF card lineage refresh
+- [ ] **Phase 27: Packaging & Publication Refresh** - Q8 GGUF conversion (pruned v4 judge, judge-only) + cascading compression gates + HF card lineage refresh
 
 </details>
 
@@ -1083,24 +1083,28 @@ for this phase.**
 
 ### Phase 27: Packaging & Publication Refresh
 
-**Goal**: The final shipping artifact (whatever Phases 23-26 produced) is quantized to a memory-feasible
-format, validated end-to-end, and published to HuggingFace with an honest, full-lineage model card
-**Depends on**: Phase 23 (bf16 pair minimum — packaging can proceed even if all conditional gates land on
-`no_winner`); Phase 25/26 if either produced a compression winner
+**Goal**: The final shipping artifact (the pruned v4 judge from Phase 26: models/Qwen3.6-35B-A3B-judge-v4-pruned-k224,
+60 GB bf16, 224/256 experts) is quantized to a memory-feasible format, validated end-to-end, and published to
+HuggingFace with an honest, operator-first model card
+**Depends on**: Phase 26 (Gate C closed 2026-07-17: ship_pruned_v4)
 **Requirements**: PKG4-01, PKG4-02, PUB4-01
 **Success Criteria** (what must be TRUE):
 
-  1. Q8 GGUF pair conversion completes (llama.cpp >=b9180) with GGUF block-count verified against the
-     safetensors index, concurrent-sequence CUDA-backend smoke passing, and shared-expert quant-type
-     metadata independently verified (does not inherit from Phase 22's Sieve-side protection)
+  1. Q8 GGUF conversion of the single pruned v4 judge completes (llama.cpp >=b9180) with GGUF block-count
+     verified against the safetensors index, concurrent-sequence CUDA-backend smoke passing, shared-expert
+     quant-type metadata independently verified (does not inherit from Phase 22's Sieve-side protection),
+     + GGUF expert_count verified against config.json text_config.num_experts (224)
 
-  2. Cascading compression gates re-run — Gate 1 bf16 baseline, Gate 2 (pre-determined "warranted" since
-     the bf16 pair at 134 GiB exceeds the 121 GB GB10 host), ladder Q8->Q6->Q5 within +/-2pp, no uniform
+  2. Cascading compression gates re-run — Gate 1 f16-GGUF/llama.cpp baseline (bf16-equivalent on the
+     shipped stack), Gate 2 (warrant re-derived in Phase 27 for a judge-only ship — the stale pair-serving
+     rationale is VOID: the 60 GB pruned checkpoint fits the 121 GiB host; see
+     output/pkg-v4/gate2_quantization_decision_v4.md), ladder Q8->Q6->Q5 within +/-2pp, no uniform
      4-bit nf4
 
-  3. HuggingFace model cards are updated with the full v4.0 lineage and benchmark deltas vs v3.0, and a
-     post-upload round-trip (download, GGUF load, gen/judge smoke) validates the published artifact — same
-     discipline as v3.1's PUB-03
+  3. A new HuggingFace repo (iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf) carries an operator-first card
+     per CONTEXT.md LOCKED DECISION 2; the v3 repo iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf stays live
+     and untouched; a post-upload round-trip (download, GGUF load, judge smoke) validates the published
+     artifact — same discipline as v3.1's PUB-03
 
 **Plans**: 5 plans
 
