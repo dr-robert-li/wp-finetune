@@ -184,4 +184,19 @@ None — no external service configuration required. All work was local GGUF con
 ---
 *Phase: 27-packaging-publication-refresh*
 *Completed: 2026-07-17*
+
+## Self-Check: PASSED
+
+- FOUND: `output/pkg-v4/conversion_receipt_v4.json`
+- FOUND: `output/pkg-v4/quant_type_q8.json`
+- FOUND: `output/pkg-v4/gate1_f16_baseline_v4.json`
+- FOUND: `output/pkg-v4/ladder_q8.json`
+- FOUND: `output/pkg-v4/wp-judge-v4-pruned-k224.f16.gguf`
+- FOUND: `output/pkg-v4/wp-judge-v4-pruned-k224.Q8_0.gguf`
+- FOUND: `scripts/eval4_ext_gguf_convert.sh`
+- FOUND commit `bf8ab1a` (Task 1)
+- FOUND commit `5e469a1` (Rule 1/3 fix — `--no-mtp` re-conversion)
+- FOUND commit `d043890` (Task 2)
+- FOUND commit `130af17` (Task 3)
+- FOUND commit `b6c3ed0` (plan SUMMARY)
 </content>
