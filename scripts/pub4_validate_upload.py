@@ -358,9 +358,9 @@ def real_run(repo: str, manifest_path: str, out_path: str, scratch_dir: str, por
     try:
         proc = serve_and_probe(gguf_local, port, alias)
         header = read_gguf_header(gguf_local)
-        assert header["expert_count"] == EXPECTED_EXPERT_COUNT, (
+        assert header["expert_count"] == expect_experts, (
             f"EXPERT COUNT MISMATCH on DOWNLOADED bytes: "
-            f"gguf={header['expert_count']} vs expected={EXPECTED_EXPERT_COUNT}"
+            f"gguf={header['expert_count']} vs expected={expect_experts}"
         )
         smoke = run_judge_smoke(port, alias, os.path.dirname(out_path) or ".")
         gguf_load = {
@@ -405,6 +405,8 @@ def main() -> int:
     ap.add_argument("--out", default="output/pkg-v4/pub4_validation_receipt.json")
     ap.add_argument("--scratch", default="models/_hf_dl_scratch/judge_v4")
     ap.add_argument("--port", type=int, default=8093)
+    ap.add_argument("--expect-experts", type=int, default=EXPECTED_EXPERT_COUNT,
+                    help="expected GGUF expert_count (224 pruned default; 256 for the unpruned variant)")
     ap.add_argument("--v3-snapshot", default="output/pkg-v4/v3_repo_prepush_snapshot.json",
                      help="Task 2's pre-push snapshot of the v3 repo (LOCKED DECISION 3 assertion)")
     ap.add_argument("--self-check", action="store_true")
