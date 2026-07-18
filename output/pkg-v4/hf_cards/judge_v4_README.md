@@ -28,9 +28,13 @@ generation fine-tune is shipped alongside this judge.
 
 Repo: [`iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf`](https://huggingface.co/iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf)
 
-| File | Quant | Size |
-|---|---|---|
-| `wp-judge-v4-pruned-k224.Q6_K.gguf` | Q6_K | 23.47 GiB |
+| File | Quant | Size | MTP / speculative decoding |
+|---|---|---|---|
+| `wp-judge-v4-pruned-k224.Q6_K.gguf` (default) | Q6_K | 23.47 GiB | no |
+| `wp-judge-v4-unpruned.Q5_K_M.gguf` | Q5_K_M | 23.61 GiB | yes |
+
+Both judge identically within measurement noise (see Performance). Take the default; take the
+unpruned file if you want speculative decoding — same download size to within 150 MB.
 
 ```bash
 hf download iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf \
@@ -47,6 +51,10 @@ llama-server -m ./judge/wp-judge-v4-pruned-k224.Q6_K.gguf --host 127.0.0.1 --por
 ```
 
 `--jinja` is load-bearing — the chat template drives the rubric output format.
+
+With the unpruned file you can additionally pass `--spec-type draft-mtp` to enable speculative
+decoding via the model's own MTP head (measured 56% draft acceptance on judge output — no separate
+draft model needed). The pruned file ignores this flag (no MTP head).
 
 Judge a snippet — prepend the `<wp_judge>` task prefix and the model returns per-dimension reasoning
 followed by a structured verdict:
@@ -78,19 +86,29 @@ Spearman rho vs. human-relabeled 9-dimension scores, n=121 held-out items, singl
 All three rungs are statistically indistinguishable at this sample size (95% CI half-widths ~7-8pp). Q6_K
 ships as the smallest tier with zero parse failures, not because it scored highest.
 
+The unpruned variant measured rho 0.8093 (Q5_K_M, same protocol, 0 parse failures) against its own f16
+floor of 0.8081 — statistically indistinguishable from the pruned file's numbers above. Its quant tier was
+selected by the same rule: smallest rung within ±2pp of its own f16 floor with zero parse failures.
+
 The prior WP Judge (`iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf`, Qwen3-30B-A3B base, 30.2 GiB) reports
 0.8056 on a **3-seed ensemble** — a different stack and seed configuration than the single-seed number
 above, and not directly comparable to it.
 
-## Known limitation
+## Variants
 
-This GGUF has **no MTP / speculative-decoding head**. The checkpoint's expert-pruning left the MTP layer
-at a different expert count than the trunk, and GGUF's expert-count metadata must be uniform, so the MTP
-tensors were dropped at conversion (`--no-mtp`). Speculative decoding is not available with this file;
-standard generation and judging are unaffected.
+| | `wp-judge-v4-pruned-k224.Q6_K.gguf` (default) | `wp-judge-v4-unpruned.Q5_K_M.gguf` |
+|---|---|---|
+| Experts | 224/256 (expert-pruned) | 256/256 (unpruned) |
+| MTP / speculative decoding | **not available** | **available** (`--spec-type draft-mtp`, 56% measured draft acceptance) |
+| Size | 23.47 GiB | 23.61 GiB |
+| Judge quality | statistically tied (see Performance) | statistically tied (see Performance) |
+
+Why the default has no MTP head: expert-pruning left the MTP layer at a different expert count than the
+trunk, and GGUF's expert-count metadata must be uniform, so the MTP tensors were dropped at its conversion
+(`--no-mtp`). Standard generation and judging are unaffected in both files.
 
 ## Links
 
-- Base: fine-tuned and expert-pruned (224/256 experts) from [`Qwen/Qwen3.6-35B-A3B`](https://huggingface.co/Qwen/Qwen3.6-35B-A3B), then quantized to GGUF.
+- Base: fine-tuned from [`Qwen/Qwen3.6-35B-A3B`](https://huggingface.co/Qwen/Qwen3.6-35B-A3B), then quantized to GGUF. The default file is additionally expert-pruned (224/256 experts); the unpruned variant keeps all 256.
 - How this was built: [github.com/dr-robert-li/wp-finetune](https://github.com/dr-robert-li/wp-finetune) — see `PIPELINE.md`, `JOURNAL.md`, `CHANGELOG.md`.
 - License: Apache 2.0.

@@ -1,0 +1,30 @@
+{
+  "tier": "Q8",
+  "method": "GGUF Q8_0 (llama.cpp)",
+  "status": "MEASURED",
+  "generated_utc": "2026-07-18T00:12:38.412179+00:00",
+  "gate1_baseline_ref": "output/pkg-v4/unpruned_gate1_f16_baseline.json",
+  "measured": {
+    "judge_rho": 0.7767256306639484,
+    "ci": [
+      0.6952193441045995,
+      0.8376140041977965
+    ],
+    "n": 121,
+    "parse_fail": 0,
+    "max_tokens": 2048,
+    "size_bytes": 37802148960,
+    "capture": "output/pkg-v4/unpruned_q8_eval/judge_responses.jsonl",
+    "summary": "output/pkg-v4/unpruned_q8_eval/eval_summary.json"
+  },
+  "gate": {
+    "gate1_rho": 0.8081393794583069,
+    "delta": -0.03141374879435854,
+    "delta_pp": -3.1414,
+    "epsilon_pp": 2,
+    "bar": "delta >= -0.02 (inclusive)",
+    "pass": false,
+    "slack_pp": -1.1414
+  },
+  "interpretation_note": "Point estimate FAILS the pre-registered -2pp bar (-3.14pp). Caution before treating as real: the pruned ladder's noise_floor_finding demonstrated a 2.12pp pure-noise rung spread at this n (Q6 > its own f16 source, physically impossible as signal), and the CIs here overlap heavily. Per the refined goal (measure the full ladder, pick best size-to-performance), Q6/Q5 are measured regardless \u2014 a Q6/Q5 result back inside the band would demonstrate non-monotonicity (noise) a second time; all three rungs failing would be a genuine degradation signal."
+}

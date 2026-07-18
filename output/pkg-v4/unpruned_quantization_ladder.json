@@ -1,0 +1,45 @@
+{
+  "title": "Unpruned-MTP variant quantization ladder (LOCKED DECISION 6 addendum)",
+  "generated_utc": "2026-07-18T00:44:25.994258+00:00",
+  "checkpoint": "models/Qwen3.6-35B-A3B-judge-v4-s1-merged (256/256 experts, MTP head retained, block_count 41)",
+  "gate1_baseline_ref": "output/pkg-v4/unpruned_gate1_f16_baseline.json",
+  "ladder": [
+    {
+      "tier": "f16",
+      "rho": 0.8081393794583069,
+      "delta_pp": 0.0,
+      "parse_fail": 0,
+      "size_gib": 66.19,
+      "role": "floor"
+    },
+    {
+      "tier": "Q8_0",
+      "rho": 0.7767256306639484,
+      "delta_pp": -3.1414,
+      "parse_fail": 0,
+      "size_gib": 35.21,
+      "pass": false
+    },
+    {
+      "tier": "Q6_K",
+      "rho": 0.8074827513509674,
+      "delta_pp": -0.0657,
+      "parse_fail": 0,
+      "size_gib": 27.2,
+      "pass": true
+    },
+    {
+      "tier": "Q5_K_M",
+      "rho": 0.8093208092209783,
+      "delta_pp": 0.1181,
+      "parse_fail": 0,
+      "size_gib": 23.61,
+      "pass": true
+    }
+  ],
+  "noise_floor_finding": "Second independent reproduction of the pruned ladder's non-monotonicity: Q6 (-0.07pp) and Q5 (+0.12pp) both sit ~3pp ABOVE Q8 (-3.14pp), and Q5 sits above its own f16 source. No degradation mechanism produces that ordering \u2014 single-seed rung-to-rung rho deltas at n=121 are sampling noise. Q8's band failure is not treated as a real signal; it is recorded as measured.",
+  "ship_tier": "Q5_K_M",
+  "ship_gguf": "output/pkg-v4/wp-judge-v4-unpruned.Q5_K_M.gguf",
+  "ship_rationale": "Q5_K_M ships: smallest rung within the pre-registered \u00b12pp band of this checkpoint's own f16 floor with ZERO parse failures across n=121 (the selection rule locked in LOCKED DECISION 6, identical in kind to the pruned ladder's rule). NOT selected on rho point-ordering \u2014 established noise. Contrast with the pruned ladder, where Q5 produced 1/121 parse failure and Q6 shipped; this checkpoint's Q5 ran clean.",
+  "pending_before_upload": "MTP speculative-decoding smoke (--spec-type draft-mtp) on the ship rung"
+}

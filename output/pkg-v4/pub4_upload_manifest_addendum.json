@@ -10,16 +10,12 @@
     "unpruned_variant_size_bytes": 25347531872,
     "unpruned_verdict": "25347531872 bytes (~23.61 GiB) well under both limits"
   },
+  "addendum_note": "2026-07-18 LOCKED DECISION 6: unpruned-MTP variant (Q5_K_M) added + README updated. Pruned GGUF unchanged on the Hub (not re-uploaded).",
   "repos": [
     {
       "repo_id": "iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf",
       "private": false,
       "files": [
-        {
-          "path": "output/pkg-v4/wp-judge-v4-pruned-k224.Q6_K.gguf",
-          "repo_path": "wp-judge-v4-pruned-k224.Q6_K.gguf",
-          "size_bytes": 25200652096
-        },
         {
           "path": "output/pkg-v4/hf_cards/judge_v4_README.md",
           "repo_path": "README.md",
@@ -32,6 +28,5 @@
         }
       ]
     }
-  ],
-  "addendum_note": "2026-07-18 LOCKED DECISION 6: unpruned-MTP variant (Q5_K_M) added + README updated. Pruned GGUF unchanged on the Hub (not re-uploaded)."
+  ]
 }

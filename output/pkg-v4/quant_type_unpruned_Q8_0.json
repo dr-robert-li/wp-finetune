@@ -1,0 +1,20 @@
+{
+  "gguf": "output/pkg-v4/wp-judge-v4-unpruned.Q8_0.gguf",
+  "expect": "Q8_0",
+  "routed_expert_types": [
+    "Q8_0"
+  ],
+  "shared_expert_types": [
+    "Q8_0"
+  ],
+  "deltanet_state_types": [
+    "F32",
+    "Q8_0"
+  ],
+  "type_census": {
+    "Q8_0": 443,
+    "F32": 310
+  },
+  "shared_expert_uniform": true,
+  "checked_utc": "2026-07-17T22:42:18.109936+00:00"
+}
