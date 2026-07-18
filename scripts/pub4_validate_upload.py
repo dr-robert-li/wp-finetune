@@ -335,7 +335,7 @@ def _write_receipt(out_path: str, downloaded_from_hf: bool, scratch_paths: dict,
 
 
 def real_run(repo: str, manifest_path: str, out_path: str, scratch_dir: str, port: int,
-             v3_snapshot_path: str) -> int:
+             v3_snapshot_path: str, expect_experts: int = EXPECTED_EXPERT_COUNT) -> int:
     raw_manifest = json.load(open(manifest_path))
     manifest_sized = _manifest_with_local_sizes(raw_manifest)
 
@@ -419,7 +419,8 @@ def main() -> int:
     if not args.repo:
         ap.error("--repo is required unless --self-check")
 
-    return real_run(args.repo, args.manifest, args.out, args.scratch, args.port, args.v3_snapshot)
+    return real_run(args.repo, args.manifest, args.out, args.scratch, args.port, args.v3_snapshot,
+                    args.expect_experts)
 
 
 if __name__ == "__main__":
