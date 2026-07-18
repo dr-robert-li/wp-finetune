@@ -1,0 +1,54 @@
+{
+  "_comment": "Overlap receipt template — EXTRACTION_GUIDE.md §4. The extraction script fills this and writes it as overlap_receipt.json. No tier sampling may proceed without a complete, non-template receipt (check: generated_at must be non-null).",
+  "generated_at": null,
+  "collection_date": null,
+  "extractor_version": null,
+  "reference_sets": {
+    "train": {
+      "file": "docs/v5-labelling/v4-judge-training-dataset/openai_train_relabel_v1.jsonl",
+      "rows_total": 563,
+      "rows_with_wp_judge_tag": 482,
+      "reference_bodies_extracted": null,
+      "normalization": "strip_comments_collapse_whitespace"
+    },
+    "val": {
+      "file": "docs/v5-labelling/v4-judge-training-dataset/openai_val.jsonl",
+      "rows_total": 141,
+      "rows_with_wp_judge_tag": 121,
+      "reference_bodies_extracted": null,
+      "normalization": "strip_comments_collapse_whitespace"
+    }
+  },
+  "thresholds": {
+    "exact_hash_algorithm": "sha256_normalized_body",
+    "near_dup_algorithm": "minhash_lsh",
+    "near_dup_jaccard_train": 0.9,
+    "near_dup_jaccard_val": 0.8,
+    "shingle_size_tokens": 5
+  },
+  "counts": {
+    "total_units_checked": null,
+    "overlap_vs_train_exact": null,
+    "overlap_vs_train_near": null,
+    "overlap_vs_val_exact": null,
+    "overlap_vs_val_near": null,
+    "hard_gated_excluded": null,
+    "train_overlap_relabels_allowed": null
+  },
+  "flagged_unit_ids": {
+    "val_exact": [],
+    "val_near": [],
+    "train_exact": [],
+    "train_near": []
+  },
+  "reference_body_hashes": {
+    "train": [],
+    "val": []
+  },
+  "gate_status": "PENDING",
+  "gate_status_values": {
+    "PENDING": "receipt not yet generated",
+    "PASS": "no val overlap detected; tier sampling may proceed",
+    "FAIL": "val overlap detected; tier sampling BLOCKED until units are manually reviewed and excluded"
+  }
+}

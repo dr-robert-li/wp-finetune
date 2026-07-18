@@ -1,0 +1,238 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CorpusManifestRow",
+  "description": "One row per functional code unit extracted from the 2,226-repo catalog. Written by the Phase 1 extraction pipeline; read-only for the labelling team. See EXTRACTION_GUIDE.md for the full spec.",
+  "type": "object",
+  "required": [
+    "unit_id",
+    "repo_slug",
+    "repo_sha",
+    "archive_sha256",
+    "collection_date",
+    "catalog_tier",
+    "repo_type",
+    "path",
+    "line_start",
+    "line_end",
+    "unit_type",
+    "unit_text",
+    "context_above",
+    "context_below",
+    "namespace_block",
+    "plugin_theme_header",
+    "status",
+    "filter_reason",
+    "overlap",
+    "v3_corpus_repo",
+    "phpcs_hints",
+    "labelling_tier"
+  ],
+  "properties": {
+    "unit_id": {
+      "type": "string",
+      "description": "sha1(repo_sha + ':' + path + ':' + line_start) — stable across re-runs on the same clone.",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "repo_slug": {
+      "type": "string",
+      "description": "WordPress.org slug (e.g. 'woocommerce', 'twentytwentyfour')."
+    },
+    "repo_sha": {
+      "type": "string",
+      "description": "SHA256 of the resolved archive (plugins: latest-stable.zip; themes: analogous). Used as the stable version pin.",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "archive_sha256": {
+      "type": "string",
+      "description": "SHA256 of the downloaded archive file byte-for-byte.",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "resolved_version": {
+      "type": "string",
+      "description": "Version string resolved from the WordPress.org endpoint (e.g. '8.5.1'). Optional but recorded when available."
+    },
+    "collection_date": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO-8601 date the entire corpus was pinned (same value for every row in a collection run)."
+    },
+    "catalog_tier": {
+      "type": "string",
+      "enum": ["top", "poor", "poor,top"],
+      "description": "Tier from repos_catalog.csv. 'poor,top' for the 48 dual-tier repos."
+    },
+    "repo_type": {
+      "type": "string",
+      "enum": ["plugin", "theme"],
+      "description": "From repos_catalog.csv repo_type column."
+    },
+    "parent_theme": {
+      "type": ["string", "null"],
+      "description": "Parent theme slug for child themes; null otherwise."
+    },
+    "path": {
+      "type": "string",
+      "description": "Relative path within the unpacked archive (e.g. 'includes/class-wc-cart.php')."
+    },
+    "line_start": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "1-indexed line of the first character of the unit span (docblock or function/add_ keyword)."
+    },
+    "line_end": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "1-indexed line of the closing brace of the unit span, inclusive."
+    },
+    "unit_type": {
+      "type": "string",
+      "enum": ["top_level_function", "class_method", "hook_closure", "trait_method", "interface_method"],
+      "description": "Syntactic category of the unit per EXTRACTION_GUIDE.md §1."
+    },
+    "containing_class": {
+      "type": ["string", "null"],
+      "description": "Fully-qualified class name for class_method / trait_method / interface_method; null for top_level_function and hook_closure."
+    },
+    "hook_name": {
+      "type": ["string", "null"],
+      "description": "Hook tag string for hook_closure units (e.g. 'init', 'wp_enqueue_scripts'); null otherwise."
+    },
+    "unit_text": {
+      "type": "string",
+      "description": "Verbatim source text of the unit span including docblock; original whitespace preserved, no trimming inside the span."
+    },
+    "context_above": {
+      "type": "string",
+      "description": "Up to 20 physical lines immediately above the unit span."
+    },
+    "context_below": {
+      "type": "string",
+      "description": "Up to 20 physical lines immediately below the unit span."
+    },
+    "namespace_block": {
+      "type": "string",
+      "description": "The file's namespace declaration and all top-level use statements, verbatim."
+    },
+    "plugin_theme_header": {
+      "type": "object",
+      "description": "Parsed WordPress plugin/theme header fields from the repo root file.",
+      "properties": {
+        "name": {"type": "string"},
+        "version": {"type": "string"},
+        "author": {"type": "string"},
+        "requires_wp": {"type": ["string", "null"]},
+        "tested_up_to": {"type": ["string", "null"]},
+        "requires_php": {"type": ["string", "null"]},
+        "license": {"type": ["string", "null"]}
+      }
+    },
+    "active_installs": {
+      "type": ["integer", "null"],
+      "description": "From repos_catalog.csv (plugin catalogs only)."
+    },
+    "rating_pct": {
+      "type": ["number", "null"],
+      "description": "From repos_catalog.csv."
+    },
+    "total_known_vulns": {
+      "type": ["integer", "null"],
+      "description": "From repos_catalog.csv (plugin catalogs only)."
+    },
+    "unpatched_vulns": {
+      "type": ["integer", "null"],
+      "description": "From repos_catalog.csv (plugin catalogs only)."
+    },
+    "max_cvss": {
+      "type": ["number", "null"],
+      "description": "From repos_catalog.csv (plugin catalogs only)."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["ok", "unavailable", "filtered", "overlap_excluded"],
+      "description": "'ok' = unit available for labelling tier assignment. 'unavailable' = repo fetch failed (record error). 'filtered' = dropped by a mechanical filter (§3). 'overlap_excluded' = hard-gated by v4 val overlap (§4)."
+    },
+    "fetch_error": {
+      "type": ["string", "null"],
+      "description": "HTTP/SVN error message when status=unavailable; null otherwise."
+    },
+    "filter_reason": {
+      "type": ["string", "null"],
+      "enum": [
+        null,
+        "body_lt_3_lines",
+        "vendored_tree",
+        "generated_marker",
+        "minified_file",
+        "exact_duplicate",
+        "near_duplicate",
+        "interface_signature_only",
+        "bare_template_block"
+      ],
+      "description": "Populated when status=filtered; null otherwise. See EXTRACTION_GUIDE.md §3."
+    },
+    "dedup_cluster_id": {
+      "type": ["string", "null"],
+      "description": "SHA1 cluster representative unit_id for exact/near duplicates; null for the kept representative and for non-duplicates."
+    },
+    "overlap": {
+      "type": ["object", "null"],
+      "description": "Populated when unit overlaps a v4 reference row; null if clean. See EXTRACTION_GUIDE.md §4.",
+      "required": ["set", "kind"],
+      "properties": {
+        "set": {
+          "type": "string",
+          "enum": ["train", "val"],
+          "description": "Which v4 reference set the overlap was detected against."
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["exact", "near"],
+          "description": "'exact' = normalized-body SHA hash match. 'near' = MinHash Jaccard above threshold."
+        },
+        "jaccard": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Jaccard similarity score for near matches; null for exact matches."
+        },
+        "reference_unit_id": {
+          "type": "string",
+          "description": "The matching reference row identifier from the v4 dataset."
+        }
+      }
+    },
+    "v3_corpus_repo": {
+      "type": "boolean",
+      "description": "True if this repo slug appears in config/repos.yaml (v3 corpus). Same-repo is NOT itself overlap but same-repo+same-file+near-dup body is a strong contamination signal."
+    },
+    "phpcs_hints": {
+      "type": ["array", "null"],
+      "description": "WPCS PHPCS machine findings for this unit. Array of finding objects; null if PHPCS did not run or produced no findings. Shown as collapsible hints to annotators per LABELING_PLAN.md §9.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "line": {"type": "integer"},
+          "type": {"type": "string", "enum": ["ERROR", "WARNING"]},
+          "code": {"type": "string"},
+          "message": {"type": "string"}
+        }
+      }
+    },
+    "labelling_tier": {
+      "type": ["string", "null"],
+      "enum": [null, "T0", "T1", "T2", "T3"],
+      "description": "Assigned sampling tier; null until tier-sampling step runs. Units with status != 'ok' are never assigned a tier."
+    },
+    "label_status": {
+      "type": "string",
+      "enum": ["unassigned", "pending", "labeled", "adjudicated", "abstained"],
+      "default": "unassigned",
+      "description": "Lifecycle state of the unit's human label."
+    },
+    "batch_id": {
+      "type": ["string", "null"],
+      "description": "'batch-{NNN}' identifier linking to labelled/batch-{NNN}.jsonl when label_status=labeled or adjudicated; null otherwise."
+    }
+  },
+  "additionalProperties": false
+}
