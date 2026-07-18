@@ -28,6 +28,9 @@ The catalogs and seed data ship **in this folder** (`docs/`), alongside this pla
 | [`repos_catalog.csv`](repos_catalog.csv) | **2,226** | **NORMALIZED corpus table** — one row per unique repo, union schema of the four catalogs + `repo_type`/`catalog_tier` (48 repos are dual-tier `poor,top`: high-install AND poorly-rated/vulnerable; 12 same-file duplicate rows merged). Regenerate: `python3 normalize_assets.py` |
 | [`seed_units.jsonl`](seed_units.jsonl) / [`.csv`](seed_units.csv) | 118 | **NORMALIZED seed table** — both UGC seed files unified (`code`/`annotation`/`corrected_code`; 59 deep_judge_cot + 59 critique_then_fix, 58 boundary / 60 clear-cut). JSONL canonical |
 | [`normalize_assets.py`](normalize_assets.py) | — | the normalizer (`--self-check` validates source invariants) |
+| [`EXTRACTION_GUIDE.md`](EXTRACTION_GUIDE.md) | — | engineering spec: repo → functional-unit splitting, filters, and the v4-dataset overlap/contamination gates |
+| [`v4-judge-training-dataset/`](v4-judge-training-dataset/) | 563 + 141 | v4 judge train + held-out eval — overlap-check reference (hard gate) + label-format exemplars |
+| [`labelled/`](labelled/) | — | finished QA-passed batch drop folder (append-only ledger) |
 | **Corpus total** | **2,226 unique repos** (2,286 source rows) | |
 
 Catalog CSV columns useful for stratification (§4): `slug` (the WordPress.org repo to
@@ -62,7 +65,7 @@ complete, documented dataset.
 
 ## 3. Corpus extraction (automated, runs before the team starts)
 
-Performed by engineering, not the labeling team. Exhaustive over all 2,286 repos.
+Performed by engineering, not the labeling team — full specification in [`EXTRACTION_GUIDE.md`](EXTRACTION_GUIDE.md) (unit boundaries, filters, and the mandatory overlap gates against `v4-judge-training-dataset/`). Exhaustive over all 2,226 unique repos.
 
 1. **Clone** every repo in the four catalogs at a pinned date; record commit SHA per repo.
 2. **Extract functional units**: every top-level function, class method, and closure-bearing
