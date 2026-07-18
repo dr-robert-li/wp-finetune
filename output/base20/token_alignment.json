@@ -1,0 +1,20 @@
+{
+  "status": "pass",
+  "orig_eos_id": 248044,
+  "aligned_eos_id": 248046,
+  "orig_pad_id": null,
+  "aligned_pad_id": 248044,
+  "tokenizer_eos_id": 248046,
+  "stopped_naturally": true,
+  "generation_config_eos_ids": [
+    248046,
+    248044
+  ],
+  "stop_gen_len": 19,
+  "max_tokens_budget": 64,
+  "decoded_output": "\n\n<think>\n\n</think>\n\nOKuser\nReply with exactly one word: OK",
+  "canonical_ids": {
+    "eos_token_id": 248046,
+    "pad_token_id": 248044
+  }
+}

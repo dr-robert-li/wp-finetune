@@ -1,0 +1,99 @@
+# Continue Here — Phase 10 (RL Comparative Evaluation)
+
+## ✅ UPDATE 2026-06-30 — MONITOR + RLEV-01/02 GATE COMPLETE
+seedA trained to step-500 (clean completion; step-500 + final-step-500 ckpts). All 5 trend reads done
+(300/350/400/450/500; READS_TALLY). RLEV-01/02 gate RUN on step-500 vs v1.2 SFT.
+**VERDICT: conjunctive gate FAILS — RL did not clear the bar; v1.2 SFT stands for v3.0 (Dr. Li's call).**
+- RLEV-01 judge-Spearman (primary target): NO checkpoint improved beyond noise; step-500 0.552 < warmstart 0.573.
+- RLEV-01 wp-bench codegen: 0.4125 vs 0.4616 = REGRESSION −0.049 (BINDING; merge weight-anchors verified faithful).
+- RLEV-02 anti-hack: PASS (no evidence RL more hackable than v1.2).
+- RLEV-02 retention/routing: NOT MEASURABLE (jaccard zeros-stub) → needs Wave-1 post-hoc routing profiling.
+- Within-run fix-correctness (PROXY reward) rose +0.028 but didn't transfer → Goodhart/over-train; step-200/400 looked best.
+**FULL REPORT: `logs/phase09_rerun/RLEV_FINAL_REPORT.md`** (+ RLEV02_ANTIHACK_RESULT.md, RLEV_GATE_PREP.md).
+Box restored: wp-v4-judge-vllm + wp-consistency-vllm back up. Merged step-500:
+models/_staging/qwen3-30b-wp-seedA-step500-merged (forward anchor 8/9 — do NOT promote without re-merge).
+Disposition options for Dr. Li: (1) reject RL keep v1.2; (2) re-run higher-LR/shorter-horizon w/ codegen guard;
+(3) wp-bench step-200/400 before deciding.
+---
+
+**Paused:** 2026-06-28 (context exhaustion) · **Branch:** `phase10-execution`
+
+## TL;DR
+A live GSPO RL run (**seedA**) is **training on Tinker right now**, heading to step 500. The
+step-250 **binding gate PASSED** — judge-axis learning confirmed real on two independent seeds.
+Decision (locked + resolved): **push seedA to 500, no seedB.** No action needed to continue —
+seedA is detached and self-running. Next context: monitor to 500, then run the final RLEV gate.
+
+## Current Position
+- **seedA RL run LIVE.** PID in `output/rl_checkpoints/metrics/rl_run.seedA.pid` (was 207480),
+  ~step 260+ at pause, ~7.5 min/step → step 500 ~ 2026-06-29/30.
+- Metrics: `output/rl_checkpoints/metrics/rl_metrics.seedA.jsonl`;
+  manifest `output/rl_checkpoints/metrics/manifest.seedA.json` (checkpoints 50/100/150/200/250 saved).
+- Config: warm-start v4 r32-rp30 MoE-only savestate, lr 1e-05, GSPO, kl 0.1/0.3, efrac 0.7/0.5,
+  `judge_max_new_tokens=4096`, local judges :8000 (wp_judge) + :8001 (wp_consistency).
+- Health at pause: KL ~0.009 (stable, well under soft 0.1), e_frac ~0.96, `halt_reason: null`,
+  echo-adversary 0.25 (no hacking), 0 judge errors.
+
+## Completed (this session)
+- **Phase 02 closed out** (re-verified, C5 ratio override accepted) — commit `2ecec45`.
+- **STATE reconciled**, then RL run launched.
+- **STEP A pre-spend diagnostics** (post-V6 §5): block-emission truncation FALSIFIED; +0.10-0.13
+  fix_score budget effect real → wired `judge_max_new_tokens=4096` (rl_train.py + launcher) —
+  commit `9ff2a94`.
+- **Gate plan locked** (Dr. Li): read `_check_judge_fixcorr` every 50, binding flat-gate at 250 —
+  commit `9550e3e`, doc `09-POST-V6-HANDOVER.md §9`.
+- **seedA launched + run to step 250** with 5 controlled-eval reads. **Binding gate RESOLVED →
+  PUSH TO 500** (learning real on seeds 12345 +0.027 and 99999 +0.055 late-vs-early; fixed-250
+  tops warm ~+0.08 and the stale control on both; echo PASS).
+
+## Remaining
+1. **Monitor seedA to step 500** (reads every 50 at 300/350/400/450/500 are optional trend checks;
+   binding decision already passed). Watch for KL>0.1 / efrac<0.7 auto-halt, reward collapse.
+2. **Final RLEV-01/02 gate on step-500**: wp-bench codegen vs v1.2 SFT (RLEV-01, no regression) +
+   anti-hack/reward-convergence/router-shift/protected-expert-retention report (RLEV-02).
+3. **`/gsd-execute-phase 10` Wave 1** (10-01 Tasks 4-7): once step-500 lands, type `live run landed`
+   at the Task-3 gate → merge (merge_tinker_v3) → vLLM serve → full eval → 5-part gate → winner →
+   human review → v3.0 disposition.
+
+## Key Decisions
+- **Read every 50, binding flat-gate at 250** (Dr. Li, locked). PASSED.
+- **Single seed (no seedB)** — signal is weak-positive, not strong enough to justify a 2nd 31h run.
+- **Judge axis judged on within-run paired trajectory** (fixed-stepN vs fixed-step50, same prompts),
+  NOT the warm/stale comparison — the stale control is confounded (an old J.4 checkpoint that beats
+  warm-start by ~+0.05; the script prints "CONFOUNDED" but it's moot since fixed-250 tops it).
+- **judge_max_new_tokens=4096**, MoE-only warm-start (train_mlp=True, attn/unembed False).
+
+## Blockers / Watch-outs (NONE blocking; all advisory)
+- **STATE.md is STALE** — auto-regenerated to a "Phase 10 BLOCKED at Task-3 / live run not landed"
+  narrative. That is WRONG: the run DID land and is training. Ignore STATE.md; trust this file +
+  `logs/phase09_rerun/READS_TALLY.md`.
+- **LR 1e-05 is conservative** (KL pinned ~0.009 ≈ +0.00014/step). If the step-500 RLEV result is
+  weak, the standing alternative is **restart at higher LR** (the instrument recommended "bump LR"
+  at every read). Hold this as Plan B.
+
+## Critical Anti-Patterns (severity: warning — NONE blocking)
+| pattern | severity | why |
+|---|---|---|
+| Stale-file append trap | warning | `rl_train.py` opens metrics in APPEND mode. Before ANY relaunch, archive/clear `rl_metrics.seed*.jsonl` + `manifest.seed*.json` or new steps stack on old (duplicate step indices → corrupt gate). Caught once this session. |
+| UTC-vs-local date grep | warning | jsonl `ts` is UTC; local is GMT+10. Don't grep watchers by local date — key on step number. |
+| Single-read trust | warning | controlled-eval reads spike (s150 0.394 collapsed to s200 0.369). Use within-run PAIRED comparison at ≥2 seeds, n=80, before any spend call. |
+
+## Resume Commands
+```bash
+cd /home/robert_li/Desktop/projects/wp-finetune
+set -a; . ./.env; set +a; unset ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN
+PY=.venv-tinker/bin/python
+# liveness + latest step
+PID=$(cat output/rl_checkpoints/metrics/rl_run.seedA.pid); kill -0 "$PID" && echo ALIVE
+tail -1 output/rl_checkpoints/metrics/rl_metrics.seedA.jsonl
+# a controlled-eval read on any checkpoint:
+$PY -m scripts._check_judge_fixcorr --fixed-50 "<tinker stepN sampler_path from manifest>" \
+  --n-prompts 40 --group-size 2 --temperature 0.2 --seed 12345
+# stop the run: kill $(cat output/rl_checkpoints/metrics/rl_run.seedA.pid)
+```
+
+## Reference
+- `logs/phase09_rerun/READS_TALLY.md` — all 5 reads + binding-gate resolution (GROUND TRUTH).
+- `.planning/phases/09-gspo-training/09-POST-V6-HANDOVER.md §9` — locked gate plan.
+- `scripts/_launch_post81_rerun.sh` (launcher), `scripts/_check_judge_fixcorr.py` (read instrument),
+  `scripts/rl_train.py` (training loop).

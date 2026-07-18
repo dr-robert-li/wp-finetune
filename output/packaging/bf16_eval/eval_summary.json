@@ -1,0 +1,14 @@
+{
+  "capture": "output/packaging/bf16_eval/judge_responses.jsonl",
+  "rho_new": 0.7700114433552329,
+  "n": 93,
+  "ci": [
+    0.6637813166698143,
+    0.8497877807289289
+  ],
+  "baseline_rho": 0.7476689625425029,
+  "delta_vs_baseline": 0.022342480812729937,
+  "ceiling": 0.9844009569826934,
+  "gap_to_ceiling": 0.2143895136274605,
+  "parse_fail": 28
+}

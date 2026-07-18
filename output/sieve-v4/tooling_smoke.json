@@ -1,0 +1,29 @@
+{
+  "model_path": "/home/robert_li/Desktop/projects/wp-finetune/models/Qwen3.6-35B-A3B-judge-v4-s1-merged",
+  "n_examples": 32,
+  "max_seq_len": 1024,
+  "expected_n_layers": 40,
+  "config_num_experts": 256,
+  "resolved_traversal_root": "model.language_model.layers",
+  "hooks_registered": 40,
+  "shared_expert_module_present": true,
+  "strata_counts": {
+    "deltanet": 30,
+    "attention": 10
+  },
+  "attention_layer_indices": [
+    3,
+    7,
+    11,
+    15,
+    19,
+    23,
+    27,
+    31,
+    35,
+    39
+  ],
+  "router_logits_last_dim": 256,
+  "shared_expert_in_router_logits": false,
+  "status": "pass"
+}

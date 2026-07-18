@@ -1,0 +1,13 @@
+{
+  "wpbench_score": 0.3981,
+  "scores": {
+    "knowledge": 0.484375,
+    "correctness": 0.3333333333333333,
+    "quality": null,
+    "overall": 0.3981
+  },
+  "results_file": "/home/robert_li/Desktop/projects/wp-finetune/output/rl_eval/wpbench_v1.3.1/v1.3.1/wp_bench_results_20260704_114914.json",
+  "ran": true,
+  "baseline_v12_0p4616": 0.4616,
+  "passes_hard_gate": false
+}

@@ -1,0 +1,19 @@
+{
+  "tinker_path": "tinker://6a06e60f-ab56-519d-9da8-b5ca11eb5967:train:0/sampler_weights/wp-reasoning-relabel-s1-ep3",
+  "n_samples": 5,
+  "temperature": 0.7,
+  "n": 121,
+  "rho_selfconsistency": 0.8015725431718407,
+  "ci": [
+    0.7090067225670849,
+    0.8638520852607211
+  ],
+  "single_sample_v13": 0.8274,
+  "ensemble_3seed": 0.8419637236160609,
+  "ceiling": 0.9844,
+  "delta_vs_single": -0.025827456828159345,
+  "delta_vs_ensemble": -0.04039118044422019,
+  "sample_parse_fail": 10,
+  "verdict": "LOSE \u2014 self-consistency median@N5,T0.7 rho 0.8016 < single-seed greedy 0.8274 (delta -0.0258). Per pre-registered rule (sweep only if delta_vs_single POSITIVE but < ensemble; here NEGATIVE): NO sweep. DECISION: single-seed greedy (v1.3 s1, rho 0.8274) is ship config for judge; sampling at T=0.7 only adds variance around an already-calibrated greedy point (10/605 samples parse-failed). The only measured way to beat greedy remains the 3-seed median ensemble (0.8420, +0.0146) at 3x serve cost. Test-time-compute lever on ONE model = exhausted. Proceed to compression on single-seed v1.3.",
+  "decision_date_utc": "2026-07-08"
+}

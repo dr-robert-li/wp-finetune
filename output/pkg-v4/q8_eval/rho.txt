@@ -1,0 +1,6 @@
+capture: output/pkg-v4/q8_eval/judge_responses.jsonl  (parse_fail=0)
+relabel-SFT vs NEW labels: rho = 0.7851 (n=121)  CI [0.6984, 0.8492]
+baseline v1.2 student   : rho = 0.7477
+ceiling = sqrt(0.969) = 0.9844
+Δ vs baseline = +0.0374   gap-to-ceiling now = +0.1993 (was +0.2367)
+wrote output/pkg-v4/q8_eval/eval_summary.json

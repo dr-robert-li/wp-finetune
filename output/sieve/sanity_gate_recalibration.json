@@ -1,0 +1,19 @@
+{
+  "reason": "Tinker-native vs vLLM-merged serving gap ~3pp, systematic, 3 runs, harness bugs fixed+ruled out",
+  "old_floors": {
+    "judge_rho": 0.822,
+    "wp_bench": 0.4416
+  },
+  "full_arm_measurements": {
+    "rho": [0.8046, 0.8243, 0.8075],
+    "wp_bench": [0.4603, 0.4365, 0.4484]
+  },
+  "new_floors": {
+    "judge_rho": 0.79,
+    "wp_bench": 0.425
+  },
+  "new_floor_derivation": "approx 3-run mean - 2sd",
+  "tost_reference": "vLLM-measured full arm in k_sweep_results.json (same stack both sides)",
+  "shipping_note": "vLLM-served merged ensemble rho ~0.81 is the true shipping figure; Tinker 0.842/0.827 are sampler-native. Ensemble still beats single-seed through vLLM. Merge-fidelity audit deferred (user chose not to block on it).",
+  "decided_by": "Dr. Robert Li via AskUserQuestion 2026-07-09"
+}

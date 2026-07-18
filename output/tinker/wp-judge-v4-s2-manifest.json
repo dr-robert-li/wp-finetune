@@ -1,0 +1,29 @@
+{
+  "save_name": "wp-judge-v4-s2",
+  "base_model": "Qwen/Qwen3.6-35B-A3B",
+  "rank": 32,
+  "train_attn": false,
+  "train_unembed": false,
+  "renderer": "qwen3_5_disable_thinking",
+  "epochs": 3,
+  "checkpoints": [
+    {
+      "epoch": 1,
+      "name": "wp-judge-v4-s2-ep1",
+      "sampler_path": "tinker://e72f1493-4eb0-5a67-a0a0-de1c26cf7e6e:train:0/sampler_weights/wp-judge-v4-s2-ep1"
+    },
+    {
+      "epoch": 2,
+      "name": "wp-judge-v4-s2-ep2",
+      "sampler_path": "tinker://e72f1493-4eb0-5a67-a0a0-de1c26cf7e6e:train:0/sampler_weights/wp-judge-v4-s2-ep2"
+    },
+    {
+      "epoch": 3,
+      "name": "wp-judge-v4-s2-ep3",
+      "sampler_path": "tinker://e72f1493-4eb0-5a67-a0a0-de1c26cf7e6e:train:0/sampler_weights/wp-judge-v4-s2-ep3"
+    }
+  ],
+  "promoted": "wp-judge-v4-s2-ep3",
+  "state_path": null,
+  "created": "2026-07-13T14:35:53.447110+00:00"
+}

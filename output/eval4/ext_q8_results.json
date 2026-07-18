@@ -1,0 +1,88 @@
+{
+  "requirement": "Phase-23-02-EXTENSION",
+  "title": "v4 judge on shipped Q8 GGUF llama.cpp stack vs v3's shipped 0.8056",
+  "preregistration": "output/eval4/ext_q8_preregistration.md",
+  "llama_cpp_version": "version: 1 (8f114a9)",
+  "config": {
+    "max_tokens": 8192,
+    "engine": "llama.cpp llama-server, CUDA (GB10), -ngl 999 --jinja, --parallel 4",
+    "val_set": "data/reasoning_dataset/openai_val.jsonl (121 wp_judge items)",
+    "labels": "output/relabel/val_labels_v1.json",
+    "ensemble_rule": "per-item median of the 3 seed overalls (>=2 seeds required)"
+  },
+  "v4_single_seed": {
+    "s0": {
+      "rho": 0.7359938504996397,
+      "n": 121,
+      "parse_fail": 0
+    },
+    "s1": {
+      "rho": 0.787727629200278,
+      "n": 121,
+      "parse_fail": 0
+    },
+    "s2": {
+      "rho": 0.7758416522505613,
+      "n": 121,
+      "parse_fail": 0
+    }
+  },
+  "v4_ensemble": {
+    "rho": 0.8066820446015684,
+    "ci": [
+      0.7356076430558469,
+      0.8526287320467012
+    ],
+    "n": 121,
+    "parse_fail_per_seed": [
+      0,
+      0,
+      0
+    ],
+    "source": [
+      "output/eval4/ext_q8/q8_s0/judge_responses.jsonl",
+      "output/eval4/ext_q8/q8_s1/judge_responses.jsonl",
+      "output/eval4/ext_q8/q8_s2/judge_responses.jsonl"
+    ]
+  },
+  "v3_ensemble_recomputed": {
+    "rho": 0.8055935309036014,
+    "n": 121,
+    "parse_fail_per_seed": [
+      0,
+      0,
+      0
+    ],
+    "source": [
+      "output/packaging/ens8192/q8_s0/judge_responses.jsonl",
+      "output/packaging/ens8192/q8_s1/judge_responses.jsonl",
+      "output/packaging/ens8192/q8_s2/judge_responses.jsonl"
+    ],
+    "note": "recomputed here from the same v3 raw captures for the paired join; original shipped receipt point estimate = 0.8056 (output/packaging/pkg03_ens8192_results.json)"
+  },
+  "v3_shipped_point": 0.8056,
+  "v3_shipped_receipt": "output/packaging/pkg03_ens8192_results.json",
+  "item_id_mismatch": false,
+  "rule_fired": "paired_bootstrap",
+  "paired_bootstrap": {
+    "n_common_items": 121,
+    "n_resamples": 10000,
+    "seed": 1337,
+    "mean_delta": 0.0009846678528317547,
+    "ci_lower": -0.051179175949317646,
+    "ci_upper": 0.0565484300733472,
+    "ci_lower_gt_0": false
+  },
+  "criteria": {
+    "a_point_gt_v3": true,
+    "b_ci_lower_gt_0_or_fallback": false
+  },
+  "unequivocal_win": false,
+  "secondary_reads": {
+    "v4_bf16_vllm_served_s1": 0.7872,
+    "v4_bf16_vllm_capture_s1": 0.8358,
+    "v4_bf16_vllm_capture_ensemble": 0.816,
+    "v3_bf16_llama_cpp_ensemble": 0.81,
+    "note": "does llama.cpp lift v4's numerics ceiling the way it matched vLLM for v3 (0.8100 vs 0.8075)?"
+  }
+}

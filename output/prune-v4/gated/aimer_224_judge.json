@@ -1,0 +1,32 @@
+{
+  "requirement": "GATE4-04",
+  "method": "aimer",
+  "k": 224,
+  "s1_rho": 0.818446799620866,
+  "n_scored": 120,
+  "parse_fail": 1,
+  "tost": {
+    "mean_diff": 0.027965811218104597,
+    "ci": [
+      -0.01900351125394314,
+      0.07678546434506994
+    ],
+    "n": 120,
+    "equivalent": false
+  },
+  "tost_reference": {
+    "arm": "full",
+    "source": "output/sieve-v4/ksweep/kfull/s1/judge_responses.jsonl",
+    "full_s1_rho": 0.7934812517026191,
+    "note": "same-stack vLLM Gate B full arm \u2014 NOT llama.cpp Q8 0.8067 nor Tinker 0.8358"
+  },
+  "protected_retained": true,
+  "pass": false,
+  "pass_d2_security": true,
+  "non_inferior": true,
+  "ci_lower": -0.01900351125394314,
+  "non_inferiority_margin": -0.02,
+  "ci_lower_slack": 0.0009964887460568589,
+  "pass_ship": true,
+  "ship_criterion": "routing-(B) non-inferiority: ci_lower >= -2pp AND D2_security retained AND protected_retained. Two-sided `pass` (equivalent) is the stricter secondary metric, kept as-measured \u2014 a point-better arm fails it on the UPPER bound."
+}

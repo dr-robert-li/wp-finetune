@@ -156,8 +156,6 @@ DRIFT LOCATIONS (executor must fix EXACTLY these — do not re-discover):
 
     Then push: `rtk git push` to origin/main.
 
-    Per the project commit convention, append the Co-Authored-By trailer to the commit message:
-      Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
   </action>
   <verify>
     <automated>rtk git status --porcelain | grep -E "^[AM] +(CHANGELOG|JOURNAL|README|PROJECT)\.md" ; rtk git log --oneline -1 | grep -iq "docs" &amp;&amp; git status -sb | grep -q "## main...origin/main$" &amp;&amp; echo PUSHED</automated>

@@ -1,0 +1,30 @@
+{
+  "tier": "Q6",
+  "method": "GGUF Q6_K (llama.cpp)",
+  "status": "MEASURED",
+  "generated_utc": "2026-07-18T00:29:04.740811+00:00",
+  "gate1_baseline_ref": "output/pkg-v4/unpruned_gate1_f16_baseline.json",
+  "measured": {
+    "judge_rho": 0.8074827513509674,
+    "ci": [
+      0.7396037411522561,
+      0.858267284257535
+    ],
+    "n": 121,
+    "parse_fail": 0,
+    "max_tokens": 2048,
+    "size_bytes": 29208730720,
+    "capture": "output/pkg-v4/unpruned_q6_eval/judge_responses.jsonl",
+    "summary": "output/pkg-v4/unpruned_q6_eval/eval_summary.json"
+  },
+  "gate": {
+    "gate1_rho": 0.8081393794583069,
+    "delta": -0.0006566281073395741,
+    "delta_pp": -0.0657,
+    "epsilon_pp": 2,
+    "bar": "delta >= -0.02 (inclusive)",
+    "pass": true,
+    "slack_pp": 1.9343
+  },
+  "noise_note": "Q6 (-0.07pp) sits 3.07pp ABOVE Q8 (-3.14pp) on the same ladder \u2014 a 6-bit quant cannot genuinely beat the 8-bit of its own source. This reproduces the pruned ladder's non-monotonicity (noise_floor_finding) on a second independent checkpoint: single-seed rung-to-rung rho deltas at n=121 are noise. Q8's band 'failure' is therefore not treated as a real degradation signal; parse_fail remains the only tier discriminator observed to matter."
+}

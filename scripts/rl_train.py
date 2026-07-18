@@ -16,6 +16,7 @@ Router gates FROZEN (no router arg), D-09-02.
 from __future__ import annotations
 
 import argparse
+import collections
 import json
 import logging
 import math
@@ -33,6 +34,16 @@ if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Codegen trip-wire (RVAL-03 / D-08.2) — import-safe, no GPU at module level.
+# CODEGEN_BAR_V12 is the single source of truth from _rlev01_wpbench_ckpt.
+# ---------------------------------------------------------------------------
+from scripts.rl_codegen_tripwire import (  # noqa: E402
+    CODEGEN_BAR_V12,
+    check_codegen_tripwire,
+    run_codegen_probe,
+)
 
 # ---------------------------------------------------------------------------
 # Defaults — thresholds from GRPO-08
@@ -120,9 +131,43 @@ def create_lora_training_client(
 def build_training_client(args: Any) -> Any:
     """Create LoRA training client from parsed args.
 
-    Uses literal True for all three train_* flags (D-09-02: MLP, attn, unembed
-    all trained; router gates FROZEN, no router arg passed).
+    Two init modes:
+      * --init-from <tinker_path> (WARM START, D-09-04): continue RL from the v1.2
+        SFT LoRA. Phase 10/RLEV-01 compares the RL model against the v1.2 SFT
+        baseline and requires judge-Spearman improvement with NO regression — only
+        coherent if RL *starts from* v1.2. A fresh LoRA on the raw base has zero
+        WordPress/judge capability (empirically: instruct-style refusals on
+        <wp_gen> prompts) and regresses vs v1.2 by construction. ServiceClient
+        .create_training_client_from_state derives base_model/rank/train_* from the
+        checkpoint (train_* default True = D-09-02; no router arg = router FROZEN)
+        and load_state()s the weights.
+      * default (no --init-from): fresh LoRA on args.model_id base. Retained for
+        smoke/dry-run only; NOT valid for a real RLEV-01 run.
     """
+    if getattr(args, "init_from", None):
+        import tinker  # noqa: PLC0415
+
+        sc = tinker.ServiceClient()
+        tc = sc.create_training_client_from_state(args.init_from)
+        # Surface the loaded geometry so a rank/base mismatch is loud, not silent.
+        try:
+            info = sc._get_rest_client_for_weights(None).get_weights_info_by_tinker_path(
+                args.init_from
+            ).result()
+            logger.info(
+                "WARM START from %s: base_model=%s rank=%s (train_mlp=%s attn=%s unembed=%s)",
+                args.init_from, info.base_model, info.lora_rank,
+                info.train_mlp, info.train_attn, info.train_unembed,
+            )
+        except Exception:  # noqa: BLE001 — logging must not abort a good client
+            logger.info("WARM START from %s (weights-info probe unavailable)", args.init_from)
+        return tc
+
+    logger.warning(
+        "COLD START: fresh LoRA on %s with NO v1.2 init. Valid for smoke/dry-run "
+        "only — a real RLEV-01 run MUST pass --init-from <v1.2 tinker path>.",
+        args.model_id,
+    )
     return create_lora_training_client(
         base_model=args.model_id,
         rank=args.lora_rank,
@@ -170,6 +215,44 @@ def rspo_floored_ratio(train_lp: Any, sampling_lp: Any) -> Any:
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# GSPO training-logprobs side-channel (CR-04 KL guard fix, 2026-06-25)
+# ---------------------------------------------------------------------------
+#: tinker.ForwardBackwardOutput carries NO `training_logprobs` field (only
+#: loss_fn_output_type / loss_fn_outputs / metrics), so _compute_kl_metrics could
+#: never read the per-token training logprobs off fb_out — it silently took the
+#: "structural absence -> 0.0" branch every real step, disabling the KL autohalt
+#: guard (kl_v1==v2==0.0 < kl_hard forever). The GSPO custom loss closure DOES
+#: receive those logprobs (logprobs_list) and runs in-process, so we stash them
+#: here for _compute_kl_metrics to consume via the canonical compute_kl_sample_train.
+#: Reset to None at the top of every build_loss_step so a step that never invokes
+#: gspo_loss_fn (GRPO fallback / mock) reads None and falls to the genuine-empty 0.0
+#: branch rather than reusing a previous step's logprobs.
+_GSPO_TRAIN_LOGPROBS: dict[str, Any] = {"logprobs": None}
+
+
+def _reset_gspo_logprobs() -> None:
+    """Clear the captured GSPO training logprobs (called once per step)."""
+    _GSPO_TRAIN_LOGPROBS["logprobs"] = None
+
+
+def _is_real_fb_out(fb_out: Any) -> bool:
+    """True only for a genuine tinker.ForwardBackwardOutput (not a mock/dry-run stub).
+
+    The empty-side-channel HARD-halt hardening must fire ONLY on the real SDK path:
+    a real forward_backward_custom calls the loss closure in-process (so the side
+    channel WILL be populated), hence an empty side-channel there is a true regression.
+    The offline test/dry-run seams return MagicMock/SimpleNamespace fb_outs that never
+    invoke the closure — an empty side-channel is expected there and must NOT halt.
+    """
+    try:
+        import tinker  # noqa: PLC0415
+
+        return isinstance(fb_out, tinker.types.ForwardBackwardOutput)
+    except Exception:  # noqa: BLE001 — tinker absent (pure-offline test) => not real
+        return False
+
+
 def _make_gspo_loss_fn(full_data):
     """Return a CustomLossFnV1-compatible loss function for GSPO.
 
@@ -193,6 +276,11 @@ def _make_gspo_loss_fn(full_data):
 
     def gspo_loss_fn(data, logprobs_list):
         import torch  # noqa: PLC0415
+
+        # Capture the SDK-provided training logprobs FIRST (before any per-datum math
+        # that could raise) so the KL/entropy guard always sees real logprobs on a
+        # real step. fb_out exposes no training_logprobs field; this is the only seam.
+        _GSPO_TRAIN_LOGPROBS["logprobs"] = list(logprobs_list)
 
         losses = []
         for full_datum, train_lps in zip(full_data, logprobs_list):
@@ -311,8 +399,16 @@ def build_loss_step(
     Returns:
         ForwardBackwardOutput (or mock equivalent).
     """
+    # Clear last step's captured training logprobs. The GSPO loss closure repopulates
+    # this; the GRPO/mock paths leave it None so _compute_kl_metrics reads a genuine
+    # absence (0.0) rather than reusing stale logprobs from a prior step.
+    _reset_gspo_logprobs()
+
     if not use_gspo:
-        # GRPO token-level IS fallback (--grpo-fallback / --no-gspo)
+        # GRPO token-level IS fallback (--grpo-fallback / --no-gspo). NOTE: this path
+        # does not yet populate the KL-guard side-channel (fb_out carries no logprobs
+        # either) -> kl_v1=0.0 on the fallback. GSPO is the locked default (D-09-03);
+        # the KL guard is live there. Fallback KL instrumentation is a known gap.
         return _res(
             tc.forward_backward(
                 [_strip_mask(d) for d in data], loss_fn="importance_sampling"
@@ -352,8 +448,18 @@ def _compute_kl_metrics(fb_out: Any, data: list) -> dict[str, float]:
     The genuinely-empty case (no training logprobs available yet, e.g. a mock
     ForwardBackwardOutput) returns 0.0 — that is a structural absence of data,
     not a computation that errored.
+
+    SOURCE OF training_logprobs (2026-06-25): tinker.ForwardBackwardOutput has NO
+    `training_logprobs` attribute (fields: loss_fn_output_type / loss_fn_outputs /
+    metrics), so the getattr below is always empty on a real run. The real per-token
+    training logprobs are handed to the GSPO custom loss closure as `logprobs_list`
+    and stashed in the _GSPO_TRAIN_LOGPROBS side-channel by build_loss_step. We prefer
+    a real fb_out.training_logprobs if a future SDK ever exposes one, else fall back
+    to the side-channel. Only when BOTH are empty is it a genuine structural absence.
     """
     training_lps = getattr(fb_out, "training_logprobs", []) or []
+    if not training_lps:
+        training_lps = _GSPO_TRAIN_LOGPROBS.get("logprobs") or []
     if not data or not training_lps:
         return {
             "optim/kl_sample_train_v1": 0.0,
@@ -505,6 +611,147 @@ def _save_checkpoint(tc: Any, name: str, manifest: dict) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Metrics helpers — 08.1-02 Priority-2 additions
+# ---------------------------------------------------------------------------
+
+# Per-run e_frac history for rolling trend (module-level deque; reset via
+# _reset_efrac_history() in tests to avoid cross-test leakage).
+_efrac_history: collections.deque = collections.deque(maxlen=200)
+
+
+def _reset_efrac_history() -> None:
+    """Clear the e_frac history (used by tests to prevent cross-test leakage)."""
+    _efrac_history.clear()
+
+
+def _extract_entropy(kl_metrics: dict) -> float | None:
+    """Extract entropy from the kl_metrics dict returned by _compute_kl_metrics.
+
+    The canonical source is kl_metrics['optim/entropy'] — that is where
+    _compute_kl_metrics (rl_train.py:380-411) stores it after compute_kl_sample_train.
+
+    Returns None when the key is absent or the value is None, so a missing
+    entropy never crashes the training loop (T-81.2-01).
+    """
+    val = kl_metrics.get("optim/entropy") if isinstance(kl_metrics, dict) else None
+    if val is None:
+        return None
+    return float(val)
+
+
+def _compute_e_frac_trend(history, window: int = 10) -> float | None:
+    """Compute the per-step slope of e_frac_with_tokens_mean over the last `window` steps.
+
+    Uses a simple ordinary-least-squares slope over the most recent `window`
+    values.  A negative slope signals routing collapse (downward trend in the
+    fraction of tokens that activate any expert).
+
+    Args:
+        history: list or deque of e_frac float values (most-recent last).
+        window:  number of trailing steps to regress over.
+
+    Returns:
+        float slope, or None when fewer than 2 data points are available.
+    """
+    vals = list(history)[-window:]
+    if len(vals) < 2:
+        return None
+    n = len(vals)
+    xs = np.arange(float(n))
+    x_mean = xs.mean()
+    y_mean = float(np.mean(vals))
+    num = float(np.sum((xs - x_mean) * (np.array(vals, dtype=float) - y_mean)))
+    den = float(np.sum((xs - x_mean) ** 2))
+    if den == 0.0:
+        return 0.0
+    return num / den
+
+
+# ---------------------------------------------------------------------------
+# Tier 5 (08.1-03 / D-81-03): Window-mean computation — verbatim from
+# 09-RL-LOGGING-REQS.md §4, with None-safe column handling.
+# ---------------------------------------------------------------------------
+
+
+def compute_window_means(metrics_path: str, windows: list[tuple[int, int]]) -> dict:
+    """Aggregate rl_metrics.jsonl fields per step window (spec §4, verbatim).
+
+    Reads the JSONL file emitted by _log_step and computes per-window means
+    for the key diagnostic fields.  Called at decision-point ticks (50/100/
+    150/200/250) and at any caller that needs the kill/continue verdict.
+
+    Args:
+        metrics_path: Path to rl_metrics.jsonl (METRICS_PATH).
+        windows:      List of (lo, hi) inclusive step ranges.
+
+    Returns:
+        dict keyed "window_{lo}_{hi}" with field means (NaN-safe).
+    """
+    import pandas as pd  # noqa: PLC0415 — optional dep, only needed for offline analysis
+
+    df = pd.read_json(metrics_path, lines=True)
+    result: dict = {}
+    for lo, hi in windows:
+        mask = (df["step"] >= lo) & (df["step"] <= hi)
+        sub = df.loc[mask]
+
+        def _col_mean(col: str) -> float | None:
+            if col not in sub.columns:
+                return None
+            v = sub[col].dropna()
+            return float(v.mean()) if len(v) > 0 else None
+
+        result[f"window_{lo}_{hi}"] = {
+            "reward_mean":           _col_mean("reward_mean"),
+            "fix_correctness_mean":  _col_mean("fix_correctness_mean"),
+            "consistency_mean":      _col_mean("consistency_mean"),
+            "group_reward_std_mean": _col_mean("group_reward_std_mean"),
+            "frac_groups_all_zero":  _col_mean("frac_groups_all_zero"),
+            "entropy_mean":          _col_mean("entropy"),
+        }
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Tier 6 (08.1-03 / D-81-03): Kill/continue decision rule — verbatim from
+# 09-RL-LOGGING-REQS.md §6, automated equivalent of the manual F-STEP200 flag.
+# ---------------------------------------------------------------------------
+
+
+def should_flag_for_review(window_means: dict, current: dict) -> tuple[bool, str]:
+    """Codified kill/continue decision rule (spec §6, verbatim).
+
+    Fires the moment a condition is met, not only at manual monitoring ticks.
+    Primary kill signal is frac_groups_all_zero window-mean > 0.5 (GSPO
+    gradient starvation).  Secondary signals: decisive flat reward and entropy
+    collapse (policy narrowing).
+
+    Args:
+        window_means: Output of compute_window_means(), with keys like
+                      "window_0_50", "window_151_200".
+        current:      Single-step metrics dict (must contain "entropy" key
+                      or the entropy check is skipped gracefully).
+
+    Returns:
+        (bool, str): (flag, reason_code) where reason is one of
+            "DECISIVE_FLAT: ...", "GROUP_COLLAPSE: ...",
+            "ENTROPY_COLLAPSE: ...", or "OK".
+    """
+    recent = window_means.get("window_151_200", {}).get("reward_mean")
+    early  = window_means.get("window_0_50",    {}).get("reward_mean")
+    frac_zero = window_means.get("window_151_200", {}).get("frac_groups_all_zero", 0) or 0
+
+    if recent is not None and early is not None:
+        if recent < early - 0.01:                 # decisive window below baseline
+            return True, f"DECISIVE_FLAT: w151_200={recent:.3f} < early={early:.3f}"
+    if frac_zero > 0.5:
+        return True, f"GROUP_COLLAPSE: {frac_zero:.1%} groups all-zero"
+    if current.get("entropy", 99) < 1.5:
+        return True, "ENTROPY_COLLAPSE: policy narrowing"
+    return False, "OK"
+
+
+# ---------------------------------------------------------------------------
 # Metrics sink — RLEV-01/02
 # ---------------------------------------------------------------------------
 
@@ -517,11 +764,73 @@ def _log_step(
     args: Any,
     jaccard: float | None = None,
     halt_reason: str | None = None,
+    group_stats: dict | None = None,
+    step_start_time: float | None = None,
 ) -> None:
     """Append one JSONL row to rl_metrics.jsonl (RLEV-01 / RLEV-02 fields).
 
     Written even in dry-run mode so Phase 10 consumer can be tested.
+
+    group_stats (optional, 08.1-02 / D-81-03): dict of Priority-1 group/component
+    metrics from compute_rollout_advantages (computed pre-drop). When None, all
+    Priority-1 fields are recorded as null so downstream consumers can detect
+    un-instrumented steps.  Priority-2 fields (entropy, grad_norm, lr, loss,
+    e_frac_trend_10) are sourced from kl_metrics / moe_metrics.
+
+    step_start_time (optional, 08.1-03 Tier 3): perf_counter timestamp taken at
+    the start of the step. Used to compute step_wall_time_s. When None the field
+    is recorded as null (never dropped — D-81-03 full spec).
+
+    All new fields default gracefully so existing callers without group_stats
+    continue to work without modification (T-81.2-01: a logging field must
+    never halt training).
     """
+    # Update module-level e_frac history for trend computation
+    e_frac = moe_metrics.get("e_frac_with_tokens:mean")
+    if e_frac is not None:
+        _efrac_history.append(float(e_frac))
+
+    gs = group_stats or {}
+
+    # -------------------------------------------------------------------------
+    # Tier 3 (08.1-03 / D-81-03): per-container VRAM + step wall-time.
+    # Sources: torch.cuda -> pynvml -> psutil in priority order (None-with-reason
+    # when a source is unavailable, never dropped per D-81-03 full spec).
+    # -------------------------------------------------------------------------
+    vram_used_gb: float | None = None
+    vram_reserved_gb: float | None = None
+    vram_fallback_reason: str | None = None
+    try:
+        import torch  # noqa: PLC0415
+        if torch.cuda.is_available():
+            vram_used_gb = round(torch.cuda.memory_allocated() / 1e9, 4)
+            vram_reserved_gb = round(torch.cuda.memory_reserved() / 1e9, 4)
+        else:
+            vram_fallback_reason = "torch.cuda not available"
+    except ImportError:
+        vram_fallback_reason = "torch not installed"
+    except Exception as _e:  # noqa: BLE001
+        vram_fallback_reason = f"torch.cuda error: {type(_e).__name__}"
+
+    if vram_used_gb is None and vram_fallback_reason is None:
+        # torch present but CUDA unavailable — already set fallback_reason above
+        pass
+
+    step_wall_time_s: float | None = None
+    if step_start_time is not None:
+        import time as _time_mod  # noqa: PLC0415 — alias to avoid shadowing module-level
+        step_wall_time_s = round(_time_mod.perf_counter() - step_start_time, 4)
+
+    # Tier 4 (08.1-03 / D-81-03): per-step consistency score histogram.
+    # get_and_reset_score_hist() returns the histogram accumulated during this
+    # step's dispatch calls and resets the accumulator for the next step.
+    consistency_score_hist: dict | None = None
+    try:
+        from scripts.rl_judge_dispatch import get_and_reset_score_hist  # noqa: PLC0415
+        consistency_score_hist = get_and_reset_score_hist()
+    except Exception:  # noqa: BLE001
+        consistency_score_hist = None  # histogram unavailable — not a training error
+
     record = {
         "step": step,
         "reward_mean": float(np.mean(rewards)) if rewards else 0.0,
@@ -537,6 +846,37 @@ def _log_step(
         "e_frac_with_tokens_mean": moe_metrics.get("e_frac_with_tokens:mean", 0.0),
         "e_max_violation_mean": moe_metrics.get("e_max_violation:mean", 0.0),
         "e_max_violation_max": moe_metrics.get("e_max_violation:max", 0.0),
+        # Priority-1 group/component metrics (08.1-02 / D-81-03) — pre-drop
+        "fix_correctness_mean": gs.get("fix_correctness_mean"),
+        "fix_correctness_std": gs.get("fix_correctness_std"),
+        "consistency_mean": gs.get("consistency_mean"),
+        "consistency_std": gs.get("consistency_std"),
+        "group_reward_std_mean": gs.get("group_reward_std_mean"),
+        "frac_groups_all_zero": gs.get("frac_groups_all_zero"),
+        "frac_groups_all_one": gs.get("frac_groups_all_one"),
+        "frac_groups_nonuniform": gs.get("frac_groups_nonuniform"),
+        "frac_reward_gt_0.9": gs.get("frac_reward_gt_0.9"),
+        "frac_reward_lt_0.1": gs.get("frac_reward_lt_0.1"),
+        # Calib liveness telemetry (loud-fail wiring, 2026-07-02): fired_frac
+        # None = calib off / no judge batch; 0.0 = configured but GT join DEAD.
+        "calib_fired_frac": gs.get("calib_fired_frac"),
+        "calib_mean": gs.get("calib_mean"),
+        "calib_std": gs.get("calib_std"),
+        "calib_n": gs.get("calib_n"),
+        # Priority-2 policy/optimizer health (08.1-02)
+        "entropy": _extract_entropy(kl_metrics),
+        "grad_norm": moe_metrics.get("grad_norm"),
+        "grad_norm_clipped": moe_metrics.get("grad_norm_clipped"),
+        "lr": moe_metrics.get("lr"),
+        "loss": moe_metrics.get("loss"),
+        "e_frac_trend_10": _compute_e_frac_trend(_efrac_history, window=10),
+        # Tier 3 (08.1-03): per-container VRAM + step wall-time
+        "vram_used_gb": vram_used_gb,
+        "vram_reserved_gb": vram_reserved_gb,
+        "vram_fallback_reason": vram_fallback_reason,
+        "step_wall_time_s": step_wall_time_s,
+        # Tier 4 (08.1-03): per-step consistency score histogram (5 bins)
+        "consistency_score_hist": consistency_score_hist,
         # Optional extras
         "jaccard_protected": jaccard,
         "halt_reason": halt_reason,
@@ -631,6 +971,9 @@ def run_training_step(
         compute_rollout_advantages,
     )
 
+    # Tier 3 (08.1-03): capture step wall-time start (perf_counter for monotonic ns).
+    _step_start = time.perf_counter()
+
     rollouts = collect_rollouts(
         sampling_client=sampling_client,
         gen_pool=gen_pool,
@@ -639,6 +982,50 @@ def run_training_step(
     )
 
     data, _advantages, _meta = compute_rollout_advantages(rollouts)
+    # Capture pre-drop group stats from meta for Priority-1 logging (08.1-02).
+    # The meta dict carries all group/component keys (frac_groups_all_zero etc.)
+    # computed on the unfiltered groups list before remove_constant_reward_groups.
+    group_stats = {
+        k: _meta.get(k)
+        for k in (
+            "fix_correctness_mean", "fix_correctness_std",
+            "consistency_mean", "consistency_std",
+            "group_reward_std_mean",
+            "frac_groups_all_zero", "frac_groups_all_one", "frac_groups_nonuniform",
+            "frac_reward_gt_0.9", "frac_reward_lt_0.1",
+        )
+    }
+
+    # Calib liveness telemetry (loud-fail wiring, 2026-07-02). Drain the per-step
+    # accumulator rl_rollouts filled during collect_rollouts. calib_fired_frac
+    # None = no judge completions this step; 0.0 = judge ran but GT join dead.
+    _calib_weight = float(getattr(args, "calib_weight", 0.0))
+    if _calib_weight > 0.0:
+        from scripts.reward_calibration import get_and_reset_calib_stats  # noqa: PLC0415
+
+        _calib_stats = get_and_reset_calib_stats()
+        group_stats.update(_calib_stats)
+        # STEP-0 HARD GATE: if the calibration term is configured but effectively
+        # dead (<50% of judge completions joined GT and produced a finite calib
+        # reward), HALT. The 2026-07-01 smoke burned 50 steps of GPU on a
+        # "hybrid@0.8" run whose calib term never fired once (0/482 hash join).
+        # Folded into halt_reason downstream (same seam as the codegen trip-wire)
+        # so the metrics row + emergency checkpoint still happen.
+        _fired = _calib_stats.get("calib_fired_frac")
+        if step == 0 and (_fired is None or _fired < 0.5):
+            _calib_halt = (
+                f"CALIB_JOIN_DEAD: calib_weight={_calib_weight:.2f} but "
+                f"calib_fired_frac={_fired} (< 0.5) at step 0 — calibration "
+                f"reward is NOT in the loss"
+            )
+            logger.error("%s. calib stats: %s", _calib_halt, _calib_stats)
+        else:
+            _calib_halt = None
+    else:
+        _calib_halt = None
+        group_stats.update(
+            {"calib_fired_frac": None, "calib_mean": None, "calib_std": None, "calib_n": 0}
+        )
 
     if not data:
         logger.warning("Step %d: no training data after advantage filter", step)
@@ -658,9 +1045,32 @@ def run_training_step(
     # the gradient is computed but NOT applied until after the halt check (CR-04).
     fb_out = build_loss_step(tc, data, use_gspo=args.use_gspo)
 
-    # KL metrics BEFORE committing the update. A compute failure returns a
-    # halt-worthy sentinel (never a silent 0.0) so the guard cannot be disabled.
-    kl_metrics = _compute_kl_metrics(fb_out, data)
+    # CR-04 hardening (2026-06-25): on the GSPO path the training-logprobs side-channel
+    # MUST be populated — forward_backward_custom calls the loss closure in-process
+    # (training_client.py:473) before returning. An empty side-channel here means the
+    # closure never ran, i.e. a silent regression of the very KL-guard-disable bug just
+    # fixed. Treat it as a KL COMPUTE FAILURE (HARD halt), never a silent kl=0.0.
+    if (
+        args.use_gspo
+        and data
+        and _is_real_fb_out(fb_out)
+        and not _GSPO_TRAIN_LOGPROBS.get("logprobs")
+    ):
+        logger.error(
+            "GSPO step %d: training-logprobs side-channel EMPTY after "
+            "forward_backward_custom — the KL guard would silently disable. "
+            "Forcing HARD halt (CR-04).",
+            step,
+        )
+        kl_metrics = {
+            "optim/kl_sample_train_v1": _KL_COMPUTE_FAILED_SENTINEL,
+            "optim/kl_sample_train_v2": _KL_COMPUTE_FAILED_SENTINEL,
+            "optim/entropy": 0.0,
+        }
+    else:
+        # KL metrics BEFORE committing the update. A compute failure returns a
+        # halt-worthy sentinel (never a silent 0.0) so the guard cannot be disabled.
+        kl_metrics = _compute_kl_metrics(fb_out, data)
     moe_metrics = getattr(fb_out, "metrics", {}) or {}
 
     # Autohalt guard (GRPO-08) — evaluated BEFORE optim_step.
@@ -672,6 +1082,75 @@ def run_training_step(
         efrac_soft=args.efrac_soft,
         efrac_hard=args.efrac_hard,
     )
+
+    # Calib step-0 liveness gate (loud-fail wiring, 2026-07-02) — same seam as
+    # the codegen trip-wire below: fold into halt_reason so the emergency
+    # checkpoint + metrics row + return-True path all fire.
+    halt_reason = halt_reason or _calib_halt
+
+    # Codegen trip-wire (RVAL-03 / D-08.2) — periodic wp-bench probe wired to
+    # the checkpoint cadence.  Folds into halt_reason so the SAME emergency-
+    # checkpoint + return-True seam fires (no second halt mechanism — T-082-06).
+    #
+    # cadence: every args.codegen_probe_every steps when > 0 (default 0 = disabled;
+    #   Plan 05's live smoke enables it; --codegen-score-override drives dry-run/test).
+    # bar:     args.codegen_bar (default CODEGEN_BAR_V12 = 0.4616 v1.2 SFT bar).
+    _codegen_probe_every = getattr(args, "codegen_probe_every", 0)
+    if _codegen_probe_every > 0 and step % _codegen_probe_every == 0:
+        _codegen_score_override = getattr(args, "codegen_score_override", None)
+        _codegen_bar = getattr(args, "codegen_bar", CODEGEN_BAR_V12)
+        if _codegen_score_override is not None:
+            # Dry-run / test path: use the injected score, never call vLLM.
+            _codegen_score = _codegen_score_override
+            _codegen_sub: dict | None = None
+        else:
+            # Loud-fail wiring (2026-07-02): the 2026-07-01 smoke ran with
+            # model_dir="." (no flag wired) -> probe returned None ->
+            # check_codegen_tripwire(None) silently skipped -> halt_reason null
+            # read as "codegen passed" when codegen was NEVER checked. If the
+            # trip-wire is ARMED (codegen_probe_every > 0) the model_dir MUST
+            # point at a real merged model (config.json present) — else HALT.
+            _probe_model_dir = getattr(args, "codegen_probe_model_dir", None)
+            if not _probe_model_dir or not os.path.isfile(
+                os.path.join(_probe_model_dir, "config.json")
+            ):
+                halt_reason = halt_reason or (
+                    f"CODEGEN_TRIPWIRE_MISCONFIGURED: probe armed "
+                    f"(codegen_probe_every={_codegen_probe_every}) but "
+                    f"codegen_probe_model_dir={_probe_model_dir!r} is not a model "
+                    f"dir (no config.json). Silent skip is forbidden — pass a "
+                    f"valid --codegen-probe-model-dir, use "
+                    f"--codegen-score-override, or disarm with "
+                    f"--codegen-probe-every 0."
+                )
+                logger.error(halt_reason)
+                _codegen_score = None
+                _codegen_sub = None
+            else:
+                # Live path (Plan 05 smoke): merge + serve the just-saved checkpoint.
+                _probe_result = run_codegen_probe(
+                    model_dir=_probe_model_dir,
+                    tag=f"step{step}",
+                    step=step,
+                )
+                _codegen_score = _probe_result.get("wpbench_score")
+                _codegen_sub = {
+                    k: _probe_result.get(k) for k in ("knowledge", "exec")
+                }
+        _codegen_halt = check_codegen_tripwire(
+            wpbench_score=_codegen_score,
+            bar=_codegen_bar,
+            sub_scores=_codegen_sub,
+        )
+        if _codegen_halt:
+            logger.error(
+                "Codegen trip-wire at step %d: score=%.4f bar=%.4f — %s",
+                step,
+                _codegen_score if _codegen_score is not None else float("nan"),
+                _codegen_bar,
+                _codegen_halt,
+            )
+        halt_reason = halt_reason or _codegen_halt
 
     # Protected-expert Jaccard monitor (every N steps, logging only)
     jaccard: float | None = None
@@ -689,7 +1168,39 @@ def run_training_step(
         args=args,
         jaccard=jaccard,
         halt_reason=halt_reason,
+        group_stats=group_stats,
+        step_start_time=_step_start,
     )
+
+    # Tier 5+6 (08.1-03): window-mean tick + kill/continue verdict at decision points
+    # (every 50 steps: 50/100/150/200/250...).  None-safe: if METRICS_PATH does not
+    # exist yet (early training / dry-run without prior steps) this is silently skipped.
+    _WINDOW_TICK_EVERY = 50
+    if step > 0 and step % _WINDOW_TICK_EVERY == 0:
+        try:
+            _wm = compute_window_means(
+                METRICS_PATH,
+                [(0, 50), (51, 100), (101, 150), (151, 200), (201, 250)],
+            )
+            _current_kl = kl_metrics.copy()
+            _current_kl.setdefault("entropy", _current_kl.get("optim/entropy"))
+            _flag, _reason = should_flag_for_review(
+                _wm,
+                current={"entropy": _extract_entropy(kl_metrics)},
+            )
+            logger.info(
+                "Tick step %d: should_flag_for_review=%s reason=%s",
+                step, _flag, _reason,
+            )
+            if _flag:
+                logger.warning(
+                    "REVIEW FLAG at step %d: %s — "
+                    "check rl_metrics.jsonl window means before continuing.",
+                    step, _reason,
+                )
+        except Exception as _tick_err:  # noqa: BLE001
+            # A tick failure must NEVER halt training (T-81.2-01).
+            logger.debug("Window-mean tick skipped at step %d: %s", step, _tick_err)
 
     # CR-04: HARD halt -> save emergency checkpoint of the PRE-update weights and
     # stop WITHOUT committing the divergent gradient. optim_step is NOT called.
@@ -736,6 +1247,18 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--lora-rank", type=int, default=32)
     parser.add_argument("--lora-seed", type=int, default=42)
+    parser.add_argument(
+        "--init-from",
+        type=str,
+        default=None,
+        help=(
+            "Tinker path to v1.2 SFT LoRA weights to WARM START RL from "
+            "(D-09-04, e.g. 'tinker://<run>:train:0/sampler_weights/wp-reasoning-v4-r32-rp30-ep3'). "
+            "create_training_client_from_state derives base/rank/train_* from it. "
+            "REQUIRED for a real RLEV-01 run — without it RL cold-starts on the raw "
+            "base (no WordPress/judge capability) and regresses vs the v1.2 baseline."
+        ),
+    )
     parser.add_argument(
         "--learning-rate", type=float, default=1e-5,
         help="Adam learning rate for optim_step (TrainingClient.optim_step AdamParams).",
@@ -833,6 +1356,20 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "Default: 1."
         ),
     )
+    # --consistency-base-url: route the consistency scorer to a LOCAL vLLM endpoint
+    # ($0, Phase 09 Option 1) instead of the paid `claude -p` subprocess path.
+    # When set, --consistency-model is the served model name at this endpoint
+    # (e.g. the Nemotron-3-Nano text NVFP4 served name on :8001, or 'wp_judge'
+    # reused on :8000). When omitted, the legacy claude path is used (bills API).
+    parser.add_argument(
+        "--consistency-base-url",
+        default=None,
+        help=(
+            "Local vLLM OpenAI endpoint for the consistency scorer "
+            "(e.g. http://localhost:8001/v1). $0 unattended path (09 Option 1). "
+            "If omitted, falls back to the paid claude -p subprocess path."
+        ),
+    )
     # Judge endpoint: on the live path the reward uses an openai.OpenAI client
     # pointed at a vLLM judge endpoint (eval_judge.judge_score_single). When
     # --judge-base-url is given, main() constructs the client itself so the
@@ -853,6 +1390,93 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="EMPTY",
         help="API key for the vLLM judge endpoint (vLLM ignores it; default 'EMPTY').",
     )
+    parser.add_argument(
+        "--judge-max-new-tokens",
+        type=int,
+        default=1536,
+        help=(
+            "Max new tokens for judge-axis (critique-then-fix) completions. Read by "
+            "rl_rollouts.collect_rollouts via args.judge_max_new_tokens. Default 1536 "
+            "matches the module constant; raise (e.g. 4096) to reduce fix-block "
+            "truncation (STEP A probe: mean fix_score +0.10-0.13 from 1536->4096)."
+        ),
+    )
+    # ---------------------------------------------------------------------------
+    # Codegen trip-wire (RVAL-03 / D-08.2) — periodic in-run wp-bench probe.
+    # Default 0 = disabled; Plan 05's live smoke enables via --codegen-probe-every.
+    # --codegen-score-override is a TEST/DRY-RUN seam ONLY — live path uses
+    # run_codegen_probe (real wp-bench). See rl_codegen_tripwire.py.
+    # ---------------------------------------------------------------------------
+    parser.add_argument(
+        "--codegen-probe-every",
+        type=int,
+        default=0,
+        help=(
+            "Run the wp-bench codegen probe every N steps (0 = disabled, default). "
+            "Plan 05's live smoke sets this to 50 or 100. RVAL-03."
+        ),
+    )
+    parser.add_argument(
+        "--codegen-bar",
+        type=float,
+        default=CODEGEN_BAR_V12,
+        help=(
+            "Halt threshold for the codegen trip-wire "
+            f"(default: CODEGEN_BAR_V12 = {CODEGEN_BAR_V12}, the v1.2 SFT bar). RVAL-03."
+        ),
+    )
+    parser.add_argument(
+        "--codegen-probe-model-dir",
+        type=str,
+        default=None,
+        dest="codegen_probe_model_dir",
+        help=(
+            "Merged-model dir served to the live codegen probe (must contain "
+            "config.json). REQUIRED when the trip-wire is armed "
+            "(--codegen-probe-every > 0) without --codegen-score-override — the "
+            "2026-07-01 smoke silently skipped every probe because this "
+            "defaulted to '.' (loud-fail wiring, 2026-07-02)."
+        ),
+    )
+    parser.add_argument(
+        "--codegen-score-override",
+        type=float,
+        default=None,
+        help=(
+            "TEST/DRY-RUN ONLY: inject a synthetic wp-bench score instead of running "
+            "the real probe. Never set in live training (Plan 05 uses the real runner). "
+            "RVAL-03 test seam (T-082-07)."
+        ),
+    )
+    # ---------------------------------------------------------------------------
+    # Calibration reward args (RVAL-02 / D-08.2 / Plan 08.2-03)
+    # The judge-axis now supports a parameterized calibration term vs TRAIN teacher GT.
+    # Default form "hybrid", weight 0.0 = pure fix_correctness behavior (back-compat).
+    # Plan 04 selects the winning (form, weight) after the offline sweep.
+    # Plan 05's assembled smoke command passes these flags — they MUST exist here.
+    # ---------------------------------------------------------------------------
+    parser.add_argument(
+        "--calib-form",
+        type=str,
+        default="hybrid",
+        help=(
+            "Calibration reward form for the judge axis (RVAL-02). "
+            "One of: 'pairwise', 'hybrid', 'calibration'. "
+            "Default 'hybrid' (pairwise + small abs-error term for intra-group gradient). "
+            "Plan 04 selects the winning form after the offline sweep."
+        ),
+    )
+    parser.add_argument(
+        "--calib-weight",
+        type=float,
+        default=0.0,
+        help=(
+            "Weight of the calibration term in the judge reward blend (RVAL-02). "
+            "0.0 (default) = pure fix_correctness behavior, unchanged from prior runs. "
+            "Plan 04 selects the winning weight after the offline sweep."
+        ),
+    )
+
     # Output-path overrides — let a smoke/test run isolate its outputs from the
     # canonical (git-tracked) manifest/metrics that Phase 10 D-10-02 reads.
     parser.add_argument(
@@ -1013,6 +1637,34 @@ def run_training(args: argparse.Namespace) -> None:
 
     gen_pool = load_rl_prompts("gen")
     judge_pool = load_rl_prompts("judge")
+
+    # GT-coverage pool filter (2026-07-02 hash-join fix). When the calibration
+    # term is active, judge items WITHOUT a TRAIN-GT sidecar row would fall back
+    # to pure fix_correctness (the proven-Goodhart reward) via the NaN no-op in
+    # augment_judge_scalar — 29% of the pool pre-filter. Restrict the judge pool
+    # to GT-covered items so every judge group trains on the blended reward.
+    if float(getattr(args, "calib_weight", 0.0)) > 0.0:
+        from scripts.reward_calibration import get_anchor_set  # noqa: PLC0415
+        from scripts.rl_rollouts import judge_item_code_hash  # noqa: PLC0415
+
+        _, _gt_map = get_anchor_set()
+        _pre = len(judge_pool)
+        judge_pool = [it for it in judge_pool if judge_item_code_hash(it) in _gt_map]
+        logger.info(
+            "GT-coverage filter (calib_weight=%.2f): judge pool %d -> %d "
+            "(%d dropped without TRAIN-GT sidecar rows)",
+            args.calib_weight, _pre, len(judge_pool), _pre - len(judge_pool),
+        )
+        if not judge_pool:
+            raise RuntimeError(
+                "GT-coverage filter left an EMPTY judge pool: the sidecar join "
+                "matched 0 items. The calibration reward cannot fire — refusing "
+                "to start a run that would silently train on pure fix_correctness "
+                "(the 2026-07-01 smoke failure mode). Check that "
+                "data/rl_probe/judge_gt_sidecar.jsonl was built with the same "
+                "normalized_code_hash as the reward path."
+            )
+
     if getattr(args, "max_pool", None):
         gen_pool = gen_pool[: args.max_pool]
         judge_pool = judge_pool[: args.max_pool]
@@ -1041,6 +1693,25 @@ def run_training(args: argparse.Namespace) -> None:
         )
         if halted:
             raise RuntimeError(f"Training halted at step {step}")
+
+        # ON-POLICY SAMPLER REFRESH (2026-06-25, the J.4 stale-sampler fix). The
+        # canonical cookbook loop (tinker_cookbook/rl/train.py do_train_step_*_and_
+        # get_sampling_client) refreshes the sampler from the just-updated weights
+        # EVERY step: sample(t) -> train -> sample(t+1). Without this the sampler was
+        # pinned at the initial weights for all N steps, so every step's rollouts came
+        # from the FROZEN warm-start policy — the policy could never escape warm-start
+        # and reward was constant-by-construction (50-step run read FLAT). run_training_
+        # step already committed optim_step on the non-halted path (CR-04), so the new
+        # sampler reflects this step's update. Logged so the plumbing is verifiable
+        # live (sampler id MUST change each step).
+        sampling_client = _res(tc.save_weights_and_get_sampling_client())
+        logger.info(
+            "Step %d: refreshed on-policy sampler -> %s",
+            step + 1,
+            getattr(sampling_client, "model_path", None)
+            or getattr(sampling_client, "_model_path", None)
+            or id(sampling_client),
+        )
 
     # Final checkpoint
     _save_checkpoint(tc, name=f"final-step-{args.total_steps}", manifest=manifest)

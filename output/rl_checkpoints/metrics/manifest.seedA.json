@@ -1,0 +1,89 @@
+{
+  "checkpoints": [
+    {
+      "name": "step-50",
+      "sampler_path": "tinker://9cb14129-f302-5c84-adf2-cc9ab92128a4:train:0/sampler_weights/step-50",
+      "saved_at": "2026-06-27T03:25:46Z"
+    },
+    {
+      "name": "step-100",
+      "sampler_path": "tinker://9cb14129-f302-5c84-adf2-cc9ab92128a4:train:0/sampler_weights/step-100",
+      "saved_at": "2026-06-27T10:09:40Z"
+    },
+    {
+      "name": "step-150",
+      "sampler_path": "tinker://9cb14129-f302-5c84-adf2-cc9ab92128a4:train:0/sampler_weights/step-150",
+      "saved_at": "2026-06-27T16:49:54Z"
+    },
+    {
+      "name": "step-200",
+      "sampler_path": "tinker://9cb14129-f302-5c84-adf2-cc9ab92128a4:train:0/sampler_weights/step-200",
+      "saved_at": "2026-06-27T23:19:16Z"
+    },
+    {
+      "name": "step-250",
+      "sampler_path": "tinker://9cb14129-f302-5c84-adf2-cc9ab92128a4:train:0/sampler_weights/step-250",
+      "saved_at": "2026-06-28T06:00:35Z"
+    },
+    {
+      "name": "step-300",
+      "sampler_path": "tinker://9cb14129-f302-5c84-adf2-cc9ab92128a4:train:0/sampler_weights/step-300",
+      "saved_at": "2026-06-28T12:29:40Z"
+    },
+    {
+      "name": "step-350",
+      "sampler_path": "tinker://9cb14129-f302-5c84-adf2-cc9ab92128a4:train:0/sampler_weights/step-350",
+      "saved_at": "2026-06-28T18:55:16Z"
+    },
+    {
+      "name": "step-400",
+      "sampler_path": "tinker://9cb14129-f302-5c84-adf2-cc9ab92128a4:train:0/sampler_weights/step-400",
+      "saved_at": "2026-06-29T01:28:33Z"
+    },
+    {
+      "name": "step-450",
+      "sampler_path": "tinker://9cb14129-f302-5c84-adf2-cc9ab92128a4:train:0/sampler_weights/step-450",
+      "saved_at": "2026-06-29T08:04:35Z"
+    },
+    {
+      "name": "step-500",
+      "sampler_path": "tinker://9cb14129-f302-5c84-adf2-cc9ab92128a4:train:0/sampler_weights/step-500",
+      "saved_at": "2026-06-29T14:41:07Z"
+    },
+    {
+      "name": "final-step-500",
+      "sampler_path": "tinker://9cb14129-f302-5c84-adf2-cc9ab92128a4:train:0/sampler_weights/final-step-500",
+      "saved_at": "2026-06-29T14:41:13Z"
+    }
+  ],
+  "run_args": {
+    "model_id": "Qwen/Qwen3-30B-A3B",
+    "lora_rank": 32,
+    "lora_seed": 42,
+    "init_from": "tinker://80c93d7c-2044-5dae-8e45-12dc1574d8f3:train:0/weights/wp-reasoning-v4-r32-rp30-savestate-final-state",
+    "learning_rate": 1e-05,
+    "total_steps": 500,
+    "batch_size": 8,
+    "group_size": 4,
+    "max_pool": null,
+    "checkpoint_every": 50,
+    "jaccard_every": 20,
+    "mask_path": "output/profiling/reasoning-merged-v4/protected_expert_mask.npy",
+    "kl_soft": 0.1,
+    "kl_hard": 0.3,
+    "efrac_soft": 0.7,
+    "efrac_hard": 0.5,
+    "use_gspo": true,
+    "dry_run": false,
+    "judge_model": "wp_judge",
+    "consistency_model": "wp_consistency",
+    "n_votes": 1,
+    "consistency_base_url": "http://localhost:8001/v1",
+    "judge_base_url": "http://localhost:8000/v1",
+    "judge_api_key": "EMPTY",
+    "judge_max_new_tokens": 4096,
+    "manifest_path": "output/rl_checkpoints/metrics/manifest.seedA.json",
+    "metrics_path": "output/rl_checkpoints/metrics/rl_metrics.seedA.jsonl"
+  },
+  "started_at": "2026-06-26T20:29:08Z"
+}

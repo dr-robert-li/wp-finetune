@@ -1,0 +1,102 @@
+{
+  "requirement": "PUB4-01",
+  "title": "Post-upload validation \u2014 round-trip from DOWNLOADED HF artifacts",
+  "generated_utc": "2026-07-18",
+  "downloaded_from_hf": true,
+  "scratch_paths": {
+    "judge_gguf": "models/_hf_dl_scratch/judge_v4_unpruned/wp-judge-v4-unpruned.Q5_K_M.gguf",
+    "reused_existing_download": true,
+    "note": "reused a prior run's Hub download already byte-verified against the manifest (size matched exactly, no re-transfer of the 23.47 GiB file this run) -- the file on disk IS the artifact downloaded from the Hub, just not re-fetched in this pass; scratch cleaned after validation, re-download to reproduce"
+  },
+  "api_listing": {
+    "ok": true,
+    "repos": {
+      "iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf": {
+        "public": true,
+        "files": {
+          "README.md": true,
+          "wp-judge-v4-unpruned.Q5_K_M.gguf": true
+        },
+        "matches_manifest": true
+      }
+    }
+  },
+  "gguf_load": {
+    "ok": true,
+    "engine": "llama.cpp llama-server (~/llama.cpp/build/bin), -ngl 999 -c 12288 --jinja",
+    "header": {
+      "magic": "GGUF",
+      "version": 3,
+      "n_tensors": 753,
+      "arch": "qwen35moe",
+      "expert_count": 256,
+      "block_count": 41,
+      "file_type": 17,
+      "size_bytes": 25347531872
+    },
+    "judge_smoke_parsed": true,
+    "judge_smoke": {
+      "prompt_source": "data/phase4_4/smoke_prompts.json idx 0",
+      "parse_format": "json",
+      "prose_rubric_dims": 5,
+      "overall_score": 76.0,
+      "response_file": "output/pkg-v4/judge_smoke_response.json"
+    }
+  },
+  "v3_repo_untouched": {
+    "repo_id": "iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf",
+    "identical": true,
+    "pre_push": {
+      "repo_id": "iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf",
+      "private": false,
+      "lastModified": "2026-07-11 21:40:50+00:00",
+      "siblings": [
+        {
+          "rfilename": ".gitattributes",
+          "size": 1708
+        },
+        {
+          "rfilename": "README.md",
+          "size": 8942
+        },
+        {
+          "rfilename": "wp-v1.3-judge-s0.Q8_0.gguf",
+          "size": 32483931840
+        },
+        {
+          "rfilename": "wp-v1.3-judge-s1.Q8_0.gguf",
+          "size": 32483931840
+        },
+        {
+          "rfilename": "wp-v1.3-judge-s2.Q8_0.gguf",
+          "size": 32483931840
+        }
+      ]
+    },
+    "post_push": {
+      "lastModified": "2026-07-11 21:40:50+00:00",
+      "siblings": [
+        {
+          "rfilename": ".gitattributes",
+          "size": 1708
+        },
+        {
+          "rfilename": "README.md",
+          "size": 8942
+        },
+        {
+          "rfilename": "wp-v1.3-judge-s0.Q8_0.gguf",
+          "size": 32483931840
+        },
+        {
+          "rfilename": "wp-v1.3-judge-s1.Q8_0.gguf",
+          "size": 32483931840
+        },
+        {
+          "rfilename": "wp-v1.3-judge-s2.Q8_0.gguf",
+          "size": 32483931840
+        }
+      ]
+    }
+  }
+}

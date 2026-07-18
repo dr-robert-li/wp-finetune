@@ -1,239 +1,252 @@
-# Stack Research
+# Stack Research: v4.0 Rerun on Qwen/Qwen3.6-35B-A3B
 
-**Domain:** LLM fine-tuning pipeline — WordPress code data + MoE fine-tuning on DGX Spark (v1.2 addendum: deep judge CoT + critique-then-fix)
-**Researched:** 2026-04-04 (v1.2 milestone update; original 2026-03-26)
-**Confidence:** HIGH for data generation additions (Claude API patterns verified), MEDIUM for reasoning quality eval metrics (no single authoritative source), HIGH for training format changes (TRL docs verified)
+**Domain:** Toolchain re-verification for an existing, locked fine-tuning pipeline swapping base models
+**Researched:** 2026-07-12 (re-verifying claims locked 2026-07-11 in `19-NEXT-BASE-SELECTION.md` / `V4-RERUN-ROADMAP.md`)
+**Confidence:** HIGH on existence/version claims (primary sources fetched live), MEDIUM on pricing-table column mapping and GB10 throughput numbers (fetch-tool summarization variance across repeated queries — see notes)
 
----
-
-## v1.2 Milestone Scope
-
-This document extends the original stack with additions specific to the v1.2 Judge Reasoning Fine-Tune milestone. The existing stack (Unsloth 2026.3.x, TRL 0.24.0, transformers 5.3.0, Qwen3-30B-A3B, DGX Spark infrastructure) is **unchanged**. Only new or modified components are described below.
-
-**What v1.2 adds to the pipeline:**
-1. Deep judge CoT data generation — regenerate judge training examples with full dimension-by-dimension reasoning chains
-2. Critique-then-fix data generation — new training format: defective code → structured critique (what/why/severity per dimension) → corrected version
-3. Reasoning quality evaluation — measure whether reasoning chains are substantive, not just syntactically valid
+This file supersedes the prior (v1.2-era, 2026-04-04) `STACK.md` for this project. It does NOT re-litigate
+the base-model *selection* (that lock stands — see item 6). It answers: what toolchain versions/flags/
+gotchas does the v4.0 requirements pass need for Qwen/Qwen3.6-35B-A3B specifically.
 
 ---
 
-## Recommended Stack — New Components Only
+## Re-verification of the 6 locked/flagged claims
 
-### Data Generation
+### 1. Tinker: Qwen3.6-35B-A3B LoRA support, 64K context cap, pricing tier
 
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| anthropic (Python SDK) | >=0.50.0 (already installed) | Generate deep reasoning chains via Claude Code agents | Already in use for phase1-3; extend same agent spawn pattern for v1.2 generation; no new dependency |
-| claude-sonnet-4-6 | current | Deep judge CoT generation — dimension-by-dimension analysis | Sonnet sufficient for structured reasoning chains at this complexity level; reserve Opus only if chain quality is inadequate after spot-check |
+**VERIFIED, with one correction and one new finding.**
 
-**Data generation approach:** Use the existing Claude Code agent spawn pattern (see `docs/AGENT_PIPELINE.md`) to generate both deep judge CoT and critique-then-fix pairs. No new LLM tooling is needed. The existing `phase2_judge_dataset.py` agent loop is the template.
+- `Qwen/Qwen3.6-35B-A3B` is a live row in Tinker's model table, type "Hybrid + Vision", arch MoE, size
+  Medium, **training context cap 64K** (confirmed independently by WebSearch snippet and two separate
+  WebFetch passes of `tinker-docs.thinkingmachines.ai/tinker/models/` on 2026-07-12). Matches the locked
+  doc exactly. Irrelevant blocker either way — WP function-level SFT examples are far under 64K.
+- **Correction to the locked doc's pricing labels.** The 2026-07-11 doc wrote "LoRA pricing train/sample/eval
+  $0.36 / $0.89 / $1.07." Direct re-fetch of the raw table today shows columns **Prefill $0.36 (cached
+  $0.072) / Sample $0.54 (cached $0.108) / Train $1.07**, identical for both `Qwen/Qwen3.6-35B-A3B` and
+  `Qwen/Qwen3.5-35B-A3B-Base`. The $0.89 figure does not appear anywhere in today's table for either row —
+  it may have been a transient value, a different comparison row, or a column-order misread in the prior
+  pass. The **conclusion still holds** ("same per-unit price tier, no cost-class jump between the two rows
+  compared") but cite Prefill $0.36 / Sample $0.54 / Train $1.07 going forward, not $0.89.
+- **New finding not in the locked doc: a Tinker-wide price increase lands 2026-07-17**, five days after
+  this research pass. Per the page's own notice: "we are also increasing our prefill and sample prices by
+  ~50% and our train prices by ~10% starting July 17." This applies uniformly across the table (not
+  Qwen3.6-specific), so it does not change the "same tier" comparison, but it does mean: if v4.0 sign-off
+  and Stage 2/3 Tinker spend happen after 2026-07-17, budget **~10% higher train cost** than the
+  roadmap's $2/run and ~$6/3-seed anchors (train is the dominant cost driver for SFT runs; prefill/sample
+  are minor by comparison for this workload).
+- **New finding, more consequential: `Qwen3-30B-A3B` and `Qwen3-30B-A3B-Base` (the CURRENT project's base)
+  were retired from Tinker on 2026-06-12** — "can no longer be used for training or inference." This
+  doesn't block v4.0 (no plan to retrain the old base), but it retroactively validates the base-swap
+  timing: staying on the old base was about to become untrainable on this vendor regardless. The
+  fallback candidate `Qwen/Qwen3.5-35B-A3B-Base` remains live and unaffected (only the non-base
+  `Qwen3.5-35B-A3B` instruct row was retired, matching the locked doc's existing note that the fallback
+  has "Base" type only).
 
-### Training Format Changes (No New Libraries)
+### 2. vLLM: serves on aarch64/GB10, `--language-model-only` drops the vision tower
 
-The existing TRL SFTTrainer handles both new formats natively. What changes is the **JSONL schema** of training examples, not the trainer.
+**VERIFIED.**
 
-**Deep judge CoT format** — conversational prompt-completion with reasoning embedded in assistant content:
+- `vllm>=0.19.0` is the vendor-recommended minimum on the model's own HF README (re-confirmed 2026-07-12,
+  matches the locked doc).
+- The `--language-model-only` flag is documented in vLLM's own recipe page
+  (`recipes.vllm.ai/Qwen/Qwen3.6-35B-A3B`) with a working example: `vllm serve Qwen/Qwen3.6-35B-A3B-FP8
+  --tensor-parallel-size 1 --max-model-len 16384 --gpu-memory-utilization 0.60 --language-model-only`.
+- GB10 specifically: an NVIDIA Developer Forums thread ("Qwen/Qwen3.6-35B-A3B (and FP8) has landed - DGX
+  Spark / GB10", posts dated 2026-04-16 through 04-20) shows the model already running on DGX Spark with
+  `vllm 0.19.1rc1.dev337+g17d87168d.d20260416`, `--gpu-memory-utilization 0.7-0.8`, reporting 7,800+
+  tok/s in some aggregate-throughput configuration. This is independent of, and predates, the project's own
+  in-repo precedent (`CHANGELOG.md` D-03) cited in the locked doc — two independent confirmations the base
+  already serves on this exact host class.
+- **New, more important finding not in the locked doc:** HuggingFace's own `transformers` docs for this
+  architecture (`qwen3_5_moe` model page) report that **GB10 (compute capability 12.1 / SM121) has no
+  prebuilt `causal_conv1d` or `fla` kernel** — the Gated-DeltaNet linear-attention path silently falls back
+  to a slower, more memory-hungry pure-PyTorch reference implementation unless `use_kernels=True` is passed
+  to `from_pretrained()` (requires `pip install -U kernels`, and currently `trust_remote_code=True` because
+  the community kernel repo `Atlas-Inference/gdn` isn't yet on the trusted-kernels allowlist). Measured
+  numbers on `Qwen/Qwen3.6-35B-A3B` bf16, GB10/SM121, 1024-token prompt, greedy decode of 256 tokens:
 
-```jsonc
-{
-  "prompt": [
-    {"role": "system", "content": "<wp_judge> system prompt..."},
-    {"role": "user", "content": "Score this WordPress PHP code:\n```php\n{code}\n```"}
-  ],
-  "completion": [
-    {
-      "role": "assistant",
-      "content": "**Dimension Analysis:**\n\n**D1 (WPCS Compliance):** [reasoning about specific violations found] → score: 72\n**D2 (Security):** [reasoning: nonce check missing on line 14, $wpdb->prepare absent] → score: 30\n...\n**D9 (Documentation):** [reasoning] → score: 85\n\n**Verdict:** FAIL. Security dimension score 30 is below auto-fail threshold of 50. Must fix: [list]\n\n```json\n{\"wpcs_compliance\": 72, \"security_score\": 30, ...}\n```"
-    }
-  ]
-}
-```
+  | `use_kernels` | TTFT (prefill) | Decode |
+  |---|---|---|
+  | `False` (PyTorch fallback, default) | 0.73 s | 16.3 tok/s |
+  | `True` (`Atlas-Inference/gdn` Hub kernel) | 0.53 s (1.38x faster) | 16.7 tok/s |
 
-**Critique-then-fix format** — single assistant turn combining critique and corrected code:
+  Decode throughput is roughly flat between the two paths (the single-token DeltaNet recurrence is
+  memory-bandwidth-bound, not compute-bound) — the win is prefill-side and grows with prompt length. This
+  applies to `transformers`-native inference paths (eval harness, HF-side smoke tests); vLLM's own kernel
+  stack may differ, but this is the first hard aarch64/GB10-specific throughput evidence for this
+  architecture and directly de-risks the roadmap's "DeltaNet-aarch64 op smoke check" item — upgrade its
+  status from "inferred-OK" to **measured-OK with a known slow-path caveat**. Recommend the Phase 20
+  bring-up smoke test explicitly try `use_kernels=True` and record whether the trusted-kernels flag is
+  acceptable for this project's threat model, since eval-harness wall-clock (already budgeted at ~19
+  min/wp-bench arm) is sensitive to per-token decode speed at this architecture's ~16 tok/s single-stream
+  ceiling.
 
-```jsonc
-{
-  "prompt": [
-    {"role": "system", "content": "<wp_judge> critique and fix system prompt..."},
-    {"role": "user", "content": "Review this WordPress PHP code and provide a corrected version:\n```php\n{defective_code}\n```\nMutation type: {mutation_description}"}
-  ],
-  "completion": [
-    {
-      "role": "assistant",
-      "content": "**Critique:**\n\n- D2 (Security) CRITICAL: SQL injection via unparameterized $wpdb->query on line 8. Direct variable interpolation bypasses WordPress's prepared statement API.\n- D1 (WPCS) MODERATE: Missing @param/@return PHPDoc blocks reduce maintainability.\n\n**Corrected code:**\n```php\n{fixed_code}\n```\n\n**What changed:** Replaced direct $wpdb->query with $wpdb->prepare() using %d placeholder. Added PHPDoc blocks."
-    }
-  ]
-}
-```
+### 3. llama.cpp: supports the architecture for GGUF conversion (hybrid DeltaNet layers)
 
-**Key format decisions:**
-- Reasoning goes inside the `content` field as structured prose — **not** in a `<think>` block. Qwen3's `enable_thinking` is left at default (enabled) for inference, but training data uses plain-text reasoning so the model learns to output visible critiques, not hidden deliberation.
-- Do NOT use the `"thinking"` field in assistant messages (supported by TRL v1.0 format). Visible critique text is the product — users need to read the reasoning. Hidden `<think>` blocks would train the model to reason privately then emit only scores, defeating the purpose.
-- Source material for critique-then-fix: existing contrastive pairs from `phase2_mutate.py` (7 mutation types already produce defective→good pairs). Claude agents expand the reasoning annotation on top of existing mutations.
+**VERIFIED, with a minimum-build-number correction and a caveat.**
 
-### Reasoning Quality Evaluation — New Script
+- Mainline `llama.cpp` supports the architecture as `qwen35moe`. `bartowski/Qwen_Qwen3.6-35B-A3B-GGUF`
+  (the project's own preferred quantizer, per the v3.0 precedent) explicitly states **release b9222** was
+  used to produce its quants, and that MTP-layer support landed in **b9180**. This is a harder, more
+  specific floor than the locked doc's general "ecosystem check" language — record **llama.cpp >= b9180**
+  as the practical minimum for this model's GGUF path (b9222+ if MTP-head quantization is wanted too).
+- Community history matters here: search results also surfaced an earlier community fork
+  (`tekintian/llama.cpp`) and in-flight PRs (#20700 for dense-variant MTP) that predate mainline support
+  landing. This mirrors the pattern already flagged for DeltaNet-on-GB10 (item 2) — support existed as a
+  community patch before merging upstream — but as of 2026-07-12 mainline support is confirmed live via
+  the bartowski repo's own build references, so this is not a blocker, just a "don't use a stale llama.cpp
+  checkout" reminder.
+- **Caveat (MEDIUM confidence — surfaced via GitHub issue search, not independently reproduced):** at least
+  one open llama.cpp issue reports a GGUF conversion/load block-count mismatch on a Qwen3.5-family hybrid
+  MoE variant (`ggml-org/llama.cpp#24737`, "Qwen3.5-4B: GGUF conversion/load expects 33 blocks, model only
+  has 32"). Not confirmed against the 35B-A3B checkpoint specifically, but same architecture family and same
+  `convert_hf_to_gguf.py` code path — worth a smoke-check on block count immediately after conversion in
+  Stage 5, before trusting the quantized artifact.
+- Positive supporting detail: bartowski's repo notes Q4_0 "online repacking" improvements specifically for
+  ARM performance — relevant since GB10 is aarch64.
 
-A new evaluation script (`eval_reasoning_quality.py`) is needed to measure whether generated reasoning chains are substantive. This uses regex-based fast checks as primary gates plus a separately spawned Claude evaluator agent as a secondary quality signal for reasoning coherence evaluation. The Claude evaluator agent runs in an independent context window and receives only the generated code + reasoning as opaque inputs — no shared state with the model under test. This isolation principle mitigates circularity concerns (decision D-19 revisited: the separately spawned agent with opaque inputs is acceptable because the evaluator cannot access training data, model weights, or generation context).
+### 4. Existing quantized checkpoint ecosystem: bartowski GGUF, unsloth GGUF, NVIDIA NVFP4, QuantTrio AWQ
 
-| Tool | Location | Purpose | Why |
-|------|----------|---------|-----|
-| Separately spawned Claude evaluator agent | Claude Code (subscription) | Evaluate reasoning chain quality: coherence, dimension coverage depth, score-reasoning consistency | Claude evaluator agent provides actual reasoning quality assessment (coherence, logical consistency) rather than text similarity; spawned in an independent context window with only generated code + reasoning as opaque inputs (no shared state with model under test); mitigates circularity because the evaluator has no access to training data, model weights, or generation context; $0 cost via subscription |
-| nltk | 3.9.3 (already installed) | Tokenization for reasoning chain length metrics | Already present; used for token count, sentence count, coverage of expected keywords (e.g., "nonce", "escape", "prepare") |
+**VERIFIED, all four confirmed live 2026-07-12.**
 
-**What NOT to use for reasoning quality eval:**
-- BLEU/ROUGE — designed for translation/summarization; punishes valid paraphrases of the same reasoning
-- BLEURT — requires a trained checkpoint download (~1.4GB); overkill for this task; limited to Google's hosted checkpoint
-- BERTScore — text similarity metric, not a reasoning quality evaluator; measures surface-level semantic overlap between texts, cannot assess whether a reasoning chain is logically coherent, covers all dimensions substantively, or has score-reasoning consistency
-- LLM-as-judge using the model being trained — circular; we're training the judge, we can't use it to evaluate itself
-- Same model family as evaluator with shared context — circular if evaluator can see training data or generation context; the separately spawned Claude evaluator agent is acceptable because it operates in an independent context window with only opaque inputs (generated code + reasoning text), no access to training data, model weights, or generation prompts
+| Provider | Repo | Format |
+|---|---|---|
+| bartowski | `bartowski/Qwen_Qwen3.6-35B-A3B-GGUF` | GGUF (Q8/Q6/Q5/Q4 ladder) |
+| Unsloth | `unsloth/Qwen3.6-35B-A3B-GGUF`, `unsloth/Qwen3.6-35B-A3B-MTP-GGUF` | GGUF (Dynamic 2.0 quantization) |
+| Unsloth | `unsloth/Qwen3.6-35B-A3B-NVFP4`, `-NVFP4-Fast` | NVFP4 |
+| Unsloth | `unsloth/Qwen3.6-35B-A3B-UD-MLX-4bit` | MLX (Apple Silicon, not relevant to GB10) |
+| NVIDIA | `nvidia/Qwen3.6-35B-A3B-NVFP4` | NVFP4 (official, Blackwell-native) |
+| QuantTrio | `QuantTrio/Qwen3.6-35B-A3B-AWQ` | AWQ 4-bit |
 
-**Reasoning quality metrics (implemented in `eval_reasoning_quality.py`):**
-1. **Dimension coverage** — does the chain mention all 9 dimensions by name? (exact string match, no model needed)
-2. **Issue specificity** — does the chain cite specific line numbers, function names, or WordPress API violations? (regex over known patterns: `line \d+`, `$wpdb->`, `wp_verify_nonce`, etc.)
-3. **Claude evaluator agent coherence score** — a separately spawned Claude evaluator agent (independent context window, opaque inputs only) evaluates a sample of reasoning chains for: (a) logical coherence of the reasoning flow, (b) whether dimension analyses substantively address the code rather than being generic filler, (c) consistency between written reasoning severity and final numeric scores
-4. **Fix presence rate** (critique-then-fix only) — does the corrected code actually contain `$wpdb->prepare`, `wp_verify_nonce`, `esc_html`, etc. that the original was missing? (PHPCS + regex; no model required)
+New since the lock: Unsloth published **NVFP4 quants on 2026-07-10** (two days before this research pass),
+claiming ~1.7x speedup on 32GB VRAM. Also new: multiple independent third-party AWQ repos beyond QuantTrio
+(`cyankiwi/Qwen3.6-35B-A3B-AWQ-4bit`, `mattbucci/Qwen3.6-35B-A3B-AWQ`) and a comparative GGUF quality
+benchmark (`localbench.substack.com`, KL-divergence ranking across unsloth/bartowski/lmstudio-community/
+ggml-org/mudler/AesSedai quants) — useful if Stage 5's quantization ladder wants a second opinion beyond
+bartowski's own numbers. **Caveat found, not in the locked doc:** Qwen3.6 GGUFs reportedly do **not** work
+in Ollama due to separate `mmproj` (vision projector) files that Ollama's loader doesn't yet split
+correctly — irrelevant to this project (vLLM/llama.cpp direct, not Ollama-mediated) but worth knowing if
+anyone reaches for Ollama as a quick local-serve shortcut during Stage 5 dev-looping.
 
-**Primary gate:** Dimension coverage >=9/9 AND issue specificity rate >=60% of examples cite at least one specific violation. Claude evaluator agent coherence is a secondary quality signal evaluated on a representative sample (~100-200 examples), not run on every example.
+### 5. transformers/PEFT version requirements for the VL checkpoint (`model.language_model.*` prefix)
 
-### Supporting Scripts — New Files in `scripts/`
+**VERIFIED (architecture/class names + key prefix), UNVERIFIABLE (exact minimum transformers version floor).**
 
-No new libraries. New Python scripts that extend existing patterns:
+- Load classes confirmed directly from HF's own model doc page: `Qwen3_5MoeForConditionalGeneration` (VL,
+  takes `vision_config` + `text_config`, this is the class for the shipped checkpoint) and
+  `Qwen3_5MoeForCausalLM` (text-only variant, used in HF's own example against the non-VL
+  `Qwen3-Next-80B-A3B-Instruct` sibling — confirms the codebase's text-only causal LM path exists for this
+  model family, though the actual `Qwen/Qwen3.6-35B-A3B` checkpoint itself ships as the VL
+  `ForConditionalGeneration` class per Axis 1 of the locked selection doc).
+- `model.language_model.*` key prefix for the text backbone under the VL wrapper is corroborated by a
+  community fine-tuning guide (Medium, "Fine-Tuning Qwen/Qwen3-VL-30B-A3B MoE Architecture with LoRA") — LoRA
+  target modules for the sibling Qwen3-VL family use `model.visual.blocks`/`model.visual.merger` for the
+  vision side and `model.language_model.layers.*.mlp.{gate,up,down}_proj` for the text side. This is
+  **MEDIUM confidence** (a third-party blog post, not an official HF/Qwen doc) but internally consistent
+  with the official HF `Qwen3_5MoeConfig` schema (separate `text_config`/`vision_config` sub-objects) — the
+  prefix split is architecturally required, not just a convention, so the risk of this being wrong is low.
+- **New, actionable finding for the SFT recipe, not in the locked doc:** HF's usage notes for this exact
+  architecture state "When training or fine-tuning, set `output_router_logits=True` so the forward returns
+  router logits and the load-balancing auxiliary loss is added to the total loss... Without it, experts can
+  collapse to a few popular slots." This is a direct, named failure mode (router/expert collapse) relevant
+  to Stage 2/3's MoE-only LoRA recipe — the requirements pass should make `output_router_logits=True` (and
+  checking `router_aux_loss_coef`, default `0.001`) an explicit SFT config item, not an assumed default.
+- **Exact minimum transformers version: UNVERIFIABLE via the tools used.** The HF docs page for this
+  architecture is served at a `/v5.13.1/` doc path (i.e., `transformers` is on major version 5 by
+  2026-07-12), and the model doc exists and is populated, meaning **some transformers >= 5.x release
+  supports `Qwen3_5MoeForConditionalGeneration`** — but no changelog/release-notes page was fetched to pin
+  the exact minimum. What was tried: fetching the model doc page (succeeded, confirms existence and class
+  names) and a targeted search for "transformers PEFT Qwen3.6 model.language_model key prefix" (returned
+  corroborating community content, not a version pin). **Recommendation for the requirements pass:** pin to
+  latest `transformers` 5.x at execution time and verify `Qwen3_5MoeForConditionalGeneration` imports
+  successfully as part of the Phase 20 bring-up smoke test, rather than trusting a version number
+  transcribed here.
 
-| Script | Purpose | Extends |
-|--------|---------|---------|
-| `phase4_deep_judge_cot.py` | Regenerate judge training examples with full dimension-by-dimension reasoning chains | `phase2_judge_dataset.py` agent loop pattern |
-| `phase4_critique_fix.py` | Generate critique-then-fix pairs from `phase2_mutate.py` outputs | `generate_cot_real.py` structure + `phase2_mutate.py` source data |
-| `eval_reasoning_quality.py` | Measure dimension coverage, issue specificity, Claude evaluator agent coherence on generated chains | Standalone; uses nltk + separately spawned Claude evaluator agent (subscription) |
+### 6. Newer Qwen release that would challenge the base lock
 
----
+**Checked — nothing found that should reopen the lock.**
 
-## Recommended Stack — Existing Components (Confirmed Unchanged)
-
-The full v1 stack remains valid. Key confirmed versions from the DGX Spark environment:
-
-| Technology | Version (confirmed) | Status |
-|------------|---------------------|--------|
-| Unsloth | 2026.3.5 | Confirmed installed |
-| TRL | 0.24.0 | Confirmed installed; v1.0 released 2026-03-31 — do NOT upgrade mid-milestone |
-| transformers | 5.3.0 | Confirmed installed |
-| Python | 3.11 | Per DGX playbook |
-| anthropic SDK | >=0.50.0 | In use across phases 1-3 |
-| nltk | 3.9.3 | Confirmed installed |
-
-**TRL version note:** TRL v1.0 (released 2026-03-31) is a stability release — "migration from last 0.x version is minimal." Do NOT upgrade to v1.0 mid-milestone without validating against `train_model.py`. The 0.24.0 installed version handles all v1.2 training format requirements (standard prompt-completion conversational format; no new TRL features required).
-
----
-
-## Training Configuration Changes
-
-The existing `train_config_*.yaml` files require **one change** for v1.2: max sequence length increase to accommodate longer reasoning chains.
-
-| Parameter | v1.0 Value | v1.2 Value | Reason |
-|-----------|-----------|-----------|--------|
-| `max_seq_length` | 4096 | 8192 | Deep judge CoT chains (dimension analysis × 9 + issue list + JSON) routinely exceed 4096 tokens; Qwen3-30B-A3B supports 128K context; DGX Spark 128GB handles 8192 at LoRA r=32 |
-| `per_device_train_batch_size` | (current) | Reduce by 50% or keep with gradient checkpointing | Longer sequences increase activation memory; use adaptive planner's existing batch coupling to maintain effective batch size |
-| LoRA r | 32 (v1.2 config) | 32 | No change; consistent with v1.2 plan ("only winning ratio gets this treatment") |
-
-**Memory estimate:** At 8192 token sequences with LoRA r=32 on Qwen3-30B-A3B (128GB unified memory), batch_size=1 with gradient_accumulation=16 is the conservative baseline. The existing adaptive planner handles batch tuning.
-
----
-
-## Data Sourcing Strategy for v1.2
-
-| Data Type | Source | Volume Target | Generation Method |
-|-----------|--------|---------------|-------------------|
-| Deep judge CoT | All 134K phase1 judged functions (passed + failed) + 2,720 synthetic passed | Sample 10-20K for reasoning annotation | Claude Code agents; same spawn pattern as phase2_judge_dataset.py |
-| Critique-then-fix | Existing mutated pairs from `data/phase2_synthetic/output/mutated/` (7 mutation types) | All available mutated pairs (~estimated 5-10K) | Claude Code agents add critique + verified fix annotation |
-
-**Source material decision:** The existing `phase2_mutate.py` contrastive pairs are ideal for critique-then-fix because the mutation type is known (sql_injection, csrf, xss, etc.) — Claude agents can be prompted with the mutation label to produce precise, dimension-targeted critiques instead of generic ones.
-
----
-
-## Installation — New Dependencies Only
-
-No new Python package dependencies for v1.2. The Claude evaluator agent uses the existing Claude Code subscription (same as data generation agents) and requires no additional infrastructure.
-
-Everything required (anthropic SDK, nltk, TRL, Unsloth, transformers) is already installed.
-
----
-
-## Alternatives Considered
-
-| Recommended | Alternative | Why Not |
-|-------------|-------------|---------|
-| Plain-text reasoning in `content` field | Hidden `<think>` blocks via Qwen3 enable_thinking=True training data | The reasoning IS the product for v1.2 — users need to see dimension-by-dimension critiques; hidden thinking trains covert deliberation not visible output; also requires enable_thinking flag management at inference time |
-| Visible reasoning in assistant `content` | TRL v1.0 `"thinking"` field in assistant messages | The "thinking" field renders as hidden `<think>` blocks in Qwen3 chat template — same problem as above; also requires TRL upgrade mid-milestone |
-| Separately spawned Claude evaluator agent for reasoning quality | BERTScore (text similarity) | BERTScore measures surface-level semantic overlap, not reasoning quality; a separately spawned Claude evaluator agent (independent context window, opaque inputs only) can evaluate coherence, dimension coverage depth, and score-reasoning consistency — actual reasoning quality signals; circularity mitigated by isolation principle (no shared state with model under test) |
-| Extend `phase2_judge_dataset.py` pattern | New agent framework (LangChain, DSPy) | Zero new dependencies; existing Claude Code agent spawn pattern already validated through 143K examples in v1.0 |
-| Regenerate from all 134K judged functions | Generate from scratch with new prompts | Reusing existing judged data guarantees the reasoning annotations cover real-world code, not just synthetic; mutation type labels from phase2_mutate.py provide critique anchors |
-| claude-sonnet-4-6 for reasoning generation | claude-opus-4-6 | Sonnet is sufficient for structured multi-dimension reasoning at this complexity; upgrade to Opus only after spot-checking chain quality; 40% cost difference |
-
----
-
-## What NOT to Use
-
-| Avoid | Why | Use Instead |
-|-------|-----|-------------|
-| Qwen3 `<think>` blocks in training data | Trains hidden reasoning, not visible critique; inference-time users need to see the reasoning | Embed reasoning directly in assistant `content` as structured prose |
-| TRL v1.0 upgrade mid-milestone | Released 2026-03-31; migration risk during active training; v0.24.0 handles all required formats | Stay on 0.24.0; evaluate upgrade at v2.0 milestone start |
-| max_seq_length=4096 for v1.2 training data | Deep judge CoT chains exceed 4096 tokens routinely; truncation silently destroys reasoning quality | Set max_seq_length=8192; validate 95th percentile token length of generated chains before training |
-| BLEU/ROUGE/BERTScore for reasoning quality | Designed for text similarity, not reasoning quality; BERTScore measures semantic overlap, not logical coherence or score-reasoning consistency | Claude evaluator agent coherence (sample-based) + dimension coverage + issue specificity regex |
-| Separate "fix" and "critique" as two training examples | Creates two-call inference pattern; model needs to learn single-pass critique-then-fix | Combine critique + corrected code in one assistant turn |
-| New external data for critique-then-fix | Introduces distribution shift from existing training data | Use `phase2_mutate.py` outputs — same mutation types, same code distribution, same quality filters already applied |
-
----
-
-## Stack Patterns by Phase — v1.2 Additions
-
-**Phase 4a (Deep Judge CoT Generation):**
-- Claude Code agents (subscription); spawn-until-target pattern
-- Prompt template: system = `<wp_judge>` judge role + dimension rubric; user = code sample; expected output = dimension-by-dimension prose analysis + JSON scores
-- Quality gate: dimension coverage check (all 9 mentioned) + issue specificity >=60% + Claude evaluator agent coherence on pilot sample
-- Output: `data/phase4_reasoning/deep_judge_cot.jsonl`
-
-**Phase 4b (Critique-then-Fix Generation):**
-- Claude Code agents; source = `data/phase2_synthetic/output/mutated/` existing pairs
-- Prompt template: system = `<wp_judge>` critique role; user = defective code + mutation_type label; expected output = critique (what/why/severity) + corrected code
-- Quality gate: PHPCS pass on corrected code + fix-presence check (mutation-specific security functions restored)
-- Output: `data/phase4_reasoning/critique_fix.jsonl`
-
-**Phase 4c (Reasoning Quality Evaluation):**
-- `eval_reasoning_quality.py`: dimension coverage, issue specificity, Claude evaluator agent coherence (sample-based)
-- Run before training; fail fast if <80% of chains pass dimension coverage gate
-- Output: `telemetry/reasoning_quality_report.json`
-
-**Phase 4d (Fine-tuning on Combined Reasoning Dataset):**
-- Same Unsloth + TRL SFTTrainer; same DGX Spark infrastructure
-- Dataset: merge deep_judge_cot.jsonl + critique_fix.jsonl + winning-ratio existing data
-- Config change: max_seq_length=8192; adaptive planner handles batch sizing
-- Adaptive planner already handles sequence-length-driven memory pressure
+- **Qwen3.7 exists but is proprietary, not open-weight.** Qwen3.7-Max announced 2026-05-19
+  ("Qwen3.7: The Agent Frontier," qwen.ai blog), Qwen3.7-Plus reached GA 2026-06-01, both served only via
+  Alibaba Cloud Model Studio / API partners (Fireworks etc.) at $2.50 input / $7.50 output per M tokens.
+  No open-weight release has been announced for either tier as of 2026-07-12. Since v4.0 requires local
+  LoRA fine-tuning on downloaded weights (Tinker + on-prem GB10 serving), a closed API-only model cannot
+  satisfy the pipeline's requirements regardless of capability — **does not challenge the lock**.
+- **No newer Qwen3.6-35B-A3B revision found.** Search for an August-2026-or-later update/checkpoint
+  revision returned only the original 2026-04-16 release artifacts (BF16, official FP8, NVIDIA NVFP4) —
+  no evidence of a re-upload, patch, or "-2" revision as of this research date.
+- **Conclusion: no action.** The locked base stands; nothing materially better shipped in the open-weight,
+  same-size-class space between 2026-07-11 (lock date) and 2026-07-12 (this research pass).
 
 ---
 
-## Version Compatibility — v1.2 Additions
+## Toolchain summary for the requirements pass
 
-| Package | Compatible With | Notes |
-|---------|-----------------|-------|
-| Claude evaluator agent (subscription) | Claude Code CLI | Separately spawned agent with independent context; used for reasoning quality eval on sample batches; $0 cost via subscription |
-| max_seq_length=8192 | unsloth 2026.3.5, Qwen3-30B-A3B | Qwen3 supports 128K context; 8192 is well within Unsloth's tested range |
-| TRL 0.24.0 | prompt-completion conversational format | Standard format; no upgrade needed for v1.2 reasoning chain training |
+| Component | Version / flag | Status | Source confidence |
+|---|---|---|---|
+| Tinker | `Qwen/Qwen3.6-35B-A3B`, 64K train context cap | VERIFIED | HIGH (live docs, 3 independent fetches) |
+| Tinker pricing | Prefill $0.36 / Sample $0.54 / Train $1.07 (rising ~10-50% from 2026-07-17) | VERIFIED + price-hike alert | HIGH |
+| vLLM | `>=0.19.0`, `--language-model-only` | VERIFIED | HIGH (vendor README + recipe page + 2 independent GB10 deployment reports) |
+| GB10 DeltaNet kernel | no native SM121 build; `use_kernels=True` + `pip install -U kernels` for 1.38x prefill speedup, decode flat ~16 tok/s | VERIFIED (measured) | HIGH (official HF docs, includes numbers) |
+| llama.cpp | mainline `qwen35moe` support, **minimum build b9180** (MTP b9180+, quant tooling tested b9222) | VERIFIED, more specific than lock | HIGH (bartowski's own repo) |
+| llama.cpp GGUF block-count | possible off-by-one on Qwen3.5-family hybrid MoE (upstream issue #24737, unconfirmed on 35B-A3B) | FLAGGED, not confirmed | MEDIUM |
+| Quant ecosystem | bartowski GGUF, unsloth GGUF/NVFP4/MLX, NVIDIA NVFP4, QuantTrio + 2 more AWQ repos | VERIFIED | HIGH |
+| transformers | 5.x (`Qwen3_5MoeForConditionalGeneration`), pin latest at execution, verify via bring-up smoke test | PARTIALLY VERIFIED (class exists; exact min version unpinned) | MEDIUM |
+| PEFT / LoRA key prefix | `model.language_model.*` for text-side LoRA targets under VL wrapper | VERIFIED (architecturally required + community-corroborated) | MEDIUM-HIGH |
+| SFT config | `output_router_logits=True` required to avoid expert collapse (not in locked doc) | NEW FINDING | HIGH (official HF usage notes) |
+| Qwen3.7 / newer base | proprietary, no open weights — does not challenge lock | VERIFIED, no reopen | HIGH |
 
 ---
+
+## Integration notes for requirements/roadmap
+
+- **Phase 20 (base bring-up) should gain two smoke-test line items** beyond what's in the roadmap: (a) load
+  with `use_kernels=True` and confirm the `Atlas-Inference/gdn` kernel path is acceptable given
+  `trust_remote_code=True`, or explicitly decide to accept the ~1.38x-slower prefill fallback; (b) after any
+  GGUF conversion in Stage 5, verify block count / tensor count against the safetensors index before trusting
+  the quantized artifact (block-count bug flagged above).
+- **Stage 2/3 SFT config must set `output_router_logits=True`** (and sanity-check `router_aux_loss_coef`,
+  default 0.001) — this is a hard requirement to avoid the exact "experts collapse to a few popular slots"
+  failure mode HF's own docs name, and it was not previously called out anywhere in the locked planning docs.
+- **Cost estimates should account for the 2026-07-17 Tinker price increase** if v4.0 sign-off happens after
+  that date: train price rises ~10% (dominant driver), prefill/sample ~50% (minor line items for this
+  workload). The roadmap's $2/run and ~$6/3-seed anchors likely still round to the same order of magnitude,
+  but should be re-derived from the live table at actual spend time, not from either the 2026-07-11 or
+  2026-07-12 snapshots in this doc.
+- **llama.cpp version pin:** require `>=b9180` explicitly in any environment/setup doc for Stage 5 (the
+  locked doc's "ecosystem check" language didn't carry a build-number floor; now it can).
+- **transformers version:** do not hardcode a version number from this doc — pin "latest transformers 5.x"
+  and let the Phase 20 bring-up smoke test (`from transformers import Qwen3_5MoeForConditionalGeneration`)
+  be the actual gate.
+
+## What NOT to add
+
+- No need to add Ollama to the serving stack for this base — its GGUF loader currently mishandles the
+  separate `mmproj` vision file for this architecture family; the project's existing vLLM/llama.cpp path
+  is unaffected and should stay primary.
+- No need to re-open the relabel campaign or the base-model lock based on anything found here — both
+  remain sound per the discretion items already resolved in `V4-RERUN-ROADMAP.md`.
+- No need to adopt NVFP4 or MLX quant formats for this project — GB10/aarch64 + llama.cpp/vLLM serving
+  makes GGUF (bartowski, llama.cpp-native) and AWQ (vLLM-native) the relevant formats; NVFP4 is
+  Blackwell-datacenter-oriented and MLX is Apple-Silicon-only, neither displaces the already-locked Q8 GGUF
+  ship-tier decision.
+- Do not add `causal-conv1d`/`fla` as hard pip dependencies — they have no GB10/SM121 build; the
+  `kernels`-package Hub-kernel path (`use_kernels=True`) is the only currently-working acceleration route
+  on this hardware, and even that is optional (fallback path works, just slower on prefill).
 
 ## Sources
 
-- [TRL Dataset Formats](https://huggingface.co/docs/trl/main/dataset_formats) — conversational prompt-completion format, reasoning field options (HIGH confidence; official docs)
-- [TRL v1.0 Blog Post](https://huggingface.co/blog/trl-v1) — v1.0 release date 2026-03-31, minimal migration from 0.x (HIGH confidence)
-- [Qwen-3 Chat Template Deep Dive](https://huggingface.co/blog/qwen-3-chat-template-deep-dive) — enable_thinking behavior, think tag format, implications for training data (HIGH confidence)
-- [Unsloth Qwen3 Docs](https://unsloth.ai/docs/models/qwen3-how-to-run-and-fine-tune) — 75%/25% reasoning/non-reasoning dataset mix recommendation; enable_thinking config for inference (MEDIUM confidence; docs fetch returned partial content)
-- [J1: Incentivizing Thinking in LLM-as-a-Judge](https://arxiv.org/abs/2505.10320) — training judges to reason with verifiable rewards; 32B judge matches 671B DeepSeek-R1 on some benchmarks (MEDIUM confidence; research paper)
-- [Training an LLM-as-a-Judge: Pipeline, Insights, Practical Lessons](https://arxiv.org/html/2502.02988v1) — dimension-level scoring format, MAE + Agr(2,2) as eval metrics (MEDIUM confidence; research paper)
-- [Improve LLM-as-a-Judge as General Ability](https://aclanthology.org/2025.emnlp-main.712.pdf) — jCoT (reasoning process) + jres (judge result) training format (MEDIUM confidence; peer-reviewed)
-- [LLM Evaluation 2025: Smarter Metrics](https://www.techrxiv.org/users/927947/articles/1304989) — comparison of automated metrics on reasoning tasks; text similarity metrics (BERTScore, BLEU, BLEURT) have limited alignment with human judgment on reasoning quality evaluation (MEDIUM confidence; preprint)
-- [The Art of Repair: Optimizing Iterative Program Repair](https://arxiv.org/abs/2505.02931) — (Instruction, Input, Output) format for code repair instruction tuning; buggy code + fix template + corrected code structure (MEDIUM confidence; research paper)
-- Confirmed installed versions via `pip show` on DGX Spark: TRL 0.24.0, transformers 5.3.0, unsloth 2026.3.5, nltk 3.9.3 (HIGH confidence; direct verification)
+All fetched/searched live on 2026-07-12 unless noted:
 
----
-
-*Stack research for: wp-qwen3-moe v1.2 (Deep Judge CoT + Critique-then-Fix)*
-*Researched: 2026-04-04*
+- https://tinker-docs.thinkingmachines.ai/tinker/models/ — live pricing/support/retirement table (3 separate fetch passes for cross-checking)
+- https://huggingface.co/Qwen/Qwen3.6-35B-A3B — model card, README, architecture
+- https://huggingface.co/docs/transformers/model_doc/qwen3_5_moe — architecture classes, GB10/SM121 kernel notes, `output_router_logits` guidance, doc-version path `v5.13.1`
+- https://huggingface.co/docs/transformers/model_doc/qwen3_5 — dense-variant sibling doc (cross-check)
+- https://recipes.vllm.ai/Qwen/Qwen3.6-35B-A3B — vLLM `--language-model-only` example command
+- https://forums.developer.nvidia.com/t/qwen-qwen3-6-35b-a3b-and-fp8-has-landed/366822 — DGX Spark/GB10 live deployment thread, posts 2026-04-16 to 04-20
+- https://huggingface.co/bartowski/Qwen_Qwen3.6-35B-A3B-GGUF — llama.cpp build-number requirements (b9180/b9222)
+- https://github.com/ggml-org/llama.cpp/issues/24737 — flagged block-count issue on Qwen3.5-family hybrid MoE (unconfirmed on 35B-A3B)
+- https://huggingface.co/QuantTrio/Qwen3.6-35B-A3B-AWQ, https://huggingface.co/unsloth/Qwen3.6-35B-A3B-NVFP4, https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF, https://huggingface.co/nvidia/Qwen3.6-35B-A3B-NVFP4 — quant ecosystem
+- https://medium.com/@ishaafsalman/fine-tuning-qwen-qwen3-vl-30b-a3b-moe-architecture-with-lora-2365359e870f — `model.language_model.*` LoRA target-module corroboration (MEDIUM confidence, third-party)
+- https://qwen.ai/blog?id=qwen3.7, https://www.marktechpost.com/2026/05/21/qwen-introduces-qwen3-7-max-a-reasoning-agent-model-with-a-1m-token-context-window/, https://www.marktechpost.com/2026/06/02/alibabas-qwen-team-launches-qwen3-7-plus-adding-vision-deep-reasoning-tool-invocation-and-autonomous-iteration-on-the-bailian-platform/ — Qwen3.7 proprietary-tier confirmation
+- `.planning/V4-RERUN-ROADMAP.md`, `.planning/phases/19-next-base-rerun-roadmap/19-NEXT-BASE-SELECTION.md` (recovered via `git show HEAD~2:...`) — baseline claims being re-verified

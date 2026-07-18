@@ -1,0 +1,12 @@
+{
+  "renderer_name": "qwen3_5_disable_thinking",
+  "renderer_source": "registry",
+  "resolved_lr": 0.0004990818286656736,
+  "lr_rationale": "Kept hp.get_lr(BASE_MODEL, is_lora=True) -- Tinker's own auto-computed LR for the base+LoRA combination, matching the ACTUAL v1.2/v1.3 Tinker regime (empirically resolved here to ~4.99e-4, matching ROADMAP.md's Phase 4.3 supersession note). GEN-02's literal '<=2e-5' text is a stale carry-over from the abandoned DGX/Unsloth-era RTRN-01 spec (superseded 2026-06-11 per ROADMAP.md), not a deliberate new v4.0 constraint -- following 'same pipeline as Qwen3' literally means reusing Tinker's auto-LR, not the superseded manual cap.",
+  "output_router_logits_disposition": "N/A at Tinker's abstraction layer (raw-transformers-forward concern only) -- evidence: tinker.ServiceClient.create_lora_training_client signature (base_model, rank, seed, train_mlp, train_attn, train_unembed, user_metadata) and TrainingClient.forward_backward(data, loss_fn, loss_fn_config) expose no router/aux-loss knob; grep for 'router'/'load_balanc' across the installed tinker + tinker_cookbook package source returns zero hits (checked live, 2026-07-13).",
+  "max_tokenized_len": 7851,
+  "len_under_64k": true,
+  "empty_think_injected": false,
+  "n_train_examples": 560,
+  "n_val_examples": 136
+}

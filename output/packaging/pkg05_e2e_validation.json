@@ -1,0 +1,21 @@
+{
+  "requirement": "PKG-05",
+  "title": "E2E inference validation on the shipped format",
+  "generated_utc": "2026-07-10",
+  "bf16_shipped_format": {
+    "status": "VALIDATED",
+    "source": "output/eval_reasoning_v4_winner/postmerge_validation_v4.json",
+    "model": "models/qwen3-30b-wp-30_70-reasoning-merged-v4",
+    "serving_stack": "vLLM (enable_thinking=false)",
+    "results": {
+      "wp_gen_coherent": "10/10",
+      "wp_judge_coherent": "10/10",
+      "routing_correct": "20/20",
+      "note": "Both task tokens produce coherent output with correct routing on the bf16 merged checkpoint. This is the final shipped format at the bf16 tier."
+    }
+  },
+  "quantized_shipped_format": {
+    "status": "PENDING-TOOLCHAIN",
+    "note": "E2E on the quantized tier (Q8 GGUF via Ollama, or AWQ via vLLM) runs once PKG-03 produces a tier that clears the +/-2pp gate. Protocol: serve final artifact, 20 <wp_gen> + 20 <wp_judge> prompts (data/phase4_4/smoke_prompts.json), verify coherent output + task-token routing. Recipe: scripts/run_packaging_recipe.md."
+  }
+}

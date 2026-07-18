@@ -1,0 +1,22 @@
+{
+  "captures": [
+    "output/eval4/ext_q8/q8_s0/judge_responses.jsonl",
+    "output/eval4/ext_q8/q8_s1/judge_responses.jsonl",
+    "output/eval4/ext_q8/q8_s2/judge_responses.jsonl"
+  ],
+  "ensemble_rho": 0.8066820446015684,
+  "n": 121,
+  "ci": [
+    0.7356076430558469,
+    0.8526287320467012
+  ],
+  "parse_fail_per_seed": [
+    0,
+    0,
+    0
+  ],
+  "baseline_rho": 0.7476689625425029,
+  "ceiling": 0.9844009569826934,
+  "delta_vs_baseline": 0.059013082059065525,
+  "min_seeds_required": 2
+}

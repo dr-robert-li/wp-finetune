@@ -1,0 +1,19 @@
+dataset:
+  name: wp-core-v1
+  source: local
+grader:
+  kind: docker
+  wp_env_dir: /home/robert_li/Desktop/projects/wp-finetune/wp-bench/runtime
+models:
+- api_base: http://localhost:8020/v1
+  api_key: none
+  max_tokens: 2048
+  name: openai/wp-30_70
+  request_timeout: 1800.0
+output:
+  jsonl_path: /home/robert_li/Desktop/projects/wp-finetune/output/bench17/full_gate_rerun/wp_bench_results.jsonl
+  path: /home/robert_li/Desktop/projects/wp-finetune/output/bench17/full_gate_rerun/wp_bench_results.json
+run:
+  concurrency: 4
+  limit: null
+  suite: wp-core-v1

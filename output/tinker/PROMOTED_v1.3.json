@@ -1,0 +1,24 @@
+{
+  "version": "v1.3",
+  "role": "wp_judge (reasoning judge)",
+  "supersedes": "v1.2 SFT judge (warmstart baseline, judge-rho 0.7477 vs relabel_v1 val labels)",
+  "promoted_utc": "2026-07-04",
+  "source_run": "wp-reasoning-relabel-s1 (seed=1)",
+  "sampler_path": "tinker://6a06e60f-ab56-519d-9da8-b5ca11eb5967:train:0/sampler_weights/wp-reasoning-relabel-s1-ep3",
+  "base_model": "Qwen/Qwen3-30B-A3B",
+  "lora": {"rank": 32, "targets": "MoE-only (train_mlp)", "seed": 1, "epochs": 3, "renderer": "qwen3_disable_thinking"},
+  "train_data": "data/reasoning_dataset/openai_train_relabel_v1.jsonl (478 judge targets recalibrated from data/relabel_v1/labels.json)",
+  "eval": {
+    "judge_rho_vs_new_val_labels": 0.8274,
+    "n": 121,
+    "v1_2_baseline_rho": 0.7477,
+    "delta_vs_v1_2": 0.0797,
+    "ceiling": 0.9844,
+    "gap_to_ceiling": 0.157,
+    "multiseed_mean_rho": 0.8044,
+    "multiseed_all_beat_v12": true,
+    "reformat_bias_audit": "PASS (delta 0)"
+  },
+  "local_export": "models/tinker_export/wp-reasoning-v1.3 (LoRA archive; merge deferred to Phase 11 packaging)",
+  "notes": "Judge-only relabel SFT; wp_gen data unchanged so no codegen regression path. RL stays gated behind reward-v2."
+}

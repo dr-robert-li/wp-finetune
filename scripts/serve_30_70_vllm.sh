@@ -39,6 +39,38 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MODEL_DIR="${MODEL_DIR:-$REPO_ROOT/models/qwen3-30b-wp-30_70-merged}"
 IMAGE="${IMAGE:-ghcr.io/spark-arena/dgx-vllm-eugr-nightly:latest}"
 
+# SIEVE-04 k-sweep (plan 11-04): optional inference-time expert-mask.
+# SIEVE_MASK_NPY=<host path to [n_layers,n_experts] bool keep-mask.npy> mounts
+# scripts/_sieve_vllm_patch (sitecustomize.py, auto-loaded via PYTHONPATH) +
+# the mask file read-only into the container; the k="full" baseline arm
+# leaves SIEVE_MASK_NPY unset and serves fully unmasked (no-op, unchanged
+# behavior from every prior caller of this script).
+SIEVE_MASK_NPY="${SIEVE_MASK_NPY:-}"
+SIEVE_DOCKER_ARGS=()
+if [ -n "$SIEVE_MASK_NPY" ]; then
+  if [ ! -f "$SIEVE_MASK_NPY" ]; then
+    echo "ERROR: SIEVE_MASK_NPY set but file not found: $SIEVE_MASK_NPY" >&2
+    exit 1
+  fi
+  SIEVE_DOCKER_ARGS+=(
+    -v "${REPO_ROOT}/scripts/_sieve_vllm_patch:/sieve_patch:ro"
+    -v "$(cd "$(dirname "$SIEVE_MASK_NPY")" && pwd)/$(basename "$SIEVE_MASK_NPY"):/sieve_mask/keep_mask.npy:ro"
+    -e "PYTHONPATH=/sieve_patch"
+    -e "SIEVE_KEEP_MASK_NPY=/sieve_mask/keep_mask.npy"
+  )
+  echo "  expert mask: $SIEVE_MASK_NPY (SIEVE-04 k-sweep)"
+fi
+
+# Phase 25 k-sweep (25-02): the v4 judge is a VL checkpoint; serve text-only.
+# LANGUAGE_MODEL_ONLY=1 appends --language-model-only (additive, backward-compatible;
+# unset -> unchanged behavior for every prior caller).
+LANGUAGE_MODEL_ONLY="${LANGUAGE_MODEL_ONLY:-}"
+LMO_ARGS=()
+if [ -n "$LANGUAGE_MODEL_ONLY" ]; then
+  LMO_ARGS+=(--language-model-only)
+  echo "  language-model-only: ON (VL checkpoint served text-only)"
+fi
+
 if [ ! -d "$MODEL_DIR" ]; then
   echo "ERROR: model dir not found: $MODEL_DIR" >&2
   echo "Expected merged checkpoint at: $MODEL_DIR" >&2
@@ -56,13 +88,18 @@ echo "Launching $NAME on :$PORT"
 echo "  model: $MODEL_DIR (merged)"
 echo "  image: $IMAGE"
 
-docker run --rm -d \
+# NOTE: no --rm — a crashed boot must leave the container behind so
+# `docker logs` is retrievable (13-04 gen-arm boot failure lost its logs).
+# Cleanup is already handled: this script rm -f's any previous $NAME above,
+# and every caller's stop_vllm() does `docker rm -f` when done.
+docker run -d \
   --name "$NAME" \
   --gpus all \
   --ipc=host \
   -p "${PORT}:${PORT}" \
   -v "${MODEL_DIR}:/workspace/model:ro" \
   -e HF_HUB_ENABLE_HF_TRANSFER=1 \
+  "${SIEVE_DOCKER_ARGS[@]}" \
   "$IMAGE" \
   vllm serve /workspace/model \
     --host 0.0.0.0 \
@@ -72,6 +109,7 @@ docker run --rm -d \
     --gpu-memory-utilization "$GPU_MEM_UTIL" \
     --trust-remote-code \
     --enable-prefix-caching \
+    "${LMO_ARGS[@]}" \
     --served-model-name wp-30_70 \
     -tp 1 -pp 1
 

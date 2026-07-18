@@ -1,0 +1,76 @@
+{
+  "phase": 14,
+  "title": "Final Comparative Evaluation (unpruned two-model pair)",
+  "generated_utc": "2026-07-10",
+  "provenance_note": "This is a consolidation report. Every quality number below is copied from an existing measured artifact under output/ with the same vLLM serving stack on both sides. No new GPU eval was run for Phase 14 because there is no pruned variant and no shipped RL baseline to A/B against; re-running the vLLM wp-bench sweep would only reproduce output/sieve/optimal_k.json.",
+  "comparison_arms_status": {
+    "pruned_variant": "DOES NOT EXIST. Phase 13 verdict no_winner -> ship unpruned (human sign-off 2026-07-10). See output/prune/prune_methodology.md.",
+    "v2_0_rl_baseline": "DOES NOT EXIST as a shipped model. RL rejected Phase 10 (6/6 dead checkpoint reads, 2026-07-05). No RL checkpoint was promoted.",
+    "effective_comparison": "Shipping stack (v1.2 gen + v1.3 judge) measured full-arm vs its own acceptance bars; pruning/expert-drop recorded as a flat size line (no reduction achievable)."
+  },
+  "shipping_stack": {
+    "generation_model": {
+      "name": "v1.2 reasoning-merged (30_70 ratio)",
+      "path": "models/qwen3-30b-wp-30_70-reasoning-merged-v4",
+      "role": "wp_gen"
+    },
+    "judge_model": {
+      "name": "v1.3 relabel-SFT judge, 3-seed median ensemble",
+      "paths": [
+        "models/_staging/qwen3-30b-wp-v1.3-merged (s1)",
+        "models/_staging/qwen3-30b-wp-v1.3-s0-merged",
+        "models/_staging/qwen3-30b-wp-v1.3-s2-merged"
+      ],
+      "role": "wp_judge",
+      "single_seed_fallback": "s1 (models/_staging/qwen3-30b-wp-v1.3-merged)"
+    }
+  },
+  "quality_measured_vllm_full_arm": {
+    "source_artifact": "output/sieve/optimal_k.json",
+    "wp_bench_overall": 0.4484,
+    "judge_ensemble_rho": 0.8074640593499867,
+    "judge_single_s1_rho": 0.8017478301734532,
+    "seed_noise_floor": 0.05203641569469587,
+    "bars": {
+      "gen_wp_bench_acceptance": 0.4286,
+      "gen_wp_bench_tinker_runtime_ref": 0.4616,
+      "judge_ensemble_rho_floor": 0.7554276436552908,
+      "judge_s1_fallback_floor": 0.7497114144787573
+    },
+    "gate_results": {
+      "wp_bench_hard_gate_pass": true,
+      "judge_ensemble_rho_pass": true,
+      "judge_s1_fallback_pass": true
+    }
+  },
+  "pruning_dead_evidence": {
+    "expert_drop_phase11": {
+      "source": "output/sieve/prune_set_for_phase13.json",
+      "finding": "E_eff ~88-99 live experts/layer of 128; k-sweep collapses wp-bench 0.4484(full)->0.2275(k64)->0.0546(k32); no swept k passes TOST epsilon=2pp. optimal_k=full."
+    },
+    "weight_norm_aimer_phase13": {
+      "source_gen": "output/prune/gated/aimer_25_gen.json",
+      "source_judge": "output/prune/gated/aimer_25_judge.json",
+      "finding": "AIMER@25% collapses gen wp-bench to 0.1577 (bar 0.4284) and judge ensemble rho to 0.1651 (bar 0.7555), judge parse 44.6%. Both gates fail at the lightest ratio; 50/75% skipped and REAP conditional-skipped per pre-registered rule."
+    }
+  },
+  "size_and_speed": {
+    "architecture": {
+      "model_type": "qwen3_moe",
+      "total_params_billions": 30.5,
+      "active_params_billions": 3.3,
+      "num_experts": 128,
+      "num_experts_per_tok": 8,
+      "num_hidden_layers": 48
+    },
+    "bf16_size_per_checkpoint_gb": 57,
+    "size_reduction_vs_base": "0% (none). Expert-drop and weight-norm pruning both proved lossy; model ships at full 128-expert width. Size lever deferred entirely to Phase 15 quantization.",
+    "inference_speed": "Unchanged vs base Qwen3-30B-A3B. No parameters were removed, so per-token active-expert count (top-8 of 128, ~3.3B active) and therefore latency/throughput are architecturally identical to the base. No speedup was purchased by the v3.0 compression track; there was nothing to prune.",
+    "served_footprint": {
+      "single_seed_pair_gb": 114,
+      "ensemble_pair_gb": 228,
+      "note": "Two-model pair. Judge ensemble serves 3 checkpoints sequentially (median at end) per Phase 11 serving decision, or single-seed s1 fallback if 3x serve / GB10 memory is unacceptable."
+    }
+  },
+  "verdict": "RE-CONFIRMATION PASS. Shipping stack clears every applicable acceptance bar on the measured vLLM full arm. No pruned candidate and no RL baseline exist, so the planned A/B degenerates to a receipt against the shipping bars. Size is flat; Phase 15 quantization is the sole remaining size lever. Cleared to package."
+}

@@ -1,0 +1,20 @@
+{
+  "gguf": "output/pkg-v4/wp-judge-v4-unpruned.Q6_K.gguf",
+  "expect": "Q6_K",
+  "routed_expert_types": [
+    "Q6_K"
+  ],
+  "shared_expert_types": [
+    "Q6_K"
+  ],
+  "deltanet_state_types": [
+    "F32",
+    "Q6_K"
+  ],
+  "type_census": {
+    "Q6_K": 443,
+    "F32": 310
+  },
+  "shared_expert_uniform": true,
+  "checked_utc": "2026-07-17T22:44:28.420097+00:00"
+}

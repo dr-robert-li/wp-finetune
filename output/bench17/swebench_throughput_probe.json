@@ -1,0 +1,143 @@
+{
+  "probe": "swebench_throughput_probe",
+  "model_dir": "models/qwen3-30b-wp-30_70-reasoning-merged-v4",
+  "served_model_name": "wp-30_70",
+  "serving_config": {
+    "engine": "vLLM",
+    "dtype": "bf16",
+    "max_model_len": 24576,
+    "gpu_memory_utilization": 0.55,
+    "concurrency_tested": 2,
+    "port": 8020
+  },
+  "sampling_config": {
+    "temperature": 0.0,
+    "max_tokens": 2048,
+    "seed": 0,
+    "enable_thinking": false,
+    "retrieval_style": "oracle",
+    "dataset": "princeton-nlp/SWE-bench_Lite_oracle"
+  },
+  "warmup": {
+    "gated_on_real_generation": true,
+    "warmup_response": "OK"
+  },
+  "per_instance_results": [
+    {
+      "instance_id": "psf__requests-863",
+      "prompt_tokens": 10113,
+      "completion_tokens": 210,
+      "ttft_s": 3.455,
+      "wall_clock_s": 16.83,
+      "prefill_tok_s": 2927.3,
+      "decode_tok_s": 15.6,
+      "patch_nonempty": true
+    },
+    {
+      "instance_id": "pytest-dev__pytest-11148",
+      "prompt_tokens": 11608,
+      "completion_tokens": 719,
+      "ttft_s": 5.922,
+      "wall_clock_s": 51.06,
+      "prefill_tok_s": 1960.1,
+      "decode_tok_s": 15.9,
+      "patch_nonempty": true
+    },
+    {
+      "instance_id": "pylint-dev__pylint-7080",
+      "prompt_tokens": 12224,
+      "completion_tokens": 217,
+      "ttft_s": 2.992,
+      "wall_clock_s": 14.949,
+      "prefill_tok_s": 4084.9,
+      "decode_tok_s": 18.1,
+      "patch_nonempty": true
+    },
+    {
+      "instance_id": "sympy__sympy-17022",
+      "prompt_tokens": 13378,
+      "completion_tokens": 870,
+      "ttft_s": 3.34,
+      "wall_clock_s": 60.255,
+      "prefill_tok_s": 4005.9,
+      "decode_tok_s": 15.3,
+      "patch_nonempty": true
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-14894",
+      "prompt_tokens": 14284,
+      "completion_tokens": 217,
+      "ttft_s": 3.511,
+      "wall_clock_s": 15.757,
+      "prefill_tok_s": 4068.1,
+      "decode_tok_s": 17.6,
+      "patch_nonempty": true
+    },
+    {
+      "instance_id": "sympy__sympy-22840",
+      "prompt_tokens": 16405,
+      "completion_tokens": 642,
+      "ttft_s": 4.203,
+      "wall_clock_s": 51.277,
+      "prefill_tok_s": 3902.8,
+      "decode_tok_s": 13.6,
+      "patch_nonempty": true
+    },
+    {
+      "instance_id": "sympy__sympy-24102",
+      "prompt_tokens": 17679,
+      "completion_tokens": 250,
+      "ttft_s": 4.692,
+      "wall_clock_s": 19.751,
+      "prefill_tok_s": 3768.0,
+      "decode_tok_s": 16.5,
+      "patch_nonempty": true
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-18869",
+      "prompt_tokens": 18412,
+      "completion_tokens": 460,
+      "ttft_s": 4.864,
+      "wall_clock_s": 24.712,
+      "prefill_tok_s": 3785.6,
+      "decode_tok_s": 23.1,
+      "patch_nonempty": true
+    }
+  ],
+  "summary": {
+    "n_instances_probed": 8,
+    "n_valid_measurements": 8,
+    "avg_prompt_tokens": 14262.9,
+    "avg_prefill_tok_s": 3562.8,
+    "avg_decode_tok_s": 17.0,
+    "avg_wall_clock_s_per_instance": 31.8,
+    "probe_total_wall_clock_s": 669.1
+  },
+  "wall_clock_projections": {
+    "lite_300_python": {
+      "n_instances": 300,
+      "generation_wall_clock_s": 4770.0,
+      "docker_overhead_s": 54000.0,
+      "total_projected_s": 58770.0,
+      "total_projected_h": 16.32
+    },
+    "php_multilingual_43": {
+      "n_instances": 43,
+      "generation_wall_clock_s": 683.7,
+      "docker_overhead_s": 1505.0,
+      "total_projected_s": 2188.7,
+      "total_projected_h": 0.61
+    },
+    "verified_500_python": {
+      "n_instances": 500,
+      "generation_wall_clock_s": 7950.0,
+      "docker_overhead_s": 90000.0,
+      "total_projected_s": 97950.0,
+      "total_projected_h": 27.21
+    },
+    "lite_300_plus_php_43": {
+      "total_projected_h": 16.93
+    }
+  },
+  "projection_methodology": "generation_wall_clock_s = (n_instances / concurrency_tested) * avg_wall_clock_s_per_instance (measured this probe, concurrency=2). docker_overhead_s = n_instances * per-instance overhead: PHP overhead (35s) is MEASURED this session (Task 1, arm64_probe1/2). Python overhead (180s) is an UNMEASURED-this-session literature-based estimate -- Task 1's live build validation is PHP-only per the plan. Both overheads assumed serial (not concurrency-scaled) -- conservative (upper-bound) choice."
+}

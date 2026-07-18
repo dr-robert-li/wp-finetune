@@ -1,0 +1,19 @@
+{
+  "save_name": "wp-gen-v4-smoke",
+  "base_model": "Qwen/Qwen3.6-35B-A3B",
+  "rank": 32,
+  "train_attn": false,
+  "train_unembed": false,
+  "renderer": "qwen3_5_disable_thinking",
+  "epochs": 1,
+  "checkpoints": [
+    {
+      "epoch": 1,
+      "name": "wp-gen-v4-smoke-ep1",
+      "sampler_path": "tinker://932fa490-23a3-54c6-bfdf-a48f75263755:train:0/sampler_weights/wp-gen-v4-smoke-ep1"
+    }
+  ],
+  "promoted": "wp-gen-v4-smoke-ep1",
+  "state_path": null,
+  "created": "2026-07-13T12:40:09.848015+00:00"
+}

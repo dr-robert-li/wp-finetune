@@ -1,4 +1,4 @@
-# wp-qwen3-moe
+# Qwen 3 WP Judge (formerly wp-qwen3-moe)
 
 ## What This Is
 
@@ -93,8 +93,28 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 | Phase 4 triage: 30/70 wins, NO_SURVIVORS | Only 30/70 produces parseable judge output (497 pairs, Spearman 0.57). Other 3 ratios: all judge examples skipped (unparseable). Gen is solved (97-100% PHPCS). Judge is the bottleneck. | ✓ Good |
 | Dual-mode GRPO (gen + judge) | Gen is 0.99+ at SFT — GRPO budget wasted on it. Judge at 0.57 Spearman needs the most RL investment. Phase 11 targets both modes with judge receiving equal or greater budget. | — Pending |
 | 0.85 Spearman gate lowered to 0.50 | 0.85 is aspirational. 0.57 is a meaningful positive correlation (p=0.000). Gate lowered to allow triage to proceed; v1.2 + v3.0 GRPO will improve judge quality toward 0.85. | ✓ Good |
+| D-09-08: RL trains MoE-only (attn/unembed frozen), warm-started from v1.2 SFT v4 `save_state` | Supersedes D-09-02's `train_attn/unembed=True` (D-09-02 predates the 04.4 D-IT finding that attn deltas are net-harmful to codegen; judge skill is MoE-borne). Cold-start raw-base RL fails RLEV-01 by construction. Signed off Dr. Robert Li 2026-06-22. See 09-RL-INIT-RECONCILIATION.md | — Pending |
+| Canonical model flips v3 -> v4 (2026-07-17) | `.planning/phases/27-packaging-publication-refresh/CONTEXT.md` LOCKED DECISION 1: Gate C's k=224 AIMER prune passed, so Phase 27 publishes the pruned v4 judge (Qwen3.6-35B-A3B base). LOCKED DECISION 5 supersedes LOCKED DECISION 1's original "larger artifact" framing: the human-confirmed ship tier is Q6_K at 23.47 GiB, ~22% SMALLER than v3's 30.2 GiB, at statistically tied quality (0.8063 single-seed vs v3's 0.8056 3-seed ensemble — different configs, not a clean delta), on the newer base. v3 (`iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf`) stays live, untouched, as the superseded prior artifact. | ✓ Good |
 
-## Current Milestone: v1.2 Judge Reasoning Fine-Tune
+## Current Milestone: v4.0 Pipeline Rerun on Qwen3.6-35B-A3B
+
+**Goal:** Rerun the locked PIPELINE.md on Qwen3.6-35B-A3B (base LOCKED, Phase 19) to break the judge-rho 0.8075 SFT wall — pre-registered success: rho >0.85 single-seed OR >0.87 ensemble; wp-bench ≥0.4286 floor. Master plan: `.planning/V4-RERUN-ROADMAP.md`.
+
+**Target features:**
+- Base bring-up: download/load smoke, eos/pad token-ID alignment (Stage 1.5), DeltaNet-aarch64 op smoke, VL merge-path check
+- SFT generation model (reasoning mix, reuse Stage-1 data — no regeneration)
+- SFT judge model (3-seed relabel-SFT, REUSE v1.3 labels; re-open condition documented)
+- Final eval A/B vs v3.0 shipping figures under pre-registered criteria
+- Conditional Gates A/B/C re-tests (RL only with new reward family; Sieve after 256-expert/shared-expert/mixed-strata tooling adaptation; prune gate-before-remove)
+- Packaging: Q8 GGUF mandatory for concurrent pair serving (pair bf16 134 GiB > GB10 121 GB) + HF publication refresh
+
+**Key constraints:**
+- Six carry-forward lessons LOCKED (truncation-aware evals, warm-up gating, --parallel splitting, CI-aware gates, benchmark pre-registration, double-grep archive rule)
+- Two architecture-delta work items scheduled before their dependent stages (Sieve tooling before Gate B; token alignment before any SFT)
+- Fresh research pass re-verifies Qwen3.6-35B-A3B docs/ecosystem before requirements lock (roadmap facts dated 2026-07-11)
+- No uniform 4-bit nf4 (MoE router collapse, measured)
+
+## Past Milestone: v1.2 Judge Reasoning Fine-Tune
 
 **Goal:** Fine-tune the winning ratio adapter on deep reasoning data so the model can articulate why code is bad, score with dimension-level justification, and generate corrected versions — not just output rubric scores.
 
@@ -109,7 +129,7 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 - Existing contrastive mutations (phase2_mutate.py) provide source material for critique-then-fix pairs
 - Must complete before v2.0 MoE-Sieve (Phase 7 needs the strengthened adapter)
 
-## Planned Milestone: v2.0 MoE-Sieve Selective Training
+## Past Milestone (superseded plan): v2.0 MoE-Sieve Selective Training
 
 **Goal:** Train only WordPress-active experts via routing-guided LoRA selection with task-aware data filtering and k-sweep to find the optimal expert budget. Produces MoE-Sieve adapter for GRPO refinement in v3.0.
 
@@ -126,7 +146,7 @@ The fine-tuned model generates WPCS-compliant, security-hardened WordPress code 
 
 **Research basis:** MoE-Sieve (arxiv 2603.24044) — routing-guided LoRA selection matches full-LoRA within ±1pp, cuts params ~70%, wall-clock ~50%.
 
-## Planned Milestone: v3.0 GRPO & Production Deployment
+## Past Milestone (superseded plan): v3.0 GRPO & Production Deployment
 
 **Goal:** Apply dual-mode GRPO (gen + judge reasoning) with composite verifiable rewards and RSPO router-shift stabilization, then merge LoRA, REAP prune on final routing, and package for production.
 
@@ -174,4 +194,16 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-05 — v1.2 added (Judge Reasoning Fine-Tune), v2.0 dependency updated to v1.2*
+*Last updated: 2026-07-17 — canonical deliverable flips to the **v4 WP Judge**
+(`iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf`, Q6_K GGUF 23.47 GiB, rho 0.8063 single-seed s1). Phases
+22/25/26 reopened the one unresolved lever (256-expert prune) after the 2026-07-15 "PROJECT COMPLETE"
+snapshot below: AIMER k=224 weight-prune passed gate-before-remove, shrinking v4 below v3's 30.2 GiB at
+statistically tied quality on the newer base — Phase 27 packages and publishes it
+(`.planning/phases/27-packaging-publication-refresh/CONTEXT.md` LOCKED DECISIONS 1/5). The prior v1.3
+(`iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf`, Q8 GGUF, rho 0.8056 3-seed ensemble) remains published,
+untouched, as the superseded prior artifact. Gen stays retired: v4.0 proved raw Qwen3.6-35B-A3B (0.4897)
+out-generates every fine-tune. Evidence: output/base21/diagnostic/DIAGNOSTIC_SYNTHESIS.md,
+output/eval4/VERDICT-EVAL4.md, output/prune-v4/selection_v4.json, output/pkg-v4/pkg4_quantization_ladder.json.*
+
+---
+*Prior snapshot, 2026-07-15 — "PROJECT COMPLETE", renamed to Qwen 3 WP Judge. Canonical deliverable = the v1.3 WP Judge (`iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf`, Q8 GGUF, rho 0.8056). Gen retired: v4.0 proved raw Qwen3.6-35B-A3B (0.4897) out-generates every fine-tune. Judge: v4 tied v3 on the shipped Q8 stack (0.8067 vs 0.8056, paired CI spans zero, +25% size) — v3 stays canonical, v4.0 recorded as a diagnostic milestone. Phases 24-27 not run (no new artifact to gate/ship). Evidence: output/base21/diagnostic/DIAGNOSTIC_SYNTHESIS.md, output/eval4/VERDICT-EVAL4.md.*

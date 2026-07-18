@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import random
 import subprocess
 from typing import Any, Optional
@@ -58,6 +59,27 @@ assert judge_consistency_weight <= 0.5, (
     f"D-09-05 guard 1 violated: judge_consistency_weight={judge_consistency_weight} "
     f"must be <= 0.5 (fix-correctness must remain the anchor). "
     f"Raising at import to prevent the consistency signal from dominating reward."
+)
+
+# ---------------------------------------------------------------------------
+# Lever 2 (08.1-03 / D-81-02): increased consistency weight as backstop.
+#
+# Measurement (08.1-MEASUREMENT.md) shows the consistency term already has
+# frac_mid~0.73 (graded), while the old 0.7 fix_correctness anchor was
+# effectively binary (frac_mid=0.011).  Shifting more weight onto the graded
+# consistency term amplifies the discriminating signal as a backstop after
+# Lever 1 Form A de-saturates the parse cliff.
+#
+# Chosen value: 0.45 — well within the D-09-05 cap (<=0.5), gives consistency
+# a meaningful boost without violating the "fix_correctness as anchor" invariant.
+# Rationale: T-81.3-03 (repudiation guard) requires this be recorded in code.
+# The guard at combine_judge_reward(weight=0.6) still raises ValueError; we
+# do NOT relax the cap, only move the call-site default closer to it.
+# ---------------------------------------------------------------------------
+judge_consistency_weight_lever2: float = 0.45
+assert judge_consistency_weight_lever2 <= 0.5, (
+    f"D-09-05 guard 1 violated by Lever 2 weight: {judge_consistency_weight_lever2} "
+    f"must be <= 0.5."
 )
 
 # ---------------------------------------------------------------------------
@@ -205,6 +227,191 @@ def combine_judge_reward(
 
 
 # ---------------------------------------------------------------------------
+# Lever 1 Form A: graded fix_correctness (08.1-03 / D-81-02 selected lever)
+# ---------------------------------------------------------------------------
+
+# Partial-credit score for non-empty but unparseable corrected blocks.
+# Chosen at 0.25 — within the frac_mid window (0.1, 0.9) that SC1 requires,
+# well below the parseable-high cluster (~0.99) to preserve the high extreme,
+# and above 0.1 to ensure a measurable contribution to frac_mid.
+# Rationale (from 08.1-MEASUREMENT.md): 68% of judge completions did not
+# produce a parseable PHP block. The prior `else: 0.0` hard gate assigned
+# these to the same bin as genuinely empty/non-answer completions, creating
+# an artificial 0-mode. Partial credit recognises that a non-empty-but-
+# unparseable output represents a FAILED FIX attempt (genuine signal), not
+# the same as producing no answer at all.
+_PARSE_CLIFF_PARTIAL_CREDIT: float = 0.25
+
+
+# FIX 1 (09-REWARD-FIX-DESIGN): improvement-delta normalizer. A >= +30-pt rubric
+# overall gain (corrected vs original) earns full correctness credit. Range of the
+# correctness-pressured tier is [0.5, 1.0]: a faithful reproduction (delta 0) -> 0.5,
+# a genuine fix that lifts the rubric by 30 pts -> 1.0.
+_IMPROVE_NORM: float = 0.30
+#: FIX 1 identity gate: minimum fraction of the original function's identifier tokens
+#: that a "corrected" block must retain to count as an edit of that function (vs a
+#: gut-to-trivial-body hack). 0.6 passes reproductions/real fixes, fails gutting.
+_MIN_TOKEN_RETENTION: float = 0.6
+
+
+def _primary_php_function_name(code: str) -> str | None:
+    """Return the name of the FIRST function/method defined in `code`, else None.
+
+    Handles visibility/modifier prefixes (public/protected/private/static/final/
+    abstract), reference-returns (`function &name`), and method declarations.
+    Used by the FIX 1 identity gate to require that a "corrected" block edits the
+    SAME function under review rather than substituting an unrelated function.
+    """
+    import re as _re  # noqa: PLC0415
+
+    # `function` keyword, optional whitespace, optional `&` (reference return),
+    # optional whitespace, then the identifier. Visibility/static modifiers sit
+    # BEFORE `function` so we do not need to capture them — matching on the
+    # `function` keyword already skips them.
+    m = _re.search(r"\bfunction\s*&?\s*([A-Za-z_\x80-\xff][A-Za-z0-9_\x80-\xff]*)\s*\(", code or "")
+    return m.group(1) if m else None
+
+
+def _token_retention(original: str, corrected: str) -> float:
+    """Fraction of the ORIGINAL's distinctive identifier tokens retained in `corrected`.
+
+    FIX 1 anti-gutting (stronger than a length ratio): a genuine fix KEEPS the
+    original's logic and adds guards/escaping; gutting DELETES the body (e.g.
+    `function render($x){ return 1; }`). A length floor misses short functions —
+    token retention does not. Tokens are identifiers + `$vars` + function/method
+    calls; the original's set is the denominator so re-writing toward a trivial
+    clean body (which drops the original's `$_GET`/`echo`/var tokens) scores low,
+    while a fix that wraps them (`echo esc_html($q)`) retains ~all of them.
+
+    Returns 1.0 for a faithful reproduction, ~0 for a gut-to-`return 1`.
+    """
+    import re as _re  # noqa: PLC0415
+
+    pat = r"[A-Za-z_\x80-\xff$][A-Za-z0-9_\x80-\xff$]*"
+    orig_toks = set(_re.findall(pat, original or ""))
+    if not orig_toks:
+        return 0.0
+    corr_toks = set(_re.findall(pat, corrected or ""))
+    return len(orig_toks & corr_toks) / len(orig_toks)
+
+
+def _judge_original_code(item: dict) -> str:
+    """Extract the ORIGINAL PHP under review from a judge pool item's user turn.
+
+    The original function is the ```php block in the user message. If the
+    fix-instruction contract (_JUDGE_FIX_INSTRUCTION) has been appended by
+    _augment_judge_prompt, strip it first so extract_php_code grabs the real
+    original block and not the instruction prose. Returns "" if no user turn /
+    no extractable PHP (caller treats "" as None -> legacy back-compat path).
+    """
+    from eval.output_parsers import extract_php_code  # noqa: PLC0415
+
+    msgs = (item or {}).get("messages") or []
+    user_content = ""
+    for m in reversed(msgs):
+        if m.get("role") == "user":
+            user_content = m.get("content") or ""
+            break
+    if not user_content:
+        return ""
+    # Strip the appended fix-instruction (pre-augmentation view) so the extractor
+    # sees only the original code-under-review.
+    idx = user_content.find(_JUDGE_FIX_INSTRUCTION)
+    if idx != -1:
+        user_content = user_content[:idx]
+    return extract_php_code(user_content)
+
+
+def judge_item_code_hash(item: dict) -> str | None:
+    """Canonical GT join key for a judge pool item (2026-07-02 hash-join fix).
+
+    Composes _judge_original_code (same extraction the reward path uses) with
+    reward_calibration.normalized_code_hash (same normalization the sidecar
+    builder uses). Used by BOTH the reward-time GT lookup and rl_train's
+    GT-coverage pool filter, so the two can never disagree again.
+    """
+    from scripts.reward_calibration import normalized_code_hash  # noqa: PLC0415
+
+    return normalized_code_hash(_judge_original_code(item))
+
+
+def _fix_score_from_completion(
+    completion_text: str, original_code: str | None = None
+) -> float:
+    """Compute a graded fix_correctness score from a judge completion (Lever 1 Form A).
+
+    Tiers (08.1-03 / D-81-02, extended by FIX 1 / 09-REWARD-FIX-DESIGN):
+      1. Empty / no corrected block          -> 0.0   (preserved low extreme)
+      2. Non-empty but unparseable PHP       -> _PARSE_CLIFF_PARTIAL_CREDIT (0.25)
+      3. Parseable PHP, `original_code` None -> rubric.overall / 100.0 (BACK-COMPAT)
+      4. Parseable PHP, `original_code` given -> correctness-pressured:
+           a. Identity gate (FAIL -> 0.25): the corrected block must edit the SAME
+              function (same primary function name) AND keep at least half the
+              original length (anti-gutting floor). This kills the trivial-echo,
+              unrelated-clean-code, and gut-the-body hacks.
+           b. Improvement delta: improvement = max(0, corr.overall - orig.overall)/100.
+              Faithful reproduction (bug intact) -> ~0; genuine fix -> > 0.
+           c. Score = 0.5 + 0.5 * min(1.0, improvement / _IMPROVE_NORM).
+              Range [0.5, 1.0]: reproduction -> 0.5; >=30-pt gain -> 1.0.
+
+    Tiers 1-3 keep every existing call site green (original_code defaults to None).
+    Tier 4 closes the isolation hack (J.7/J.8): scoring the corrected code in
+    isolation gave clean/unrelated/reproduced PHP ~1.0 with zero correctness
+    gradient. The identity gate + improvement delta restore that gradient.
+
+    Security note: non-parseable completions do NOT pass through
+    _extract_verifiable_signals because that function returns a vacuous score (~100)
+    on non-code input (T-81.3-02). The graded lever assigns a FIXED partial credit.
+
+    Args:
+        completion_text: Raw judge completion (prose, fences, or <corrected_code>).
+        original_code: The original PHP under review (from _judge_original_code).
+                       When None / empty, uses the legacy back-compat path (tier 3).
+
+    Returns:
+        float: Graded fix_correctness score in [0, 1].
+    """
+    corrected = _extract_corrected_php(completion_text)
+    if _is_parseable_php(corrected):
+        from scripts.reward_pipeline import _extract_verifiable_signals  # noqa: PLC0415
+
+        # Tier 3 (back-compat): no original -> legacy isolation rubric.
+        orig = (original_code or "").strip()
+        if not orig:
+            rubric = _extract_verifiable_signals(corrected)
+            return float(rubric.overall) / 100.0
+
+        # Tier 4 (correctness-pressured).
+        corr_stripped = corrected.strip()
+        # (a) Identity gate.
+        orig_name = _primary_php_function_name(orig)
+        corr_name = _primary_php_function_name(corr_stripped)
+        same_function = (
+            orig_name is not None and corr_name is not None and corr_name == orig_name
+        )
+        # Anti-gutting via TOKEN RETENTION, not a length ratio: a gut-to-`return 1`
+        # body can stay above a 0.5 length floor for a SHORT original yet drops the
+        # original's distinctive tokens. Require >=60% of the original's identifiers
+        # to survive — a faithful reproduction retains 1.0, a real fix retains ~all
+        # (it wraps the logic), a gutted body retains only the signature.
+        retained = _token_retention(orig, corr_stripped)
+        if not (same_function and retained >= _MIN_TOKEN_RETENTION):
+            return _PARSE_CLIFF_PARTIAL_CREDIT
+        # (b) Improvement delta.
+        rubric_corr = _extract_verifiable_signals(corr_stripped)
+        rubric_orig = _extract_verifiable_signals(orig)
+        improvement = max(0.0, float(rubric_corr.overall) - float(rubric_orig.overall)) / 100.0
+        # (c) Score.
+        return 0.5 + 0.5 * min(1.0, improvement / _IMPROVE_NORM)
+    if corrected and corrected.strip():
+        # Non-empty block that failed to parse: genuine fix attempt that produced
+        # syntactically invalid PHP. Assign partial credit.
+        return _PARSE_CLIFF_PARTIAL_CREDIT
+    # Truly empty / no corrected block at all: not a fix attempt.
+    return 0.0
+
+
+# ---------------------------------------------------------------------------
 # Non-code reward guard (unified, both reward pathways)
 # ---------------------------------------------------------------------------
 
@@ -241,6 +448,132 @@ def _is_parseable_php(code: str) -> bool:
         return True  # php not installed -> do not penalize (fail-open)
     except Exception:  # noqa: BLE001 — a lint hiccup must not zero a real reward
         return True
+
+
+# Template markers that signal Elementor / Underscore.js template output mixed
+# into a `content_template()` PHP method (FIX 2 / 09-REWARD-FIX-DESIGN).
+_TEMPLATE_MARKERS: tuple[str, ...] = ("<#", "<%", "{{")
+
+
+def _is_valid_wp_php(code: str) -> bool:
+    """True iff `code` is valid standalone PHP OR a well-formed WP template scaffold.
+
+    FIX 2 (09-REWARD-FIX-DESIGN): Elementor `content_template()` completions mix
+    `<?php ?>` PHP with Underscore/JS markup (`<# #>`, `<%- %>`, `<%= %>`, `<%  %>`,
+    `{{ }}`, `{{{ }}}`). `php -l` rejects the raw mix, zeroing an otherwise valid
+    completion -> dead gen gradient. This helper neutralizes the template directives
+    (they live in the HTML-output context between `?>` and `<?php`, so replacing
+    them with empty string leaves a lint-clean PHP scaffold) and re-lints.
+
+    Logic:
+      1. Fast path: plain `_is_parseable_php(code)` -> True (no regression).
+      2. Else, if `code` has a template marker AND a `<?php`: neutralize the
+         directives and lint the result. True iff the neutralized scaffold lints.
+      3. Else -> False.
+
+    The fix is ADDITIVE: broken PHP scaffolds (template markers but a malformed
+    `<?php` block) still fail because the neutralized result fails `php -l`.
+    """
+    if _is_parseable_php(code):
+        return True
+    s = code or ""
+    if not any(marker in s for marker in _TEMPLATE_MARKERS):
+        return False
+    # Real completions are BARE method bodies — `function content_template() { ?>
+    # ...markup... <?php }` with NO leading `<?php` (the model emits the body of a
+    # method already inside a PHP/class context). They have a `?>`/`<?php` toggle but
+    # never open PHP at the top, so `php -l` reads the whole head as HTML and chokes
+    # on the trailing `}`. Require a php<->template toggle (`<?php` or `?>` present),
+    # prepend a `<?php` opener if the scaffold does not already start in PHP, then
+    # neutralize the directives and lint. The neutralized, properly-opened scaffold
+    # lints iff the PHP structure is sound — broken PHP still fails (additive).
+    if "<?php" not in s and "?>" not in s:
+        return False
+    scaffold = s if s.lstrip().startswith("<?php") else "<?php\n" + s
+    return _is_parseable_php(_neutralize_template_directives(scaffold))
+
+
+def _neutralize_template_directives(code: str) -> str:
+    """Replace Underscore/Elementor template directives with PHP-safe placeholders.
+
+    Directives in HTML-output context (the common Elementor `content_template`
+    case: between `?>` and the next `<?php`) are removed entirely -> the
+    surrounding markup is inert text to `php -l`. Directives that would otherwise
+    sit inside a PHP expression context are replaced by a string literal so the
+    scaffold still lints. The fixtures exercise the HTML-output (removal) case;
+    the placeholder keeps the helper safe if a directive lands in PHP context.
+
+    Order matters: triple braces before double, and the three `<%` forms
+    (`<%- %>`, `<%= %>`, `<% %>`) are covered by a single `<%[-=]?...%>` pattern.
+    """
+    import re as _re  # noqa: PLC0415
+
+    # `<# ... #>` (Underscore conditional/loop control blocks) -> remove.
+    s = _re.sub(r"<#.*?#>", "", code, flags=_re.DOTALL)
+    # `<%- ... %>`, `<%= ... %>`, `<% ... %>` (Underscore interpolation/eval) -> remove.
+    s = _re.sub(r"<%[-=]?.*?%>", "", s, flags=_re.DOTALL)
+    # `{{{ ... }}}` (unescaped) then `{{ ... }}` (escaped) -> remove.
+    s = _re.sub(r"\{\{\{.*?\}\}\}", "", s, flags=_re.DOTALL)
+    s = _re.sub(r"\{\{.*?\}\}", "", s, flags=_re.DOTALL)
+    return s
+
+
+# ---------------------------------------------------------------------------
+# Judge rollout output-contract (Phase 09 zero-reward fix, Mechanism 1)
+# ---------------------------------------------------------------------------
+
+# Judge-mode rollouts need a HIGHER generation cap than gen: critique-then-fix is
+# per-dimension critique + a full corrected-code block. 512 (gen default) truncates
+# the fix -> fix_correctness=0. Calibrate against the SFT judge target length
+# (~3.2k chars ≈ 1k tokens) plus the fix.
+JUDGE_MAX_NEW_TOKENS: int = 1536
+
+# The judge reward is fix_correctness on the CORRECTED code (GRPO-05). The judge
+# pool prompt ("<wp_judge> Evaluate this WordPress code") only elicits a prose
+# score from the v4 policy — no corrected code -> extract_php_code finds nothing ->
+# fix_correctness=0. Append an explicit output contract so the policy emits a
+# corrected-code block the reward can verify. ```php + <?php so extract_php_code
+# (fence-first) succeeds; <corrected_code> is also accepted (the SFT delimiter).
+_JUDGE_FIX_INSTRUCTION = (
+    "\n\nThen FIX the code: after your critique, output the fully corrected "
+    "WordPress code in a single ```php fenced block beginning with <?php. "
+    "The corrected code must resolve every issue you identified."
+)
+
+
+def _augment_judge_prompt(item: dict) -> dict:
+    """Append the critique-then-fix output contract to a judge prompt's user turn.
+
+    Idempotent (no double-append). Mutates and returns the item. Only the judge
+    pathway calls this — gen prompts are untouched.
+    """
+    msgs = item.get("messages") or []
+    for m in reversed(msgs):
+        if m.get("role") == "user":
+            if "```php fenced block" not in (m.get("content") or ""):
+                m["content"] = (m.get("content") or "") + _JUDGE_FIX_INSTRUCTION
+            break
+    return item
+
+
+def _extract_corrected_php(text: str) -> str:
+    """Extract the corrected PHP from a judge completion.
+
+    Tries the SFT critique-then-fix delimiter <corrected_code>...</corrected_code>
+    first, then falls back to extract_php_code (```php fence, else think-stripped
+    remainder). Keeps the eval-shared extract_php_code unchanged (no blast radius).
+    """
+    import re as _re  # noqa: PLC0415
+
+    m = _re.search(r"<corrected_code>\s*(.*?)\s*</corrected_code>", text or "", _re.DOTALL)
+    if m:
+        inner = m.group(1).strip()
+        # Inner may itself be fence-wrapped; let extract_php_code unwrap it.
+        from eval.output_parsers import extract_php_code  # noqa: PLC0415
+        unfenced = extract_php_code(inner)
+        return unfenced if unfenced.strip() else inner
+    from eval.output_parsers import extract_php_code  # noqa: PLC0415
+    return extract_php_code(text)
 
 
 # ---------------------------------------------------------------------------
@@ -414,12 +747,6 @@ def compute_rollout_advantages(
           - advantages: list[float], one per datum, aligned with `data`
           - meta: {n_groups_input, n_dropped_constant, n_groups_output, n_datums}
     """
-    from tinker_cookbook.rl.data_processing import (  # noqa: PLC0415
-        assemble_training_data,
-        compute_advantages,
-        remove_constant_reward_groups,
-    )
-
     n_input = len(groups)
     if n_input == 0:
         return [], [], {
@@ -427,7 +754,103 @@ def compute_rollout_advantages(
             "n_dropped_constant": 0,
             "n_groups_output": 0,
             "n_datums": 0,
+            # Priority-1 group/component stats (None on empty input — no data to aggregate)
+            "fix_correctness_mean": None,
+            "fix_correctness_std": None,
+            "consistency_mean": None,
+            "consistency_std": None,
+            "group_reward_std_mean": None,
+            "frac_groups_all_zero": None,
+            "frac_groups_all_one": None,
+            "frac_groups_nonuniform": None,
+            "frac_reward_gt_0.9": None,
+            "frac_reward_lt_0.1": None,
         }
+
+    from tinker_cookbook.rl.data_processing import (  # noqa: PLC0415
+        assemble_training_data,
+        compute_advantages,
+        remove_constant_reward_groups,
+    )
+
+    # -------------------------------------------------------------------------
+    # Pre-drop per-group stats aggregation (08.1-02 / D-81-03 Priority 1).
+    # MUST run on the UNFILTERED `groups` list BEFORE remove_constant_reward_groups
+    # (line below). Computing these stats post-drop silently reports 0.0 during
+    # reward collapse because all-zero groups are the ones being dropped
+    # (Pitfall 1 in 08.1-RESEARCH.md). See also plan prohibition #1.
+    # -------------------------------------------------------------------------
+    import numpy as _np  # noqa: PLC0415  (local alias to avoid shadowing module-level np)
+
+    # Per-group scalar reward arrays (one float per trajectory in the group)
+    group_reward_stds: list[float] = []
+    n_all_zero = 0
+    n_all_one = 0        # all rewards > 0.9
+    n_nonuniform = 0     # reward std > 0 across group
+
+    # Per-sample counters across ALL groups
+    total_rewards_flat: list[float] = []
+
+    # Per-transition component score lists (None entries filtered out)
+    fix_scores: list[float] = []
+    consistency_scores: list[float] = []
+
+    for tg in groups:
+        # get_total_rewards() returns a flat list of per-trajectory reward scalars
+        group_rewards = list(tg.get_total_rewards())
+        total_rewards_flat.extend(group_rewards)
+
+        if group_rewards:
+            rew_arr = _np.array(group_rewards, dtype=float)
+            std = float(_np.std(rew_arr))
+            group_reward_stds.append(std)
+            if bool(_np.all(rew_arr == 0.0)):
+                n_all_zero += 1
+            if bool(_np.all(rew_arr > 0.9)):
+                n_all_one += 1
+            if std > 0:
+                n_nonuniform += 1
+
+        # Collect component scores from Transition.logs
+        for traj in getattr(tg, "trajectories_G", []):
+            for transition in getattr(traj, "transitions", []):
+                logs = getattr(transition, "logs", {}) or {}
+                fc = logs.get("fix_correctness")
+                cons = logs.get("consistency")
+                if fc is not None:
+                    fix_scores.append(float(fc))
+                if cons is not None:
+                    consistency_scores.append(float(cons))
+
+    n_groups = float(n_input)  # denominator for fractions (always >= 1 here)
+
+    def _safe_mean(lst: list[float]):
+        return float(_np.mean(lst)) if lst else None
+
+    def _safe_std(lst: list[float]):
+        return float(_np.std(lst)) if lst else None
+
+    rew_flat = _np.array(total_rewards_flat, dtype=float) if total_rewards_flat else None
+
+    group_stats: dict = {
+        "fix_correctness_mean": _safe_mean(fix_scores),
+        "fix_correctness_std": _safe_std(fix_scores),
+        "consistency_mean": _safe_mean(consistency_scores),
+        "consistency_std": _safe_std(consistency_scores),
+        "group_reward_std_mean": _safe_mean(group_reward_stds),
+        "frac_groups_all_zero": float(n_all_zero) / n_groups,
+        "frac_groups_all_one": float(n_all_one) / n_groups,
+        "frac_groups_nonuniform": float(n_nonuniform) / n_groups,
+        "frac_reward_gt_0.9": (
+            float(_np.mean(rew_flat > 0.9)) if rew_flat is not None else None
+        ),
+        "frac_reward_lt_0.1": (
+            float(_np.mean(rew_flat < 0.1)) if rew_flat is not None else None
+        ),
+    }
+    # -------------------------------------------------------------------------
+    # End pre-drop aggregation block — now drop constant groups
+    # -------------------------------------------------------------------------
 
     filtered = remove_constant_reward_groups(groups)
     n_output = len(filtered)
@@ -446,6 +869,8 @@ def compute_rollout_advantages(
         "n_dropped_constant": n_input - n_output,
         "n_groups_output": n_output,
         "n_datums": len(data_D),
+        # Merge pre-drop group/component stats (computed above before the drop)
+        **group_stats,
     }
     return data_D, advantages, meta
 
@@ -511,6 +936,9 @@ def collect_rollouts(
         item["_group_id"] = f"gen-{gid}"
     for gid, item in enumerate(judge_rollouts):
         item["_group_id"] = f"judge-{gid}"
+        # Mechanism-1 fix: make the judge prompt require a corrected-code block so
+        # the fix_correctness reward has code to verify (else prose -> 0.0 reward).
+        _augment_judge_prompt(item)
 
     all_rollouts = []
     all_rewards = []
@@ -540,39 +968,49 @@ def collect_rollouts(
         # existing security-gate terminal zero (RewardResult.scalar). breakdown is
         # left intact for provenance.
         for i, php in enumerate(gen_php):
-            if not _is_parseable_php(php):
+            if not _is_valid_wp_php(php):
                 gen_reward_results[i].scalar = 0.0
         all_rollouts.extend(gen_completions)
         all_rewards.extend(gen_reward_results)
 
     # Step 3: wp_judge rewards (fix-correctness + capped consistency)
     if judge_rollouts:
-        judge_completions = _generate_completions(sampling_client, judge_rollouts, args)
+        judge_completions = _generate_completions(
+            sampling_client, judge_rollouts, args,
+            max_tokens_override=getattr(args, "judge_max_new_tokens", JUDGE_MAX_NEW_TOKENS),
+        )
 
         # Deterministic fix-correctness from verifiable signals on corrected code.
-        # Extract the corrected PHP first (the judge task emits critique prose +
-        # a ```php fix), then GATE on parseability: a non-code judge answer (e.g.
-        # "could you clarify...") otherwise scores a vacuous fix_correctness=1.0
-        # (score_code finds no violations in non-code), which the 0.7 anchor
-        # weight then turns into a 0.70 reward for a non-answer. No parseable PHP
-        # -> 0.0, so the fix_correctness=1.0/consistency=0.0 divergence that
-        # Panickssery flags can no longer pay out.
+        # Lever 1 Form A (08.1-03 / D-81-02): _fix_score_from_completion replaces
+        # the old binary parse gate with a three-tier graded score:
+        #   empty/no-block       -> 0.0  (preserved low extreme)
+        #   non-empty-unparseable -> _PARSE_CLIFF_PARTIAL_CREDIT (0.25)
+        #   parseable PHP         -> rubric.overall/100 (preserved high extreme)
+        # This breaks the bimodal 0/1 structure that caused frac_mid=0.011 on the
+        # judge path (08.1-MEASUREMENT.md). Security note: non-parseable completions
+        # receive a FIXED constant — _extract_verifiable_signals is NOT called on
+        # non-code (that path returns vacuous ~100 and is a reward-hacking surface).
+        # Map each completion's group id ("judge-<k>") back to its originating
+        # judge_rollouts item (the flat completion index no longer aligns with the
+        # prompt list now that we draw group_size completions per prompt). Needed
+        # for BOTH the FIX 1 original-code lookup and the consistency critique_text.
+        judge_by_gid = {item["_group_id"]: item for item in judge_rollouts}
+
+        # FIX 1 (09-REWARD-FIX-DESIGN): pass the ORIGINAL code under review so the
+        # graded score applies the identity + improvement gates (correctness
+        # pressure) instead of the isolation rubric. _judge_original_code returns ""
+        # if the original block is missing -> _fix_score_from_completion treats ""
+        # as None (legacy back-compat path), so this stays robust.
         fix_correctness_scores = []
         for completion_obj in judge_completions:
-            corrected = extract_php_code(completion_obj.completion)
-            if _is_parseable_php(corrected):
-                rubric = _extract_verifiable_signals(corrected)
-                fix_score = float(rubric.overall) / 100.0  # [0,100] -> [0,1]
-            else:
-                fix_score = 0.0
+            item = judge_by_gid.get(getattr(completion_obj, "group_id", None), {})
+            orig = _judge_original_code(item)
+            fix_score = _fix_score_from_completion(completion_obj.completion, orig)
             fix_correctness_scores.append(fix_score)
 
         # Capped Claude-consistency via 09-03 dispatcher. Each judge completion
         # carries .group_id ("judge-<k>") identifying its source prompt; map
-        # that back to the originating judge_rollouts item for its critique_text
-        # (the flat completion index no longer aligns with the prompt list now
-        # that we draw group_size completions per prompt).
-        judge_by_gid = {item["_group_id"]: item for item in judge_rollouts}
+        # that back to the originating judge_rollouts item for its critique_text.
         consistency_samples = [
             {
                 "php_code": c.completion,
@@ -582,13 +1020,36 @@ def collect_rollouts(
             }
             for c in judge_completions
         ]
-        consistency_scores = asyncio.run(
-            score_judge_consistency_batch(
-                consistency_samples,
-                model=getattr(args, "consistency_model", "sonnet"),
-                n_votes=getattr(args, "n_votes", 1),
-            )
+        # Loud-fail wiring (2026-07-02): the consistency scorer needs an Anthropic
+        # key (model="sonnet") or an explicit base_url. In the 2026-07-01 smoke the
+        # keys were unset -> every call timed out -> consistency=0.0 for ALL
+        # completions, silently rescaling judge_scalar to 0.55*fc. If the scorer
+        # cannot possibly work, set its weight to 0 EXPLICITLY (fc keeps full
+        # judge_scalar weight) and say so once, instead of blending in a dead zero.
+        _consistency_base_url = getattr(args, "consistency_base_url", None)
+        _consistency_can_run = bool(
+            _consistency_base_url
+            or os.environ.get("ANTHROPIC_API_KEY")
+            or os.environ.get("ANTHROPIC_AUTH_TOKEN")
         )
+        consistency_weight = judge_consistency_weight_lever2
+        if not _consistency_can_run:
+            consistency_weight = 0.0
+            logger.warning(
+                "Consistency scorer has no ANTHROPIC key and no --consistency-base-url: "
+                "setting consistency weight to 0.0 (was %.2f). judge_scalar = fix_correctness.",
+                judge_consistency_weight_lever2,
+            )
+            consistency_scores = [0.0] * len(consistency_samples)
+        else:
+            consistency_scores = asyncio.run(
+                score_judge_consistency_batch(
+                    consistency_samples,
+                    model=getattr(args, "consistency_model", "sonnet"),
+                    n_votes=getattr(args, "n_votes", 1),
+                    base_url=_consistency_base_url,
+                )
+            )
 
         # Combine on the RAW [0, 1] scale (D-09-05 guard 1). fix_correctness and
         # consistency are both in [0, 1], so (1-w)*fc + w*cons stays in [0, 1] and
@@ -596,11 +1057,97 @@ def collect_rollouts(
         # (advantage centering, A_i = r_i - mean(r)) is applied DOWNSTREAM in
         # compute_rollout_advantages — applying it here as well would re-introduce
         # z-scores and drive valid positive judge rewards negative (CR-05).
+        #
+        # Lever 2 (08.1-03): use judge_consistency_weight_lever2 (0.45) instead of
+        # the module default (0.3) to amplify the already-graded consistency signal
+        # as a backstop against the >90 saturation cluster on parseable outputs.
+        # Guard (weight>0.5 -> ValueError) is NOT relaxed — 0.45 <= 0.5 (D-09-05).
+        #
+        # Calibration term (RVAL-02 / Plan 08.2-03): the judge scalar is optionally
+        # augmented with a per-completion pairwise rank-agreement-vs-TRAIN-teacher-GT
+        # calibration reward, loaded once per run from data/rl_probe/judge_gt_sidecar.jsonl.
+        # - calib_weight=0.0 (default): augment_judge_scalar is a no-op — byte-for-byte
+        #   back-compat with prior behavior (0*NaN trap guarded in augment_judge_scalar).
+        # - calib_weight>0: folded INSIDE [0,1] before downstream MO-GRPO centering.
+        #   The D-09-05 consistency cap and downstream centering are UNCHANGED (CR-05).
+        # - GT join: per completion's code_hash from _judge_original_code; missing GT
+        #   -> NaN calib_reward -> augment_judge_scalar falls back to judge_scalar (no-op).
+        calib_weight = float(getattr(args, "calib_weight", 0.0))
+        calib_form = str(getattr(args, "calib_form", "hybrid"))
+
+        if calib_weight > 0.0:
+            # Load the TRAIN-GT anchor set once (lazy singleton, thread-safe).
+            # Import here (not at module level) to avoid pulling reward_calibration into
+            # the module scope for callers that never use the calibration path.
+            from scripts.reward_calibration import (  # noqa: PLC0415
+                get_anchor_set,
+                calibration_reward,
+                augment_judge_scalar,
+                record_calib_stat,
+            )
+            _anchor_set, _gt_map = get_anchor_set()
+            # Dimension weights for _derive_prose_overall fallback (same as oracle).
+            from eval.output_parsers import load_dim_map as _ldm  # noqa: PLC0415
+            _dm = _ldm()
+            _dim_weights = {k: v for k, v in _dm["dimension_weights"].items() if not k.startswith("_")}
+        else:
+            # calib_weight=0: skip the calibration path entirely (guard 0*NaN trap).
+            from scripts.reward_calibration import augment_judge_scalar  # noqa: PLC0415
+            _anchor_set = []
+            _gt_map = {}
+            _dim_weights = {}
+
         for i, completion_obj in enumerate(judge_completions):
             combined_scalar = combine_judge_reward(
                 fix_correctness=fix_correctness_scores[i],
                 consistency=consistency_scores[i],
+                weight=consistency_weight,
             )
+
+            # Calibration augmentation (RVAL-02). At calib_weight=0, augment_judge_scalar
+            # is the identity — the combined_scalar passes through unchanged.
+            if calib_weight > 0.0:
+                # Derive model_overall from this completion's judge score.
+                from eval.output_parsers import parse_judge_scores  # noqa: PLC0415
+                from eval.eval_judge import _derive_prose_overall  # noqa: PLC0415
+                parsed = parse_judge_scores(completion_obj.completion, "auto")
+                if parsed and parsed.get("dimension_scores"):
+                    model_overall = (
+                        float(parsed["overall"])
+                        if "overall" in parsed
+                        else _derive_prose_overall(parsed["dimension_scores"], _dim_weights)
+                    )
+                else:
+                    model_overall = None
+
+                # Look up teacher GT via content-hash of original code (T-082-02).
+                # MUST use normalized_code_hash — the SAME whitespace-normalized
+                # join key build_reward_gt_sidecar.py writes. The 2026-07-01 smoke
+                # hashed RAW code here -> 0/482 join -> calib silently never fired
+                # (the run trained on pure fix_correctness). Single source of truth.
+                item = judge_by_gid.get(getattr(completion_obj, "group_id", None), {})
+                code_hash = judge_item_code_hash(item)
+                teacher_overall = _gt_map.get(code_hash) if code_hash else None
+
+                if model_overall is not None and teacher_overall is not None:
+                    calib_r = calibration_reward(
+                        model_overall=float(model_overall),
+                        teacher_overall=float(teacher_overall),
+                        anchor_set=_anchor_set,
+                        form=calib_form,
+                    )
+                else:
+                    # Missing parse or missing GT -> NaN (augment_judge_scalar falls back)
+                    calib_r = float("nan")
+                # Liveness telemetry (loud-fail wiring): NaN = did-not-fire.
+                record_calib_stat(calib_r)
+
+                combined_scalar = augment_judge_scalar(
+                    judge_scalar=combined_scalar,
+                    calib_reward=calib_r,
+                    calib_weight=calib_weight,
+                )
+            # calib_weight==0: combined_scalar is already correct (no-op path).
 
             # Wrap in a RewardResult-like object for build_trajectory_groups
             reward_obj = _make_reward_result(
@@ -689,13 +1236,18 @@ def _prompt_user_messages(item: dict) -> list:
     return [{"role": "user", "content": str(prompt_text)}]
 
 
-def _build_sampling_params(args: Any, renderer: Any) -> Any:
+def _build_sampling_params(args: Any, renderer: Any, max_tokens_override: int = None) -> Any:
     """Construct tinker.SamplingParams for one sample() call.
 
     Falls back to a plain SimpleNamespace when tinker is unavailable (test/offline
     path) so _generate_completions stays exercisable without the tinker package.
+
+    max_tokens_override lets the judge pathway request a larger generation budget
+    than gen: a critique-then-fix completion (per-dimension critique + a fenced
+    corrected-code block) needs far more than the 512-token gen cap, and a
+    truncated completion drops the ```php fix -> fix_correctness=0 (Phase 09 bug).
     """
-    max_tokens = getattr(args, "max_new_tokens", 512)
+    max_tokens = max_tokens_override if max_tokens_override else getattr(args, "max_new_tokens", 512)
     temperature = getattr(args, "temperature", 1.0)
     stop = renderer.get_stop_sequences() if hasattr(renderer, "get_stop_sequences") else None
     try:
@@ -728,6 +1280,7 @@ def _generate_completions(
     args: Any,
     renderer: Any = None,
     tok: Any = None,
+    max_tokens_override: int = None,
 ) -> list:
     """Generate G completions per prompt via the real Tinker sampling API.
 
@@ -760,7 +1313,7 @@ def _generate_completions(
         renderer, tok = build_rl_renderer()
 
     group_size = int(getattr(args, "group_size", 4))
-    sp = _build_sampling_params(args, renderer)
+    sp = _build_sampling_params(args, renderer, max_tokens_override=max_tokens_override)
 
     completions: list = []
     for prompt_idx, item in enumerate(prompt_items):
@@ -780,7 +1333,15 @@ def _generate_completions(
             logprobs = list(logprobs) if logprobs is not None else [0.0] * len(tokens)
             completions.append(
                 _Completion(
-                    completion=tok.decode(tokens),
+                    # skip_special_tokens: the chat EOS marker (`<|im_end|>`) is part of
+                    # the sampled token list (and MUST stay in .tokens/.logprobs for GSPO),
+                    # but it leaks into the decoded TEXT as a literal `<|im_end|>`. For
+                    # BARE-code gen completions (no ```php fence) that trailing marker
+                    # rides into the extracted PHP -> `php -l` errors "unexpected token '<'"
+                    # -> _is_valid_wp_php False -> gen reward zeroed (a confirmed cause of
+                    # dead gen gradient; the judge path was spared only because fenced
+                    # extraction drops anything after the closing ```). Strip from text only.
+                    completion=tok.decode(tokens, skip_special_tokens=True),
                     group_id=group_id,
                     model_input=prompt,
                     tokens=tokens,

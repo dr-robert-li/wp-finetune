@@ -1,0 +1,14 @@
+{
+  "capture": "/home/robert_li/Desktop/projects/wp-finetune/output/base21/judge_capture_s0.jsonl",
+  "rho_new": 0.7649087907356016,
+  "n": 121,
+  "ci": [
+    0.68051612540418,
+    0.8288835173240937
+  ],
+  "baseline_rho": 0.7476689625425029,
+  "delta_vs_baseline": 0.01723982819309866,
+  "ceiling": 0.9844009569826934,
+  "gap_to_ceiling": 0.21949216624709178,
+  "parse_fail": 0
+}

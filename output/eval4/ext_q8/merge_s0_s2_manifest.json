@@ -1,0 +1,34 @@
+{
+  "s0": {
+    "sampler_path": "tinker://e02bbb36-f4ec-57c6-a832-bd134ad99dde:train:0/sampler_weights/wp-judge-v4-s0-ep3",
+    "merged_dir": "models/Qwen3.6-35B-A3B-judge-v4-s0-merged",
+    "merge_ok": true,
+    "guard": {
+      "merged_target_module_count": 240,
+      "expected_target_module_count": 240,
+      "raw_expected_module_count": 240,
+      "dropped_module_count": 0,
+      "merge_engine": "tinker_cookbook.weights.build_hf_model",
+      "expert_layout": "fused_concatenated",
+      "planned_target_keys": 200
+    },
+    "merged_size_gib": 66.99,
+    "duration_sec": 375.5
+  },
+  "s2": {
+    "sampler_path": "tinker://e72f1493-4eb0-5a67-a0a0-de1c26cf7e6e:train:0/sampler_weights/wp-judge-v4-s2-ep3",
+    "merged_dir": "models/Qwen3.6-35B-A3B-judge-v4-s2-merged",
+    "merge_ok": true,
+    "guard": {
+      "merged_target_module_count": 240,
+      "expected_target_module_count": 240,
+      "raw_expected_module_count": 240,
+      "dropped_module_count": 0,
+      "merge_engine": "tinker_cookbook.weights.build_hf_model",
+      "expert_layout": "fused_concatenated",
+      "planned_target_keys": 200
+    },
+    "merged_size_gib": 66.99,
+    "duration_sec": 360.0
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "requirement": "PKG-03",
+  "title": "Q8 vs bf16 FULL 3-seed ensemble at max_tokens=8192 — clean, zero parse failures",
+  "generated_utc": "2026-07-10",
+  "motivation": "The prior single-seed run at max_tokens=2048 showed 24-29 parse failures and a -4.6pp Q8 gap. This rerun raises the cap to 8192 and evaluates the full 3-seed ensemble to separate real quantization loss from the 2048-token prose-truncation artifact.",
+  "config": {
+    "max_tokens": 8192,
+    "engine": "llama.cpp llama-server, CUDA (GB10), -ngl 999 --jinja, --parallel 4, per-slot ctx 11264",
+    "readiness": "real generation warmup probe before capture (fixes the earlier 503-during-load empties)",
+    "val_set": "data/reasoning_dataset/openai_val.jsonl (121 wp_judge items)",
+    "labels": "output/relabel/val_labels_v1.json",
+    "ensemble_rule": "per-item median of the 3 seed overalls (>=2 seeds required)"
+  },
+  "parse_failures": {
+    "all_six_arms": 0,
+    "note": "0/121 parse failures on EVERY arm at 8192. The 24-29 failures at 2048 were entirely prose truncation, not quantization or the model."
+  },
+  "per_seed": {
+    "q8":   {"s0": 0.7744, "s1": 0.7928, "s2": 0.7894, "mean": 0.7855, "n": 121, "parse_fail": 0},
+    "bf16": {"s0": 0.7761, "s1": 0.7888, "s2": 0.7524, "mean": 0.7724, "n": 121, "parse_fail": 0}
+  },
+  "ensemble": {
+    "q8":   {"rho": 0.8056, "ci": [0.7381, 0.8577], "n": 121},
+    "bf16": {"rho": 0.8100, "ci": [0.7364, 0.8635], "n": 121}
+  },
+  "quantization_delta": {
+    "q8_minus_bf16_ensemble": -0.0044,
+    "seed_noise_floor": 0.0520,
+    "within_noise": true,
+    "cis_overlap": true,
+    "gate_pm2pp": "CLEAN PASS (|delta| 0.44pp << 2pp)"
+  },
+  "cross_reference": {
+    "bf16_ensemble_vllm_optimal_k": 0.8075,
+    "note": "The 8192 llama.cpp bf16 ensemble (0.8100) now MATCHES the vLLM ensemble reference (0.8075). This validates the harness end-to-end and confirms the earlier depressed absolutes were the truncation artifact, not an engine gap."
+  },
+  "size": {"q8_gib": 30.2, "bf16_gib": 56.8, "reduction_pct": 46.8},
+  "verdict": "Q8 GGUF is LOSSLESS for the judge. Full 3-seed ensemble at 8192 tokens: Q8 0.8056 vs bf16 0.8100, delta -0.44pp, clean +-2pp pass, 0 parse failures both. Combined with the 47% size cut and the 4-bit-nf4 collapse contrast, Q8 is the confirmed ship tier. Supersedes the earlier 'marginal' single-seed@2048 read."
+}

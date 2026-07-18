@@ -1,0 +1,13 @@
+{
+  "status": "pass",
+  "vllm_version": "0.20.2rc1.dev196+g84f7a5534.d20260510",
+  "cuda_graph_capture": "enabled",
+  "fallback_used": false,
+  "warm_gen_ok": true,
+  "warm_gen_sample": "Here's a thinking process:\n\n1.  **Analyze User Input:**",
+  "use_kernels": false,
+  "use_kernels_rationale": "use_kernels=False (PyTorch fallback) chosen by default per 20-RESEARCH.md Alternatives Considered: the community Atlas-Inference/gdn Hub kernel requires trust_remote_code=True against a repo not yet on HF's trusted-kernels allowlist (SUS verdict, Package Legitimacy Audit) for only a 1.38x prefill speedup (0.73s vs 0.53s at 1024 tokens; decode throughput flat ~16 tok/s either way, memory-bandwidth bound). `kernels` was not installed and the Hub kernel was not loaded. Flipping to use_kernels=True in any later phase requires a checkpoint:human-verify (gate=blocking-human) per this plan's threat-model entry T-20-03a.",
+  "gpu_mem_util": 0.8,
+  "served_model": "/workspace/model",
+  "model_dir": "models/Qwen3.6-35B-A3B"
+}

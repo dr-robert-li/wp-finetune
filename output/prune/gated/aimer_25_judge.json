@@ -1,0 +1,29 @@
+{
+  "method": "aimer",
+  "ratio": 25,
+  "axis": "judge",
+  "judge_ensemble_rho": 0.16510495699965666,
+  "judge_s1_rho": 0.3048261023247483,
+  "per_seed_rho": {
+    "s0": -0.2336074226532662,
+    "s1": 0.3048261023247483,
+    "s2": 0.4442616583193193
+  },
+  "parse_rate": 0.4462809917355372,
+  "n_scored": 54,
+  "n_per_seed": {
+    "s0": 26,
+    "s1": 34,
+    "s2": 5
+  },
+  "protected_retained": true,
+  "pass": false,
+  "pass_judge_ensemble_rho": false,
+  "pass_judge_parse_rate": false,
+  "s1_fallback_bar": 0.7497,
+  "bars_used": {
+    "judge_ensemble_rho_floor": 0.7555,
+    "judge_parse_floor": 0.95
+  },
+  "rescored_from_existing_captures": true
+}

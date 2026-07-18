@@ -1,33 +1,194 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: MVP
-status: completed
-stopped_at: Phase 10 context gathered
-last_updated: "2026-06-20T21:35:10.680Z"
+milestone: v4.0
+milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
+current_phase: 27
+status: milestone_complete
+stopped_at: "v4.0 milestone COMPLETE — Phase 27 + unpruned-MTP addendum shipped, docs synced, JOURNAL closed"
+last_updated: "2026-07-18T02:20:00.000Z"
+last_activity: 2026-07-18
+last_activity_desc: "v4.0 CLOSED: two-file v4 repo live (pruned Q6_K canonical 23.47 GiB + unpruned Q5_K_M 23.61 GiB with working MTP spec-decode, 56.4% acceptance). Full doc staleness sweep applied (PROJECT/README/PIPELINE/CHANGELOG/MODEL_CARD); JOURNAL final entry written. All receipts committed."
 progress:
-  total_phases: 13
-  completed_phases: 11
-  total_plans: 45
-  completed_plans: 45
-  percent: 85
+  total_phases: 8
+  completed_phases: 7
+  total_plans: 22
+  completed_plans: 22
+  percent: 88
+current_phase_name: Conditional Gate A — RL Re-Test
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-05)
+See: .planning/PROJECT.md (updated 2026-07-12)
 
 **Core value:** A single self-hostable model that generates WPCS-compliant WordPress code and catches critical defects via structured 9-dimension rubric scoring
-**Current focus:** Milestone complete
+**Current focus:** Phase 27 — Packaging & Publication Refresh
 
 ## Current Position
 
-Phase: 10 (RL Comparative Evaluation) — Pending, ready to plan (`/gsd:plan-phase 10`)
-Prev: Phase 09 (gspo-training) — COMPLETE 2026-06-20, 6/6 plans
-Requirements: RLEV-01 (RL vs v1.2 SFT baseline on wp-bench + 9 dims, no regression), RLEV-02 (reward-convergence + router-shift + protected-expert retention + anti-hack report)
-Next: plan Phase 10. NOTE: Phase 10 execution consumes the metrics from Phase 9's live Tinker RL run — that run is credential-gated and still tracked partial in 09-HUMAN-UAT.md, so it must complete before Phase 10 can produce real comparison results.
+Phase: 27 — COMPLETE
+Plan: Not started
+Status: Phase 27 complete
+Last activity: 2026-07-17 — Phase 27 marked complete
+
+### 2026-07-17 — Phase 27 PLANNED: 5 plans, waves 0-4 (linear chain)
+
+Research + pattern-map + plan + check all passed. Three things worth carrying into execution:
+
+- **Scope correction (judge-only, not a pair).** ROADMAP/REQUIREMENTS PKG4-01/PKG4-02 carry stale v3.0 "pair"
+  wording; the gen role was retired as a deliverable 2026-07-15. Plan 27-01 corrects the docs rather than
+  planning around them. Ship target: the single pruned v4 judge (`models/Qwen3.6-35B-A3B-judge-v4-pruned-k224`,
+  60 GB bf16, 224/256 experts).
+
+- **Gate 1 is the f16 GGUF, not Q8** (planner override of 27-VALIDATION.md, upheld by the checker). A
+  Q8-anchored Gate 1 would make Q8 pass with delta 0 *by construction*, defining away the open question — is
+  Q8 lossless on a surgically-pruned 224-expert MoE? Costs one extra eval run. Recorded as assumption A1 in
+  27-02-PLAN.md with a non-silent OOM fallback (`f16_anchor_failure_evidence`).
+
+- **Gate 2's warrant is re-derived, not inherited.** The ROADMAP's "134 GiB bf16 pair > 121 GB host" rationale
+  is void for a judge-only ship (60 GB fits the 121 GiB host). Plan 27-03 voids it by name with numbers, then
+  rests the warrant on distribution size + operator memory budget + the measured-lossless Q8 precedent.
+
+The 33.6 GiB Q8 figure remains a **projection**; 27-02 measures it. Publish (27-05) is `autonomous: false` —
+human-authorized final step, per the v3 PKG-04 precedent.
+
+**Note:** the frontmatter `progress` block was drifting (it read 15/15 plans / 5 phases while disk showed 17
+summaries). Reset here to 17/22 plans, 6 phases complete, from `roadmap.analyze`. Phase 24 (RL re-test) is
+0 plans by design — skipped, no new reward family.
+
+### 2026-07-17 — Phase 26 (Gate C) CLOSED: `ship_pruned_v4` — the pruned v4 judge ships, canonical flips v3→v4
+
+AIMER weight-prune at k=224 **passed** gate-before-remove, contradicting the profile-shape prediction (Gate B's diffuse routing suggested resistance; the measurement said otherwise — this is why we measure).
+
+- **Gate (like-for-like s1-vs-s1, the evidence the ship rests on):** pruned checkpoint rho **0.8134** (masked proxy 0.8184) vs the same-stack vLLM full arm **0.7935** → **+0.020, non-inferior, point-better**. ci_lower −0.019 vs the −0.020 margin — **slack 0.001, THIN**; an unluckier bootstrap flips it. Two-sided TOST `equivalent:false` kept as-measured (fails on the *upper* bound — the arm may be >2pp better, not worse).
+- **D2_security retained:** 6.326 ≥ 6.115 baseline (no security regression). protected_retained:true. parse_fail 1/120.
+- **Surgery:** stacked-tensor axis-0 slice 256→224 experts/layer (`shared_expert.*`/`mtp.*` untouched, `text_config.num_experts=224`) → `models/Qwen3.6-35B-A3B-judge-v4-pruned-k224` (60 GB bf16, from 67 GB). Gate-before-remove **code-enforced** (guard asserts pass_ship+D2 before any tensor write). Pruned checkpoint validated **coherent**, delta −0.005 vs masked.
+- **3-seed ensemble 0.8533** (s0 0.7653 / s1 0.8184 / s2 0.8264) — **CONFIRMATORY (no collapse), NOT a +6pp pruning gain**: it was computed against a single-seed arm, and ensembling lifts rho on its own. No pruning-attributable gain claimed from it.
+- **Stack caveat:** these are bf16-vLLM numbers; v3's 0.8056 / v4's 0.8067 are Q8 GGUF — not comparable until Phase 27's Q8 conversion.
+- **Ship policy (2026-07-17 user directive):** canonical flips **v3 → v4**. Size-vs-v3 demoted from a ship gate to a note — the pruned v4 (~33.6 GiB Q8 projected) stays ~3.4 GiB larger than v3's 30.2 GiB, accepted in exchange for the newer Qwen3.6 base. Ship criterion = routing-(B) non-inferiority (not two-sided TOST); `pass_ship` computed distinctly, measured `pass:false` preserved.
+- **Sign-off:** human approval relayed via orchestrator (`signoff_status: approved_via_orchestrator_relay`) — not recorded as a verified signature.
+- Receipts: `output/prune-v4/selection_v4.json`, `gated/{aimer_224_judge,aimer_224_d2,aimer_224_pruned_validation,aimer_224_ensemble}.json`. Plans 26-01/26-02 both closed.
+
+**Next: Phase 27** — package the PRUNED v4 (Q8 GGUF conversion measures the real size vs the 33.6 GiB projection), cascading compression gates, and the **operator-only** HF model card + v4 lineage. Spec locked in `.planning/phases/27-packaging-publication-refresh/CONTEXT.md`.
+
+### 2026-07-16 — Phase 25 routing profile PRODUCED (served path); routing is diffuse, likely resists pruning
+
+Ran the served-model profiler end-to-end on the GB10 (no OOM, no extra hardware). Two passes:
+
+- Smoke (563-example relabel_v1): validated the path, surfaced + fixed 3 bugs (flush np.save name-munging,
+  enforce-eager warmup contamination, prompt-length 400s). Jaccard mean 0.9111, 15/40 layers <0.94.
+
+- Canonical (34,855-example ratio_30_70, the v3-comparable stimulus; 17.4M tokens/layer): **563/563 then
+  34,855/34,855 + 3,485 subsample, 0 request failures.**
+
+RESULT (output/sieve-v4/routing_report.jsonl + jaccard_stability.json):
+
+- **E_eff mean 144.3 / 256** (min 106.7, max 224.5). Per-stratum uniform: DeltaNet 144.1 (30 layers),
+  attention 145.0 (10). ~56% of experts effectively active per layer -> DIFFUSE routing.
+
+- **Jaccard mean 0.9722** (up from 0.9111 at 563; 10 of 15 unstable layers stabilized with 60x data),
+  min 0.7778, **5/40 layers <0.94** (0,4,15,25,26). Gate (all >=0.94) FALSE. The 5 residual layers are the
+  highest-E_eff / flattest-routing ones (layer 0 = 221.9/256): their top-8 boundary is an intrinsic
+  multi-way tie, NOT a data shortfall (confirmed by boundary-margin diagnostic: rank8-vs-rank9 gap ~0.02%).
+
+- READ for the Sieve/prune decision: diffuse routing + no clean keep/drop cliff + the flattest layers being
+  the unstabilizable ones all point to **the 256-expert v4 judge resisting expert-drop pruning**, echoing
+  128-expert v3 (which found no winner). Phase 25 k-sweep / Phase 26 prune now have the saturated profile to
+  quantify this against actual judge quality before the publish decision.
+
+Tooling (committed): scripts/_sieve_profile_vllm_patch/sitecustomize.py, scripts/serve_v4_profile_vllm.sh
+(+ MAX_NUM_BATCHED throughput knob), scripts/drive_v4_routing_profile.py.
+
+### 2026-07-16 — Phase 25 profiler unblocked: profile via the SERVED model, not in-process
+
+`profile_v4_judge.py`'s in-process `from_pretrained` OOMs on the GB10: full-resident bf16 of the
+35B/256-expert judge peaks ~117 GiB (host staging ~50 + device ~67) vs the 121 GiB unified pool, and no
+loader knob fixes it (verified by a supervised watchdog run to 112 GiB @ 63%;
+`.planning/debug/v4-judge-load-oom-recurrence.md`). The fix is to let vLLM's own memory manager hold the
+weights (boots clean) and profile through it. Implemented as a READ-side sibling of the existing SIEVE mask
+patch — same MoE-block class resolver, same `self.gate` forward-hook point — but accumulating per-layer/
+per-expert top-k selection counts instead of writing an -inf mask:
+
+  - `scripts/_sieve_profile_vllm_patch/sitecustomize.py` — the counting hook (CUDA-graph-safe via
+    `--enforce-eager`; atomic periodic + atexit .npy dump).
+
+  - `scripts/serve_v4_profile_vllm.sh` — profiling launcher (`--enforce-eager --language-model-only`,
+    prefix-caching OFF so every token re-routes, GPU_MEM_UTIL 0.85).
+
+  - `scripts/drive_v4_routing_profile.py` — thin stdlib client: renders prompts identically to the reference,
+    fires prefill-only (`max_tokens=1`) requests, derives the Jaccard subsample by count-subtraction (counts
+    are additive — no restart), and finalizes through the UNCHANGED `RoutingCollector`/`compute_eeff`/
+    `write_profiling_jsonl`/`compute_jaccard_stability` so outputs match the merged-model profiler.
+Equivalence PROVEN offline: served hook counts == in-process `RoutingCollector` counts, byte-identical; driver
+`--self-check` passes. Remaining: run it in the container (GPU) to produce `routing_report.jsonl` +
+`jaccard_stability.json` for the k-sweep — the operator step, mirroring the mask patch's "confirmed in
+container" discipline.
+
+### 2026-07-15 — reopened v4.0 back-half: Sieve/prune on the 256-expert v4 judge; renamed to Qwen 3 WP Judge
+
+The v4.0 milestone's final-eval verdict (v4 judge ties v3 on the shipped Q8 stack, 0.8067 vs 0.8056, +25%
+size; gen fine-tunes all regress below the raw Qwen3.6 base) reframed the project around the judge and drove
+the rename. Gen is retired as a deliverable regardless. But a fair question reopened one lever: the v4 judge
+was *trained* and is tied-quality on a *newer* base — the only thing v3 wins on is the 30.2-vs-37.8 GiB size.
+The v4 judge's 256 experts have never been through MoE-Sieve or weight-prune; v3.0 found no winner on 128
+experts, but the roadmap flagged 256 + shared expert as where it might flip. If it compresses below v3, the
+v4 judge becomes unequivocally better (newer base, tied quality, smaller) and publishes. So Phases 22 (256-expert
+Sieve tooling) → 25 (k-sweep) → 26 (prune) are reopened; Phase 24 (RL) skipped (no new reward family). Docs
+(README judge-first, JOURNAL, PROJECT/MODEL_CARD/CHANGELOG) synced; `wp-moe.md` retired to `deprecated/`.
+Evidence: `output/base21/diagnostic/DIAGNOSTIC_SYNTHESIS.md`, `output/eval4/VERDICT-EVAL4.md`.
+
+### 2026-07-15 — Phase 23-03 EXTENSION: unmerged runtime-LoRA judge serving — last lever, H1 REJECTED
+
+Tested the final untested lever for beating v3's judge: serve the v4 judge adapter **unmerged**
+(native runtime LoRA, never baked into base weights) to test whether that recovers the
+Tinker-capture rho (0.8358) the merge step was hypothesized to destroy via bf16 precision-swamping
+(H1). Pre-registered before measurement (`output/eval4/ext_unmerged_preregistration.md`).
+
+- **vLLM `--enable-lora`:** source-level derivation of the nightly build's exact PEFT convention
+  (`mlp.experts.base_layer`/`mlp.experts`) let a correctly-converted adapter **load without any
+  naming error** — resolves the naming blockage from `exp2_unmerged_lora_rho.json`. A robust
+  3-prompt diff gate then showed 0/3 differ from raw base on a clean boot: the kernel accepts the
+  adapter but doesn't measurably apply it. Recorded `blocked_deeper_than_naming` (pre-release
+  kernel, not debugged further).
+
+- **llama.cpp `--lora`:** converted to the base checkpoint's own fused naming
+  (`mlp.experts.gate_up_proj`/`down_proj`), fixed two genuine previously-unexercised upstream
+  `convert_lora_to_gguf.py` bugs (missing `LoraTorchTensor.ndim`; an ellipsis-expansion off-by-N),
+  built a raw (unadapted) base Q8_0 GGUF, and served with `--lora`. An in-process
+  scale-0-vs-scale-1 diff gate gave dramatic confirmation (adapter off = generic rambling;
+  adapter on = correct 9-dimension WPCS judge rubric). Full 121-item capture: **rho = 0.7833**
+  (n=121, parse_fail=0).
+
+- **H1 REJECTED:** 0.7833 lands essentially on the served-merged ceiling (0.7872, +0.39pp), 5.25pp
+  below the capture anchor (0.8358) — despite the adapter being verifiably, dramatically active.
+  Precision-swamping-at-merge-time does not explain the serving ceiling. Per pre-registration,
+  s0/s2 capture and ensemble were correctly skipped (stop condition fires at s1).
+
+- **Verdict unchanged: `unequivocal_win = FALSE`.** v3's judge (v1.3, Q8 ensemble 0.8056) stays
+  canonical. **Last-lever status: EXHAUSTED** — all three pre-registered serving configurations
+  (bf16-vLLM-merged 0.7872, Q8-llama.cpp-merged 0.7877, Q8-llama.cpp-unmerged 0.7833) land within a
+  0.44pp band; only the Tinker capture harness (0.8358) sits meaningfully above it. Whatever
+  separates capture from every served configuration is not a merge-precision artifact and is out
+  of scope for this milestone.
+
+- Receipts: `output/eval4/ext_unmerged_results.json`, `output/eval4/VERDICT-EVAL4.md` §7,
+  `.planning/phases/23-final-evaluation/23-03-SUMMARY.md`. Commits: `687aee7` (pre-reg), `d67eee7`
+  (converters+harnesses), `f7e1a56` (results+VERDICT), `db1e694` (SUMMARY).
+
+### 2026-07-08 — Gap-closure investigation (judge reasoning ceiling)
+
+Tested all three levers to push judge rho past 0.827 toward ceiling 0.984; **all negative, v1.3 is a local optimum:**
+
+- **B capacity** (rank64 + train_attn, 3ep): rho **0.662** — OVERFIT. Prior rank32/MoE-only was regularization, NOT a codegen handicap; two-model split does not unlock free capacity.
+- **A loss-reshape** (`--loss json_weighted`): alpha 0.5 → 0.773, alpha 3.0 → 0.780; **uniform CE (v1.3) is the peak.** Reasoning-then-score structure jointly load-bearing.
+- **C data-cleaning**: gap is distributed mid-band compression, not label outliers (drop-worst-15 only +0.015). Dominated.
+- **Verdict:** 0.157 gap is a real wall for SFT-on-relabeled-data on Qwen3-30B-A3B. Ceiling-moving lever = stronger base (qwen3.6/3.7 plan). Test-time compute (3-seed ensemble 0.842) is the only measured gain. Evidence: `output/relabel/{gap_closure_summary,leverA_loss_result,leverB_capacity_result,residual_audit}.json`. New: `scripts/reweight_json_loss.py`, `--loss json_weighted` in `tinker_reasoning_sft.py`.
+- **Ensemble choice LOCKED (2026-07-08):** compression targets the **3-seed ensemble**. Serving mechanics REVISED per Phase 11 research: Tinker MoE LoRA ≠ standard PEFT (vLLM can't runtime-load it) → ensemble = **3 merged checkpoints served sequentially** (median at the end), not multi-LoRA. Single-seed s1 (0.827) is the pre-authorized fallback if GB10 memory wall or 3-pass latency breaks serving (fallback = JOURNAL note, no re-decision). Protected mask (1,480 experts) is inviolable in Sieve AND prune; `layer_stability_notes` added to mask JSON per Phase 7 forward obligation.
+- **Phase 11 scope LOCKED (2026-07-08, user-selected): TRAINING-FREE Sieve** — routing profile + inference-time expert-masking k-sweep + prune-set for Phase 13. No LoRA retraining, no recovery SFT (ROADMAP's literal retraining spec superseded by the frozen-weights ship decision).
+
+Next: `/gsd-execute-phase 11` — planning COMPLETE 2026-07-08: 5 plans (11-01..05, waves 0-4), checker VERIFICATION PASSED (1 warning resolved: k-sweep sanity tolerances pre-registered — judge rho >= 0.822, wp_bench >= 0.4416). RESEARCH/VALIDATION/CONTEXT all committed.
 
 **Phase 7 closure (07-HUMAN-REVIEW §5, council-reviewed):** Profiling run of canonical v1.2 merged model on
 matched 30/70 training stimulus (34,855 examples, 785.8M tokens, GB10 6h30m, rc=0). All automated gates green —
@@ -145,7 +306,7 @@ Progress: [██████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 19
+- Total plans completed: 48
 - Average duration: 9 min
 - Total execution time: 0.62 hours
 
@@ -159,6 +320,13 @@ Progress: [██████████] 100%
 | 04.4 | 5 | - | - |
 | 8 | 4 | - | - |
 | 09 | 6 | - | - |
+| 08.1 | 4 | - | - |
+| 08.2 | 5 | - | - |
+| 20 | 4 | - | - |
+| 21 | 6 | - | - |
+| 23 | 1 | - | - |
+| 22 | 2 | - | - |
+| 27 | 5 | - | - |
 
 **Recent Trend:**
 
@@ -199,6 +367,37 @@ Progress: [██████████] 100%
 | Phase 09-gspo-training P03 | 18 | 2 tasks | 2 files |
 | Phase 09-gspo-training P05 | 35m | 2 tasks | 3 files |
 | Phase 09-gspo-training P06 | 15m | 1 tasks | 1 files |
+| Phase 08.1 P02 | 10 | 2 tasks | 3 files |
+| Phase 08.1-reward-redesign P01 | 30 | 3 tasks | 2 files |
+| Phase 11 P05 | ~35 min | 3 tasks | 4 files |
+| Phase 13 P06 | ~15min | 2 tasks | 2 files |
+| Phase 13 P07 | 10min | 1 tasks | 2 files |
+| Phase 17 P01 | 25min | 2 tasks | 8 files |
+| Phase 17 P02 | 40min | 4 tasks | 6 files |
+| Phase 18 P02 | ~13h | 3 tasks | 8 files |
+| Phase 20 P01 | 11min | 2 tasks | 6 files |
+| Phase 20-base-bring-up P02 | 8min | 2 tasks | 4 files |
+| Phase 20-base-bring-up P03 | 16min | 2 tasks | 5 files |
+| Phase 20 P04 | 72min | 2 tasks | 6 files |
+| Phase 21-sft-training-generation-judge-models P01 | 105min | 2 tasks | 7 files |
+| Phase 21-sft-training-generation-judge-models P02 | 95min | 2 tasks | 4 files |
+| Phase 21 P03 | 30min | 2 tasks | 4 files |
+| Phase 21-sft-training-generation-judge-models P04 | ~55min | 1 tasks | 2 files |
+| Phase 21-sft-training-generation-judge-models P05 | ~150min | 2 tasks | 5 files |
+| Phase 21-sft-training-generation-judge-models P06 | ~120min | 3 tasks | 10 files |
+| Phase 23-final-evaluation P01 | 12min | 3 tasks | 4 files |
+| Phase 22 P01 | 20min | 3 tasks | 11 files |
+| Phase 22 P02 | 35min | 1 tasks | 2 files |
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 25 P02 | 172 | 3 tasks | 5 files |
+| Phase 27-packaging-publication-refresh P01 | 25min | 3 tasks | 6 files |
+| Phase 27 P02 | 70min | 3 tasks | 7 files |
+| Phase 27 P03 | 55min | 3 tasks | 11 files |
+| Phase 27-packaging-publication-refresh P04 | ~30min | 3 tasks | 7 files |
+| Phase 27 P05 | ~1h43m | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -254,6 +453,60 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 09-03]: Async-over-blocking dispatch; score clamped [0,1]; None not cached
 - [Phase ?]: GSPO primary locked D-09-03; GRPO fallback only via --grpo-fallback
 - [Phase ?]: Dispatch boundary: Agent=telemetry monitor only; judge scoring=claude_agent subprocess
+- [Phase 09]: D-09-08 — RL trains MoE-only (train_attn=False, train_unembed=False), warm-started from v1.2 SFT v4 `save_state` via create_training_client_from_state; supersedes D-09-02 attn/unembed=True (attn deltas net-harmful per D-IT 04.4; judge skill MoE-borne; cold-start raw-base fails RLEV-01). Signed off Dr. Robert Li 2026-06-22; see 09-RL-INIT-RECONCILIATION.md
+- [Phase ?]: entropy source is kl_metrics['optim/entropy'] not fb_out.metrics
+- [Phase ?]: BOTH judge-path pathologies confirmed: parse-cliff 0-mode (68% fail) + lax-checks >90 cluster (mean=98.9) — judge frac_mid=0.011 vs gen 0.202; selected Lever 1 Form A + Lever 2 for Plan 03
+- [Phase ?]: optimal_k = FULL locked (human sign-off 2026-07-10): no swept k passes TOST at epsilon=2pp; expert-DROP compression dead, Phase 13 AIMER weight-level pruning is the sole remaining compression path
+- [Phase ?]: TOST/regression reference = vLLM-measured full arm (wp-bench 0.4484, rho 0.8075), not Tinker-native 0.842/0.827 — shipping-stack rho ~0.81 is the true figure
+- [Phase ?]: 13-06: no_winner verdict from prune_selection.py; human approved ship unpruned — 13-07 does not run
+- [Phase ?]: PRUNE-06 realized via ship-unpruned branch: no_winner + human sign-off ship_unpruned, no surgery ran, prune_methodology.md + MERGE-01 final lineage written; both Phase 11 (routing-cold) and Phase 13 (weight-norm) negative pruning results recorded together
+- [Phase 17]: [Phase 17-01]: Restored scripts/_wpbench_pth + scripts/_wpbench_shim (mis-archived in Phase 16 cleanup) — active runtime dependencies referenced via string path construction, missed by import-only grep
+- [Phase 17]: [Phase 17-01]: BENCH-01 fresh full wp-bench (0.4365) reproduces 0.4484 Gate-1 within the 5.20pp seed-noise floor — no regression, same vLLM bf16 stack confirmed
+- [Phase ?]: [Phase 17-02]: SWE-bench scope pre-registered before results: Lite-300 primary + PHP-43 secondary, oracle, generation-mode, native arm64 local Docker (<=20h rule; Verified-500 out at 27.21h projected)
+- [Phase ?]: [Phase 17-02]: Native arm64 SWE-bench eval CONFIRMED working (gold patches resolve via make_test_spec arch=arm64 wrapper); amd64 fails fast on this host (no QEMU) — sb-cli/cloud fallback not needed
+- [Phase ?]: HF publication: two cross-linked PUBLIC model repos under iamchum (gen bf16 safetensors, judge Q8_0 GGUF-only); Xet disabled + sequential per-file upload on this host
+- [Phase ?]: 20-01: Upgraded torchvision 0.25.0->0.27.1 (exact match for installed torch==2.12.1) — pre-existing mismatch broke every peft/transformers.PreTrainedModel import chain, unrelated to this plan
+- [Phase ?]: 20-01: Upgraded pytest 6.0.0rc2.dev33->9.1.1 — pre-existing dev build could not collect ANY test file (Python 3.13 ast-rewrite incompatibility), blocking the whole tests/ suite
+- [Phase ?]: 20-01: config/train_config_v4.yaml is a non-destructive sibling of config/train_config.yaml; v4.0 scripts take --config-path rather than mutating the v3.x default
+- [Phase ?]: 20-02: model.config on the loaded VL checkpoint unwraps to the plain text-only sub-config (get_text_config() returns self) — model.config.save_pretrained() silently drops vision_config/architectures/image_token_id, so config.json fixes must use direct JSON surgery against the original file instead
+- [Phase ?]: 20-02: BASE-02 satisfied — eos/pad aligned (text_config.eos_token_id 248044->248046, pad_token_id None->248044), real stop-token generation confirmed natural stop (19/64 tokens), output/base20/token_alignment.json status=pass is the Stage 1.5 gate Phase 21 must consume
+- [Phase ?]: 20-03: use_kernels=False locked — Atlas-Inference/gdn community kernel (SUS, non-allowlisted trust_remote_code) declined for 1.38x prefill-only gain; flipping to True requires a blocking-human checkpoint per T-20-03a
+- [Phase ?]: 20-03: BASE-03 satisfied — DeltaNet serves on GB10/aarch64 via vLLM 0.20.2rc1 WITH CUDA-graph capture enabled on first attempt (vLLM #35945 did not reproduce, fallback_used=false); v4 serving harness ready for 20-04
+- [Phase ?]: 20-04: AutoModelForCausalLM resolves this VL checkpoint to the flattened Qwen3_5MoeForCausalLM class -- live tree is flat model.layers.*, matching Tinker's raw export as-is; model.language_model.* is the on-disk-only convention
+- [Phase ?]: 20-04: 90/190 Tinker-attached DeltaNet modules (in_proj_q/k/v split) have no live-model equivalent (checkpoint fuses in_proj_qkv) -- documented drop, not silent loss; merge guard checks the mergeable 100-module subset
+- [Phase ?]: 20-04: BASE-04 satisfied -- merge_adapter.py is prefix-aware + VL-config-repairing; merged model served via vLLM --language-model-only and produced empty output vs base's verbose response, proving the adapter delta landed
+- [Phase ?]: [21-01]: RENDERER_NAME resolved to qwen3_5_disable_thinking (source=registry) via runtime probing, not the Phase-20-precedent qwen3_disable_thinking -- matches this base's actual resolved class (Qwen3_5MoeForCausalLM)
+- [Phase ?]: [21-01]: Kept hp.get_lr auto-LR (resolved 4.99e-4) over GEN-02's literal <=2e-5 text -- stale DGX/Unsloth-era carry-over per ROADMAP.md Phase 4.3 supersession note
+- [Phase ?]: [21-01]: MoE (train_mlp=True) merge probe found a genuine architectural gap -- merge_adapter.py has zero PEFT target_parameters support, so Tinker's routed-expert fused deltas are silently excluded while the module-count guard still reports a clean pass. Recorded merge_ok=false honestly (Rule 4, not auto-fixed -- semantic w1/w2/w3 mapping unconfirmable from any available source).
+- [Phase ?]: [21-01 gap-closure]: Tinker's w1/w2/w3 <-> gate/down/up mapping IS in the installed tinker_cookbook source (weights/_merge.py MergeProfile.expert_key_remaps: w1->gate_proj, w3->up_proj, w2->down_proj) -- the vendor also ships a full verified merge for Qwen3.5/3.6 MoE (weights.build_hf_model, fused_concatenated [gate|up]). Reused it instead of hand-implementing composition math; merge_adapter.py routes routed-expert adapters there via a safetensors header scan. Proven by trained-prompt token-for-token match vs Tinker SamplingClient.
+- [Phase ?]: [21-02]: In-driver terse gate FAIL (20/141 @temp0) dispositioned as the pre-documented replay-row measurement artifact (all 21 no-[/REASONING] val targets are stream=replay); canonical cot+ctf gate re-scored on the persisted ep3 checkpoint -> PASS both arms (0/120 @temp0.0, 3/360 @temp0.7). Both measurements recorded.
+- [Phase ?]: [21-02]: GEN-02 satisfied -- full gen SFT on Qwen3.6-35B-A3B, v1.2 recipe (3 epochs per wp-reasoning-v2/v3 manifests), MoE-only LoRA r32, auto-LR 4.99e-4, loss 7.97->1.46; all 3 per-epoch ttl=None sampler checkpoints persisted in wp-gen-v4-manifest.json for GEN-03 selection.
+- [Phase 21]: JUDGE-02: 3 seeds ran concurrently as independent Tinker jobs (satisfies plan's resilience intent as well as sequential launch)
+- [Phase 21]: judge02_run.json sampler-path resolution verified by actually calling capture_judge_responses_tinker._resolve_tinker_path against each manifest, not just asserted
+- [Phase ?]: [21-04]: JUDGE-01 raw-base parse_fail_rate 1.0 (30/30) vs 0.18 community anchor recorded as untrained baseline BEFORE any judge SFT result read -- root cause: Qwen3.6 always-on thinking mode exhausts 2048 tokens in prose before any rubric JSON; diagnostic anchor, NOT a gate (judge SFT trains this away)
+- [Phase ?]: [21-05]: GEN-03 RECORDED MISS -- merged gen model wp-bench 0.372 (CI lower 0.2847) < floor 0.4286; fresh raw new-base anchor 0.4897 is ABOVE the floor so the fresh-floor escape hatch does not apply, inherited floor stands. Reasoning-mix SFT regressed codegen ~11.8pp vs the raw new base (beyond the 5.2pp seed-noise floor) -- v1.2 RC-B interference signature on Qwen3.6.
+- [Phase ?]: [21-05]: wp-bench harness hardcodes served model name wp-30_70 -- serve_base20_vllm.sh gained a SERVED_MODEL_NAME env toggle (default unset); any future bench against a serve_base20-served model must set it
+- [Phase ?]: [21-06]: JUDGE-03 VALID RECORDED MISS -- vLLM-served s1 rho 0.7872 (CI-lower 0.7125 < 0.85), cheap-path 3-seed ensemble 0.8160 (CI-lower 0.7563 < 0.87); parse 0/121 on all paths (vs raw 30/30 fail -- format landed); discretion-item-2 re-open condition NOT met (gap-closure diagnostic not yet run on this base); all 3 seed checkpoints preserved for Phase 27 packaging ensemble
+- [Phase ?]: [21-06]: vLLM serve for 8192-cap judge capture needs MAX_MODEL_LEN=16384 -- an 8192-context serve silently re-truncates long prompts under an 8192 completion cap (Pitfall 4 moved to the serve side)
+- [Phase ?]: [Phase 23-01]: EVAL4-01 milestone verdict recorded -- gen_role_winner=raw_base (dominates every trained variant on point AND CI-lower); primary_judge_target_met=false, disposition=valid_recorded_miss (served s1 CI-lower 0.7125<0.85, capture ensemble CI-lower 0.7563<0.87); relabel_reopen_condition_met=false (gap-closure diagnostic not yet run on this base)
+- [Phase ?]: 23-02 EXT: v4 judge on shipped llama.cpp Q8 stack NOT unequivocal (ens 0.8067 vs v3 0.8056, paired CI spans 0) — v3 pair stays canonical; judge-only v4 ship rejected; serving ceiling engine-independent (Q8-llama.cpp 0.7877 ≈ bf16-vLLM 0.7872)
+- [Phase ?]: resolve_moe_layers candidate order is flat-first (model.layers -> model.language_model.layers -> language_model.layers), per 20-04 empirical LIVE-tree fact, not the ROADMAP literal nested-path guess
+- [Phase ?]: sieve_protected_retention.py mask.shape==(48,128)/sum==1480 asserts replaced with dtype==bool + non-empty -- v4 mask is a fresh Phase-25 profile of unknown shape/count
+- [Phase ?]: 22-02: Used AutoModelForImageTextToText instead of AutoModelForCausalLM — meta-device key diff proved AutoModelForCausalLM leaves the v4 judge text backbone randomly initialized (692/693 keys missing); AutoModelForImageTextToText (Qwen3_5MoeForConditionalGeneration) matches the checkpoint exactly (0 missing keys).
+- [Phase ?]: 22-02: resolved_traversal_root == model.language_model.layers for the v4 judge VL-composite checkpoint, empirically confirmed via a bounded GB10 forward pass (not the flat model.layers root).
+- [Phase ?]: Phase 25 Gate B: v4 judge k-sweep verdict no_winner (optimal_k=full) per pre-registered two-sided CI-aware TOST eps=2pp vs same-stack full arm 0.7935; no sub-full k equivalent
+- [Phase ?]: Phase 26 routing (relayed via orchestrator): attempt prune at k=224 (non-inferior, point-better, parseable) with 3-seed ensemble confirm before publish; ~12.5% drop unlikely to close 37.8->30.2 GiB gap
+- [Phase ?]: Phase 27 Wave 0: corrected stale gen+judge 'pair' scope to judge-only ship (pruned v4 at models/Qwen3.6-35B-A3B-judge-v4-pruned-k224) in ROADMAP.md/REQUIREMENTS.md; voided the dead 134 GiB pair-based Gate-2 rationale
+- [Phase ?]: Added expert-count sanity check to eval4_ext_gguf_convert.sh (hard subscript, no silent skip) + new pkg4_quant_type_check.py and pub4_validate_upload.py, both self-check-provable offline, closing T-27-01/T-27-02 before any conversion output is trusted
+- [Phase ?]: [Phase 27 Plan 02]: Q8 is NOT lossless on the pruned v4 judge (Gate1 f16 rho 0.8002 vs Q8 rho 0.7851, delta -1.507pp) -- contradicts v3 precedent, visible only because Gate 1 was anchored to f16 (A1). Q8 PASSES the -2pp bar with 0.493pp slack; Q6/Q5 in Plan 03 unlikely to clear it.
+- [Phase ?]: [Phase 27 Plan 02]: --no-mtp GGUF conversion required -- Phase 26 prune left the MTP/nextn layer at 256 experts while trunk was pruned to 224; GGUF's global expert_count field made the mixed-count GGUF unloadable. Shipped GGUF has no MTP/speculative-decoding head.
+- [Phase ?]: Gate 2 rests on distribution size + operator memory budget + a measured (honestly non-lossless) Q8 precedent, not the void 134 GiB bf16-pair rationale
+- [Phase ?]: Q6 scoring above the f16 floor falsifies 27-02's 'Q8 not lossless' headline -- rung-to-rung rho deltas are noise at n=121 single-seed; corrected via a revised_interpretation block, raw numbers untouched
+- [Phase ?]: ship_tier=Q6_K selected on reliability (zero parse failures, smallest such tier), explicitly overriding the plan's literal lowest-rho-passing-tier rule -- flagged for human review (D3, human_judgment:true)
+- [Phase ?]: Canonical model flipped v3 -> v4 (README.md/PROJECT.md/.planning/PROJECT.md/output/packaging/MODEL_CARD.md) per LOCKED DECISION 1, corrected per LOCKED DECISION 5 (Q6_K is ~22% smaller than v3, not larger); v3 repo iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf stays live untouched as superseded prior artifact
+- [Phase ?]: Fresh operator-only v4 HF model card written from scratch (output/pkg-v4/hf_cards/judge_v4_README.md) per CONTEXT.md LOCKED DECISION 2 -- not adapted from the v3 card's negative-example body; every rho labelled with stack+seed config, no MTP-head disclosure included
+- [Phase ?]: HF Hub per-file upload limit confirmed live from huggingface.co/docs/hub/storage-limits (<200GB recommended split, 500GB hard cap) rather than assumed; 23.47 GiB ship GGUF needs no split -- recorded in pub4_upload_manifest.json's per_file_limit_checked block
+- [Phase ?]: 27-05: fixed pub4_validate_upload.py judge smoke to use eval.eval_judge._judge_create (RC-A enable_thinking=False guard) after a hand-rolled raw POST produced a false-negative round-trip result; v4 judge published to iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf with v3 repo proven untouched
 
 ### Pending Todos
 
@@ -275,6 +528,7 @@ Recent decisions affecting current work:
 - [Phase 11]: Phase 10 (RL eval) must confirm readiness before Phase 11 (post-RL MoE-Sieve) begins — fresh RL-policy routing profiling required
 - [Phase 13]: LoRA merge (MERGE-01) must complete before pruning — strictly sequential within the phase; AIMER primary (D-09)
 - [Phase 15]: Quantization (PKG-03) is gated by Gate 2 decision — verify AWQ support for Qwen3-30B-A3B in vLLM (likely native)
+- [Phase 21 21-01 Task 2 -- RESOLVED 2026-07-13]: routed MoE-expert (train_mlp=True) merge gap CLOSED. w1/w3/w2 -> gate/up/down mapping confirmed vendor-authoritative (installed tinker_cookbook==0.4.1 _merge.py expert_key_remaps + weights/README.md, matching merge_tinker_v3.py's shipped convention); merge_adapter.py now routes routed-expert adapters through tinker_cookbook.weights.build_hf_model (240/240 modules, 0 drops); ground-truth verified vs Tinker SamplingClient (trained-prompt token-for-token match, output/base21/moe_merge_ground_truth.json verdict_pass=true); smoke_vl_merge re-run PASSED (attention-only path regression-free). moe_merge_probe.json merge_ok=true, routed_moe_expert_merge_proven=true. GEN-02/JUDGE-02 real Tinker spend UNBLOCKED. Commits 8c7d539, c4be0d3.
 
 ### Quick Tasks Completed
 
@@ -293,10 +547,24 @@ Recent decisions affecting current work:
 | 260403-vvg | Fix stale unsloth refs in dgx_toolbox; fix CONFIG_PATH; add missing dataloader fields to 30_70/40_60 configs | 2026-04-03 | f340b22 | [260403-vvg-fix-stale-unsloth-refs-and-config-incons](./quick/260403-vvg-fix-stale-unsloth-refs-and-config-incons/) |
 | 260620-bwf | Update all docs, changelog, and JOURNAL.md to reflect Phase 7 closure + Phase 8 reward infrastructure | 2026-06-20 | 4513027 | [260620-bwf-update-all-docs-changelog-and-journal-md](./quick/260620-bwf-update-all-docs-changelog-and-journal-md/) |
 
+### Roadmap Evolution
+
+- Phase 08.2 inserted after Phase 08.1: Reward Validity Gate — offline reward<->teacher-Spearman oracle + calibration reward + codegen trip-wire (Phase 10 Goodhart trigger) (URGENT)
+- v4.0 roadmap (2026-07-12): compressed V4-RERUN-ROADMAP.md's 10-phase (20-29) sketch to 8 phases (20-27) — merged Stage 2/3 SFT (gen+judge, parallel-safe, single shared Phase-20 dependency) and merged Packaging+Publication (strictly sequential, small scope); kept the 3 conditional gates (RL/Sieve/Prune) and Sieve-tooling adaptation as separate phases to preserve independent no_winner dispositions and the Sieve-tooling-must-not-block-SFT dependency
+
 ## Session Continuity
 
-Last session: 2026-06-20T21:35:10.671Z
-Stopped at: Phase 10 context gathered
+Last session: 2026-07-17T13:11:27.901Z
+Stopped at: Completed 27-05-PLAN.md — Phase 27 fully executed
+
+Prior session: 2026-07-13T11:52:35.100Z
+Stopped at: Phase 21 Plan 01: GEN-01 satisfied; MoE train_mlp=True merge-path gap found (merge_ok=false, human decision required before GEN-02/JUDGE-02 real Tinker spend). See 21-01-SUMMARY.md + output/base21/moe_merge_probe.json.
+
+Prior session: 2026-07-08T00:00:00.000Z
+Stopped at: Path A executed (regen v4 save_state → gated smoke). Smoke KILLED at step 50: hybrid@0.8 did not move validated teacher-Spearman above warm-start noise (Δ+0.015 < +0.02 bar; ρ_initial 0.6243), while forbidden fix_correctness proxy rose +0.025 = Goodhart-consistent. Kill-at-50 fired as designed. Reject-RL reinforced → ship v1.2 SFT for v3.0. Loadable v4 save_state now exists (reusable). Artifacts: logs/phase09_rerun/SMOKE_READS_TALLY.md. Resume = ./.continue-here.md (user decides: accept verdict → v3.0 packaging, OR refine non-code-blind reward + re-smoke with Gate-2 armed).
+
+Prior session: 2026-07-01T02:38:02.215Z
+Stopped at: context exhaustion at 100% (2026-07-01)
 
 Prior session: 2026-06-02T21:31:00.000Z
 Stopped at: Phase 4.4 CLOSED **REJECTED** at REVL-05 (human). All automated gates run; merge NOT promoted; D-05 disposition pending (recommend Phase 4.3 format-stability re-train). See `04.4-GATE-LEDGER.md` + `04.4-D05-DIAGNOSIS.md`. Resume = decide D-05.
@@ -341,7 +609,7 @@ Stopped at: W1-W6 cascade BLOCKED on eval-harness prose compat (2 layers). Findi
   - **CERTIFIED VERDICT (c246a20)**: smoke_pass=True exit=0 distinctness=0.879. judge 5/5 (prose 9/9 dims + 1 CtF json), gen 5/5 php_lint, baseline-sim 0.02-0.42 (<0.85 canary → reasoning diverges). Artifact: merge-artifacts/w0_03_smoke_PASS_verdict.json.
   - Data finding flagged: reasoning judge output is dimensional PROSE (CoT) or JSON (CtF), NOT <REASONING>-tagged. parse_judge_response(JSON-only) would have false-failed all CoT — coherence redesigned prose-aware + json-aware.
 
-Resume file: .planning/phases/10-rl-comparative-evaluation/10-CONTEXT.md
+Resume file: None
 Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertions + smoke-gate hardening), THEN W0-03 smoke gate against models/qwen3-30b-wp-30_70-reasoning-merged/ vs models/qwen3-30b-wp-30_70-merged-v2/ baseline, THEN REVL-01..08 eval gates
 
 ### Session 2026-05-29 reasoning MERGE COMPLETE + PROMOTED
@@ -415,7 +683,7 @@ Next: apply PR1+PR2 pre-exec blockers (HUMAN_OVERRIDE sentinel + sanity assertio
 
 ### Calibration Readiness — GATE PASSED ✅ (2026-05-21)
 
-**Status:** Milestone complete
+**Status:** Phase 27 complete
 
 - ✅ SEC-N04 false-positive fix applied + validated (agreement 65.2%->75.3% on consumption file)
 - ✅ Test/vendor pre-filter applied (1105 dropped)

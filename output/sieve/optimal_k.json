@@ -1,0 +1,76 @@
+{
+ "epsilon": 0.02,
+ "tost_reference": "vLLM-measured full arm in k_sweep_results.json (same stack both sides, per sanity_gate_recalibration.json)",
+ "full_arm": {
+  "wp_bench": 0.4484,
+  "judge_ensemble_rho": 0.8074640593499867,
+  "judge_single_s1_rho": 0.8017478301734532
+ },
+ "seed_noise_floor": 0.05203641569469587,
+ "judge_rho_bar_ensemble": 0.7554276436552908,
+ "judge_rho_bar_s1_fallback": 0.7497114144787573,
+ "canonical_bars_for_traceability": {
+  "note": "Tinker-native 0.842/0.827 minus seed_noise_floor -- NOT the gating reference (serving gap, see sanity_gate_recalibration.json). Recorded for traceability only.",
+  "ensemble": 0.7899635843053041,
+  "s1_fallback": 0.7749635843053041
+ },
+ "per_k": {
+  "13": {
+   "measured": true,
+   "tost": null,
+   "protected_retained": null,
+   "judge_rho_bar_passed": null,
+   "equivalent_k": false,
+   "note": "CORRECTED 2026-07-10 (11-VERIFICATION audit): the background k-sweep driver survived the executor session and DID execute this arm (ksweep_driver_resume.log shows '=== k-sweep COMPLETE ==='). k=13: gen wp-bench arm timed out at 7200s (genuine timeout); judge captured 121/121 for all 3 seeds but 0/121 responses were parseable \u2014 judge output collapses into unparseable text under aggressive masking. Verdict unchanged: not equivalent (total collapse)."
+  },
+  "32": {
+   "measured": true,
+   "tost": {
+    "equivalent": false,
+    "p_lower": 1.0,
+    "p_upper": 4.396990499575057e-40,
+    "mean_diff": -0.4156976744186046,
+    "ci": [
+     -0.46549474610266595,
+     -0.3659006027345433
+    ]
+   },
+   "wp_bench": 0.0546,
+   "protected_retained": true,
+   "judge_ensemble_rho": null,
+   "judge_rho_bar_passed": false,
+   "judge_rho_note": "judge_ensemble_rho not measured at this k (sweep session ended before judge capture).",
+   "equivalent_k": false,
+   "judge_note": "CORRECTED 2026-07-10 (11-VERIFICATION audit): the background k-sweep driver survived the executor session and DID execute this arm (ksweep_driver_resume.log shows '=== k-sweep COMPLETE ==='). k=32 judge captures completed for all 3 seeds; 0/121 parseable (same total-collapse mode as k=13). judge_ensemble_rho null because of parse collapse, not a skipped measurement."
+  },
+  "64": {
+   "measured": true,
+   "tost": {
+    "equivalent": false,
+    "p_lower": 0.9999999987587657,
+    "p_upper": 1.012897125542808e-12,
+    "mean_diff": -0.23546511627906974,
+    "ci": [
+     -0.29417884938724287,
+     -0.1767513831708966
+    ]
+   },
+   "wp_bench": 0.2275,
+   "protected_retained": true,
+   "judge_ensemble_rho": 0.5415319270279086,
+   "judge_rho_bar_passed": false,
+   "judge_rho_note": null,
+   "equivalent_k": false
+  }
+ },
+ "optimal_k": "full",
+ "no_equivalent_k": true,
+ "human_signoff": {
+  "approved": true,
+  "approver": "Dr. Robert Li",
+  "date": "2026-07-10",
+  "mechanism": "AskUserQuestion (blocking checkpoint:human-verify, plan 11-05 Task 2)",
+  "decision": "Lock optimal_k='full', no_equivalent_k=true. Zero expert-drop compression ships; Phase 13 AIMER weight-level pruning is the sole remaining compression path (conservative, distributed routing E_eff ~90)."
+ },
+ "audit_correction_2026_07_10": "Prior narrative ('session died mid-k=32-judge', 'k=13 never run') was stale: verified against logs/sieve/ksweep_driver_resume.log by 11-VERIFICATION. Real outcome: arms executed; judge unparseable (0/121) at k=13/32. Strengthens optimal_k=full."
+}

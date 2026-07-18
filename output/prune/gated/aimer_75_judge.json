@@ -1,0 +1,20 @@
+{
+  "method": "aimer",
+  "ratio": 75,
+  "axis": "judge",
+  "measured": false,
+  "judge_ensemble_rho": null,
+  "judge_s1_rho": null,
+  "per_seed_rho": null,
+  "parse_rate": null,
+  "protected_retained": null,
+  "pass_judge_ensemble_rho": false,
+  "pass_judge_parse_rate": false,
+  "bars_used": {
+    "judge_ensemble_rho_floor": 0.7555,
+    "judge_parse_floor": 0.95
+  },
+  "pass": false,
+  "physically_infeasible": true,
+  "skip_reason": "bounded-worse-by-monotonicity: not served (no GB10 wall-clock spent). AIMER@25 (keep k=96/128) measured judge ensemble rho 0.1651 (FAIL vs floor 0.7555), parse rate 0.4463 (FAIL vs floor 0.95) with the parse-collapse mode 26/34/5 of 121 per seed (aimer_25_judge.json, 13-04). AIMER@75 keeps k=32/128, a strict subset of AIMER@25's and AIMER@50's keep-sets, so parse collapse can only equal or worsen. Additionally, k=32 is PHYSICALLY INFEASIBLE regardless of accuracy: layer 1 alone carries 40 protected experts (output/profiling/reasoning-merged-v4/protected_expert_mask.npy), exceeding k=32 under PRUNE-06's uniform-per-layer constraint (see output/prune/expansion_decision.md)."
+}

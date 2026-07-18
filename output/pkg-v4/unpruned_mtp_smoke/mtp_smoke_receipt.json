@@ -1,0 +1,20 @@
+{
+  "title": "MTP speculative-decoding smoke \u2014 unpruned Q5_K_M ship rung (LOCKED DECISION 6)",
+  "generated_utc": "2026-07-18T00:46:05.407233+00:00",
+  "gguf": "output/pkg-v4/wp-judge-v4-unpruned.Q5_K_M.gguf",
+  "serve": "llama-server -ngl 999 -c 12288 --jinja --parallel 1 --spec-type draft-mtp",
+  "speculation_engaged": true,
+  "draft_acceptance": 0.564,
+  "drafts_accepted": 423,
+  "drafts_generated": 750,
+  "mean_accepted_len": 2.69,
+  "evidence": "output/pkg-v4/unpruned_mtp_smoke/serve.log (slot print_timing 'draft acceptance' line)",
+  "judge_smoke": {
+    "parsed": true,
+    "finish_reason": "stop",
+    "content_len": 2961,
+    "rc_a_guard": "chat_template_kwargs.enable_thinking=false sent in-request (mirrors eval.eval_judge._judge_create)",
+    "response_file": "output/pkg-v4/unpruned_mtp_smoke/judge_smoke_response.json"
+  },
+  "conclusion": "The MTP head survives fine-tuning + Q5_K_M quantization and functions: 56.4% draft acceptance with mean accepted length 2.69 tokens, and the judge rubric still parses under speculation."
+}

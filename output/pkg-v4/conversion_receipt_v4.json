@@ -1,0 +1,74 @@
+{
+  "requirement": "PKG4-01",
+  "title": "GGUF conversion + structural sanity, pruned v4 judge (judge-only)",
+  "generated_utc": "2026-07-17T07:53:40.751790+00:00",
+  "source_checkpoint": "models/Qwen3.6-35B-A3B-judge-v4-pruned-k224",
+  "source_bf16_gb_on_disk": 59.49,
+  "llamacpp_build": "version: 1 (8f114a9) built with GNU 13.3.0 for Linux aarch64",
+  "b9180_floor_note": "PKG4-01 pins >=b9180 (MTP conversion support for Qwen3.5/3.6); recorded build is past it",
+  "convert_flags": "--no-mtp (see mtp_deviation_note)",
+  "artifacts": {
+    "f16": {
+      "path": "output/pkg-v4/wp-judge-v4-pruned-k224.f16.gguf",
+      "size_bytes": 61313087616,
+      "size_gib": 57.1023
+    },
+    "q8_0": {
+      "path": "output/pkg-v4/wp-judge-v4-pruned-k224.Q8_0.gguf",
+      "size_bytes": 32614463296,
+      "size_gib": 30.3746
+    }
+  },
+  "sanity": {
+    "block_count": {
+      "expected": 40,
+      "gguf": 40,
+      "pass": true
+    },
+    "expert_count_f16": {
+      "expected": 224,
+      "gguf": 224,
+      "pass": true
+    },
+    "expert_count_q8": {
+      "expected": 224,
+      "gguf": 224,
+      "pass": true
+    },
+    "shared_expert_uniform": true,
+    "quant_type_receipt": "output/pkg-v4/quant_type_q8.json"
+  },
+  "mtp_deviation_note": "The first conversion attempt (block_count=41, including the MTP/nextn layer) produced a GGUF that FAILED TO LOAD in llama-server: 'check_tensor_dims: tensor blk.40.ffn_gate_inp.weight has wrong shape; expected 2048,224, got 2048,256' -- because Phase 26's prune surgery deliberately left the MTP/nextn layer (and shared_expert.*) at the original 256 experts while pruning the 40 trunk layers to 224, and GGUF's expert_count metadata is a single GLOBAL field llama.cpp's loader enforces uniformly across every block. Root-caused and fixed by re-converting with the officially supported 'convert_hf_to_gguf.py --no-mtp' flag (confirmed in ~/llama.cpp/conversion/qwen.py's _Qwen35MtpMixin: drops all mtp.* tensors, sets block_count=num_hidden_layers exactly -- no mixed-count block). This GGUF has NO MTP/speculative-decoding head; block_count is 40, not 41. Verified safe: none of this phase's eval harnesses (_pkg_gguf_eval_run.sh) exercise MTP/speculative decoding, and the corrected Q8_0 was smoke-tested (loads, listens, real generation succeeds) before use. scripts/eval4_ext_gguf_convert.sh was extended with an optional 4th 'extra_convert_arg' positional and the block-count formula now branches on --no-mtp.",
+  "tensor_name_patterns": {
+    "routed_expert": [
+      "blk.0.ffn_down_exps.weight",
+      "blk.0.ffn_gate_exps.weight",
+      "blk.0.ffn_up_exps.weight"
+    ],
+    "shared_expert": [
+      "blk.0.ffn_down_shexp.weight",
+      "blk.0.ffn_gate_shexp.weight",
+      "blk.0.ffn_up_shexp.weight"
+    ],
+    "deltanet_state": [
+      "blk.0.ssm_a",
+      "blk.0.ssm_alpha.weight",
+      "blk.0.ssm_beta.weight",
+      "blk.0.ssm_conv1d.weight",
+      "blk.0.ssm_dt.bias",
+      "blk.0.ssm_norm.weight"
+    ]
+  },
+  "size_vs_projection": {
+    "projected_q8_gib": 33.6,
+    "projected_by": "linear scaling, output/prune-v4/selection_v4.json size.note",
+    "measured_q8_gib": 30.3746,
+    "delta_gib": -3.2254,
+    "note": "33.6 is a PROJECTION and is recorded here only to close it out against the measurement; the measured value is the only one any downstream doc or card may cite. The measured Q8 (30.38 GiB) came in SMALLER than the linear-scaling projection -- the --no-mtp GGUF excludes the MTP/nextn head entirely (never counted separately in the projection's linear-scaling math), on top of the projection not accounting for shared-expert/DeltaNet tensors being fixed (non-expert-count-scaling) overhead."
+  },
+  "v3_comparison": {
+    "v3_shipped_q8_gib": 30.2,
+    "delta_gib": 0.1746,
+    "note": "recorded per the 2026-07-17 user directive: size-vs-v3 is a NOTE, not a ship gate"
+  }
+}

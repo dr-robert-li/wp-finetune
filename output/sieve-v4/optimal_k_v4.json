@@ -1,0 +1,84 @@
+{
+  "requirement": "GATE4-03",
+  "epsilon": 0.02,
+  "ci_aware": true,
+  "tost_reference": {
+    "arm": "full",
+    "judge_single_s1_rho": 0.7934812517026191,
+    "source": "same-stack vLLM full arm (all-keep mask) measured in this sweep",
+    "note": "NOT the llama.cpp Q8 0.8067 nor the Tinker 0.8358 \u2014 both TOST sides same stack"
+  },
+  "full_s1_rho": 0.7934812517026191,
+  "per_k": {
+    "224": {
+      "measured": true,
+      "judge_single_s1_rho": 0.81293833039953,
+      "parse_fail": 0,
+      "protected_retained": true,
+      "kept_experts_per_layer_min": 224,
+      "tost": {
+        "mean_diff": 0.019457078696910934,
+        "ci": [
+          -0.018154148360465784,
+          0.06240721989988936
+        ],
+        "n": 121,
+        "equivalent": false
+      }
+    },
+    "192": {
+      "measured": true,
+      "judge_single_s1_rho": 0.8028605849580077,
+      "parse_fail": 0,
+      "protected_retained": true,
+      "kept_experts_per_layer_min": 192,
+      "tost": {
+        "mean_diff": 0.009379333255388644,
+        "ci": [
+          -0.026249673930745777,
+          0.04667939853188282
+        ],
+        "n": 121,
+        "equivalent": false
+      }
+    },
+    "144": {
+      "measured": true,
+      "judge_single_s1_rho": 0.7561561532054716,
+      "parse_fail": 0,
+      "protected_retained": true,
+      "kept_experts_per_layer_min": 144,
+      "tost": {
+        "mean_diff": -0.03732509849714749,
+        "ci": [
+          -0.10279126590094338,
+          0.02496589276750845
+        ],
+        "n": 121,
+        "equivalent": false
+      }
+    },
+    "112": {
+      "measured": true,
+      "judge_single_s1_rho": 0.7556916513374347,
+      "parse_fail": 0,
+      "protected_retained": true,
+      "kept_experts_per_layer_min": 112,
+      "tost": {
+        "mean_diff": -0.03778960036518442,
+        "ci": [
+          -0.10892518986901381,
+          0.027081780403395896
+        ],
+        "n": 121,
+        "equivalent": false
+      }
+    }
+  },
+  "optimal_k": "full",
+  "no_equivalent_k": true,
+  "no_winner": true,
+  "disposition": "no_winner",
+  "signoff_status": "presented for human sign-off; routing relayed via GSD orchestrator (not an independently-verified human signature)",
+  "phase26_routing": "no_winner (optimal_k=full) locked per the pre-registered two-sided TOST. Recorded routing = B (non-inferiority read): Phase 26 SHOULD attempt a prune at k=224 as a compression candidate — non-inferior (CI lower -0.018 clears -2pp), point-better (+0.0195), fully parseable (0/121) — CONFIRMING with the reserved 3-seed ensemble (s0/s1/s2) at k=224 BEFORE any publish decision. Caveat: k=224 drops only ~12.5% of experts, so it is unlikely to close the 37.8->30.2 GiB gap vs v3's Q8; the aggressive ks that could (144/112) degrade quality ~4pp. The compression lever probably does not pay, but Phase 26 probes k=224 rather than assuming."
+}

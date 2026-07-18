@@ -1,0 +1,48 @@
+{
+  "note": "judge-rho vs relabel val labels, n=121, mix dose-response (2026-07-04)",
+  "cells": {
+    "raw_relabel_v13": {
+      "negatives": false,
+      "replay": 0,
+      "judge_rho": 0.8274,
+      "codegen": 0.3808,
+      "codegen_gate": "FAIL"
+    },
+    "aug15": {
+      "negatives": true,
+      "replay": 15,
+      "judge_rho": 0.7227,
+      "ci": [
+        0.6258,
+        0.7988
+      ],
+      "codegen": null
+    },
+    "rp30_v131": {
+      "negatives": true,
+      "replay": 30,
+      "judge_rho": 0.7408,
+      "ci": [
+        0.6448,
+        0.8122
+      ],
+      "codegen": "benching"
+    },
+    "genreplay": {
+      "negatives": false,
+      "replay": "genx3 (33.5% gen)",
+      "judge_rho": 0.6455,
+      "codegen": null,
+      "ci": [
+        0.5115,
+        0.7557
+      ]
+    },
+    "v12_bar": {
+      "judge_rho": 0.7477,
+      "codegen": 0.4616
+    }
+  },
+  "hypothesis": "negatives (old-distribution invalid-PHP judge targets) fight relabel calibration; both negative-containing mixes collapse to ~0.73 regardless of replay level",
+  "conclusion": "judge-rho tracks judge-exposure share monotonically (0.827@85% -> 0.74@66%+neg -> 0.65@66%). Mix search closed. DECISION: two-model \u2014 v1.3 raw relabel = judge artifact (0.827); v1.2 = gen artifact (0.4616); RL trains judge axis from v1.3 warm-start with G2 = no-regression vs own 0.3808; unified dual-mode deferred to Phase 11 packaging."
+}

@@ -1,0 +1,15 @@
+{
+  "capture": "output/relabel/eval_s1_ep3/judge_responses.jsonl",
+  "rho_new": 0.8274,
+  "n": 121,
+  "ci": [
+    0.761,
+    0.8731
+  ],
+  "baseline_rho": 0.7477,
+  "delta_vs_baseline": 0.0797,
+  "ceiling": 0.9844,
+  "gap_to_ceiling": 0.157,
+  "parse_fail": 0,
+  "note": "canonical v1.3 (seed1 ep3). RESTORED after eval sweep clobbered."
+}

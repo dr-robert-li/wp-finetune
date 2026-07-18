@@ -1,0 +1,99 @@
+{
+  "experiment": "exp4_retrain_on_rebuilt_mix",
+  "date": "2026-07-14",
+  "train_path": "data/reasoning_dataset/openai_train_v4_rebuilt.jsonl",
+  "mix_provenance": "output/base21/diagnostic/exp4_mix_provenance.json",
+  "base_model": "Qwen/Qwen3.6-35B-A3B",
+  "recipe": {
+    "rank": 32,
+    "train_mlp": true,
+    "train_attn": false,
+    "train_unembed": false,
+    "router": "frozen (by omission, D-N1)",
+    "lr": 0.000499,
+    "lr_source": "hp.get_lr auto (gen01_format_decision.json, binding decision kept)",
+    "renderer": "qwen3_5_disable_thinking",
+    "epochs": 2,
+    "epochs_rationale": "reduced from the old-mix run's 3 (ep3-overtraining suspicion, DIAGNOSTIC_SYNTHESIS.md finding 2 / exp1 confirmed ep1 0.4381 > ep3 0.372)",
+    "batch_size": 8
+  },
+  "training": {
+    "steps": 256,
+    "train_batches_per_epoch": 128,
+    "loss_first_step": 9.041431427001953,
+    "loss_end_ep1_last_logged": {
+      "step": 120,
+      "loss": 5.662457048892975
+    },
+    "loss_end_ep2_last_logged": {
+      "step": 250,
+      "loss": 2.0133434906601906
+    },
+    "loss_last": 3.064004108309746,
+    "loss_note": "9.04 -> 3.06 over 256 steps. Terminal loss is FAR above the old-mix run's 1.46 (gen02_run.json) -- expected and healthy: the rebuilt mix is 1028 rows (vs 563) of more heterogeneous content (53.5% real wired code + 46.5% judge CoT), so less memorization in fewer epochs; the old run's 1.46 on 563 homogeneous rows was the overfit signature (recipe_provenance_audit.md 3.2).",
+    "per_epoch_terse_at_temp0_n8": {
+      "ep1": 0.0,
+      "ep2": 0.0
+    },
+    "log": "output/base21/gen02b_full_log.txt"
+  },
+  "checkpoints": {
+    "manifest": "output/tinker/wp-gen-v4b-manifest.json",
+    "persistent_ttl": null,
+    "ep1": "tinker://be098eb3-0735-5866-aec8-0e8f89793141:train:0/sampler_weights/wp-gen-v4b-full-ep1",
+    "ep2": "tinker://be098eb3-0735-5866-aec8-0e8f89793141:train:0/sampler_weights/wp-gen-v4b-full-ep2",
+    "promoted": "wp-gen-v4b-full-ep2"
+  },
+  "fs_gate": {
+    "canonical_cot_ctf": [
+      {
+        "temp": 0.0,
+        "terse": 0,
+        "n": 120,
+        "rate": 0.0,
+        "wilson_upper": 0.031020271055929513,
+        "pass": true
+      },
+      {
+        "temp": 0.7,
+        "terse": 0,
+        "n": 360,
+        "rate": 0.0,
+        "wilson_upper": 0.010558440816003448,
+        "pass": true
+      }
+    ],
+    "canonical_pass": true,
+    "canonical_receipt": "output/format_stability/fs_gate/wp-gen-v4b/summary.json",
+    "in_driver_full_val": {
+      "arms": [
+        {
+          "temp": 0.0,
+          "terse": 18,
+          "n": 141,
+          "rate": 0.1276595744680851,
+          "wilson_upper": 0.19277246911638168,
+          "pass": false
+        },
+        {
+          "temp": 0.7,
+          "terse": 54,
+          "n": 423,
+          "rate": 0.1276595744680851,
+          "wilson_upper": 0.16284617421239203,
+          "pass": false
+        }
+      ],
+      "pass": false,
+      "disposition": "KNOWN MEASUREMENT ARTIFACT, not format collapse: the in-driver gate scores all 141 val rows including the 21 replay (code-gen) rows that legitimately carry no [/REASONING]. 18/141 terse at temp0 and 54/423 (=18x3, identical 0.1277 rate) at temp0.7 are bounded by and deterministic over that 21-row replay set. PROVEN by the canonical cot+ctf gate: 0 terse in 480 cot+ctf samples across both temps -- every terse hit lives in the replay rows. Same artifact as 21-02 (gen02), pre-documented in scripts/tinker_fs_gate.py's docstring."
+    },
+    "note": "Canonical result is CLEANER than the old-mix run (0/360 vs 3/360 at temp0.7) despite the gen share rising from 13% to 53.5% -- rebalancing toward real code did not erode the judge-format stability of the cot/ctf streams."
+  },
+  "cost_usd_approx": 2,
+  "smoke": {
+    "manifest": "output/tinker/wp-gen-v4b-smoke-manifest.json",
+    "steps": 4,
+    "loss_first": 9.041,
+    "loss_last": 5.873
+  }
+}

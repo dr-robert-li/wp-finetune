@@ -1,0 +1,14 @@
+{
+  "capture": "output/packaging/ens8192/q8_s2/judge_responses.jsonl",
+  "rho_new": 0.7894431349523691,
+  "n": 121,
+  "ci": [
+    0.7154548652582388,
+    0.8451960848461222
+  ],
+  "baseline_rho": 0.7476689625425029,
+  "delta_vs_baseline": 0.04177417240986614,
+  "ceiling": 0.9844009569826934,
+  "gap_to_ceiling": 0.1949578220303243,
+  "parse_fail": 0
+}

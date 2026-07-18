@@ -1,20 +1,21 @@
 {
   "stream": "ctf",
-  "generated_at": "2026-04-08T20:14:56.266361Z",
-  "accepted_count": 150,
+  "generated_at": "2026-04-09T21:50:47.932635Z",
+  "accepted_count": 179,
   "total_attempted": 200,
   "parse_failures": 0,
   "parse_failure_rate": 0.0,
-  "duplicate_rate": 0.015,
-  "dup_prompt": 3,
+  "duplicate_rate": 0.005,
+  "dup_prompt": 1,
   "dup_output": 0,
   "rejection_reasons": {
-    "alignment:0.00": 25,
-    "php_lint_invalid": 22,
-    "dup_prompt": 3
+    "php_lint_invalid": 4,
+    "corrected_identical_to_defective": 13,
+    "alignment:0.00": 2,
+    "dup_prompt": 1
   },
   "php_lint_pass_rate": 1.0,
-  "mean_alignment_ratio": 0.961111111111111,
+  "mean_alignment_ratio": 0.9921296296296297,
   "corrected_code_differs_rate": 1.0,
   "bogus_template_rejection_count": 0,
   "thresholds": {

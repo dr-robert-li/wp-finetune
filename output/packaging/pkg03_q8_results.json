@@ -1,0 +1,68 @@
+{
+  "requirement": "PKG-03",
+  "title": "Q8 GGUF quantization — measured result on the single-seed judge, with foundation + same-engine bf16 arms",
+  "generated_utc": "2026-07-10",
+  "toolchain": {
+    "quantizer": "llama.cpp convert_hf_to_gguf.py --outtype q8_0 (Q8_0, direct, no f16 intermediate)",
+    "server": "llama.cpp llama-server, CUDA build (GB10 aarch64, CUDA 13), -ngl 999 --jinja",
+    "commit": "llama.cpp 8f114a9",
+    "eval_harness": "scripts.sieve_capture_judge_http -> scripts/relabel/eval_relabel.py (same val set + labels as the bf16 vLLM measurement)",
+    "serving_config_note": "All three arms served identically (max_tokens 2048, temp 0.0, enable_thinking=False via chat_template_kwargs). Engine held constant, so the Q8-vs-bf16 delta isolates quantization."
+  },
+  "arms": {
+    "foundation_base_bf16": {
+      "model": "models/Qwen3-30B-A3B (untrained base)",
+      "gguf": "models/_gguf/qwen3-30b-base.bf16.gguf",
+      "size_gib": 56.8,
+      "judge_rho": null,
+      "n_scored": 0,
+      "parse_fail": 121,
+      "note": "121/121 responses unparseable. The base has zero structured wp_judge capability; it cannot emit the rubric format at all. The entire judge skill is created by the fine-tune."
+    },
+    "judge_bf16_same_engine": {
+      "model": "models/_staging/qwen3-30b-wp-v1.3-merged (v1.3 s1)",
+      "gguf": "models/_gguf/wp-v1.3-judge-s1.bf16.gguf",
+      "size_gib": 56.8,
+      "judge_rho": 0.7700,
+      "ci": [0.6638, 0.8498],
+      "n_scored": 93,
+      "parse_fail": 28
+    },
+    "judge_q8": {
+      "model": "models/_staging/qwen3-30b-wp-v1.3-merged (v1.3 s1)",
+      "gguf": "models/_gguf/wp-v1.3-judge-s1.Q8_0.gguf",
+      "size_gib": 30.2,
+      "size_bytes": 32483931840,
+      "judge_rho": 0.7239,
+      "ci": [0.5928, 0.8208],
+      "n_scored": 92,
+      "parse_fail": 29
+    }
+  },
+  "cross_reference": {
+    "bf16_vllm_optimal_k": {"judge_single_s1_rho": 0.8017, "note": "different engine (vLLM); absolute rho higher because vLLM run did not hit the same prose-truncation parse loss. Not the gate reference."}
+  },
+  "quantization_delta": {
+    "q8_minus_bf16_same_engine": -0.0461,
+    "seed_noise_floor": 0.0520,
+    "cis_overlap": true,
+    "within_noise": true,
+    "interpretation": "Q8 point estimate is 4.6pp below same-engine bf16, but the difference is smaller than the seed noise floor (0.052) and the two CIs overlap almost entirely ([0.593,0.821] vs [0.664,0.850]). Statistically indistinguishable at n~92."
+  },
+  "size_reduction": {
+    "bf16_gib": 56.8,
+    "q8_gib": 30.2,
+    "reduction_pct": 46.8
+  },
+  "collapse_check": {
+    "q8_parse_rate": 0.760,
+    "bf16_parse_rate": 0.769,
+    "q4_nf4_reference": {"judge_ensemble_rho": 0.1651, "parse_rate": 0.446, "verdict": "COLLAPSE"},
+    "verdict": "Q8 does NOT collapse. Parse rate matches bf16 (76% vs 77%); rho within noise. This is the decisive contrast with uniform 4-bit nf4, which halved the parse rate and dropped rho to 0.165."
+  },
+  "caveat": {
+    "parse_fail_source": "~24% parse failures in BOTH judge arms come from the model's bimodal long-prose output truncated at max_tokens=2048, not from quantization. Applied equally to Q8 and bf16, so the delta is valid, but the absolute rho is depressed vs the vLLM figure. A confirmation run at max_tokens>=4096 (and/or the full 3-seed ensemble) would tighten the absolute numbers.",
+    "gate_status": "MARGINAL vs the strict +/-2pp point gate (point delta -4.6pp exceeds 2pp), but WITHIN measurement noise. Q8 is coherent and non-collapsing."
+  },
+  "verdict": "Q8 GGUF SHIPPABLE with note. 47% smaller (56.8 -> 30.2 GiB), no collapse, judge rho within noise of bf16. Recommended ship tier for the single-seed judge. Foundation arm confirms the fine-tune created the entire judge capability (base: 0 parseable)."
+}

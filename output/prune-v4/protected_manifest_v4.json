@@ -1,0 +1,9 @@
+{
+  "requirement": "GATE4-04",
+  "protected_mask_npy": "output/sieve-v4/protected_expert_mask.npy",
+  "mask_npy_sha256": "cca757e930828047d5eb631a9ee10fef598f048d8eb7030101573e051ec47e78",
+  "max_protected_per_layer": 98,
+  "k_anchor": 224,
+  "merge_of_record": "models/Qwen3.6-35B-A3B-judge-v4-s1-merged",
+  "note": "v4-specific \u2014 do NOT reuse v3's output/sieve/prune_set_for_phase13.json"
+}

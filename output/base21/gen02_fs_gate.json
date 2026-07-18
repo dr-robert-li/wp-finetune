@@ -1,0 +1,29 @@
+{
+  "checkpoint": "tinker://05590ab9-4d38-57fc-bb2f-53a445891caa:train:0/sampler_weights/wp-gen-v4-ep3",
+  "streams": [
+    "cot",
+    "ctf"
+  ],
+  "gate_n": 300,
+  "threshold_rate": 0.1,
+  "threshold_wilson_upper": 0.15,
+  "arms": [
+    {
+      "temp": 0.0,
+      "terse": 0,
+      "n": 120,
+      "rate": 0.0,
+      "wilson_upper": 0.031020271055929513,
+      "pass": true
+    },
+    {
+      "temp": 0.7,
+      "terse": 3,
+      "n": 360,
+      "rate": 0.008333333333333333,
+      "wilson_upper": 0.024211132411548104,
+      "pass": true
+    }
+  ],
+  "pass": true
+}

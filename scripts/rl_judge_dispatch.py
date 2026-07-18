@@ -1,22 +1,33 @@
-"""Claude score-reasoning consistency scorer (D-09-05 judge-reward half).
+"""Score-reasoning consistency scorer (D-09-05 judge-reward half).
 
-Async, cached, timeout-imputing batch dispatcher over the project's
-subprocess Claude path (scripts.claude_agent). Produces a float in [0,1]
-per sample representing how consistently the written critique justifies
-the numeric score.
+Async, cached, timeout-imputing batch dispatcher. Produces a float in [0,1]
+per sample representing how consistently the written critique justifies the
+numeric score.
+
+Two scoring backends, selected per-call by ``base_url``:
+  - ``base_url is None`` (legacy): scripts.claude_agent.generate_json — the
+    subprocess Claude path (``claude -p``). Per the 2026-06-22 billing-policy
+    change this ALWAYS bills paid API, so it is no longer the default for the
+    unattended RL run (see deprecated/planning-handoffs/09-HANDOFF.md Option 1).
+  - ``base_url`` set (Phase 09 Option 1, $0): a LOCAL vLLM OpenAI-compatible
+    endpoint (e.g. http://localhost:8001/v1). Model-agnostic — works with any
+    chat model served there (Nemotron-3-Nano text NVFP4, or a reused wp_judge).
+    enable_thinking=False + temperature=0.2 + max_tokens=256 per the recipe
+    caveat; mirrors eval_judge._judge_create's graceful kwarg fallback.
 
 Design constraints:
-  - Uses scripts.claude_agent.generate_json (subprocess, NOT the direct LLM API)
   - No background Agent dispatch — that is orchestrator-only (SKILL layer)
-  - Content-hash cache keyed on (php_code[:512], critique_text[:512])
+  - Content-hash cache keyed on (php_code[:512], critique_text[:512]). The cache
+    does NOT key on the backend/model — never reuse a populated cache across
+    endpoints within one process.
   - 120s per-sample timeout via asyncio.wait_for
   - Timeout/error slots imputed from the group mean of valid scores
   - N-vote median for noise suppression (default n_votes=1; callers in 09-04/05 raise it)
 
 Exports:
-  score_judge_consistency(php_code, critique_text, model, n_votes) -> float | None
-  score_with_cache(php_code, critique_text, model) -> float | None
-  score_judge_consistency_batch(samples) -> list[float]   [async]
+  score_judge_consistency(php_code, critique_text, model, n_votes, base_url) -> float | None
+  score_with_cache(php_code, critique_text, model, n_votes, base_url) -> float | None
+  score_judge_consistency_batch(samples, model, n_votes, base_url) -> list[float]   [async]
 """
 
 from __future__ import annotations
@@ -25,13 +36,181 @@ import asyncio
 import hashlib
 import json
 import logging
+import re
 import statistics
 import warnings
-from typing import Optional
+from typing import Any, Optional
 
 from scripts.claude_agent import generate_json
 
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Local-vLLM backend (Phase 09 Option 1 — $0 unattended consistency judge)
+# ---------------------------------------------------------------------------
+
+_VLLM_TEMPERATURE = 0.2   # recipe "Instruct" sampling row — near-greedy, low noise
+_VLLM_MAX_TOKENS = 256    # pure JSON score, no reasoning chain
+_VLLM_API_KEY = "EMPTY"   # vLLM ignores the key
+
+# Per-base_url OpenAI client cache (avoid reconstructing per call).
+_vllm_clients: dict[str, Any] = {}
+# Whether the served chat template accepts chat_template_kwargs enable_thinking;
+# flipped off once on first rejection (mirrors eval_judge._thinking_kwarg_supported).
+_vllm_thinking_supported = True
+
+# ---------------------------------------------------------------------------
+# Tier 4 (08.1-03 / D-81-03): Inline consistency score-distribution histogram
+#
+# Accumulates per-dispatch scores into 5 bins so each training step can report
+# the consistency score distribution to rl_metrics.jsonl.  This is the earliest
+# positive-learning signal (histogram peak shift precedes reward_mean movement).
+#
+# Design: module-level dict (resets per step via get_and_reset_score_hist()).
+# Mirrors the _efrac_history / _reset_efrac_history pattern in rl_train.py.
+# ---------------------------------------------------------------------------
+
+# 5-bin histogram: [0,0.2), [0.2,0.4), [0.4,0.6), [0.6,0.8), [0.8,1.0]
+_score_hist: dict[str, int] = {
+    "0_0.2":   0,
+    "0.2_0.4": 0,
+    "0.4_0.6": 0,
+    "0.6_0.8": 0,
+    "0.8_1.0": 0,
+}
+
+
+def _bin_score(s: float) -> str:
+    """Map a score in [0,1] to a 5-bin label (Tier 4 histogram key).
+
+    Args:
+        s: consistency score in [0, 1].
+
+    Returns:
+        str: bin label like "0_0.2".
+    """
+    if s < 0.2:
+        return "0_0.2"
+    if s < 0.4:
+        return "0.2_0.4"
+    if s < 0.6:
+        return "0.4_0.6"
+    if s < 0.8:
+        return "0.6_0.8"
+    return "0.8_1.0"  # catches s >= 0.8, including s == 1.0
+
+
+def get_and_reset_score_hist() -> dict[str, int]:
+    """Return the current per-step score histogram and reset it to zeros.
+
+    Called by rl_train._log_step once per step to capture the consistency
+    score distribution accumulated during that step's dispatch calls.
+
+    Returns:
+        dict[str, int]: A COPY of the histogram with bin counts, then resets.
+    """
+    global _score_hist
+    snapshot = dict(_score_hist)
+    _score_hist = {k: 0 for k in _score_hist}
+    return snapshot
+
+
+def _get_vllm_client(base_url: str) -> Any:
+    """Return a cached openai.OpenAI client pointed at the local vLLM endpoint."""
+    client = _vllm_clients.get(base_url)
+    if client is None:
+        import openai  # noqa: PLC0415 — lazy: not needed on the legacy claude path
+        client = openai.OpenAI(base_url=base_url, api_key=_VLLM_API_KEY)
+        _vllm_clients[base_url] = client
+    return client
+
+
+def _parse_consistency_score(text: Optional[str]) -> Optional[float]:
+    """Extract a [0,1] consistency score from a model completion.
+
+    Robust to a reasoning model leaking prose around the JSON: tries strict
+    JSON first, then a regex on ``consistency_score``, then a lone bare float.
+    Returns None when nothing parseable is found.
+    """
+    if not text:
+        return None
+    # Strip any <think>…</think> the reasoning model may emit despite enable_thinking=False.
+    cleaned = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL | re.IGNORECASE).strip()
+    # 1) strict JSON object somewhere in the text
+    for m in re.finditer(r"\{[^{}]*\}", cleaned, flags=re.DOTALL):
+        try:
+            obj = json.loads(m.group(0))
+        except (json.JSONDecodeError, ValueError):
+            continue
+        if isinstance(obj, dict) and "consistency_score" in obj:
+            try:
+                return max(0.0, min(1.0, float(obj["consistency_score"])))
+            except (TypeError, ValueError):
+                pass
+    # 2) key:value regex without full JSON
+    m = re.search(r"consistency_score\"?\s*[:=]\s*([01](?:\.\d+)?|0?\.\d+)", cleaned)
+    if m:
+        try:
+            return max(0.0, min(1.0, float(m.group(1))))
+        except ValueError:
+            pass
+    # 3) a lone bare float in [0,1]
+    m = re.search(r"\b(0(?:\.\d+)?|1(?:\.0+)?)\b", cleaned)
+    if m:
+        try:
+            return max(0.0, min(1.0, float(m.group(1))))
+        except ValueError:
+            pass
+    return None
+
+
+def _score_via_vllm(
+    php_code: str,
+    critique_text: str,
+    model: str,
+    base_url: str,
+) -> Optional[float]:
+    """Single consistency call against a local vLLM chat endpoint ($0).
+
+    Mirrors eval_judge._judge_create: send chat_template_kwargs enable_thinking=False,
+    and on a template rejection drop the kwarg for the rest of the run.
+    """
+    global _vllm_thinking_supported
+    client = _get_vllm_client(base_url)
+    messages = [
+        {"role": "system", "content": JUDGE_SYSTEM},
+        {"role": "user", "content": _build_consistency_prompt(php_code, critique_text)},
+    ]
+    kwargs = dict(model=model, messages=messages,
+                  max_tokens=_VLLM_MAX_TOKENS, temperature=_VLLM_TEMPERATURE)
+    try:
+        if _vllm_thinking_supported:
+            try:
+                resp = client.chat.completions.create(
+                    **kwargs,
+                    extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+                )
+            except Exception as e:  # noqa: BLE001
+                emsg = str(e).lower()
+                if "enable_thinking" in emsg or "chat_template" in emsg or "template" in emsg:
+                    _vllm_thinking_supported = False
+                    logger.warning(
+                        "consistency vLLM: served template rejected enable_thinking=False; "
+                        "dropping the kwarg for the rest of this run (regex fallback still applies)."
+                    )
+                    resp = client.chat.completions.create(**kwargs)
+                else:
+                    raise
+        else:
+            resp = client.chat.completions.create(**kwargs)
+    except Exception as e:  # noqa: BLE001 — network/server error -> imputed upstream
+        logger.warning("consistency vLLM call failed: %r", e)
+        return None
+    try:
+        content = resp.choices[0].message.content
+    except (AttributeError, IndexError):
+        return None
+    return _parse_consistency_score(content)
 
 # ---------------------------------------------------------------------------
 # Rubric system prompt (D-09-05 — reduces hackability via structured rubric)
@@ -114,17 +293,23 @@ def score_judge_consistency(
     critique_text: str,
     model: str = "sonnet",
     n_votes: int = 1,
+    base_url: Optional[str] = None,
 ) -> Optional[float]:
     """Score consistency between a critique and the PHP code it describes.
 
-    Calls the Claude subprocess via generate_json (NOT the Anthropic API).
+    Backend is selected by ``base_url``:
+      - None  -> legacy Claude subprocess via generate_json (paid API; default).
+      - set   -> local vLLM OpenAI endpoint via _score_via_vllm ($0, Option 1).
     Supports N-vote median for noise suppression (D-09-05 guard 2).
 
     Args:
         php_code: The PHP source code under critique.
         critique_text: The written critique to evaluate.
-        model: Claude model name passed to generate_json ('sonnet', etc.).
+        model: Model name. On the claude path a slug ('sonnet'); on the vLLM
+               path the served model name at ``base_url``.
         n_votes: Number of independent calls; returns median. Default 1.
+        base_url: Local vLLM endpoint (e.g. http://localhost:8001/v1). When set,
+               routes to the local $0 path; when None, the legacy claude path.
 
     Returns:
         Float in [0.0, 1.0], or None if all calls fail to produce parseable JSON.
@@ -133,6 +318,13 @@ def score_judge_consistency(
 
     scores: list[float] = []
     for _ in range(max(1, n_votes)):
+        if base_url:
+            score = _score_via_vllm(php_code, critique_text, model=model, base_url=base_url)
+            if score is None:
+                continue
+            scores.append(score)
+            continue
+
         result = generate_json(prompt, system=JUDGE_SYSTEM, model=model,
                                timeout=_SUBPROCESS_TIMEOUT_S)
         if result is None:
@@ -167,6 +359,7 @@ def score_with_cache(
     critique_text: str,
     model: str = "sonnet",
     n_votes: int = 1,
+    base_url: Optional[str] = None,
 ) -> Optional[float]:
     """score_judge_consistency with content-hash caching.
 
@@ -187,7 +380,8 @@ def score_with_cache(
         logger.debug("Cache hit for key %s…", key[:8])
         return _score_cache[key]
 
-    score = score_judge_consistency(php_code, critique_text, model=model, n_votes=n_votes)
+    score = score_judge_consistency(php_code, critique_text, model=model,
+                                    n_votes=n_votes, base_url=base_url)
     if score is not None:
         _score_cache[key] = score
     return score
@@ -210,18 +404,20 @@ async def _score_one_async(
     critique_text: str,
     model: str,
     n_votes: int,
+    base_url: Optional[str] = None,
 ) -> Optional[float]:
     """Async wrapper: cache-hit resolves immediately; miss runs scorer in thread."""
     key = _cache_key(php_code, critique_text)
     if key in _score_cache:
         return _score_cache[key]
 
-    # score_judge_consistency is blocking (subprocess) — run in thread pool
+    # score_judge_consistency is blocking (subprocess or HTTP) — run in thread pool
     loop = asyncio.get_running_loop()
     score = await asyncio.wait_for(
         loop.run_in_executor(
             None,
-            lambda: score_judge_consistency(php_code, critique_text, model=model, n_votes=n_votes),
+            lambda: score_judge_consistency(php_code, critique_text, model=model,
+                                            n_votes=n_votes, base_url=base_url),
         ),
         timeout=_BATCH_TIMEOUT_S,
     )
@@ -234,6 +430,7 @@ async def score_judge_consistency_batch(
     samples: list[dict],
     model: str = "sonnet",
     n_votes: int = 1,
+    base_url: Optional[str] = None,
 ) -> list[float]:
     """Async batch Claude-consistency scorer with cache + 120s timeout + group-mean imputation.
 
@@ -255,6 +452,7 @@ async def score_judge_consistency_batch(
             s["critique_text"],
             model=model,
             n_votes=n_votes,
+            base_url=base_url,
         )
         for s in samples
     ]
@@ -305,5 +503,11 @@ async def score_judge_consistency_batch(
             n_imputed,
             len(samples),
         )
+
+    # Tier 4 (08.1-03): accumulate final scores into per-step histogram.
+    # Called after imputation so imputed scores also land in the histogram
+    # (their contribution is noted in the imputation-warn log above).
+    for score in final:
+        _score_hist[_bin_score(score)] += 1
 
     return final

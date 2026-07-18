@@ -1,0 +1,64 @@
+{
+  "requirement": "PKG4-02",
+  "tier": "Q8",
+  "method": "GGUF Q8_0 (llama.cpp)",
+  "status": "MEASURED",
+  "generated_utc": "2026-07-17T08:44:32.992485+00:00",
+  "gate1_baseline_ref": "output/pkg-v4/gate1_f16_baseline_v4.json",
+  "anchor": "f16_gguf_llamacpp",
+  "stack": "Q8_0 GGUF (--no-mtp, no MTP/speculative-decoding head), llama-server -ngl 999 --parallel 4 --jinja, CTX 20480",
+  "llamacpp_build": "version: 1 (8f114a9) built with GNU 13.3.0 for Linux aarch64",
+  "seeds": "single-seed s1",
+  "measured": {
+    "judge_rho": 0.7851092593129675,
+    "ci": [
+      0.6983942411407741,
+      0.8492152048156426
+    ],
+    "n": 121,
+    "n_dataset_note": "same wp_judge-filtered subset of data/reasoning_dataset/openai_val.jsonl as gate1_f16_baseline_v4.json (n=121, identical to Gate 1) -- like-for-like, same dataset/max_tokens/filtering, confirmed by direct n match.",
+    "parse_fail": 0,
+    "max_tokens": 2048,
+    "size_bytes": 32614463296,
+    "size_gib": 30.3746,
+    "capture": "output/pkg-v4/q8_eval/judge_responses.jsonl",
+    "summary": "output/pkg-v4/q8_eval/eval_summary.json"
+  },
+  "gate": {
+    "gate1_rho": 0.8001808600187146,
+    "delta": -0.01507160070574709,
+    "delta_pp": -1.5072,
+    "epsilon_pp": 2,
+    "bar": "delta >= -0.02 (inclusive, matching Phase 26's ci_lower >= -0.02 convention)",
+    "pass": true,
+    "slack_pp": 0.4928
+  },
+  "concurrent_sequence_smoke": {
+    "parallel_slots": 4,
+    "ngl": 999,
+    "backend": "CUDA (-ngl 999, full GPU offload)",
+    "requests_total": 121,
+    "requests_failed": 0,
+    "pass": true,
+    "evidence": "output/pkg-v4/q8_eval/serve.log",
+    "evidence_note": "serve.log line 'n_slots = 4' at load_model + interleaved slot ids 0-3 across print_timing lines is this build's semantic equivalent of the literal '--parallel 4' echo (this llama-server build does not print the literal word 'parallel' in its log -- see SUMMARY.md deviation note). [sieve-capture] DONE n=121 ok=121 err=0 in the driver log is the 0-failed-requests evidence: all 121 requests across the 4 concurrent slots succeeded."
+  },
+  "headline_finding": {
+    "statement": "Q8 is NOT lossless on this surgically-pruned 224-expert MoE. It costs 1.507pp against the f16 master (delta -0.0151), leaving only 0.493pp of the 2pp budget for Q6/Q5 in Plan 27-03. This CONTRADICTS the v3 precedent, where Q8 was confirmed lossless (ensemble rho 0.8056). The prune appears to have made this checkpoint materially more quantization-sensitive than the unpruned v3 was.",
+    "visible_only_because_of_a1": "This finding is visible ONLY because Gate 1 was anchored to f16 (assumption A1), not Q8. A Q8-anchored Gate 1 would have produced delta=0.000 by construction and reported 'Q8 lossless' -- a false conclusion defining away the exact question this plan exists to answer. That is the concrete payoff of the A1 override.",
+    "ci_overlap_caveat": "The two CIs (f16 [0.7186, 0.8582], Q8 [0.6984, 0.8492]) overlap substantially given n=121 -- this does NOT establish the point-estimate drop is statistically insignificant, only that the sampling noise at this n cannot rule out a smaller or larger true gap. The 1.507pp point-estimate drop is the honest headline; it is not rounded to zero or called 'within noise'.",
+    "forward_flag_for_plan_03": "Q8 has already consumed 1.507pp of the 2pp budget. Q6_K and Q5_K_M are now UNLIKELY to clear the f16 floor's +/-2pp band -- the ladder may stop at Q8, making Q8 the ship tier. Plan 27-03 must still MEASURE Q6/Q5 rather than assume this; a Q6 failure should not be treated as an anomaly."
+  },
+  "v3_shipped_comparison": {
+    "v3_q8_ensemble_rho": 0.8056,
+    "v4_merged_unpruned_q8_rho": 0.8067,
+    "note": "FIRST apples-to-apples v4-pruned-vs-v3 comparison -- all three are Q8 GGUF/llama.cpp. But v3's 0.8056 is a 3-SEED ENSEMBLE and this rung is SINGLE-SEED s1; the configurations differ and the gap is not a clean like-for-like. Recorded with that caveat, not as a headline. The headline is delta_vs_gate1 (Q8 vs the SAME checkpoint's own f16 master), not this cross-checkpoint comparison."
+  },
+  "revised_interpretation": {
+    "status": "headline_finding above is SUPERSEDED. The measured judge_rho (0.7851092593129675) and every other field in this file are UNCHANGED and remain the historical record of what was measured -- only the INTERPRETATION is corrected here, in Plan 27-03, after the Q6 rung came back.",
+    "what_falsified_it": "ladder_q6.json's Q6_K rung measured judge_rho 0.8063205167262201 -- ABOVE the f16 floor (0.8002) and ABOVE this Q8 rung (0.7851). Q6_K is a lossier compression of the SAME f16 master than Q8_0; it cannot legitimately carry more judge signal than its own source. A real quantization-sensitivity mechanism predicts monotonic decay (f16 > Q8 > Q6); the measured ordering is Q6 > f16 > Q8, which no degradation mechanism can produce.",
+    "corrected_conclusion": "The -1.507pp Q8 point estimate is NOT evidence that Q8 is lossy on this checkpoint, and NOT evidence the prune increased quantization sensitivity. At n=121 single-seed, rung-to-rung deltas of 1-2pp are well inside sampling noise (CI half-widths ~7-8pp; the three rungs span 2.12pp against each other). f16, Q8, and Q6 are statistically indistinguishable on this measurement. See output/pkg-v4/ladder_q6.json's noise_floor_finding block for the full argument.",
+    "correction_source": "27-03-SUMMARY.md and output/pkg-v4/ladder_q6.json (Plan 27-03, Task 2). Note that .planning/phases/27-packaging-publication-refresh/27-02-SUMMARY.md's headline (\"Q8 is NOT lossless\" / \"contradicts the v3 precedent\") is now known-superseded prose from before the Q6 measurement existed; it is left as-written in that file (historical record) but a reader following it forward must land here.",
+    "not_touched": "gate1_baseline_ref, measured, gate, concurrent_sequence_smoke, and the raw headline_finding text above are all UNCHANGED -- this block corrects the READING of those numbers, not the numbers themselves."
+  }
+}

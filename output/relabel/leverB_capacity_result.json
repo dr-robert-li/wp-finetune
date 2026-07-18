@@ -1,0 +1,16 @@
+{
+  "lever": "B capacity (rank64 + train_attn + 3ep, seed1, relabel data)",
+  "ep3_rho": 0.6618,
+  "ci": [
+    0.5318,
+    0.764
+  ],
+  "n": 120,
+  "train_loss_last": 2.71,
+  "terse": 0.0,
+  "v13_baseline": 0.8274,
+  "v12_baseline": 0.7477,
+  "delta_vs_v13": -0.1656,
+  "verdict": "LOSE \u2014 OVERFIT. Higher rank + unfrozen attention at LoRA LR over 3 epochs memorized train (loss 13->2.71) and COLLAPSED val rho to 0.66, below even v1.2. The prior MoE-only/rank-32 recipe was REGULARIZATION, not a codegen-imposed handicap; the two-model split does NOT unlock a free capacity win. Limiter is signal/generalization, not capacity. -> lever A (score-weighted loss) must run on the regularized rank-32/MoE-only recipe.",
+  "checkpoint": "wp-reasoning-relabel-capB-r64attn-ep3 (kept, not promoted)"
+}

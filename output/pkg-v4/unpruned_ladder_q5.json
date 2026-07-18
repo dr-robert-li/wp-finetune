@@ -1,0 +1,30 @@
+{
+  "tier": "Q5",
+  "method": "GGUF Q5_K_M (llama.cpp)",
+  "status": "MEASURED",
+  "generated_utc": "2026-07-18T00:44:25.994258+00:00",
+  "gate1_baseline_ref": "output/pkg-v4/unpruned_gate1_f16_baseline.json",
+  "measured": {
+    "judge_rho": 0.8093208092209783,
+    "ci": [
+      0.7373798440843395,
+      0.8625772653075424
+    ],
+    "n": 121,
+    "parse_fail": 0,
+    "max_tokens": 2048,
+    "size_bytes": 25347531872,
+    "capture": "output/pkg-v4/unpruned_q5_eval/judge_responses.jsonl",
+    "summary": "output/pkg-v4/unpruned_q5_eval/eval_summary.json"
+  },
+  "gate": {
+    "gate1_rho": 0.8081393794583069,
+    "delta": 0.0011814297626713266,
+    "delta_pp": 0.1181,
+    "epsilon_pp": 2,
+    "bar": "delta >= -0.02 (inclusive)",
+    "pass": true,
+    "slack_pp": 2.1181
+  },
+  "note": "Zero parse failures at n=121 \u2014 unlike the PRUNED ladder's Q5 (1/121, repetition-loop truncation). Point estimate above its own f16 source (+0.12pp): impossible as signal, noise demonstration #3."
+}

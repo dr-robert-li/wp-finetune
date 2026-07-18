@@ -1,8 +1,722 @@
-# Engineering Journal — wp-qwen3-moe
+# Engineering Journal — Qwen 3 WP Judge (formerly wp-qwen3-moe)
 
 Decisions, reasoning, and observations logged as the project evolves.
 
 ---
+
+## 2026-07-18 — the lever pulled, and v4 shipped smaller than the model it replaced.
+
+Two days ago I wrote that the routing profile said the experts don't want to be cut, and that the one lever left was probably not going to pull. It pulled. AIMER at k=224 went through gate-before-remove and passed — pruned checkpoint rho 0.8134 against the same-stack full arm's 0.7935, non-inferior and point-better, with 0.001 of slack on the confidence bound. That last number deserves to be written down as nakedly as the pass: an unluckier bootstrap flips it. But the pre-registered rule said pass, the 3-seed ensemble confirmed at 0.8533, and the surgery went in — 256 experts sliced to 224 per layer, and a 60 GB checkpoint where a 67 GB one used to be. The profile's diffuse-routing shape was a prediction. The gate was a measurement. I've spent this whole project saying measure-don't-guess, and this is the entry where the discipline paid for itself, because I would have guessed wrong.
+
+**Packaging tried to feed me two wrong stories, and the receipts caught both.** The first conversion attempt produced a GGUF that wouldn't load: the prune left the MTP layer at 256 experts while the trunk went to 224, and GGUF stores expert count as one global field the loader enforces everywhere. Mixed counts are simply unrepresentable, so the pruned file ships without its speculative-decoding head (`--no-mtp`) — a real capability loss I had to write on the card rather than bury. The second wrong story was mine. The Q8 rung measured 1.5 points under the f16 floor and I briefly had a headline: the prune made the model quantization-sensitive. Then Q6 came back *above* the f16 master it was compressed from, which no degradation mechanism can produce, and the headline died the death it deserved. At n=121, single-seed, the rung-to-rung spread is sampling noise — all four tiers are statistically the same judge. What actually separated them was parse failures: the pruned Q5 emitted one repetition loop that never closed its verdict, the only hard failure in the ladder, and for a model whose entire contract is a parseable rubric that's the discriminator that matters. Q6_K shipped at 23.47 GiB. v3 shipped at 30.2. The tradeoff I accepted in writing two days ago — newer base, bigger artifact — turned out not to exist.
+
+**The round-trip validation then accused a working model, and the accusation was a mirror.** Post-upload, the judge smoke came back unparseable and for a moment the published artifact looked broken. It wasn't. The validation driver had hand-rolled its chat request instead of going through `_judge_create`, which meant it lost the `enable_thinking=False` guard — the exact landmine Phase 04.4 documented in capitals after it cost us 19-25% parse failures, now stepped on again by a script written fresh three days ago. The model had judged correctly the whole time; its rubric was sitting in `reasoning_content` while the harness read an empty `content`. The fix was to reuse the project's own helper, which is what the pattern map said to do in the first place. I keep relearning that the codebase already knows things I forget.
+
+**Then, with the milestone one commit from closed, I went back for the head I'd amputated.** The no-MTP limitation nagged enough to check whether the *unpruned* merged checkpoint — uniform 256 experts everywhere, MTP intact — would convert with the head in. It does, and llama.cpp genuinely runs it: `--spec-type draft-mtp`, no separate draft model, 56.4% measured draft acceptance with the rubric still parsing under speculation. I ran its own four-rung ladder against its own f16 floor and got the same lesson twice: Q8 "failed" the band at −3.1 while Q6 and Q5 sat above the floor, non-monotonic again, noise again. Its Q5_K_M ran clean at 0/121 where the pruned one had stumbled, so that's the rung — 23.61 GiB, within 150 MB of the pruned file. The repo now carries two GGUFs: the pruned Q6_K as the default, and the unpruned Q5_K_M for anyone who wants speculative decoding back. Same judge either way, to within anything this eval can resolve.
+
+**So v4.0 closes, and the ledger reads better than I expected when I opened it.** I set out to build two models and I'm shipping one judge in two flavors — smaller than v3, on a newer base, at quality the measurements call a tie and my thumb-on-scale instinct wanted to call a win. The instinct lost every round to the receipts, which is the system working. What the milestone banked besides the artifact: the capture-versus-served ceiling quantified across three engines, a prune gate that contradicted its own routing profile, two independent demonstrations that single-seed rho deltas at this sample size can't rank quant tiers, and two interim headlines I had to retract in writing because a later measurement falsified them. The v1.3 repo stays up, untouched — I checked it byte-for-byte three separate times, because "we didn't touch it" is a claim and the snapshot diff is a measurement. The judge works. It's public. Both numbers are real. Done.
+
+---
+
+## 2026-07-16 — the profile came back, and it says the experts don't want to be cut.
+
+Ran the served profiler for real. The smoke pass on 563 examples worked but the container run did what host tests never do — it found three bugs I'd written with a straight face. `np.save("x.npy.tmp")` silently appends `.npy`, so my atomic-rename source never existed and nothing ever persisted. The enforce-eager warmup fires the hook before any real request, so the counter starts dirty — fixed by snapshotting a post-warmup baseline and subtracting it, the same additive trick the subsample already used. And a handful of prompts truncated to exactly the model length, then asked for one more token, and got a 400 — one flag, truncate to length-minus-one, and a sender that logs a failure instead of dying on it. None of these were visible until a GPU and a real dataset were on the other end. That's the whole argument for running the thing.
+
+The first real profile flagged a problem I took seriously: the Jaccard stability gate failed, mean 0.9111, fifteen of forty layers under the 0.94 bar. The obvious reading is "not enough data," and a fair question was whether to expand the stimulus. But I didn't want to spend an hour of GPU on a hunch, so I looked at the boundary first. The margins told a split story: on the unstable layers, experts ranked eight and nine differed by 0.017% of traffic — a coin-flip — but a *stable* layer had an even tinier gap and held anyway. So the instability wasn't uniformly data starvation; it was sampling noise sitting on top of a genuinely flat plateau where five-ish experts are all within a whisker of each other. More data would quiet the noise but couldn't invent a gap that isn't there.
+
+Both halves of that prediction came true. I re-ran on the canonical 34,855-example ratio_30_70 stimulus — the same one v3's profile used, so the two are comparable — 17.4 million routed tokens per layer, thirty-odd thousand requests, zero failures. Jaccard mean climbed to 0.9722 and ten of the fifteen unstable layers snapped to perfect agreement. The five that didn't — layers 0, 4, 15, 25, 26 — are exactly the highest-E_eff, flattest-routing layers, layer 0 sitting at 222 effective experts out of 256. Their top-8 set is intrinsically ambiguous; sixty times the data didn't move them because there was nothing to resolve. The gate still reads FALSE, and for once that's the honest answer rather than a bug: those layers really don't have a stable top-8.
+
+Which is the actual finding, and it's not the one I was hoping for. E_eff averages 144 of 256 — more than half the experts carrying real traffic in every layer, uniform across the DeltaNet and attention strata. Diffuse routing, no cliff between the experts you'd keep and the ones you'd drop, and the layers that won't stabilize are the flattest ones. Every arrow points the same way: the 256-expert judge looks like it resists expert-drop pruning, the same wall the 128-expert v3 hit. I'm not calling the gate yet — the k-sweep and the prune still have to put a quality number on it, and a profile shape is a prediction, not a verdict. But if I'm honest about what the routing is telling me, the one lever that could have made v4 ship smaller than v3 is probably not going to pull. The profile is in hand, on real hardware, and it was never a memory problem — it was a question about the model, and now I can see the model's answer forming.
+
+## 2026-07-16 — I stopped fighting the loader and profiled the served model instead.
+
+The OOM investigation ended with a verdict, not a fix: a full-resident bf16 load of the 35B judge cannot happen on this host, and no allocator knob changes the arithmetic. So the right move was to stop loading the model in-process at all. vLLM already boots this exact checkpoint cleanly at 0.55 utilization — its memory manager fits the weights where my `from_pretrained` couldn't. If the model can live in the server, the routing profile can be read out of the server.
+
+The satisfying part is how little new code that took, because the project already had the hard half. `scripts/_sieve_vllm_patch/sitecustomize.py` — the k-sweep mask patch — already resolves the v4 MoE-block class through an ordered candidate list (the class name is different from v3's and wasn't confirmable off the host) and already registers a forward hook on each block's `self.gate`. It uses that hook to *write* -inf onto masked experts. Profiling is the mirror image: hook the same gate, but *read* the logits and accumulate which experts each token's top-k selected. So the profiling patch is the mask patch with the hook body inverted, and it inherits the class-resolution work I'd otherwise have had to redo blind.
+
+Two things had to be got right or the numbers would be quietly wrong. First, the hook is Python, and vLLM captures CUDA graphs — during graph replay the Python never runs, so a counting hook would only ever see warmup tokens. The mask patch dodges this because a tensor add becomes part of the captured graph; a counter can't. The honest fix is to serve the profiling run with `--enforce-eager` and eat the slowdown — it's a one-time offline pass. Second, prefix caching: if two prompts share a prefix, vLLM serves the second one's shared tokens from cache and never recomputes them, so those tokens never route and the counts undercount. Prefix caching stays off for profiling. Both are the kind of thing that doesn't error — it just gives you a plausible wrong distribution — so they're written down at the top of the launcher, not buried.
+
+The v4 judge has no `<wp_gen>`/`<wp_judge>` task tokens, which turns out to be a gift. The in-process collector splits counts by token type, which would be genuinely painful to reconstruct inside vLLM's flattened continuous batch. But with no task tokens the reference collector already degrades to total-only, so the served hook is total-only too and there's no token-position alignment to do. The driver renders prompts exactly as the reference does, fires them prefill-only (`max_tokens=1` — routing happens on the prompt, not the generation), and gets the Jaccard subsample by subtraction: counts are additive, so send the full set, snapshot, send the subsample, and the difference is the subsample's contribution. No second server, no reset.
+
+What makes me trust it before it has ever touched a GPU: I fed the same synthetic logits through the served hook and through the in-process `RoutingCollector` and they produced byte-identical count arrays. The finalize step then reconstructs a `RoutingCollector` from the dumped counts and calls the existing `compute_eeff`, `write_profiling_jsonl`, and `compute_jaccard_stability` unchanged — so whatever the merged-model profiler would have written, this writes, from the same math. The container run is still the operator's to do, same as the mask patch was always "confirmed inside the container," but the correctness question is settled on the host. E_eff and Jaccard for the k-sweep come out of a served model now, and the OOM is simply not on the path anymore.
+
+---
+
+## 2026-07-16 — the GB10 OOM came back, and the "fix" was only half a fix.
+
+Phase 25 needs a routing profile of the v4 judge, and the profiler kept dying at ~66% of the weight load. Yesterday I thought I'd killed it: `device_map="auto"` was reading the whole 121 GiB unified pool as GPU-free and balancing the model across a phantom CPU+GPU split, so I pinned everything to a single device (`gb10_load_kwargs`, single-device + `low_cpu_mem_usage`). It relaunched, ran further, and died at 66% anyway. Same window, same signal: no Python traceback, a kernel `Out of memory: Killed process` in the journal. A fix that doesn't hold isn't a fix, it's a lead.
+
+Instrumenting the load told the real story. Two mechanisms, not one. First, `transformers`' `caching_allocator_warmup()` fires the moment `device_map` is non-null — and my single-device fix *requires* it to be non-null — issuing one eager `torch.empty()` sized to the *entire* model on cuda:0 before a single shard streams in. On GB10 that's an instant, real physical-RAM commit, and it's invisible to the process's own anon-rss (the driver books device memory on a separate ledger), which is exactly why the original OOM log's 52 GiB undercounted the truth. A 10 GiB `torch.empty(device=cuda:0)` moved system `free` by 10.4 GiB and the process's own RSS by 93 MB. So the buffer was hiding. I monkeypatched the warmup to a no-op (it's a pure load-speed optimization, safe to skip) and forced `HF_DEACTIVATE_ASYNC_LOAD=1` to shut off the threaded shard materializer.
+
+Then I did the thing I should always do and ran it for real, on a clean box, under a watchdog sampling every 0.25s that SIGKILLs the loader at 112 GiB — nine gigs below the ceiling — so a repeat couldn't take the box down with it. Good thing. The warmup no-op worked: at twelve seconds in we were at 6 GiB instead of yesterday's 70. But the peak didn't move, only its shape did. Memory climbed proportionally with load progress this time, ~0.5 GiB/s, and crossed 112 GiB at 63% — the same death window, now caught by my watchdog instead of the kernel. Host RSS grew 6→47 GiB tracking the loaded fraction and never freed, *even with the async loader disabled*. So the synchronous path retains host copies too. The arithmetic is just brutal and honest: ~50 GiB of host staging plus ~67 GiB of device weights doesn't fit in a 121 GiB pool that already carries a dozen gigs of services. A full-resident bf16 load of a 35B model can't happen on this host, and no loader knob changes that.
+
+So the buffer I actually need to shrink is the model, not the allocator. Real options: load 4-bit (17–20 GiB, fits with room to spare) if the profiler tolerates a quantized forward; or profile through the vLLM server that already boots fine at 0.55 utilization instead of loading in-process; or refactor the profiler to never hold the whole model at once. The watchdog run is the receipt; the debug record is `.planning/debug/v4-judge-load-oom-recurrence.md`. The half-fix stays in as a documented partial mitigation — it genuinely removed the 70 GiB spike — but it's labelled honestly, because it does not stand alone.
+
+---
+
+## 2026-07-15 — the project narrows to a judge, not a pair (with one lever still to pull).
+
+I set out to build two models. I'm shipping one. This is the entry where I write down why, and why I think that's the right call rather than a retreat.
+
+**The generator is done, and not by me.** The v4.0 study asked a simple question: does a newer base close the gaps the old one couldn't? For generation the answer was blunt. Raw Qwen3.6-35B-A3B, with no fine-tuning and `<wp_gen>` hitting it as plain text, scores 0.4897 on wp-bench. Every generator I trained on top of it came out worse: ep3 at 0.372, the ep1 checkpoint at 0.4381, even a carefully rebuilt mix at 0.4022. Five experiments (`output/base21/diagnostic/DIAGNOSTIC_SYNTHESIS.md`) explain the drop the same way each time. Our gen targets are structurally weaker than what the base already writes: the training set is 86% judge-shaped, and 92% of the actual gen targets are bare unwired function fragments, no `<?php`, no `add_action`, one literally labelled "TODO: Copied from section.php". The old Qwen3-30B base improved on that data because its own raw output was weaker still. A stronger base has nothing to learn from targets it already beats. So I'm not shipping a generator. If you need WordPress code generated, point a current base model at the task and frame the prompt. That problem aged out of this project.
+
+**The judge is the thing that was ever really mine.** The clearest number in the whole project is still the ugliest one: the untrained base produces zero parseable rubric verdicts out of 121. The judge is a capability created from nothing, and on Qwen3.6 the training worked, measurably. Capture-path rho hit 0.8358, past the old base's 0.8274. For a while I thought that meant a new shipped judge.
+
+It didn't, and chasing that down was the real work of the last two days. Every time I merge the adapter and serve it, the number falls to ~0.79 and stays there. I tested this to exhaustion because the user asked for an unequivocal win and I wanted to give them one. bf16 merged on vLLM: 0.7872. Q8 GGUF merged on llama.cpp: 0.7877. Q8 with the adapter served unmerged as a runtime LoRA, verified active by a scale-0-vs-1 diff: 0.7833. An fp32-accumulation merge fix that turned out to be a no-op because the real merge path was already fp32. Three engines, three serving configs, one ceiling inside a half-point band. The 0.8358 lives only inside Tinker's own serving stack, and I can't ship Tinker. On the stack users actually run, the v4 judge scored 0.8067 against v3's 0.8056 — a paired-bootstrap tie with the confidence interval sitting square across zero, at 25% more disk. I pre-registered the rule that would let me call it a win before I measured, and the rule said no. So v1.3 stays canonical.
+
+I keep wanting to soften that and I won't. The stronger base did make a better judge; I just can't get the better judge out of the lab and onto a self-hostable stack, and "better in a place nobody can run it" is not better. Whatever eats the 0.05 lives in the merge-then-serve pathway on every engine, for both bases. That's a genuinely interesting open problem and it is not one I'm going to pretend I solved.
+
+**So the project renames and narrows.** It was `wp-qwen3-moe`, a two-model pair. It's now Qwen 3 WP Judge, and the canonical deliverable is exactly one artifact: `iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf`, the v1.3 relabel-SFT judge, Q8_0 GGUF ensemble, rho 0.8056, lossless against bf16. The gen checkpoint stays published so the provenance is honest, but it's a footnote now, not a headline. The README got rewritten around the judge and the operator: pull the GGUF, serve it with llama.cpp, hand it a snippet, read the rubric back. Everything a reader needs to reproduce the pipeline points at PIPELINE.md; everything that was archaeology moved to `deprecated/`, including the old `wp-moe.md` spec that described the pair I'm no longer shipping.
+
+What v4.0 produced, so far, is knowledge rather than a checkpoint: the capture-versus-served ceiling quantified across three engines, the routed-expert merge tooling hardened, two upstream llama.cpp bugs found and patched, and a negative result recorded in full instead of buried. I would rather stand on a clean "no" I can defend than a soft "maybe" I can't. The judge works, it's public, and the number is real.
+
+There is one lever I haven't pulled, and a fair question made me go back for it: I trained a tied-quality judge on a newer base and left it on the shelf because it's 25% bigger. But "not canonical" is a different verdict from "not worth shipping," and I'd collapsed the two. The v4 judge's 256 experts have never been through MoE-Sieve or a weight-prune. On the old base's 128 experts that pipeline found nothing to cut, but the whole v4 roadmap flagged 256-plus-a-shared-expert as the one place it might finally bite. If it does, the v4 judge drops below v3's 30.2 GiB and the only thing v3 still wins on evaporates: same quality, newer base, smaller. So I'm reopening the back half of the roadmap to try exactly that before I call anything final. Sieve, then prune, then a publish decision that's earned rather than assumed. If the experts don't compress, the story above stands unchanged and v3 stays canonical. Either way the answer will be measured, not guessed.
+
+---
+
+## 2026-07-15: five experiments later, I know exactly why the rebase disappointed. Mostly it didn't.
+
+The Phase 21 misses bothered me enough to stop and run the full diagnostic before touching Phase 23.
+Three forensics passes over artifacts already on disk, then five experiments, all receipted under
+`output/base21/diagnostic/`. Total marginal cost: about $2 of Tinker and a day of GB10 time.
+
+The judge story flipped first. The capture-path rho on the new base is 0.8358, which beats the old
+base's 0.8274 under the identical recipe. The training worked. What eats the gain is the serve step:
+merge the adapter, serve it through vLLM, and the same checkpoint reads 0.7872. I assumed the merge was
+the culprit, so experiment 3 rewrote the delta application with fp32 accumulation and re-measured:
+0.7823. No change, and it turns out the real merge path (the vendor's own `build_hf_model`) was already
+accumulating in fp32; the forensics doc had analyzed a legacy code path nothing uses. So the drop is
+engine numerics, Tinker's serving stack versus vLLM's kernels, flipping a handful of borderline greedy
+decodes whose long chains then wander. Recomputing the old base the same paired way gives 0.7888 served,
+statistically the same as our 0.7872. The wall we thought we hit at 0.85 is partly a measurement
+ceiling that both bases share. Experiment 2, which would have separated merge from engine by serving
+the adapter unmerged, got blocked: vLLM's `--enable-lora` rejects Tinker's `w1/w2/w3` expert naming.
+Filed as a tooling gap, recorded, moved on.
+
+The gen story is less flattering and more interesting. Experiment 5 scored the 73 training targets
+against what the raw base already writes: the targets lose on every structural axis that matters
+(hook wiring 8% vs 46%, `<?php` self-containment 8% vs 50%). One target literally says "TODO: Copied
+from section.php". We trained a strong model on code weaker than its own output, and it obliged us by
+getting worse. Experiment 1 benched the preserved ep1 checkpoint at 0.4381, recovering over half the
+gap from ep3's 0.372, so three epochs on 563 rows also overcooked it. Experiment 4 rebuilt the mix
+properly, wired full-file targets sampled from the 66K-function human-written corpus, gen share up,
+replay stream dropped, two epochs, canonical terse gate clean. It benched 0.4022. Better than the
+original, still 8.8pp under the raw base's 0.4897.
+
+That last number is the real finding of the week. On a base this strong, SFT-for-codegen has negative
+headroom against wp-bench: nothing in our corpus teaches it anything the benchmark can see, and any
+tuning pass risks dragging it toward the training data's shape. The honest gen candidate for Phase 23
+is the raw base itself, with the fine-tune as the B arm. The judge is the opposite case, a genuinely
+created capability that got measurably better on the new base, and its promotion call should read the
+capture-path number with the serving caveat attached. Synthesis: `DIAGNOSTIC_SYNTHESIS.md`.
+
+---
+
+## 2026-07-14 — Phase 21: both pre-registered bars missed, and the receipts say so.
+
+The whole SFT phase ran end to end on the new base: six plans, four waves, about $8 of Tinker, all of
+it landed before the July 17 price rise. The recipe was deliberately the v1.2/v1.3 one, reused data,
+same LoRA shape, Tinker's own auto LR, with only the deltas Phase 20 and the research pass forced.
+
+The Wave-0 probe earned its place before a dollar of real training moved. A cheap `train_mlp=True`
+probe revealed that Tinker exports routed experts as per-expert-batched `w1/w2/w3` tensors that our
+merge code silently dropped, 90 modules gone while the guard reported a clean pass. The fix turned out
+to be sitting in the vendor's own cookbook: `build_hf_model` ships a verified merge for exactly this
+model, fused `[gate|up]` layout and all. We proved it by merging the probe and comparing generations
+token for token against Tinker's own sampler serving the same adapter. Forty tokens, identical. That
+merge path then carried every real adapter in the phase, 240 of 240 modules each time.
+
+Training itself was uneventful in the good way. Gen SFT: loss 7.97 down to 1.46, terse gate clean once
+the known replay-row measurement artifact was rescoped out (the in-driver gate counts raw-code replay
+targets as "terse", same as it did on v1.2; the canonical cot+ctf gate is the honest one). Judge SFT:
+three seeds, run concurrently, thirty minutes wall-clock. The raw-base baseline for judge format came
+in at 30 of 30 unparseable, thinking-mode prose that exhausts the token budget before any JSON, which
+makes the trained result of 0 parse failures in 121 across all three seeds the clearest single win of
+the phase.
+
+Then the two numbers that matter. Gen: the merged model benched 0.372 against a 0.4286 floor, while a
+fresh anchor put the raw untrained base at 0.4897. The fine-tune made the new base worse at the thing
+it was tuned for. Judge: served single-seed 0.7872 against the 0.85 target, capture ensemble 0.8160
+against 0.87. Both recorded as misses, mechanically, CI-aware, per the pre-registration. No floor got
+quietly swapped, no re-run until it passed. The failure-disposition rule exists for exactly this, and
+writing "miss" twice in one day is easier when the alternative is lying to the next phase. Why the
+misses happened is the next entry up.
+
+---
+
+## 2026-07-13 — v4.0 opens: Phase 20 clears every architecture trap before the money moves.
+
+v4.0 got its sign-off, so the first real work on Qwen3.6-35B-A3B was bring-up: prove the download, the
+tokens, the DeltaNet serving path, and the VL merge path before any SFT spend. Four gates, four
+receipts under `output/base20/`, all green by end of day.
+
+The eos/pad mismatch from the roadmap was real and exactly as documented: config says 248044, tokenizer
+says 248046, pad is null. The gate fixed it with direct JSON surgery after catching a nastier trap on
+the way: `save_pretrained()` on this VL checkpoint silently strips `vision_config` because the loaded
+model's config object unwraps to the text-only sub-config. That one is now written down where Phases 21
+through 27 will see it. The DeltaNet smoke ran with CUDA-graph capture deliberately enabled, since the
+open vLLM crash (#35945) only fires during capture and an eager-only test would have false-passed. It
+didn't fire; vLLM 0.20.2 on the GB10 boots healthy in about six and a half minutes. The community
+kernel that promises 1.38x prefill stays off, since it wants `trust_remote_code` against a repo nobody
+has audited.
+
+The merge-path check used a real Tinker run costing cents, and it was worth every cent given what the
+same trick caught in Phase 21 a day later. Findings that surprised me: the flattened text-only class
+means Tinker's export already matches our module tree with no prefix remapping, and the model's
+always-on thinking mode showed up in the very first warm-up generation ("Here's a thinking process:"),
+a preview of the format decisions Phase 21 would have to make. Post-execution code review found one
+real landmine, the v4 config's `lora.target_modules` matching zero routed-expert modules on the fused
+architecture, which would have silently no-opped the LoRA. Fixed with `target_parameters` before it
+could bite. Milestone plumbing: 18 requirements, phases 20 through 27, roadmap committed. The plan
+survives contact so far.
+
+---
+
+## 2026-07-12: the base anchor lands, and it keeps the gen story honest.
+
+One number was missing from the benchmark table: what the untrained base scores on wp-bench. The judge
+side already had its anchor (the raw base produces 0 parseable verdicts out of 121, so the trained
+judge's 0.8075 rho is a capability created from nothing). The gen side had 0.4365 for v1.2 but nothing
+to subtract from it. So I served `Qwen3-30B-A3B` itself, no task tokens, `<wp_gen>` hitting it as plain
+text, on the exact same vLLM bf16 stack, seed 1337, full 344-test suite, real-generation warm-up gate,
+and let the harness run unmodified.
+
+The base scored 0.4033 overall, knowledge 0.4688, execution 0.3542. That makes the fine-tune's lift
++3.32pp fresh-vs-fresh, +4.51pp against the Gate-1 figure, and both deltas sit inside our own 5.20pp
+seed-noise floor. I want to say that plainly rather than dress it up: on this benchmark, the gen
+fine-tune's measurable lift over the base is modest, and I cannot claim it clears noise. What the
+anchor also shows is why: Qwen3-30B already ships with a lot of WordPress. Most of the base's score
+comes from the knowledge MCQ split, where it lands within ~2pp of the trained model; the execution
+split is where the fine-tune pulls its largest gap (+4.17pp), which at least points in the direction
+the training aimed. The contrast with the judge could not be sharper. The judge is a created
+capability; the gen model is a polished one. The receipts say exactly that now, and I would rather the
+table read honestly at 0.4033 vs 0.4365 than imply the fine-tune invented WordPress competence the
+base already had. Receipt: `output/bench17/wpbench_base_anchor.json`.
+
+---
+
+## 2026-07-12 — Phase 18: the models are public. The upload fought back the whole way.
+
+**What shipped.** Both halves of the pair are live on HuggingFace under iamchum:
+`wp-qwen3-30b-a3b-wp-gen-v1.2` (57 GB of bf16 safetensors plus the task-token tokenizer) and
+`wp-qwen3-30b-a3b-wp-judge-v1.3-gguf` (all three Q8_0 ensemble seeds, 90.7 GB, with the single-seed
+fallback documented on the card). Nothing shipped that shouldn't have: the bf16 judge GGUFs and the
+base-model GGUF stayed home, enforced by an allowlist manifest rather than good intentions. And the
+validation wasn't a vibe check on local files. We pulled the artifacts back down from the Hub and made
+the downloaded copies prove themselves: the GGUF loads, a judge prompt comes back as a parseable
+9-dimension critique, and the gen model serves WPCS-shaped PHP through vLLM. The receipt is in
+output/packaging/pub03_validation_receipt.json.
+
+**The upload deserves its own paragraph, because 147 GiB did not want to leave this machine.** First
+the cached token turned out to be a June read-only leftover, which cost half a day waiting on a write
+token. Then `hf upload-large-folder`, the tool built for exactly this job, deadlocked twice: ten
+workers parked at "pre-uploading" with zero bytes read for an hour, once with the Xet backend and once
+without it. A single-file probe went through cleanly, which pinned the fault on the tool's worker pool
+rather than the network. So the shipping path ended up being the boring one: a shell loop uploading one
+file at a time with a three-attempt retry and a watchdog that kills any transfer showing no io growth
+for five minutes. The third failure mode was self-inflicted: background processes launched from
+subagent contexts get reaped when the context ends, which silently killed the loop mid-shard and later
+a validation download. The fix, detached setsid relaunches owned by the session, is worth remembering
+for every long-running job this project starts from an agent.
+
+**Sweep half.** Before any of that, 18-01 reconciled README, PROJECT.md, and wp-moe.md against the
+model card as the single source of truth, gave the README an honest Benchmarks section, archived ten
+one-off scripts, and, satisfyingly, caught six files an earlier sweep had wrongly deprecated while they
+were still load-bearing. The double-grep rule (imports and string literals both) came out of Phase 17's
+bruise and it earned its keep on the very first use.
+
+**Where that leaves things.** v3.1 is done: benchmarks measured, pair published, next-base roadmap
+locked. The project's active work now stops at a clean edge. The only thing on the other side of that
+edge is v4.0, the Qwen3.6-35B-A3B rerun, and that starts with a human saying go.
+
+---
+
+## 2026-07-11 — Phase 19: I locked the next base, and it does not fit on the host at bf16.
+
+I spent this session on a planning-only phase, so nothing got downloaded and nothing trained. The
+motivation is the judge rho ceiling from the gap-closure investigation on 2026-07-08: the 0.157 gap to
+the attenuation ceiling is a real wall for SFT on Qwen3-30B-A3B, and the only lever left untested was a
+stronger base. My job was to pick that base, verify the claims about it live rather than trust the
+research doc from earlier this session, and write out exactly what rerunning the whole locked pipeline on
+it would look like.
+
+I locked `Qwen/Qwen3.6-35B-A3B`. Before locking, I re-fetched the model card directly (not from memory,
+not from the earlier research pass) and checked every load-bearing claim against the raw text: 35B total
+with 3B active, 256 experts with 8 routed plus 1 always-on shared, the hybrid layout of Gated DeltaNet and
+Gated Attention blocks, Apache 2.0, and the coding benchmarks (SWE-bench Verified 73.4, LiveCodeBench v6
+80.4, Terminal-Bench 2.0 51.5). I also checked Tinker's live model table (it is there, same LoRA price
+tier as our current base, though its training context cap is 64K rather than the model's native 262K,
+which does not matter for function-level PHP examples), and I checked the HuggingFace ecosystem for
+Unsloth and llama.cpp support (both exist, day-of-release conversions, plus an NVIDIA official NVFP4
+build). Everything checked out.
+
+One thing did not check out cleanly, and I think it is the most useful finding of the session. I did the
+arithmetic on bf16 memory: this base is 65.2 GiB per checkpoint against the old base's 56.8 GiB. Two
+checkpoints, one for generation and one for judging, come to 130.4 GiB, and the GB10 host has 121 GB. The
+pair fit with headroom on the old base. It does not fit at all on the new one, not concurrently. That
+converts Stage 5 quantization from an optional size lever, which is how it behaved in v3.0, into a hard
+memory prerequisite for the new base. I wrote that into the roadmap rather than letting it surface later
+as a surprise during an actual GPU run.
+
+The rest of the roadmap doc maps every stage and every conditional gate from PIPELINE.md onto this base:
+expected delta, the exact known result carried forward from the old base, the re-test gate that has to
+fire, and a cost estimate anchored to an actual number we already measured (Tinker spend, GB10 wall-clock,
+GGUF conversion time). The three no-winner gates, RL, MoE-Sieve, and pruning, all get carried forward as
+conditional re-tests rather than dropped, because a higher-rho and more concentrated base is exactly the
+condition PIPELINE.md itself says might flip them. I also scheduled the two known architecture headaches
+as explicit work items ahead of the stages that depend on them: the Sieve tooling needs to understand
+mixed DeltaNet and attention layers plus a shared expert it cannot mask, and there is a known eos/pad
+token mismatch on this model line that has to be fixed before any SFT starts.
+
+I made two calls the plan left to my discretion. First, I proposed a v4.0 phase structure that mirrors the
+pipeline stages in dependency order. Second, I recommended reusing the existing 603-item human relabel
+set rather than re-running that campaign, since the labels are human judgments of code quality and have
+nothing base-specific baked into them. I wrote down the condition under which that reasoning would be
+wrong (if the new base's judge saturates below the pre-registered target on the reused labels even after
+the usual training-recipe diagnostics rule out other causes), so it is a real trigger and not a permanent
+excuse to skip relabeling.
+
+What I did not do is authorize any of it. The roadmap ends with the same sentence it starts with: this is
+a plan, and v4.0 starts only when I decide to start it.
+
+---
+
+## 2026-07-11 — Phase 17: the pair gets public numbers, and the low one is the honest one.
+
+**What ran.** Two benchmarks, both on the shipping stack, both receipt-backed. First the full 344-test
+wp-bench rerun: 0.4365 overall, 1.19pp under the 0.4484 Gate-1 reference and well inside the 5.20pp
+seed-noise floor, clearing the 0.4286 bar. The old number reproduces; no stack anomaly, no regression.
+Second, the one I have been promising these entries for a while: SWE-bench, generation-mode, run
+entirely locally on the GB10.
+
+**The pre-registration held.** Scope was locked and committed before a single eval result existed:
+Lite-300 primary plus the Multilingual PHP-43 subset, oracle retrieval, one prompt in and one
+unified-diff out, native arm64 Docker, 20-hour budget. Nothing got re-decided after seeing numbers.
+The projection said 16.93 hours; the actual end-to-end was about 3.5 (generation 1.36h, eval roughly
+2.2h including a fix pass). The gap is almost all the 180s-per-instance Python Docker estimate, which
+was flagged as a conservative literature guess and proved about right in spirit but heavy in practice,
+plus fast-failing instances that never reached their test suites.
+
+**The numbers, plainly.** Lite-300: 5 resolved of 300, 1.67 percent. On the 131 instances that
+actually ran to a test verdict inside a container, 3.82 percent. PHP-43: zero of 43. Every
+non-resolution is disclosed by category in the receipt: 80 Lite prompts simply do not fit the 24k
+serving context and were scored unresolved per the pre-registration; 59 patches failed to apply; 29
+instances sit in 2018-era Python environments that will not build on an arm64 host with 2026
+toolchains (cdms2 has no aarch64 conda build, py3.6 setuptools pins are gone, old scipy will not
+compile, pip removed --no-use-pep517). Those 29 count against the model too. Conservative, disclosed,
+done.
+
+**What I actually learned.** A WordPress-specialized 30B resolving anything on Django and pytest
+issues via bare single-shot patch generation is mildly surprising; the five wins are real
+FAIL_TO_PASS flips through the official harness. The PHP zero is the more interesting null: being
+in-language does not help when the domain is framework internals and the patch format discipline is
+the bottleneck. Most failures die at git apply, not at test time. That is a diff-formatting and
+context-budget problem, not a knowledge problem, and it is exactly what the out-of-domain caveat on
+the card says it is.
+
+**One infrastructure gotcha worth writing down.** This host had swebench images from a November 2024
+install. The 4.1.0 harness happily reused them, and the old layout bakes the repo into /testbed where
+the new instance build expects to clone fresh. Fifteen instances failed on that collision and one
+completed instance had silently run inside a stale image. Purged every 2024-dated sweb image, reran
+the affected instances, and the fix pass promoted one of them (requests-2674) to resolved. Lesson:
+before trusting a harness that caches Docker images by name, check the dates on what it finds.
+
+---
+
+## 2026-07-11 — Phase 15 closed, v3.0 done. The ladder stops at Q8 on purpose.
+
+**Why I'm not running Q6 and Q5.** The ladder spec says descend until a tier breaks the ±2pp gate. Q8
+passed clean, so the letter of the spec says keep going. I'm stopping anyway, and the reason is boring:
+there's nothing to buy. Q8 at 30.2 GiB already fits the 121 GB host with the full two-model pair loaded
+and room to spare. Q6 would save maybe 7 more GiB that nobody needs, at real risk to a judge whose whole
+value is calibration. Descending the ladder for its own sake is how you trade a measured lossless tier
+for a marginal one and call it progress. If a smaller host ever becomes a target, the recipe is written
+down and the ladder re-opens from Q8. Until then, deferred.
+
+**So Phase 15 is complete.** Gates 1 and 2 done, model card written, bf16 E2E validated, Q8 confirmed
+lossless on the full ensemble at 8192 tokens. The one deliberate change: the HuggingFace upload that
+PKG-04 carried as a rider moves to its own home in Phase 18, because publishing deserves a phase with
+its own validation loop, not a checkbox at the tail of quantization. With that, v3.0 closes for real.
+Sixteen phases, and the honest scorecard for the milestone is: RL rejected, Sieve returned full, pruning
+returned no winner, quantization returned the only genuine size cut of the campaign. Three nulls and one
+win, all measured, all kept in the pipeline as conditional gates for the next base.
+
+**What v3.1 is for.** Three phases. Phase 17 gets the pair current benchmark numbers: a full wp-bench
+run on the shipping stack, plus a SWE-bench generation-mode eval so the model card can position this
+thing against a public benchmark instead of only our own. I expect SWE-bench to be humbling (a
+WordPress-specialized 30B doing out-of-domain Python patches), and that's fine; the caveat goes in the
+card next to the number. Phase 18 is the production sweep and the actual publication: repo docs
+reconciled, stale artifacts deprecated, then both models packaged together and pushed to HuggingFace
+with post-upload validation. Phase 19 writes the roadmap I keep gesturing at in these entries: rerun
+the locked PIPELINE.md on the newest Qwen-class base and see whether a stronger base moves the judge
+ceiling and finally makes pruning pay. That plan should be costed, not vibes.
+
+
+
+**The doubt.** The first Q8 read came in at rho 0.7239 against bf16 0.7700, a 4.6pp gap that squeaked past
+the ±2pp bar. I flagged it as marginal and blamed the 24% parse failures on the model's long prose getting
+guillotined at 2048 tokens. That was a hypothesis, not a proof. So I raised the cap to 8192 and ran the
+whole thing again, this time the full three-seed ensemble on both Q8 and bf16, six arms, same engine.
+
+**What 8192 did.** Every single arm came back with zero parse failures. Not "fewer," zero. 0/121 on all
+six. The 24-29 fails at 2048 were entirely the tail of a prose judgment getting cut before it closed its
+JSON. Give the model room to finish and it finishes every time. That alone was worth the rerun.
+
+**The clean numbers.** Q8 ensemble 0.8056, bf16 ensemble 0.8100. The gap is 0.4 points. Per seed the two
+sit right on top of each other (Q8 mean 0.786, bf16 mean 0.772; Q8 is actually a hair higher, which is
+just seed noise). The confidence intervals are basically the same interval. Q8 is lossless for the judge,
+full stop. And the bf16 ensemble at 8192 landed at 0.8100, which matches the vLLM ensemble reference of
+0.8075 I've been quoting all campaign. That's the harness validating itself end to end. The depressed
+0.72-0.77 absolutes from the first pass were never real, just the truncation dragging the parseable set
+down and adding noise.
+
+**One serving bug worth remembering.** The first 8192 attempt produced 91 empty responses, worse than
+2048. Not truncation this time, a load race: the capture fires 121 concurrent requests the instant
+`/health` says ok, but `/health` returns ok while the 30B is still loading into the GPU, so the flood got
+503'd into empties. The fix is to gate the capture on a real one-token generation succeeding, not on
+`/health`. Also learned, painfully, that `--parallel N` splits the context window N ways, so asking for
+8192 output with `-c 12288` and 8 slots gives you 1536 per slot. Size the context as parallel times
+per-slot need.
+
+**Where this leaves Q8.** 47% smaller, lossless, zero parse failures, and the 4-bit-nf4 tombstone still
+sitting there at 0.165 for contrast. Q8 GGUF is the ship tier for the judge and I'm no longer hedging on
+it. Numbers in `output/packaging/pkg03_ens8192_results.json`.
+
+
+
+**What changed.** Last pass I left Q8 pre-registered because the quant toolchain wasn't installed. This
+pass I installed it and actually ran the thing. llama.cpp built with CUDA on the GB10, and
+`convert_hf_to_gguf.py --outtype q8_0` produced a real Q8_0 of the single-seed v1.3 judge. It's on disk:
+30.2 GiB, down from 56.8 GiB bf16. That's a 47% cut, which is the first genuine size reduction anything in
+this whole v3.0 milestone has produced. Pruning gave nothing twice; quantization finally moved the number.
+
+**The eval was designed to isolate one thing.** The question isn't "what's the absolute rho," it's "does
+8-bit hurt the judge." So I served all arms through the same engine, same val set, same labels, same
+2048-token cap: foundation base, bf16, Q8. Holding the engine constant means the bf16-vs-Q8 gap is
+quantization and nothing else.
+
+**Numbers.** Foundation Qwen3-30B-A3B base: 121 out of 121 responses unparseable, rho undefined. The
+untrained model literally cannot produce the rubric format. That's the cleanest statement of what the
+fine-tune bought that I've ever gotten, so I'm glad the user asked for it. bf16 judge: rho 0.7700. Q8
+judge: rho 0.7239. The gap is 0.046, and the seed noise floor on this eval is 0.052, so the drop sits
+inside the noise. The confidence intervals overlap almost end to end. Parse rates are identical, 76% vs
+77%. Q8 does not collapse.
+
+**Why "within noise" and not a clean pass.** The pre-registered gate was plus-or-minus 2 points, and the
+point estimate is 4.6 under, so I'm not going to dress this up as a clean ±2pp pass. It isn't. But it also
+isn't a real regression: the delta is smaller than the measurement's own noise, and the decisive contrast
+is with the 4-bit nf4 tombstone, which halved the parse rate and dropped rho to 0.165. Q8 is nothing like
+that. The other honest caveat is the 24% parse-fail rate in both judge arms, which is the model's bimodal
+long-prose output getting guillotined at 2048 tokens, not a quant effect. It hits bf16 and Q8 equally so
+the delta survives, but it does depress the absolute rho versus the vLLM figure and it widens the noise.
+If someone wants the tighter number before final ship, re-run both arms at 4096 tokens and the full
+ensemble. My call: Q8 is the shippable single-seed tier, marginal-but-within-noise, non-collapsing, 47%
+smaller. Recorded honestly in `output/packaging/pkg03_q8_results.json`.
+
+
+
+**Why add a phase after packaging.** The whole point of this project was never one model. It was a
+method: take a task-token MoE base, teach it to write and review WordPress code, then try to shrink it.
+v3.0 ran that method to the end and learned that this particular base (Qwen3-30B-A3B) won't shrink and
+its judge tops out around rho 0.80. Fine. The interesting question is what happens when Qwen3.6 lands with
+the same architecture, possibly a higher achievable rho and more concentrated routing that finally makes
+pruning pay. I don't want to re-derive the pipeline from a scatter of `_04.4_*.py` and seedA launch
+scripts when that day comes. So Phase 16 freezes the pipeline into one document an outside person can
+follow, and clears the experiment wreckage out of the way.
+
+**The honest shape of the pipeline includes its dead ends.** A repeatable pipeline that hides the phases
+that returned nothing is a lie by omission, and worse, it invites the next person to skip the gates that
+matter. RL got rejected. Expert-drop found no headroom. Weight-norm pruning found no winner. Those aren't
+detours to delete; they're gates with a known result on this base and an open question on the next one.
+The locked pipeline keeps them as conditional stages: run the gate, and on Qwen3-30B-A3B expect
+`no_winner`; on a higher-rho base, re-test, because the answer might flip. That's the part worth
+preserving. The gate, not the verdict.
+
+**Cleanup rule I'm holding myself to.** Nothing that an active script or skill references gets moved.
+Deprecation is a `deprecated/` folder plus stripping dead references, not `rm`. The one-off drivers
+(`_04.4_*`, `_p0_*`, `_rlev01_*`, the seedA/v3/v4 experiment launchers, the stale smoke scripts) go there
+with a README explaining what each was and why it's frozen. The model tombstones stay where they are, too
+big to move and useful as evidence. Root-level stray logs and a stray `judge_batch_18.py` get swept. When
+I'm done the top level should read like a project someone can clone and understand, not an archaeology dig.
+
+
+
+**The setup.** Pruning gave nothing, so the model ships at its full 57 GB bf16 footprint per checkpoint.
+That's a problem for serving, not just aesthetics. The GB10 has 121 GB of unified memory. The single-seed
+pair (gen + one judge seed) is 114 GB before you account for the KV cache and activations, so it fits on
+paper and chokes in practice. The three-seed judge ensemble is 228 GB, which doesn't fit at all. If we
+want to serve the thing we actually promoted, we have to make it smaller. Quantization is the only lever
+left, and unlike expert count it's orthogonal to the routing story that killed pruning.
+
+**Gate 1 is a copy-paste.** The bf16 baseline is exactly the Phase 14 numbers: 57 GB, wp-bench 0.4484,
+judge ensemble rho 0.8075, speed identical to base. Nothing to re-measure.
+
+**Gate 2 is where the judgment lives, and it's already half-decided by an old scar.** Back in Phase 4.3
+I tried a 4-bit post-hoc gate on this exact architecture and it collapsed: bitsandbytes nf4 double-quant
+turns the MoE router to mush and the model emits degenerate text regardless of the adapter. That result
+retired RTRN-04 as invalid on quantized Qwen3-MoE. The artifact is still on disk
+(`models/qwen3-30b-wp-30_70-merged-v2-4bit`) as the tombstone. So the naive bottom of the ladder, Q4 via
+uniform nf4, is off the table before I start. That's not a guess, it's a measurement I already paid for.
+
+**So the Gate 2 call:** quantization is warranted (the memory math forces it), but the search starts high
+and the method matters. Uniform nf4 is what broke; an activation-aware method that protects the salient
+router and attention weights (AWQ, or a GGUF Q8_0/Q6_K that keeps more bits on the sensitive tensors) is
+the right family. The pre-registered PKG-03 ladder is Q8 -> Q6 -> Q5 -> Q4, stop at the lowest tier still
+within 2 points of the Gate 1 baseline, and Q4-nf4 is already marked FAIL.
+
+**What I can honestly finish here, and what I can't.** This environment doesn't have the quant toolchain
+installed. No autoawq, no llmcompressor, no llama.cpp; the project has always quantized and served through
+the DGX vLLM containers, not local transformers, precisely because a local 30B load walks straight into
+the memory wall. I'm not going to fabricate Q8 eval numbers I didn't run, and I'm not going to kick off a
+multi-hour local quant I can't sit and watch. What I can do, and did, is nail down the parts that are real
+and shippable: the Gate 1 record, the Gate 2 decision with the ladder and the one measured dead tier, a
+turnkey recipe for the pending tiers, and the HuggingFace model card with the full compression lineage
+end to end. The model card is the thing an outside person actually reads, and it's honest about every gate
+including the ones that returned nothing.
+
+---
+
+## 2026-07-10 — Phase 14: the final comparison, and the honest admission that it's mostly a re-confirmation.
+
+**Where this sits.** Phase 13 closed with a `no_winner` verdict and a human sign-off to ship unpruned.
+Two independent signals killed expert-level pruning: the Phase 11 routing profile (E_eff ~88-99 live
+experts per layer, so every masked-k budget cuts into capacity the model is actually using), and the
+Phase 13 weight-norm AIMER run (25% compression collapses generation to 0.1577 and drags judge parse
+to 45%). So walking into Phase 14, there is no pruned variant to A/B against anything. And the ROADMAP's
+other comparison arm, the "v2.0 RL baseline", never shipped a model either. RL was rejected back in
+Phase 10 on 6/6 dead checkpoint reads. Both arms of the planned A/B are empty.
+
+**So what is Phase 14, really.** It's the audit that confirms the shipping stack is what we think it is,
+with numbers that already exist and provenance attached to each one. I decided not to re-run the multi-hour
+vLLM wp-bench sweep to reproduce figures I already have measured under the identical serving stack. That
+would burn GB10 hours to re-derive 0.4484. The measured full-arm numbers live in
+`output/sieve/optimal_k.json`, captured on the same vLLM path both sides, and those are the true shipping
+figures: wp-bench 0.4484, judge ensemble rho 0.8075, single-seed s1 rho 0.8017. The Tinker-native 0.842
+/ 0.827 I quoted through the campaign are runtime numbers with a known serving gap; the vLLM figures are
+the ones that ship.
+
+**The size story is the uncomfortable part.** The whole v3.0 milestone was pitched on shrinking the model.
+Expert-drop is dead, weight-level AIMER is dead, so the bf16 footprint after the full pipeline is exactly
+what it was before: 57 GB per merged checkpoint, ~30.5B total params, ~3.3B active. The two-model pair is
+57 GB (gen) plus 57 GB (judge, single seed) or 3x57 GB if we serve the ensemble. Phase 14 records that flat
+line honestly. The only size lever left standing is quantization, and that's Phase 15's whole job.
+
+**What I'm actually gating on.** wp-bench is the hard gate for packaging. With no pruned candidate, the
+gate reduces to: does the shipping gen model clear the codegen bar it was held to. It does, 0.4484 measured
+vLLM full-arm against the 0.4286 Phase-4.4 acceptance bar (the 0.4616 figure was the Tinker-runtime codegen
+number; the vLLM-served figure is 0.4484 and it still clears). Judge rho 0.8075 ensemble clears its
+recalibrated bar 0.7554. Nothing here is new capability. It's the receipt.
+
+---
+
+## 2026-07-08 — Judge ceiling is a wall: all three gap-closure levers fail. Ship v1.3 ensemble, go to packaging.
+
+**Question.** With RL dead, could anything push the judge from rho 0.827 toward the attenuation
+ceiling 0.984 before compression? Three levers, pre-registered, tested honestly.
+
+**Ceiling first (is it even right?).** Verified: val labels are M=3 (120/121), pilot inter-pass
+Spearman r=0.9125 → Spearman-Brown M=3 reliability 0.969 → √0.969 = 0.9844. Correct formula, correct
+input. It is a best-case upper bound (assumes a perfect predictor), and it is the ceiling for THIS
+noisy val — relabel to M=5 lifts it only ~0.01. The 0.157 gap is genuine capability, not a math error.
+
+**C — data cleaning: dominated.** Residual audit (student vs val labels): dropping the 15 worst-residual
+items moves rho only 0.827 → 0.842. The gap is DISTRIBUTED, and systematic — 12/15 worst items are the
+student UNDER-scoring mid-band labels (student 34 vs 60, 36 vs 62, 52 vs 74…). Mid-band rank-compression,
+a capability signature, not label outliers. `residual_audit.json`.
+
+**B — capacity: OVERFIT (0.662).** Unfroze attention + rank 32→64, 3 epochs on the relabel data.
+Train loss crashed 13→2.71; val rho collapsed to 0.662, below even v1.2 (0.748). The surprise: the old
+MoE-only/rank-32 recipe was doing REGULARIZATION, not paying a codegen tax. The two-model split does NOT
+unlock a free capacity win — the limiter is generalization, not capacity. `leverB_capacity_result.json`.
+
+**A — loss reshape: uniform CE is the peak.** Added a `forward_backward_custom` loss that up-weights the
+`<judge_output>` JSON score tokens (`scripts/reweight_json_loss.py`, `--loss json_weighted`). alpha 3.0
+(emphasize scores) → 0.780; alpha 0.5 (emphasize prose CoT) → 0.773. Both below plain CE 0.827. Deviating
+from uniform token weighting in EITHER direction costs ~0.05 — the reasoning-then-score structure is
+jointly load-bearing; you cannot beat uniform CE by reweighting tokens. (Also earlier: self-consistency
+median@5 T=0.7 = 0.802 < greedy 0.827.) `leverA_loss_result.json`, `gap_closure_summary.json`.
+
+**Verdict.** v1.3 (rank-32 MoE-only, 3-epoch, uniform CE on relabeled data, seed 1) is a LOCAL OPTIMUM.
+None of capacity, loss-reshaping, or data-cleaning beats rho 0.827. The 0.157 gap is a real wall for
+SFT-on-relabeled-data on Qwen3-30B-A3B. The only measured improvement is the 3-seed median ensemble
+(0.842, seed-noise cancellation, saturating — `eval_seed_curve.json`). The lever that actually moves the
+ceiling is a stronger base model — the qwen3.6/3.7 plan.
+
+**Ship decision.** Two-model pair for v3.0: **v1.3 3-seed ensemble judge (0.842)** + **v1.2 gen (0.4616)**.
+Single-seed s1 (0.827) is the leaner fallback. Proceed to Phase 11 compression/packaging. Packaging must
+resolve ensemble (3× judge serve) vs single-seed for the MoE-Sieve/AIMER target. Spend this session:
+~$2-3 Tinker (3 training runs + captures), all negative — but the negative IS the answer: stop tuning
+this base. Footgun fixed: `eval_relabel.py` hardcoded its output path and was clobbering the v1.3 record;
+now writes next to each capture.
+
+---
+
+## 2026-07-05 — RL closed for good: the ideal-conditions smoke also came back empty. v1.3 final.
+
+**The test.** After the B2 offline oracle gate passed for the calib-only stream (in-family 0.886,
+CI [0.31,1.0], leave-one-run-out robust; defect stream anti-correlated and was zeroed per the
+Fable 5 adversarial review), we ran the RL configuration every prior failure pointed to: warm-start
+from v1.3 (0.827, the real promoted judge — not a fresh LoRA), pure calibration reward against the
+re-labeled sidecar v2 (the honest GT), 5× the headroom of the seedA2 attempt (+0.157 vs +0.03),
+two independent seeds, codegen trip-wire armed, drift trip-wires live, CI-based G1 gates with
+measured noise floors. Every defect from the previous three RL post-mortems was fixed.
+
+**The result.** Six checkpoint reads (2 seeds × steps 50/100/150), six negative deltas:
+−0.036/−0.018 → −0.015/−0.030 → −0.020/−0.025, every CI straddling zero from below. No format
+collapse (0 parse fails in all 726 captures), no Goodhart signature (calib_mean/std flat, KL ~0.01),
+reward telemetry honest throughout. The pre-registered kill criterion (both seeds ≤ 0 at 150) fired
+and both runs were killed at steps 155/157. Verdict artifact: `output/rl_eval/SMOKE_V13_VERDICT.json`.
+
+**What this settles.** Per-step judge-score calibration reward does not improve a converged SFT
+judge — not because the reward was broken (this time it provably wasn't), but because the residual
+error the reward can see is the same error SFT already minimized. The +0.079 that was available in
+the labels, SFT took (0.748 → 0.827 via the relabel campaign). What remains to the 0.984 ceiling is
+noise-shaped for this reward family. Any future RL needs a *different signal* (execution-grounded,
+preference-based, or multi-turn), not a better-tuned version of this one.
+
+**Also this session (mix dose-response, A4):** wp-bench showed v1.3 codegen 0.381 vs v1.2's 0.4616
+bar; the mix search (raw / aug15 / rp30 / gen-replay) proved judge-rho tracks judge-exposure share
+monotonically — no training mix recovers both axes. Decision: **two-model** — v1.3 is the judge
+artifact, v1.2 remains the generation artifact, unified dual-mode deferred to Phase 11 packaging.
+
+## 2026-07-04 — PROMOTED v1.3 judge: relabel 3-epoch SFT beats v1.2, multi-seed confirmed.
+
+**What shipped.** The re-labeling campaign paid off. Rebuilt 478 judge SFT targets from the
+median-aggregated relabel scores (`openai_train_relabel_v1.jsonl` — verdict + all dims + overall
+made mutually consistent, inline CoT numbers patched to match the emitted JSON), then trained the
+same rank-32 MoE-only LoRA the v1.2 recipe uses. The trainer builds a fresh LoRA from base (no
+`load_state`), so "continued fine-tune of v1.2" is really a fresh SFT on better labels — I ran the
+isolated A/B to prove it was the labels, not the recipe.
+
+**The evidence, cleanest form.** Same 121 val items, vs the new relabel_v1 labels, identical
+recipe/seed — only the training targets differ:
+- 1-epoch A/B: relabel 0.638 vs old-data control 0.487 → **+0.15 label effect**.
+- 3-epoch curve: 0.610 → 0.739 → **0.796** (monotonic, no collapse; train loss 2.68, terse 0.0).
+- Multi-seed ep3 (seeds default/1/2): 0.796 / 0.827 / 0.790 → mean 0.804, sd 0.020, **all beat
+  v1.2's 0.748**; 3-seed median-ensemble 0.842. Paired advantage CI [-0.007,+0.127] grazes zero
+  (v1.2 is one strong instance, n=121 eval noise is wide) — but every independent seed clearing
+  the bar is the decisive fact, not the marginal CI.
+- Reformat-probe bias audit (the QC axis skipped in session 3): Δ=0, no formatting sensitivity.
+
+**Decision.** Promote **seed 1, ep3 (rho 0.827)** as the v1.3 judge — canonical record
+`output/tinker/PROMOTED_v1.3.json`, sampler `tinker://6a06e60f-…/sampler_weights/wp-reasoning-relabel-s1-ep3`,
+local archive `models/tinker_export/wp-reasoning-v1.3`. Gap-to-ceiling now +0.16 (was +0.24) —
+thin, still SFT territory. **RL stays gated behind reward-v2.** Codegen no-regression gate skipped
+with rationale: judge-only relabel, `<wp_gen>` data byte-identical to v1.2, so no regression path
+(unlike the RL Goodhart arc). Total measured Tinker spend for this session: **$1.83** (balance
+$102.59 → $100.76); real rate ~30x under the initial parametric estimate.
+
+## 2026-07-03 — SHIPPED: v3.0 proceeds on v1.2 SFT. RL closed (recoverable, but not by retrying).
+
+**Context:** The 2026-07-01 smoke kill turned out to be a wiring artifact, not a verdict: code review
+found the reward-time GT hash-join was DEAD (raw vs whitespace-normalized hashing, 0/482 joins), so the
+"hybrid@0.8" run had actually trained on pure fix_correctness — the exact reward Phase 10 proved
+Goodharts — with the consistency scorer also silently dead and the codegen trip-wire silently skipped.
+Three silent no-ops, one run. Fixed with a canonical `normalized_code_hash` on both sides, a GT-coverage
+pool filter (482→342), per-step calib liveness telemetry, a step-0 CALIB_JOIN_DEAD hard gate, a trip-wire
+misconfiguration halt, and an explicit consistency weight-0 when unkeyed.
+
+**Decision / Observation:** The rerun (smoke_seedA2) was the FIRST honest test of hybrid@0.8 — calib
+provably in the loss (fired 0.90–1.0 every step) — and it still failed Gate-1: step-50 teacher-Spearman
+0.6066 vs warm-start 0.6243 (−0.018; bar +0.02), step-150 trend read 0.6434 (+0.019, CI spans zero).
+Crucially, NO Goodhart signature this time: fix_correctness flat, entropy flat. The oracle-valid
+calibration signal is honest but too weak/slow. That is a real negative on the reward's trainability,
+not on the wiring. KILL applied per discipline (read arrived late — a sentinel bug let the run reach
+step 161; recorded in SMOKE_READS_TALLY).
+
+**Reasoning:** Three independent confirmations now support the same disposition (Phase 10, the re-labeled
+07-01 run, and an honest 07-03 run): hold RL, ship v1.2 SFT as the v3.0 base. ROADMAP amended — Phases
+11-15 operate on v1.2 SFT (routing profiles re-scoped to the SFT policy). RL is NOT foreclosed: the
+recovery paths are (a) measure the teacher ceiling (Claude-generated GT — test-retest reliability bounds
+attainable ρ via attenuation; if the ceiling is thin the target itself is exhausted), (b) if headroom
+≥ ~0.1, a reward-v2 with materially stronger per-step signal (defect-grounded terms, G=8–16 groups,
+MO-GRPO separation), oracle-gated offline before any spend. Retrying hybrid@0.8 with more steps is
+explicitly rejected — the 50→150 slope (+0.037) would need ~300+ speculative steps to clear noise.
+
+**Outcome:** v3.0 unblocked on v1.2 SFT. Teacher-ceiling measurement is next (in-session Claude agents,
+$0). Artifacts: output/rl_eval/step-{50,150}-seedA2/, rlev01_teacher_summary.json, tests/test_calib_join.py.
+
+---
+
+## 2026-07-01 — The gated smoke, and the warm-start that had to be rebuilt first
+
+Phase 08.2 ended with a humble verdict — the old reward is dead, and no offline sweep found a replacement that
+survives the code-blind echo test — and it deliberately refused to green-light an RL rerun. It left one honest
+question: is `hybrid@0.8` (the least-bad candidate) actually worthless, or does it just look bad to a pessimistic
+offline proxy? The runbook's answer was a *gated* smoke: warm-start, kill at step 50 unless the validated
+teacher-Spearman is measurably moving, never 500 steps on faith.
+
+The catch surfaced before any GPU spent: the smoke's warm-start pointed at `wp-reasoning-v4-r32-rp30-ep3`, which is a
+*sampler_weights* checkpoint — and Tinker's `load_state` rejects those. The "cheap smoke" wasn't cheap: a valid v4
+warm-start needed a regenerated `save_state` first (a full 3-epoch SFT re-run). The v3 escape-hatch was worse than
+confounded — v3 codegen sits ~0.37, the trip-wire bar is 0.4616, so it would false-kill on codegen at the first probe
+before any judge signal. So: regenerate v4 with `--save-state` (loss 12.7→2.5, 0% terse, MoE-only — the recipe
+reproduced), which finally produced a loadable `/weights/` state. That artifact is the one durable good to come out of
+today; any future warm-start RL skips this step.
+
+Then the smoke itself. Warm-start took cleanly (`train_mlp=True attn=False unembed=False`, judge_failures=0,
+fix_correctness 0.36 — the model judges, it doesn't refuse). Step-0 reward_mean read low (0.146) but that's a
+hybrid-form artifact, not a failure — 80% of the judge-axis weight rides a pairwise-rank term that starts near zero.
+I measured ρ_initial = 0.6243 on the ep3 sampler (same end-of-epoch-3 model the RL warmed from) so step 50 would be
+adjudicable against a fixed baseline rather than eyeballed — that eyeballing is precisely what sank Phase 10.
+
+Step 50 came back flat. Teacher-Spearman moved +0.015 against a +0.02 noise bar; the bootstrap CI straddled zero. And
+the tell: `fix_correctness` — the proxy the runbook explicitly forbids as a go/no-go — rose +0.025, *more* than the
+validated metric moved. Proxy up, validated metric flat, with an ENTROPY_COLLAPSE flag on top. That is Goodhart onset
+by definition, and kill-at-50 exists to kill exactly this ambiguity. So I killed it — at step 50, ~52 steps of spend,
+not 500.
+
+Two honest caveats I'm keeping in the record rather than laundering out. First, the step-50 capture kept getting
+reaped under Tinker contention with the live run; n=41 is where it stopped, not a chosen sample — it meets the
+runbook's n≈40 floor and the *divergence* (which carries the decision) is n-independent, but the CI at that n is
+corroborating, not load-bearing. So the honest claim is "hybrid@0.8 failed to demonstrate it works in 50 steps," not
+"proven dead at scale" — a refined hybrid with a real codegen/anti-hack term is not foreclosed. Second, I found a live
+defect: the in-run codegen trip-wire never armed — `run_codegen_probe` defaults its model_dir to `"."`, no
+`--codegen-probe-model-dir` is wired, so it returned None and `halt_reason: null` meant "not checked," not "passed."
+Gate 2 was inert this run. It didn't matter (Gate 1 already killed), but any re-smoke must wire it.
+
+Net: the smoke did its job. It caught the failure at 50, cost a save_state regen plus a handful of RL steps, and
+reinforced the standing disposition — hold RL, ship v1.2 SFT for v3.0 — with an actual data point instead of a fear.
+
+## 2026-07-01 — The cheap probe that closed the door on RL
+
+The step-500 gate failed but left one honest question open: step-500 was the *worst* checkpoint on every axis that moved — teacher-Spearman peaked at 200 and 400, reward was highest mid-run — so maybe the 500-step grind ruined a checkpoint that was actually good earlier. Before recommending anything as expensive as a 31-hour re-train, that question was worth twenty minutes. I wp-benched step-200 and step-400 through the exact pipeline already built for step-500: export the sampler weights, merge against stock base, boot vLLM, grade 344 tasks.
+
+Both came back at 0.3926 — below step-500's 0.4125, and well below the v1.2 bar of 0.4616. So the ranking on codegen is the inverse of the judge-Spearman peaks: the mid-run checkpoints that looked best on the judge axis are the *worst* on generation. Every RL checkpoint regresses codegen; none beats judge-Spearman noise. There is no salvageable checkpoint hiding in the run. The door is closed.
+
+The identical 0.3926 for both 200 and 400 stopped me — two different checkpoints landing on the same weighted score to four decimals is the kind of coincidence that's usually a bug. I checked per-task before believing it: the answers differ, the prompt hashes differ, 96 of 344 graded verdicts flip between the two checkpoints. They each get 145 right, just a different 145, and the knowledge/execution split happens to weight to the same aggregate. That's real, not a cache collision — and it's exactly what you'd expect from checkpoints separated by almost no KL: the argmax is stable on the easy and hard tasks and only the boundary cases flip, roughly balanced, so the aggregate barely moves while the identity of the correct set churns.
+
+The recommendation is therefore unambiguous: reject RL-as-configured and ship v1.2 SFT as v3.0. And the more useful conclusion for whoever picks this up — don't reach for a higher learning rate. The whole run is a clean Goodhart demonstration: the policy maximized the fix-correctness proxy it was paid on, the proxy's intended target (judge calibration) didn't follow, and an untargeted capability (codegen) paid for it. Cranking LR optimizes the same mis-specified objective harder. If RL is revisited it needs a reward that provably tracks judge-Spearman and a codegen-regression guardrail in the loop — a reward-design problem, which is where Phase 08.1 was already pointing, not a hyperparameter.
+
+---
+
+## 2026-06-30 — The RL run that moved the reward but not the target
+
+seedA reached step 500 clean — both `step-500` and `final-step-500` checkpoints landed, KL pinned around 0.009 the whole way, e_frac steady near 0.96, never a halt. The monitoring was the easy half: a small bash watchdog keyed on step number (never on wall-clock, because the metrics `ts` is UTC and the box is GMT+10) that polled the metrics tail, the PID, KL, e_frac, and both judge endpoints every two minutes and exited the moment a target checkpoint landed or anything breached. Five trend reads at 300/350/400/450/500 confirmed the within-run fix-correctness plateau the binding gate had already bought at 250: fixed-50 0.385 climbing to roughly 0.41 and holding, echo-adversary nailed at 0.25 every single read. On the proxy reward the run looked like a modest, honest win.
+
+Then the actual gate told a different and more important story. The judge-Spearman axis — the *validated* RLEV-01 target, the teacher-GT correlation, measured by Tinker-sampling each checkpoint with no merge in the loop so it can't be blamed on serving — never improved beyond noise at any checkpoint. step-500 came in at rho 0.552 against a warmstart baseline of 0.573, slightly *below* where it started, every bootstrap CI straddling zero. And wp-bench codegen regressed: 0.4125 against the v1.2 SFT bar of 0.4616, a 0.049 drop, failing the hard no-regression gate, with the execution sub-score sitting exactly on its floor. The shape of it is textbook Goodhart — the policy optimized the fix-correctness proxy it was rewarded on and neither the proxy's intended target (calibration) nor the untargeted capability (generation) came along for the ride. The endpoint is worse than the middle of the run; teacher-Spearman peaked at steps 200 and 400. lr 1e-05 with KL pinned that hard was always going to be a slow grind, and the grind didn't pay.
+
+Two things nearly led me to write the wrong conclusion, and both were caught the same way — by checking what a number actually measures before trusting it. The anti-hack gate first: my instinct was a single run of the perturbation set through the judge endpoint, which "failed" all three axes with perturbed code scoring above clean. But that endpoint is the *frozen* reward model shared by both v1.2 and the RL policy, so a single absolute number can't discriminate RL from baseline — and the spec wanted a comparison. The discriminating fact was buried in the serve script header: `wp_judge` on :8000 *is* the v1.2 SFT model serving as judge. So my "failed" run was already the v12 side of the comparison; I only needed to serve step-500 as a judge and compare margins. Done properly, RL shows no evidence of being more hackable than v1.2 — more robust on two of three axes, tied on the third. The absolute "fail" is a pre-existing property of the reward-model family, not an RL regression, and reporting it as the latter would have been wrong.
+
+The second was the merge fidelity. I'd benched step-500 through a surgical path that skipped the served-identity precondition, and the merge carried a `staging_written_pending_anchor` flag. Running the anchor certifier returned `staging_anchor_FAILED` — which, taken at face value, would have made the regression "provisional" and possibly triggered a 31-hour re-train to chase a measurement artifact. But the failure was one forward-anchor probe out of nine, at the deepest layer, failing only the max-abs cap (0.125 against a 0.1 floor) while cosine held at 0.99995 and the two *primary* precision anchors — the bit-for-bit weight checks — both passed cleanly. That is bf16 tail noise in a cross-implementation forward, not a merge defect. The weights are provably faithful, so the eval number is real. The clean resolution is two separate bars: trust the eval (yes), and promote this dir to production serving (no, re-merge first). The regression is binding.
+
+The infrastructure footnotes, as always on this box: the GB10's 121 GB unified pool only ever holds one 30B comfortably alongside a judge, so the two reward containers had to come down to serve step-500 and go back up after — and consistency OOM-killed twice on restart because my merges had left ~110 GB of model files in page cache, loading clean only once the cache was reclaimed. The merge itself needed `peft` and `accelerate`, absent from the tinker venv and added via uv. And `jaccard_protected` is a hardcoded-zeros stub — the in-loop routing monitor never had real data because Tinker exposes no per-step routing — so protected-expert retention and routing-collapse are simply unmeasured this run, deferred to a Wave-1 post-hoc profiling pass, not failed.
+
+Net: the conjunctive gate fails on the two measurable RLEV-01 axes. v1.2 SFT stands for v3.0 unless Dr. Li decides otherwise — and the cheapest next probe, before any re-train, is to wp-bench the step-200 and step-400 checkpoints, which looked better than the endpoint on every axis that moved.
+
+---
+
+## 2026-06-23 — The consistency judge that bills nothing, and the model the handoff named wrong
+
+The RL run had one paid component left. Fix-correctness is deterministic and local. The generation rewards — PHPCS, security, VeRPO — are local. Only the score-reasoning-consistency reward, the 0.3-weight half that asks "does this critique actually justify its own score," went out through `claude_agent`, which is `claude -p`, which after the June policy change always bills direct API. The signal run proved that the hard way: about ninety dollars of API for twenty-five steps. A five-hundred-step run would have been catastrophic. So the consistency judge had to go local, at zero dollars, before anything multi-day could start.
+
+The wiring was the easy part and I kept it model-agnostic on purpose. `score_judge_consistency_batch` learned to take a `base_url`; when set, it routes to a local vLLM OpenAI endpoint instead of the Claude subprocess, with a robust parser that strips leaked `<think>` blocks and falls back from strict JSON to a regex on `consistency_score` to a bare float. The legacy path stayed intact behind a `None` default. That decoupling mattered more than I expected, because the model the handoff told me to serve turned out to be the wrong one.
+
+The handoff named `Nemotron-3-Nano-Omni-30B-A3B-Reasoning-NVFP4` and described it as "the same 3B-active MoE footprint as the training model" — a text model, in other words. The config said otherwise: `force_image_size`, an image-context token, a vision tower, a hybrid-Mamba backbone. It is a multimodal Omni model. For a task that reads PHP and a critique and emits a single number between zero and one, the vision tower is pure liability — extra weight on a shared, unprotected memory pool, for capability the task never touches. A search of the NVIDIA org turned up the sibling the handoff meant: `NVIDIA-Nemotron-3-Nano-30B-A3B-NVFP4`, text-only, `NemotronHForCausalLM`, no vision, 19 instead of 22 gigabytes. I checked the vLLM registry in the nightly image before downloading anything — both architectures were registered, so the literal recipe was feasible, but the text sibling was strictly better. I served that instead.
+
+Two infrastructure facts cost real time. The repo is Xet-backed, and `hf_xet` could not hold a connection to the CAS servers — it sat at zero bytes written for minutes while the network counter said data was flowing, because the bytes were going into a stalled reconstruction that never landed on disk. `HF_HUB_DISABLE_XET=1` forced the classic CDN path and the download ran at fifteen megabytes a second. And the GB10 is one unified memory pool with no OOM protection at all: a real out-of-memory event hangs the machine unrecoverably. Two thirty-billion-parameter servers plus a remote trainer share 121 gigabytes, so `gpu-memory-utilization` cannot be the recipe's 0.70 — that plus the judge's 0.55 would oversubscribe. I served the consistency model at 0.22, which still saturates throughput at eight concurrent sequences, and wrote a watchdog that pauses the run and stops the containers the moment available memory falls below two gigabytes.
+
+The smoke test earned its place. The recipe's 32768 context was eight times what the task needs, so I cut it — first to 8192, then to 12288 when a deliberately pathological prompt came within 1367 tokens of the 8192 ceiling. At max-num-seqs eight the KV pool is set by utilization, not context length, so the bump cost no memory. The first concurrent batch took thirteen seconds and looked alarming until the next two rounds settled at nine-tenths of a second — one-time cudagraph capture, not a throughput problem. And the local judge discriminates: a real critique scored 0.8 to 1.0, a fabricated "this is perfectly safe" critique scored 0.0, every time. Step zero of the live signal run came back non-uniform reward, the consistency endpoint taking twenty requests a step, memory flat, and not one call to Claude.
 
 ## 2026-06-22 (later) — The RL run was learning nothing, because it started from nothing
 

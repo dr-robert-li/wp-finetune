@@ -1,0 +1,14 @@
+{
+  "capture": "output/eval4/ext_q8/q8_s1/judge_responses.jsonl",
+  "rho_new": 0.787727629200278,
+  "n": 121,
+  "ci": [
+    0.7142016983766006,
+    0.8384256414056579
+  ],
+  "baseline_rho": 0.7476689625425029,
+  "delta_vs_baseline": 0.04005866665777502,
+  "ceiling": 0.9844009569826934,
+  "gap_to_ceiling": 0.19667332778241542,
+  "parse_fail": 0
+}

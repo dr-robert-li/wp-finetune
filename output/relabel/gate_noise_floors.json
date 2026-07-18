@@ -1,0 +1,15 @@
+{
+  "s1-s2": {
+    "sd": 0.026018207847347936,
+    "two_se": 0.05203641569469587
+  },
+  "ep3-s2": {
+    "sd": 0.03330778110503583,
+    "two_se": 0.06661556221007166
+  },
+  "parse_fail": {
+    "v13_base": 0.0,
+    "halt_bar_10step": 0.05834057902536163
+  },
+  "G1_rule": "paired-delta-rho CI-lower > 0 at read points (NOT point +0.02); 2SE ~ 0.10-0.13 on n=121 single read -> point bars under 0.10 are noise"
+}

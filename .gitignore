@@ -41,10 +41,16 @@ htmlcov/
 data/phase1_extraction/repos/
 
 # Pipeline output data (generated, not source)
-data/phase1_extraction/output/
+data/phase1_extraction/
 data/phase2_synthetic/
-data/phase3_cot/output/
+data/phase3_cot/
 data/final_dataset/
+
+# Generated knowledge-graph / analysis output (large, regenerable) — 2026-06-30
+graphify-out/
+# Stray root run logs (ephemeral)
+/judge_batch2.log
+/judge_batch2_run2.log
 
 # Model weights and adapters (large, re-downloadable)
 models/
@@ -64,6 +70,9 @@ output/
 # Telemetry output (ephemeral run data)
 telemetry/
 
+# Run logs (ephemeral, regenerable) — swept in Phase 16 cleanup
+logs/
+
 # wp-bench (cloned repo, re-cloneable)
 wp-bench/
 
@@ -82,3 +91,6 @@ unsloth_compiled_cache/
 # Nohup output
 nohup.out
 .venv-tinker/
+
+# GGUF convert/eval run logs (ephemeral)
+/logs_gguf_*.log

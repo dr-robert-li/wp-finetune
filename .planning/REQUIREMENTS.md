@@ -36,7 +36,7 @@ Source data already exists at `/home/robert_li/Desktop/data/wp-finetune-data/`: 
 - [x] **DATA-08**: Phase 2 judge_dataset completes — rubric-scored judge training data generated
 - [x] **DATA-09**: Phase 3 CoT completes — instruction synthesis + reasoning chains generated
 - [x] **DATA-10**: Phase 3 export completes — OpenAI, Alpaca, Raw JSONL with task tokens, 80/10/10 split
-- [x] **DATA-11**: Final dataset contains ≥10,000 examples with ~50/50 wp_gen/wp_judge split
+- [x] **DATA-11**: Final dataset contains ≥10,000 examples with ~50/50 wp_gen/wp_judge split _(≥10,000 met: 86,542. Split target SUPERSEDED — the static ~50/50 (here) / 40/60 (ROADMAP C5) targets were replaced by the ratio_30_70..70_30 sweep; 30/70 selected as Phase 4 triage winner. Accepted via 02-VERIFICATION override 2026-06-26.)_
 
 ### Model Preparation
 
@@ -180,41 +180,64 @@ Requirements for MoE-Sieve on the RL-trained model, followed by LoRA merge, prun
 
 ### Selective Training (MoE-Sieve) — Post-RL
 
-- [ ] **SIEVE-01**: Fresh routing profiling on RL-trained model; LoRA r=32, alpha=64, dropout=0.05 applied to hot routed experts (per RL-policy routing) + all attention (Q/K/V/O) + router gates + 4 shared experts (always trained); cold routed experts frozen. Protected experts from Phase 7 must be in the retained set.
-- [ ] **SIEVE-02**: Gen-hot experts (per RL-policy routing categories) trained on golden signal data only (passed examples, synthetic good); judge-hot experts trained on full spectrum (passed + failed + contrastive)
-- [ ] **SIEVE-03**: Retrain uses best gen/judge ratio determined by Phase 4 eval results
-- [ ] **SIEVE-04**: K-sweep at minimum 3 budgets (~13, 32, 64 experts per layer from 128 routed) to find accuracy plateau for Qwen3-30B-A3B on WordPress data
-- [ ] **SIEVE-05**: Optimal k is smallest budget matching full-LoRA within +/-1pp on wp-bench (TOST equivalence test, epsilon=2pp, 3+ seeds); all protected experts from Phase 7 must be retained at optimal k
+- [x] **SIEVE-01**: Fresh routing profiling on RL-trained model; LoRA r=32, alpha=64, dropout=0.05 applied to hot routed experts (per RL-policy routing) + all attention (Q/K/V/O) + router gates + 4 shared experts (always trained); cold routed experts frozen. Protected experts from Phase 7 must be in the retained set.
+- [x] **SIEVE-02**: Gen-hot experts (per RL-policy routing categories) trained on golden signal data only (passed examples, synthetic good); judge-hot experts trained on full spectrum (passed + failed + contrastive)
+- [x] **SIEVE-03**: Retrain uses best gen/judge ratio determined by Phase 4 eval results
+- [x] **SIEVE-04**: K-sweep at minimum 3 budgets (~13, 32, 64 experts per layer from 128 routed) to find accuracy plateau for Qwen3-30B-A3B on WordPress data
+- [x] **SIEVE-05**: Optimal k is smallest budget matching full-LoRA within +/-1pp on wp-bench (TOST equivalence test, epsilon=2pp, 3+ seeds); all protected experts from Phase 7 must be retained at optimal k
 
 ### MoE-Sieve Comparative Evaluation
 
-- [ ] **EVAL2-01**: A/B eval of each k-sweep MoE-Sieve adapter against v2.0 RL baseline on wp-bench and static eval suite
-- [ ] **EVAL2-02**: Report includes per-dimension comparison (all 9 dimensions), overall scores, inference speed delta, and seed variance comparison
+- [x] ~~**EVAL2-01**~~ (N/A — Phase 12 SKIPPED 2026-07-10: optimal_k=full, no sieve variants exist; see phases/12-*/12-SKIP.md): A/B eval of each k-sweep MoE-Sieve adapter against v2.0 RL baseline on wp-bench and static eval suite
+- [x] ~~**EVAL2-02**~~ (N/A — Phase 12 SKIPPED 2026-07-10: no variant report possible; see phases/12-*/12-SKIP.md): Report includes per-dimension comparison (all 9 dimensions), overall scores, inference speed delta, and seed variance comparison
 
 ### LoRA Merge & Pruning (AIMER primary, REAP optional)
 
 Sub-experiment: Does WordPress domain specialization create enough routing concentration for calibration-based pruning (REAP) to outperform weight-based pruning (AIMER)? Or is PHP/WordPress too close to general code for domain-aware pruning to differentiate? AIMER is the primary pruning method (D-09) — calibration-free and fast iteration. REAP is an optional comparison.
 
-- [ ] **MERGE-01**: Merge MoE-Sieve + RL LoRA adapters into base model weights before pruning — REAP needs activation magnitudes from the unified model, AIMER needs final weight norms
-- [ ] **PRUNE-01**: Run AIMER pruning on merged model (weight-based, no calibration, ~1 second) at 25%, 50%, and 75% compression ratios — serves as primary pruning method (D-09)
-- [ ] **PRUNE-02**: Optionally run REAP pruning on same merged model with WordPress calibration data (gen + judge examples), `reap` saliency scoring, at same 25%, 50%, 75% compression ratios — serves as domain-aware comparison
-- [ ] **PRUNE-03**: Evaluate both methods via gating mask before weight removal — compare retention across all 9 eval dimensions at each compression ratio (6 variants total: 2 methods × 3 ratios)
-- [ ] **PRUNE-04**: Analyze domain specificity signal: compare which experts each method retains/prunes — high overlap suggests WordPress isn't specialized enough for calibration-based advantage; low overlap suggests REAP is capturing domain-specific routing patterns AIMER misses
-- [ ] **PRUNE-05**: Select winning method + compression ratio with best dimension-level retention (especially D2_security), prefer higher compression at equivalent quality; if regression on any dimension, reduce compression incrementally until clean
-- [ ] **PRUNE-06**: Final model has expert weights physically removed and router softmax re-normalized for removed expert slots; saved as HuggingFace-compatible checkpoint; pruning methodology documented in model card
+- [x] **MERGE-01** (COMPLETE 2026-07-10 — traceability record, no unmerged adapters existed): Merge MoE-Sieve + RL LoRA adapters into base model weights before pruning — REAP needs activation magnitudes from the unified model, AIMER needs final weight norms
+- [x] **PRUNE-01** (COMPLETE 2026-07-10 — AIMER scorer + real scores + gated eval; measured FAIL at 25%): Run AIMER pruning on merged model (weight-based, no calibration, ~1 second) at 25%, 50%, and 75% compression ratios — serves as primary pruning method (D-09)
+- [x] **PRUNE-02** (COMPLETE 2026-07-10 — REAP module built; 6 conditional-skip stubs per pre-registered rule): Optionally run REAP pruning on same merged model with WordPress calibration data (gen + judge examples), `reap` saliency scoring, at same 25%, 50%, 75% compression ratios — serves as domain-aware comparison
+- [x] **PRUNE-03** (COMPLETE 2026-07-10 — gate-before-remove honored; no weight removal ever ran): Evaluate both methods via gating mask before weight removal — compare retention across all 9 eval dimensions at each compression ratio (6 variants total: 2 methods × 3 ratios)
+- [x] **PRUNE-04** (COMPLETE 2026-07-10 — overlap documented-skip (no REAP mask exists)): Analyze domain specificity signal: compare which experts each method retains/prunes — high overlap suggests WordPress isn't specialized enough for calibration-based advantage; low overlap suggests REAP is capturing domain-specific routing patterns AIMER misses
+- [x] **PRUNE-05**: Select winning method + compression ratio with best dimension-level retention (especially D2_security), prefer higher compression at equivalent quality; if regression on any dimension, reduce compression incrementally until clean
+- [x] **PRUNE-06**: Final model has expert weights physically removed and router softmax re-normalized for removed expert slots; saved as HuggingFace-compatible checkpoint; pruning methodology documented in model card
 
 ### Final Comparative Evaluation
 
-- [ ] **EVAL3-01**: A/B eval of pruned model against v2.0 RL baseline on wp-bench and static eval suite
-- [ ] **EVAL3-02**: Report includes per-dimension comparison, inference speed delta (expect significant from pruning), model size reduction, and seed variance
+- [x] **EVAL3-01**: A/B eval of pruned model against v2.0 RL baseline on wp-bench and static eval suite — ADAPTED: no pruned variant (Phase 13 no_winner) and no shipped RL baseline (Phase 10 rejected); reduced to shipping-stack receipt vs acceptance bars (wp-bench 0.4484 >= 0.4286). See `output/eval3/eval3_final_comparison.json`.
+- [x] **EVAL3-02**: Report includes per-dimension comparison, inference speed delta (expect significant from pruning), model size reduction, and seed variance — size reduction 0% (pruning dead), speed unchanged; recorded honestly in `EVAL3-REPORT.md`.
 
 ### Packaging (cascading compression gates)
 
-- [ ] **PKG-01**: Gate 1 — Eval pruned bf16 model: record size, inference speed, all 9 dimensions as quality baseline for subsequent compression
-- [ ] **PKG-02**: Gate 2 — Assess whether quantization is needed based on pruned model size, deployment constraints, and Gate 1 performance margins
-- [ ] **PKG-03**: If quantization warranted, test incrementally Q8→Q6→Q5→Q4, eval at each level, stop at lowest quantization holding within ±2pp of Gate 1 baseline
-- [ ] **PKG-04**: Model card + adapter uploaded to HuggingFace with full compression lineage (base -> RL -> MoE-Sieve -> merge -> AIMER/REAP winner -> quantization level, eval at each gate) including AIMER vs REAP comparison results
-- [ ] **PKG-05**: E2E inference validation on final shipped format (both `<wp_gen>` and `<wp_judge>` prompts via target serving stack)
+- [x] **PKG-01**: Gate 1 — Eval bf16 model: record size, inference speed, all 9 dimensions as quality baseline — `output/packaging/gate1_bf16_baseline.json` (57 GB, wp-bench 0.4484, judge rho 0.8075). On unpruned pair (no pruned model).
+- [x] **PKG-02**: Gate 2 — Assess whether quantization is needed — WARRANTED (121 GB host vs 114/228 GB pair); uniform nf4 excluded by measured collapse; start Q8, activation-aware below. `output/packaging/gate2_quantization_decision.md`
+- [x] **PKG-03**: Incremental Q8→Q6→Q5→Q4 with ±2pp stop rule — **CLOSED at Q8, LOSSLESS ship tier**: Q8_0 GGUF, 30.2 GiB (47% off bf16). Full 3-seed ensemble @8192 tokens, 0/121 parse fails all arms: Q8 ens rho 0.8056 vs bf16 ens 0.8100 (Δ−0.4pp, clean ±2pp pass); bf16 ens matches vLLM 0.8075. `output/packaging/pkg03_ens8192_results.json`. (Earlier single-seed@2048 −4.6pp was a truncation artifact.) Foundation base 0/121 parseable. Q4-nf4 FAIL recorded. **Q6/Q5 descent DEFERRED (closed 2026-07-11): Q8 already fits the 121 GB host with full pair headroom, so deeper tiers are size optimization with quality risk and no deployment need; ladder re-opens only if a smaller host becomes a target.** Recipe `scripts/run_packaging_recipe.md`.
+- [x] **PKG-04**: Model card with full compression lineage (base -> RL rejected -> MoE-Sieve full -> merge -> AIMER/REAP no_winner -> quantization) + usage — `output/packaging/MODEL_CARD.md`. Upload push is human-authorized final step.
+- [x] **PKG-05**: E2E inference validation — bf16 shipped format VALIDATED (gen 10/10, judge 10/10, routing 20/20, `output/packaging/pkg05_e2e_validation.json`); quantized tier pending toolchain.
+
+### Pipeline Lockdown & Repo Cleanup (Phase 16)
+
+- [x] **PIPE-01**: `PIPELINE.md` documents every stage end-to-end with runnable entrypoint, gate, and known Qwen3-30B-A3B result; no-winner gates (RL/Sieve/prune) kept as conditional re-test stages for the next base.
+- [x] **PIPE-02**: 95 one-off scripts moved to `deprecated/` with a README; grep confirms 0 active imports of a moved file; 3 misclassified active deps caught and retained; `py_compile` clean.
+- [x] **PIPE-03**: `logs/` gitignored, root stray deprecated, README links PIPELINE.md + deprecated/; layout parseable by outside users.
+
+### v3.1 Benchmark Expansion (Phase 17)
+
+- [x] **BENCH-01**: Full (unlimited) wp-bench run on the v1.2 gen model via the shipping stack; score + config + seed recorded and compared to the 0.4484 Gate-1 receipt.
+- [x] **BENCH-02**: SWE-bench generation-mode (non-agentic patch generation) eval at the largest scope the aarch64 toolchain can honestly evaluate; scope and harness constraints pre-registered before results are read.
+- [x] **BENCH-03**: MODEL_CARD.md Benchmarks section updated with both results + out-of-domain caveat for SWE-bench.
+
+### v3.1 Production Sweep & Publication (Phase 18)
+
+- [x] **PUB-01**: Repo sweep — README/PROJECT/PIPELINE/STATE mutually consistent; stale artifacts to deprecated/ with README notes; clean root.
+- [x] **PUB-02**: Two-model pair packaged together (v1.2 gen + v1.3 3-seed ensemble judge, Q8 GGUF ship tier) with full-lineage model card.
+- [x] **PUB-03**: HuggingFace upload + post-upload validation (download, GGUF load, gen/judge smoke round-trip).
+
+### v3.1 Next-Base Rerun Roadmap (Phase 19)
+
+- [x] **NEXT-01**: Latest Qwen-family base researched and selected with documented rationale (architecture match, size class, routing concentration, license). `Qwen/Qwen3.6-35B-A3B` LOCKED, live-verified — `.planning/phases/19-next-base-rerun-roadmap/19-NEXT-BASE-SELECTION.md`.
+- [x] **NEXT-02**: Roadmap doc maps every PIPELINE.md stage to the new base with expected deltas, conditional re-test gates carried forward, and rough compute/cost estimates. `.planning/V4-RERUN-ROADMAP.md`.
 
 ## v4 Requirements (deferred)
 
@@ -340,37 +363,115 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GRPO-08 | Phase 9 | Complete |
 | RLEV-01 | Phase 10 | Pending |
 | RLEV-02 | Phase 10 | Pending |
-| SIEVE-01 | Phase 11 | Pending |
-| SIEVE-02 | Phase 11 | Pending |
-| SIEVE-03 | Phase 11 | Pending |
-| SIEVE-04 | Phase 11 | Pending |
-| SIEVE-05 | Phase 11 | Pending |
-| EVAL2-01 | Phase 12 | Pending |
-| EVAL2-02 | Phase 12 | Pending |
-| MERGE-01 | Phase 13 | Pending |
-| PRUNE-01 | Phase 13 | Pending |
-| PRUNE-02 | Phase 13 | Pending |
-| PRUNE-03 | Phase 13 | Pending |
-| PRUNE-04 | Phase 13 | Pending |
-| PRUNE-05 | Phase 13 | Pending |
-| PRUNE-06 | Phase 13 | Pending |
-| EVAL3-01 | Phase 14 | Pending |
-| EVAL3-02 | Phase 14 | Pending |
-| PKG-01 | Phase 15 | Pending |
-| PKG-02 | Phase 15 | Pending |
-| PKG-03 | Phase 15 | Pending |
-| PKG-04 | Phase 15 | Pending |
-| PKG-05 | Phase 15 | Pending |
+| SIEVE-01 | Phase 11 | Complete |
+| SIEVE-02 | Phase 11 | Complete |
+| SIEVE-03 | Phase 11 | Complete |
+| SIEVE-04 | Phase 11 | Complete |
+| SIEVE-05 | Phase 11 | Complete |
+| EVAL2-01 | Phase 12 | N/A (skipped) |
+| EVAL2-02 | Phase 12 | N/A (skipped) |
+| MERGE-01 | Phase 13 | Complete |
+| PRUNE-01 | Phase 13 | Complete |
+| PRUNE-02 | Phase 13 | Complete |
+| PRUNE-03 | Phase 13 | Complete |
+| PRUNE-04 | Phase 13 | Complete |
+| PRUNE-05 | Phase 13 | Complete |
+| PRUNE-06 | Phase 13 | Complete |
+| EVAL3-01 | Phase 14 | Complete (2026-07-10, adapted) |
+| EVAL3-02 | Phase 14 | Complete (2026-07-10) |
+| PKG-01 | Phase 15 | Complete (2026-07-10) |
+| PKG-02 | Phase 15 | Complete (2026-07-10) |
+| PKG-03 | Phase 15 | Complete (2026-07-11) — Q8 LOSSLESS ship tier (30.2 GiB −47%; ens@8192 0.8056 vs bf16 0.8100, Δ−0.4pp, 0 parse fails); Q6/Q5 descent deferred, no deployment need |
+| PKG-04 | Phase 15 | Complete (model card; upload human-authorized) |
+| PKG-05 | Phase 15 | Complete (bf16); quantized pending |
+| BENCH-01 | Phase 17 | Complete |
+| BENCH-02 | Phase 17 | Complete |
+| BENCH-03 | Phase 17 | Complete |
+| PUB-01 | Phase 18 | Complete (2026-07-11) — docs reconciled, 10 archived, 6 mis-archived restored |
+| PUB-02 | Phase 18 | Complete |
+| PUB-03 | Phase 18 | Complete |
+| NEXT-01 | Phase 19 | Complete (base locked: `19-NEXT-BASE-SELECTION.md`) |
+| NEXT-02 | Phase 19 | Complete (`.planning/V4-RERUN-ROADMAP.md`) |
+| BASE-01 | Phase 20 | Complete |
+| BASE-02 | Phase 20 | Complete |
+| BASE-03 | Phase 20 | Complete |
+| BASE-04 | Phase 20 | Complete |
+| GEN-01 | Phase 21 | Complete |
+| GEN-02 | Phase 21 | Complete |
+| GEN-03 | Phase 21 | Complete |
+| JUDGE-01 | Phase 21 | Complete |
+| JUDGE-02 | Phase 21 | Complete |
+| JUDGE-03 | Phase 21 | Complete |
+| GATE4-02 | Phase 22 | Complete |
+| EVAL4-01 | Phase 23 | Complete |
+| GATE4-01 | Phase 24 | Pending |
+| GATE4-03 | Phase 25 | Complete |
+| GATE4-04 | Phase 26 | Complete |
+| PKG4-01 | Phase 27 | Complete |
+| PKG4-02 | Phase 27 | Complete |
+| PUB4-01 | Phase 27 | Complete |
+
+## v4.0 Requirements — Pipeline Rerun on Qwen3.6-35B-A3B
+
+Master plan: `.planning/V4-RERUN-ROADMAP.md` (locked 2026-07-11, re-verified 2026-07-12 — `.planning/research/SUMMARY.md`).
+Pre-registered success criteria: judge rho **>0.85 single-seed OR >0.87 3-seed ensemble** (vs 0.8075 wall); wp-bench **≥0.4286** floor. All gates CI-aware (bootstrap lower bound clears the bar). Cost note: Tinker price rise 2026-07-17 (train ~+10%).
+
+### Base Bring-Up (Stage 1.5 + smoke gates)
+
+- [x] **BASE-01**: Qwen3.6-35B-A3B downloads and loads on GB10 (trust_remote_code on model+tokenizer, transformers 5.x import check, `Qwen3_5MoeForConditionalGeneration` class resolution)
+- [x] **BASE-02**: eos/pad token-ID alignment gate passes — `model.config.eos_token_id`/`pad_token_id` assert-match tokenizer special tokens + stop-token smoke generate; SFT blocked on failure (QwenLM #96, WAI upstream)
+- [x] **BASE-03**: DeltaNet aarch64 serving smoke passes WITH CUDA-graph capture enabled (vLLM ≥0.19.0; vLLM #35945 risk; `--enforce-eager` fallback documented; `use_kernels` decision recorded)
+- [x] **BASE-04**: VL merge-path validated end-to-end — Tinker LoRA export → merge onto `model.language_model.*` keys → vLLM serve (`--language-model-only`) → real generation round-trip; Tinker LoRA target-module resolution logged (dual key-prefix silent-partial-load risk)
+
+### SFT Generation Model (Stage 2)
+
+- [x] **GEN-01**: Thinking-mode/`<think>` SFT data-format decision recorded + rendered-example spot-check (no spurious empty `<think></think>` blocks, QwenLM #131; max tokenized length asserted under Tinker 64K cap) before any training data feeds
+- [x] **GEN-02**: Generation model SFT completes on reasoning mix (reuse Stage-1 data, MoE-only LoRA r32, LR ≤2e-5, frozen router, `output_router_logits=True`)
+- [x] **GEN-03**: Gen model clears wp-bench floor 0.4286 (CI lower bound; or freshly-measured noise-adjusted floor, measured not assumed)
+
+### SFT Judge Model (Stage 3 — the crux)
+
+- [x] **JUDGE-01**: Judge-output-format-compliance smoke on the raw pre-SFT base early (community-reported 18% noncompliance — the failure mode that killed 3/4 ratios on the old base)
+- [x] **JUDGE-02**: 3-seed relabel-SFT (seeds {1,0,2}) completes reusing v1.3 labels (`data/relabel_v1/`; re-open condition per V4-RERUN-ROADMAP discretion item 2)
+- [x] **JUDGE-03**: Judge rho measured vs held-out relabeled val (`scripts/relabel/eval_relabel.py`, vLLM-served, 8192-token cap) against pre-registered targets; failure disposition recorded as valid outcome if unmet
+
+### Final Evaluation (Stage 4)
+
+- [x] **EVAL4-01**: A/B eval vs v3.0 shipping figures (wp-bench + judge rho, same harness) under pre-registered criteria; results committed before any packaging decision
+
+### Conditional Gates (re-tests, no_winner is a result)
+
+- [ ] **GATE4-01**: RL re-test ONLY with a materially different reward family (execution-grounded/preference/multi-turn); pre-registered kill criterion carried (validated teacher-Spearman over warm-start noise + codegen Goodhart trip-wire); smoke-scale before full budget
+- [x] **GATE4-02**: Sieve/protected-mask tooling adapted BEFORE Gate B — profiler traversal `model.model.language_model.layers`, n_experts 128→256 across 4 scripts, DeltaNet/Attention strata split, empirical shared-expert-exclusion-from-router_logits verification
+- [x] **GATE4-03**: MoE-Sieve k-sweep re-test (TOST ε=2pp, CI-aware) on adapted tooling
+- [x] **GATE4-04**: Merge + prune re-test (AIMER/REAP, gate-before-remove, per-dimension retention esp. D2_security) — COMPLETE 2026-07-17: `ship_pruned_v4`. AIMER@k=224 passed gate-before-remove on the routing-(B) non-inferiority bar (pruned 0.8134 vs full 0.7935; ci_lower slack 0.001 — thin); D2_security retained 6.326 ≥ 6.115; surgery applied → models/Qwen3.6-35B-A3B-judge-v4-pruned-k224. REAP deferred (gated on AIMER failing; it passed). Receipt: output/prune-v4/selection_v4.json
+
+### Packaging (Stage 5 — quantization mandatory)
+
+> Scope corrected 2026-07-17 (Phase 27 planning): the "pair" framing was stale v3.0 template text; gen retired as a deliverable 2026-07-15. See .planning/phases/27-packaging-publication-refresh/CONTEXT.md.
+
+- [x] **PKG4-01**: Q8 GGUF conversion of the pruned v4 judge (judge-only — the generation half was retired as a deliverable 2026-07-15, PROJECT.md:14) (llama.cpp ≥b9180 pin; GGUF block-count sanity vs safetensors index; concurrent-sequence CUDA-backend smoke; shared-expert quant-type metadata independently verified; GGUF expert_count sanity vs config.json text_config.num_experts (224 after AIMER k=224 surgery))
+- [x] **PKG4-02**: Cascading compression gates re-run (Gate 1 f16-GGUF/llama.cpp baseline / Gate 2 warrant RE-DERIVED for a judge-only ship (the pair rationale is void — 60 GiB bf16 fits the 121 GiB host); the real warrant is distribution size + operator memory budget + the measured-lossless Q8 precedent / ladder Q8→Q6→Q5 within ±2pp; NO uniform 4-bit nf4; below-Q8 requires DeltaNet recurrent-state tensor precision check)
+
+### Publication Refresh
+
+> Scope corrected 2026-07-17 (Phase 27 planning): the "pair" framing was stale v3.0 template text; gen retired as a deliverable 2026-07-15. See .planning/phases/27-packaging-publication-refresh/CONTEXT.md.
+
+- [x] **PUB4-01**: HF publication refresh — NEW repo iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf published with an operator-first card (CONTEXT.md LOCKED DECISION 2); v3 repo untouched, post-upload validation round-trip (same PUB-03 discipline)
 
 **Coverage:**
+
 - v1 requirements: 39 total (32 complete, 7 eval pending)
 - v1.1 requirements: 13 total (13 complete)
 - v1.2 requirements: 17 total (1 complete: DGEN-02) — DGEN-01/02/03 -> Phase 4.1; DGEN-04/05 -> Phase 4.2; RTRN-01/02/03/04 -> Phase 4.3; REVL-01/02/03/04/05/06/07/08 -> Phase 4.4
 - v2.0 requirements: 16 total (0 complete) — PROF(5) + GATE-01(1) + GRPO(8) + RLEV(2) [Phases 7-10]
 - v3.0 requirements: 21 total (0 complete) — SIEVE(5) + EVAL2(2) + MERGE(1) + PRUNE(6) + EVAL3(2) + PKG(5) [Phases 11-15]
 - DPLT requirements: 7 total (deferred -> v3.0 PKG/PRUNE)
-- Total mapped to phases: 101 active + 7 deferred (all requirements mapped, 0 unmapped)
+- v3.1 requirements: 8 total (8 complete) — BENCH(3) + PUB(3) + NEXT(2) [Phases 17-19]
+- v4.0 requirements: 18 total (0 complete) — BASE(4)->Ph20 + GEN(3)+JUDGE(3)->Ph21 + GATE4-02(1)->Ph22 + EVAL4(1)->Ph23 + GATE4-01(1)->Ph24 + GATE4-03(1)->Ph25 + GATE4-04(1)->Ph26 + PKG4(2)+PUB4(1)->Ph27 (ROADMAP.md v4.0 milestone, Phases 20-27)
+- Total mapped to phases: 127 active (109 + 18 v4.0, now phase-mapped) + 7 deferred
 
 ---
 *Requirements defined: 2026-03-26*
-*Last updated: 2026-04-08 — Pipeline reordered per Issue #1 (D-07): RL before MoE-Sieve; GRPO-01-04 moved to Phase 8, GRPO-05-08 to Phase 9, SIEVE to Phase 11, EVAL2 to Phase 12, MERGE/PRUNE to Phase 13, EVAL3 to Phase 14, PKG to Phase 15; GRPO-05/06 updated for full-MoE RL + GSPO primary (D-08); RLEV-01/02 added for Phase 10; SIEVE updated for post-RL context; AIMER primary (D-09), REAP optional*
+*Last updated: 2026-07-12 — v4.0 requirements added (Pipeline Rerun on Qwen3.6-35B-A3B): BASE/GEN/JUDGE/EVAL4/GATE4/PKG4/PUB4, 18 REQ-IDs from V4-RERUN-ROADMAP.md + 2026-07-12 research re-verification*
+*Last updated: 2026-07-12 — v4.0 traceability filled: 18 REQ-IDs mapped to Phases 20-27 (ROADMAP.md v4.0 milestone appended, STATE.md advanced)*

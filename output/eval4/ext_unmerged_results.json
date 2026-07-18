@@ -1,0 +1,65 @@
+{
+  "requirement": "Phase-23-03-EXTENSION",
+  "title": "v4 judge served UNMERGED (runtime LoRA) -- test whether unmerged serving recovers the capture-path rho the merge step destroys",
+  "preregistration": "output/eval4/ext_unmerged_preregistration.md",
+  "hypothesis_h1": "Precision swamping at merge time; runtime LoRA (W*x + B*A*x computed separately, never baked into the base weights) should recover rho near the Tinker capture anchor (0.8358) instead of the ~0.78-0.79 served-merged ceiling.",
+  "status": "measured",
+  "engines": {
+    "vllm": {
+      "status": "blocked_deeper_than_naming",
+      "build": "ghcr.io/spark-arena/dgx-vllm-eugr-nightly:latest (vLLM 0.20.2rc1.dev196+g84f7a5534.d20260510)",
+      "adapter_conversion": "scripts/eval4_ext_unmerged_lora_convert.py (renamed Tinker's mlp.experts.{w1,w2,w3} to the PEFT base_layer/bare convention FusedMoE3DWithLoRA expects; lossless -- w1/w3 lora_A verified bit-identical, no rank inflation)",
+      "boot_result": "Adapter loaded WITHOUT error ('MoE model detected. Using fused MoE LoRA implementation.', 'Loaded new LoRA adapter: name judge-s1') -- the naming/shape derivation was correct and confirmed against installed vLLM source (vllm/lora/layers/fused_moe.py, vllm/lora/model_manager.py::_stack_moe_lora_weights, vllm/lora/lora_model.py::check_unexpected_modules).",
+      "diff_gate_result": "3 distinct real-generation prompts, greedy decode, lora vs raw-base: 0/3 differ (byte-identical outputs on all 3, after an initial single-prompt run showed 1/1 differing -- traced to Triton-JIT-warmup nondeterminism on first-ever inference, not a genuine adapter effect; the robust 3-prompt re-run on a fresh boot is the trustworthy read).",
+      "conclusion": "The converted adapter loads cleanly but its delta is not measurably applied at inference by this nightly build's FusedMoE3DWithLoRA kernel path -- a deeper-than-naming failure. Per pre-registration, falls through to the llama.cpp fallback rather than further debugging a pre-release kernel.",
+      "receipt": "output/eval4/ext_unmerged_lora_rho_s1.json"
+    },
+    "llama_cpp": {
+      "status": "measured",
+      "build": "llama.cpp (local checkout ~/llama.cpp, llama-server + convert_lora_to_gguf.py)",
+      "upstream_patches_applied": [
+        "convert_lora_to_gguf.py LoraTorchTensor: added missing `ndim` property (never exercised -- no prior LoRA-to-GGUF conversion for a fused-MoE-checkpoint architecture's gate_up_proj chunking path existed before this run)",
+        "convert_lora_to_gguf.py LoraTorchTensor.__getitem__: fixed an ellipsis-expansion off-by-N bug (expanded Ellipsis to `len(indices)-1` implicit dims regardless of actual tensor rank, instead of `len(shape) - n_explicit_indices`; only correct by coincidence for the previously-tested 2-element-indices case, broke on the 3-dim `[..., :n, :]` MoE gate_up_proj chunk)"
+      ],
+      "adapter_conversion": "scripts/eval4_ext_unmerged_lora_convert_llamacpp.py (renamed to mlp.experts.gate_up_proj/down_proj, matching the base checkpoint's own fused safetensors naming verified directly from models/Qwen3.6-35B-A3B/model.safetensors.index.json; A materialized to full per-expert [E,r,H]/[E,r,I] rather than left broadcast-1, because llama.cpp's build_lora_mm_id applies LoRA-A via ggml_mul_mat_id -- a real per-token expert-id GATHER, not a numpy-style broadcast batch matmul -- so a broadcast-1 leading dim risked out-of-bounds indexing rather than safely broadcasting)",
+      "gguf_conversion_receipt": "output/eval4/ext_unmerged_convert_receipt_s1_llamacpp.json",
+      "base_gguf": "models/_gguf/wp-v4-base-raw.Q8_0.gguf (37.8 GiB, raw base Qwen3.6-35B-A3B, no adapter baked in, block-count sanity PASS)",
+      "lora_gguf": "output/eval4/ext_unmerged/judge03_s1_lora.gguf (5.1 GiB f16, 480 tensors)",
+      "diff_gate_result": "PASSED -- in-process A/B via POST /lora-adapters scale=0 vs scale=1 on the SAME loaded weights (no second model load needed). scale=0: raw rambling analysis text (matches un-adapted base behavior). scale=1: correct structured 9-dimension WPCS judge rubric (WPCS Compliance / SQL Safety / Security / Performance / WP API Usage / Code Quality / Dependency Integrity / i18n, each scored X/10) -- dramatic, unambiguous evidence the adapter is being correctly applied via ggml_mul_mat_id. See output/eval4/ext_unmerged/llamacpp_s1/diff_gate.txt.",
+      "capture_and_score": {
+        "s1_rho": 0.783304734615698,
+        "n": 121,
+        "parse_fail": 0,
+        "ci": [0.7134266168886362, 0.834627811019173],
+        "source": "output/eval4/ext_unmerged/llamacpp_s1/judge_responses.jsonl",
+        "eval_summary": "output/eval4/ext_unmerged/llamacpp_s1/eval_summary.json"
+      }
+    }
+  },
+  "h1_check": {
+    "capture_anchor_rho": 0.8358149892119933,
+    "capture_anchor_ci_lower": 0.7740,
+    "served_merged_anchor_rho": 0.7872,
+    "unmerged_s1_rho": 0.783304734615698,
+    "delta_vs_capture_anchor": -0.0525,
+    "delta_vs_served_merged_anchor": -0.0039,
+    "closer_to_capture": false,
+    "within_noise_of_capture_band": 0.03,
+    "h1_confirmed": false,
+    "interpretation": "The unmerged-served rho (0.7833) lands essentially ON the served-merged ceiling (0.7872, delta +0.39pp -- within any reasonable noise band) and is 5.25pp BELOW the Tinker capture anchor (0.8358), well outside the noise band used elsewhere in this extension (0.03) for 'within noise'. This is despite the diff-gate providing dramatic, unambiguous confirmation that the LoRA delta IS being correctly applied at inference (correct trained judge output format only appears with the adapter on). H1 (precision-swamping-at-merge-time) is REJECTED: serving unmerged does NOT recover the capture-path rho. The ~0.78-0.79 ceiling is not a merge-vs-unmerged artifact -- it persists across bf16-vLLM-merged (0.7872), Q8-llama.cpp-merged (0.7877), AND Q8-llama.cpp-UNMERGED (0.7833), three engine/precision/merge-status combinations that all land in the same narrow band, while only the Tinker capture path (0.8358) sits meaningfully above it. Whatever separates the capture harness from every served configuration examined so far is not explained by merge precision loss."
+  },
+  "decision": {
+    "rule_applied": "ext_unmerged_preregistration.md Decision rule Step 1",
+    "h1_confirmed": false,
+    "s0_s2_capture_run": false,
+    "reason": "Pre-registered stop condition: 'If it does not [fall within noise of the capture anchor], H1 is REJECTED and the run stops at s1 -- no s0/s2 capture, no ensemble, the part-1 verdict stands as final, recorded with this negative result as an additional confirmation that the ceiling is not a mergeable-vs-unmerged artifact.'",
+    "unequivocal_win_verdict": "UNCHANGED -- stays FALSE, per ext_q8_results.json (part 1). No serving configuration examined across this milestone (vLLM bf16 merged, llama.cpp Q8 merged, llama.cpp Q8 unmerged) unequivocally beats v3's shipped Q8 ensemble (0.8056) on the paired-bootstrap rule.",
+    "canonical_artifact": "v3 judge (v1.3, Q8 ensemble 0.8056) stays the canonical shipping artifact.",
+    "last_lever_status": "EXHAUSTED. All three levers pre-registered across 23-01/23-02/23-03 (served-merged bf16-vLLM, served-merged shipped-stack Q8, served-UNMERGED Q8-runtime-LoRA) have now been measured. The v4 judge's real, reproducible advantage remains capture-path-only (Tinker inference harness, 0.8358 vs v3's 0.8274, +0.84pp) and does not survive ANY examined serving configuration."
+  },
+  "wall_clock_notes": {
+    "vllm_attempt_s": "~460-500s per boot attempt x 3 (2 diff-gate iterations + naming-fix probe), no full capture spent (blocked before capture)",
+    "base_gguf_conversion_s": "~150s (37.8 GiB Q8_0 write)",
+    "llamacpp_boot_to_capture_complete": "~21+ minutes wall clock for the full 121-item @8192-token capture, 4 parallel slots, ~14-15 tok/s per slot"
+  }
+}

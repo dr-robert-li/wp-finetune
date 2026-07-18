@@ -1,0 +1,14 @@
+{
+  "requirement": "GATE4-04",
+  "method": "aimer",
+  "k": 224,
+  "judge_ensemble_rho": 0.8533283115844795,
+  "per_seed_rho": {
+    "s1": 0.818446799620866,
+    "s0": 0.7653487160503534,
+    "s2": 0.8263607258361042
+  },
+  "n_scored": 121,
+  "full_arm_s1_rho": 0.7934812517026191,
+  "ensemble_non_inferior": true
+}

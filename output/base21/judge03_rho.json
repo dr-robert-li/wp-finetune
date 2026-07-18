@@ -1,0 +1,64 @@
+{
+  "promoted_sampler_path": "tinker://a8efbc89-6faa-5ec5-8ca2-f60068a92fce:train:0/sampler_weights/wp-judge-v4-s1-ep3",
+  "merged_dir": "models/Qwen3.6-35B-A3B-judge-v4-s1-merged",
+  "merge_ok": true,
+  "merged_target_module_count": 240,
+  "expected_target_module_count": 240,
+  "base_vs_merged_differs": true,
+  "merged_size_gib": 66.99,
+  "vllm_served_single_seed": {
+    "seed": 1,
+    "rho": 0.7872053287497484,
+    "ci_lower": 0.7125475563884955,
+    "ci_upper": 0.840519955968956,
+    "n": 121,
+    "parse_fail": 0,
+    "max_tokens": 8192,
+    "served_model_dir": "models/Qwen3.6-35B-A3B-judge-v4-s1-merged",
+    "capture_path": "/home/robert_li/Desktop/projects/wp-finetune/output/base21/judge_capture_vllm_s1.jsonl"
+  },
+  "ensemble_vllm_served": "deferred_to_packaging",
+  "max_model_len_served": 16384,
+  "targets": {
+    "single": 0.85,
+    "ensemble": 0.87
+  },
+  "ci_aware": "bootstrap CI lower bound must clear the bar (D-V4-10 hardening), measured with the same eval_relabel.py 2000-resample percentile bootstrap on both paths",
+  "single_seed_pass": false,
+  "single_seed_figure": {
+    "methodology": "vllm_served",
+    "seed": 1,
+    "rho": 0.7872053287497484,
+    "ci_lower": 0.7125475563884955,
+    "note": "the literal JUDGE-03 / pre-registered-criteria methodology (vLLM-served, 8192-token cap, eval_relabel.py)"
+  },
+  "single_seed_tinker_capture_reference": {
+    "methodology": "tinker_capture",
+    "seed": 1,
+    "rho": 0.8358149892119933,
+    "ci_lower": 0.7740054476645172,
+    "note": "cheap promotion-path figure (how v1.3's 0.8274 promotion decision was made) -- NOT the gating methodology, recorded to keep the two distinct"
+  },
+  "ensemble_pass": false,
+  "ensemble_figure": {
+    "methodology": "tinker_capture",
+    "rho": 0.8160452097775477,
+    "ci_lower": 0.756291877837854,
+    "ci_upper": 0.8585138000687434,
+    "n": 121,
+    "note": "3-seed median ensemble on the cheap Tinker-capture path; the vLLM-served 3-MERGED ensemble is deferred to packaging (Phase 27)"
+  },
+  "overall_pass": false,
+  "framed_vs": {
+    "v30_ensemble": 0.8075,
+    "v30_single": 0.8017,
+    "ceiling": 0.984
+  },
+  "disposition": "valid_recorded_miss",
+  "reopen_condition": {
+    "source": "V4-RERUN-ROADMAP.md Claude's-Discretion item 2",
+    "verbatim": "Re-open the relabel campaign ONLY IF the new base's judge SFT, trained on the reused labels, saturates below the pre-registered rho target (0.85/0.87) above AND diagnostic investigation (mirroring the 2026-07-08 gap-closure investigation pattern -- capacity, loss-shape, data-cleaning levers) rules out training-recipe causes. In that specific case, label quality/coverage becomes the remaining suspect and a fresh or expanded relabel pass is warranted. Do not re-run the campaign speculatively \"just in case\".",
+    "condition_met": false,
+    "condition_assessment": "(a) saturated-below-target: YES on this measurement (neither 0.85 single nor 0.87 ensemble CI-lower cleared). (b) gap-closure diagnostic ruling out recipe causes: NOT YET RUN on this base -- the 2026-07-08 gap_closure_summary.json diagnostics (capacity/loss-shape/data-cleaning) were measured on Qwen3-30B-A3B, not Qwen3.6-35B-A3B. Both (a) AND (b) are required; (b) is unmet, so the re-open condition is NOT met. No re-open triggered here (recording only, per plan)."
+  }
+}

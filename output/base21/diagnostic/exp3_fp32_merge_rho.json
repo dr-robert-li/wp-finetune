@@ -1,0 +1,33 @@
+{
+  "experiment": "exp3_fp32_merge",
+  "status": "measured",
+  "adapter_dir": "/home/robert_li/Desktop/projects/wp-finetune/output/base21/judge03_s1_adapter",
+  "merged_dir": "models/Qwen3.6-35B-A3B-judge-v4-s1-fp32merged",
+  "merge_ok": true,
+  "merged_target_module_count": 240,
+  "expected_target_module_count": 240,
+  "base_vs_merged_differs": true,
+  "merged_size_gib": 66.99,
+  "vllm_served_fp32_merged": {
+    "rho": 0.7823010810799426,
+    "ci_lower": 0.7119284436939642,
+    "ci_upper": 0.8306885945421247,
+    "n": 121,
+    "parse_fail": 0,
+    "max_tokens": 8192,
+    "served_model_dir": "models/Qwen3.6-35B-A3B-judge-v4-s1-fp32merged",
+    "capture_path": "/home/robert_li/Desktop/projects/wp-finetune/output/base21/exp3_judge_capture_fp32merged_s1.jsonl"
+  },
+  "decision": {
+    "verdict": "no material change: engine numerics dominate, fp32 merge fix does not help",
+    "rho_measured": 0.7823010810799426,
+    "original_served_rho_bf16_merge": 0.7872,
+    "capture_anchor_rho": 0.8358149892119933,
+    "delta_vs_original_served": -0.0049,
+    "delta_vs_capture_anchor": -0.0535,
+    "recovery_band": 0.02,
+    "recovered": false
+  },
+  "max_model_len_served": 16384,
+  "wall_clock_s": 2783.0
+}

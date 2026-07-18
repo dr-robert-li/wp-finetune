@@ -1,0 +1,26 @@
+{
+  "question": "move student judge rho 0.827 toward ceiling 0.984",
+  "v13_baseline_rho": 0.8274,
+  "ceiling": 0.9844,
+  "gap": 0.157,
+  "levers_tested": {
+    "C_data_cleaning": {
+      "result": "dominated",
+      "evidence": "gap distributed not outliers; drop-worst-15 only +0.015; residual_audit.json"
+    },
+    "B_capacity_rank64_attn": {
+      "rho": 0.6618,
+      "result": "LOSE-overfit",
+      "evidence": "prior rank32/MoE-only was regularization not codegen handicap; leverB_capacity_result.json"
+    },
+    "A_loss_reweight": {
+      "alpha0.5": 0.7728,
+      "alpha3.0": 0.7803,
+      "result": "LOSE-both",
+      "evidence": "uniform CE is peak; leverA_loss_result.json"
+    }
+  },
+  "conclusion": "v1.3 recipe (rank32 MoE-only, 3ep, uniform CE on relabeled data, seed1) is a LOCAL OPTIMUM. None of capacity/loss-reshaping/data-cleaning beats rho 0.827. The 0.157 gap is a genuine wall for SFT-on-relabeled-data on Qwen3-30B-A3B. Test-time compute (3-seed ensemble 0.842) is the only measured improvement, at 3x serve. The lever that would actually move the ceiling: a STRONGER BASE MODEL (qwen3.6/3.7) \u2014 the user's stated end goal.",
+  "decision": "SHIP v1.3 single-seed greedy (0.827) or 3-seed ensemble (0.842); proceed to compression. Reasoning-power ceiling for this base+pipeline is reached.",
+  "total_runs_this_session": "3 training (B r64attn, A jw3, A jw0.5) + 4 captures; all negative vs v1.3"
+}

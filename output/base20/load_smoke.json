@@ -1,0 +1,10 @@
+{
+  "status": "pass",
+  "model_class": "Qwen3_5MoeForConditionalGeneration",
+  "host_notes": "single forward pass on a 1-token CPU bf16 input executed without error",
+  "transformers_version": "5.3.0",
+  "peft_version": "0.18.1",
+  "huggingface_hub_version": "1.23.0",
+  "shard_count": 26,
+  "total_size_gb": 67.0
+}

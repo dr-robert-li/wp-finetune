@@ -1,17 +1,38 @@
-# PROJECT: WordPress Best-Practice MoE Model (wp-qwen3-moe)
+# PROJECT: Qwen 3 WP Judge (formerly wp-qwen3-moe)
 
 ## Vision
 
-A single Qwen3-based Mixture-of-Experts model that both **generates** and **judges** WordPress code according to strict WordPress Coding Standards. Task tokens (`<wp_gen>`, `<wp_judge>`) route input to specialized expert pathways within the same network. Built and served on the [DGX Toolbox](~/dgx-toolbox) infrastructure stack.
+An open-weight WordPress code **reviewer**: given a PHP function, score it against a strict 9-dimension
+WordPress-quality rubric and explain the defects. Built and served on the [DGX Toolbox](~/dgx-toolbox)
+infrastructure stack.
+
+**Canonical deliverable (2026-07-17):** the **WP Judge v4** —
+[`iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf`](https://huggingface.co/iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf),
+a relabel-SFT fine-tune of Qwen3.6-35B-A3B, expert-pruned 256→224 (AIMER, gate-before-remove PASS), shipped
+as a Q6_K GGUF, 23.47 GiB (rho 0.8063, single-seed s1, shipped Q6_K/llama.cpp stack — statistically tied
+with the f16 floor and with v3's 3-seed-ensemble 0.8056, ~22% smaller than v3's 30.2 GiB). The prior
+[`iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf`](https://huggingface.co/iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf)
+(Qwen3-30B-A3B base) remains published as the superseded prior artifact. The judge is a *created*
+capability — the untrained base produces 0 parseable verdicts out of 121.
+
+The generation half was **retired as a deliverable**. The project began as a two-model pair
+(`<wp_gen>` + `<wp_judge>`); the v4.0 study on Qwen3.6-35B-A3B showed a raw modern base out-generates every
+gen fine-tune we trained (0.4897 vs best 0.4381), so generation is now a solved problem best served by a
+current base model directly. The v1.2 gen checkpoint remains published for provenance but is not the
+recommendation. Full lineage: [MODEL_CARD.md](output/packaging/MODEL_CARD.md); v4.0 evidence:
+[output/base21/diagnostic/DIAGNOSTIC_SYNTHESIS.md](output/base21/diagnostic/DIAGNOSTIC_SYNTHESIS.md). The
+sections below describe the original phased plan; see "Current Status" for what each phase produced.
 
 ## Architecture
 
-- **Base:** Qwen3-30B-A3B (native MoE, ~30B total params, ~3B active per forward pass, 128 experts, top-8 routing)
-- **Modes:** `<wp_gen>` (code generation) and `<wp_judge>` (structured critique with rubric scoring)
-- **Compatibility:** HuggingFace `AutoModelForCausalLM`, standard transformers tooling
+- **Base (canonical, v4):** Qwen3.6-35B-A3B (hybrid MoE, ~35B total params, ~3B active per forward pass, 256 experts top-8 routing — shipped judge pruned to **224/256** via AIMER k=224)
+- **Base (original, v1–v3):** Qwen3-30B-A3B (native MoE, ~30B total, 128 experts, top-8 routing)
+- **Mode:** `<wp_judge>` (structured critique with rubric scoring). The `<wp_gen>` generation mode was retired as a deliverable 2026-07-15 — every fine-tuned gen candidate regressed below the raw base; use the base model directly for generation.
+- **Compatibility:** HuggingFace `AutoModelForCausalLM`, standard transformers tooling; shipped as GGUF for llama.cpp
 - **Infrastructure:** DGX Toolbox — Unsloth Studio (fine-tuning), vLLM/Ollama (inference), eval-toolbox (benchmarks), safety harness (guardrails)
 
-See [wp-moe.md](wp-moe.md) for full model specification.
+See [PIPELINE.md](PIPELINE.md) for the frozen end-to-end method. (The original model spec, `wp-moe.md`, is
+retired in [deprecated/](deprecated/).)
 
 ## Execution Model
 
@@ -114,7 +135,9 @@ E_eff_l = exp(H_l)                   (effective expert count — how many expert
 
 ### Phase D: MoE-Sieve Selective Training (v2.0)
 
-*Planned. Depends on Phase C (surviving ratios with eval scores + base-model E_eff).*
+*Complete (v3.0, closed 2026-07). Result: **no compression** — routing profile shows ~88-99 effective
+experts/layer of 128; every masked-k budget collapses wp-bench (0.4484 full → 0.2275 at k=64 → 0.0546 at
+k=32). `optimal_k = full`, nothing dropped. Full outcome and receipts: [PIPELINE.md](PIPELINE.md#conditional-gate-b--moe-sieve-expert-drop-phases-11-12).*
 
 | Step | Description |
 |------|-------------|
@@ -125,7 +148,12 @@ E_eff_l = exp(H_l)                   (effective expert count — how many expert
 
 ### Phase E: GRPO & Production Deployment (v3.0)
 
-*Planned. Depends on Phase D (MoE-Sieve eval results).*
+*Complete (v3.0, closed 2026-07-11). Actual scope was narrower than originally planned: GSPO (RL) was
+**rejected** in Phase 9 (6/6 dead checkpoint reads), so there was no RL checkpoint to merge or prune against.
+AIMER/REAP pruning on the SFT-only merged pair found **no winner** (AIMER@25% collapses gen to wp-bench
+0.1577 and judge ensemble rho to 0.1651) — the model ships unpruned at full 128-expert width. Packaging
+(E6) shipped Q8_0 GGUF as the lossless tier (−47% size). Full lineage and both negative pruning results:
+[MODEL_CARD.md](output/packaging/MODEL_CARD.md), `output/prune/prune_methodology.md`.*
 
 | Step | Description |
 |------|-------------|
@@ -161,7 +189,6 @@ wp-finetune/
 ├── README.md                           # Quick start guide
 ├── JOURNAL.md                          # Engineering decisions log
 ├── CHANGELOG.md                        # Version history
-├── wp-moe.md                           # Full model specification
 ├── config/
 │   ├── repos.yaml                      # 236 repos (top + poor-quality plugins/themes)
 │   ├── judge_system.md                 # 9-dimension judge criteria
@@ -250,10 +277,20 @@ Judge training data is additionally sanity-checked: high-quality source code mus
 - [x] Phase C: Judge reasoning fine-tune — v4-winner promoted, +3.58 calibration locked (v1.2 Phases 4.1-4.4, complete 2026-06-14)
 - [x] Phase 7: Router profiling — 1,480 experts protected, CI-aware Jaccard gate passed, council-approved (v2.0, closed 2026-06-19)
 - [x] Phase 8: Reward infrastructure — composite 70/30 pipeline, security terminal gate, MO-GRPO, VeRPO, anti-hack eval set; 424 tests green (v2.0, complete 2026-06-20)
-- [ ] Phase 9: GSPO Training — **next step** (v2.0)
-- [ ] Phase 10: RL Eval (v2.0)
-- [ ] Phase D: MoE-Sieve selective training + eval + merge + pruning (v3.0 Phases 11-13)
-- [ ] Phase E: Final eval + packaging (v3.0 Phases 14-15)
+- [x] Phase 9: GSPO Training — **REJECTED**, killed 6/6 dead checkpoint reads (v2.0, 2026-07-05)
+- [x] Phase 10: RL Eval — N/A, no RL checkpoint promoted (v2.0)
+- [x] Phase D: MoE-Sieve selective training — **no compression**, optimal_k = full (v3.0 Phases 11-12)
+- [x] Phase E: LoRA merge + pruning + final eval + packaging — **no prune winner**, Q8 GGUF ships lossless (v3.0 Phases 13-15)
+- [x] Phase 16: Pipeline lockdown — `PIPELINE.md` frozen, `deprecated/` sweep (v3.0, closed 2026-07-11)
+- [x] Phase 17: Benchmark expansion — wp-bench full rerun 0.4365, SWE-bench out-of-domain 1.67%/0% (v3.1, closed 2026-07-11)
+- [x] Phase 18: Production sweep + HuggingFace publication — two-model pair PUBLIC on HuggingFace (v3.1, closed 2026-07-12)
+- [x] Phase 19: Next-base rerun roadmap — Qwen3.6-35B-A3B locked, V4-RERUN-ROADMAP.md (v3.1, closed 2026-07-11)
+- [x] Phase 20: v4.0 base bring-up — 4/4 gates green on Qwen3.6-35B-A3B (v4.0, closed 2026-07-13)
+- [x] Phase 21: v4.0 SFT gen & judge — both pre-registered bars missed, recorded honestly (v4.0, closed 2026-07-14)
+- [x] Phase 21 diagnostic (exp 1-5) + Phase 23 final eval — gen regression + judge serving-ceiling root-caused; gen-role winner = raw base; judge tie vs v3 on the shipped stack (v4.0, closed 2026-07-15)
+- [x] Phases 22/25/26: MoE-Sieve + prune on the v4 judge's **256 experts** — the lever pulled. AIMER weight-prune at k=224 **passed** gate-before-remove (contradicting the routing profile's "resists pruning" prediction); physical surgery shipped a 224/256-expert checkpoint (v4.0, closed 2026-07-17). Gen stayed retired.
+- [x] Phase 27: Packaging & publication — v4 judge quantization ladder measured against its own f16 floor (all rungs statistically indistinguishable at n=121; tier selection by zero-parse-failures + size, not rho). **Two files published** to [iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf](https://huggingface.co/iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf): pruned Q6_K 23.47 GiB (canonical, no MTP) and unpruned Q5_K_M 23.61 GiB (256/256 experts, **MTP speculative decoding works** — `--spec-type draft-mtp`, 56% measured draft acceptance). Post-upload round-trips validated both (v4.0, closed 2026-07-18).
+- **Canonical model = the v4 WP Judge** (pruned Q6_K, 23.47 GiB — ~22% smaller than v3's 30.2 GiB at statistically tied quality on the newer base). The v1.3 repo stays live as the superseded prior artifact. **v4.0 milestone COMPLETE.**
 
 ## Dependencies
 

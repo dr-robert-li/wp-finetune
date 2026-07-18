@@ -1,0 +1,76 @@
+{
+  "save_name": "wp-gen-v4b-full",
+  "base_model": "Qwen/Qwen3.6-35B-A3B",
+  "rank": 32,
+  "train_attn": false,
+  "train_unembed": false,
+  "renderer": "qwen3_5_disable_thinking",
+  "epochs": 2,
+  "checkpoints": [
+    {
+      "epoch": 1,
+      "name": "wp-gen-v4b-full-ep1",
+      "sampler_path": "tinker://be098eb3-0735-5866-aec8-0e8f89793141:train:0/sampler_weights/wp-gen-v4b-full-ep1"
+    },
+    {
+      "epoch": 2,
+      "name": "wp-gen-v4b-full-ep2",
+      "sampler_path": "tinker://be098eb3-0735-5866-aec8-0e8f89793141:train:0/sampler_weights/wp-gen-v4b-full-ep2"
+    }
+  ],
+  "promoted": "wp-gen-v4b-full-ep2",
+  "state_path": null,
+  "created": "2026-07-14T04:28:18.673223+00:00",
+  "fs_gate": {
+    "checkpoint": "tinker://be098eb3-0735-5866-aec8-0e8f89793141:train:0/sampler_weights/wp-gen-v4b-full-ep2",
+    "streams": [
+      "cot",
+      "ctf"
+    ],
+    "gate_n": 300,
+    "threshold_rate": 0.1,
+    "threshold_wilson_upper": 0.15,
+    "arms": [
+      {
+        "temp": 0.0,
+        "terse": 0,
+        "n": 120,
+        "rate": 0.0,
+        "wilson_upper": 0.031020271055929513,
+        "pass": true
+      },
+      {
+        "temp": 0.7,
+        "terse": 0,
+        "n": 360,
+        "rate": 0.0,
+        "wilson_upper": 0.010558440816003448,
+        "pass": true
+      }
+    ],
+    "pass": true,
+    "scope": "cot+ctf (REOPEN pre-registered terse metric; scripts/tinker_fs_gate.py standalone re-score via sys.modules v4-alias, 21-02 pattern)",
+    "in_driver_full_val_arms": {
+      "arms": [
+        {
+          "temp": 0.0,
+          "terse": 18,
+          "n": 141,
+          "rate": 0.1276595744680851,
+          "wilson_upper": 0.19277246911638168,
+          "pass": false
+        },
+        {
+          "temp": 0.7,
+          "terse": 54,
+          "n": 423,
+          "rate": 0.1276595744680851,
+          "wilson_upper": 0.16284617421239203,
+          "pass": false
+        }
+      ],
+      "pass": false,
+      "disposition": "KNOWN MEASUREMENT ARTIFACT, not format collapse: the in-driver gate scores all 141 val rows including the 21 replay (code-gen) rows that legitimately carry no [/REASONING]. 18/141 terse at temp0 and 54/423 (=18x3, identical 0.1277 rate) at temp0.7 are bounded by and deterministic over that 21-row replay set. PROVEN by the canonical cot+ctf gate: 0 terse in 480 cot+ctf samples across both temps -- every terse hit lives in the replay rows. Same artifact as 21-02 (gen02), pre-documented in scripts/tinker_fs_gate.py's docstring."
+    }
+  }
+}

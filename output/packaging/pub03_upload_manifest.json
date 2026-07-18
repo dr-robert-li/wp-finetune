@@ -1,0 +1,171 @@
+{
+  "requirement": "PUB-02/PUB-03",
+  "title": "HF publication ship-set allowlist (gen bf16 + judge Q8_0 GGUF)",
+  "generated_utc": "2026-07-11",
+  "account": "iamchum",
+  "visibility": "public",
+  "repos": [
+    {
+      "repo_id": "iamchum/wp-qwen3-30b-a3b-wp-gen-v1.2",
+      "repo_type": "model",
+      "role": "generation",
+      "source_dir": "models/qwen3-30b-wp-30_70-reasoning-merged-v4",
+      "total_bytes": 61079713697,
+      "files": [
+        {
+          "path": "models/qwen3-30b-wp-30_70-reasoning-merged-v4/model-00001-of-00013.safetensors",
+          "repo_path": "model-00001-of-00013.safetensors",
+          "size_bytes": 4983533312
+        },
+        {
+          "path": "models/qwen3-30b-wp-30_70-reasoning-merged-v4/model-00002-of-00013.safetensors",
+          "repo_path": "model-00002-of-00013.safetensors",
+          "size_bytes": 4985158216
+        },
+        {
+          "path": "models/qwen3-30b-wp-30_70-reasoning-merged-v4/model-00003-of-00013.safetensors",
+          "repo_path": "model-00003-of-00013.safetensors",
+          "size_bytes": 4985158600
+        },
+        {
+          "path": "models/qwen3-30b-wp-30_70-reasoning-merged-v4/model-00004-of-00013.safetensors",
+          "repo_path": "model-00004-of-00013.safetensors",
+          "size_bytes": 4985159792
+        },
+        {
+          "path": "models/qwen3-30b-wp-30_70-reasoning-merged-v4/model-00005-of-00013.safetensors",
+          "repo_path": "model-00005-of-00013.safetensors",
+          "size_bytes": 4985159792
+        },
+        {
+          "path": "models/qwen3-30b-wp-30_70-reasoning-merged-v4/model-00006-of-00013.safetensors",
+          "repo_path": "model-00006-of-00013.safetensors",
+          "size_bytes": 4985159792
+        },
+        {
+          "path": "models/qwen3-30b-wp-30_70-reasoning-merged-v4/model-00007-of-00013.safetensors",
+          "repo_path": "model-00007-of-00013.safetensors",
+          "size_bytes": 4985159792
+        },
+        {
+          "path": "models/qwen3-30b-wp-30_70-reasoning-merged-v4/model-00008-of-00013.safetensors",
+          "repo_path": "model-00008-of-00013.safetensors",
+          "size_bytes": 4985159792
+        },
+        {
+          "path": "models/qwen3-30b-wp-30_70-reasoning-merged-v4/model-00009-of-00013.safetensors",
+          "repo_path": "model-00009-of-00013.safetensors",
+          "size_bytes": 4985159792
+        },
+        {
+          "path": "models/qwen3-30b-wp-30_70-reasoning-merged-v4/model-00010-of-00013.safetensors",
+          "repo_path": "model-00010-of-00013.safetensors",
+          "size_bytes": 4985159792
+        },
+        {
+          "path": "models/qwen3-30b-wp-30_70-reasoning-merged-v4/model-00011-of-00013.safetensors",
+          "repo_path": "model-00011-of-00013.safetensors",
+          "size_bytes": 4985159792
+        },
+        {
+          "path": "models/qwen3-30b-wp-30_70-reasoning-merged-v4/model-00012-of-00013.safetensors",
+          "repo_path": "model-00012-of-00013.safetensors",
+          "size_bytes": 4985159792
+        },
+        {
+          "path": "models/qwen3-30b-wp-30_70-reasoning-merged-v4/model-00013-of-00013.safetensors",
+          "repo_path": "model-00013-of-00013.safetensors",
+          "size_bytes": 1246289424
+        },
+        {
+          "path": "models/qwen3-30b-wp-30_70-reasoning-merged-v4/model.safetensors.index.json",
+          "repo_path": "model.safetensors.index.json",
+          "size_bytes": 1699795
+        },
+        {
+          "path": "models/qwen3-30b-wp-30_70-reasoning-merged-v4/config.json",
+          "repo_path": "config.json",
+          "size_bytes": 1020
+        },
+        {
+          "path": "models/qwen3-30b-wp-30_70-reasoning-merged-v4/generation_config.json",
+          "repo_path": "generation_config.json",
+          "size_bytes": 213
+        },
+        {
+          "path": "models/qwen3-30b-wp-30_70-reasoning-merged-v4/chat_template.jinja",
+          "repo_path": "chat_template.jinja",
+          "size_bytes": 4168
+        },
+        {
+          "path": "models/qwen3-30b-wp-30_70-reasoning-merged-v4/tokenizer.json",
+          "repo_path": "tokenizer.json",
+          "size_bytes": 11422650
+        },
+        {
+          "path": "models/qwen3-30b-wp-30_70-reasoning-merged-v4/tokenizer_config.json",
+          "repo_path": "tokenizer_config.json",
+          "size_bytes": 664
+        },
+        {
+          "path": "output/packaging/hf_cards/gen_README.md",
+          "repo_path": "README.md",
+          "size_bytes": 7507
+        }
+      ]
+    },
+    {
+      "repo_id": "iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf",
+      "repo_type": "model",
+      "role": "judge",
+      "source_dir": "models/_gguf",
+      "total_bytes": 97451804462,
+      "files": [
+        {
+          "path": "models/_gguf/wp-v1.3-judge-s0.Q8_0.gguf",
+          "repo_path": "wp-v1.3-judge-s0.Q8_0.gguf",
+          "size_bytes": 32483931840
+        },
+        {
+          "path": "models/_gguf/wp-v1.3-judge-s1.Q8_0.gguf",
+          "repo_path": "wp-v1.3-judge-s1.Q8_0.gguf",
+          "size_bytes": 32483931840
+        },
+        {
+          "path": "models/_gguf/wp-v1.3-judge-s2.Q8_0.gguf",
+          "repo_path": "wp-v1.3-judge-s2.Q8_0.gguf",
+          "size_bytes": 32483931840
+        },
+        {
+          "path": "output/packaging/hf_cards/judge_gguf_README.md",
+          "repo_path": "README.md",
+          "size_bytes": 8942
+        }
+      ]
+    }
+  ],
+  "exclusions": {
+    "bf16_judge_gguf": {
+      "files": [
+        "models/_gguf/wp-v1.3-judge-s0.bf16.gguf",
+        "models/_gguf/wp-v1.3-judge-s1.bf16.gguf",
+        "models/_gguf/wp-v1.3-judge-s2.bf16.gguf"
+      ],
+      "reason": "size, no deployment need (PUB-02 LOCKED) \u2014 Q8_0 is the recommended ship tier and is lossless per pkg03_ens8192_results.json"
+    },
+    "base_model_gguf": {
+      "files": [
+        "models/_gguf/qwen3-30b-base.bf16.gguf"
+      ],
+      "reason": "untrained base checkpoint, not a shipped fine-tune artifact (PUB-02 LOCKED)"
+    },
+    "judge_bf16_safetensors_export": {
+      "files": [
+        "models/tinker_export/v1.3"
+      ],
+      "reason": "Claude's-discretion item resolved: models/tinker_export/v1.3 is empty (export not produced complete), so the judge ships GGUF-only per CONTEXT discretion clause (\"publish judge safetensors if it exists complete; otherwise GGUF-only judge is fine\")"
+    }
+  },
+  "total_upload_bytes": 158531518159,
+  "total_upload_gib": 147.64
+}

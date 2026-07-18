@@ -1,0 +1,6 @@
+capture: output/packaging/base_eval/judge_responses.jsonl  (parse_fail=121)
+relabel-SFT vs NEW labels: rho = nan (n=0)  CI [nan, nan]
+baseline v1.2 student   : rho = 0.7477
+ceiling = sqrt(0.969) = 0.9844
+Δ vs baseline = +nan   gap-to-ceiling now = +nan (was +0.2367)
+wrote output/packaging/base_eval/eval_summary.json

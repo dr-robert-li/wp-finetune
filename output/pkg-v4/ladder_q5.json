@@ -1,0 +1,49 @@
+{
+  "requirement": "PKG4-02",
+  "tier": "Q5",
+  "method": "GGUF Q5_K_M (llama.cpp)",
+  "status": "MEASURED",
+  "generated_utc": "2026-07-17T09:25:00.000000+00:00",
+  "gate1_baseline_ref": "output/pkg-v4/gate1_f16_baseline_v4.json",
+  "anchor": "f16_gguf_llamacpp",
+  "stack": "Q5_K_M GGUF (--no-mtp, no MTP/speculative-decoding head, quantized from the f16 master), llama-server -ngl 999 --parallel 4 --jinja, CTX 20480",
+  "llamacpp_build": "version: 1 (8f114a9) built with GNU 13.3.0 for Linux aarch64",
+  "seeds": "single-seed s1",
+  "measured": {
+    "judge_rho": 0.8060171794650208,
+    "ci": [0.735794476891905, 0.8580947991832031],
+    "n": 120,
+    "n_dataset_note": "NOT like-for-like with f16/Q8/Q6 (all n=121). This is the wp_judge-filtered 121-row subset MINUS exactly the one parse-failure row (index 109). Confirmed by direct count: 121 total indexed rows, 1 parse failure, 120 scored -- not a second, unrelated drop. Because rho is computed on a different (n-1) example set than the other three rungs, its delta below is not a perfectly clean like-for-like comparison, though the practical effect of dropping 1/121 rows on Spearman rho is small.",
+    "parse_fail": 1,
+    "parse_fail_root_cause": "Index 109's generation entered a degenerate repetition loop and never emitted the closing structured-rubric JSON before hitting the shared max_tokens=2048 cap. Response is 8021 characters (~2048 tokens at this model's byte-per-token ratio, consistent with running to the token budget). Tail of the response repeats the fragment 'Issue: format_error() is a simple string construction with no IOPerformance: severity low (8/10) —' verbatim multiple times back-to-back, then truncates mid-fragment with no closing brace/JSON. This is a per-sample generation-quality failure at Q5_K_M's reduced precision on this specific prompt, not a harness bug: same parser (eval.output_parsers.parse_judge_scores), same max_tokens (2048), same dataset/index mapping as every other rung, all of which had parse_fail=0 at n=121.",
+    "max_tokens": 2048,
+    "size_bytes": 21861275456,
+    "size_gib": 20.3599,
+    "capture": "output/pkg-v4/q5_eval/judge_responses.jsonl",
+    "summary": "output/pkg-v4/q5_eval/eval_summary.json"
+  },
+  "gate": {
+    "gate1_rho": 0.8001808600187146,
+    "delta": 0.0058363194463062484,
+    "delta_pp": 0.5836,
+    "epsilon_pp": 2,
+    "bar": "delta >= -0.02 (inclusive, matching Phase 26's ci_lower >= -0.02 convention)",
+    "pass": true,
+    "slack_pp": 2.584,
+    "pass_caveat": "This 'pass' is on the rho-vs-floor criterion only, computed on the n=120 like-for-like-with-a-caveat subset above. It does NOT certify Q5 as defect-free -- see reliability block below, which is the criterion that actually disqualifies this tier from automatic shipment."
+  },
+  "reliability": {
+    "parse_fail_count": 1,
+    "parse_fail_rate": "1/121 = 0.83%",
+    "reliability_pass": false,
+    "note": "The ONLY tier in this ladder with a nonzero parse failure. f16 (n=121), Q8 (n=121), Q6 (n=121) all scored parse_fail=0. For a judge whose entire output contract is a parseable structured rubric, a parse failure is a hard functional failure, not a soft quality wobble -- and this project's own v3 PKG-03 protocol treats zero parse failures as the bar (see output/packaging/pkg03_quantization_ladder.json Q8 entry, 'parse_fail_all_arms: 0'). 1/121 is weak statistical evidence on its own (wide binomial CI at this n) and could be a single unlucky sample -- it is NOT claimed as proof Q5_K_M is systematically less reliable. But it is the only tier-discriminating signal this ladder actually measured (see noise_floor_finding: rho cannot discriminate), and a hard failure mode is one where conservatism is cheap."
+  },
+  "deltanet_state_precision": {
+    "q8_types": ["F32", "Q8_0"],
+    "q6_types": ["F32", "Q6_K"],
+    "q5_types": ["F32", "Q5_K"],
+    "dropped_below_tier": false,
+    "pattern_matched_tensors": 210,
+    "note": "PKG4-02 below-Q8 clause. Q5's DeltaNet ssm_* tensors match the Q5_K_M tier's nominal type exactly (120 stay F32, 90 track Q5_K -- identical split to Q8 and Q6). No state tensor dropped below the requested tier."
+  }
+}

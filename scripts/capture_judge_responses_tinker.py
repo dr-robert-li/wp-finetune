@@ -65,13 +65,36 @@ def main() -> int:
     ap.add_argument("--filter", default="wp_judge_startswith",
                     choices=["wp_judge_startswith", "all"],
                     help="row filter; wp_judge_startswith mirrors eval_judge._run_eval_reasoning")
+    ap.add_argument("--base-model", default=None,
+                    help="override BASE_MODEL for tokenizer+renderer resolution (default: this "
+                         "module's v3 BASE_MODEL). Pass the v4 base "
+                         "(tinker_reasoning_data_v4.BASE_MODEL) to sample a v4-trained sampler "
+                         "checkpoint under its own renderer -- back-compat: omitting this flag "
+                         "reproduces the original v3-only behavior exactly.")
+    ap.add_argument("--renderer", default=None,
+                    help="override RENDERER_NAME explicitly (default: resolved from --base-model, "
+                         "or this module's v3 RENDERER_NAME if --base-model is also omitted)")
     args = ap.parse_args()
 
     tinker_path = _resolve_tinker_path(args.tinker_path, args.manifest)
     print(f"[capture-tinker] sampler path: {tinker_path}", flush=True)
 
-    tok = get_tokenizer(BASE_MODEL)
-    renderer = renderers.get_renderer(RENDERER_NAME, tokenizer=tok)
+    base_model = args.base_model or BASE_MODEL
+    renderer_name = args.renderer
+    if renderer_name is None:
+        if base_model == BASE_MODEL:
+            renderer_name = RENDERER_NAME
+        else:
+            from tinker_reasoning_data_v4 import BASE_MODEL as V4_BASE_MODEL, RENDERER_NAME as V4_RENDERER_NAME
+            if base_model != V4_BASE_MODEL:
+                raise SystemExit(f"--base-model {base_model!r} has no known renderer "
+                                  f"(known: {BASE_MODEL!r} -> {RENDERER_NAME!r}, "
+                                  f"{V4_BASE_MODEL!r} -> {V4_RENDERER_NAME!r}); pass --renderer explicitly")
+            renderer_name = V4_RENDERER_NAME
+    print(f"[capture-tinker] base_model={base_model} renderer={renderer_name}", flush=True)
+
+    tok = get_tokenizer(base_model)
+    renderer = renderers.get_renderer(renderer_name, tokenizer=tok)
     sc = tinker.ServiceClient()
     sampling_client = sc.create_sampling_client(model_path=tinker_path)
     sp = tinker.SamplingParams(max_tokens=args.max_tokens, temperature=args.temperature,
@@ -86,28 +109,45 @@ def main() -> int:
     print(f"[capture-tinker] {len(examples)} examples (filter={args.filter})", flush=True)
 
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
-    n_close = n_jo = 0
+    n_close = n_jo = n_infra_error = 0
     with open(args.out, "w") as fh:
         fh.write(json.dumps({"__provenance__": tinker_path, "dataset": args.dataset,
-                             "renderer": RENDERER_NAME, "max_tokens": args.max_tokens,
+                             "base_model": base_model, "renderer": renderer_name,
+                             "max_tokens": args.max_tokens,
                              "temperature": args.temperature, "n": len(examples)}) + "\n")
         for idx, r in enumerate(examples):
             user_msgs = [m for m in r["messages"] if m["role"] == "user"]
             prompt = renderer.build_generation_prompt(user_msgs)
+            infra_error = False
             try:
                 resp = sampling_client.sample(prompt=prompt, num_samples=1, sampling_params=sp)
                 text = _decode_first(resp, tok)
             except Exception as e:  # noqa: BLE001
                 print(f"[capture-tinker] sample error idx {idx}: {e}", flush=True)
                 text = ""
+                infra_error = True
+                n_infra_error += 1
             n_close += "[/REASONING]" in text
             n_jo += "<judge_output>" in text
-            fh.write(json.dumps({"index": idx, "response": text}) + "\n")
+            # WR-04: "infra_error" is an additive field -- eval_relabel.py
+            # (unmodified) only reads "index"/"response" per row and ignores
+            # unknown keys, so a transient sampling-API error stays
+            # distinguishable from a genuine judge-format non-compliance
+            # without changing the downstream scorer.
+            fh.write(json.dumps({"index": idx, "response": text, "infra_error": infra_error}) + "\n")
             if (idx + 1) % 25 == 0:
                 print(f"[capture-tinker] {idx + 1}/{len(examples)} "
-                      f"close={n_close} judge_output={n_jo}", flush=True)
+                      f"close={n_close} judge_output={n_jo} infra_error={n_infra_error}", flush=True)
+    # WR-04: sidecar summary carrying n_infra_error alongside n (total) --
+    # written last so streaming per-row writes above stay crash-resilient
+    # (a killed mid-run process still leaves a usable partial capture file;
+    # only this final summary would be missing).
+    summary_path = args.out + ".capture_summary.json"
+    with open(summary_path, "w") as f:
+        json.dump({"n": len(examples), "n_infra_error": n_infra_error,
+                   "n_close_tag": n_close, "n_judge_output_tag": n_jo}, f, indent=2)
     print(f"[capture-tinker] DONE n={len(examples)} close_tag={n_close} "
-          f"judge_output={n_jo} -> {args.out}", flush=True)
+          f"judge_output={n_jo} infra_error={n_infra_error} -> {args.out}", flush=True)
     return 0
 
 

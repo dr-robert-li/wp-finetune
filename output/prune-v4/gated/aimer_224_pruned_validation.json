@@ -1,0 +1,11 @@
+{
+  "requirement": "GATE4-04",
+  "checkpoint": "models/Qwen3.6-35B-A3B-judge-v4-pruned-k224",
+  "pruned_s1_rho": 0.8134073708876893,
+  "masked_s1_rho": 0.818446799620866,
+  "rho_delta_vs_masked": -0.005039428733176643,
+  "parse_fail": 1,
+  "n_scored": 120,
+  "coherent": true,
+  "note": "pruned checkpoint served UNMASKED (native 224 experts); rho should track masked-s1"
+}

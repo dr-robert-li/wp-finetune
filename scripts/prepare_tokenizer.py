@@ -25,6 +25,7 @@ import yaml
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from scripts.dgx_toolbox import get_toolbox  # noqa: F401 — establishes DGX pattern
+from scripts import sieve_arch  # GB10-safe from_pretrained kwargs
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = PROJECT_ROOT / "config" / "train_config.yaml"
@@ -166,7 +167,7 @@ def prepare_tokenizer(skip_download: bool = False, smoke_only: bool = False) -> 
         model = AutoModelForCausalLM.from_pretrained(
             str(local_dir),
             dtype=torch.bfloat16,
-            device_map="auto",
+            **sieve_arch.gb10_load_kwargs(),  # single-device + low_cpu_mem_usage; NOT device_map="auto" (GB10 OOM trap)
         )
         run_smoke_test(tokenizer, model)
         return
@@ -223,7 +224,7 @@ def prepare_tokenizer(skip_download: bool = False, smoke_only: bool = False) -> 
         model = AutoModelForCausalLM.from_pretrained(
             str(local_dir),
             dtype=torch.bfloat16,
-            device_map="auto",
+            **sieve_arch.gb10_load_kwargs(),  # single-device + low_cpu_mem_usage; NOT device_map="auto" (GB10 OOM trap)
         )
 
     # --- Step 3: Extend tokenizer and mean-init embeddings ---

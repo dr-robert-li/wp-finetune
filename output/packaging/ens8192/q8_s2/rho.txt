@@ -1,0 +1,6 @@
+capture: output/packaging/ens8192/q8_s2/judge_responses.jsonl  (parse_fail=0)
+relabel-SFT vs NEW labels: rho = 0.7894 (n=121)  CI [0.7155, 0.8452]
+baseline v1.2 student   : rho = 0.7477
+ceiling = sqrt(0.969) = 0.9844
+Δ vs baseline = +0.0418   gap-to-ceiling now = +0.1950 (was +0.2367)
+wrote output/packaging/ens8192/q8_s2/eval_summary.json

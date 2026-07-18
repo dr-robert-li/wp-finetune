@@ -1,0 +1,31 @@
+=== STDOUT ===
+Knowledge ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00
+Execution ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00
+Results written to: 
+/home/robert_li/Desktop/projects/wp-finetune/output/bench17/full_gate_rerun/wp_b
+ench_results_20260711_050328.json
+WP-Bench completed
+{
+    'knowledge': 0.490625,
+    'correctness': 0.3958333333333333,
+    'quality': None,
+    'overall': 0.4365
+}
+
+=== STDERR ===
+/home/robert_li/miniconda3/lib/python3.13/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.3)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+⚠ Warning: wp-env starts both development and tests environments by default.
+This behavior is deprecated and will be removed in a future version.
+To avoid this warning, add "testsEnvironment": false to your .wp-env.json.
+The "env", "testsPort", and "testsEnvironment" options are also deprecated.
+Use the --config option with a separate config file for test environments instead.
+
+- Reading configuration.
+WordPress development site started at http://localhost:8888
+MySQL is listening on port 32780
+WordPress test site started at http://localhost:8889
+MySQL for automated testing is listening on port 32781
+
+ ✔ Done! (in 3s 689ms)
+

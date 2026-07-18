@@ -1,0 +1,3017 @@
+{
+ "train:0": {
+  "overall": 81.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:1": {
+  "overall": 68.5,
+  "n_passes": 2,
+  "old_gt": 48.0
+ },
+ "train:2": {
+  "overall": 61.0,
+  "n_passes": 3,
+  "old_gt": 35.0
+ },
+ "train:3": {
+  "overall": 76.5,
+  "n_passes": 2,
+  "old_gt": 53.0
+ },
+ "train:4": {
+  "overall": 84.0,
+  "n_passes": 2,
+  "old_gt": 92.0
+ },
+ "train:5": {
+  "overall": 64.0,
+  "n_passes": 2,
+  "old_gt": 45.0
+ },
+ "train:6": {
+  "overall": 81.0,
+  "n_passes": 2,
+  "old_gt": 81.0
+ },
+ "train:7": {
+  "overall": 68.5,
+  "n_passes": 2,
+  "old_gt": 45.0
+ },
+ "train:8": {
+  "overall": 76.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:9": {
+  "overall": 81.0,
+  "n_passes": 2,
+  "old_gt": 85.0
+ },
+ "train:10": {
+  "overall": 64.5,
+  "n_passes": 2,
+  "old_gt": 61.0
+ },
+ "train:11": {
+  "overall": 56.0,
+  "n_passes": 3,
+  "old_gt": 22.0
+ },
+ "train:12": {
+  "overall": 71.0,
+  "n_passes": 2,
+  "old_gt": 68.0
+ },
+ "train:13": {
+  "overall": 54.0,
+  "n_passes": 2,
+  "old_gt": 45.0
+ },
+ "train:14": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:15": {
+  "overall": 72.0,
+  "n_passes": 2,
+  "old_gt": 45.0
+ },
+ "train:16": {
+  "overall": 79.0,
+  "n_passes": 2,
+  "old_gt": 61.0
+ },
+ "train:17": {
+  "overall": 67.5,
+  "n_passes": 2,
+  "old_gt": 69.0
+ },
+ "train:18": {
+  "overall": 82.0,
+  "n_passes": 2,
+  "old_gt": 94.0
+ },
+ "train:19": {
+  "overall": 82.0,
+  "n_passes": 2,
+  "old_gt": 74.0
+ },
+ "train:20": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:21": {
+  "overall": 57.5,
+  "n_passes": 2,
+  "old_gt": 47.0
+ },
+ "train:22": {
+  "overall": 68.0,
+  "n_passes": 2,
+  "old_gt": 25.0
+ },
+ "train:23": {
+  "overall": 74.0,
+  "n_passes": 2,
+  "old_gt": 56.0
+ },
+ "train:24": {
+  "overall": 26.0,
+  "n_passes": 2,
+  "old_gt": 40.0
+ },
+ "train:25": {
+  "overall": 66.5,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:26": {
+  "overall": 81.0,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:27": {
+  "overall": 75.5,
+  "n_passes": 2,
+  "old_gt": 73.0
+ },
+ "train:28": {
+  "overall": 75.0,
+  "n_passes": 2,
+  "old_gt": 38.0
+ },
+ "train:29": {
+  "overall": 80.0,
+  "n_passes": 129,
+  "old_gt": 30.0
+ },
+ "train:30": {
+  "overall": 83.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:31": {
+  "overall": 85.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:32": {
+  "overall": 75.0,
+  "n_passes": 2,
+  "old_gt": 93.0
+ },
+ "train:33": {
+  "overall": 32.0,
+  "n_passes": 2,
+  "old_gt": 82.0
+ },
+ "train:34": {
+  "overall": 83.5,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:35": {
+  "overall": 68.0,
+  "n_passes": 2,
+  "old_gt": 88.0
+ },
+ "train:36": {
+  "overall": 73.0,
+  "n_passes": 2,
+  "old_gt": 94.0
+ },
+ "train:37": {
+  "overall": 76.0,
+  "n_passes": 2,
+  "old_gt": 55.0
+ },
+ "train:38": {
+  "overall": 84.5,
+  "n_passes": 2,
+  "old_gt": 70.0
+ },
+ "train:39": {
+  "overall": 87.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:40": {
+  "overall": 77.5,
+  "n_passes": 2,
+  "old_gt": 75.0
+ },
+ "train:41": {
+  "overall": 86.0,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:42": {
+  "overall": 65.5,
+  "n_passes": 2,
+  "old_gt": 35.0
+ },
+ "train:43": {
+  "overall": 79.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:44": {
+  "overall": 78.0,
+  "n_passes": 129,
+  "old_gt": 90.0
+ },
+ "train:45": {
+  "overall": 51.5,
+  "n_passes": 2,
+  "old_gt": 37.0
+ },
+ "train:46": {
+  "overall": 80.5,
+  "n_passes": 2,
+  "old_gt": 63.0
+ },
+ "train:47": {
+  "overall": 76.5,
+  "n_passes": 2,
+  "old_gt": 35.0
+ },
+ "train:48": {
+  "overall": 64.0,
+  "n_passes": 3,
+  "old_gt": 45.0
+ },
+ "train:49": {
+  "overall": 83.5,
+  "n_passes": 2,
+  "old_gt": 64.0
+ },
+ "train:50": {
+  "overall": 78.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:51": {
+  "overall": 83.5,
+  "n_passes": 2,
+  "old_gt": 76.0
+ },
+ "train:52": {
+  "overall": 66.5,
+  "n_passes": 2,
+  "old_gt": 50.0
+ },
+ "train:53": {
+  "overall": 78.5,
+  "n_passes": 2,
+  "old_gt": 61.0
+ },
+ "train:54": {
+  "overall": 81.0,
+  "n_passes": 2,
+  "old_gt": 80.0
+ },
+ "train:55": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:56": {
+  "overall": 76.5,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:57": {
+  "overall": 69.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:58": {
+  "overall": 46.5,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:59": {
+  "overall": 64.5,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:60": {
+  "overall": 81.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:61": {
+  "overall": 70.0,
+  "n_passes": 129,
+  "old_gt": 65.0
+ },
+ "train:62": {
+  "overall": 81.0,
+  "n_passes": 2,
+  "old_gt": 71.0
+ },
+ "train:63": {
+  "overall": 51.5,
+  "n_passes": 2,
+  "old_gt": 74.0
+ },
+ "train:64": {
+  "overall": 60.0,
+  "n_passes": 2,
+  "old_gt": 51.0
+ },
+ "train:65": {
+  "overall": 82.0,
+  "n_passes": 2,
+  "old_gt": 45.0
+ },
+ "train:66": {
+  "overall": 81.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:67": {
+  "overall": 76.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:68": {
+  "overall": 66.0,
+  "n_passes": 2,
+  "old_gt": 70.0
+ },
+ "train:69": {
+  "overall": 85.0,
+  "n_passes": 2,
+  "old_gt": 83.0
+ },
+ "train:70": {
+  "overall": 73.0,
+  "n_passes": 2,
+  "old_gt": 35.0
+ },
+ "train:71": {
+  "overall": 83.5,
+  "n_passes": 2,
+  "old_gt": 74.0
+ },
+ "train:72": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 77.0
+ },
+ "train:73": {
+  "overall": 81.0,
+  "n_passes": 2,
+  "old_gt": 85.0
+ },
+ "train:74": {
+  "overall": 78.5,
+  "n_passes": 2,
+  "old_gt": 87.0
+ },
+ "train:75": {
+  "overall": 80.5,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:76": {
+  "overall": 79.0,
+  "n_passes": 2,
+  "old_gt": 65.0
+ },
+ "train:77": {
+  "overall": 59.5,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:78": {
+  "overall": 75.0,
+  "n_passes": 2,
+  "old_gt": 65.0
+ },
+ "train:79": {
+  "overall": 77.5,
+  "n_passes": 2,
+  "old_gt": 69.0
+ },
+ "train:80": {
+  "overall": 81.5,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:81": {
+  "overall": 68.0,
+  "n_passes": 3,
+  "old_gt": 35.0
+ },
+ "train:82": {
+  "overall": 68.0,
+  "n_passes": 2,
+  "old_gt": 65.0
+ },
+ "train:83": {
+  "overall": 71.0,
+  "n_passes": 2,
+  "old_gt": 45.0
+ },
+ "train:84": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:85": {
+  "overall": 76.5,
+  "n_passes": 2,
+  "old_gt": 59.0
+ },
+ "train:86": {
+  "overall": 85.5,
+  "n_passes": 2,
+  "old_gt": 79.0
+ },
+ "train:87": {
+  "overall": 84.5,
+  "n_passes": 2,
+  "old_gt": 88.0
+ },
+ "train:88": {
+  "overall": 69.0,
+  "n_passes": 2,
+  "old_gt": 57.0
+ },
+ "train:89": {
+  "overall": 59.0,
+  "n_passes": 2,
+  "old_gt": 53.0
+ },
+ "train:90": {
+  "overall": 63.0,
+  "n_passes": 3,
+  "old_gt": 45.0
+ },
+ "train:91": {
+  "overall": 84.5,
+  "n_passes": 2,
+  "old_gt": 83.0
+ },
+ "train:92": {
+  "overall": 81.0,
+  "n_passes": 2,
+  "old_gt": 35.0
+ },
+ "train:93": {
+  "overall": 57.0,
+  "n_passes": 3,
+  "old_gt": 95.0
+ },
+ "train:94": {
+  "overall": 79.0,
+  "n_passes": 2,
+  "old_gt": 77.0
+ },
+ "train:95": {
+  "overall": 61.5,
+  "n_passes": 2,
+  "old_gt": 45.0
+ },
+ "train:96": {
+  "overall": 84.5,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:97": {
+  "overall": 79.5,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:98": {
+  "overall": 82.0,
+  "n_passes": 2,
+  "old_gt": 67.0
+ },
+ "train:99": {
+  "overall": 81.5,
+  "n_passes": 2,
+  "old_gt": 65.0
+ },
+ "train:100": {
+  "overall": 85.0,
+  "n_passes": 2,
+  "old_gt": 88.0
+ },
+ "train:101": {
+  "overall": 69.0,
+  "n_passes": 2,
+  "old_gt": 45.0
+ },
+ "train:102": {
+  "overall": 73.5,
+  "n_passes": 2,
+  "old_gt": 74.0
+ },
+ "train:103": {
+  "overall": 62.0,
+  "n_passes": 2,
+  "old_gt": 45.0
+ },
+ "train:104": {
+  "overall": 69.0,
+  "n_passes": 2,
+  "old_gt": 57.0
+ },
+ "train:105": {
+  "overall": 50.0,
+  "n_passes": 3,
+  "old_gt": 65.0
+ },
+ "train:106": {
+  "overall": 75.0,
+  "n_passes": 2,
+  "old_gt": 54.0
+ },
+ "train:107": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 90.0
+ },
+ "train:108": {
+  "overall": 77.0,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:109": {
+  "overall": 43.0,
+  "n_passes": 2,
+  "old_gt": 35.0
+ },
+ "train:110": {
+  "overall": 87.5,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:111": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 76.0
+ },
+ "train:112": {
+  "overall": 69.0,
+  "n_passes": 2,
+  "old_gt": 59.0
+ },
+ "train:113": {
+  "overall": 72.5,
+  "n_passes": 2,
+  "old_gt": 45.0
+ },
+ "train:114": {
+  "overall": 66.0,
+  "n_passes": 2,
+  "old_gt": 48.0
+ },
+ "train:115": {
+  "overall": 78.5,
+  "n_passes": 2,
+  "old_gt": 92.0
+ },
+ "train:116": {
+  "overall": 82.0,
+  "n_passes": 2,
+  "old_gt": 35.0
+ },
+ "train:117": {
+  "overall": 81.0,
+  "n_passes": 2,
+  "old_gt": 70.0
+ },
+ "train:118": {
+  "overall": 67.0,
+  "n_passes": 2,
+  "old_gt": 53.0
+ },
+ "train:119": {
+  "overall": 77.5,
+  "n_passes": 2,
+  "old_gt": 96.0
+ },
+ "train:120": {
+  "overall": 84.0,
+  "n_passes": 2,
+  "old_gt": 88.0
+ },
+ "train:121": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 85.0
+ },
+ "train:122": {
+  "overall": 82.5,
+  "n_passes": 2,
+  "old_gt": 81.0
+ },
+ "train:123": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 98.0
+ },
+ "train:124": {
+  "overall": 81.5,
+  "n_passes": 2,
+  "old_gt": 77.0
+ },
+ "train:125": {
+  "overall": 83.0,
+  "n_passes": 2,
+  "old_gt": 85.0
+ },
+ "train:126": {
+  "overall": 84.5,
+  "n_passes": 2,
+  "old_gt": 90.0
+ },
+ "train:127": {
+  "overall": 69.0,
+  "n_passes": 2,
+  "old_gt": 53.0
+ },
+ "train:128": {
+  "overall": 77.5,
+  "n_passes": 2,
+  "old_gt": 56.0
+ },
+ "train:129": {
+  "overall": 69.0,
+  "n_passes": 2,
+  "old_gt": 45.0
+ },
+ "train:130": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 78.0
+ },
+ "train:131": {
+  "overall": 52.0,
+  "n_passes": 3,
+  "old_gt": 15.0
+ },
+ "train:132": {
+  "overall": 64.5,
+  "n_passes": 2,
+  "old_gt": 57.0
+ },
+ "train:133": {
+  "overall": 75.0,
+  "n_passes": 2,
+  "old_gt": 90.0
+ },
+ "train:134": {
+  "overall": 55.0,
+  "n_passes": 3,
+  "old_gt": 35.0
+ },
+ "train:135": {
+  "overall": 77.0,
+  "n_passes": 2,
+  "old_gt": 77.0
+ },
+ "train:136": {
+  "overall": 70.5,
+  "n_passes": 2,
+  "old_gt": 15.0
+ },
+ "train:137": {
+  "overall": 73.5,
+  "n_passes": 2,
+  "old_gt": 35.0
+ },
+ "train:138": {
+  "overall": 64.5,
+  "n_passes": 2,
+  "old_gt": 41.0
+ },
+ "train:139": {
+  "overall": 85.5,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:140": {
+  "overall": 64.5,
+  "n_passes": 2,
+  "old_gt": 65.0
+ },
+ "train:141": {
+  "overall": 63.0,
+  "n_passes": 2,
+  "old_gt": 60.0
+ },
+ "train:142": {
+  "overall": 60.5,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:143": {
+  "overall": 67.5,
+  "n_passes": 2,
+  "old_gt": 15.0
+ },
+ "train:144": {
+  "overall": 66.0,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:145": {
+  "overall": 80.5,
+  "n_passes": 2,
+  "old_gt": 93.0
+ },
+ "train:146": {
+  "overall": 65.5,
+  "n_passes": 2,
+  "old_gt": 56.0
+ },
+ "train:147": {
+  "overall": 84.0,
+  "n_passes": 2,
+  "old_gt": 84.0
+ },
+ "train:148": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 76.0
+ },
+ "train:149": {
+  "overall": 69.0,
+  "n_passes": 2,
+  "old_gt": 65.0
+ },
+ "train:150": {
+  "overall": 60.5,
+  "n_passes": 2,
+  "old_gt": 45.0
+ },
+ "train:151": {
+  "overall": 86.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:152": {
+  "overall": 66.0,
+  "n_passes": 2,
+  "old_gt": 44.0
+ },
+ "train:153": {
+  "overall": 85.0,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:154": {
+  "overall": 74.5,
+  "n_passes": 2,
+  "old_gt": 90.0
+ },
+ "train:155": {
+  "overall": 79.0,
+  "n_passes": 2,
+  "old_gt": 59.0
+ },
+ "train:156": {
+  "overall": 72.5,
+  "n_passes": 2,
+  "old_gt": 44.0
+ },
+ "train:157": {
+  "overall": 82.5,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:158": {
+  "overall": 74.0,
+  "n_passes": 2,
+  "old_gt": 51.0
+ },
+ "train:159": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 63.0
+ },
+ "train:160": {
+  "overall": 67.5,
+  "n_passes": 2,
+  "old_gt": 53.0
+ },
+ "train:161": {
+  "overall": 84.5,
+  "n_passes": 2,
+  "old_gt": 83.0
+ },
+ "train:162": {
+  "overall": 47.0,
+  "n_passes": 2,
+  "old_gt": 40.0
+ },
+ "train:163": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 93.0
+ },
+ "train:164": {
+  "overall": 43.0,
+  "n_passes": 2,
+  "old_gt": 39.0
+ },
+ "train:165": {
+  "overall": 68.0,
+  "n_passes": 2,
+  "old_gt": 79.0
+ },
+ "train:166": {
+  "overall": 82.5,
+  "n_passes": 2,
+  "old_gt": 71.0
+ },
+ "train:167": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:168": {
+  "overall": 81.5,
+  "n_passes": 2,
+  "old_gt": 92.0
+ },
+ "train:169": {
+  "overall": 76.5,
+  "n_passes": 2,
+  "old_gt": 82.0
+ },
+ "train:170": {
+  "overall": 84.0,
+  "n_passes": 2,
+  "old_gt": 85.0
+ },
+ "train:171": {
+  "overall": 68.0,
+  "n_passes": 2,
+  "old_gt": 58.0
+ },
+ "train:172": {
+  "overall": 72.5,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:173": {
+  "overall": 82.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:174": {
+  "overall": 79.0,
+  "n_passes": 2,
+  "old_gt": 79.0
+ },
+ "train:175": {
+  "overall": 70.0,
+  "n_passes": 2,
+  "old_gt": 51.0
+ },
+ "train:176": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 64.0
+ },
+ "train:177": {
+  "overall": 84.5,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:178": {
+  "overall": 82.5,
+  "n_passes": 2,
+  "old_gt": 84.0
+ },
+ "train:179": {
+  "overall": 82.5,
+  "n_passes": 2,
+  "old_gt": 80.0
+ },
+ "train:180": {
+  "overall": 69.5,
+  "n_passes": 2,
+  "old_gt": 76.0
+ },
+ "train:181": {
+  "overall": 84.5,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:182": {
+  "overall": 82.0,
+  "n_passes": 2,
+  "old_gt": 90.0
+ },
+ "train:183": {
+  "overall": 63.5,
+  "n_passes": 2,
+  "old_gt": 50.0
+ },
+ "train:184": {
+  "overall": 61.5,
+  "n_passes": 2,
+  "old_gt": 45.0
+ },
+ "train:185": {
+  "overall": 85.0,
+  "n_passes": 2,
+  "old_gt": 93.0
+ },
+ "train:186": {
+  "overall": 70.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:187": {
+  "overall": 55.5,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:188": {
+  "overall": 70.0,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:189": {
+  "overall": 85.5,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:190": {
+  "overall": 79.0,
+  "n_passes": 2,
+  "old_gt": 54.0
+ },
+ "train:191": {
+  "overall": 59.0,
+  "n_passes": 2,
+  "old_gt": 43.0
+ },
+ "train:192": {
+  "overall": 77.5,
+  "n_passes": 2,
+  "old_gt": 45.0
+ },
+ "train:193": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 65.0
+ },
+ "train:194": {
+  "overall": 75.5,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:195": {
+  "overall": 81.5,
+  "n_passes": 2,
+  "old_gt": 74.0
+ },
+ "train:196": {
+  "overall": 72.0,
+  "n_passes": 2,
+  "old_gt": 53.0
+ },
+ "train:197": {
+  "overall": 75.0,
+  "n_passes": 2,
+  "old_gt": 25.0
+ },
+ "train:198": {
+  "overall": 73.5,
+  "n_passes": 2,
+  "old_gt": 74.0
+ },
+ "train:199": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 75.0
+ },
+ "train:200": {
+  "overall": 74.0,
+  "n_passes": 2,
+  "old_gt": 49.0
+ },
+ "train:201": {
+  "overall": 67.5,
+  "n_passes": 2,
+  "old_gt": 90.0
+ },
+ "train:202": {
+  "overall": 78.0,
+  "n_passes": 2,
+  "old_gt": 82.0
+ },
+ "train:203": {
+  "overall": 66.0,
+  "n_passes": 2,
+  "old_gt": 67.0
+ },
+ "train:204": {
+  "overall": 80.5,
+  "n_passes": 2,
+  "old_gt": 57.0
+ },
+ "train:205": {
+  "overall": 62.0,
+  "n_passes": 2,
+  "old_gt": 55.0
+ },
+ "train:206": {
+  "overall": 79.0,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:207": {
+  "overall": 69.0,
+  "n_passes": 2,
+  "old_gt": 55.0
+ },
+ "train:208": {
+  "overall": 71.0,
+  "n_passes": 2,
+  "old_gt": 49.0
+ },
+ "train:209": {
+  "overall": 77.5,
+  "n_passes": 2,
+  "old_gt": 88.0
+ },
+ "train:210": {
+  "overall": 67.0,
+  "n_passes": 2,
+  "old_gt": 44.0
+ },
+ "train:211": {
+  "overall": 79.0,
+  "n_passes": 2,
+  "old_gt": 63.0
+ },
+ "train:212": {
+  "overall": 74.0,
+  "n_passes": 2,
+  "old_gt": 73.0
+ },
+ "train:213": {
+  "overall": 83.5,
+  "n_passes": 2,
+  "old_gt": 86.0
+ },
+ "train:214": {
+  "overall": 81.0,
+  "n_passes": 2,
+  "old_gt": 88.0
+ },
+ "train:215": {
+  "overall": 79.0,
+  "n_passes": 2,
+  "old_gt": 76.0
+ },
+ "train:216": {
+  "overall": 82.0,
+  "n_passes": 2,
+  "old_gt": 82.0
+ },
+ "train:217": {
+  "overall": 83.0,
+  "n_passes": 2,
+  "old_gt": 90.0
+ },
+ "train:218": {
+  "overall": 68.0,
+  "n_passes": 2,
+  "old_gt": 57.0
+ },
+ "train:219": {
+  "overall": 73.5,
+  "n_passes": 2,
+  "old_gt": 92.0
+ },
+ "train:220": {
+  "overall": 82.5,
+  "n_passes": 2,
+  "old_gt": 81.0
+ },
+ "train:221": {
+  "overall": 68.0,
+  "n_passes": 2,
+  "old_gt": 73.0
+ },
+ "train:222": {
+  "overall": 84.5,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:223": {
+  "overall": 46.5,
+  "n_passes": 2,
+  "old_gt": 46.0
+ },
+ "train:224": {
+  "overall": 77.0,
+  "n_passes": 2,
+  "old_gt": 57.0
+ },
+ "train:225": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:226": {
+  "overall": 81.5,
+  "n_passes": 2,
+  "old_gt": 71.0
+ },
+ "train:227": {
+  "overall": 73.0,
+  "n_passes": 2,
+  "old_gt": 64.0
+ },
+ "train:228": {
+  "overall": 81.5,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:229": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 53.0
+ },
+ "train:230": {
+  "overall": 82.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:231": {
+  "overall": 79.0,
+  "n_passes": 2,
+  "old_gt": 60.0
+ },
+ "train:232": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:233": {
+  "overall": 82.5,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:234": {
+  "overall": 87.5,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:235": {
+  "overall": 66.5,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:236": {
+  "overall": 73.0,
+  "n_passes": 2,
+  "old_gt": 10.0
+ },
+ "train:237": {
+  "overall": 77.0,
+  "n_passes": 2,
+  "old_gt": 93.0
+ },
+ "train:238": {
+  "overall": 50.0,
+  "n_passes": 2,
+  "old_gt": 25.0
+ },
+ "train:239": {
+  "overall": 82.5,
+  "n_passes": 2,
+  "old_gt": 80.0
+ },
+ "train:240": {
+  "overall": 71.5,
+  "n_passes": 2,
+  "old_gt": 85.0
+ },
+ "train:241": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:242": {
+  "overall": 68.0,
+  "n_passes": 2,
+  "old_gt": 43.0
+ },
+ "train:243": {
+  "overall": 79.5,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:244": {
+  "overall": 82.0,
+  "n_passes": 2,
+  "old_gt": 90.0
+ },
+ "train:245": {
+  "overall": 68.0,
+  "n_passes": 2,
+  "old_gt": 71.0
+ },
+ "train:246": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 15.0
+ },
+ "train:247": {
+  "overall": 73.0,
+  "n_passes": 2,
+  "old_gt": 59.0
+ },
+ "train:248": {
+  "overall": 64.5,
+  "n_passes": 2,
+  "old_gt": 45.0
+ },
+ "train:249": {
+  "overall": 44.5,
+  "n_passes": 2,
+  "old_gt": 38.0
+ },
+ "train:250": {
+  "overall": 78.0,
+  "n_passes": 2,
+  "old_gt": 61.0
+ },
+ "train:251": {
+  "overall": 76.0,
+  "n_passes": 2,
+  "old_gt": 15.0
+ },
+ "train:252": {
+  "overall": 81.5,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:253": {
+  "overall": 65.0,
+  "n_passes": 2,
+  "old_gt": 39.0
+ },
+ "train:254": {
+  "overall": 79.5,
+  "n_passes": 2,
+  "old_gt": 35.0
+ },
+ "train:255": {
+  "overall": 73.0,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:256": {
+  "overall": 82.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:257": {
+  "overall": 81.0,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:258": {
+  "overall": 66.0,
+  "n_passes": 2,
+  "old_gt": 53.0
+ },
+ "train:259": {
+  "overall": 80.5,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:260": {
+  "overall": 60.0,
+  "n_passes": 2,
+  "old_gt": 3.0
+ },
+ "train:261": {
+  "overall": 77.0,
+  "n_passes": 2,
+  "old_gt": 90.0
+ },
+ "train:262": {
+  "overall": 66.0,
+  "n_passes": 2,
+  "old_gt": 31.0
+ },
+ "train:263": {
+  "overall": 82.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:264": {
+  "overall": 73.0,
+  "n_passes": 2,
+  "old_gt": 52.0
+ },
+ "train:265": {
+  "overall": 83.5,
+  "n_passes": 2,
+  "old_gt": 70.0
+ },
+ "train:266": {
+  "overall": 71.5,
+  "n_passes": 2,
+  "old_gt": 45.0
+ },
+ "train:267": {
+  "overall": 81.0,
+  "n_passes": 2,
+  "old_gt": 85.0
+ },
+ "train:268": {
+  "overall": 75.5,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:269": {
+  "overall": 79.5,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:270": {
+  "overall": 75.0,
+  "n_passes": 2,
+  "old_gt": 93.0
+ },
+ "train:271": {
+  "overall": 47.5,
+  "n_passes": 2,
+  "old_gt": 15.0
+ },
+ "train:272": {
+  "overall": 77.5,
+  "n_passes": 2,
+  "old_gt": 55.0
+ },
+ "train:273": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 74.0
+ },
+ "train:274": {
+  "overall": 82.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:275": {
+  "overall": 83.5,
+  "n_passes": 2,
+  "old_gt": 67.0
+ },
+ "train:276": {
+  "overall": 62.0,
+  "n_passes": 2,
+  "old_gt": 57.0
+ },
+ "train:277": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 88.0
+ },
+ "train:278": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 63.0
+ },
+ "train:279": {
+  "overall": 77.0,
+  "n_passes": 2,
+  "old_gt": 90.0
+ },
+ "train:280": {
+  "overall": 15.0,
+  "n_passes": 2,
+  "old_gt": 30.0
+ },
+ "train:281": {
+  "overall": 79.0,
+  "n_passes": 2,
+  "old_gt": 15.0
+ },
+ "train:282": {
+  "overall": 89.0,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:283": {
+  "overall": 84.0,
+  "n_passes": 2,
+  "old_gt": 92.0
+ },
+ "train:284": {
+  "overall": 68.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:285": {
+  "overall": 83.0,
+  "n_passes": 2,
+  "old_gt": 90.0
+ },
+ "train:286": {
+  "overall": 71.0,
+  "n_passes": 2,
+  "old_gt": 42.0
+ },
+ "train:287": {
+  "overall": 71.0,
+  "n_passes": 2,
+  "old_gt": 73.0
+ },
+ "train:288": {
+  "overall": 82.5,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:289": {
+  "overall": 64.0,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:290": {
+  "overall": 72.5,
+  "n_passes": 2,
+  "old_gt": 35.0
+ },
+ "train:291": {
+  "overall": 77.0,
+  "n_passes": 2,
+  "old_gt": 25.0
+ },
+ "train:292": {
+  "overall": 82.0,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:293": {
+  "overall": 61.0,
+  "n_passes": 2,
+  "old_gt": 58.0
+ },
+ "train:294": {
+  "overall": 64.0,
+  "n_passes": 2,
+  "old_gt": 61.0
+ },
+ "train:295": {
+  "overall": 42.5,
+  "n_passes": 2,
+  "old_gt": 37.0
+ },
+ "train:296": {
+  "overall": 79.0,
+  "n_passes": 2,
+  "old_gt": 77.0
+ },
+ "train:297": {
+  "overall": 81.0,
+  "n_passes": 2,
+  "old_gt": 80.0
+ },
+ "train:298": {
+  "overall": 72.0,
+  "n_passes": 2,
+  "old_gt": 71.0
+ },
+ "train:299": {
+  "overall": 79.0,
+  "n_passes": 2,
+  "old_gt": 73.0
+ },
+ "train:300": {
+  "overall": 52.0,
+  "n_passes": 3,
+  "old_gt": 1.0
+ },
+ "train:301": {
+  "overall": 79.5,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:302": {
+  "overall": 70.0,
+  "n_passes": 2,
+  "old_gt": 37.0
+ },
+ "train:303": {
+  "overall": 72.5,
+  "n_passes": 2,
+  "old_gt": 15.0
+ },
+ "train:304": {
+  "overall": 62.0,
+  "n_passes": 3,
+  "old_gt": 75.0
+ },
+ "train:305": {
+  "overall": 71.0,
+  "n_passes": 2,
+  "old_gt": 94.0
+ },
+ "train:306": {
+  "overall": 81.5,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:307": {
+  "overall": 81.0,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:308": {
+  "overall": 78.0,
+  "n_passes": 2,
+  "old_gt": 45.0
+ },
+ "train:309": {
+  "overall": 75.5,
+  "n_passes": 2,
+  "old_gt": 15.0
+ },
+ "train:310": {
+  "overall": 70.0,
+  "n_passes": 2,
+  "old_gt": 45.0
+ },
+ "train:311": {
+  "overall": 58.0,
+  "n_passes": 2,
+  "old_gt": 65.0
+ },
+ "train:312": {
+  "overall": 78.5,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:313": {
+  "overall": 83.5,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:314": {
+  "overall": 74.0,
+  "n_passes": 2,
+  "old_gt": 93.0
+ },
+ "train:315": {
+  "overall": 72.5,
+  "n_passes": 2,
+  "old_gt": 15.0
+ },
+ "train:316": {
+  "overall": 74.5,
+  "n_passes": 2,
+  "old_gt": 79.0
+ },
+ "train:317": {
+  "overall": 83.5,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:318": {
+  "overall": 84.5,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:319": {
+  "overall": 78.0,
+  "n_passes": 2,
+  "old_gt": 69.0
+ },
+ "train:320": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 73.0
+ },
+ "train:321": {
+  "overall": 63.0,
+  "n_passes": 2,
+  "old_gt": 36.0
+ },
+ "train:322": {
+  "overall": 71.5,
+  "n_passes": 2,
+  "old_gt": 35.0
+ },
+ "train:323": {
+  "overall": 84.5,
+  "n_passes": 2,
+  "old_gt": 95.0
+ },
+ "train:324": {
+  "overall": 87.0,
+  "n_passes": 2,
+  "old_gt": 87.0
+ },
+ "train:325": {
+  "overall": 79.5,
+  "n_passes": 2,
+  "old_gt": 80.0
+ },
+ "train:326": {
+  "overall": 63.0,
+  "n_passes": 2,
+  "old_gt": 40.0
+ },
+ "train:327": {
+  "overall": 78.0,
+  "n_passes": 2,
+  "old_gt": 57.0
+ },
+ "train:328": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:329": {
+  "overall": 67.5,
+  "n_passes": 2,
+  "old_gt": 3.0
+ },
+ "train:330": {
+  "overall": 66.5,
+  "n_passes": 2,
+  "old_gt": 87.0
+ },
+ "train:331": {
+  "overall": 79.0,
+  "n_passes": 2,
+  "old_gt": 77.0
+ },
+ "train:332": {
+  "overall": 58.0,
+  "n_passes": 2,
+  "old_gt": 38.0
+ },
+ "train:333": {
+  "overall": 84.5,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "train:334": {
+  "overall": 69.0,
+  "n_passes": 2,
+  "old_gt": 65.0
+ },
+ "train:335": {
+  "overall": 79.0,
+  "n_passes": 2,
+  "old_gt": 76.0
+ },
+ "train:336": {
+  "overall": 80.5,
+  "n_passes": 2,
+  "old_gt": 71.0
+ },
+ "train:337": {
+  "overall": 69.0,
+  "n_passes": 2,
+  "old_gt": 85.0
+ },
+ "train:338": {
+  "overall": 60.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "train:339": {
+  "overall": 42.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:340": {
+  "overall": 53.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:341": {
+  "overall": 81.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:342": {
+  "overall": 66.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "train:343": {
+  "overall": 63.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:344": {
+  "overall": 77.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:345": {
+  "overall": 62.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:346": {
+  "overall": 78.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:347": {
+  "overall": 73.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:348": {
+  "overall": 41.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:349": {
+  "overall": 79.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:350": {
+  "overall": 74.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:351": {
+  "overall": 40.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:352": {
+  "overall": 75.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:353": {
+  "overall": 44.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:354": {
+  "overall": 66.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:355": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:356": {
+  "overall": 56.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "train:357": {
+  "overall": 64.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:358": {
+  "overall": 68.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:359": {
+  "overall": 81.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:360": {
+  "overall": 81.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:361": {
+  "overall": 78.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:362": {
+  "overall": 54.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "train:363": {
+  "overall": 63.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "train:364": {
+  "overall": 56.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:365": {
+  "overall": 46.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:366": {
+  "overall": 66.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "train:367": {
+  "overall": 81.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:368": {
+  "overall": 79.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:369": {
+  "overall": 71.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:370": {
+  "overall": 82.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:371": {
+  "overall": 75.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:372": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:373": {
+  "overall": 71.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:374": {
+  "overall": 65.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:375": {
+  "overall": 36.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:376": {
+  "overall": 67.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:377": {
+  "overall": 60.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "train:378": {
+  "overall": 67.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:379": {
+  "overall": 82.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:380": {
+  "overall": 71.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:381": {
+  "overall": 58.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "train:382": {
+  "overall": 79.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:383": {
+  "overall": 16.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:384": {
+  "overall": 45.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:385": {
+  "overall": 79.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:386": {
+  "overall": 48.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "train:387": {
+  "overall": 62.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:388": {
+  "overall": 66.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "train:389": {
+  "overall": 71.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:390": {
+  "overall": 81.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:391": {
+  "overall": 67.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:392": {
+  "overall": 79.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:393": {
+  "overall": 56.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:394": {
+  "overall": 39.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:395": {
+  "overall": 80.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:396": {
+  "overall": 76.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:397": {
+  "overall": 67.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:398": {
+  "overall": 42.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:399": {
+  "overall": 65.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:400": {
+  "overall": 75.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:401": {
+  "overall": 76.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:402": {
+  "overall": 81.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:403": {
+  "overall": 57.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:404": {
+  "overall": 30.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:405": {
+  "overall": 79.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:406": {
+  "overall": 74.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:407": {
+  "overall": 77.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:408": {
+  "overall": 66.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:409": {
+  "overall": 72.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:410": {
+  "overall": 45.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:411": {
+  "overall": 71.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:412": {
+  "overall": 68.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:413": {
+  "overall": 77.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:414": {
+  "overall": 78.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:415": {
+  "overall": 68.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:416": {
+  "overall": 68.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "train:417": {
+  "overall": 66.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:418": {
+  "overall": 74.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:419": {
+  "overall": 82.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:420": {
+  "overall": 82.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:421": {
+  "overall": 32.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:422": {
+  "overall": 65.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:423": {
+  "overall": 60.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:424": {
+  "overall": 81.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:425": {
+  "overall": 78.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:426": {
+  "overall": 70.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "train:427": {
+  "overall": 71.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:428": {
+  "overall": 76.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:429": {
+  "overall": 34.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:430": {
+  "overall": 66.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:431": {
+  "overall": 69.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:432": {
+  "overall": 27.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:433": {
+  "overall": 49.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:434": {
+  "overall": 51.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:435": {
+  "overall": 71.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:436": {
+  "overall": 75.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:437": {
+  "overall": 74.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:438": {
+  "overall": 49.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:439": {
+  "overall": 70.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:440": {
+  "overall": 71.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:441": {
+  "overall": 46.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:442": {
+  "overall": 36.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:443": {
+  "overall": 70.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:444": {
+  "overall": 76.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:445": {
+  "overall": 82.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:446": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:447": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:448": {
+  "overall": 27.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:449": {
+  "overall": 66.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:450": {
+  "overall": 82.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:451": {
+  "overall": 63.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:452": {
+  "overall": 50.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:453": {
+  "overall": 37.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:454": {
+  "overall": 68.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:455": {
+  "overall": 42.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:456": {
+  "overall": 79.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:457": {
+  "overall": 62.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "train:458": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:459": {
+  "overall": 56.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "train:460": {
+  "overall": 75.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:461": {
+  "overall": 21.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:462": {
+  "overall": 58.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:463": {
+  "overall": 77.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:464": {
+  "overall": 72.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:465": {
+  "overall": 60.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "train:466": {
+  "overall": 43.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:467": {
+  "overall": 74.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:468": {
+  "overall": 75.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:469": {
+  "overall": 72.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:470": {
+  "overall": 78.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:471": {
+  "overall": 72.5,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:472": {
+  "overall": 65.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:473": {
+  "overall": 70.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:474": {
+  "overall": 64.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "train:475": {
+  "overall": 74.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:476": {
+  "overall": 62.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:477": {
+  "overall": 42.0,
+  "n_passes": 2,
+  "old_gt": null
+ },
+ "train:492": {
+  "overall": 82.0,
+  "n_passes": 2,
+  "old_gt": 79.0
+ },
+ "train:509": {
+  "overall": 82.0,
+  "n_passes": 2,
+  "old_gt": 60.0
+ },
+ "train:541": {
+  "overall": 69.0,
+  "n_passes": 2,
+  "old_gt": 54.0
+ },
+ "train:547": {
+  "overall": 72.0,
+  "n_passes": 2,
+  "old_gt": 52.0
+ },
+ "val:0": {
+  "overall": 82.0,
+  "n_passes": 3,
+  "old_gt": 74.0
+ },
+ "val:1": {
+  "overall": 83.0,
+  "n_passes": 3,
+  "old_gt": 83.0
+ },
+ "val:2": {
+  "overall": 86.0,
+  "n_passes": 3,
+  "old_gt": 100.0
+ },
+ "val:3": {
+  "overall": 76.0,
+  "n_passes": 3,
+  "old_gt": 65.0
+ },
+ "val:4": {
+  "overall": 73.0,
+  "n_passes": 3,
+  "old_gt": 100.0
+ },
+ "val:5": {
+  "overall": 84.0,
+  "n_passes": 3,
+  "old_gt": 95.0
+ },
+ "val:6": {
+  "overall": 62.0,
+  "n_passes": 3,
+  "old_gt": 58.0
+ },
+ "val:7": {
+  "overall": 82.0,
+  "n_passes": 3,
+  "old_gt": 100.0
+ },
+ "val:8": {
+  "overall": 80.0,
+  "n_passes": 3,
+  "old_gt": 95.0
+ },
+ "val:9": {
+  "overall": 81.0,
+  "n_passes": 3,
+  "old_gt": 42.0
+ },
+ "val:10": {
+  "overall": 80.0,
+  "n_passes": 3,
+  "old_gt": 100.0
+ },
+ "val:11": {
+  "overall": 80.0,
+  "n_passes": 3,
+  "old_gt": 85.0
+ },
+ "val:12": {
+  "overall": 85.0,
+  "n_passes": 3,
+  "old_gt": 93.0
+ },
+ "val:13": {
+  "overall": 62.0,
+  "n_passes": 3,
+  "old_gt": 46.0
+ },
+ "val:14": {
+  "overall": 80.0,
+  "n_passes": 3,
+  "old_gt": 54.0
+ },
+ "val:15": {
+  "overall": 85.0,
+  "n_passes": 3,
+  "old_gt": 100.0
+ },
+ "val:16": {
+  "overall": 66.0,
+  "n_passes": 3,
+  "old_gt": 41.0
+ },
+ "val:17": {
+  "overall": 82.0,
+  "n_passes": 3,
+  "old_gt": 100.0
+ },
+ "val:18": {
+  "overall": 74.0,
+  "n_passes": 3,
+  "old_gt": 85.0
+ },
+ "val:19": {
+  "overall": 80.0,
+  "n_passes": 3,
+  "old_gt": 85.0
+ },
+ "val:20": {
+  "overall": 76.0,
+  "n_passes": 3,
+  "old_gt": 33.0
+ },
+ "val:21": {
+  "overall": 86.0,
+  "n_passes": 3,
+  "old_gt": 79.0
+ },
+ "val:22": {
+  "overall": 70.0,
+  "n_passes": 3,
+  "old_gt": 92.0
+ },
+ "val:23": {
+  "overall": 83.0,
+  "n_passes": 3,
+  "old_gt": 100.0
+ },
+ "val:24": {
+  "overall": 72.0,
+  "n_passes": 3,
+  "old_gt": 40.0
+ },
+ "val:25": {
+  "overall": 71.0,
+  "n_passes": 3,
+  "old_gt": 35.0
+ },
+ "val:26": {
+  "overall": 58.0,
+  "n_passes": 3,
+  "old_gt": 46.0
+ },
+ "val:27": {
+  "overall": 63.0,
+  "n_passes": 3,
+  "old_gt": 15.0
+ },
+ "val:28": {
+  "overall": 86.0,
+  "n_passes": 3,
+  "old_gt": 100.0
+ },
+ "val:29": {
+  "overall": 70.0,
+  "n_passes": 3,
+  "old_gt": 15.0
+ },
+ "val:30": {
+  "overall": 76.0,
+  "n_passes": 3,
+  "old_gt": 95.0
+ },
+ "val:31": {
+  "overall": 86.0,
+  "n_passes": 3,
+  "old_gt": 100.0
+ },
+ "val:32": {
+  "overall": 80.0,
+  "n_passes": 3,
+  "old_gt": 95.0
+ },
+ "val:33": {
+  "overall": 66.0,
+  "n_passes": 3,
+  "old_gt": 90.0
+ },
+ "val:34": {
+  "overall": 65.0,
+  "n_passes": 3,
+  "old_gt": 53.0
+ },
+ "val:35": {
+  "overall": 82.0,
+  "n_passes": 3,
+  "old_gt": 90.0
+ },
+ "val:36": {
+  "overall": 77.0,
+  "n_passes": 3,
+  "old_gt": 88.0
+ },
+ "val:37": {
+  "overall": 67.0,
+  "n_passes": 3,
+  "old_gt": 92.0
+ },
+ "val:38": {
+  "overall": 78.0,
+  "n_passes": 3,
+  "old_gt": 100.0
+ },
+ "val:39": {
+  "overall": 74.0,
+  "n_passes": 3,
+  "old_gt": 95.0
+ },
+ "val:40": {
+  "overall": 61.0,
+  "n_passes": 3,
+  "old_gt": 46.0
+ },
+ "val:41": {
+  "overall": 55.0,
+  "n_passes": 3,
+  "old_gt": 55.0
+ },
+ "val:42": {
+  "overall": 36.0,
+  "n_passes": 3,
+  "old_gt": 45.0
+ },
+ "val:43": {
+  "overall": 55.0,
+  "n_passes": 3,
+  "old_gt": 95.0
+ },
+ "val:44": {
+  "overall": 36.0,
+  "n_passes": 3,
+  "old_gt": 10.0
+ },
+ "val:45": {
+  "overall": 80.0,
+  "n_passes": 3,
+  "old_gt": 93.0
+ },
+ "val:46": {
+  "overall": 83.0,
+  "n_passes": 3,
+  "old_gt": 77.0
+ },
+ "val:47": {
+  "overall": 71.0,
+  "n_passes": 3,
+  "old_gt": 45.0
+ },
+ "val:48": {
+  "overall": 52.0,
+  "n_passes": 3,
+  "old_gt": 20.0
+ },
+ "val:49": {
+  "overall": 78.0,
+  "n_passes": 3,
+  "old_gt": 55.0
+ },
+ "val:50": {
+  "overall": 76.0,
+  "n_passes": 3,
+  "old_gt": 92.0
+ },
+ "val:51": {
+  "overall": 60.0,
+  "n_passes": 3,
+  "old_gt": 52.0
+ },
+ "val:52": {
+  "overall": 68.0,
+  "n_passes": 3,
+  "old_gt": 45.0
+ },
+ "val:53": {
+  "overall": 80.0,
+  "n_passes": 3,
+  "old_gt": 76.0
+ },
+ "val:54": {
+  "overall": 58.0,
+  "n_passes": 3,
+  "old_gt": 38.0
+ },
+ "val:55": {
+  "overall": 56.0,
+  "n_passes": 3,
+  "old_gt": 33.0
+ },
+ "val:56": {
+  "overall": 80.0,
+  "n_passes": 3,
+  "old_gt": 95.0
+ },
+ "val:57": {
+  "overall": 83.0,
+  "n_passes": 3,
+  "old_gt": 90.0
+ },
+ "val:58": {
+  "overall": 76.0,
+  "n_passes": 3,
+  "old_gt": 80.0
+ },
+ "val:59": {
+  "overall": 74.0,
+  "n_passes": 3,
+  "old_gt": 45.0
+ },
+ "val:60": {
+  "overall": 68.0,
+  "n_passes": 3,
+  "old_gt": 25.0
+ },
+ "val:61": {
+  "overall": 78.0,
+  "n_passes": 3,
+  "old_gt": 85.0
+ },
+ "val:62": {
+  "overall": 84.0,
+  "n_passes": 3,
+  "old_gt": 100.0
+ },
+ "val:63": {
+  "overall": 80.0,
+  "n_passes": 3,
+  "old_gt": 78.0
+ },
+ "val:64": {
+  "overall": 72.0,
+  "n_passes": 3,
+  "old_gt": 85.0
+ },
+ "val:65": {
+  "overall": 76.0,
+  "n_passes": 3,
+  "old_gt": 67.0
+ },
+ "val:66": {
+  "overall": 74.0,
+  "n_passes": 3,
+  "old_gt": 72.0
+ },
+ "val:67": {
+  "overall": 77.0,
+  "n_passes": 3,
+  "old_gt": 83.0
+ },
+ "val:68": {
+  "overall": 66.0,
+  "n_passes": 3,
+  "old_gt": 95.0
+ },
+ "val:69": {
+  "overall": 78.0,
+  "n_passes": 3,
+  "old_gt": 95.0
+ },
+ "val:70": {
+  "overall": 82.0,
+  "n_passes": 3,
+  "old_gt": 100.0
+ },
+ "val:71": {
+  "overall": 60.0,
+  "n_passes": 3,
+  "old_gt": 56.0
+ },
+ "val:72": {
+  "overall": 60.0,
+  "n_passes": 3,
+  "old_gt": 27.0
+ },
+ "val:73": {
+  "overall": 76.0,
+  "n_passes": 3,
+  "old_gt": 76.0
+ },
+ "val:74": {
+  "overall": 82.0,
+  "n_passes": 3,
+  "old_gt": 70.0
+ },
+ "val:75": {
+  "overall": 80.0,
+  "n_passes": 2,
+  "old_gt": 100.0
+ },
+ "val:76": {
+  "overall": 73.0,
+  "n_passes": 3,
+  "old_gt": 54.0
+ },
+ "val:77": {
+  "overall": 78.0,
+  "n_passes": 3,
+  "old_gt": 95.0
+ },
+ "val:78": {
+  "overall": 52.0,
+  "n_passes": 3,
+  "old_gt": 40.0
+ },
+ "val:79": {
+  "overall": 85.0,
+  "n_passes": 3,
+  "old_gt": 80.0
+ },
+ "val:80": {
+  "overall": 74.0,
+  "n_passes": 3,
+  "old_gt": 65.0
+ },
+ "val:81": {
+  "overall": 80.0,
+  "n_passes": 3,
+  "old_gt": 61.0
+ },
+ "val:82": {
+  "overall": 42.0,
+  "n_passes": 3,
+  "old_gt": 15.0
+ },
+ "val:83": {
+  "overall": 88.0,
+  "n_passes": 3,
+  "old_gt": 100.0
+ },
+ "val:84": {
+  "overall": 53.0,
+  "n_passes": 3,
+  "old_gt": 45.0
+ },
+ "val:85": {
+  "overall": 74.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:86": {
+  "overall": 73.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:87": {
+  "overall": 82.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:88": {
+  "overall": 27.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:89": {
+  "overall": 64.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:90": {
+  "overall": 66.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:91": {
+  "overall": 78.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:92": {
+  "overall": 73.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:93": {
+  "overall": 52.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:94": {
+  "overall": 70.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:95": {
+  "overall": 74.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:96": {
+  "overall": 76.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:97": {
+  "overall": 66.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:98": {
+  "overall": 54.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:99": {
+  "overall": 80.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:100": {
+  "overall": 80.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:101": {
+  "overall": 81.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:102": {
+  "overall": 70.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:103": {
+  "overall": 66.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:104": {
+  "overall": 66.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:105": {
+  "overall": 58.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:106": {
+  "overall": 69.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:107": {
+  "overall": 52.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:108": {
+  "overall": 54.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:109": {
+  "overall": 66.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:110": {
+  "overall": 54.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:111": {
+  "overall": 82.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:112": {
+  "overall": 82.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:113": {
+  "overall": 71.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:114": {
+  "overall": 67.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:115": {
+  "overall": 70.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:116": {
+  "overall": 78.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:117": {
+  "overall": 62.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:118": {
+  "overall": 70.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:119": {
+  "overall": 84.0,
+  "n_passes": 3,
+  "old_gt": null
+ },
+ "val:137": {
+  "overall": 83.0,
+  "n_passes": 3,
+  "old_gt": 61.0
+ }
+}

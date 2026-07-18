@@ -1,0 +1,9 @@
+{
+  "method": "aimer",
+  "ratio": 25,
+  "axis": "d2",
+  "d2_security_retention": 25.147058823529413,
+  "d2_security_baseline": 6.977528089887641,
+  "protected_retained": true,
+  "note": "UNRELIABLE retention: masked judge parse-collapsed (parse_rate 0.45); the few parsed D2 values are on corrupted scales (observed up to 80 on the 0-10 dim), inflating retention (25.1) vs baseline (6.98). Variant already ineligible on gen wp-bench + judge rho + parse-rate gates; do not treat retention>baseline as a real D2 pass."
+}

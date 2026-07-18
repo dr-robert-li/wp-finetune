@@ -1,0 +1,27 @@
+{
+  "title": "Gate 1 baseline \u2014 UNPRUNED v4 judge (+MTP) on the shipped GGUF/llama.cpp stack (LOCKED DECISION 6 addendum)",
+  "generated_utc": "2026-07-17T23:55:55.152060+00:00",
+  "floor_frozen_utc": "2026-07-17T23:55:55.152060+00:00",
+  "floor_frozen_note": "Frozen BEFORE any unpruned rung has been MEASURED. Unlike the pruned ladder, the Q8/Q6/Q5 files already exist on disk (batch-quantized before this eval) \u2014 pre-registration here is at the measurement level, not the byte level. Stated honestly rather than claimed otherwise. judge_rho below is the only floor the unpruned rung deltas gate against; not to be adjusted after seeing a rung measurement.",
+  "anchor": "f16_gguf_llamacpp",
+  "stack": "f16 GGUF WITH MTP head (block_count 41, nextn_predict_layers 1, expert_count 256), ~/llama.cpp/build/bin/llama-server, -ngl 999 --parallel 4 --jinja, CTX 20480",
+  "model": "models/Qwen3.6-35B-A3B-judge-v4-s1-merged (unpruned, 256/256 experts)",
+  "seeds": "single-seed s1",
+  "judge_rho": 0.8081393794583069,
+  "ci": [
+    0.7390731129190119,
+    0.8541261447547539
+  ],
+  "n": 121,
+  "parse_fail": 0,
+  "max_tokens": 2048,
+  "dataset": "data/reasoning_dataset/openai_val.jsonl (121 wp_judge rows)",
+  "capture": "output/pkg-v4/unpruned_f16_eval/judge_responses.jsonl",
+  "summary": "output/pkg-v4/unpruned_f16_eval/eval_summary.json",
+  "epsilon_pp": 2,
+  "size_gib_f16": 66.19,
+  "non_comparable_references": {
+    "pruned_f16_floor_rho": 0.8001808600187146,
+    "note": "The PRUNED ladder's floor. Same protocol, DIFFERENT checkpoint \u2014 each ladder gates only against its own floor. Cross-ladder rho differences are within the established noise (noise_floor_finding, pkg4_quantization_ladder.json)."
+  }
+}
