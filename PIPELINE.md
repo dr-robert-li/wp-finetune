@@ -16,9 +16,10 @@ numbers as you go.
 
 ## What it produces
 
-A two-model pair sharing one MoE base, routed by task token:
+As originally designed (v1–v3): a two-model pair sharing one MoE base, routed by task token:
 
-- `<wp_gen>` — generates WPCS-compliant WordPress PHP.
+- `<wp_gen>` — generates WPCS-compliant WordPress PHP. *(Retired as a deliverable 2026-07-15 — the v4.0
+  study proved a current raw base out-generates every gen fine-tune; the shipped deliverable is judge-only.)*
 - `<wp_judge>` — reviews code against a 9-dimension rubric and explains defects.
 
 ## Prerequisites
@@ -153,9 +154,18 @@ return nothing.
 3. Rerun all three conditional gates. They returned nothing on Qwen3-30B-A3B; a higher-rho, more
    concentrated base is precisely where they might flip. Treat a `no_winner` as a valid, recorded outcome,
    not a failure to force.
-4. Package with the same ladder. If the base is smaller or routing is prunable, the size story finally
-   improves. On Qwen3.6-35B the pair no longer fits GB10 at bf16, so quantization is a memory
-   prerequisite, not a preference.
+   v4.0 actual: **the weight-prune gate flipped.** AIMER at k=224 passed gate-before-remove on the
+   256-expert Qwen3.6 judge (+0.020 non-inferior, point-better) even though the routing profile predicted
+   resistance — the "might flip" above resolved TRUE, and the shipped v4 judge is the 224/256-expert
+   pruned checkpoint. Measure the gate; don't trust the profile's prediction in either direction.
+4. Package with the same ladder — but gate each checkpoint against its OWN f16 floor and expect the rung
+   to move. v4.0 actuals: single-seed rung-to-rung rho deltas at n=121 are sampling noise (demonstrated
+   twice — a lower-bit rung "beating" its own f16 source on both the pruned and unpruned ladders), so the
+   ship tier is selected on parse reliability + size, not rho ordering. v4 shipped Q6_K (pruned, 23.47 GiB)
+   plus an unpruned Q5_K_M variant (23.61 GiB) that retains the MTP head — converting an expert-pruned
+   Qwen3.5/3.6 checkpoint requires `--no-mtp` (GGUF's global `expert_count` cannot represent a 224-expert
+   trunk under a 256-expert MTP layer), so speculative decoding lives only in the unpruned file
+   (`--spec-type draft-mtp`, 56% measured acceptance).
 
 Deprecated one-off experiment drivers from the v3.0 run live in `deprecated/` with their own README. They
 are not part of this pipeline; they are the archaeology of how the gates above were established.

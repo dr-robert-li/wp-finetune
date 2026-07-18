@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Pipeline Rerun on Qwen3.6-35B-A3B
 current_phase: 27
-status: completed
-stopped_at: Completed 27-05-PLAN.md — Phase 27 fully executed
-last_updated: "2026-07-17T13:24:52.450Z"
-last_activity: 2026-07-17
-last_activity_desc: Phase 27 marked complete
+status: milestone_complete
+stopped_at: "v4.0 milestone COMPLETE — Phase 27 + unpruned-MTP addendum shipped, docs synced, JOURNAL closed"
+last_updated: "2026-07-18T02:20:00.000Z"
+last_activity: 2026-07-18
+last_activity_desc: "v4.0 CLOSED: two-file v4 repo live (pruned Q6_K canonical 23.47 GiB + unpruned Q5_K_M 23.61 GiB with working MTP spec-decode, 56.4% acceptance). Full doc staleness sweep applied (PROJECT/README/PIPELINE/CHANGELOG/MODEL_CARD); JOURNAL final entry written. All receipts committed."
 progress:
   total_phases: 8
   completed_phases: 7

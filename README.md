@@ -34,8 +34,9 @@ HuggingFace as the superseded prior artifact — it is not updated or removed by
 | Base | Qwen3.6-35B-A3B (native MoE, expert-pruned 256→224, top-8 routing) |
 | Training | relabel-SFT judge fine-tune, AIMER weight-prune post-merge (k=224) |
 | Ship tier | Q6_K GGUF, 23.47 GiB — smallest tier with zero parse failures |
+| Variant | `wp-judge-v4-unpruned.Q5_K_M.gguf`, 23.61 GiB — unpruned 256/256 experts, **MTP speculative decoding** (`--spec-type draft-mtp`, 56% measured draft acceptance) |
 | Serving | llama.cpp (GGUF) |
-| Judge rho | **0.8063**, single-seed s1, shipped Q6_K/llama.cpp stack |
+| Judge rho | **0.8063**, single-seed s1, shipped Q6_K/llama.cpp stack (unpruned variant: 0.8093 vs its own f16 floor — statistically tied) |
 | Prior release | [`iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf`](https://huggingface.co/iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf) — superseded, Qwen3-30B-A3B base, stays live untouched |
 | Model card | [output/packaging/MODEL_CARD.md](output/packaging/MODEL_CARD.md) |
 
@@ -49,6 +50,16 @@ hf download iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf \
 # 2. serve (llama.cpp b9180+; -c 16384 so long critiques never truncate)
 llama-server -m ./judge/wp-judge-v4-pruned-k224.Q6_K.gguf --host 127.0.0.1 --port 8020 \
   -ngl 999 -c 16384 --jinja
+```
+
+Want speculative decoding? Pull the unpruned variant instead and add `--spec-type draft-mtp` — the model's
+own MTP head drafts (56% measured acceptance), no separate draft model needed. Same judge quality, +150 MB:
+
+```bash
+hf download iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf \
+  wp-judge-v4-unpruned.Q5_K_M.gguf --local-dir ./judge
+llama-server -m ./judge/wp-judge-v4-unpruned.Q5_K_M.gguf --host 127.0.0.1 --port 8020 \
+  -ngl 999 -c 16384 --jinja --spec-type draft-mtp
 ```
 
 Judge a snippet — prepend the `<wp_judge>` task prefix and the model returns a 9-dimension rubric verdict:
@@ -76,9 +87,12 @@ Receipt-backed, shipping stack, 0/121 parse failures. Full detail: [MODEL_CARD.m
 | Judge rho — f16 GGUF, single-seed s1 (uncompressed floor) | 0.8002 | statistically tied with Q6_K |
 | Judge rho — untrained base | **0/121 parseable** | the entire judge capability is the fine-tune |
 
-All three GGUF rungs measured (f16/Q8_0/Q6_K) are statistically indistinguishable at n=121 (95% CI
-half-widths ~7-8pp); Q6_K ships as the smallest zero-parse-failure tier, not the highest-scoring one.
-Spearman rho is measured against human-relabeled 9-dimension scores on a held-out set of 121 items.
+All four GGUF rungs measured (f16/Q8_0/Q6_K/Q5_K_M) are statistically indistinguishable at n=121 (95% CI
+half-widths ~7-8pp); Q6_K ships as the smallest zero-parse-failure tier, not the highest-scoring one. The
+unpruned variant ran its own four-rung ladder against its own f16 floor (0.8081) with the same outcome —
+statistically flat, tier selected on parse reliability + size (its Q5_K_M ran clean at 0/121, unlike the
+pruned checkpoint's Q5). Spearman rho is measured against human-relabeled 9-dimension scores on a held-out
+set of 121 items.
 
 ## How it was built (and how to recreate it)
 
@@ -92,8 +106,10 @@ is in **[PIPELINE.md](PIPELINE.md)**. In brief:
 2. **Relabel** — 603 items re-scored by hand against the frozen rubric, rebuilt into judge SFT targets.
    Human ground truth is what makes the judge portable across base models.
 3. **Fine-tune** — rank-32 MoE-only LoRA, frozen router, 3 epochs, 3 seeds, via [Tinker](https://thinkingmachines.ai).
-4. **Merge + quantize** — merge each seed's adapter into the base, convert to Q8_0 GGUF (llama.cpp),
-   verify rho is lossless vs bf16 at an 8192-token cap.
+4. **Merge + quantize** — merge each seed's adapter into the base, convert to GGUF (llama.cpp) and walk a
+   quantization ladder (Q8→Q6→Q5) against the checkpoint's own f16 floor; ship the smallest rung that
+   stays in-band with zero parse failures. (On v3 that was Q8_0, measured lossless; on v4 it was Q6_K
+   pruned / Q5_K_M unpruned — the rung is a measurement, not a constant.)
 
 LLM-heavy steps run through **Claude Code agents** (subscription, no per-token API cost), not direct API
 calls. Training, serving, and eval run on a single [DGX Spark (GB10)](https://github.com/dr-robert-li/dgx-toolbox)

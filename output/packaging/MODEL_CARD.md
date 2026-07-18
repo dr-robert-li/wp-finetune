@@ -195,11 +195,11 @@ predicted it might flip). Phases 22/25/26 (2026-07-16/17) resolved it:
   0.7935 — **+0.020, non-inferior, point-better** (ci_lower slack 0.001, thin but held). D2_security
   retained (6.326 ≥ 6.115 baseline). Surgery: stacked-tensor axis-0 slice 256→224 experts/layer
   (`shared_expert.*`/`mtp.*` untouched); `models/Qwen3.6-35B-A3B-judge-v4-pruned-k224`, 60 GB bf16.
-- **GGUF conversion + quantization ladder (Phase 27):** converted with `--no-mtp` (the MTP/nextn layer was
-  left at 256 experts by the prune surgery; GGUF's `expert_count` metadata is a single global field, so the
-  mixed-count checkpoint would not load — the shipped GGUF has no MTP/speculative-decoding head). Full
-  ladder measured on the shipped GGUF/llama.cpp stack, single-seed s1, n=121, gated against the frozen f16
-  floor:
+- **GGUF conversion + quantization ladder (Phase 27):** the pruned checkpoint converted with `--no-mtp`
+  (the MTP/nextn layer was left at 256 experts by the prune surgery; GGUF's `expert_count` metadata is a
+  single global field, so the mixed-count checkpoint would not load — the pruned GGUF has no
+  MTP/speculative-decoding head; see the unpruned variant below, which restores it). Full ladder measured
+  on the shipped GGUF/llama.cpp stack, single-seed s1, n=121, gated against the frozen f16 floor:
 
   | Tier | Judge rho | Δ vs f16 floor | Parse fail | Size |
   |---|---|---|---|---|
@@ -214,11 +214,22 @@ predicted it might flip). Phases 22/25/26 (2026-07-16/17) resolved it:
   as the smallest of the two zero-parse-failure tiers, not as the highest-rho tier. Full derivation:
   `output/pkg-v4/pkg4_quantization_ladder.json` `noise_floor_finding` + `ship_rationale`.
 
-- **Ship policy (human-confirmed 2026-07-17):** canonical flips **v3 → v4**. Q6_K at 23.47 GiB is **~22%
-  smaller** than v3's 30.2 GiB — the size tradeoff v3.0 originally accepted (v4 "stays larger") is void;
-  v4 is smaller, on the newer base, at tied quality. `iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf` (this
-  pair) stays live, untouched, as the superseded prior artifact — it is not deprecated, deleted, or
-  rewritten by the v4 publish.
+- **Unpruned MTP variant (2026-07-18 addendum, human-directed):** the repo also ships
+  `wp-judge-v4-unpruned.Q5_K_M.gguf` — the unpruned s1-merged checkpoint (256/256 experts, MTP head
+  retained, block_count 41), quantized and gated on its **own** ladder (f16 floor rho 0.8081; Q8_0 0.7767;
+  Q6_K 0.8074; Q5_K_M 0.8093 — non-monotonic again, reproducing the noise finding on a second independent
+  checkpoint). Q5_K_M selected by the same rule (smallest in-band rung with 0/121 parse failures; unlike
+  the pruned ladder, this Q5 ran clean). **MTP speculative decoding works on this file**: llama-server
+  `--spec-type draft-mtp`, measured 56.4% draft acceptance (mean accepted length 2.69 tokens), judge rubric
+  still parses under speculation. 23.61 GiB. Receipts: `output/pkg-v4/unpruned_quantization_ladder.json`,
+  `output/pkg-v4/unpruned_mtp_smoke/mtp_smoke_receipt.json`, `output/pkg-v4/pub4_validation_receipt_unpruned.json`.
+
+- **Ship policy (human-confirmed 2026-07-17; variant added 2026-07-18):** canonical flips **v3 → v4**.
+  The v4 repo carries **two files**: pruned Q6_K 23.47 GiB (canonical/default, no MTP) and unpruned
+  Q5_K_M 23.61 GiB (MTP speculative decoding). Q6_K at 23.47 GiB is **~22% smaller** than v3's 30.2 GiB —
+  the size tradeoff v3.0 originally accepted (v4 "stays larger") is void; v4 is smaller, on the newer
+  base, at tied quality. `iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf` (this pair) stays live, untouched,
+  as the superseded prior artifact — it is not deprecated, deleted, or rewritten by the v4 publish.
 
 Full v4 packaging receipts: `output/pkg-v4/` (`gate1_f16_baseline_v4.json`, `pkg4_quantization_ladder.json`,
 `conversion_receipt_v4.json`); v4 HF card: `output/pkg-v4/hf_cards/judge_v4_README.md`; prune gate:
