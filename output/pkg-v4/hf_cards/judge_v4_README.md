@@ -59,6 +59,20 @@ draft acceptance — no separate draft model). Omit it (or use the pruned file) 
 
 The pruned file ignores `--spec-type draft-mtp` (no MTP head) but is otherwise served identically.
 
+**Ollama** (pulls the GGUF straight from this repo):
+
+```bash
+ollama run hf.co/iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf:Q5_K_M
+```
+
+Two things matter on Ollama: set the context window — the default truncates long critiques mid-rubric
+(`/set parameter num_ctx 16384` in the session, or `PARAMETER num_ctx 16384` in a Modelfile) — and note
+that Ollama does not expose llama.cpp's `--spec-type` flag, so MTP speculative decoding is unavailable
+there (both files serve at the same speed). The chat template is read from the GGUF metadata.
+
+All published quality numbers were measured on llama.cpp; other engines (Ollama, LM Studio,
+llama-cpp-python) run the same GGUF but their numerics are unverified here.
+
 Judge a snippet — prepend the `<wp_judge>` task prefix and the model returns per-dimension reasoning
 followed by a structured verdict:
 
