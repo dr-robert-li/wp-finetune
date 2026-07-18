@@ -85,3 +85,13 @@ Human paused the close-out to address the no-MTP limitation. Verified findings b
 - The pruned checkpoint's MTP layer still holds 256-expert tensors (`mtp.layers.0.mlp.experts.gate_up_proj` = [256, 1024, 2048]); pruning MTP to 224 was considered and REJECTED as unvalidated surgery (never went through gate-before-remove).
 
 Decision (human-selected): **add** an unpruned+MTP GGUF as a second file in `iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf`. The pruned Q6_K **stays canonical** — Gate C's signed ship_pruned_v4 decision is NOT re-opened. Refined goal (2026-07-18): run the unpruned checkpoint's own quantization ladder (f16 floor, Q8/Q6/Q5, identical protocol to the pruned ladder — 121 wp_judge rows, max_tokens 2048, single-seed s1) and ship the best size-to-performance rung, selected by the same rule the pruned ladder used (smallest rung within ±2pp of its own f16 floor with zero parse failures — rho point-ordering established as noise at this n). Card: same as the pruned card except the pruning statements and the Known-limitation section (limitation becomes a variants table). MTP spec-decode smoke (`--spec-type draft-mtp`) required before upload.
+
+## LOCKED DECISION 7 — recommended file flips to unpruned Q5_K_M (2026-07-18, human-directed)
+
+Human re-decided the default after the MTP variant's measurements landed: **recommended file =
+`wp-judge-v4-unpruned.Q5_K_M.gguf`** (same judge quality within noise, MTP speculative decoding = faster
+serving, +150 MB). The pruned Q6_K **stays published** — reframed as the **Gate C experiment artifact**
+(the prune passed its gate and proved 32 experts removable at tied quality; receipted science, kept for
+provenance and for smaller-footprint operators). Removal was considered and REJECTED (breaks links, the
+Gate C record, and the keep-history discipline). HF card updated + re-uploaded (commit 1a3f62e);
+README/MODEL_CARD lineage reframed accordingly.

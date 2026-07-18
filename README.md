@@ -12,10 +12,12 @@ An open-weight WordPress code **reviewer**. Give it a PHP function, it returns a
 scored across 9 WordPress-quality dimensions (WPCS compliance, SQL safety, security, performance, WP API
 usage, code quality, dependencies, i18n, accessibility) and tells you what is wrong and why.
 
-The model is `iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf` — a fine-tune of Qwen3.6-35B-A3B, expert-pruned
-to 224/256 experts, shipped as a Q6_K GGUF (23.47 GiB). It is self-hostable, needs no external API, and is
-deliberately opinionated: it pushes back on unsafe SQL, missing nonce checks, and poor architecture instead
-of rubber-stamping. Measured judge rho on the shipped stack (single-seed, Q6_K GGUF/llama.cpp): **0.8063**.
+The model is `iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf` — a fine-tune of Qwen3.6-35B-A3B, shipped as a
+Q5_K_M GGUF (23.61 GiB, recommended file) with MTP speculative decoding, alongside an expert-pruned Q6_K
+variant (23.47 GiB — the Gate C prune experiment, kept for provenance). It is self-hostable, needs no
+external API, and is deliberately opinionated: it pushes back on unsafe SQL, missing nonce checks, and poor
+architecture instead of rubber-stamping. Measured judge rho (single-seed, llama.cpp): **0.8093**
+(recommended file) / 0.8063 (pruned) — statistically tied.
 
 The prior `iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf` (Qwen3-30B-A3B base) remains available on
 HuggingFace as the superseded prior artifact — it is not updated or removed by this release.
@@ -31,36 +33,29 @@ HuggingFace as the superseded prior artifact — it is not updated or removed by
 | Property | Value |
 |----------|-------|
 | Repository | [`iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf`](https://huggingface.co/iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf) |
-| Base | Qwen3.6-35B-A3B (native MoE, expert-pruned 256→224, top-8 routing) |
-| Training | relabel-SFT judge fine-tune, AIMER weight-prune post-merge (k=224) |
-| Ship tier | Q6_K GGUF, 23.47 GiB — smallest tier with zero parse failures |
-| Variant | `wp-judge-v4-unpruned.Q5_K_M.gguf`, 23.61 GiB — unpruned 256/256 experts, **MTP speculative decoding** (`--spec-type draft-mtp`, 56% measured draft acceptance) |
+| Base | Qwen3.6-35B-A3B (native MoE, 256 experts, top-8 routing) |
+| Training | relabel-SFT judge fine-tune |
+| Recommended file | `wp-judge-v4-unpruned.Q5_K_M.gguf`, 23.61 GiB — **MTP speculative decoding** (`--spec-type draft-mtp`, 56% measured draft acceptance) |
+| Pruned variant | `wp-judge-v4-pruned-k224.Q6_K.gguf`, 23.47 GiB — AIMER k=224 expert-prune (Gate C experiment: 224/256 experts at tied quality; no MTP) |
 | Serving | llama.cpp (GGUF) |
-| Judge rho | **0.8063**, single-seed s1, shipped Q6_K/llama.cpp stack (unpruned variant: 0.8093 vs its own f16 floor — statistically tied) |
+| Judge rho | **0.8093** recommended file / 0.8063 pruned — single-seed s1, each vs its own f16 floor, statistically tied |
 | Prior release | [`iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf`](https://huggingface.co/iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf) — superseded, Qwen3-30B-A3B base, stays live untouched |
 | Model card | [output/packaging/MODEL_CARD.md](output/packaging/MODEL_CARD.md) |
 
 ## Quickstart
 
 ```bash
-# 1. pull the GGUF
-hf download iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf \
-  wp-judge-v4-pruned-k224.Q6_K.gguf --local-dir ./judge
-
-# 2. serve (llama.cpp b9180+; -c 16384 so long critiques never truncate)
-llama-server -m ./judge/wp-judge-v4-pruned-k224.Q6_K.gguf --host 127.0.0.1 --port 8020 \
-  -ngl 999 -c 16384 --jinja
-```
-
-Want speculative decoding? Pull the unpruned variant instead and add `--spec-type draft-mtp` — the model's
-own MTP head drafts (56% measured acceptance), no separate draft model needed. Same judge quality, +150 MB:
-
-```bash
+# 1. pull the GGUF (recommended file: MTP speculative decoding, faster serving)
 hf download iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf \
   wp-judge-v4-unpruned.Q5_K_M.gguf --local-dir ./judge
+
+# 2. serve (llama.cpp b9180+; -c 16384 so long critiques never truncate)
 llama-server -m ./judge/wp-judge-v4-unpruned.Q5_K_M.gguf --host 127.0.0.1 --port 8020 \
   -ngl 999 -c 16384 --jinja --spec-type draft-mtp
 ```
+
+Prefer the marginally smaller expert-pruned file (no speculative decoding, same judge quality)?
+Pull `wp-judge-v4-pruned-k224.Q6_K.gguf` (23.47 GiB) and drop `--spec-type draft-mtp`.
 
 Judge a snippet — prepend the `<wp_judge>` task prefix and the model returns a 9-dimension rubric verdict:
 

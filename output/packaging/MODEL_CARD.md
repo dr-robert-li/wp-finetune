@@ -224,12 +224,18 @@ predicted it might flip). Phases 22/25/26 (2026-07-16/17) resolved it:
   still parses under speculation. 23.61 GiB. Receipts: `output/pkg-v4/unpruned_quantization_ladder.json`,
   `output/pkg-v4/unpruned_mtp_smoke/mtp_smoke_receipt.json`, `output/pkg-v4/pub4_validation_receipt_unpruned.json`.
 
-- **Ship policy (human-confirmed 2026-07-17; variant added 2026-07-18):** canonical flips **v3 → v4**.
-  The v4 repo carries **two files**: pruned Q6_K 23.47 GiB (canonical/default, no MTP) and unpruned
-  Q5_K_M 23.61 GiB (MTP speculative decoding). Q6_K at 23.47 GiB is **~22% smaller** than v3's 30.2 GiB —
-  the size tradeoff v3.0 originally accepted (v4 "stays larger") is void; v4 is smaller, on the newer
-  base, at tied quality. `iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf` (this pair) stays live, untouched,
-  as the superseded prior artifact — it is not deprecated, deleted, or rewritten by the v4 publish.
+- **Ship policy (human-confirmed 2026-07-17; recommendation flipped 2026-07-18):** canonical flips
+  **v3 → v4**. The v4 repo carries **two files**, and the **recommended file is the unpruned Q5_K_M**
+  (23.61 GiB, 256/256 experts, MTP speculative decoding — `--spec-type draft-mtp`, 56% measured draft
+  acceptance): same judge quality as the pruned file within measurement noise, faster serving. The
+  **pruned Q6_K** (23.47 GiB, 224/256 experts) remains published as the **Gate C experiment artifact** —
+  the AIMER k=224 prune passed gate-before-remove and proved 32 experts removable at tied quality, a real
+  and receipted scientific result, but its 150 MB size advantage does not buy the operator anything the
+  MTP head doesn't outweigh. It stays for provenance and for operators who want the smaller expert
+  footprint. Both files are ~22-24% smaller than v3's 30.2 GiB — the size tradeoff v3.0 originally
+  accepted (v4 "stays larger") is void; v4 is smaller, on the newer base, at tied quality.
+  `iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf` (this pair) stays live, untouched, as the superseded
+  prior artifact — it is not deprecated, deleted, or rewritten by the v4 publish.
 
 Full v4 packaging receipts: `output/pkg-v4/` (`gate1_f16_baseline_v4.json`, `pkg4_quantization_ladder.json`,
 `conversion_receipt_v4.json`); v4 HF card: `output/pkg-v4/hf_cards/judge_v4_README.md`; prune gate:
