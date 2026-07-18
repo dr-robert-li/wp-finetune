@@ -50,15 +50,16 @@ upload_one() { # repo local remote
   return 1
 }
 
-echo "[$(date -u +%FT%TZ)] PUB4-01 sequential upload start"
+MANIFEST="${1:-output/pkg-v4/pub4_upload_manifest.json}"
+echo "[$(date -u +%FT%TZ)] PUB4-01 sequential upload start (manifest: $MANIFEST)"
 
 # iterate manifest allowlist: "repo_id<TAB>local<TAB>remote" per line
 FAIL=0
 while IFS=$'\t' read -r repo local_f remote; do
   upload_one "$repo" "$local_f" "$remote" || { FAIL=1; break; }
 done < <(python3 -c "
-import json
-man = json.load(open('output/pkg-v4/pub4_upload_manifest.json'))
+import json, sys
+man = json.load(open('$MANIFEST'))
 for r in man['repos']:
     for f in r['files']:
         print(f\"{r['repo_id']}\t{f['path']}\t{f['repo_path']}\")
