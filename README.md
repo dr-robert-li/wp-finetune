@@ -111,33 +111,6 @@ calls. Training, serving, and eval run on a single [DGX Spark (GB10)](https://gi
 via the DGX Toolbox execution engine. One-off experiment scaffolding from earlier campaigns lives in
 [deprecated/](deprecated/), off the pipeline path.
 
-## The v4.0 finding (Qwen3.6)
-
-v4.0 reran the entire pipeline on the newer `Qwen3.6-35B-A3B` to try to beat the shipped judge. The
-[full diagnostic](output/base21/diagnostic/DIAGNOSTIC_SYNTHESIS.md) is receipt-backed; the short version:
-
-- **Generation is a solved problem now.** The raw Qwen3.6 base scored wp-bench **0.4897**; every gen
-  fine-tune we trained *regressed* below it (best 0.4381), because the training targets are structurally
-  weaker than what a modern base already writes. So the project drops the gen model as a deliverable — for
-  generation, use a strong current base with prompt-side task framing.
-- **The judge did improve, but not enough to re-ship as-is.** The Qwen3.6 judge beats the old base on the
-  capture path (rho 0.8358 vs 0.8274), but a serving-stack numerics ceiling (~0.79, identical across
-  vLLM-merged, llama.cpp-Q8-merged, and llama.cpp-unmerged-LoRA) eats the gain. On the shipped Q8 stack it
-  scored **0.8067 vs v3's 0.8056** — a statistical tie (paired bootstrap CI spans zero) at +25% artifact
-  size. Per the pre-registered rule, **v1.3 stayed canonical at that point** — this was resolved by the
-  prune below.
-
-That lever resolved. v4's judge had a tie on **128**-vs-**256** experts the compression pipeline had never
-touched on a 256-expert base; v3.0 found no MoE-Sieve or prune winner on 128 experts, and the v4 roadmap
-flagged 256 experts + a shared expert as exactly the architecture where that might flip — it did. AIMER
-weight-pruning at k=224 passed gate-before-remove (Phases 22/25/26), producing a 224/256-expert checkpoint
-that ships at **Q6_K, 23.47 GiB** — smaller than v3's 30.2 GiB, on the newer base, at statistically tied
-quality (judge rho 0.8063 single-seed vs v3's 0.8056 3-seed ensemble — different configurations, not a
-clean delta). **Canonical flips to v4 (2026-07-17);** v1.3 remains published as the superseded prior
-release. Either way, v4.0 already produced durable knowledge: the capture-vs-served ceiling quantified
-across three engines, hardened routed-expert merge tooling, and a fully recorded negative result on the
-un-pruned checkpoint.
-
 ## Repository layout
 
 ```
