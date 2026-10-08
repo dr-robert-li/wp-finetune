@@ -4,6 +4,18 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-10-09 — Shrink study: can the judge get smaller without losing skill?
+
+Users asked for a smaller file. The shipped file is Q6_K, 23.47 GiB. This study tests each way to make the model smaller, alone and then in combination.
+
+**Method.** One baseline: the shipped Q6_K. Each variant answers the same 121 judge prompts. Settings are fixed: one request at a time, greedy decoding (temperature 0), seed 1234. The same input gives the same output, so a repeat run must match the baseline exactly. We check this with a repeat run.
+
+**Measures.** File size. Memory used. Speed. Agreement with the baseline: score rank match (agree_rho), mean score difference, same PASS/FAIL verdict, unreadable answers (parse failures). Also rank match with the reference answers in the validation set (ref_rho).
+
+**Limits we accept.** This machine has no f16 source file and no Tinker access. All variants are made from the Q6_K file. A variant made from f16 would be equal or better, so our results are a safe lower bound. The label file behind the published 0.80 score is not on this machine. ref_rho uses the reference answers in the validation set instead, so it is not the same number as the published 0.80.
+
+---
+
 ## 2026-07-18 — the lever pulled, and v4 shipped smaller than the model it replaced.
 
 Two days ago I wrote that the routing profile said the experts don't want to be cut, and that the one lever left was probably not going to pull. It pulled. AIMER at k=224 went through gate-before-remove and passed — pruned checkpoint rho 0.8134 against the same-stack full arm's 0.7935, non-inferior and point-better, with 0.001 of slack on the confidence bound. That last number deserves to be written down as nakedly as the pass: an unluckier bootstrap flips it. But the pre-registered rule said pass, the 3-seed ensemble confirmed at 0.8533, and the surgery went in — 256 experts sliced to 224 per layer, and a 60 GB checkpoint where a 67 GB one used to be. The profile's diffuse-routing shape was a prediction. The gate was a measurement. I've spent this whole project saying measure-don't-guess, and this is the entry where the discipline paid for itself, because I would have guessed wrong.
