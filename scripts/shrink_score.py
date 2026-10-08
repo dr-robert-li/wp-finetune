@@ -5,6 +5,7 @@ Paired metrics (same 121 wp_judge prompts, greedy decode):
   mean_abs_diff mean |overall_variant - overall_baseline|
   verdict_agree share of items with the same PASS/FAIL verdict
   parse_fail    responses with no parseable judge output
+  not_json      parsed only by the prose fallback (no <judge_output> JSON, e.g. truncated)
 Reference metric:
   ref_rho       Spearman of overall score vs the assistant label stored in openai_val.jsonl,
                 with a seeded 2000-sample bootstrap CI. (The relabel-v1 median labels behind the
@@ -40,11 +41,13 @@ def load_capture(path, dw):
         if "index" not in r:
             continue
         p = parse_judge_scores(r["response"], "auto")
-        ov = None
-        if p and p.get("dimension_scores"):
-            ov = float(p["overall"]) if "overall" in p else _derive_prose_overall(p["dimension_scores"], dw)
+        ov, fmt = None, None
+        if p and "overall" in p:
+            ov, fmt = float(p["overall"]), p.get("_format")
+        elif p and p.get("dimension_scores"):
+            ov, fmt = _derive_prose_overall(p["dimension_scores"], dw), p.get("_format")
         m = _VERDICT.search(r["response"] or "")
-        out[r["index"]] = (ov, m.group(1) if m else None)
+        out[r["index"]] = (ov, m.group(1) if m else None, fmt)
     return out
 
 
@@ -62,12 +65,13 @@ def reference_labels(dw):
 def boot_ci(a, b, n=2000, seed=0):
     rng = np.random.default_rng(seed)
     a, b = np.array(a), np.array(b)
-    vals = sorted(spearmanr(a[i], b[i]).statistic for i in (rng.integers(0, len(a), len(a)) for _ in range(n)))
-    return [float(vals[int(0.025 * n)]), float(vals[int(0.975 * n) - 1])]
+    vals = [spearmanr(a[i], b[i]).statistic for i in (rng.integers(0, len(a), len(a)) for _ in range(n))]
+    return [float(np.nanpercentile(vals, 2.5)), float(np.nanpercentile(vals, 97.5))]
 
 
 def score(var, base, ref):
     parse_fail = sum(1 for v in var.values() if v[0] is None)
+    not_json = sum(1 for v in var.values() if v[0] is not None and len(v) > 2 and v[2] != "json")
     both = sorted(i for i in var if var[i][0] is not None and base.get(i, (None,))[0] is not None)
     v = [var[i][0] for i in both]
     b = [base[i][0] for i in both]
@@ -75,7 +79,7 @@ def score(var, base, ref):
     rc = sorted(i for i in var if var[i][0] is not None and i in ref)
     rv, rr = [var[i][0] for i in rc], [ref[i] for i in rc]
     return {
-        "n": len(var), "parse_fail": parse_fail, "n_paired": len(both),
+        "n": len(var), "parse_fail": parse_fail, "not_json": not_json, "n_paired": len(both),
         "agree_rho": float(spearmanr(v, b).statistic) if len(both) > 2 else None,
         "mean_abs_diff": float(np.mean(np.abs(np.array(v) - np.array(b)))) if both else None,
         "exact_match": float(np.mean([x == y for x, y in zip(v, b)])) if both else None,
@@ -103,4 +107,4 @@ if __name__ == "__main__":
     res = score(load_capture(sys.argv[1], dw), load_capture(sys.argv[2], dw), reference_labels(dw))
     res.update(capture=sys.argv[1], baseline=sys.argv[2])
     json.dump(res, open(sys.argv[3], "w"), indent=2)
-    print(json.dumps({k: res[k] for k in ("parse_fail", "agree_rho", "mean_abs_diff", "verdict_agree", "ref_rho")}))
+    print(json.dumps({k: res[k] for k in ("parse_fail", "not_json", "agree_rho", "mean_abs_diff", "verdict_agree", "ref_rho")}))

@@ -108,8 +108,10 @@ def main() -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--max-tokens", type=int, default=2048)
     ap.add_argument("--temperature", type=float, default=0.0)
+    ap.add_argument("--concurrency", type=int, default=DEFAULT_CONCURRENCY)
     args = ap.parse_args()
-    capture(args.base_url, args.model, args.dataset, args.out, args.max_tokens, args.temperature)
+    capture(args.base_url, args.model, args.dataset, args.out, args.max_tokens, args.temperature,
+            args.concurrency)
     return 0
 
 
