@@ -1,186 +1,133 @@
+---
+last_mapped_commit: f5e93c309b551cf8744e50e6bc5119ce1aea071d
+last_mapped_at: 2026-10-09
+---
 # Technology Stack
 
-**Analysis Date:** 2026-03-31
+**Analysis Date:** 2026-10-09
 
 ## Languages
 
 **Primary:**
-- Python 3.11+ - All pipeline scripts, training, evaluation, orchestration (uses `dict[str, Any]`, `X | None` syntax)
-- PHP - Code extraction (`scripts/php_extract_functions.php`), PHPCS/PHPStan evaluation targets
+- Python 3.10+ - All pipeline, training, merge, quantization, eval, and test code (`scripts/` ~337 Python files across repo, `eval/`, `tests/`, `config/`). Minimum version stated in `README.md` ("Requirements").
+- Bash - Serving, upload, and run wrappers (`scripts/serve_v4_judge_vllm.sh`, `scripts/serve_30_70_vllm.sh`, `scripts/_pub4_upload.sh`, `scripts/_pub03_upload.sh`, `scripts/eval4_ext_gguf_convert.sh`, 37 `.sh` files total)
 
 **Secondary:**
-- YAML - All configuration (`config/*.yaml`, 12 config files)
-- Jinja2 - Chat templates for tokenizer (`adapters/tokenizer/chat_template.jinja`)
-- Bash - DGX Toolbox container scripts (external, referenced via `config/dgx_toolbox.yaml`)
-- Markdown - System prompts (`config/judge_system.md`), documentation
+- PHP - Data-pipeline static checks. PHP CLI with `tokenizer` extension plus PHP_CodeSniffer and WordPress-Coding-Standards are required (`README.md`, `scripts/build_antihack_set.py`, `scripts/reward_pipeline.py`, `eval/rubric_scorer.py`). Training corpus is WordPress PHP code (`tests/fixtures/reward_integration_cases/known_good_php/`, `known_bad_php/`).
+- YAML - Configs in `config/*.yaml` (training, rubric, taxonomy, repos, DGX Toolbox) and `recipes/*.yaml` (vLLM serving recipes).
+- Markdown - Rubric prompt `config/judge_system.md`, and the project docs (`PIPELINE.md`, `PROJECT.md`, `JOURNAL.md`).
+- JSON / JSONL - Datasets, receipts, and manifests (`data/`, `output/`, `config/*.json`).
 
 ## Runtime
 
 **Environment:**
-- Python 3.11+ (type hint syntax requires it)
-- NVIDIA DGX Spark (unified memory architecture, 128GB system RAM shared between CPU and GPU)
-- Docker containers managed by DGX Toolbox (`~/dgx-toolbox/`)
-- Container `unsloth-headless` is the primary training environment
+- Two execution environments, both on a single NVIDIA DGX Spark (GB10, aarch64):
+  - Training/merge/profiling: NGC PyTorch container `nvcr.io/nvidia/pytorch:25.11-py3`, run through the `unsloth-studio` container from DGX Toolbox (`config/requirements-profiling.txt` header, `config/dgx_toolbox.yaml`).
+  - Serving/eval: vLLM and llama.cpp (`llama-server`) on the host or in DGX Toolbox containers.
+- A `.venv/` and `venv/` are git-ignored (`.gitignore`), but no venv is committed.
+- PyTorch is used via the NGC container image. It is not pinned in-repo.
 
 **Package Manager:**
-- pip (no `requirements.txt` or `pyproject.toml` in repo)
-- Dependencies pinned in `config/dgx_toolbox.yaml` under `pinned_versions`
-- Lockfile: missing (config-based pinning instead)
+- pip (inside the container). Installs use `pip install --no-deps -r config/requirements-profiling.txt`.
+- Lockfile: missing. No `requirements.txt`, `pyproject.toml`, `setup.py`, `setup.cfg`, `Pipfile`, `poetry.lock`, or `uv.lock` at the repo root. Dependencies are documented in `README.md`, `config/requirements-profiling.txt`, and the `pinned_versions` / `extra_deps` blocks in `config/dgx_toolbox.yaml`.
+- `deps/dgx-toolbox` is a git submodule (`.gitmodules`, URL `https://github.com/dr-robert-li/dgx-toolbox.git`). The directory is currently empty, so the submodule is not initialized.
 
 ## Frameworks
 
-**Core ML (Training):**
-- Unsloth (`FastLanguageModel`) - Model loading with MoE support, LoRA application, gradient checkpointing mode "unsloth"
-- HuggingFace Transformers 4.56.2 - `AutoTokenizer`, `AutoModelForCausalLM`, `TrainerCallback`
-- TRL 0.24.0 - `SFTTrainer`, `SFTConfig` for supervised fine-tuning
-- PEFT - `PeftModel` for LoRA adapter loading, merging via `merge_and_unload()`
-- PyTorch (bfloat16) - Tensor operations, model inference, gradient computation
+**Core (training and model stack):**
+- Hugging Face `transformers` 4.56.2 - Model loading, tokenization, and merge. Pinned in `config/requirements-profiling.txt` and `config/dgx_toolbox.yaml`.
+- `peft` 0.18.1 - LoRA adapters. The MoE fused-expert LoRA uses `target_parameters` (`config/train_config_v4.yaml`).
+- `trl` 0.26.1 - SFT trainer (`required_imports` in `config/dgx_toolbox.yaml`).
+- `unsloth` / `unsloth_zoo` >=2026.3.5,<2026.5 - Training-time stack. The upper bound is deliberate, since 2026.5.x needs transformers 5.x (`config/requirements-profiling.txt`).
+- `accelerate` >=1.0.0,<2 - Distributed/training runtime.
+- `datasets` 4.3.0; `huggingface_hub` 0.34.1; `tokenizers` >=0.22,<0.23; `safetensors` >=0.4,<0.5.
+- `bitsandbytes` 0.48.0 - Pinned for 4/8-bit safety (`config/requirements-profiling.txt`).
+- `tinker` and `tinker_cookbook` - Hosted fine-tuning / RL backend (Thinking Machines). Imported across roughly 90 scripts, for example `scripts/rl_train.py`, `scripts/tinker_reasoning_sft_v4.py`, `scripts/tinker_reasoning_data_v4.py`. A git-ignored `.venv-tinker/` is the expected local env for these scripts (`.gitignore`); it is not committed.
 
-**Data:**
-- HuggingFace Datasets 4.3.0 - Dataset loading from JSONL files via `load_dataset("json", ...)`
-- HuggingFace Hub 0.34.1 - Model download via `snapshot_download()` with resume support
+**Serving and inference:**
+- vLLM - OpenAI-compatible server, bf16 serving on port 8020 (`scripts/serve_v4_judge_vllm.sh`, `scripts/serve_30_70_vllm.sh`, `scripts/serve_base20_vllm.sh`, `scripts/serve_consistency_vllm.sh`, `scripts/serve_reasoning_v3_vllm.sh`, `scripts/serve_v4_profile_vllm.sh`). Configured by `recipes/*-vllm.yaml`.
+- llama.cpp `llama-server` (build b9180+) - Serves the shipped GGUF on port 8020 with `-c 16384 --jinja`, with `--spec-type draft-mtp` for MTP speculative decoding (`README.md` Quickstart).
+- Ollama - Named as an alternative server for GGUF (`README.md`). No repo code path found for it.
+- `litellm` - Used by the wp-bench harness through `scripts/run_eval_reasoning.py` and `scripts/_wpbench_pth/usercustomize.py`. `config/dgx_toolbox.yaml` lists `litellm` as a component on port 4000.
 
-**Evaluation:**
-- PHPCS (3 standards: WordPress, WordPressVIPMinimum, Security) - Static analysis via subprocess in `eval/rubric_scorer.py`
-- PHPStan (level 5) - Type analysis via subprocess in `eval/rubric_scorer.py`
-- scipy.stats.spearmanr - Spearman correlation for judge evaluation in `eval/eval_judge.py`
-- OpenAI Python client - Talks to local vLLM endpoint (not OpenAI servers)
+**Quantization and export:**
+- `gguf` Python package and llama.cpp convert/quant tools - GGUF conversion and the Q8_0 / Q6_K / Q5_K_M quantization ladder (`scripts/eval4_ext_gguf_convert.sh`, `scripts/pkg4_quant_type_check.py`).
+- `scripts/aimer_prune_v4.py` - Expert pruning (AIMER k=224 variant).
 
-**Experiment Tracking:**
-- MLflow - Local SQLite store at `mlruns.db`, experiment name "wp-qwen3-moe", configured in `scripts/train_model.py`
+**Evaluation and analysis:**
+- `numpy` >=1.26,<3; `scipy` >=1.11; `scikit-learn` >=1.5,<1.7; `xgboost` >=2.1,<3 - Dual-head rubric calibration model (`config/requirements-profiling.txt`, `scripts/` calibration scripts). `statsmodels` and `pandas` are imported by some analysis scripts.
+- PHP_CodeSniffer + WordPress-Coding-Standards - PHPCS pre-filter and scoring for the PHP data pipeline and reward signal (`eval/rubric_scorer.py`, `scripts/reward_pipeline.py`).
+- `wp-bench` - External WordPress benchmark harness. Run through `config/wp-bench.yaml` (grader `kind: docker`, suite `wp-core-v1`). Appears about 189 times in scripts and eval code.
 
 **Testing:**
-- pytest (inferred from `tests/test_*.py` structure)
+- `pytest` - Test runner. `tests/` has about 63 test files, with `tests/conftest.py` and `tests/fixtures/`. The `unittest` module is also used in some tests.
+- Run command (no config file committed): `pytest tests/`
+
+**Build/Dev:**
+- No build system (no Makefile, Dockerfile, or CI config in the repo).
+- DGX Toolbox - Execution engine for training, eval, and serving containers. Config lives in `config/dgx_toolbox.yaml`, with `dgx_toolbox_path: ~/dgx-toolbox`. Overridable with `DGX_TOOLBOX_PATH`.
+- Claude Code - Drives LLM-assisted pipeline steps and project skills in `.claude/skills/wp-finetune:*/`.
 
 ## Key Dependencies
 
-**Critical (pinned in `config/dgx_toolbox.yaml`):**
-- `transformers==4.56.2` - Core model loading and tokenization
-- `trl==0.24.0` - SFTTrainer for fine-tuning
-- `datasets==4.3.0` - Training data loading
-- `bitsandbytes==0.48.0` - Quantization support (load_in_4bit is LOCKED to False for MoE)
-- `huggingface_hub==0.34.1` - Model download with resume
+**Critical (pinned because they break adapter loading or training):**
+- `transformers==4.56.2` / `peft==0.18.1` / `trl==0.26.1` - Exact versions the 30/70 adapter was trained against. The NGC `pytorch:26.02-py3` container is explicitly excluded because its transformers 5.8.0 stack is incompatible (`config/requirements-profiling.txt`).
+- `unsloth` <2026.5 - Upper bound to avoid transformers 5.x breakage.
+- `scikit-learn` <1.7 - sklearn 1.7+ removed `_estimator_type`, which xgboost 2.1.x relies on at `save_model` time.
+- `bitsandbytes==0.48.0` - Avoids the 0.49.2 missing `libbitsandbytes_cuda131.so` error.
 
-**Infrastructure (installed as extra_deps in containers):**
-- `unsloth` - FastLanguageModel wrapper, gradient checkpointing; NOT version-pinned (container-provided)
-- `peft` - LoRA adapter management and merge
-- `mlflow` - Experiment tracking to local SQLite
-- `pyyaml` - Config file parsing (used in every script)
-- `python-dotenv` - `.env` file loading for API keys
-- `scipy` - Spearman correlation in eval
-- `hf_transfer` - Faster model downloads
-
-**Data Pipeline Only:**
-- `anthropic` - Claude API client for synthetic generation, judging (`scripts/utils.py`, `scripts/phase2_generate.py`)
-- `openai` - OpenAI-compatible client for vLLM inference endpoint (`eval/eval_gen.py`, `eval/eval_judge.py`)
+**Infrastructure:**
+- `pyyaml` >=6 - YAML config loading (`README.md` Requirements, `config/requirements-profiling.txt`).
+- `python-dotenv` - Listed in `README.md` and `extra_deps` in `config/dgx_toolbox.yaml`. Loads `.env` (`.env.example` shows one key, `ANTHROPIC_API_KEY`).
+- `mlflow` - Experiment tracking. Imported in `scripts/train_model.py`. Listed in `extra_deps`.
+- `openai` (Python SDK) - Client for the local OpenAI-compatible vLLM / llama.cpp endpoints. Used with `api_key="none"` (for example `scripts/generate_cot_vllm.py`, `scripts/rl_judge_dispatch.py`, `eval/llm_checks.py`). Listed in `extra_deps`.
+- `requests` - HTTP client in `scripts/pub4_validate_upload.py`.
+- `hf` CLI (`hf download`, `hf upload`) - Model download and publishing to HuggingFace (`README.md`, `scripts/_pub03_upload.sh`, `scripts/_pub4_upload.sh`).
+- `anthropic` Python SDK - Imported only in tests (`tests/test_phase2_judge_dataset.py`, `tests/test_generate_critique_then_fix.py`, `tests/test_generate_deep_judge_cot.py`). Runtime Anthropic access goes through the `claude` CLI (see INTEGRATIONS.md).
+- `telemetry` package (DGX Toolbox) - GPU sampling and failure classification (`scripts/train_model.py`, `scripts/adaptive_planner.py`). Mounted into containers from `~/dgx-toolbox/telemetry`.
 
 ## Configuration
 
 **Environment:**
-- `.env` file present - contains `ANTHROPIC_API_KEY` (for data pipeline phases, not training)
-- `.env.example` documents required variables
-- `DGX_TOOLBOX_PATH` env var - overrides toolbox location (default: `~/dgx-toolbox`)
+- Config is layered YAML files in `config/`. Training variants are `config/train_config*.yaml` (for example `config/train_config_v4.yaml`, `config/train_config_reasoning.yaml`, `config/train_config_30_70.yaml`).
+- Runtime settings come from environment variables read with `os.environ` / `os.getenv` (names only; see INTEGRATIONS.md for the list):
+  - Backend selection: `LLM_BACKEND` (`claude` default, or `vllm`), `LLM_VLLM_BASE_URL`, `VLLM_BASE_URL`, `VLLM_MODEL`, `LLM_VLLM_MODEL`
+  - Eval endpoints: `EVAL_JUDGE_BASE_URL`, `EVAL_GEN_BASE_URL`
+  - Toolbox path: `DGX_TOOLBOX_PATH`
+  - Behavior flags: `RUBRIC_USE_LLM_CHECKS`, `REWARD_SKIP_PHPCS_ASSERT`, `WP_JUDGE_DEBUG_DUMP`, `WPBENCH_LIMIT`, `PILOT_TARGET`, `SIEVE_PROFILE_*`, `ADAPTIVE_THERMAL_LOG`, `SWEEP_RESULTS_PATH`
+- `.env` file: loaded by `python-dotenv`. Template at `.env.example` (`ANTHROPIC_API_KEY` placeholder). The actual `.env` is not read for this document.
+- Required secrets: `TINKER_API_KEY` for the Tinker backend (`scripts/build_base20_probe_adapter.py`).
 
-**Training configs (ratio variants for ablation studies):**
-- `config/train_config.yaml` - Default training configuration (active)
-- `config/train_config_30_70.yaml` through `config/train_config_70_30.yaml` - Gen/judge ratio variants
-- All share identical LoRA and model settings; differ only in data paths, output_dir, and dataloader settings
+**Build:**
+- `config/dgx_toolbox.yaml` - Container map, component paths, shared directories, ports, pinned versions, `required_imports`, `extra_deps`.
+- `config/requirements-profiling.txt` - Pinned HF / training / eval stack.
+- `config/wp-bench.yaml` - wp-bench run config.
+- `config/repos.yaml` - Source repos for the data pipeline (236 WordPress repos per `README.md`).
+- `config/adaptive_planning.yaml`, `config/rubric_calibration.yaml`, `config/taxonomy.yaml`, `config/synthetic_prompts.yaml`, `config/judge_system.md` - Pipeline and rubric configuration.
+- `recipes/qwen3.6-35b-a3b-vllm.yaml`, `recipes/qwen3.6-35b-a3b-fp8-vllm.yaml`, `recipes/qwen3-30b-wp-30_70-vllm.yaml` - vLLM serving recipes.
 
-**Pipeline configs:**
-- `config/dgx_toolbox.yaml` - Container mapping, pinned versions, ports, validation paths, required imports
-- `config/repos.yaml` - WordPress repository list (core + plugins with quality tiers)
-- `config/taxonomy.yaml` - Training tag taxonomy and coverage minimums
-- `config/synthetic_prompts.yaml` - Prompt templates for synthetic generation
-- `config/judge_system.md` - 9-dimension judging rubric system prompt
-- `config/wp-bench.yaml` - wp-bench evaluation configuration (vLLM endpoint, grader config)
+## Models
 
-## Model Specification
-
-**Base Model:**
-- Qwen3-30B-A3B (`Qwen/Qwen3-30B-A3B` on HuggingFace)
-- Native MoE architecture: ~30B total params, ~3B active per forward pass
-- 128 experts, top-8 routing
-- Stored at `models/Qwen3-30B-A3B/` (16 safetensors shards, ~60GB)
-- BF16 precision (load_in_4bit=False is LOCKED -- no QLoRA for MoE)
-- MoE load balancing: `output_router_logits=True` set on model.config
-
-**LoRA Configuration (from `config/train_config.yaml`):**
-- r=32, alpha=64, dropout=0.05
-- Target modules: `q_proj`, `k_proj`, `v_proj`, `o_proj`, `gate_up_proj`, `down_proj`
-- modules_to_save: `embed_tokens`, `lm_head` (LOCKED for custom token embeddings)
-- Gradient checkpointing: `use_gradient_checkpointing="unsloth"` mode
-- bias: "none"
-
-**Custom Tokens:**
-- `<wp_gen>` - Routes to code generation mode
-- `<wp_judge>` - Routes to structured critique/scoring mode
-- Mean-initialized from existing embedding average in `scripts/prepare_tokenizer.py`
-
-**Training Hyperparameters:**
-- SFT with cosine LR schedule, warmup_ratio=0.05
-- Effective batch size: 16 (per_device_batch=4 x gradient_accumulation=4)
-- Max sequence length: 4096
-- 2 epochs, learning_rate=2e-4
-- BF16 mixed precision (fp16=False explicitly)
-- Checkpoints saved every 400 steps, eval every 200 steps
-- Dataloader: 3 workers, persistent, prefetch_factor=3
-
-**Adapter Outputs:**
-- Training saves to `adapters/qwen3-wp/` (or ratio-specific dirs like `adapters/qwen3-30b-wp-40_60/`)
-- Checkpoints at `adapters/qwen3-wp/checkpoint-{N}/` (every save_steps)
-- Merged models at `models/qwen3-30b-wp-{ratio}-merged/`
-
-## Memory Management
-
-**MemoryWatchdogCallback** (`scripts/train_model.py` line 261):
-- Custom `TrainerCallback` that monitors `/proc/meminfo` every training step
-- Threshold: 2048 MB available RAM (OOM_WATCHDOG_THRESHOLD_MB)
-- On trigger: sets `control.should_save=True` and `control.should_training_stop=True`
-- Saves emergency checkpoint before OOM killer strikes
-- Critical for DGX Spark unified memory where GPU/CPU compete for same pool
-
-**Pre-training Memory Check** (`scripts/train_model.py` line 59):
-- Reads `/proc/meminfo` (fallback: psutil) before loading 63GB model
-- Minimum 70GB free required (MIN_FREE_MEMORY_GB)
-- Shows top memory consumers and Docker containers if insufficient
-- Exits with actionable suggestions if check fails
-
-## Telemetry System
-
-**Observer Agents** (documented in `docs/wp-finetune:observe-training.md`):
-- 6-agent team spawned as background Claude Code agents
-- GPU metrics, thermal/throttling, training metrics, disk I/O, checkpoint integrity, container monitor
-- Write to `telemetry/training/{timestamp}/` as Markdown files
-- 30-second polling intervals
-- Stop via `_stop` sentinel file
-
-**Review** (documented in `docs/wp-finetune:review-telemetry.md`):
-- Reads telemetry files and produces consolidated `_summary.md`
-- Extracts WARNING/CRITICAL flags, key metrics, timeline
+- Base (canonical v4): `Qwen/Qwen3.6-35B-A3B` (native MoE, 256 experts, top-8 routing). Local path `./models/Qwen3.6-35B-A3B` (`config/train_config_v4.yaml`). FP8 variant `Qwen/Qwen3.6-35B-A3B-FP8` is used by `recipes/qwen3.6-35b-a3b-fp8-vllm.yaml`.
+- Base (v1.3 and 30/70 experiments): `Qwen/Qwen3-30B-A3B` (`config/train_config*.yaml`, `config/dgx_toolbox.yaml` `status_artifacts`).
+- Shipped artifact: `iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf` on HuggingFace (`README.md`). Recommended file `wp-judge-v4-unpruned.Q5_K_M.gguf` (23.61 GiB). Pruned file `wp-judge-v4-pruned-k224.Q6_K.gguf` (23.47 GiB).
+- Special tokens added to the tokenizer: `<wp_gen>`, `<wp_judge>` (`config/train_config_v4.yaml`).
+- Training: rank-32 MoE-only LoRA, `lora_alpha` 64, `lora_dropout` 0.05, `max_seq_length` 4096, learning rate 2e-4 cosine, 2 epochs in v4 (`config/train_config_v4.yaml`).
 
 ## Platform Requirements
 
 **Development:**
-- Python 3.11+
-- PHP + PHPCS with WordPress-Extra, WordPressVIPMinimum, Security standards
-- PHPStan (optional, for full rubric scoring)
-- Docker (for DGX Toolbox container management)
-- ~60GB disk for base model, ~2GB per adapter checkpoint
+- Linux with an NVIDIA GPU. The documented target is a DGX Spark (GB10, aarch64, CUDA).
+- Python 3.10+, PHP CLI with `tokenizer`, PHP_CodeSniffer, and WordPress-Coding-Standards.
+- Docker (DGX Toolbox containers, `wp-bench` grader with `kind: docker`).
+- Claude Code CLI (`claude`) for LLM-assisted pipeline steps.
+- `hf` CLI for HuggingFace downloads and uploads.
 
-**Training (Production):**
-- NVIDIA DGX Spark with unified memory (128GB)
-- Docker with NVIDIA runtime
-- DGX Toolbox (`~/dgx-toolbox/`) for container orchestration
-- Minimum 70GB free system RAM before model loading
-- Container: `unsloth-headless` via `~/dgx-toolbox/containers/unsloth-headless-sync.sh`
-- Training duration: 6-12 hours per run
-
-**Inference (Production):**
-- vLLM server (via DGX Toolbox) on port 8020
-- LiteLLM proxy on port 4000 (optional)
-- OpenAI-compatible API endpoint
-- Supports both merged model and adapter-only serving (`--lora-modules` fallback)
+**Production:**
+- Self-hosted inference. No external API is required to run the judge (`README.md`).
+- Served as either GGUF via llama.cpp b9180+ or Ollama, or as bf16 via vLLM. The default port is 8020 (`config/dgx_toolbox.yaml` `ports`).
+- Published to HuggingFace under the `iamchum` account (Apache 2.0).
 
 ---
 
-*Stack analysis: 2026-03-31*
+*Stack analysis: 2026-10-09*

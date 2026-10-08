@@ -1,279 +1,265 @@
+---
+last_mapped_commit: f5e93c309b551cf8744e50e6bc5119ce1aea071d
+last_mapped_at: 2026-10-09
+---
 # Coding Conventions
 
-**Analysis Date:** 2026-03-31
+**Analysis Date:** 2026-10-09
 
 ## Naming Patterns
 
 **Files:**
-- Use `snake_case.py` for all Python modules: `train_model.py`, `pipeline_orchestrator.py`, `eval_gate.py`
-- Pipeline phase scripts follow `phase{N}_{action}.py` pattern: `phase1_clone.py`, `phase1_extract.py`, `phase2_generate.py`, `phase2_mutate.py`, `phase3_cot.py`
-- Test files mirror source: `test_{module_name}.py` in `tests/` directory
-- Config files use `snake_case.yaml`: `train_config.yaml`, `repos.yaml`, `taxonomy.yaml`
+- Python modules: `snake_case.py`. Examples: `scripts/utils.py`, `scripts/rl_judge_dispatch.py`, `eval/eval_gate.py`.
+- Pipeline scripts carry a phase or family prefix that groups related work: `scripts/phase1_extract.py`, `scripts/phase2_judge.py`, `scripts/sieve_ksweep_run.py`, `scripts/eval4_ext_verdict.py`, `scripts/relabel/prep_batches.py`, `scripts/revl07_classification.py`. Name a new script after its family prefix if one already exists.
+- Verb-first names for build and generation steps: `build_*.py`, `generate_*.py`, `merge_*.py`, `check_*.py`, `audit_*.py`, `serve_*.sh`.
+- Helper or internal-only modules and scripts start with an underscore: `scripts/_p0_smoke_common.py`, `scripts/_pkg_gguf_eval_run.sh`, `scripts/_wpbench_pth/usercustomize.py`. Keep the underscore for anything not meant to be run directly.
+- Shell runners end in `.sh` and use `serve_*` for server launchers, `_*_run.sh` for one-off eval/packaging runs.
+- Test modules: `tests/test_<module>.py` (see `TESTING.md`).
+- Documentation: UPPERCASE for top-level docs (`README.md`, `PIPELINE.md`, `PROJECT.md`, `CHANGELOG.md`). Config and recipe YAML use lowercase with underscores or hyphens (`config/train_config_v4.yaml`, `recipes/qwen3.6-35b-a3b-vllm.yaml`). Match the neighbouring files.
 
 **Functions:**
-- Use `snake_case` for all functions: `load_config()`, `extract_json()`, `check_memory()`
-- Private/internal functions prefixed with underscore: `_available_mb()`, `_get_checkpoint_dir()`, `_build_parser()`, `_require_phpcs()`
-- Entry-point functions named `main()` for pipeline scripts, `train()` for training script
-- Action-first naming: `mutate_remove_prepare()`, `mutate_remove_nonce()`, `verify_mutation_detectable()`
+- `snake_case`. Public: `extract_json`, `load_checkpoint`, `save_checkpoint`, `check_gates`, `load_thresholds`.
+- Private helpers: leading underscore. Examples: `_get_checkpoint_dir` in `scripts/utils.py`, `_auto_device_map_calls` in `tests/test_gb10_load_safety.py`, `_judge_response` in `tests/phase4_4/conftest.py`.
+- Verbs first: `load_*`, `save_*`, `check_*`, `build_*`, `parse_*`.
 
 **Variables:**
-- Use `snake_case` for local variables and parameters: `train_dataset`, `config_path`, `resume_checkpoint`
-- Use `UPPER_SNAKE_CASE` for module-level constants: `PROJECT_ROOT`, `CONFIG_PATH`, `MIN_FREE_MEMORY_GB`, `BATCH_THRESHOLD`, `OOM_WATCHDOG_THRESHOLD_MB`
-- Path constants use `_DIR` or `_PATH` suffix: `PASSED_DIR`, `EXTRACTED_DIR`, `CONFIG_PATH`, `TRAIN_JSONL`
+- `snake_case`. Local names are short but descriptive: `stripped`, `tmp_path`, `gate_rows`, `hits`.
+- Module-level defaults are `UPPER_SNAKE_CASE`: `DEFAULT_CONFIG_PATH = "config/train_config.yaml"` in `eval/eval_gate.py`; `BASE_MODEL`, `MAX_LENGTH`, `TRAIN_PATH` in `scripts/`.
+- Module-level "private" constants start with an underscore: `_FALLBACK_THRESHOLDS` in `eval/eval_gate.py`.
+- Mutable module-level cache: `_DEFAULT_CHECKPOINT_DIR: Optional[Path] = None` with a `global` statement in `scripts/utils.py`. Keep this pattern for lazy one-time values only.
+- Environment-variable names are `UPPER_SNAKE` and are read with `os.environ.get(NAME, default)`: `VLLM_BASE_URL`, `VLLM_MODEL`, `SIEVE_MASK_NPY`, `XDG_STATE_HOME`.
 
-**Types/Classes:**
-- Use `PascalCase` for classes: `MemoryWatchdogCallback`, `DGXToolbox`, `CheckResult`, `ValidationResult`, `ExecResult`
-- Dataclasses use `@dataclass` decorator with type annotations: see `scripts/dgx_toolbox.py`
-- Frozen dataclasses for immutable data: `@dataclass(frozen=True)` in `eval/rubric_definitions.py`
+**Types and classes:**
+- `PascalCase`. Exceptions end in `Error` or describe the failure: `PreconditionError(RuntimeError)` in `scripts/fidelity_gate_v3.py`, `VllmBootTimeout(RuntimeError)` in `scripts/_p0_vllm_smoke_serve.py`.
+- Use `@dataclass` for structured records (5 files in `scripts/` and `eval/`).
+- Test helper classes are named `Test*` and grouped by behaviour (see `TESTING.md`).
 
 ## Code Style
 
 **Formatting:**
-- No formatter config file (no `pyproject.toml`, `ruff.toml`, or `black` config)
-- Indentation: 4 spaces (standard Python)
-- Line length: ~100-120 characters observed, no enforced limit
-- Use f-strings for string interpolation throughout: `f"Loading model from {local_dir} ..."`
-- 2 blank lines between top-level functions, 1 for logical separation within functions
+- No formatter config is committed (no `.prettierrc`, `pyproject.toml` with black/ruff settings, or `.editorconfig`). Match the surrounding file.
+- Indentation: 4 spaces for Python, 2 spaces in YAML.
+- Quotes: double quotes dominate in Python (about 103 scripts use `print("...")`). Single quotes appear inside PHP strings and in test fixture content, not as the general style.
+- Line length: most lines are under 100 characters, but the codebase is not strict. About 1,100 of roughly 71,700 Python lines exceed 100 characters and about 330 exceed 120. Keep new lines under 100 and wrap long function calls across lines with a trailing comma.
+- Long f-strings for prompts are normal. Multiline prompt text lives in triple-quoted strings (`f"""You are generating ..."""` in `scripts/orchestrator.py`). Keep them readable rather than wrapping them mechanically.
 
 **Linting:**
-- No linting config file (no `.flake8`, `ruff.toml`, or `pylintrc`)
-- Inline `noqa` comments used for intentional suppressions: `# noqa: PLC0415` (deferred imports), `# noqa: F401` (imported but unused), `# noqa: ARG001` (unused argument)
-- No CI linting pipeline detected
+- No linter is configured or enforced in CI. Do not assume `ruff`/`flake8` passes.
+- The code still signals intent with `# noqa: E402` on imports that follow a `sys.path.insert(...)` line (see Import Organization).
+- Rule that is actually enforced: `tests/test_gb10_load_safety.py` fails the suite on `device_map="auto"` in any `scripts/*.py`. Treat that as a hard rule, not style.
+
+**Type hints:**
+- Present on function signatures in the utility and gate modules: `def extract_json(text: str) -> Optional[dict]:` in `scripts/utils.py`.
+- Two spellings are in use: `Optional[X]` (21 files) and `X | None` (37 files). The `X | None` form needs `from __future__ import annotations` on Python versions before 3.10. Use `X | None` with the future import in new code; keep `Optional` in a file that already uses it.
+- `from __future__ import annotations` is in 143 of 228 Python files under `scripts/`, `eval/`, and `tests/`. Add it to new files.
+- Keep signatures simple: no `TypedDict`, `Protocol`, or generics are needed for the existing patterns.
 
 ## Import Organization
 
 **Order:**
-1. `from __future__ import annotations` (when used, always first)
-2. Standard library imports: `json`, `sys`, `time`, `re`, `subprocess`, `pathlib`, `argparse`
-3. Third-party imports: `yaml`, `torch`, `anthropic`, `pytest`
-4. Local/project imports: `from scripts.utils import ...`, `from eval.rubric_scorer import ...`
+1. `from __future__ import annotations` (when present)
+2. Standard library (`import json`, `import re`, `from pathlib import Path`, `from typing import Optional`)
+3. Third-party (`import yaml`, `import pytest`, `import torch`)
+4. Project modules (`from scripts.dgx_toolbox import get_toolbox`, `from eval.eval_gate import ...`)
 
-**Deferred Imports:**
-- Heavy ML libraries are imported inside functions to avoid startup cost:
-  ```python
-  def load_model_and_tokenizer(config: dict):
-      from unsloth import FastLanguageModel  # noqa: PLC0415
-      from transformers import AutoTokenizer  # noqa: PLC0415
-  ```
-- This pattern is used consistently in `scripts/train_model.py` for `unsloth`, `transformers`, `mlflow`, `trl`, `datasets`
+Keep the blank lines between groups. Example from `eval/eval_gate.py`:
+
+```python
+import argparse
+import json
+import sys
+from pathlib import Path
+from typing import Optional
+
+import yaml
+
+from scripts.dgx_toolbox import get_toolbox
+```
+
+**Path bootstrap for scripts run directly:**
+Most scripts are run as `python scripts/<name>.py` or `python -m scripts.<name>`. They add the project root to `sys.path` before importing project modules, then mark the late import with `# noqa: E402`:
+
+```python
+
+# scripts/check_verdict_confusion.py
+
+sys.path.insert(0, str(ROOT))
+from eval.output_parsers import parse_judge_scores  # noqa: E402
+```
+
+Use this pattern (`sys.path.insert(0, str(PROJECT_ROOT))` with `PROJECT_ROOT = Path(__file__).resolve().parent.parent`) in new scripts that import from `scripts.` or `eval.`. Appears in about 122 files.
 
 **Path Aliases:**
-- No path aliases or import shortcuts. All imports use full dotted paths: `from scripts.utils import extract_json`
-- `sys.path.insert(0, ...)` used in test files to ensure project root is on path
+- None. Import by package path: `scripts.<module>`, `eval.<module>`. Both `scripts/` and `eval/` have an `__init__.py`.
+- Local imports inside functions are used to defer heavy or optional dependencies: `from scripts._p0_vllm_smoke_serve import boot_vllm` inside `main()` in `scripts/build_gen03_merge.py`; `from unittest.mock import MagicMock` inside a fixture. Use this when a module is expensive to import or may be absent.
+
+## Module Layout
+
+**Top of file:**
+1. Module docstring describing purpose, provided functions, and a `Usage:` block when runnable. Example from `eval/eval_gate.py`:
+   ```
+   Usage:
+       python -m eval.eval_gate [--results-dir PATH] [--config PATH]
+   ```
+2. `from __future__ import annotations`
+3. Imports (order above)
+4. Constants (`UPPER_SNAKE`), including default paths
+5. Section banners (see below)
+6. Functions, then `if __name__ == "__main__":` (present in about 148 files)
+
+**Section banners:**
+Separate groups of related functions with a comment banner (used in `scripts/utils.py` and `eval/eval_gate.py`):
+
+```python
+
+# ---------------------------------------------------------------------------
+
+# Threshold loading
+
+# ---------------------------------------------------------------------------
+
+```
+
+**Entry points:**
+- `main()` function plus `if __name__ == "__main__": main()` (or `sys.exit(main())` when the exit code matters).
+- Command-line parsing uses `argparse` (74 files). Name the parser variable `ap` or `parser`. Give every option a default that can be read from an environment variable when it is a service URL or model name:
+  ```python
+  ap.add_argument("--base-url", default=os.environ.get("VLLM_BASE_URL", DEFAULT_BASE_URL))
+  ```
+- Exit codes: `sys.exit(1)` for gate or validation failure, `sys.exit(2)` for usage or precondition errors. 83 files call `sys.exit`. Quality gates must exit non-zero on failure (see `eval/eval_gate.py`).
+
+## Documentation Comments
+
+**Docstrings:**
+- Google style: `Args:` and `Returns:` sections with indented descriptions. Used in `scripts/utils.py` and `eval/eval_gate.py` (`Args:` / `Returns:` in about 39 files).
+- Module docstrings are required for runnable scripts and describe the phase, inputs, outputs, and usage.
+- Keep the first line as a short imperative summary: `"""Load evaluation thresholds from config/train_config.yaml eval section."""`.
+- Tests have one-line docstrings stating the case.
+
+```python
+def load_checkpoint(phase: str, checkpoint_dir: Optional[Path] = None) -> dict:
+    """Load checkpoint state for a given phase name.
+
+    Returns a fresh empty state if no checkpoint file exists.
+
+    Args:
+        phase: Phase identifier used as the filename stem
+        checkpoint_dir: Override directory (for testing)
+    """
+```
+
+**Inline comments:**
+- Use comments to explain why, especially for numeric thresholds, model-specific quirks, and hardware or environment traps. Examples: the GB10 unified-memory note in `tests/test_gb10_load_safety.py`, and the close-only `[/REASONING]` format note in `tests/phase4_4/conftest.py`.
+- Reference the decision or ticket ID when the reason is recorded elsewhere (for example `D-09-03`, `PKG-03`, `PUB4-01`, `REVL-03` appear in comments and test names). Keep these IDs when editing those sections so the trail is preserved.
+- Numbered strategies or steps are written as comments: `# Strategy 1: direct parse`, `# Strategy 2: ```json fenced block`.
+
+**TODO/FIXME:**
+- Rare. Only 5 `TODO`/`FIXME`/`HACK`/`XXX` markers in `scripts/`, `eval/`, `tests/` combined. Record open work in `PROJECT.md` or `.planning/`, and avoid leaving bare TODOs.
 
 ## Error Handling
 
 **Patterns:**
 
-1. **Fail-open for non-critical checks:** Return safe defaults when checks cannot run. Used in `MemoryWatchdogCallback._available_mb()` (`scripts/train_model.py`):
-   ```python
-   except Exception:
-       pass
-   return 999_999  # fail-open: if we can't read, don't block training
-   ```
+- Catch narrow exceptions when the failure is expected. Examples: `json.JSONDecodeError` and `ValueError` in `scripts/utils.py:extract_json`, `FileNotFoundError`, `subprocess.TimeoutExpired`, `ImportError` for optional dependencies.
+- Broad `except Exception` appears often (about 120 occurrences) in pipeline and serving code, where a single bad item must not stop a batch. Log the error and continue, or record it in a failed list. Do not use bare `except:` (0 occurrences). Do not silently swallow exceptions.
+- Fallback-with-default is the typical recovery path. Example: `load_thresholds` returns `dict(_FALLBACK_THRESHOLDS)` when the config file is missing or has no `eval` section.
+- Raise `RuntimeError` for environment or runtime failures (35 files) and `ValueError` for bad input (16 files). Define a subclass of `RuntimeError` for a failure callers may want to catch by name (`VllmBootTimeout`, `PreconditionError`).
+- Use `raise ... from exc` or include the original message when re-raising; preserve the cause.
+- Subprocesses: wrap `subprocess.run` with an explicit `timeout=` and catch `subprocess.TimeoutExpired`. 28 files use `subprocess.run`.
 
-2. **Hard exit for critical preconditions:** Use `sys.exit(1)` with descriptive error for must-have requirements. Used in `scripts/preflight.py`, `scripts/phase2_mutate.py`:
-   ```python
-   except FileNotFoundError:
-       print("ERROR: phpcs not found...", file=sys.stderr)
-       sys.exit(1)
-   ```
+```python
+try:
+    return json.loads(stripped)
+except (json.JSONDecodeError, ValueError):
+    pass
+```
 
-3. **Graceful degradation with fallback chain:** Try primary method, then fallback, then skip. Used in `scripts/train_model.py` memory check:
-   ```python
-   try:
-       meminfo = Path("/proc/meminfo").read_text()
-   except Exception:
-       try:
-           import psutil
-       except ImportError:
-           print("Warning: Cannot check memory. Proceeding anyway.")
-           return
-   ```
+**Atomic writes:**
+Persist state with write-to-temp then rename so readers never see a partial file. The pattern in `scripts/utils.py:save_checkpoint`:
 
-4. **Exponential backoff for API calls:** Centralized in `scripts/utils.py:call_with_backoff()` with jitter, retry-after header support, and max retries. All API-calling scripts must use this instead of raw `client.messages.create()`.
+```python
+tmp_path = directory / f"{phase}_checkpoint.tmp"
+with tmp_path.open("w", encoding="utf-8") as f:
+    json.dump(state, f, indent=2)
+tmp_path.rename(path)
+```
 
-5. **Atomic writes for state:** Checkpoint saves use write-to-tmp-then-rename pattern in `scripts/utils.py:save_checkpoint()` to prevent partial reads.
+Use this for any new checkpoint or result file that another process may read while it is being written.
 
-6. **Structured validation results:** `scripts/dgx_toolbox.py` uses `CheckResult` and `ValidationResult` dataclasses for composable validation:
-   ```python
-   result = dgx.validate(["toolbox", "training_data", "config", "memory:70"])
-   if not result.ok:
-       print(result.report())
-       sys.exit(1)
-   ```
+**Validation at the boundary:**
+Validate LLM output and external JSON with `extract_json` (from `scripts/utils.py`) rather than calling `json.loads` directly. It tolerates fenced and embedded JSON in model responses.
 
 ## Logging
 
-**Framework:** `print()` statements (no logging framework)
+**Framework:** Mixed. Standard `logging` in library-style modules and `print` for operator-facing progress in scripts.
+
+**Counts:**
+- `print(...)` is used by about 167 files, mostly with a bracketed tag prefix:
+  ```python
+  print(f"[sft] ...")
+  print(f"[probe] ...")
+  print(f"[vllm] ...")
+  print("[merge] subprocess exited 0", flush=True)
+  ```
+- `logging.getLogger(__name__)` is used in 12 files. Calls are mostly `logger.info` (113), `logger.warning` (54), `logger.error` (38), `logger.debug` (6).
+- `logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")` is the standard setup in entry points (4 files).
 
 **Patterns:**
-- Use `print()` for all output; no `logging` module usage
-- Errors go to stderr: `print("ERROR: ...", file=sys.stderr)`
-- Progress indicators use formatted banners:
-  ```python
-  print(f"\n{'=' * 60}")
-  print(f"  MEMORY PRE-CHECK")
-  print(f"{'=' * 60}")
-  ```
-- Status lines use fixed-width formatting for alignment: `f"  Total system memory: {total_gb:.1f} GB"`
-- Unicode check/cross marks for pass/fail: `"✓"` and `"✗"`
+- For a new script, use the bracketed-tag `print(f"[tag] ...", flush=True)` style when it is a long-running pipeline step, so output is readable in `tee`d logs.
+- For a new library module used by several scripts, define `logger = logging.getLogger(__name__)` at module top and log through it.
+- Do not log secrets, API keys, or full model responses. Log counts, paths, and scores.
 
 ## Comments
 
 **When to Comment:**
-- Module-level docstrings describe full pipeline context, usage, and invocation: every `scripts/*.py` and `eval/*.py` file has a comprehensive module docstring
-- Section separators use `# ── Section Name ──` or `# ---------------------------------------------------------------------------`
-- Inline comments explain non-obvious decisions, especially locked hyperparameters:
-  ```python
-  load_in_4bit=False,  # LOCKED — no QLoRA for MoE
-  modules_to_save=lora_cfg["modules_to_save"],  # ["embed_tokens", "lm_head"] — LOCKED
-  ```
-- Reference ticket IDs in comments: `# TRNG-04`, `# TRNG-05`, `# PIPE-03`
+- Explain non-obvious constraints, hardware or model quirks, and the reason for an unusual choice.
+- Do not restate what the code does.
+- Put a short banner above a group of related functions (see Module Layout).
 
-**Docstrings:**
-- Use triple-quoted docstrings on all public functions
-- Include `Args:` and `Returns:` sections for complex functions (Google style)
-- Class docstrings describe purpose and design rationale (see `MemoryWatchdogCallback`, `DGXToolbox`)
+**JSDoc/TSDoc:**
+- Not applicable. Python project. Use Google-style docstrings (see Documentation Comments).
 
 ## Function Design
 
-**Size:** Functions are generally focused and under 50 lines. Larger functions (like `get_status()` in `scripts/pipeline_orchestrator.py`) aggregate data and are still single-purpose.
+**Size:**
+- Helpers are small and single-purpose. Long pipeline functions exist (orchestrators, `main()` functions with argparse) and are acceptable for CLI glue. Extract the testable logic into a named function so `tests/` can import it without running `main()`.
 
 **Parameters:**
-- Use `config: dict` pattern -- load YAML config once, pass dict through pipeline
-- Use `Optional[Path]` with default `None` for overridable paths (useful for testing): `checkpoint_dir: Optional[Path] = None`
-- CLI args use `argparse.Namespace`
+- Accept an explicit override for any directory or file path that would otherwise default into `data/` or `output/`. Example: `save_checkpoint(phase, state, checkpoint_dir: Optional[Path] = None)`. Tests use this override so they never write into real project data.
+- Use keyword arguments for options with defaults. Callers in `tests/` pass them explicitly by name.
 
 **Return Values:**
-- Return `dict` for structured data (status, config, results)
-- Return `tuple` for multiple values: `(successes, failures)` from `parse_batch_results()`
-- Return `None` for failure/not-found cases: `extract_json()` returns `None` on parse failure
-- Return `bool` for checks: `verify_mutation_detectable()` returns `True`/`False`
-- Return `(None, None)` tuple to signal "no mutation applied" in mutation functions
+- Return `Optional[...]` for a lookup that may fail (`extract_json` returns `None`). Return a fresh empty state, not `None`, for a missing checkpoint (`load_checkpoint`).
+- Return tuples for a pass/fail plus detail: `check_gates(...) -> (bool, list[dict])`.
 
 ## Module Design
 
-**Exports:** No `__all__` lists. Import specific names from modules: `from scripts.utils import extract_json, call_with_backoff, load_checkpoint, save_checkpoint`
+**Exports:**
+- No `__all__` declarations (0 in `scripts/` and `eval/`). Public names are those without a leading underscore.
+- `eval/__init__.py` and `scripts/__init__.py` are empty.
 
-**Barrel Files:** `scripts/__init__.py`, `eval/__init__.py`, and `tests/__init__.py` exist but are empty (namespace packages)
+**Barrel Files:**
+- Not used. Import the concrete module: `from eval.output_parsers import parse_judge_scores`, not from a package re-export.
 
-**Singleton Pattern:** Used in `scripts/dgx_toolbox.py`:
-```python
-_instance: DGXToolbox | None = None
+**Shared utilities:**
+- Shared helpers go in `scripts/utils.py` (JSON extraction, checkpoints), `scripts/dgx_toolbox.py` (hardware and environment queries via `get_toolbox()`), and `eval/` (evaluation and parsing). Check these before writing a new helper; several one-off copies exist, so search with `grep -rn "def <name>" scripts eval` first.
 
-def get_toolbox() -> DGXToolbox:
-    global _instance
-    if _instance is None:
-        _instance = DGXToolbox()
-    return _instance
-```
+**Hardware-safe loading (project rule):**
+- Never pass `device_map="auto"` to `from_pretrained`. On the GB10 unified-memory host this causes an OOM. Use `scripts.sieve_arch.gb10_load_kwargs()` instead. Enforced by `tests/test_gb10_load_safety.py`.
 
-**Dataclass Pattern:** Used for structured results in `scripts/dgx_toolbox.py`:
-```python
-@dataclass
-class CheckResult:
-    name: str
-    passed: bool
-    message: str
-    details: dict[str, Any] = field(default_factory=dict)
-```
+## Shell Scripts
 
-## Idempotency Pattern
+- `scripts/*.sh` files: 8 of 14 set `set -e` (or `set -uo pipefail`). Add `set -euo pipefail` to new runners.
+- Put a header comment after the shebang that states the phase ID, purpose, and usage (`# Usage: _pkg_gguf_eval_run.sh <gguf_path> <alias> <out_dir> <port>`).
+- Read configuration from positional arguments or environment variables, with defaults, not hard-coded values.
+- Known deviation: `scripts/_pkg_ens8192_run.sh` hard-codes an absolute home path (`cd /home/robert_li/...`). Do not copy this. Resolve the project root relative to the script (`cd "$(dirname "$0")/.."`).
 
-Every pipeline script checks whether its output already exists before running. Follow this pattern for new scripts:
+## Known Deviations
 
-```python
-# At start of train():
-adapter_config = output_dir / "adapter_config.json"
-if adapter_config.exists() and not args.resume and not args.dry_run:
-    print(f"Trained adapter already exists at {output_dir}/adapter_config.json")
-    return
-```
-
-Checkpoint-based idempotency for multi-item processing (see `scripts/phase1_extract.py`, `scripts/phase1_clone.py`):
-```python
-checkpoint = load_checkpoint("phase1_extract")
-completed = set(checkpoint["completed"])
-for repo in repos:
-    if repo["name"] in completed:
-        continue  # skip already-processed
-    # ... process ...
-    checkpoint["completed"].append(repo["name"])
-    save_checkpoint("phase1_extract", checkpoint)
-```
-
-DGX Toolbox also supports idempotency via the `idempotency_check` parameter:
-```python
-dgx.execute("unsloth_studio", "python", "-m", "scripts.train_model",
-            idempotency_check="/workspace/wp-finetune/adapters/qwen3-wp/adapter_config.json")
-```
-
-## Config-Driven Design
-
-All hyperparameters and targets live in YAML config files, never hardcoded in scripts:
-
-- Training hyperparameters: `config/train_config.yaml`
-- Eval thresholds: `config/train_config.yaml` (eval section)
-- Pipeline percentage targets: `scripts/pipeline_orchestrator.py` constants (derived from data)
-- Repo list and filters: `config/repos.yaml`
-- DGX container config: `config/dgx_toolbox.yaml`
-- Judge rubric: `config/judge_system.md`
-- Taxonomy: `config/taxonomy.yaml`
-
-When adding new configurable values, add them to the appropriate YAML file and load via `yaml.safe_load()`.
-
-## CLI Pattern
-
-Pipeline scripts use `if __name__ == "__main__":` with `argparse` or simple `sys.argv` parsing:
-
-```python
-# Simple CLI (pipeline_orchestrator.py):
-if __name__ == "__main__":
-    cmd = sys.argv[1] if len(sys.argv) > 1 else "status"
-
-# Full argparse (train_model.py):
-def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="...")
-    parser.add_argument("--resume", nargs="?", const=True, ...)
-    return parser
-
-if __name__ == "__main__":
-    args = _build_parser().parse_args()
-    train(args)
-```
-
-Scripts are also importable as modules: `python -m scripts.train_model` or `from scripts.train_model import load_config`.
-
-## Callback Pattern (Training)
-
-The `MemoryWatchdogCallback` in `scripts/train_model.py` inherits `transformers.TrainerCallback` with a fail-open design:
-
-```python
-class MemoryWatchdogCallback(_TrainerCallback):
-    def __init__(self, threshold_mb: int = OOM_WATCHDOG_THRESHOLD_MB):
-        self.threshold_mb = threshold_mb
-        self._triggered = False
-
-    @staticmethod
-    def _available_mb() -> int:
-        try:
-            # read /proc/meminfo
-        except Exception:
-            return 999_999  # fail-open
-
-    def on_step_end(self, args, state, control, **kwargs):
-        if self._triggered:
-            return
-        avail = self._available_mb()
-        if avail < self.threshold_mb:
-            self._triggered = True
-            control.should_save = True
-            control.should_training_stop = True
-```
-
-Key design: reads `/proc/meminfo` every step, triggers graceful save before OOM killer strikes, fires only once (`_triggered` flag).
+- Multiple styles of CLI logging coexist (`print` vs `logging`). Follow the file you are editing.
+- `Optional[X]` and `X | None` both appear. Follow the file you are editing.
+- Phase- and ticket-numbered names (`phase2_*`, `revl07_*`, `eval4_*`) make the codebase larger to navigate. Put new work under the existing family prefix instead of creating a new one.
 
 ---
 
-*Convention analysis: 2026-03-31*
+*Convention analysis: 2026-10-09*

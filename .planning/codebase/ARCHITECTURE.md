@@ -1,249 +1,261 @@
+---
+last_mapped_commit: f5e93c309b551cf8744e50e6bc5119ce1aea071d
+last_mapped_at: 2026-10-09
+---
+<!-- refreshed: 2026-10-09 -->
+
 # Architecture
 
-**Analysis Date:** 2026-03-31
+**Analysis Date:** 2026-10-09
+
+## System Overview
+
+```text
+┌──────────────────────────────────────────────────────────────────────┐
+│                 Operator layer (Claude Code skills)                   │
+│  `.claude/skills/wp-finetune:*/SKILL.md`  (run-*, observe-*, review-*)│
+└───────────┬──────────────────────────┬────────────────────────────────┘
+            │ invokes                  │ spawns Claude Code agents for LLM work
+            ▼                          ▼
+┌────────────────────────────┐  ┌────────────────────────────────────────┐
+│ Orchestration / drivers    │  │ Stage scripts (one job per file)        │
+│ `scripts/pipeline_         │  │ `scripts/phase1_*`, `phase2_*`, `phase3_*`│
+│   orchestrator.py`         │  │ `scripts/build_*`, `assemble_*`,        │
+│ `scripts/orchestrator.py`  │  │ `scripts/tinker_*`, `train_model.py`,   │
+│ `scripts/rl_train.py`      │  │ `scripts/merge_*`, `scripts/sieve_*`,   │
+│ `eval/eval_gate.py`        │  │ `scripts/aimer_prune*`, `scripts/prune_*`│
+└─────────────┬──────────────┘  └───────────────┬────────────────────────┘
+              │ imports                          │ imports
+              ▼                                  ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ Shared libraries                                                      │
+│ `scripts/utils.py` (JSON extract, checkpoints)                        │
+│ `scripts/dgx_toolbox.py` (container resolve/validate/execute)         │
+│ `scripts/claude_agent.py` (agent invocation)                          │
+│ `scripts/reward_pipeline.py` (RL reward, VeRPO-style shaping)         │
+│ `scripts/judge_functions.py` (heuristic 9-dimension scorers)          │
+└──────────────┬───────────────────────────────────┬───────────────────┘
+               ▼                                   ▼
+┌───────────────────────────────┐   ┌──────────────────────────────────┐
+│ Evaluation package `eval/`    │   │ External compute                  │
+│ `rubric_scorer.py` (PHPCS,    │   │ DGX Spark (GB10) containers via   │
+│   regex, floor rules)         │   │   `deps/dgx-toolbox` (vLLM, etc.) │
+│ `eval_judge.py` (LLM judge)   │   │ Tinker cloud (LoRA SFT / GSPO)    │
+│ `output_parsers.py`           │   │ llama.cpp / GGUF (packaging)      │
+└──────────────┬────────────────┘   └──────────────────────────────────┘
+               ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ Artifacts (file-based, no database)                                   │
+│ `config/` (YAML/MD)  `data/` (JSONL/JSON)  `output/` (receipts/models)│
+│ `data/checkpoints/*.json` (phase state)                               │
+└──────────────────────────────────────────────────────────────────────┘
+```
 
 ## Pattern Overview
 
-**Overall:** Multi-phase ML pipeline with skill-based orchestration, container-mediated execution, and adaptive resource planning.
+**Overall:** Staged, file-based ML pipeline (offline batch) with a Claude Code skill layer on top. There is no long-running service, web server, or database owned by this repo. Each stage reads files produced by earlier stages and writes new JSON/JSONL artifacts plus receipts.
 
 **Key Characteristics:**
-- Pipeline stages are independent Python scripts invoked via CLI, connected through filesystem-based data handoff (JSON/JSONL files in `data/` subdirectories)
-- Claude Code skills (`.claude/skills/`) serve as the orchestration layer, invoking scripts and spawning background telemetry agents
-- DGX Toolbox (`scripts/dgx_toolbox.py`) is the execution engine that resolves container paths, validates preconditions, and executes commands inside Docker containers
-- All training runs are isolated by dataset ratio, with per-run config overlays and output directories
-- Adaptive resource planning reads telemetry JSONL logs between runs and adjusts training config based on thermal/memory history
+- Stages communicate only through files under `data/` and `output/`. Stage boundaries are the file formats, not function calls.
+- Configuration is externalized to `config/*.yaml` (e.g. `config/train_config_v4.yaml`, `config/repos.yaml`, `config/dgx_toolbox.yaml`, `config/adaptive_planning.yaml`). Thresholds are meant to live in config, not in code (`config/adaptive_planning.yaml` header: "Do not hardcode in skills or scripts").
+- Most stage scripts are standalone CLIs with `argparse` and an `if __name__ == "__main__":` block, run as `python -m scripts.<name>` or `python scripts/<name>.py`.
+- LLM-heavy labelling steps run through Claude Code agents, not direct paid API loops (`README.md`, `PIPELINE.md` prerequisites).
+- Compute is split across three backends: DGX Spark containers (via `scripts/dgx_toolbox.py`), Tinker cloud (`scripts/tinker_*.py`), and local llama.cpp/GGUF for packaging.
+- Gates are first-class: every stage has a pass/fail gate, and "no winner" is a recorded valid outcome (`PIPELINE.md`, conditional gates A/B/C).
 
 ## Layers
 
-**Skill Layer (Intent + Recovery):**
-- Purpose: Define high-level workflows (data pipeline, training, evaluation) with step-by-step procedures and error recovery
-- Location: `.claude/skills/wp-finetune:*/SKILL.md`
-- Contains: Markdown skill definitions that Claude Code interprets and executes
-- Depends on: DGX Toolbox, pipeline scripts, telemetry agents
-- Used by: User via Claude Code commands (`/run-training`, `/run-pipeline`, `/observe-training`)
-- Key skills: `run-training` (Steps 0-9, adaptive planning), `run-data-pipeline` (orchestrator-driven), `observe-training` (6-agent team), `observe-data-pipeline` (3-agent team), `observe-packaging` (3-agent team), `observe-inference`, `observe-evaluation`, `review-telemetry`
+**Operator skills (Claude Code):**
+- Purpose: Turn a pipeline stage into a repeatable invocation with telemetry.
+- Location: `.claude/skills/wp-finetune:*/SKILL.md` (13 skills). Mirror copies of several live in `docs/wp-finetune:*.md`.
+- Contains: Markdown instructions, architecture notes, agent team assessments.
+- Depends on: `scripts/` entry points, `config/`.
+- Used by: The operator via `/wp-finetune:*` commands.
+- Note: `docs/wp-finetune:run-training.md` and `.claude/skills/wp-finetune:run-training/SKILL.md` already differ, so the mirrors can drift from the live skill.
 
-**Execution Engine (DGX Toolbox):**
-- Purpose: Resolve container paths, validate state, manage container lifecycle, execute commands inside Docker
-- Location: `scripts/dgx_toolbox.py`, `config/dgx_toolbox.yaml`
-- Contains: `DGXToolbox` class (singleton via `get_toolbox()`), validation engine with named checks, container lifecycle management, execution with idempotency
-- Depends on: Docker CLI, `config/dgx_toolbox.yaml`, external dgx-toolbox project (`~/dgx-toolbox`)
-- Used by: All training/eval scripts import `get_toolbox()`, skills call `dgx.validate()`, `dgx.ensure_ready()`, `dgx.execute()`
+**Orchestration and drivers:**
+- Purpose: Decide what to run next, or drive a multi-step run.
+- Location: `scripts/pipeline_orchestrator.py` (status/plan for the data pipeline, `get_status`, `get_plan`, `compute_targets`); `scripts/orchestrator.py` (CoT/CTF batch spawn, merge, validate); `scripts/rl_train.py` (GSPO RL driver, 1767 lines, `run_training_step`, `check_halt`); `eval/eval_gate.py` (`run_gate`, `check_gates`).
+- Depends on: Stage scripts, `scripts/utils.py`, `scripts/dgx_toolbox.py`.
+- Used by: Operator skills and direct CLI.
 
-**Pipeline Orchestrator (State Machine):**
-- Purpose: Scan filesystem to determine pipeline state, compute percentage-based targets, produce structured action plans
-- Location: `scripts/pipeline_orchestrator.py`
-- Contains: State scanning (`get_status()`), dynamic target computation (`compute_targets()` with percentage-based targets + COT_FLOOR minimum), action plan generation (`get_plan()`)
-- Depends on: Filesystem state in `data/` directories, `config/repos.yaml`, `config/taxonomy.yaml`
-- Used by: `run-data-pipeline` skill reads `plan-json` and dispatches actions as "script" or "agent" types
+**Stage scripts:**
+- Purpose: One unit of pipeline work each (clone, extract, judge, generate, train, merge, profile, prune, eval).
+- Location: `scripts/` (177 Python files, 14 shell scripts). Key families:
+  - Data: `scripts/phase1_clone.py`, `phase1_extract.py`, `phase1_judge.py`, `phase2_gap_analysis.py`, `phase2_generate.py`, `phase2_judge.py`, `phase2_mutate.py`, `phase3_cot.py`, `generate_cot*.py`, `assemble_reasoning_dataset.py`, `build_*.py`.
+  - Training: `scripts/train_model.py` (local transformers/Unsloth path), `scripts/tinker_reasoning_sft.py` (+ `_v4`), `scripts/tinker_rl_data.py`, `scripts/rl_train.py`.
+  - Merge and compression: `scripts/merge_adapter.py`, `merge_tinker_v3.py`, `aimer_prune.py`, `aimer_prune_v4.py`, `reap_prune.py`, `prune_*.py`, `scripts/sieve_*.py`.
+  - Eval drivers: `scripts/run_eval_reasoning.py`, `run_eval_triage.py`, `run_grid_eval.py`, `scripts/relabel/eval_relabel.py`, `bootstrap_gate.py`, `tost_gate.py`.
+- Depends on: `eval/`, `scripts/utils.py`, `scripts/dgx_toolbox.py`, `scripts/reward_pipeline.py`.
+- Used by: Orchestrators, skills, and other stage scripts (e.g. `scripts/rl_train.py` imports `scripts/rl_rollouts.py` and `scripts/rl_codegen_tripwire.py`).
 
-**Pipeline Scripts (Data Processing):**
-- Purpose: Individual data processing stages from extraction through export
-- Location: `scripts/*.py`
-- Contains: Phase 1 (`phase1_clone.py`, `phase1_extract.py`, `phase1_judge.py`), Phase 2 (`phase2_gap_analysis.py`, `phase2_generate.py`, `phase2_mutate.py`, `phase2_judge.py`, `phase2_judge_dataset.py`), Phase 3 (`phase3_cot.py`), merge (`merge_dataset.py`), export (`export_dataset.py`)
-- Depends on: `scripts/utils.py` (shared utilities), Anthropic API (for LLM judging/generation), PHP CLI (for extraction/linting)
-- Used by: Pipeline orchestrator dispatches these as "script" actions; skills invoke directly
+**Shared libraries:**
+- Purpose: Cross-cutting helpers.
+- Location: `scripts/utils.py` (`extract_json` at line 19, `load_checkpoint`/`save_checkpoint` at lines 85/120), `scripts/dgx_toolbox.py` (`get_toolbox()` resolver, `ValidationResult`, container execute), `scripts/claude_agent.py`, `scripts/judge_functions.py` (`score_wpcs`, `score_sql`, `score_security`, … one per rubric dimension), `scripts/reward_pipeline.py` (`compute_reward` line 627, `compute_group_rewards` line 425).
+- Depends on: `eval/` (reward_pipeline imports `eval.rubric_scorer` and `eval.eval_judge`).
+- Used by: Nearly all stage scripts (`scripts.dgx_toolbox` is imported by 13 modules; `scripts.utils` by 12).
 
-**Training Scripts (Model Training):**
-- Purpose: Model download, tokenizer extension, LoRA SFT training, adapter merge
-- Location: `scripts/download_model.py`, `scripts/prepare_tokenizer.py`, `scripts/train_model.py`, `scripts/merge_adapter.py`
-- Contains: Unsloth FastLanguageModel loading (BF16, no QLoRA for MoE), LoRA application (r=32, alpha=64), SFTTrainer with MLflow tracking, MemoryWatchdogCallback, checkpoint resume support
-- Depends on: DGX Toolbox (container execution), `config/train_config*.yaml`, HuggingFace Hub, Unsloth, TRL, PyTorch
-- Used by: `run-training` skill orchestrates these in Steps 4-8 inside Docker containers
+**Evaluation package:**
+- Purpose: Score WordPress PHP against the 9-dimension rubric and gate model quality.
+- Location: `eval/` (9 files).
+  - `eval/rubric_scorer.py`: `score_code` (line 723) combines PHPCS (`run_phpcs`, line 197), PHPStan (`run_phpstan`, line 235), regex checks (`run_regex_checks`, line 441), and floor rules (`apply_floor_rules`, line 594) into a `RubricScore`.
+  - `eval/eval_judge.py`: `judge_score_single` (line 386), `run_eval` (line 556); talks to an OpenAI-compatible judge endpoint.
+  - `eval/output_parsers.py`: `parse_judge_scores` (line 156), `strip_think` (line 78). Handles judge output that may be JSON or prose.
+  - `eval/rubric_definitions.py`: `CHECK_REGISTRY`, `CRITICAL_FLOOR_RULES`.
+  - `eval/eval_gate.py`: threshold gates from YAML.
+  - `eval/dim_map.json`: dimension mapping.
+- Depends on: `scripts.dgx_toolbox` (`eval/eval_gate.py` line 24 and `eval/eval_judge.py` `_get_dgx`). This is a two-way package dependency with `scripts/` (see Architectural Constraints).
+- Used by: `scripts/reward_pipeline.py`, `scripts/run_eval_*.py`, `scripts/relabel/*`, and `tests/`.
 
-**Evaluation Layer:**
-- Purpose: Score model outputs against 9-dimension rubric, check quality gates, run wp-bench
-- Location: `eval/*.py`
-- Contains: Rubric scorer (`rubric_scorer.py` - PHPCS + PHPStan + regex + LLM), rubric definitions (`rubric_definitions.py`), gen eval (`eval_gen.py` - 9-dimension scoring), judge eval (`eval_judge.py` - Spearman correlation), quality gate (`eval_gate.py` - threshold checking)
-- Depends on: DGX Toolbox (container execution), PHPCS/PHPStan (code quality tools), OpenAI-compatible API (vLLM endpoint at port 8020), scipy (Spearman correlation)
-- Used by: Post-training quality gate, `observe-evaluation` skill
+**Container and serving shims:**
+- Purpose: Patch behaviour inside serving or eval containers without touching upstream code.
+- Location: `scripts/_sieve_vllm_patch/sitecustomize.py` (applies the expert mask as a forward hook inside vLLM, duplicating math from `scripts/sieve_expert_mask_inference.py`), `scripts/_sieve_profile_vllm_patch/sitecustomize.py`, `scripts/_wpbench_pth/usercustomize.py` (forces `enable_thinking: false` for wp-bench), `scripts/_wpbench_shim/npx`.
+- Depends on: Being on `PYTHONPATH` inside the container.
+- Used by: `scripts/serve_*.sh`, wp-bench runs.
 
-**Telemetry Layer:**
-- Purpose: Monitor GPU, thermal, training metrics, disk I/O, checkpoint integrity, container health during long-running operations
-- Location: `telemetry/` (runtime output), `.claude/skills/wp-finetune:observe-*/SKILL.md` (definitions)
-- Contains: Background agent definitions (6 agents for training, 3 for data pipeline, 3 for packaging), canonical thermal JSONL log, `thermal_history.json`
-- Depends on: `nvidia-smi` (HOST, not container -- containers can lose NVML access), `docker` CLI, `/proc/meminfo`, `free`
-- Used by: Adaptive resource planning (Step 8.5), `review-telemetry` consolidation
-
-**Configuration Layer:**
-- Purpose: Centralize all tunable parameters
-- Location: `config/*.yaml`
-- Contains: Training hyperparameters (`train_config.yaml`), per-ratio overlays (`train_config_{ratio}.yaml`), LoRA config, eval thresholds, DGX Toolbox mappings (`dgx_toolbox.yaml`), repo definitions (`repos.yaml`), taxonomy (`taxonomy.yaml`), synthetic prompts (`synthetic_prompts.yaml`), wp-bench config (`wp-bench.yaml`)
-- Depends on: Nothing (static files, modified by adaptive planning)
-- Used by: All scripts and skills
+**Data and artifacts:**
+- Purpose: Persist everything between stages.
+- Location: `data/` (148 tracked files: seeds, relabel labels, reasoning datasets, RL prompt pools, calibration), `output/` (281 tracked files: eval receipts, packaging, prune and sieve results, `output/packaging/MODEL_CARD.md`), `data/checkpoints/` (runtime phase-state JSON, gitignored).
+- Used by: All stages.
 
 ## Data Flow
 
-**Data Pipeline (Extraction to Export):**
+### Primary request path: data pipeline to judge model
 
-1. `scripts/csv_to_repos.py` generates `config/repos.yaml` from source CSV
-2. `scripts/phase1_clone.py` clones repos to `data/phase1_extraction/repos/`
-3. `scripts/phase1_extract.py` extracts PHP functions via PHP tokenizer to `data/phase1_extraction/output/extracted/*.json`
-4. `scripts/phase1_judge.py` (or Claude Code agents in batches of 5 repos) judges functions, splitting into `output/passed/` and `output/failed/`
-   - WordPress Core (quality_tier: "core") -> auto-passed, tagged only
-   - Others -> PHPCS pre-filter (< 5 errors/100 lines) -> Claude 9-dimension judgment
-5. `scripts/phase2_gap_analysis.py` compares tag counts against `config/taxonomy.yaml` minimums, writes `data/phase2_synthetic/gap_report.json`
-6. `scripts/phase2_mutate.py` creates contrastive pairs (remove prepare(), strip nonces, strip escaping, remove capability checks, inject SELECT *) in `data/phase2_synthetic/output/mutated/`
-7. `scripts/phase2_generate.py` (or agents) fills taxonomy gaps using real code as style anchors in `data/phase2_synthetic/output/generated/`
-8. `scripts/phase2_judge.py` / `scripts/phase2_judge_dataset.py` (or agents) assess synthetics into `output/judged/`, generate judge training data in `output/judge_training/`
-9. `scripts/phase3_cot.py` (or agents) generates 4 CoT types in `data/phase3_cot/output/`:
-   - `cot_gen_pattern` (requirement -> pattern -> implementation -> reasoning)
-   - `cot_judge_rubric` (code -> walk 9 dimensions -> scores -> verdict)
-   - `cot_judge_contrastive` (bad code -> issues -> fixes -> good version)
-   - `cot_security` (security analysis -> nonce/cap/escape -> verdict)
-10. `scripts/merge_dataset.py` combines all sources into `data/final_dataset/wordpress_finetune.jsonl`
-11. `scripts/export_dataset.py` deduplicates (SHA-256 on assistant content), enforces 40/60 gen/judge ratio, adds sample weights (1.5x for contrastive/low-score), validates PHP lint on sample, splits 80/10/10 train/val/test, writes OpenAI/Alpaca/raw formats + metadata.json
+1. Clone and extract: `scripts/phase1_clone.py` reads `config/repos.yaml`; `scripts/phase1_extract.py` runs a PHP tokenizer helper (`scripts/php_extract_functions.php`) to pull function boundaries.
+2. Heuristic and agent judging: `scripts/judge_functions.py` (`judge_function`, line 538) produces per-dimension scores; `scripts/phase1_judge.py` dispatches Claude agents for LLM judgement. WordPress Core is auto-passed (`config/repos.yaml`, `quality_tier: core`).
+3. Synthetic fill: `scripts/phase2_gap_analysis.py` writes a coverage report, `scripts/phase2_generate.py` generates examples for gaps, `scripts/phase2_judge.py` judges them with the same bar.
+4. Chain of thought: `scripts/phase3_cot.py` and `scripts/generate_cot*.py` attach reasoning. `scripts/orchestrator.py` batches this (`spawn`, `merge`, `validate`).
+5. Assembly gate: `scripts/assemble_reasoning_dataset.py` and `scripts/validate_reasoning_consistency.py` reject examples whose reasoning contradicts the numeric score, then build the mix (`scripts/build_replay_mix.py`).
+6. Train: `scripts/tinker_reasoning_sft.py --stage full --epochs 3 --seed {1,0,2}` runs LoRA SFT on Tinker (`config/train_config_v4.yaml` for v4 settings), or `scripts/train_model.py` runs the local path.
+7. Merge and package: `scripts/merge_adapter.py` or `merge_tinker_v3.py` fuse adapters; packaging follows `scripts/run_packaging_recipe.md`.
+8. Evaluate: `eval/eval_gate.py` runs thresholds from config; `scripts/run_eval_reasoning.py` and `eval/eval_judge.py` score outputs; receipts land in `output/`.
 
-**Training Pipeline (Per-Run, orchestrated by `run-training` skill):**
+Stage progress is tracked by `scripts/pipeline_orchestrator.py`, which counts artifacts (`count_json_items`, `count_jsonl_lines`, line 58/72) and emits an ordered `actions` list from `get_plan` (line 432).
 
-1. Step 0: User selects base model, dataset ratios, telemetry mode (observe/monitor/none)
-2. Step 1: Skill creates run-specific config overlay (`config/train_config_{ratio}.yaml`) with ratio-specific data paths and output dirs
-3. Step 2: `dgx.validate(["toolbox", "config", "memory:70"])` checks preconditions
-4. Step 3: `dgx.ensure_ready("unsloth_studio")` starts container, mounts project at `/workspace/wp-finetune`, installs pinned deps
-5. Step 4: `scripts/download_model.py` downloads base model (idempotent via `idempotency_check`, shared across runs)
-6. Step 5: `scripts/prepare_tokenizer.py` extends tokenizer with `<wp_gen>`, `<wp_judge>` tokens (idempotent)
-7. Step 6: `scripts/train_model.py --dry-run` validates config, checks memory pre-check (MIN_FREE_MEMORY_GB = 70), serves as warmup probe
-8. Step 7: `scripts/train_model.py [--resume] --config {config}` runs SFTTrainer with MemoryWatchdogCallback (threshold: 2 GB)
-9. Step 8: `scripts/merge_adapter.py` merges LoRA into base model, verifies special tokens survive roundtrip
-10. Step 8.5: Adaptive resource planning (see below)
+### RL reward path (conditional gate A)
 
-**Adaptive Resource Planning (Step 8.5):**
+1. `scripts/rl_train.py` `run_training_step` (line 946) calls `scripts/rl_rollouts.py` `collect_rollouts`.
+2. Each rollout is scored by `scripts/reward_pipeline.py` `compute_group_rewards` (line 425) and `compute_reward` (line 627).
+3. `compute_reward` calls `eval.rubric_scorer.score_code` for verifiable signals (PHPCS/regex) and `eval.eval_judge.judge_score_single` for the judge component.
+4. `scripts/rl_codegen_tripwire.py` checks for codegen regression (Goodhart guard). `check_halt` (`scripts/rl_train.py` line 491) stops the run on the pre-registered kill criterion.
 
-```
-Collectors (observe agents / monitor)    Canonical log                Downstream consumers
-────────────────────────────────        ──────────────               ────────────────────
-Lightweight monitor ──┐
-                      ├──> {model}_{date}_{ratio}   ──┬──> 8.5a: compute avg/peak metrics
-Observe agents ───────┘    _thermal.jsonl              ├──> 8.5b: thermal_history.json (one record per run)
-                           (append-only JSONL)         ├──> 8.5c: zone classification (COLD/COOL/WARM/HOT/CRITICAL)
-                                                       ├──> 8.5d: CRITICAL backoff (restore last WARM config)
-                                                       ├──> 8.5d-mem: OOM recovery (restore last safe config)
-                                                       └──> 8.5e: thermal exploitation ladder
-```
+### Evaluation and triage path
 
-Thermal zones:
-- CRITICAL (>= 83C peak): Pause, backoff to last WARM config, wait for cooldown < 75C
-- HOT (78-82C peak): Reduce batch_size by 1, increase grad_accum to maintain eff_batch
-- WARM (72-77C peak): Hold current config (target zone)
-- COOL (65-71C avg): Apply exploitation ladder
-- COLD (< 65C avg): Aggressive exploitation ladder
+1. `scripts/profile_base_model.py` and `scripts/compute_concentration.py` profile routing (E_eff).
+2. `scripts/sieve_ksweep_run.py` / `sieve_ksweep_v4_run.py` sweep expert counts k. `scripts/bootstrap_gate.py` and `scripts/tost_gate.py` decide equivalence.
+3. `scripts/run_eval_triage.py` produces a triage decision for human approval (`output/triage_decision.md`).
 
-Exploitation ladder (COOL/COLD, applied in priority order):
-1. `prefetch_factor` +1 (cap 4) -- near-zero memory, reduces GPU idle gaps
-2. `save_steps` x2 (cap 400) -- zero memory, fewer checkpoint stalls
-3. `eval_steps` x2 (cap 200) -- zero memory, fewer eval pauses
-4. `batch_size` +1 (last resort, model-scale-aware ceiling, requires warmup probe)
-
-OOM detection: Final telemetry readings show GPU util < 10% while RAM > 95% -> memory backoff (restore last non-OOM config, step down workers by 1, enable persistent_workers)
-
-**Telemetry Flow:**
-
-1. Collectors poll `nvidia-smi` (HOST) / `free` / `docker` at defined intervals (30s for GPU, 60s for training/disk/container, 5m for checkpoints, 10m for lightweight monitor)
-2. All collectors append to canonical thermal log: `telemetry/training/{model}_{date}_{ratio}_thermal.jsonl`
-   - Schema: `{"ts", "gpu_util", "temp", "vram_used_mb" (null on unified memory), "sys_ram_used_mb", "sys_ram_total_mb", "source"}`
-3. Between runs, Step 8.5a reads canonical log, computes metrics
-4. Step 8.5b appends summary record to `telemetry/training/thermal_history.json`
-5. Step 8.5c-e adjusts next run's config
-6. `review-telemetry` skill reads agent markdown reports, produces `_summary.md`
-
-**State Management:**
-- Pipeline state is entirely filesystem-based: orchestrator scans `data/` directories to determine current phase
-- Checkpoint persistence uses atomic write-and-rename via `scripts/utils.py` (`save_checkpoint()` writes `.tmp` then `rename()`) in `data/checkpoints/`
-- Training state managed by HuggingFace Trainer (checkpoint dirs in adapter output)
-- Thermal history persists in `telemetry/training/thermal_history.json` as JSON array
-- Telemetry stop signal via `_stop` sentinel file -- agents check each cycle and write Final Summary before exiting
+**State management:**
+- Stateless between runs except for files. `scripts/utils.py` keeps per-phase JSON state in `data/checkpoints/` (`load_checkpoint`, `save_checkpoint`), and the RL driver writes manifests (`_write_manifest`, `scripts/rl_train.py` line 91).
+- Calibration caches are module-level and loaded lazily (`eval/rubric_scorer.py` `_load_calibration`, line 115).
 
 ## Key Abstractions
 
-**DGXToolbox (Execution Engine):**
-- Purpose: Bridge between skill intent and Docker container execution
-- Location: `scripts/dgx_toolbox.py`
-- Pattern: Singleton (`get_toolbox()`), config-driven container resolution from `config/dgx_toolbox.yaml`, validation engine with named checks (`toolbox`, `training_data`, `config`, `memory:N`, `container:name`, `mounted:name`, `gpu`, `deps:name`), idempotent execution with `idempotency_check` parameter
-- Key classes: `DGXToolbox`, `ValidationResult`, `CheckResult`, `ExecResult`
+**`RubricScore`:**
+- Purpose: Result of scoring one PHP snippet across the 9 dimensions.
+- Examples: `eval/rubric_scorer.py` line 69.
+- Pattern: Dataclass returned by `score_code`; consumed by reward and eval code.
 
-**Pipeline Orchestrator (State Machine):**
-- Purpose: Scan filesystem state, compute dynamic targets, produce action plans
-- Location: `scripts/pipeline_orchestrator.py`
-- Pattern: Pure function over filesystem state -- `get_status()` returns current counts, `compute_targets()` derives percentage-based targets (10% of base counts with COT_FLOOR=500 minimum), `get_plan()` returns structured JSON plan with typed actions ("script" or "agent")
+**`RewardBreakdown` / `RewardResult`:**
+- Purpose: Per-rollout reward and its components.
+- Examples: `scripts/reward_pipeline.py` lines 229 and 302.
+- Pattern: Dataclasses. Reward is computed per group (`_verpo_group`, line 336), then normalised (`_mo_grpo_norm`, line 205).
 
-**MemoryWatchdogCallback (Safety):**
-- Purpose: Prevent OOM-kill during training by triggering graceful checkpoint save when RAM drops below threshold
-- Location: `scripts/train_model.py` (class `MemoryWatchdogCallback`)
-- Pattern: HuggingFace `TrainerCallback` reading `/proc/meminfo` every step, sets `control.should_save = True` and `control.should_training_stop = True` when MemAvailable < 2048 MB. Fail-open: returns 999999 if `/proc/meminfo` unreadable.
+**`DgxToolbox` / `ValidationResult` / `CheckResult`:**
+- Purpose: Resolve a named component (e.g. `unsloth_studio`, `vllm`) from `config/dgx_toolbox.yaml`, validate preconditions, execute inside a container.
+- Examples: `scripts/dgx_toolbox.py` (`get_toolbox`, dataclasses at lines near the top).
+- Pattern: Facade. Callers use `dgx.validate([...])`, `dgx.ensure_ready(...)`, `dgx.execute(...)`, `dgx.status_report()`. Scripts never hard-code container commands.
 
-**Checkpoint Persistence (Resumability):**
-- Purpose: Allow pipeline scripts to resume from last successful item after interruption
-- Location: `scripts/utils.py` (`load_checkpoint()`, `save_checkpoint()`)
-- Pattern: Atomic JSON write (write `.tmp` then `rename()`) storing `{completed: [], failed: [], batch_job_ids: [], timestamp}` per phase in `data/checkpoints/{phase}_checkpoint.json`
+**Dimension scorers:**
+- Purpose: One deterministic heuristic per rubric dimension.
+- Examples: `scripts/judge_functions.py` `score_wpcs` (line 65), `score_sql` (136), `score_security` (191), `score_performance` (265), `score_wp_api` (305), `score_code_quality` (348), `score_dependency` (383), `score_i18n` (401), `score_accessibility` (451).
+- Pattern: Each returns `(score, list_of_reasons)`. `detect_training_tags` (line 484) maps findings to training-set tags.
 
-**Adaptive Resource Planning (Thermal Exploitation):**
-- Purpose: Automatically adjust training hyperparameters between runs based on observed thermal and memory behavior
-- Location: `.claude/skills/wp-finetune:run-training/SKILL.md` (Step 8.5)
-- Pattern: Read canonical thermal JSONL -> compute aggregates -> classify zone -> apply exploitation ladder or backoff -> write updated config for next run. Persistent memory in `thermal_history.json` enables backoff-to-last-WARM.
-
-**Quality Gate (Evaluation):**
-- Purpose: Automated pass/fail decision on trained model
-- Location: `eval/eval_gate.py`
-- Pattern: Load thresholds from `config/train_config.yaml` `eval` section, load result JSONs, check each metric against threshold, exit 0 (pass) or 1 (fail). Gates: overall mean score, per-dimension gen pass rates, overall Spearman correlation, per-dimension judge correlations, legacy PHPCS/security/spearman thresholds.
-
-**Rubric Scorer (Ground Truth):**
-- Purpose: Deterministic code quality scoring for evaluation and judge training
-- Location: `eval/rubric_scorer.py`, `eval/rubric_definitions.py`
-- Pattern: 4-tool scoring pipeline (PHPCS -> PHPStan -> regex patterns -> LLM checks), 9 weighted dimensions with critical floor rules, grade bands (Excellent/Good/Acceptable/Poor/Bad/Failing)
+**Gate:**
+- Purpose: Decide ship or stop at each stage.
+- Examples: `eval/eval_gate.py` `check_gates` (line 96), `scripts/bootstrap_gate.py`, `scripts/tost_gate.py`, `scripts/reward_validity_gate.py`.
+- Pattern: Thresholds read from YAML (`load_thresholds`, line 45). Gate results are recorded as receipts, and a failing gate is a valid recorded outcome.
 
 ## Entry Points
 
-**Data Pipeline Entry:**
-- Location: `scripts/pipeline_orchestrator.py` (CLI: `status`, `plan`, `plan-json`, `status-json`)
-- Triggers: `run-data-pipeline` skill reads `plan-json` output
-- Responsibilities: Scan state, compute targets, emit action plan
+**Data pipeline status and plan:**
+- Location: `scripts/pipeline_orchestrator.py` (`__main__` at line 734).
+- Triggers: Operator runs `python scripts/pipeline_orchestrator.py`.
+- Responsibilities: Report counts against targets (`print_status`, `print_plan`), emit next steps.
 
-**Training Entry:**
-- Location: `scripts/train_model.py` (via `python -m scripts.train_model [--resume] [--dry-run] [--config PATH]`)
-- Triggers: `run-training` skill Step 7, executed inside Docker container via `dgx.execute()`
-- Responsibilities: Load config, check memory, load model via Unsloth, apply LoRA, load datasets, train with SFTTrainer
+**Stage scripts:**
+- Location: `scripts/phase1_clone.py`, `scripts/phase1_extract.py`, `scripts/phase1_judge.py`, `scripts/phase2_*.py`, `scripts/phase3_cot.py`, and others.
+- Triggers: `python -m scripts.<name>` as printed by `get_plan`.
+- Responsibilities: One stage each.
 
-**Evaluation Entry:**
-- Location: `eval/eval_gate.py` (via `python -m eval.eval_gate [--results-dir PATH] [--config PATH]`)
-- Triggers: Post-training quality gate check
-- Responsibilities: Load thresholds from config, load eval results, check all gates, exit 0/1
+**Training:**
+- Location: `scripts/tinker_reasoning_sft.py` (cloud LoRA SFT), `scripts/rl_train.py` (`_parse_args` line 1235, `_dry_run` line 1495), `scripts/train_model.py` (`train` line 499, `_build_parser` line 634).
+- Triggers: Operator skills `wp-finetune:run-training` and `wp-finetune:run-rl-training`.
 
-**DGX Toolbox CLI:**
-- Location: `scripts/dgx_toolbox.py` (via `python scripts/dgx_toolbox.py [info|validate|status]`)
-- Triggers: Diagnostic use, skill validation steps
-- Responsibilities: Show toolbox info, run validation checks, emit structured status report
+**Evaluation:**
+- Location: `eval/eval_gate.py` (`main` line 294), `eval/eval_judge.py` (`run_eval` line 556), `scripts/run_eval_reasoning.py`, `scripts/run_eval_triage.py`.
+- Triggers: Operator skill `wp-finetune:run-evaluation`.
 
-**Preflight:**
-- Location: `scripts/preflight.py` (via `python scripts/preflight.py`)
-- Triggers: Before data pipeline scripts
-- Responsibilities: Verify ANTHROPIC_API_KEY, php, phpcs, WordPress-Extra standard
+**Batch CoT driver:**
+- Location: `scripts/orchestrator.py` (`main` line 304): subcommands for spawn, merge, validate.
+
+**Tests:**
+- Location: `tests/conftest.py` (fixtures, adds project root to `sys.path`), `tests/phase4_4/conftest.py`.
+
+## Architectural Constraints
+
+- **Threading:** Single-process Python scripts. Concurrency is at the level of containers, Tinker jobs, and Claude Code agent batches, not threads inside the repo. `scripts/rl_rollouts.py` collects rollouts in-process. No threading model is documented.
+- **Global state:** Module-level caches and env handling.
+  - `scripts/utils.py` `_DEFAULT_CHECKPOINT_DIR` (lazily set global).
+  - `eval/rubric_scorer.py` `_load_calibration` (module-level calibration cache).
+  - `scripts/reward_pipeline.py` pops environment variables at import time before importing `eval.*` ("Lazy imports after env-var suppression"). Import order matters here.
+  - `scripts/reward_pipeline.py` `_RECALIB_PATH` and `_load_score_offset` (line 47).
+- **Package dependency direction:** Not one-way. `eval/eval_gate.py` and `eval/eval_judge.py` import `scripts.dgx_toolbox`, and `scripts/reward_pipeline.py` imports `eval.*`. Keep `scripts/dgx_toolbox.py` free of `eval` imports to avoid a real cycle.
+- **Duplicated logic:** The expert-mask math is duplicated on purpose between `scripts/sieve_expert_mask_inference.py` and `scripts/_sieve_vllm_patch/sitecustomize.py` (the container cannot import host modules). Keep the two in sync and run `tests/test_sieve_vllm_patch.py` after changes.
+- **Frozen router:** The MoE router is kept frozen during SFT (`scripts/train_model.py` `assert_router_frozen_and_report`, line 459). Changes to training must preserve this.
+- **Config paths:** Several scripts resolve paths from `config/*.yaml` via `resolve_path` (`scripts/train_model.py` line 45). Hard-coded paths in older scripts bypass this.
+
+## Anti-Patterns
+
+### Versioned sibling scripts instead of parameters
+
+**What happens:** Behaviour changes are shipped as new files with version suffixes, e.g. `scripts/aimer_prune.py` and `scripts/aimer_prune_v4.py`, `scripts/tinker_reasoning_sft.py` and `scripts/tinker_reasoning_sft_v4.py`, `scripts/tinker_reasoning_data.py` and `scripts/tinker_reasoning_data_v4.py`, `scripts/prune_apply_physical.py` and `..._v4.py`, `scripts/eval4_ext_*` alongside `scripts/eval_judge_unsloth.py`.
+**Why it's wrong:** Duplicated logic drifts. A fix in one copy does not reach the other, and it is unclear which copy the skills call.
+**Do this instead:** Add a parameter or a config key in `config/` for the new behaviour, and keep one implementation. Where a sibling must stay for reproducibility, say so in its module docstring and point the skill at the current one.
+
+### Underscore-prefixed one-off drivers inside the live `scripts/` tree
+
+**What happens:** Single-experiment drivers sit beside pipeline code, e.g. `scripts/_p0_*.py`, `scripts/_pkg_ens8192_run.sh`, `scripts/_pub03_upload.sh`, `scripts/_probe_rl_reward.py`. `deprecated/scripts/` holds the older versions of the same kind of script.
+**Why it's wrong:** The live pipeline and experiment scaffolding are indistinguishable by location, and `PIPELINE.md` says `deprecated/` is off the pipeline path.
+**Do this instead:** Put new one-off experiments in `deprecated/` once finished, or in a dated `output/` receipt directory, not in `scripts/`.
+
+### Hard-coded container commands
+
+**What happens:** Scripts call `docker` or vLLM commands directly rather than going through the toolbox.
+**Why it's wrong:** Bypasses precondition checks and telemetry in `scripts/dgx_toolbox.py`.
+**Do this instead:** `dgx = get_toolbox(); dgx.validate([...]); dgx.execute("vllm", ...)`, as in the docstring of `scripts/dgx_toolbox.py`.
 
 ## Error Handling
 
-**Strategy:** Fail-fast with diagnostics at validation time; graceful degradation during long-running operations.
+**Strategy:** Fail closed at gates, fail soft at parse. Gates return a pass/fail result and a receipt. Parsers return `None` instead of raising when judge output is malformed, and the caller counts it as a parse failure.
 
 **Patterns:**
-- **Pre-validation:** DGX Toolbox `validate()` checks toolbox existence, training data, config, memory (>= 70 GB), container state, GPU access, deps before any work begins. Skills call this in Step 2.
-- **Container restart loop detection:** `_check_container()` inspects Docker restart count; auto-removes and recreates containers stuck in restart loops (restart_count > 2)
-- **Memory watchdog:** `MemoryWatchdogCallback` monitors `/proc/meminfo` every training step; triggers checkpoint save + graceful exit at < 2 GB available
-- **OOM detection:** Step 8.5a analyzes final telemetry readings for signs of OOM (GPU idle + RAM > 95%) and triggers memory backoff
-- **Thermal guard:** Observe agents touch `_thermal_pause` file when GPU temp >= 83C; skill checks for this after training
-- **Checkpoint resumption:** All data pipeline scripts use `load_checkpoint()`/`save_checkpoint()` for per-item progress. Training supports `--resume` to continue from latest checkpoint directory.
-- **Idempotency:** `dgx.execute()` accepts `idempotency_check` parameter -- skips execution if output file exists inside container. Training checks for `adapter_config.json` existence before starting.
-- **Merge defense-in-depth:** Adapter saved separately by `train_model.py`; merge failure does not lose adapter. Merge verifies special tokens survive roundtrip; failure prints vLLM `--lora-modules` fallback command.
-- **API retry:** `scripts/utils.py` `call_with_backoff()` retries Anthropic API calls with exponential backoff (RateLimitError 429, server errors >= 500), respects `retry_after` header.
-- **PHP extraction:** 30s timeout per file, returns empty list on timeout/parse error, continues to next file.
+- `scripts/utils.py` `extract_json` returns `Optional[dict]`.
+- `eval/output_parsers.py` `parse_judge_scores` returns `None` on failure; parse-failure rates are reported (for example "0/121 parse failures" in `README.md`).
+- Judge failures are dumped for inspection by `_dump_judge_failure` (`eval/eval_judge.py` line 228).
+- Checkpointing: `scripts/utils.py` `save_checkpoint` lets a stage resume after a failure.
 
 ## Cross-Cutting Concerns
 
-**Logging:** Console output via `print()` statements with operation labels. MLflow tracks training metrics to local SQLite store (`mlruns.db`). Telemetry agents write structured markdown reports and canonical JSONL thermal logs.
+**Logging:** `print` and `logging` mix. `scripts/rl_train.py` uses `logging` with step metrics written to files (`_log_step`, line 759). Stage scripts mostly use `print`.
 
-**Validation:** Multi-layer: preflight (external tools), DGX Toolbox validation engine (named checks), dry-run (training config + memory), quality gate (eval thresholds). PHP lint validation on dataset samples via `php -l` in `export_dataset.py`.
+**Validation:** Config validation in `scripts/preflight.py` and `scripts/sieve_env_precheck.py`. Dataset validation in `scripts/validate_reasoning_consistency.py` and `scripts/validate_ctf_batch.py`. Memory and hardware checks in `scripts/train_model.py` `check_memory` (line 59) and `scripts/dgx_toolbox.py`.
 
-**Authentication:** Anthropic API key via `.env` file (loaded by `python-dotenv`). HuggingFace Hub for model download (token via `huggingface-cli login`). vLLM serves locally with `api_key: "none"`. No cloud services required.
+**Authentication:** Judge LLM access uses an OpenAI-compatible endpoint configured by environment (`.env.example`). Credentials are never read into docs. Tinker access goes through the Tinker client. Claude Code agents use the operator's own subscription.
 
-**Configuration:** All config in `config/*.yaml`. Training config supports per-ratio overlays (`config/train_config_{ratio}.yaml`). DGX Toolbox config maps component names to container scripts and ports. Eval thresholds live in train_config.yaml `eval` section with fallback defaults.
+**Telemetry:** Operator skills spawn observer agents that write to `telemetry/<stage>/{timestamp}/` (per `.claude/skills/wp-finetune:observe-*/SKILL.md`). `wp-finetune:review-telemetry` consolidates those files. This layer is not represented in the repository tree; the directory is produced at run time.
 
 ---
 
-*Architecture analysis: 2026-03-31*
+*Architecture analysis: 2026-10-09*

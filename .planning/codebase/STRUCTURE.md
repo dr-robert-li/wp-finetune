@@ -1,323 +1,277 @@
+---
+last_mapped_commit: f5e93c309b551cf8744e50e6bc5119ce1aea071d
+last_mapped_at: 2026-10-09
+---
+<!-- refreshed: 2026-10-09 -->
+
 # Codebase Structure
 
-**Analysis Date:** 2026-03-31
+**Analysis Date:** 2026-10-09
 
 ## Directory Layout
 
 ```
 wp-finetune/
-├── .claude/                                # Claude Code skills and settings
-│   ├── skills/                             # Skill definitions (orchestration layer)
-│   │   ├── wp-finetune:run-training/       # Training pipeline (Steps 0-9 + adaptive planning)
-│   │   ├── wp-finetune:run-data-pipeline/  # Data pipeline (orchestrator-driven)
-│   │   ├── wp-finetune:observe-training/   # 6-agent telemetry team for training
-│   │   ├── wp-finetune:observe-data-pipeline/ # 3-agent telemetry for data pipeline
-│   │   ├── wp-finetune:observe-packaging/  # 3-agent telemetry for merge/export
-│   │   ├── wp-finetune:observe-inference/  # Telemetry for inference serving
-│   │   ├── wp-finetune:observe-evaluation/ # Telemetry for evaluation runs
-│   │   └── wp-finetune:review-telemetry/   # Consolidate telemetry into summaries
-│   └── settings.local.json                 # Local Claude Code settings
-├── config/                                 # All configuration (YAML + prompt files)
-│   ├── dgx_toolbox.yaml                    # DGX Toolbox execution engine config
-│   ├── train_config.yaml                   # Base training config (LoRA, hyperparams, eval thresholds)
-│   ├── train_config_{ratio}.yaml           # Per-ratio training config overlays (30_70, 40_60, etc.)
-│   ├── repos.yaml                          # WordPress repository definitions (66KB)
-│   ├── taxonomy.yaml                       # Concept taxonomy with minimum_coverage targets
-│   ├── synthetic_prompts.yaml              # Prompt templates for synthetic generation
-│   ├── judge_system.md                     # 9-dimension judge rubric criteria
-│   └── wp-bench.yaml                       # wp-bench evaluation config
-├── scripts/                                # Python pipeline and training scripts
-│   ├── __init__.py
-│   ├── utils.py                            # Shared utilities (JSON extraction, API retry, checkpoints)
-│   ├── dgx_toolbox.py                      # DGX Toolbox execution engine
-│   ├── pipeline_orchestrator.py            # Pipeline state machine and action planner
-│   ├── preflight.py                        # Pre-flight validation (API key, PHP, PHPCS)
-│   ├── csv_to_repos.py                     # Generate repos.yaml from CSV
-│   ├── phase1_clone.py                     # Clone WordPress repositories
-│   ├── phase1_extract.py                   # Extract PHP functions via tokenizer
-│   ├── phase1_judge.py                     # Judge code quality (PHPCS + Claude)
-│   ├── phase2_gap_analysis.py              # Analyze taxonomy coverage gaps
-│   ├── phase2_generate.py                  # Generate synthetic code filling gaps
-│   ├── phase2_mutate.py                    # Generate contrastive mutation pairs
-│   ├── phase2_judge.py                     # Judge synthetic code
-│   ├── phase2_judge_dataset.py             # Create judge training data (rubric-scored)
-│   ├── phase3_cot.py                       # Generate CoT reasoning (4 types)
-│   ├── merge_dataset.py                    # Merge all sources into wordpress_finetune.jsonl
-│   ├── export_dataset.py                   # Deduplicate, ratio-enforce, split, export formats
-│   ├── download_model.py                   # Download base model from HuggingFace Hub
-│   ├── prepare_tokenizer.py                # Extend tokenizer with <wp_gen>, <wp_judge> tokens
-│   ├── train_model.py                      # Unsloth LoRA SFT training with MemoryWatchdog
-│   ├── merge_adapter.py                    # Merge LoRA adapter into base model
-│   ├── agent_judge.py                      # Agent-based judging helper
-│   └── judge_amp_wp.py                     # WordPress AMP judging
-├── eval/                                   # Evaluation suite
-│   ├── __init__.py
-│   ├── rubric_definitions.py               # 9-dimension rubric constants and check registry
-│   ├── rubric_scorer.py                    # Ground truth scorer (PHPCS + PHPStan + regex + LLM)
-│   ├── eval_gen.py                         # Generation evaluation (9-dimension scoring)
-│   ├── eval_judge.py                       # Judge evaluation (Spearman correlation)
-│   └── eval_gate.py                        # Quality gate (threshold checking, exit 0/1)
-├── tests/                                  # Test suite
-│   ├── __init__.py
-│   ├── fixtures/                           # Test data files
-│   ├── test_config.py
-│   ├── test_csv_to_repos.py
-│   ├── test_eval_gate.py
-│   ├── test_eval_gen.py
-│   ├── test_eval_judge.py
-│   ├── test_export.py
-│   ├── test_phase2_judge_dataset.py
-│   ├── test_phase2_mutate.py
-│   ├── test_pipeline_integration.py
-│   ├── test_preflight.py
-│   ├── test_prepare_tokenizer.py
-│   ├── test_train_model.py
-│   └── test_utils.py
-├── data/                                   # All pipeline data (gitignored, large)
-│   ├── checkpoints/                        # Atomic checkpoint files per phase
-│   ├── phase1_extraction/                  # Phase 1 output
-│   │   ├── repos/                          # Cloned WordPress repos (shallow)
-│   │   └── output/
-│   │       ├── extracted/                  # Raw extracted functions (JSON per repo)
-│   │       ├── passed/                     # Quality-assessed passed functions
-│   │       └── failed/                     # Functions that failed assessment
-│   ├── phase2_synthetic/                   # Phase 2 output
-│   │   ├── gap_report.json                 # Coverage gap analysis
-│   │   └── output/
-│   │       ├── generated/                  # Claude-generated synthetic examples
-│   │       ├── judged/                     # Judged synthetic (passed_*.json, failed_*.json)
-│   │       ├── mutated/                    # Contrastive mutation pairs
-│   │       └── judge_training/             # Rubric-scored judge training data
-│   ├── phase3_cot/                         # Phase 3 output
-│   │   └── output/                         # CoT reasoning files (4 types)
-│   └── final_dataset/                      # Training-ready dataset (all formats)
-│       ├── wordpress_finetune.jsonl         # Merged source (before export)
-│       ├── metadata.json                   # Dataset statistics + composition
-│       ├── openai_{train,val,test}.jsonl    # OpenAI finetuning format
-│       ├── alpaca_{train,val,test}.json     # Alpaca/Llama-MoE format
-│       ├── raw_{train,val,test}.jsonl       # Full metadata format
-│       └── ratio_{N_M}/                    # Per-ratio exports (e.g., ratio_40_60/)
-├── adapters/                               # LoRA adapters and extended tokenizer
-│   ├── tokenizer/                          # Extended tokenizer with <wp_gen>, <wp_judge>
-│   └── qwen3-wp/                           # Default adapter output (or {run_name}/)
-│       ├── adapter_config.json             # LoRA adapter config
-│       ├── adapter_model.safetensors       # LoRA weights
-│       └── checkpoint-*/                   # Training checkpoints
-├── models/                                 # Base and merged models
-│   ├── Qwen3-30B-A3B/                      # Downloaded base model
-│   └── {run_name}-merged/                  # Merged model (base + adapter)
-├── telemetry/                              # Runtime telemetry output
-│   └── training/                           # Training telemetry
-│       ├── {model}_{date}_{ratio}_thermal.jsonl  # Canonical thermal log (JSONL)
-│       ├── thermal_history.json            # Persistent thermal history (adaptive planning)
-│       └── {timestamp}/                    # Per-run agent reports (observe mode)
-│           ├── gpu-metrics.md
-│           ├── thermal-throttling.md
-│           ├── training-metrics.md
-│           ├── disk-io.md
-│           ├── checkpoint-integrity.md
-│           ├── container-monitor.md
-│           ├── _summary.md                 # Consolidated by review-telemetry
-│           └── _stop                       # Sentinel file to stop agents
-├── mlruns/                                 # MLflow experiment tracking (local SQLite)
-│   └── *.yaml                              # Experiment metadata
-├── mlruns.db                               # MLflow SQLite database
-├── docs/                                   # Documentation
-│   └── eval/                               # Evaluation documentation
-├── .planning/                              # GSD planning and codebase analysis
-│   └── codebase/                           # Codebase mapping documents
-├── .env                                    # Environment variables (ANTHROPIC_API_KEY)
-├── .env.example                            # Example environment config
-├── .gitignore                              # Git ignore rules
-├── PROJECT.md                              # Full project specification (phases A-E)
-├── README.md                               # Quick start guide
-├── CHANGELOG.md                            # Version changelog
-├── JOURNAL.md                              # Training journal (77KB, detailed run logs)
-└── wp-moe.md                               # Model architecture specification (MoE design)
+├── scripts/            # Pipeline stages, drivers, shared libs (177 .py, 14 .sh)
+│   ├── relabel/        # Human-relabel prep, aggregation, eval (16 .py)
+│   ├── _sieve_vllm_patch/          # sitecustomize inside vLLM container
+│   ├── _sieve_profile_vllm_patch/  # sitecustomize for routing profile
+│   ├── _wpbench_pth/               # usercustomize: disables Qwen thinking for wp-bench
+│   └── _wpbench_shim/npx           # shim for wp-bench runner
+├── eval/               # Rubric scorer, judge, parsers, gates (9 files)
+├── tests/              # pytest suites (77 .py) + fixtures
+│   ├── phase4_4/       # Subpackage with its own conftest.py
+│   └── fixtures/       # PHP cases + sample CSVs
+├── config/             # YAML and markdown configuration (18 files)
+├── recipes/            # Serving recipes (vLLM YAML, 3 files)
+├── data/               # Pipeline data artifacts (148 tracked files)
+│   ├── calibration/    # Calibration train/holdout + audit
+│   ├── checkpoints/    # Runtime phase state JSON (gitignored contents)
+│   ├── phase1b/        # Rejudge runs
+│   ├── phase4_4/       # Smoke prompts and baselines
+│   ├── phase4_reasoning/  # CoT and CTF batches, pilots, manifests
+│   ├── reasoning_dataset/ # SFT dataset splits and metadata
+│   ├── relabel_v1/     # Human relabel labels and GT dims
+│   ├── rl_probe/       # RL reward probe corpus
+│   ├── rl_prompts/     # RL prompt pools + PROVENANCE.md
+│   └── seeds/          # UGC seed sets and summaries
+├── output/             # Receipts, eval results, packaging (281 tracked files)
+│   ├── base20/, base21/   # Base-model bring-up receipts
+│   ├── bench17/           # wp-bench results
+│   ├── eval3/, eval4/     # Evaluation rounds
+│   ├── packaging/         # GGUF/AWQ packaging, MODEL_CARD inputs, hf_cards
+│   ├── pkg-v4/            # v4 packaging receipts (f16, q5, q6, q8)
+│   ├── prune/, prune-v4/  # Expert prune gates and masks
+│   ├── sieve/, sieve-v4/  # MoE-Sieve k-sweeps and protected masks
+│   ├── relabel/           # Relabel eval results
+│   └── rl_checkpoints/    # RL metrics
+├── docs/               # Operator docs, rubric, v5 labelling kit (34 files)
+│   ├── eval/              # Rubric and research notes
+│   ├── v5-labelling/      # Extraction guide, labelling plan, corpus manifest
+│   │   ├── labelled/              # Drop folder for labelled output
+│   │   └── v4-judge-training-dataset/
+│   └── wp-finetune:*.md   # Mirror copies of operator skill docs
+├── deps/
+│   ├── dgx-toolbox/       # Git submodule (empty in working tree)
+│   └── wp-finetune-data/  # Seed data mirror and seed-collection prompts
+├── deprecated/         # Frozen earlier campaigns (114 tracked files, off pipeline path)
+│   ├── scripts/           # Old experiment drivers
+│   ├── planning-handoffs/ # Old continue-here notes
+│   └── planning-reviews/  # Old review docs
+├── .planning/          # GSD planning state (phases, quick tasks, research, debug notes)
+│   ├── phases/         # 20-27 phase folders with PLAN/SUMMARY/VERIFICATION
+│   ├── quick/          # Quick-task folders
+│   ├── research/       # Stack, features, architecture research
+│   ├── debug/          # Debug knowledge base and resolved notes
+│   ├── todos/pending/  # Pending todos
+│   └── codebase/       # These mapping documents
+├── .claude/skills/     # Operator skills: wp-finetune:* (13 SKILL.md)
+├── README.md           # Project overview, model card links, quickstart
+├── PIPELINE.md         # Frozen end-to-end method, gate by gate
+├── PROJECT.md          # Project spec and status
+├── JOURNAL.md          # Build log (decision record)
+├── CHANGELOG.md        # Versioned changes
+├── .env.example        # Environment variable template (no secrets)
+├── .gitmodules         # Declares deps/dgx-toolbox submodule
+└── .gitignore          # Ignores checkpoints, .env, models/, adapters/, caches
 ```
 
 ## Directory Purposes
 
-**`.claude/skills/`**
-- Purpose: Skill-based orchestration layer for Claude Code -- each skill defines a multi-step workflow
-- Contains: SKILL.md files with step-by-step procedures, agent prompts, error recovery logic
-- Key files: `wp-finetune:run-training/SKILL.md` (the main training skill, ~900 lines, Steps 0-9 with adaptive planning), `wp-finetune:run-data-pipeline/SKILL.md` (orchestrator-driven data pipeline)
+**`scripts/`:**
+- Purpose: Everything executable in the pipeline: stage CLIs, orchestrators, shared libraries, container shims.
+- Contains: `.py` modules (most with `argparse` and `__main__`), `.sh` launchers for serving and eval (`serve_*_vllm.sh`, `eval4_ext_*.sh`, `_pkg_*_run.sh`), one PHP helper (`php_extract_functions.php`), and a prompt-ish recipe `run_packaging_recipe.md`.
+- Key files:
+  - `scripts/pipeline_orchestrator.py`: data pipeline status and next actions.
+  - `scripts/orchestrator.py`: batch CoT/CTF driver.
+  - `scripts/utils.py`: `extract_json`, checkpoint load/save.
+  - `scripts/dgx_toolbox.py`: container resolver and executor.
+  - `scripts/reward_pipeline.py`: RL reward.
+  - `scripts/rl_train.py`: GSPO RL driver.
+  - `scripts/train_model.py`: local training path.
+  - `scripts/tinker_reasoning_sft.py`: cloud SFT driver.
+  - `scripts/judge_functions.py`: heuristic dimension scorers.
 
-**`config/`**
-- Purpose: All configuration files controlling pipeline behavior, training hyperparameters, and evaluation thresholds
-- Contains: YAML configs, prompt markdown
-- Key files: `train_config.yaml` (base training config with LoRA/hyperparams/eval), `dgx_toolbox.yaml` (container mappings, ports, pinned deps, validation paths), `repos.yaml` (66KB WordPress repo definitions), `taxonomy.yaml` (concept coverage targets), `judge_system.md` (9-dimension rubric)
+**`eval/`:**
+- Purpose: The judge's scoring contract. Used by evaluation, RL reward, and relabel.
+- Contains: `rubric_scorer.py`, `eval_judge.py`, `output_parsers.py`, `rubric_definitions.py`, `eval_gate.py`, `eval_gen.py`, `llm_checks.py`, `dim_map.json`, `__init__.py`.
+- Key files: `eval/rubric_scorer.py` (`score_code` line 723), `eval/eval_judge.py` (`run_eval` line 556), `eval/eval_gate.py` (`main` line 294).
 
-**`scripts/`**
-- Purpose: All Python pipeline scripts -- data processing, training, and utilities
-- Contains: Phase 1-3 pipeline scripts, training scripts, DGX Toolbox execution engine, pipeline orchestrator
-- Key files: `dgx_toolbox.py` (execution engine singleton), `pipeline_orchestrator.py` (state machine), `train_model.py` (SFTTrainer with MemoryWatchdog), `utils.py` (shared utilities)
+**`tests/`:**
+- Purpose: pytest suites mirroring `scripts/` and `eval/` modules by name.
+- Contains: `tests/test_<module>.py` (about 65 top-level), `tests/phase4_4/test_*.py` (13 modules with their own conftest), shared fixtures `tests/_rl_fixtures.py`, `tests/conftest.py`, and `tests/fixtures/`.
+- Key files: `tests/conftest.py` (adds project root to `sys.path`), `tests/test_reward_pipeline.py`, `tests/test_rl_train.py`, `tests/test_eval_gate.py`, `tests/test_sieve_vllm_patch.py`.
 
-**`eval/`**
-- Purpose: Evaluation suite -- rubric scoring, gen/judge evaluation, quality gate
-- Contains: Ground truth scorer, rubric definitions, per-dimension evaluation, threshold checking
-- Key files: `rubric_scorer.py` (4-tool scoring: PHPCS + PHPStan + regex + LLM), `eval_gate.py` (quality gate, exit 0/1)
+**`config/`:**
+- Purpose: All tunables. Scripts read these instead of hard-coding values.
+- Contains: Train configs, eval thresholds, repo list, rubric, taxonomy, prompts, DGX toolbox component map.
+- Key files:
+  - `config/train_config_v4.yaml`: current training config (LoRA r=32, alpha 64, eval targets).
+  - `config/train_config_{30_70,40_60,50_50,60_40,70_30}.yaml`: task-mix sweep configs.
+  - `config/train_config_reasoning.yaml`, `config/train_config_qwen3-30b_experiment_001_20260411.yaml`: experiment-specific.
+  - `config/repos.yaml`: repos to clone with `quality_tier` (core, assessed, poor).
+  - `config/judge_system.md`: 9-dimension rubric the judge follows.
+  - `config/rubric_calibration.yaml`: calibration parameters.
+  - `config/taxonomy.yaml`, `config/synthetic_prompts.yaml`: data generation inputs.
+  - `config/dgx_toolbox.yaml`: component paths for containers.
+  - `config/adaptive_planning.yaml`: power, thermal, and memory thresholds.
+  - `config/wp-bench.yaml`: wp-bench dataset, model endpoint, output paths.
+  - `config/requirements-profiling.txt`: profiling dependencies.
 
-**`data/`**
-- Purpose: All pipeline data -- extraction output, synthetic generation, CoT reasoning, final datasets
-- Contains: Per-phase output directories, checkpoint files, final training data in multiple formats
-- Key files: `final_dataset/openai_train.jsonl` (primary training data), `checkpoints/{phase}_checkpoint.json` (resumability)
+**`recipes/`:**
+- Purpose: Serving recipes for vLLM.
+- Contains: `qwen3-30b-wp-30_70-vllm.yaml`, `qwen3.6-35b-a3b-vllm.yaml`, `qwen3.6-35b-a3b-fp8-vllm.yaml`.
 
-**`adapters/`**
-- Purpose: LoRA adapters and extended tokenizer produced by training
-- Contains: Extended tokenizer dir, per-run adapter directories with checkpoints
-- Key files: `tokenizer/tokenizer_config.json`, `qwen3-wp/adapter_config.json`, `qwen3-wp/adapter_model.safetensors`
+**`data/`:**
+- Purpose: Inputs and intermediate datasets. Large or regenerable outputs are gitignored at `data/phase1_extraction/`, `data/phase2_synthetic/`, `data/phase3_cot/`, `data/final_dataset/`.
+- Contains: JSONL and JSON splits, labels, seeds, and audit transcripts.
+- Key files: `data/reasoning_dataset/openai_train.jsonl`, `openai_val.jsonl`, `holdout_v1.jsonl`, `metadata.json`; `data/relabel_v1/labels.json`, `gt_dims_train.json`; `data/rl_prompts/PROVENANCE.md`.
+- Note: several sibling variants exist (`openai_train.augmented.jsonl`, `openai_train.pre_vendorfilter.jsonl`, `openai_train_relabel_v1.augmented.replay30.jsonl`). Check `metadata.json` before choosing one.
 
-**`models/`**
-- Purpose: Downloaded base models and merged (base + adapter) models
-- Contains: HuggingFace model downloads, merged model outputs
-- Key files: `Qwen3-30B-A3B/config.json`, `{run_name}-merged/config.json`
+**`output/`:**
+- Purpose: Evidence of what each run produced: receipts, gate verdicts, model cards, packaged artifacts.
+- Contains: Per-campaign directories (`base20`, `bench17`, `eval3`, `eval4`, `pkg-v4`, `prune-v4`, `sieve-v4`, `rl_eval`, `packaging`, `tinker`), plus top-level markdown decision notes (`output/triage_decision.md`, `output/phase1b_*_review*.md`).
+- Convention: Each campaign directory holds its own receipts. Do not overwrite a prior campaign's directory. Create a new one.
 
-**`telemetry/`**
-- Purpose: Runtime telemetry from background observer agents and adaptive planning history
-- Contains: Canonical thermal JSONL logs, per-run agent markdown reports, thermal history JSON
-- Key files: `training/thermal_history.json` (persistent cross-run memory for adaptive planning), `training/*_thermal.jsonl` (canonical thermal logs)
+**`docs/`:**
+- Purpose: Operator and method docs that are not the top-level project files.
+- Key files: `docs/AGENT_PIPELINE.md` (agent execution model), `docs/eval/wp_code_quality_rubric.md`, `docs/eval/research_wpcs_standards.md`, `docs/eval/research_wp_security_sql_perf.md`, `docs/v5-labelling/EXTRACTION_GUIDE.md`, `docs/v5-labelling/LABELING_PLAN.md`, `docs/v5-labelling/corpus_manifest.jsonl` (+ `.schema.json`), `docs/v5-labelling/overlap_receipt.json` (gate file, currently pending).
+- Note: `docs/wp-finetune:*.md` are colon-named mirrors of the skill files. Edit the `.claude/skills/` copy first.
+
+**`deps/`:**
+- Purpose: External or vendored inputs.
+- `deps/dgx-toolbox/`: git submodule (`.gitmodules`). The working-tree directory is currently empty, so `scripts/dgx_toolbox.py` resolves to a checkout at `dgx_toolbox_path` (default `~/dgx-toolbox`, `config/dgx_toolbox.yaml`) or `DGX_TOOLBOX_PATH`. Run `git submodule update --init` before expecting `deps/dgx-toolbox` contents.
+- `deps/wp-finetune-data/`: seed JSON/CSV mirror and seed-collection prompts (`UGC_COLLECTION_PROMPT.md`).
+- `deps/DGX_TOOLBOX_ISSUES.md`: issues filed against the toolbox.
+
+**`deprecated/`:**
+- Purpose: Frozen scaffolding from earlier campaigns and superseded specs. Off the pipeline path. Keep for provenance.
+- Contains: `deprecated/scripts/` (`_04.4_*`, `_p0_*`, `_rlev01_*`, `bench17_*`), `deprecated/planning-handoffs/`, `deprecated/planning-reviews/`, and `deprecated/README.md`.
+
+**`.claude/skills/`:**
+- Purpose: Claude Code operator skills for each stage.
+- Contains: 13 directories named `wp-finetune:<name>/SKILL.md`.
+- Naming: Directory name includes a colon (`wp-finetune:run-training`). Skill names match these directory suffixes.
+
+**`.planning/`:**
+- Purpose: GSD workflow state. Not part of the ML pipeline.
+- Contains: `PROJECT.md`, `REQUIREMENTS.md`, `ROADMAP.md`, `STATE.md`, `config.json`, `phases/` (per-phase `NN-PLAN.md`, `NN-SUMMARY.md`, `NN-VERIFICATION.md`, `CONTEXT.md`, `RESEARCH.md`), `quick/`, `research/`, `debug/`, `todos/`, `codebase/`.
+- Phase folders are named `NN-<slug>` (`20-base-bring-up`, `27-packaging-publication-refresh`).
 
 ## Key File Locations
 
 **Entry Points:**
-- `scripts/pipeline_orchestrator.py`: Data pipeline state + action planning (CLI: status, plan, plan-json)
-- `scripts/train_model.py`: Training entry point (--resume, --dry-run, --config)
-- `scripts/dgx_toolbox.py`: Execution engine (CLI: info, validate, status)
-- `scripts/preflight.py`: Pre-flight validation
-- `eval/eval_gate.py`: Quality gate (exit 0/1)
+- `scripts/pipeline_orchestrator.py`: `python scripts/pipeline_orchestrator.py` prints status and plan.
+- `scripts/phase1_clone.py`, `scripts/phase1_extract.py`, `scripts/phase1_judge.py`: data pipeline phase 1 (`python -m scripts.<name>`).
+- `scripts/tinker_reasoning_sft.py`: cloud SFT (`--stage`, `--epochs`, `--seed`).
+- `scripts/rl_train.py`: RL (`_parse_args` line 1235; `--dry-run` path `_dry_run` line 1495).
+- `scripts/train_model.py`: local training.
+- `eval/eval_gate.py`: gate CLI.
 
 **Configuration:**
-- `config/train_config.yaml`: Base training config (model, LoRA, training, eval thresholds)
-- `config/dgx_toolbox.yaml`: Container mappings, ports, pinned deps, validation paths
-- `config/repos.yaml`: WordPress repository definitions with quality_tier and path filters
-- `config/taxonomy.yaml`: Concept taxonomy with minimum_coverage targets
-- `config/wp-bench.yaml`: wp-bench evaluation config
+- `config/*.yaml`: see Directory Purposes above.
+- `.env.example`: lists required environment variables. Copy to `.env` locally. Never commit `.env`.
 
 **Core Logic:**
-- `scripts/dgx_toolbox.py`: DGXToolbox class -- resolve, validate, ensure_ready, execute, status_report
-- `scripts/pipeline_orchestrator.py`: get_status(), compute_targets(), get_plan()
-- `scripts/train_model.py`: load_model_and_tokenizer(), apply_lora(), build_trainer(), MemoryWatchdogCallback
-- `scripts/utils.py`: extract_json(), call_with_backoff(), load_checkpoint(), save_checkpoint(), batch helpers
-- `eval/rubric_scorer.py`: score_code() -- 4-tool ground truth scoring
-- `eval/eval_gate.py`: check_gates() -- threshold comparison
+- `eval/rubric_scorer.py`: scoring.
+- `scripts/reward_pipeline.py`: RL reward.
+- `scripts/judge_functions.py`: heuristics.
+- `scripts/assemble_reasoning_dataset.py`: dataset assembly and gate.
+- `scripts/merge_adapter.py`, `scripts/merge_tinker_v3.py`: LoRA merge.
 
 **Testing:**
-- `tests/test_*.py`: Unit tests for most scripts and eval modules
-- `tests/fixtures/`: Test data files
+- `tests/conftest.py`: shared fixtures.
+- `tests/test_<module>.py`: unit tests named after the module under test.
+- `tests/phase4_4/`: REVL and fidelity tests.
 
 ## Naming Conventions
 
-**Files:**
-- Pipeline scripts: `phase{N}_{operation}.py` (e.g., `phase1_extract.py`, `phase2_generate.py`)
-- Training scripts: `{verb}_{noun}.py` (e.g., `download_model.py`, `train_model.py`, `merge_adapter.py`)
-- Config files: `{purpose}.yaml` or `{purpose}.md` (e.g., `train_config.yaml`, `judge_system.md`)
-- Per-ratio configs: `train_config_{gen}_{judge}.yaml` (e.g., `train_config_40_60.yaml`)
-- Test files: `test_{module_name}.py` matching the script they test
-- Skills: `wp-finetune:{verb}-{noun}/SKILL.md` (e.g., `run-training`, `observe-training`, `review-telemetry`)
+**Files (Python):**
+- Pipeline phases: `phase<N>_<step>.py` (`phase1_clone.py`, `phase2_judge.py`, `phase3_cot.py`). Phase 4 and later use other prefixes.
+- Build outputs: `build_<artifact>.py` (`build_reasoning_negatives.py`, `build_rl_prompts.py`).
+- Audits: `audit_<thing>.py` (`audit_dropped_seeds.py`).
+- Eval gates: `*_gate.py` (`eval_gate.py`, `bootstrap_gate.py`, `tost_gate.py`, `reward_validity_gate.py`).
+- Provider-specific drivers: `tinker_*.py` for Tinker cloud, `*_vllm.py` or `serve_*_vllm.sh` for vLLM, `eval4_ext_*` for the v4 extension evaluation.
+- Versioned siblings: `*_v4.py` marks the v4 variant (`aimer_prune_v4.py`). Prefer parameters over new siblings (see ARCHITECTURE.md Anti-Patterns).
+- Experiment-scoped: `_p0_*`, `_rlev*`, `revl*_*`, `_pkg_*`, `_pub*_upload.sh`. Leading underscore means one-off driver.
+- Tests: `test_<module>.py` matching the module name.
+
+**Files (other):**
+- Config: `<purpose>.yaml`, `train_config_<mix>.yaml` where `<mix>` is `30_70`, `50_50`, etc. (task-token ratio).
+- Data: `openai_<split>.jsonl` for chat-format splits. `*.augmented.*`, `*.replay30.*`, `*.pre_vendorfilter.*` suffix variants.
+- Docs: UPPERCASE.md for top-level and method docs (`PIPELINE.md`, `README.md`). `docs/v5-labelling/` uses UPPER_SNAKE (`EXTRACTION_GUIDE.md`, `LABELING_PLAN.md`).
+- Phase artifacts: `NN-MM-PLAN.md`, `NN-MM-SUMMARY.md`, `NN-VERIFICATION.md` under `.planning/phases/NN-slug/`.
 
 **Directories:**
-- Phase data: `phase{N}_{operation}/` (e.g., `phase1_extraction`, `phase2_synthetic`, `phase3_cot`)
-- Output grouping: `passed/`, `failed/`, `extracted/`, `generated/`, `mutated/`, `judged/`, `judge_training/`
-- Per-run isolation: `adapters/{run_name}/`, `models/{run_name}-merged/`
-- Telemetry: `telemetry/{stage}/{timestamp}/`
-
-**Variables (Python):**
-- Module-level path constants: `SCREAMING_SNAKE_CASE` (e.g., `PROJECT_ROOT`, `REPOS_DIR`, `EXTRACTED_DIR`)
-- Functions: `snake_case` (e.g., `extract_repo()`, `load_config()`, `check_memory()`)
-- Classes: `PascalCase` (e.g., `DGXToolbox`, `MemoryWatchdogCallback`, `ValidationResult`)
-- Config keys: `snake_case` from YAML (e.g., `quality_tier`, `per_device_train_batch_size`)
+- Output campaigns: lowercase, hyphen or underscore (`pkg-v4`, `prune-v4`, `eval_reasoning_v4_winner`). Version tag in the name.
+- Skill directories: `wp-finetune:<kebab-name>`.
 
 ## Where to Add New Code
 
-**New Data Pipeline Phase:**
-- Create `scripts/phase{N}_{operation}.py`
-- Follow pattern: define `PROJECT_ROOT`, input/output paths as module constants, use `load_checkpoint()`/`save_checkpoint()` for resumability
-- Register in `scripts/pipeline_orchestrator.py` `get_plan()` with appropriate action type ("script" or "agent")
-- Add to `run-data-pipeline` skill if agent-based
+**New pipeline stage:**
+- Implementation: `scripts/<stage_name>.py` with an `argparse` `main()` and `if __name__ == "__main__":`. Read paths from `config/` and use `scripts/utils.py` for checkpoints.
+- Config: add a block to the appropriate `config/*.yaml`.
+- Tests: `tests/test_<stage_name>.py`.
+- Operator entry: add or update the matching `.claude/skills/wp-finetune:<name>/SKILL.md`.
 
-**New Training Script:**
-- Create `scripts/{verb}_{noun}.py`
-- Import `from scripts.dgx_toolbox import get_toolbox` (establishes DGX resolver pattern)
-- Define `PROJECT_ROOT`, `CONFIG_PATH`, `load_config()` following existing pattern
-- Add CLI with `argparse`, support `--config` and `--dry-run` where appropriate
-- Register execution in `run-training` skill SKILL.md at appropriate step
+**New evaluation or rubric logic:**
+- Scorer or check: `eval/rubric_scorer.py` (`score_code`), with check definitions in `eval/rubric_definitions.py` (`CHECK_REGISTRY`).
+- Judge parsing: `eval/output_parsers.py`.
+- Tests: `tests/test_eval_*.py` (name-matched).
 
-**New Evaluation Metric:**
-- Add to `eval/rubric_definitions.py` (dimension weights, check registry)
-- Update `eval/rubric_scorer.py` scoring logic
-- Add threshold to `config/train_config.yaml` `eval` section
-- Update `eval/eval_gate.py` `check_gates()` to include new gate
+**New RL reward component:**
+- Implementation: `scripts/reward_pipeline.py` (add to `compute_reward` or `_verpo_group`).
+- Tests: `tests/test_reward_pipeline.py` and `tests/test_reward_pipeline_integration.py`.
+- Note: keep the env-var suppression block above the `eval` imports.
 
-**New Skill:**
-- Create `.claude/skills/wp-finetune:{verb}-{noun}/SKILL.md`
-- Follow existing skill structure: Trigger, Process (numbered steps), agent prompts with STOP conditions
-- For observe skills: define agent team, polling intervals, markdown output format, `_stop` sentinel
+**New training run or config variant:**
+- Config: `config/train_config_<name>.yaml`. Do not edit `train_config_v4.yaml` for an experiment.
+- Driver: reuse `scripts/tinker_reasoning_sft.py` or `scripts/train_model.py`. Add a flag before creating a new `*_v<N>.py`.
 
-**New Telemetry Agent:**
-- Add agent definition to the appropriate `observe-*` skill SKILL.md
-- Ensure agent writes to the run's telemetry directory (`{TDIR}/`)
-- For thermal data: append JSONL to canonical thermal log (`$THERMAL_LOG`)
-- Include `_stop` file check in the loop for graceful shutdown
+**New dataset build:**
+- Implementation: `scripts/build_<artifact>.py`.
+- Output: `data/<purpose>/` for inputs and `output/<campaign>/` for receipts.
 
-**New Test:**
-- Create `tests/test_{module_name}.py`
-- Place test fixtures in `tests/fixtures/`
-- Follow existing pattern: use `pytest`, mock external dependencies (Docker, API calls, filesystem)
+**New experiment or campaign:**
+- Write receipts to a new `output/<campaign-name>/` directory. Do not reuse an existing one.
+- Finished one-off drivers go to `deprecated/scripts/` once the campaign closes.
 
-**New Config Parameter:**
-- Add to appropriate YAML file (`config/train_config.yaml` for training, `config/dgx_toolbox.yaml` for containers)
-- Update the script that reads it with `.get()` and sensible default
-- Document in relevant skill SKILL.md
+**Utilities:**
+- Shared JSON and checkpoint helpers: `scripts/utils.py`.
+- Container resolution: `scripts/dgx_toolbox.py`. Do not hard-code container paths.
+
+**Tests for a new module:**
+- `tests/test_<module>.py`. Use `tests/_rl_fixtures.py` for RL fixtures and `tests/fixtures/` for PHP and CSV samples.
 
 ## Special Directories
 
-**`data/phase1_extraction/repos/`**
-- Purpose: Shallow-cloned WordPress git repositories
-- Generated: Yes (by `phase1_clone.py`)
-- Committed: No (gitignored, large)
-- Safe to delete: Yes, re-cloned on next run
+**`data/checkpoints/`:**
+- Purpose: Runtime phase state written by `scripts/utils.py` `save_checkpoint`.
+- Generated: Yes (at run time).
+- Committed: Contents are gitignored (`data/checkpoints/*.json`, `*.tmp`). `.gitkeep` is tracked.
 
-**`data/checkpoints/`**
-- Purpose: Atomic checkpoint files enabling pipeline resumability
-- Generated: Yes (by `scripts/utils.py` `save_checkpoint()`)
-- Committed: No (runtime state)
-- Format: `{phase}_checkpoint.json` with `{completed, failed, batch_job_ids, timestamp}`
+**`deps/dgx-toolbox/`:**
+- Purpose: DGX Toolbox execution engine (git submodule).
+- Generated: No.
+- Committed: Submodule pointer only. Working-tree content is empty until initialised.
 
-**`adapters/`**
-- Purpose: LoRA adapters and extended tokenizer (training output)
-- Generated: Yes (by `train_model.py`, `prepare_tokenizer.py`)
-- Committed: No (large model files)
-- Key patterns: `adapters/{run_name}/checkpoint-*/` for training checkpoints, `adapters/tokenizer/` for extended tokenizer
+**`deprecated/`:**
+- Purpose: Frozen earlier campaigns.
+- Generated: No.
+- Committed: Yes. Do not import from here.
 
-**`models/`**
-- Purpose: Downloaded base models and merged outputs
-- Generated: Yes (by `download_model.py`, `merge_adapter.py`)
-- Committed: No (very large, 60+ GB per model)
+**`output/`:**
+- Purpose: Run receipts and packaged artifacts.
+- Generated: Yes, by pipeline runs.
+- Committed: Yes, for receipts. Model weights are gitignored (`models/`, `adapters/`, `merged_model/`).
 
-**`telemetry/`**
-- Purpose: Runtime telemetry from observer agents and adaptive planning
-- Generated: Yes (by observe-* skills and lightweight monitor)
-- Committed: Partially (thermal_history.json is valuable across sessions)
-- Key files: `training/thermal_history.json` (persistent adaptive planning memory)
+**`.planning/codebase/`:**
+- Purpose: Architecture and mapping docs for GSD commands.
+- Generated: Yes, by `/gsd-map-codebase`.
+- Committed: Yes.
 
-**`mlruns/` and `mlruns.db`**
-- Purpose: MLflow experiment tracking (local SQLite store)
-- Generated: Yes (by `train_model.py` via MLflow)
-- Committed: `mlruns.db` is committed (1.5 MB), `mlruns/` metadata committed
-- Access: `mlflow ui --backend-store-uri sqlite:///mlruns.db`
-
-**`.planning/codebase/`**
-- Purpose: Codebase analysis documents produced by `/gsd:map-codebase`
-- Generated: Yes (by GSD commands)
-- Committed: Yes (documentation for planning/execution)
-
-**`data/final_dataset/ratio_{N_M}/`**
-- Purpose: Per-ratio dataset exports for multi-run training comparisons
-- Generated: Yes (by `export_dataset.py` with ratio-specific config)
-- Committed: No (training data)
-- Pattern: `ratio_30_70/`, `ratio_40_60/`, `ratio_50_50/`, etc.
+**Gitignored at root (run-time, not in tree):** `models/`, `adapters/`, `merged_model/`, `data/phase1_extraction/`, `data/phase2_synthetic/`, `data/phase3_cot/`, `data/final_dataset/`, `graphify-out/`. Their absence from the tree is expected.
 
 ---
 
-*Structure analysis: 2026-03-31*
+*Structure analysis: 2026-10-09*
