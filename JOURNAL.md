@@ -12,6 +12,12 @@ Users asked for a smaller file. The shipped file is Q6_K, 23.47 GiB. This study 
 
 **Measures.** File size. Memory used. Speed. Agreement with the baseline: score rank match (agree_rho), mean score difference, same PASS/FAIL verdict, unreadable answers (parse failures). Also rank match with the reference answers in the validation set (ref_rho).
 
+**Baseline result.** Shipped Q6_K: 23.47 GiB, 0 of 121 unreadable answers, about 55 tokens per second. A second run gave the same 121 answers, byte for byte. The test is repeatable. Any change in a variant comes from the variant, not from chance.
+
+**ref_rho is low (0.54), and that is expected.** The reference answers in the validation file are the old labels. The v4 judge learned from newer labels. So ref_rho only shows change against the baseline. It is not a skill score. Agreement with the baseline is the main measure.
+
+**Independent checks.** A separate reviewer agent checked every script before use. It found 3 faults that would have spoiled results (random request order, a wrong speed reading, a wrong file for expert cuts). We fixed all of them before the baseline ran. The reviewer also checked the 192-expert file: correct experts removed, protected experts kept, all other parts unchanged.
+
 **Limits we accept.** This machine has no f16 source file and no Tinker access. All variants are made from the Q6_K file. A variant made from f16 would be equal or better, so our results are a safe lower bound. The label file behind the published 0.80 score is not on this machine. ref_rho uses the reference answers in the validation set instead, so it is not the same number as the published 0.80.
 
 ---
