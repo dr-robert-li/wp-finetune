@@ -18,6 +18,8 @@ Users asked for a smaller file. The shipped file is Q6_K, 23.47 GiB. This study 
 
 **Independent checks.** A separate reviewer agent checked every script before use. It found 3 faults that would have spoiled results (random request order, a wrong speed reading, a wrong file for expert cuts). We fixed all of them before the baseline ran. The reviewer also checked the 192-expert file: correct experts removed, protected experts kept, all other parts unchanged.
 
+**The f16 source is back.** With the Tinker key we downloaded the v4 judge adapter and the base model again. We merged them, removed the same 32 experts per layer, and made an f16 file. Then we made a Q6_K from it. It is the same as the shipped Q6_K, byte for byte. A separate reviewer confirmed this. So the rebuild is exact. All file variants now come from f16, as a real release would. The first two variants (Q5_K_M, Q4_K_M made from Q6_K) stay as a measure of the extra loss from re-compressing a compressed file.
+
 **Limits we accept.** This machine has no f16 source file and no Tinker access. All variants are made from the Q6_K file. A variant made from f16 would be equal or better, so our results are a safe lower bound. The label file behind the published 0.80 score is not on this machine. ref_rho uses the reference answers in the validation set instead, so it is not the same number as the published 0.80.
 
 ---

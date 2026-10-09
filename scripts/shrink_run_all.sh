@@ -6,7 +6,7 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"; cd "$ROOT"
 BIN="${LLAMA_BIN:-$HOME/work/llama.cpp/build/bin}"; G=models/_gguf
 # SHIP = shipped Q6_K (baseline + runtime options). SRC = file the variants are quantized from.
-# Set SRC_GGUF=<f16.gguf> TAG=_f16src to rebuild the file variants from f16 under new names.
+# Set SRC_GGUF=<f16.gguf> TAG=_f16 to rebuild the file variants from f16 under new names.
 SHIP=$G/wp-judge-v4-pruned-k224.Q6_K.gguf; SRC="${SRC_GGUF:-$SHIP}"; T="${TAG:-}"; IMAT=$G/shrink$T.imatrix
 EXPS='ffn_(gate|up|down|gate_up)_exps'
 
