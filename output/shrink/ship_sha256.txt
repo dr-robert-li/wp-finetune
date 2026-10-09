@@ -1,0 +1,4 @@
+082893d756d7555eb29861eb9a984f9debf0645630c1b546f7ca863399abf074  models/_gguf/shrink-iq4xs-im_f16.gguf
+b64a5df36ff8e1ef8389b08085a36c23c3f398dd66bbc9d377f9317f12a8eb86  models/_gguf/shrink-mix-eiq3xxs_f16.gguf
+models/_gguf/shrink-iq4xs-im_f16.gguf 16579196960
+models/_gguf/shrink-mix-eiq3xxs_f16.gguf 12869398560

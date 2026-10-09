@@ -1,0 +1,13 @@
+{
+ "requirement": "shrink-study ship 2026-10-10",
+ "repos": [
+  {
+   "repo_id": "iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf",
+   "files": [
+    {"path": "models/_gguf/shrink-iq4xs-im_f16.gguf", "repo_path": "wp-judge-v4-pruned-k224.IQ4_XS.gguf", "bytes": 16579196960, "sha256": "082893d756d7555eb29861eb9a984f9debf0645630c1b546f7ca863399abf074"},
+    {"path": "models/_gguf/shrink-mix-eiq3xxs_f16.gguf", "repo_path": "wp-judge-v4-pruned-k224.small-IQ3_XXS-experts.gguf", "bytes": 12869398560, "sha256": "b64a5df36ff8e1ef8389b08085a36c23c3f398dd66bbc9d377f9317f12a8eb86"},
+    {"path": "output/pkg-v4/hf_cards/judge_v4_README.md", "repo_path": "README.md"}
+   ]
+  }
+ ]
+}

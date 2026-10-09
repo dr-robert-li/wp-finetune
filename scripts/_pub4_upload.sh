@@ -8,7 +8,7 @@
 # Target repo: iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf (new v4 repo).
 # Log: logs/hf_upload_27.log
 set -uo pipefail
-cd /home/robert_li/Desktop/projects/wp-finetune
+cd "$(dirname "$0")/.."
 unset HF_XET_HIGH_PERFORMANCE
 export HF_HUB_DISABLE_XET=1
 

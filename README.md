@@ -12,12 +12,13 @@ An open-weight WordPress code **reviewer**. Give it a PHP function, it returns a
 scored across 9 WordPress-quality dimensions (WPCS compliance, SQL safety, security, performance, WP API
 usage, code quality, dependencies, i18n, accessibility) and tells you what is wrong and why.
 
-The model is `iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf` — a fine-tune of Qwen3.6-35B-A3B, shipped as a
-Q5_K_M GGUF (23.61 GiB, recommended file) with MTP speculative decoding, alongside an expert-pruned Q6_K
-variant (23.47 GiB — the Gate C prune experiment, kept for provenance). It is self-hostable, needs no
-external API, and is deliberately opinionated: it pushes back on unsafe SQL, missing nonce checks, and poor
-architecture instead of rubber-stamping. Measured judge rho (single-seed, llama.cpp): **0.8093**
-(recommended file) / 0.8063 (pruned) — statistically tied.
+The model is `iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf` — a fine-tune of Qwen3.6-35B-A3B, expert-pruned
+to 224/256 experts and shipped as GGUF in three sizes: **IQ4_XS (15.44 GiB, default)**, a small mixed file
+(11.99 GiB, experts at IQ3_XXS), and Q6_K (23.47 GiB, max fidelity). An unpruned Q5_K_M (23.61 GiB) keeps
+the MTP head for speculative decoding. It is self-hostable, needs no external API, and is deliberately
+opinionated: it pushes back on unsafe SQL, missing nonce checks, and poor architecture instead of
+rubber-stamping. Measured judge rho (single-seed, llama.cpp): 0.8063 (Q6_K) / 0.8093 (unpruned Q5_K_M) —
+statistically tied. The smaller files track the Q6_K scores at Spearman 0.935 (IQ4_XS) and 0.921 (small).
 
 The prior `iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf` (Qwen3-30B-A3B base) remains available on
 HuggingFace as the superseded prior artifact — it is not updated or removed by this release.
@@ -35,27 +36,37 @@ HuggingFace as the superseded prior artifact — it is not updated or removed by
 | Repository | [`iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf`](https://huggingface.co/iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf) |
 | Base | Qwen3.6-35B-A3B (native MoE, 256 experts, top-8 routing) |
 | Training | relabel-SFT judge fine-tune |
-| Recommended file | `wp-judge-v4-unpruned.Q5_K_M.gguf`, 23.61 GiB — **MTP speculative decoding** (`--spec-type draft-mtp`, 56% measured draft acceptance) |
-| Pruned variant | `wp-judge-v4-pruned-k224.Q6_K.gguf`, 23.47 GiB — AIMER k=224 expert-prune (Gate C experiment: 224/256 experts at tied quality; no MTP) |
+| Default file | `wp-judge-v4-pruned-k224.IQ4_XS.gguf`, 15.44 GiB, ~16 GB GPU, 69 tok/s — Spearman 0.935 vs Q6_K scores, same PASS/FAIL on 99.2%, 1/121 repetition loop |
+| Small file | `wp-judge-v4-pruned-k224.small-IQ3_XXS-experts.gguf`, 11.99 GiB, 12314 MiB GPU, 60 tok/s — Spearman 0.921, same PASS/FAIL on 96.7% (conditions below) |
+| Max-fidelity file | `wp-judge-v4-pruned-k224.Q6_K.gguf`, 23.47 GiB, ~24 GB GPU, 55 tok/s — AIMER k=224 expert-prune (224/256 experts; no MTP); the reference the smaller files are measured against |
+| MTP variant | `wp-judge-v4-unpruned.Q5_K_M.gguf`, 23.61 GiB — 256/256 experts, **MTP speculative decoding** (`--spec-type draft-mtp`, 56% measured draft acceptance) |
 | Serving | llama.cpp (GGUF) |
-| Judge rho | **0.8093** recommended file / 0.8063 pruned — single-seed s1, each vs its own f16 floor, statistically tied |
+| Judge rho | 0.8063 Q6_K / 0.8093 unpruned Q5_K_M — single-seed s1, each vs its own f16 floor, statistically tied |
 | Prior release | [`iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf`](https://huggingface.co/iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf) — superseded, Qwen3-30B-A3B base, stays live untouched |
 | Model card | [output/packaging/MODEL_CARD.md](output/packaging/MODEL_CARD.md) |
 
 ## Quickstart
 
 ```bash
-# 1. pull the GGUF (recommended file: MTP speculative decoding, faster serving)
+# 1. pull the GGUF (default file: IQ4_XS, 15.44 GiB)
 hf download iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf \
-  wp-judge-v4-unpruned.Q5_K_M.gguf --local-dir ./judge
+  wp-judge-v4-pruned-k224.IQ4_XS.gguf --local-dir ./judge
 
 # 2. serve (llama.cpp b9180+; -c 16384 so long critiques never truncate)
-llama-server -m ./judge/wp-judge-v4-unpruned.Q5_K_M.gguf --host 127.0.0.1 --port 8020 \
-  -ngl 999 -c 16384 --jinja --spec-type draft-mtp
+llama-server -m ./judge/wp-judge-v4-pruned-k224.IQ4_XS.gguf --host 127.0.0.1 --port 8020 \
+  -ngl 999 -c 16384 --jinja --chat-template-kwargs '{"enable_thinking": false}'
 ```
 
-Prefer the marginally smaller expert-pruned file (no speculative decoding, same judge quality)?
-Pull `wp-judge-v4-pruned-k224.Q6_K.gguf` (23.47 GiB) and drop `--spec-type draft-mtp`.
+Other files, same command with a different `-m`:
+
+- **Small** (`wp-judge-v4-pruned-k224.small-IQ3_XXS-experts.gguf`, 11.99 GiB). Use the default f16 context
+  cache only; do not add `-ctk q8_0` / `-ctv q8_0` (that combination fails the agreement bar). Expect about
+  4x more PASS/FAIL flips than IQ4_XS. Set `max_tokens` to 2048 and treat a response with no
+  `<judge_output>` verdict as a failure (retry or flag).
+- **Max fidelity** (`wp-judge-v4-pruned-k224.Q6_K.gguf`, 23.47 GiB). Low on GPU memory? Add
+  `--n-cpu-moe 99` to keep the experts in system RAM: ~2.3 GB GPU + ~23 GB RAM, ~10 tok/s, same verdicts.
+- **MTP variant** (`wp-judge-v4-unpruned.Q5_K_M.gguf`, 23.61 GiB). Add `--spec-type draft-mtp` for
+  speculative decoding.
 
 Judge a snippet — prepend the `<wp_judge>` task prefix and the model returns a 9-dimension rubric verdict:
 
@@ -63,7 +74,7 @@ Judge a snippet — prepend the `<wp_judge>` task prefix and the model returns a
 curl -s http://127.0.0.1:8020/v1/chat/completions -d '{
   "messages": [{"role": "user",
     "content": "<wp_judge>Review this code:\n<?php $wpdb->query(\"SELECT * FROM wp_posts WHERE ID=$id\"); ?>"}],
-  "temperature": 0.0, "max_tokens": 8192
+  "temperature": 0.0, "max_tokens": 2048
 }'
 # → structured critique: flags the unprepared SQL as a D2_security FAIL, scores each dimension,
 #   overall PASS/FAIL verdict. Parse the JSON block from the response.
@@ -78,16 +89,22 @@ Receipt-backed, shipping stack, 0/121 parse failures. Full detail: [MODEL_CARD.m
 
 | Metric | Score | Notes |
 |---|---|---|
-| **Judge rho** — Q6_K GGUF, single-seed s1 (shipped) | **0.8063** | 0/121 parse failures |
+| **Judge rho** — Q6_K GGUF, single-seed s1 (max-fidelity file) | **0.8063** | 0/121 parse failures |
 | Judge rho — f16 GGUF, single-seed s1 (uncompressed floor) | 0.8002 | statistically tied with Q6_K |
 | Judge rho — untrained base | **0/121 parseable** | the entire judge capability is the fine-tune |
 
 All four GGUF rungs measured (f16/Q8_0/Q6_K/Q5_K_M) are statistically indistinguishable at n=121 (95% CI
-half-widths ~7-8pp); Q6_K ships as the smallest zero-parse-failure tier, not the highest-scoring one. The
+half-widths ~7-8pp); Q6_K was picked as the smallest zero-parse-failure tier, not the highest-scoring one. The
 unpruned variant ran its own four-rung ladder against its own f16 floor (0.8081) with the same outcome —
 statistically flat, tier selected on parse reliability + size (its Q5_K_M ran clean at 0/121, unlike the
 pruned checkpoint's Q5). Spearman rho is measured against human-relabeled 9-dimension scores on a held-out
 set of 121 items.
+
+The IQ4_XS and small files were measured differently: Spearman agreement with the Q6_K scores on the same
+121 prompts (greedy, fixed seed), not against the human labels. The pass bar was a bootstrap 95% CI lower
+bound of 0.85 or more on two perturbed runs; the noise ceiling (same weights, different numeric path) is
+~0.94-0.96. IQ4_XS: 0.935 [0.897, 0.960]. Small: 0.921 [0.878, 0.951]. Full table:
+[output/shrink/RESULTS.md](output/shrink/RESULTS.md).
 
 ## How it was built (and how to recreate it)
 
@@ -104,7 +121,8 @@ is in **[PIPELINE.md](PIPELINE.md)**. In brief:
 4. **Merge + quantize** — merge each seed's adapter into the base, convert to GGUF (llama.cpp) and walk a
    quantization ladder (Q8→Q6→Q5) against the checkpoint's own f16 floor; ship the smallest rung that
    stays in-band with zero parse failures. (On v3 that was Q8_0, measured lossless; on v4 it was Q6_K
-   pruned / Q5_K_M unpruned — the rung is a measurement, not a constant.)
+   pruned / Q5_K_M unpruned — the rung is a measurement, not a constant.) A later size study rebuilt the
+   f16 source and picked IQ4_XS (importance matrix) as the default file — see `output/shrink/`.
 
 LLM-heavy steps run through **Claude Code agents** (subscription, no per-token API cost), not direct API
 calls. Training, serving, and eval run on a single [DGX Spark (GB10)](https://github.com/dr-robert-li/dgx-toolbox)

@@ -53,5 +53,17 @@ prune() {  # prune <K>: cut experts; from f16 the cut file is then quantized to 
 v_prune_k192()        { prune 192; run prune_k192 $G/shrink-k192$T.Q6_K.gguf; }
 v_prune_k160()        { prune 160; run prune_k160 $G/shrink-k160$T.Q6_K.gguf; }
 
+# Combinations: surviving files + runtime option (8-bit context cache).
+v_c_iq4xs_kvq8()      { run c_iq4xs_kvq8 $G/shrink-iq4xs-im_f16.gguf -fa on -ctk q8_0 -ctv q8_0; }
+v_c_eiq4xs_kvq8()     { run c_eiq4xs_kvq8 $G/shrink-mix-eiq4xs_f16.gguf -fa on -ctk q8_0 -ctv q8_0; }
+v_c_eiq3xxs_kvq8()    { run c_eiq3xxs_kvq8 $G/shrink-mix-eiq3xxs_f16.gguf -fa on -ctk q8_0 -ctv q8_0; }
+
+# Stability: same file, numeric-path perturbations (flash attention; smaller compute batch).
+v_s_eiq3xxs_fa()      { run s_eiq3xxs_fa $G/shrink-mix-eiq3xxs_f16.gguf -fa on; }
+v_s_eiq3xxs_ub128()   { run s_eiq3xxs_ub128 $G/shrink-mix-eiq3xxs_f16.gguf -ub 128; }
+v_s_eiq3xxs_ub256()   { run s_eiq3xxs_ub256 $G/shrink-mix-eiq3xxs_f16.gguf -ub 256; }
+v_s_iq4xs_fa()        { run s_iq4xs_fa $G/shrink-iq4xs-im_f16.gguf -fa on; }
+v_s_iq4xs_ub128()     { run s_iq4xs_ub128 $G/shrink-iq4xs-im_f16.gguf -ub 128; }
+
 ALL=(baseline_q6k baseline_repeat q5km q4km iq4xs_im q3km iq3xxs_im mix_e4km mix_eiq4xs mix_eiq3xxs rt_kvq8 rt_cpumoe prune_k192 prune_k160)
 for v in "${@:-${ALL[@]}}"; do echo "=== $v $(date +%T)"; "v_$v"; done

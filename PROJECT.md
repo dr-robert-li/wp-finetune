@@ -10,7 +10,9 @@ infrastructure stack.
 [`iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf`](https://huggingface.co/iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf),
 a relabel-SFT fine-tune of Qwen3.6-35B-A3B, expert-pruned 256→224 (AIMER, gate-before-remove PASS), shipped
 as a Q6_K GGUF, 23.47 GiB (rho 0.8063, single-seed s1, shipped Q6_K/llama.cpp stack — statistically tied
-with the f16 floor and with v3's 3-seed-ensemble 0.8056, ~22% smaller than v3's 30.2 GiB). The prior
+with the f16 floor and with v3's 3-seed-ensemble 0.8056, ~22% smaller than v3's 30.2 GiB). **Default file
+since 2026-10-10:** IQ4_XS, 15.44 GiB (Spearman 0.935 vs the Q6_K scores, 99.2% same verdict), with a small
+11.99 GiB experts-IQ3_XXS file and Q6_K kept as max fidelity — see the shrink study in `output/shrink/`. The prior
 [`iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf`](https://huggingface.co/iamchum/wp-qwen3-30b-a3b-wp-judge-v1.3-gguf)
 (Qwen3-30B-A3B base) remains published as the superseded prior artifact. The judge is a *created*
 capability — the untrained base produces 0 parseable verdicts out of 121.
@@ -290,7 +292,8 @@ Judge training data is additionally sanity-checked: high-quality source code mus
 - [x] Phase 21 diagnostic (exp 1-5) + Phase 23 final eval — gen regression + judge serving-ceiling root-caused; gen-role winner = raw base; judge tie vs v3 on the shipped stack (v4.0, closed 2026-07-15)
 - [x] Phases 22/25/26: MoE-Sieve + prune on the v4 judge's **256 experts** — the lever pulled. AIMER weight-prune at k=224 **passed** gate-before-remove (contradicting the routing profile's "resists pruning" prediction); physical surgery shipped a 224/256-expert checkpoint (v4.0, closed 2026-07-17). Gen stayed retired.
 - [x] Phase 27: Packaging & publication — v4 judge quantization ladder measured against its own f16 floor (all rungs statistically indistinguishable at n=121; tier selection by zero-parse-failures + size, not rho). **Two files published** to [iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf](https://huggingface.co/iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf): pruned Q6_K 23.47 GiB (canonical, no MTP) and unpruned Q5_K_M 23.61 GiB (256/256 experts, **MTP speculative decoding works** — `--spec-type draft-mtp`, 56% measured draft acceptance). Post-upload round-trips validated both (v4.0, closed 2026-07-18).
-- **Canonical model = the v4 WP Judge** (pruned Q6_K, 23.47 GiB — ~22% smaller than v3's 30.2 GiB at statistically tied quality on the newer base). The v1.3 repo stays live as the superseded prior artifact. **v4.0 milestone COMPLETE.**
+- [x] Shrink study (2026-10-09/10, post-v4.0): f16 source rebuilt byte-exact; 17 size variants scored against the Q6_K. **Default file = IQ4_XS, 15.44 GiB** (34% smaller, agreement 0.935, 99.2% same verdict); small tier = experts at IQ3_XXS, 11.99 GiB (0.921, f16 context cache only); Q6_K stays as max fidelity. Evidence: `output/shrink/RESULTS.md`.
+- **Canonical model = the v4 WP Judge** (pruned k=224; default file IQ4_XS 15.44 GiB, max-fidelity Q6_K 23.47 GiB — ~22% smaller than v3's 30.2 GiB at statistically tied quality on the newer base). The v1.3 repo stays live as the superseded prior artifact. **v4.0 milestone COMPLETE.**
 
 ## Dependencies
 

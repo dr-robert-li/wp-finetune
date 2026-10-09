@@ -4,6 +4,46 @@ Decisions, reasoning, and observations logged as the project evolves.
 
 ---
 
+## 2026-10-10 — Shrink study result: two smaller files ship.
+
+The study is complete. Two smaller files pass the bar. All other options fail or give no gain.
+
+**Phase 2.** We made each single-method variant from the f16 source: Q5_K_M, Q4_K_M, Q3_K_M, IQ4_XS and IQ3_XXS with an importance matrix, and three mixes that compress only the expert tensors. We also tested two expert cuts (192 and 160 experts per layer). The best single file is IQ4_XS with importance matrix: 15.44 GiB (34% smaller), 15992 MiB GPU, 69.0 tok/s, agree_rho 0.935, verdict 99.2%, 1 unreadable answer. The baseline uses 24074 MiB GPU at 55.4 tok/s.
+
+**Phase 3.** We tested the surviving files with an 8-bit context cache (kvq8), and the Q6_K file with experts in system RAM. A memory probe measured each candidate. The kvq8 cache saves only 47 MiB on the Q6_K file. It does not help size.
+
+**Bar.** The bootstrap 95% CI lower bound of agree_rho must be 0.85 or more on two perturbed runs. At most 1 of 121 answers can be unreadable. Unreadable includes answers that are not valid JSON.
+
+**What failed, and why.**
+- Q4_K_M and Q5_K_M from f16: 0.916 and 0.913. They are larger than IQ4_XS and agree less.
+- Q3_K_M from f16: 0.839. IQ3_XXS with importance matrix: 0.835 at 11.24 GiB. Both fail the bar.
+- Experts at Q4_K, all else Q6_K: 0.867 at 16.7 GiB. It is larger than IQ4_XS and agrees less.
+- Experts at IQ4_XS, all else Q6_K: 0.926 at 15.88 GiB. It is larger and slower than IQ4_XS, with no gain.
+- Expert cut to 192: 0.879 at 20.38 GiB. Expert cut to 160: 0.880 at 17.3 GiB, with 19 unreadable answers (7 parse failures and 12 not valid JSON). The 160 file falls into word loops. We drop both cuts.
+
+**The noise ceiling is about 0.95, not 1.0.** The same Q6_K weights through a different numeric path agree with the baseline at only 0.942 (kvq8) and 0.957 (experts in RAM). Against each other they agree at 0.916. So a score of 0.94 to 0.96 is as good as a real file can get. IQ4_XS at 0.935 sits at this ceiling.
+
+**The -fa run was a no-op.** Our first stability runs used `-fa on`. The reviewer found that each `-fa` run was byte-identical to its default run: 0 of 121 answers differed. Flash attention is already on by default on this GPU. So those runs were repeats, not perturbations. We replaced the 3-bit file's `-fa` run with a genuine `-ub 256` run. Its answers differ from the default run in 52 of 121 cases.
+
+**Stability.** IQ4_XS: ub128 0.926 [0.891, 0.950], kvq8 0.939 [0.908, 0.960], 98.3% verdict, 0 unreadable. It passes on both runs. The 3-bit mix (experts at IQ3_XXS, all else Q6_K): default 0.921 [0.878, 0.951], verdict 96.7%, 0 unreadable. ub128 0.930 [0.889, 0.957], with 1 loop. ub256 0.908 [0.863, 0.938], verdict 95.9%, 0 unreadable. It passes on ub128 and ub256.
+
+**The 3-bit file is fragile.** With kvq8 it drops to 0.858 [0.797, 0.903], verdict 95.0%. That fails the bar. A paired bootstrap puts the gap between ub128 and kvq8 at [+0.029, +0.124], so the drop is real. The ub256 lower bound (0.863) is also close to 0.85. Its verdict agreement across runs (95.9% to 96.7%) means about 4 times the PASS/FAIL flips of IQ4_XS (99.2%).
+
+**The main failure mode is a repetition loop.** Almost every unreadable answer is a loop that runs to the 2048-token cap. The longest baseline answer is 1512 tokens. The Q6_K weights with kvq8 also loop once, so one loop in 121 is within noise. The run scripts have no repetition guard.
+
+**Decision.**
+- New default: IQ4_XS with importance matrix, made from f16. HF name `wp-judge-v4-pruned-k224.IQ4_XS.gguf`.
+- New small tier: experts at IQ3_XXS, all other tensors Q6_K, importance matrix, from f16. 11.99 GiB (49% smaller), 12314 MiB GPU, 59.7 tok/s. HF name `wp-judge-v4-pruned-k224.small-IQ3_XXS-experts.gguf`.
+- Conditions for the small tier. Use the default f16 context cache only. Never set `-ctk` or `-ctv` to q8_0. Expect more verdict flips than IQ4_XS. Keep max_tokens at 2048. Treat an answer with no `<judge_output>` verdict as a failure, then retry or flag it.
+- The Q6_K file stays on HF as the "max fidelity" file. The unpruned Q5_K_M (MTP head, speculative decoding) stays as it is.
+- For low VRAM, run the Q6_K file with `--n-cpu-moe 99`. Experts stay in system RAM: 2342 MiB GPU plus about 23 GB RAM, 9.9 tok/s, agree_rho 0.957, verdict 100%.
+
+**Limits.** Each run uses 121 prompts and one seed. The CIs are 0.07 to 0.09 wide. agree_rho measures agreement with the Q6_K baseline. It is not a new skill score. A file can only be as good as the baseline on this measure. The memory probe uses one prompt, so the memory numbers are for a short single request.
+
+**Correction to the 2026-10-09 entry.** Its "Limits we accept" paragraph says this machine has no f16 source and that all variants come from Q6_K. The f16 rebuild in the same entry later made that false. All quantized variants in this result come from f16, except the first Q5_K_M and Q4_K_M. The two expert cuts start from the shipped Q6_K file.
+
+---
+
 ## 2026-10-09 — Shrink study: can the judge get smaller without losing skill?
 
 Users asked for a smaller file. The shipped file is Q6_K, 23.47 GiB. This study tests each way to make the model smaller, alone and then in combination.

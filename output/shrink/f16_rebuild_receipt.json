@@ -1,0 +1,95 @@
+{
+  "title": "f16 GGUF rebuild of shipped pruned v4 WP judge (k224) from scratch",
+  "generated_utc": "2026-10-09T00:30:00Z",
+  "host": "NVIDIA GB10, aarch64, 121 GiB unified",
+  "wall_time_approx": "~2h50m total (env install ~20m, base+adapter download ~2h, merge 4m27s, prune 34s, convert 1m20s, quantize 2m20s)",
+  "versions": {
+    "python": "3.12.3 (~/work/venv)",
+    "torch": "2.12.1+cu130",
+    "transformers": "5.3.0",
+    "tinker": "0.33.0",
+    "tinker_cookbook": "0.4.1",
+    "safetensors": "0.8.0",
+    "llama_cpp": "8f114a9b5 (build 9954, GNU 13.3.0 aarch64)",
+    "gguf_py": "~/work/llama.cpp/gguf-py"
+  },
+  "steps": [
+    {
+      "step": "tinker_access_check",
+      "result": "archive URL issued for tinker://a8efbc89-6faa-5ec5-8ca2-f60068a92fce:train:0/sampler_weights/wp-judge-v4-s1-ep3"
+    },
+    {
+      "step": "base_download",
+      "cmd": "scripts/download_model.py --config-path config/train_config_v4.yaml",
+      "repo": "Qwen/Qwen3.6-35B-A3B",
+      "hf_revision": "995ad96eacd98c81ed38be0c5b274b04031597b0",
+      "shards": 26,
+      "size_gb": 67.0
+    },
+    {
+      "step": "eos_pad_json_surgery",
+      "file": "models/Qwen3.6-35B-A3B/config.json (backup config.json.orig)",
+      "change": "text_config.eos_token_id 248044->248046, pad_token_id null->248044 (json.dumps indent=2, as scripts/check_token_alignment.py); generation_config.json already correct, untouched"
+    },
+    {
+      "step": "adapter_download",
+      "via": "build_judge03_merge_serve._download_promoted_adapter(1) URL; tar fetched with parallel ranged curl (single stream ~0.1 MB/s), extracted with the same member filter",
+      "path": "output/base21/judge03_s1_adapter",
+      "tar_bytes": 2084126720,
+      "sha256": {
+        "adapter_model.safetensors": "f9982a1c4d1b291d87c7d57fc4e4870b6d8486b11414ba800880c9702206cbbf",
+        "adapter_config.json": "7c4821f8f443de1d52d092093c5bdb57bafcfe431bd83b0c28b51852283a86bd"
+      }
+    },
+    {
+      "step": "merge",
+      "cmd": "scripts/merge_adapter.py --config-path config/train_config_v4.yaml --adapter-dir output/base21/judge03_s1_adapter --output-dir models/Qwen3.6-35B-A3B-judge-v4-s1-merged --expected-modules-manifest output/base21/moe_merge_probe.json --guard-receipt-path output/base21/_judge03_s1_merge_guard_result.json",
+      "engine": "tinker_cookbook.weights.build_hf_model (fp32-upcast adapter)",
+      "modules": "240/240",
+      "expert_layout": "fused_concatenated",
+      "max_rss_gib": 10.6,
+      "size_gib": 67
+    },
+    {
+      "step": "prune",
+      "cmd": "python -m scripts.prune_apply_physical_v4 (defaults; --self-check passed first)",
+      "gate_record": "output/prune-v4/gated/aimer_224_judge.json pass_ship=true pass_d2_security=true",
+      "mask": "output/prune-v4/masks/aimer_k224.npy",
+      "out": "models/Qwen3.6-35B-A3B-judge-v4-pruned-k224",
+      "size_gib": 59.49
+    },
+    {
+      "step": "convert",
+      "cmd": "python ~/work/llama.cpp/convert_hf_to_gguf.py models/Qwen3.6-35B-A3B-judge-v4-pruned-k224 --outtype f16 --outfile models/_gguf/wp-judge-v4-pruned-k224.f16.gguf --no-mtp",
+      "max_rss_gib": 5.1
+    }
+  ],
+  "f16": {
+    "path": "models/_gguf/wp-judge-v4-pruned-k224.f16.gguf",
+    "size_bytes": 61313087616,
+    "size_matches_conversion_receipt_v4": true,
+    "sha256": "33e428f475a48897b71324deb313cb8d4db9c8c355ac5596201c3fd73440d36c",
+    "architecture": "qwen35moe",
+    "block_count": 40,
+    "expert_count": 224,
+    "n_tensors": 733,
+    "mtp_tensors": 0
+  },
+  "verification": {
+    "cmd": "~/work/llama.cpp/build/bin/llama-quantize wp-judge-v4-pruned-k224.f16.gguf rebuild-check.Q6_K.gguf Q6_K",
+    "rebuild_q6k": {
+      "path": "models/_gguf/rebuild-check.Q6_K.gguf",
+      "size_bytes": 25200652096,
+      "sha256": "df81571412e1a5e228a7017340348a9730096dedd673b249dea2d4d00971c729"
+    },
+    "shipped_q6k": {
+      "path": "models/_gguf/wp-judge-v4-pruned-k224.Q6_K.gguf",
+      "hf_repo": "iamchum/wp-qwen3.6-35b-a3b-wp-judge-v4-gguf",
+      "size_bytes": 25200652096,
+      "sha256": "df81571412e1a5e228a7017340348a9730096dedd673b249dea2d4d00971c729"
+    },
+    "byte_identical": true,
+    "per_tensor_compare": "not needed (sha256 equal)"
+  },
+  "tracked_files_edited": []
+}

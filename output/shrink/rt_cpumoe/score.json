@@ -1,0 +1,18 @@
+{
+  "n": 121,
+  "parse_fail": 0,
+  "not_json": 0,
+  "n_paired": 121,
+  "agree_rho": 0.9570802167402844,
+  "mean_abs_diff": 1.2231404958677685,
+  "exact_match": 0.6033057851239669,
+  "verdict_agree": 1.0,
+  "ref_rho": 0.5178312027186833,
+  "ref_ci": [
+    0.374370171412004,
+    0.6366408969843317
+  ],
+  "n_ref": 121,
+  "capture": "output/shrink/rt_cpumoe/judge_responses.jsonl",
+  "baseline": "output/shrink/baseline_q6k/judge_responses.jsonl"
+}

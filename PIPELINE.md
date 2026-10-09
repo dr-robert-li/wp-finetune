@@ -166,6 +166,10 @@ return nothing.
    Qwen3.5/3.6 checkpoint requires `--no-mtp` (GGUF's global `expert_count` cannot represent a 224-expert
    trunk under a 256-expert MTP layer), so speculative decoding lives only in the unpruned file
    (`--spec-type draft-mtp`, 56% measured acceptance).
+   Post-ship size study (2026-10-10): quantize from the f16 source, not from the shipped file, and score
+   each smaller file by Spearman agreement with the ship file's scores (pass bar: bootstrap CI lower bound
+   >= 0.85 on two perturbed runs). IQ4_XS with an importance matrix became the default (15.44 GiB, 0.935);
+   experts-only IQ3_XXS is the small tier (11.99 GiB, 0.921). Evidence: `output/shrink/RESULTS.md`.
 
 Deprecated one-off experiment drivers from the v3.0 run live in `deprecated/` with their own README. They
 are not part of this pipeline; they are the archaeology of how the gates above were established.
