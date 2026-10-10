@@ -282,7 +282,7 @@ def _send(base, msgs):
     from openai import OpenAI
     cli = OpenAI(base_url=base, api_key="none", max_retries=0, timeout=600)
     r = cli.chat.completions.create(model="x", temperature=0, max_tokens=2048, messages=msgs,
-                                    extra_body={"chat_template_kwargs": {"enable_thinking": False}})
+                                    extra_body={"chat_template_kwargs": {"enable_thinking": False}, "cache_prompt": False})
     return r.choices[0].message.content or ""
 
 def _judge_json(raw):
@@ -456,7 +456,8 @@ sec_real() {
   local R=$WORK/real; mkdir -p "$R"
   local spec name url units kind t0 wall
   for spec in "classic-editor|https://downloads.wordpress.org/plugin/classic-editor.latest-stable.zip|39|plugin" \
-              "twentytwentyfour|https://downloads.wordpress.org/theme/twentytwentyfour.zip|60|theme"; do
+              "twentytwentyfour|https://downloads.wordpress.org/theme/twentytwentyfour.zip|60|theme" \
+              "twentytwelve|https://downloads.wordpress.org/theme/twentytwelve.4.9.zip|54|theme"; do
     IFS='|' read -r name url units kind <<<"$spec"
     [ -s "$R/$name.zip" ] || curl -fsSL -o "$R/$name.zip" "$url" || { fail "real $name: download $url"; continue; }
     t0=$(date +%s)
