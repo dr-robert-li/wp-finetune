@@ -1,0 +1,205 @@
+{
+  "model": "models/_gguf/shrink-iq4xs-im_f16.gguf (IQ4_XS)",
+  "server": "host llama-server ~/work/llama.cpp build, --parallel 1 -c 8192 --jinja enable_thinking=false",
+  "request": "no system prompt, temperature 0, max_tokens 2048",
+  "code_from": "wpjudge.extract.collect_units",
+  "date": "2026-10-10",
+  "units": [
+    {
+      "id": "includes/legacy.php:18:ser_search_registrations",
+      "group": "sqli",
+      "verdict": "FAIL",
+      "overall_score": 36,
+      "security": 4,
+      "sql_safety": 2,
+      "scores": {
+        "wpcs_compliance": 4,
+        "security": 4,
+        "sql_safety": 2,
+        "performance": 6,
+        "wp_api_usage": 5,
+        "code_quality": 4,
+        "dependency_integrity": 7,
+        "error_handling": 4
+      },
+      "secs": 13.5,
+      "parsed": true
+    },
+    {
+      "id": "includes/legacy.php:30:ser_delete_registration",
+      "group": "sqli",
+      "verdict": "FAIL",
+      "overall_score": 46,
+      "security": 4,
+      "sql_safety": 4,
+      "scores": {
+        "wpcs_compliance": 4,
+        "security": 4,
+        "sql_safety": 4,
+        "performance": 7,
+        "wp_api_usage": 6,
+        "code_quality": 5,
+        "dependency_integrity": 7,
+        "error_handling": 4
+      },
+      "secs": 13.2,
+      "parsed": true
+    },
+    {
+      "id": "includes/legacy.php:43:ser_ajax_export_registrations",
+      "group": "ajax_no_nonce_no_cap",
+      "verdict": "FAIL",
+      "overall_score": 46,
+      "security": 4,
+      "sql_safety": 4,
+      "scores": {
+        "wpcs_compliance": 5,
+        "security": 4,
+        "sql_safety": 4,
+        "performance": 6,
+        "wp_api_usage": 6,
+        "code_quality": 5,
+        "dependency_integrity": 7,
+        "error_handling": 4
+      },
+      "secs": 13.0,
+      "parsed": true
+    },
+    {
+      "id": "includes/legacy.php:54:ser_render_search_box",
+      "group": "unescaped_echo",
+      "verdict": "FAIL",
+      "overall_score": 14,
+      "security": 1,
+      "sql_safety": null,
+      "scores": {
+        "wpcs_compliance": 2,
+        "security": 1,
+        "performance": 6,
+        "wp_api_usage": 4,
+        "code_quality": 3,
+        "dependency_integrity": 6,
+        "i18n": 2,
+        "accessibility": 4
+      },
+      "secs": 12.6,
+      "parsed": true
+    },
+    {
+      "id": "includes/legacy.php:65:ser_save_settings",
+      "group": "unsanitized_option",
+      "verdict": "FAIL",
+      "overall_score": 46,
+      "security": 4,
+      "sql_safety": null,
+      "scores": {
+        "wpcs_compliance": 4,
+        "security": 4,
+        "performance": 7,
+        "wp_api_usage": 6,
+        "code_quality": 5,
+        "dependency_integrity": 7,
+        "error_handling": 5
+      },
+      "secs": 11.6,
+      "parsed": true
+    },
+    {
+      "id": "simple-events.php:34:ser_get_registrations_for_event",
+      "group": "clean",
+      "verdict": "PASS",
+      "overall_score": 80,
+      "security": 8,
+      "sql_safety": 8,
+      "scores": {
+        "wpcs_compliance": 8,
+        "security": 8,
+        "sql_safety": 8,
+        "performance": 7,
+        "wp_api_usage": 8,
+        "code_quality": 8,
+        "dependency_integrity": 8,
+        "error_handling": 6
+      },
+      "secs": 11.9,
+      "parsed": true
+    },
+    {
+      "id": "simple-events.php:58:ser_render_registration_count",
+      "group": "clean",
+      "verdict": "PASS",
+      "overall_score": 80,
+      "security": 8,
+      "sql_safety": null,
+      "scores": {
+        "wpcs_compliance": 8,
+        "security": 8,
+        "performance": 7,
+        "wp_api_usage": 8,
+        "code_quality": 8,
+        "dependency_integrity": 7,
+        "i18n": 8,
+        "accessibility": 7
+      },
+      "secs": 12.1,
+      "parsed": true
+    },
+    {
+      "id": "simple-events.php:76:ser_handle_cancel_registration",
+      "group": "clean",
+      "verdict": "PASS",
+      "overall_score": 80,
+      "security": 8,
+      "sql_safety": 8,
+      "scores": {
+        "wpcs_compliance": 8,
+        "security": 8,
+        "sql_safety": 8,
+        "performance": 7,
+        "wp_api_usage": 8,
+        "code_quality": 8,
+        "dependency_integrity": 8,
+        "i18n": 8,
+        "error_handling": 6
+      },
+      "secs": 16.5,
+      "parsed": true
+    },
+    {
+      "id": "simple-events.php:99:ser_sanitize_settings",
+      "group": "clean",
+      "verdict": "PASS",
+      "overall_score": 84,
+      "security": 8,
+      "sql_safety": null,
+      "scores": {
+        "wpcs_compliance": 8,
+        "security": 8,
+        "wp_api_usage": 8,
+        "code_quality": 8,
+        "dependency_integrity": 8
+      },
+      "secs": 8.0,
+      "parsed": true
+    },
+    {
+      "id": "templates/settings-page.php:1:<template>",
+      "group": "template",
+      "verdict": "PASS",
+      "overall_score": 84,
+      "security": 8,
+      "sql_safety": null,
+      "scores": {
+        "wpcs_compliance": 8,
+        "security": 8,
+        "wp_api_usage": 8,
+        "code_quality": 8,
+        "dependency_integrity": 8,
+        "i18n": 8,
+        "accessibility": 8
+      },
+      "secs": 12.3,
+      "parsed": true
+    }
+  ]
+}

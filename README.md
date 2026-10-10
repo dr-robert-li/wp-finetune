@@ -142,6 +142,22 @@ PIPELINE.md end-to-end method, gate by gate     JOURNAL.md  build log
 PROJECT.md  project spec + status               CHANGELOG.md
 ```
 
+## Scan a whole plugin or theme (harness)
+
+[`harness/`](harness/README.md) packages the judge as `wpjudge`. It extracts every PHP function from a
+plugin or theme (folder, `.zip` or `.tar.gz`), judges each one through llama-server, and writes one JSON
+report: LOC-weighted overall score, a safety cap at 60 when `security` or `sql_safety` ≤ 4, coverage,
+dimension stats, patterns and anti-patterns.
+
+```bash
+pip install -e harness
+wpjudge scan my-plugin.zip -o report.json          # needs llama-server on 127.0.0.1:8080
+cd harness && docker compose up -d                 # or: async-job API on 127.0.0.1:8000 + llama.cpp
+```
+
+Use it as a CLI, a Python library (`from wpjudge import scan`) or a container API. About 11 units (functions or templates) per
+minute on a GB10 with IQ4_XS. Operator guide, API reference and caveats: [harness/README.md](harness/README.md).
+
 ## Requirements
 
 - Python 3.10+, `pyyaml`, `python-dotenv`

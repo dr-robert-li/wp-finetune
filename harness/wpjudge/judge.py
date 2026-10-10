@@ -1,0 +1,159 @@
+"""Units -> judgments via the wp-judge model behind an OpenAI-compatible server (llama-server)."""
+import json
+import re
+import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Optional
+
+from openai import OpenAI
+
+PROMPT = "<wp_judge> Evaluate this WordPress code:\n\n```php\n{code}\n```"  # training format, no system prompt
+
+# Copied from eval/eval_judge.py _judge_create: if the server template rejects the
+# enable_thinking kwarg, drop it for the rest of the process and warn.
+_thinking_kwarg_supported = True
+
+
+def _judge_create(client, *, model, messages, max_tokens=2048, temperature=0.0):
+    global _thinking_kwarg_supported
+    if _thinking_kwarg_supported:
+        try:
+            return client.chat.completions.create(
+                model=model, messages=messages, max_tokens=max_tokens,
+                temperature=temperature,
+                extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+            )
+        except Exception as e:  # noqa: BLE001
+            emsg = str(e).lower()
+            if "enable_thinking" in emsg or "chat_template" in emsg or "template" in emsg:
+                _thinking_kwarg_supported = False
+                print("WARNING [wpjudge]: server template rejected chat_template_kwargs "
+                      "enable_thinking=False; dropping it for this process. Unclosed <think> "
+                      "blocks will show up as parse failures.", file=sys.stderr, flush=True)
+            else:
+                raise
+    return client.chat.completions.create(
+        model=model, messages=messages, max_tokens=max_tokens, temperature=temperature)
+
+
+# Copied verbatim from eval/eval_judge.py:310-383.
+def parse_judge_response(response: str) -> Optional[dict]:
+    """Parse model judge response and extract score fields.
+
+    PURE parser — returns exactly what the model emitted (no derived fields), so
+    it is safe for BOTH the served-judge reward path AND teacher-GT extraction
+    (_extract_gt_from_assistant), which requires overall_score to be ABSENT when
+    the target omits it (canonical GT = rubric_scorer, never a derived proxy).
+    overall_score derivation for the reward path lives in judge_score_single.
+
+    Handles:
+      - <judge_output>...</judge_output> tag block (v1.2 reasoning judge)
+      - Raw JSON string
+      - JSON in markdown code fences (```json ... ``` or ``` ... ```)
+      - Embedded {...} object
+      - Missing keys -> returns dict without those keys
+
+    Args:
+        response: Raw model response string.
+
+    Returns:
+        Parsed dict with judge fields (may include overall_score), or None
+        if the response cannot be parsed as JSON.
+    """
+    text = response.strip()
+
+    # Strip <think>...</think> blocks (Qwen3 reasoning mode).
+    # Must happen before JSON extraction — thinking content may contain
+    # curly braces that confuse the greedy {.*} regex below.
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+
+    # Strategy 0: <judge_output>...</judge_output> tag block. MUST precede the
+    # greedy {.*} scan: the v1.2 judge prefixes a [REASONING] prose block that
+    # quotes the code under review (e.g. `{$wpdb->prefix}`), so a greedy first-{
+    # to last-} match spans prose+JSON and fails. The tags bound the JSON exactly.
+    # (Teacher-GT targets carry no such tags, so this strategy never alters them.)
+    match = re.search(r"<judge_output>\s*(\{.*\})\s*</judge_output>", text, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group(1))
+        except json.JSONDecodeError:
+            pass
+
+    # Strategy 1: raw JSON
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    # Strategy 2: ```json fenced block
+    match = re.search(r"```json\s*\n(.*?)```", text, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group(1).strip())
+        except json.JSONDecodeError:
+            pass
+
+    # Strategy 3: generic ``` fenced block
+    match = re.search(r"```\s*\n(.*?)```", text, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group(1).strip())
+        except json.JSONDecodeError:
+            pass
+
+    # Strategy 4: embedded JSON object (first { ... } match)
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group(0))
+        except json.JSONDecodeError:
+            pass
+
+    # Cannot parse
+    return None
+
+
+def to_judgment(unit, raw, attempts):
+    """Raw model text -> judged Judgment, or None if unusable (no JSON or no numeric overall_score)."""
+    j = parse_judge_response(raw)
+    if not isinstance(j, dict) or not isinstance(j.get("overall_score"), (int, float)) \
+            or isinstance(j["overall_score"], bool):
+        return None
+    scores = {k: int(v) for k, v in j.items()  # A5: scores only from the JSON, never the prose
+              if k not in ("verdict", "overall_score") and isinstance(v, (int, float))
+              and not isinstance(v, bool) and float(v).is_integer()}
+    return {**unit, "status": "judged", "attempts": attempts, "verdict": j.get("verdict"),
+            "overall_score": int(round(j["overall_score"])), "scores": scores,
+            "critique": re.split(r"\[/REASONING\]|<judge_output>", raw, maxsplit=1)[0].strip(),
+            "raw": raw, "error": None}
+
+
+def judge_one(client, model, unit, max_tokens=2048):
+    raw, err = "", None
+    for attempt in (1, 2):  # retry once
+        try:
+            r = _judge_create(client, model=model, max_tokens=max_tokens,
+                              messages=[{"role": "user", "content": PROMPT.format(code=unit["code"])}])
+            raw = r.choices[0].message.content or ""
+            j = to_judgment(unit, raw, attempt)
+            if j:
+                return j
+            err = "parse_failure"
+        except Exception as e:  # noqa: BLE001
+            err = f"{type(e).__name__}: {e}"
+    return {**unit, "status": "unjudged", "attempts": 2, "verdict": None, "overall_score": None,
+            "scores": {}, "critique": "", "raw": raw, "error": err}
+
+
+def judge_units(units, base_url, model, workers=4, on_result=None, max_tokens=2048):
+    """Judge every unit concurrently; on_result(judgment) fires per finished unit. Returns judgments sorted by id."""
+    client = OpenAI(base_url=base_url, api_key="none", timeout=600, max_retries=0)
+    out = []
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = [pool.submit(judge_one, client, model, u, max_tokens) for u in units]
+        for fut in as_completed(futures):
+            j = fut.result()
+            if on_result:
+                on_result(j)
+            out.append(j)
+    return sorted(out, key=lambda j: j["id"])

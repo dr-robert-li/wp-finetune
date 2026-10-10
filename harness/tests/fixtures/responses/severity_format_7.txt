@@ -1,0 +1,34 @@
+This is a PHPUnit unit test excluded from production training data; all dimension ratings reflect test-context norms rather than production code standards.
+
+WPCS Compliance: severity low (8/10) — Issue: Test method lacks @covers tag; @since is absent from the docblock. Test WPCS conventions require @covers for each test method to document tested API surface.. Fix: Add @covers WP_Theme_JSON_Gutenberg::get_styles_for_block to the docblock.
+
+SQL Safety: severity low (8/10) — Issue: No SQL in this test method.. Fix: No SQL remediation needed.
+
+Security: severity low (8/10) — Issue: Test context; no security surface.. Fix: No security remediation needed.
+
+Performance: severity low (8/10) — Issue: Single WP_Theme_JSON_Gutenberg instantiation per test iteration is acceptable in unit-test context.. Fix: No performance remediation needed.
+
+WP API Usage: severity low (8/10) — Issue: WP_Theme_JSON_Gutenberg is instantiated with raw array data in the test; this is the correct pattern for unit testing the theme-json layer.. Fix: No wp_api_usage changes needed.
+
+Code Quality: severity low (8/10) — Issue: Test is clear and focused; $custom_css expected value is explicit. The $paragraph_node mock structure is minimal and sufficient for this test scenario.. Fix: No code quality changes needed.
+
+Dependency Integrity: severity low (8/10) — Issue: WP_Theme_JSON_Gutenberg is a Gutenberg internal class; in the wordpress-develop source tree this test belongs in tests/wordpress-theme-json-gutenberg/.. Fix: No dependency integrity changes needed.
+
+i18n: severity low (8/10) — Issue: No i18n surface in this test method.. Fix: No i18n remediation needed.
+
+Accessibility: severity low (8/10) — Issue: Test context; no accessibility surface.. Fix: No accessibility remediation needed.
+
+Key observation: Test-context code; the only improvement is adding a @covers tag to document the tested API surface.
+
+[/REASONING]
+
+<judge_output>
+{
+  "verdict": "PASS",
+  "wpcs_compliance": 8,
+  "wp_api_usage": 8,
+  "code_quality": 8,
+  "dependency_integrity": 8,
+  "overall_score": 80
+}
+</judge_output>

@@ -1,0 +1,32 @@
+{
+ "units": [
+  "includes/legacy.php:18:ser_search_registrations",
+  "includes/legacy.php:30:ser_delete_registration",
+  "includes/legacy.php:43:ser_ajax_export_registrations",
+  "includes/legacy.php:54:ser_render_search_box",
+  "includes/legacy.php:65:ser_save_settings",
+  "simple-events.php:34:ser_get_registrations_for_event",
+  "simple-events.php:58:ser_render_registration_count",
+  "simple-events.php:76:ser_handle_cancel_registration",
+  "simple-events.php:99:ser_sanitize_settings",
+  "templates/settings-page.php:1:<template>"
+ ],
+ "skips": [
+  {"file": "build/index.asset.php", "line": 0, "name": "", "reason": "build"},
+  {"file": "simple-events.php", "line": 26, "name": "ser_text_domain", "reason": "tiny"},
+  {"file": "tests/test-x.php", "line": 0, "name": "", "reason": "test"},
+  {"file": "vendor/x.php", "line": 0, "name": "", "reason": "vendor"},
+  {"file": "x.min.php", "line": 0, "name": "", "reason": "minified"}
+ ],
+ "skip_counts": {"build": 1, "tiny": 1, "test": 1, "vendor": 1, "minified": 1},
+ "php_files": 7,
+ "groups": {
+  "sqli": ["includes/legacy.php:18:ser_search_registrations", "includes/legacy.php:30:ser_delete_registration"],
+  "ajax_no_nonce_no_cap": ["includes/legacy.php:43:ser_ajax_export_registrations"],
+  "unescaped_echo": ["includes/legacy.php:54:ser_render_search_box"],
+  "unsanitized_option": ["includes/legacy.php:65:ser_save_settings"],
+  "clean": ["simple-events.php:34:ser_get_registrations_for_event", "simple-events.php:58:ser_render_registration_count",
+            "simple-events.php:76:ser_handle_cancel_registration", "simple-events.php:99:ser_sanitize_settings"],
+  "template": ["templates/settings-page.php:1:<template>"]
+ }
+}

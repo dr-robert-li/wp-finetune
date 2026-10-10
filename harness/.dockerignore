@@ -1,0 +1,13 @@
+.venv
+jobs
+research
+build_notes
+**/__pycache__
+**/*.pyc
+*.egg-info
+.pytest_cache
+tests/fixtures/**/*.zip
+tests/fixtures/**/*.tar.gz
+*.gguf
+*.md
+docker-compose.yml

@@ -1,0 +1,43 @@
+# docker compose up -d   (first run downloads the GGUF into the models volume; up to ~40 min)
+services:
+  llama:
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda13-b11515   # pinned; never server-cuda (no sm_121)
+    entrypoint: ["/bin/sh", "/llama-entrypoint.sh"]
+    environment:
+      WPJUDGE_MODEL_FILE: ${WPJUDGE_MODEL_FILE:-wp-judge-v4-pruned-k224.IQ4_XS.gguf}
+      LLAMA_PARALLEL: ${LLAMA_PARALLEL:-4}
+    volumes:
+      - models:/models
+      - ./docker/llama-entrypoint.sh:/llama-entrypoint.sh:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40m
+      start_interval: 10s
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: all, capabilities: [gpu]}]
+    restart: unless-stopped
+
+  harness:
+    build: {context: ., target: harness}
+    image: wpjudge:harness
+    depends_on:
+      llama: {condition: service_healthy}
+    environment:
+      WPJUDGE_BASE_URL: http://llama:8080/v1
+      WPJUDGE_MODEL_FILE: ${WPJUDGE_MODEL_FILE:-wp-judge-v4-pruned-k224.IQ4_XS.gguf}
+      WPJUDGE_WORKERS: ${LLAMA_PARALLEL:-4}
+      WPJUDGE_API_KEY: ${WPJUDGE_API_KEY:-}
+    volumes:
+      - jobs:/data/jobs
+    ports:
+      - "127.0.0.1:8000:8000"
+    restart: unless-stopped
+
+volumes:
+  models:
+  jobs:
