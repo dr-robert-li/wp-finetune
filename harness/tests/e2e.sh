@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Phase 5 integration + functional suite (PLAN.md phase 5, binding changes 1-3, 8, 12-15).
-# Usage: tests/e2e.sh <section>...   sections: cli malicious serverdown api allinone library parity real prerun | all
-# Env knobs: GGUF (host model file), LLAMA_BIN, PORT (host server, 8097), HOST_PARALLEL (4), WORK (scratch dir),
-#            API_PORT (8000, compose), AIO_PORT (8001), PARITY_PORT (8098), JOB_TIMEOUT (secs, 1800)
+# Usage: tests/e2e.sh <section>...   sections: cli malicious serverdown api allinone library parity real determinism prerun | all
+# Env knobs: GGUF (host model file), LLAMA_BIN, PORT (host server, 8097), HOST_PARALLEL (1), WORK (scratch dir),
+#            API_PORT (8000, compose), AIO_PORT (8001), PARITY_PORT (8098), DET_PORT (8099), JOB_TIMEOUT (secs, 1800)
 # GPU sections start the host llama-server only if nothing answers on PORT, and stop it before docker sections.
 set -uo pipefail
 
@@ -19,7 +19,8 @@ MODEL_FILE=$(basename "$GGUF")
 LLAMA_BIN=${LLAMA_BIN:-$HOME/work/llama.cpp/build/bin/llama-server}
 PORT=${PORT:-8097}
 BASE=http://127.0.0.1:$PORT/v1
-HOST_PARALLEL=${HOST_PARALLEL:-4}
+HOST_PARALLEL=${HOST_PARALLEL:-1}  # serial decoding is the only reproducible mode (T5)
+DET_PORT=${DET_PORT:-8099}
 API_PORT=${API_PORT:-8000}
 AIO_PORT=${AIO_PORT:-8001}
 PARITY_PORT=${PARITY_PORT:-8098}
@@ -150,6 +151,14 @@ def cmd_fixture(exp, *reports):  # schema + units/skips + recompute for API / li
         schema(r, tag); fixture_units(r, tag, exp); recompute(r, tag)
         ok(not r["summary"]["coverage"]["low_coverage"], f"{tag}: coverage {r['summary']['coverage']['pct']}% >= 90")
 
+def same(a, b, msg):  # T5: exact equality on per-unit scores/verdicts, summary score+cap, dimensions
+    def key(r):
+        return ({i: (f["overall_score"], f["scores"], f["verdict"]) for i, f in byid(r).items()},
+                {k: r["summary"][k] for k in ("overall_score", "overall_score_uncapped", "cap_reasons")}, r["dimensions"])
+    ka, kb = key(a), key(b)
+    diff = sorted(i for i in ka[0].keys() | kb[0].keys() if ka[0].get(i) != kb[0].get(i))
+    ok(ka == kb, f"{msg}: exactly equal (units differing {diff}; summary equal {ka[1] == kb[1]}; dimensions equal {ka[2] == kb[2]})")
+
 def cmd_golden(exp, pre, rdir, rzip, rtgz, rw4):
     exp, pre = load(exp), load(pre)
     R = {"dir": load(rdir), "zip": load(rzip), "tgz": load(rtgz)}
@@ -160,14 +169,11 @@ def cmd_golden(exp, pre, rdir, rzip, rtgz, rw4):
     ok(R["dir"]["target"]["files_scanned"] == R["zip"]["target"]["files_scanned"] == R["tgz"]["target"]["files_scanned"],
        f"dir/zip/tgz: files_scanned agree ({R['dir']['target']['files_scanned']})")
     ok(R["zip"]["target"]["sha256"] != "" and R["dir"]["target"]["sha256"] == "", "sha256: archive set, dir empty")
-    a = byid(R["dir"])
-    for tag in ("zip", "tgz"):
-        b = byid(R[tag])
-        d = max([abs(a[i]["overall_score"] - b[i]["overall_score"]) for i in a if i in b
-                 and a[i]["overall_score"] is not None and b[i]["overall_score"] is not None], default=0)
-        ok(d <= 6, f"dir vs {tag} (workers=1): max |d overall| = {d} <= 6")
-    b = byid(w4)
-    ok(bool(a) and all(a[i]["verdict"] == b.get(i, {}).get("verdict") for i in a), "workers=4 vs workers=1: verdicts equal")
+    same(R["dir"], R["zip"], "dir vs zip"); same(R["dir"], R["tgz"], "dir vs tgz"); same(R["dir"], w4, "workers=4 vs workers=1")
+    for tag, r in list(R.items()) + [("w4", w4)]:
+        m = r["model"]
+        ok(m.get("server_slots") == 1 and m.get("reproducible") is True,
+           f"{tag}: model.server_slots == 1 and reproducible (got {m.get('server_slots')}, {m.get('reproducible')})")
     g = exp["groups"]
     planted = [i for k in ("sqli", "ajax_no_nonce_no_cap", "unescaped_echo", "unsanitized_option") for i in g[k]]
     pre_by = {u["id"]: u for u in pre["units"]}
@@ -182,6 +188,15 @@ def cmd_golden(exp, pre, rdir, rzip, rtgz, rw4):
         ok(not bad, f"{tag}: every planted < every clean; planted {[f[p]['overall_score'] for p in planted]} "
                     f"clean {[f[c]['overall_score'] for c in g['clean']]} violations {bad}")
         ok(any(x["dimension"] in CAP_DIMS for x in r["anti_patterns"]), f"{tag}: anti_patterns include security/sql_safety")
+
+def cmd_determinism(rdir, rw4, rw1):  # rw4/rw1: same --parallel 4 server
+    g, w4, w1 = load(rdir), load(rw4), load(rw1)
+    m = w4["model"]
+    ok(m.get("server_slots") == 4 and m.get("workers") == 4 and m.get("reproducible") is False,
+       f"determinism w4 on -np 4: server_slots 4, workers 4, reproducible false (got {m})")
+    m = w1["model"]
+    ok(m.get("server_slots") == 4 and m.get("reproducible") is True, f"determinism w1 on -np 4: reproducible true (got {m})")
+    same(g, w1, "determinism: w1 on -np 4 vs golden r_dir (-np 1)")
 
 def cmd_serverdown(exp, rep):
     exp, r = load(exp), load(rep)
@@ -353,6 +368,31 @@ for name, p in (("lib_dir", fix), ("lib_zip", z)):
 EOF
   expect "library: scan() ran" test -s "$WORK/lib_zip.json"
   chk fixture "$EXP" "$WORK/lib_dir.json" "$WORK/lib_zip.json"
+}
+
+sec_determinism() {  # T5: slot count alone does not move scores; concurrent decoding is flagged
+  note "== determinism (T5)"
+  [ -s "$WORK/r_dir.json" ] || { fail "determinism: $WORK/r_dir.json missing; run the cli section first (same WORK)"; return; }
+  host_down
+  curl -fs "127.0.0.1:$DET_PORT/health" >/dev/null && { fail "determinism: port $DET_PORT already in use"; return; }
+  local base=http://127.0.0.1:$DET_PORT/v1 up=""
+  "$LLAMA_BIN" -m "$GGUF" --host 127.0.0.1 --port "$DET_PORT" -ngl 999 --jinja \
+    --chat-template-kwargs '{"enable_thinking": false}' --parallel 4 -c $((4 * 8192)) >"$WORK/llama-det.log" 2>&1 &
+  HOST_PID=$!  # own server on DET_PORT; HOST_PID so host_down and the EXIT trap stop it
+  for _ in $(seq 300); do curl -fs "127.0.0.1:$DET_PORT/health" >/dev/null && up=1 && break; sleep 2; done
+  if [ -n "$up" ]; then
+    # w1 first: slots reused from a concurrent run keep batch-variant KV (cache_prompt) and can move a w1 score
+    "$WJ" scan "$FIX" -o "$WORK/det_w1.json" --workers 1 --base-url "$base" --model-file "$MODEL_FILE" 2>"$WORK/det_w1.err"
+    expect "determinism w1: exit 0" test $? -eq 0
+    expect "determinism w1: no warning" bash -c "! grep -q WARNING '$WORK/det_w1.err'"
+    "$WJ" scan "$FIX" -o "$WORK/det_w4.json" --workers 4 --base-url "$base" --model-file "$MODEL_FILE" 2>"$WORK/det_w4.err"
+    expect "determinism w4: exit 0" test $? -eq 0
+    expect "determinism w4: stderr warns not reproducible" grep -q "WARNING.*reproducible" "$WORK/det_w4.err"
+    chk determinism "$WORK/r_dir.json" "$WORK/det_w4.json" "$WORK/det_w1.json"
+  else
+    fail "determinism: --parallel 4 server not healthy (see $WORK/llama-det.log)"
+  fi
+  host_down
 }
 
 sec_real() {
@@ -527,11 +567,11 @@ sec_allinone() {
 }
 
 [ $# -eq 0 ] && { sed -n '2,6p' "$0"; exit 2; }
-[ "$1" = all ] && set -- malicious serverdown cli library real parity api allinone
+[ "$1" = all ] && set -- malicious serverdown cli library real determinism parity api allinone
 note "== wpjudge e2e $(date -Is) WORK=$WORK model=$MODEL_FILE"
 for s in "$@"; do
   case $s in
-    cli | malicious | serverdown | api | allinone | library | parity | real | prerun) "sec_$s";;
+    cli | malicious | serverdown | api | allinone | library | parity | real | determinism | prerun) "sec_$s";;
     *) fail "unknown section $s";;
   esac
 done

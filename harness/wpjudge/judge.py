@@ -2,6 +2,7 @@
 import json
 import re
 import sys
+import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional
 
@@ -145,7 +146,17 @@ def judge_one(client, model, unit, max_tokens=2048):
             "scores": {}, "critique": "", "raw": raw, "error": err}
 
 
-def judge_units(units, base_url, model, workers=4, on_result=None, max_tokens=2048):
+def server_slots(base_url):
+    """llama-server slot count from GET <root>/props (total_slots), or None on any error."""
+    try:
+        with urllib.request.urlopen(re.sub(r"/v1/?$", "", base_url.rstrip("/")) + "/props", timeout=5) as r:
+            n = json.load(r).get("total_slots")
+        return n if type(n) is int else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def judge_units(units, base_url, model, workers=1, on_result=None, max_tokens=2048):
     """Judge every unit concurrently; on_result(judgment) fires per finished unit. Returns judgments sorted by id."""
     client = OpenAI(base_url=base_url, api_key="none", timeout=600, max_retries=0)
     out = []

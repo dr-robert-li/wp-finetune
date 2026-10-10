@@ -23,7 +23,7 @@ def test_loc_weighting_no_cap():
     assert s["overall_score"] == s["overall_score_uncapped"] == 80.0   # (90*30+50*10)/40
     assert not s["capped"] and s["cap_reasons"] == []
     assert r["target"] == {"name": "p", "type": "plugin", "files_scanned": 3, "sha256": "abc"}
-    assert r["model"] == MODEL and r["schema_version"] == "1.0"
+    assert r["model"].items() >= MODEL.items() and r["schema_version"] == "1.0"
 
 
 def test_cap_and_files_scanned_arg():
