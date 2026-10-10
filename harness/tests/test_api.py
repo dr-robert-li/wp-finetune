@@ -2,6 +2,7 @@
 import http.server
 import json
 import os
+import socket
 import threading
 import time
 
@@ -119,6 +120,7 @@ def test_webhook_delivered(env):
 
     srv = http.server.HTTPServer(("127.0.0.1", 0), H)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
+    api.CFG.webhook_allow_nets = ("127.0.0.0/8",)  # loopback is blocked by default
     try:
         with TestClient(api.app) as c:
             jid = submit(c, webhook_url=f"http://127.0.0.1:{srv.server_port}/hook").json()["job_id"]
@@ -130,6 +132,84 @@ def test_webhook_delivered(env):
         assert got and got[0]["summary"]["overall_score"] == 80
     finally:
         srv.shutdown()
+
+
+BLOCKED = ["http://127.0.0.1/", "http://localhost/", "http://2130706433/", "http://0x7f.1/", "http://0177.0.0.1/",
+           "http://0.0.0.0/", "http://[::1]/", "http://[::ffff:127.0.0.1]/", "http://[fd00::1]/", "http://[fe80::1]/",
+           "http://10.0.0.1/", "http://192.168.1.1/", "http://169.254.169.254/latest/meta-data/", "http://[fd00:ec2::254]/",
+           "http://100.64.0.1/", "http://224.0.0.1/", "http://[64:ff9b::7f00:1]/", "http://evil@127.0.0.1/", "http://h:99999/"]
+
+
+def test_webhook_internal_rejected(env):
+    with TestClient(api.app) as c:
+        for url in BLOCKED:
+            assert submit(c, webhook_url=url).status_code == 400, url
+        assert os.listdir(api.CFG.jobs_dir) == []
+
+
+def test_webhook_public_allowed():
+    for url in ("http://93.184.215.14/h", "https://[2606:4700:4700::1111]/h"):
+        assert api.webhook_target(url)[2] in url
+
+
+def test_webhook_allow_nets(env):
+    api.CFG.webhook_allow_nets = ("127.0.0.0/8",)
+    with TestClient(api.app) as c:
+        for ok in ("http://127.0.0.1:9/h", "http://[::ffff:127.0.0.1]:9/h"):
+            r = submit(c, webhook_url=ok)
+            assert r.status_code == 202, ok
+            wait(c, r.json()["job_id"], "done")
+        for bad in ("http://169.254.169.254/", "http://224.0.0.1/", "http://10.0.0.1/"):
+            assert submit(c, webhook_url=bad).status_code == 400, bad  # allowlist is not "allow all"
+
+
+def test_webhook_rebind_pinned(monkeypatch):
+    """answer 1 public, answer 2 loopback: the send must connect to the IP it checked."""
+    real, n, seen = socket.getaddrinfo, [0], []
+
+    def gai(h, p, *a, **k):
+        n[0] += 1
+        return real("93.184.215.14" if n[0] == 1 else "127.0.0.1", p, *a, **k)
+
+    def conn(addr, *a):
+        seen.append(addr[0])
+        raise OSError("stop")
+    monkeypatch.setattr(api.socket, "getaddrinfo", gai)
+    monkeypatch.setattr(api.socket, "create_connection", conn)
+    monkeypatch.setattr(api.time, "sleep", lambda s: None)
+    api.webhook("http://rebind.test/h", {})
+    assert n[0] == 2 and seen == ["93.184.215.14"]  # 2nd attempt re-resolves -> loopback -> blocked, not sent
+
+
+def test_webhook_no_redirect(env):
+    api.CFG.webhook_allow_nets = ("127.0.0.0/8",)
+    hits = {"A": 0, "B": 0}
+
+    def handler(name, status, loc=None):
+        class H(http.server.BaseHTTPRequestHandler):
+            def do_POST(self):
+                hits[name] += 1
+                self.rfile.read(int(self.headers["Content-Length"]))
+                self.send_response(status)
+                if loc:
+                    self.send_header("Location", loc)
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+
+            def log_message(self, *a):
+                pass
+        return H
+
+    b = http.server.HTTPServer(("127.0.0.1", 0), handler("B", 200))
+    a = http.server.HTTPServer(("127.0.0.1", 0), handler("A", 307, f"http://127.0.0.1:{b.server_port}/x"))
+    for s in (a, b):
+        threading.Thread(target=s.serve_forever, daemon=True).start()
+    try:
+        api.webhook(f"http://127.0.0.1:{a.server_port}/hook", {"x": 1})
+        assert hits == {"A": 1, "B": 0}
+    finally:
+        a.shutdown()
+        b.shutdown()
 
 
 def test_queue_order_and_partial_results(env):
