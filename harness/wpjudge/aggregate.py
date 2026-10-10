@@ -48,14 +48,27 @@ def rank(judged, lo=4, hi=8, top=10):
     return anti, pat
 
 
-def _row(j):
-    return {k: v for k, v in j.items() if k not in ("code", "raw")}
+def _row(j, cfg):
+    """T4 (R4, PLAN D2): review leads only; they never change the score or the cap."""
+    r = {k: v for k, v in j.items() if k not in ("code", "raw")}
+    prose, why = r.setdefault("prose_scores", {}), []
+    if j["status"] == "judged":
+        p = r.setdefault("verdict_p", None)
+        if p is not None and p < cfg.min_verdict_p:
+            why.append("verdict_p")
+        low = lambda x: isinstance(x, (int, float)) and x <= cfg.cap_threshold  # None / N/A / absent = above
+        if any(low(prose.get(d)) != low(j["scores"].get(d)) for d in cfg.cap_dims):
+            why.append("prose_disagrees")
+    else:
+        r["verdict_p"] = None
+    return {**r, "confidence_reasons": why, "low_confidence": bool(why)}
 
 
 def _skip_row(s):
     return {"file": s["file"], "line": s["line"], "name": s["name"], "loc": 0, "truncated": False,
             "status": "skipped", "reason": s["reason"], "verdict": None, "overall_score": None,
-            "scores": {}, "critique": ""}
+            "scores": {}, "critique": "", "verdict_p": None, "prose_scores": {},
+            "confidence_reasons": [], "low_confidence": False}
 
 
 def build_report(target_meta, model_meta, judgments, skips, cfg, files_scanned=None):
@@ -88,6 +101,7 @@ def build_report(target_meta, model_meta, judgments, skips, cfg, files_scanned=N
     anti, pat = rank(judged)
     worst = sorted(judged, key=lambda j: (j["overall_score"], j["id"]))[:10]
 
+    rows = [_row(j, cfg) for j in judgments] + [_skip_row(s) for s in skips]
     if files_scanned is None:
         files_scanned = target_meta.get("files_scanned", 0)
     return {
@@ -102,11 +116,12 @@ def build_report(target_meta, model_meta, judgments, skips, cfg, files_scanned=N
             "coverage": {"units": n_units, "judged": len(judged), "unjudged": n_units - len(judged),
                          "skipped": len(skips), "pct": pct,
                          "low_coverage": not judged or pct < cfg.coverage_threshold},
+            "low_confidence": sum(r["low_confidence"] for r in rows),
         },
         "dimensions": dims,
         "anti_patterns": anti,
         "patterns": pat,
         "worst_functions": [{"file": j["file"], "line": j["line"], "name": j["name"],
                              "overall_score": j["overall_score"], "verdict": j["verdict"]} for j in worst],
-        "functions": [_row(j) for j in judgments] + [_skip_row(s) for s in skips],
+        "functions": rows,
     }

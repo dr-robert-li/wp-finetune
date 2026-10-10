@@ -143,11 +143,40 @@ def fixture_units(r, tag, exp):
        f"{tag}: skip counts exact {exp['skip_counts']}")
     ok(r["target"]["files_scanned"] == exp["php_files"], f"{tag}: files_scanned {r['target']['files_scanned']} == {exp['php_files']}")
 
+def confidence(r, tag, exp=None, soft=False):  # WS-C: T2b header sync + T4 confidence fields
+    import os
+    from wpjudge.aggregate import DIM, build_report
+    from wpjudge.config import load as cfg_load
+    fs = r["functions"]; J = [f for f in fs if f["status"] == "judged"]
+    bad = [(f["id"], lab, a or b) for f in J for lab, a, b, _ in DIM.findall(f["critique"])
+           if (a or b) != str(f["scores"].get(lab.lower().replace(" ", "_")))]
+    ok(not bad, f"{tag}: every critique header number == scores[d] or None (bad {bad[:3]})")
+    vp = [f.get("verdict_p") for f in J]
+    ok(all(isinstance(p, (int, float)) and 0 <= p <= 1 for p in vp), f"{tag}: every judged row 0 <= verdict_p <= 1 "
+       f"(null {vp.count(None)}, min {min([p for p in vp if p is not None], default=None)})")
+    n = sum(f.get("low_confidence") is True for f in fs)
+    ok(all(isinstance(f.get("low_confidence"), bool) and isinstance(f.get("confidence_reasons"), list) for f in fs)
+       and r["summary"].get("low_confidence") == n, f"{tag}: summary.low_confidence == rows flagged ({n}/{len(J)} judged)")
+    os.environ["WPJUDGE_MIN_VERDICT_P"] = "0"
+    try: cfg = cfg_load()
+    finally: del os.environ["WPJUDGE_MIN_VERDICT_P"]
+    sk = [{k: f[k] for k in ("file", "line", "name", "reason")} for f in fs if f["status"] == "skipped"]
+    r0 = build_report(r["target"], r["model"], [f for f in fs if f["status"] != "skipped"], sk, cfg)
+    ok(cfg.min_verdict_p == 0 and not any("verdict_p" in f["confidence_reasons"] for f in r0["functions"]),
+       f"{tag}: WPJUDGE_MIN_VERDICT_P=0 -> no row has the verdict_p reason")
+    if exp:
+        g = exp["groups"]
+        planted = {i for k in ("sqli", "ajax_no_nonce_no_cap", "unescaped_echo", "unsanitized_option") for i in g[k]}
+        ids = {x["id"] for x in r["summary"]["cap_reasons"]}
+        msg = f"{tag}: cap_reasons ids == the 5 planted bugs (extra {sorted(ids - planted)}, missing {sorted(planted - ids)})"
+        print("WARN " + msg) if soft and ids != planted else ok(ids == planted, msg)
+
 def cmd_fixture(exp, *reports):  # schema + units/skips + recompute for API / library / allinone reports
     exp = load(exp)
     for p in reports:
         r = load(p); tag = Path(p).name
         schema(r, tag); fixture_units(r, tag, exp); recompute(r, tag)
+        confidence(r, tag, exp, soft=tag.startswith(("api", "aio")))  # soft until a serial b11515 run is recorded
         ok(not r["summary"]["coverage"]["low_coverage"], f"{tag}: coverage {r['summary']['coverage']['pct']}% >= 90")
 
 def cmd_golden(exp, pre, rdir, rzip, rtgz, rw4):
@@ -200,6 +229,12 @@ def cmd_real(rep, name, exp_units, kind, wall):
     print(f"INFO {tag}: units {c['units']} (plan said {exp_units}), skipped {c['skipped']}, wall {wall}s, "
           f"overall {r['summary']['overall_score']} capped {r['summary']['capped']}")
     if c["units"] != int(exp_units): print(f"WARN {tag}: unit count differs from plan reference {exp_units}")
+    confidence(r, tag)
+    if name == "classic-editor":
+        h = [f for f in r["functions"] if f["name"].endswith("add_redirect_helper")]
+        print(("INFO " if h and all("prose_disagrees" in f.get("confidence_reasons", []) for f in h) else "WARN ")
+              + f"{tag}: add_redirect_helper prose_disagrees {[f.get('confidence_reasons') for f in h]}")
+    print(f"INFO {tag}: low_confidence {r['summary'].get('low_confidence')}/{c['judged']} judged units")
     by = {}
     for f in r["functions"]:
         if f["status"] == "judged": by.setdefault("template" if f["kind"] == "template" else "function", []).append(f)
@@ -305,6 +340,7 @@ sec_cli() {
   "$WJ" scan "$FIX" -o "$WORK/r_w4.json" --workers 4 --base-url "$BASE" --model-file "$MODEL_FILE" 2>/dev/null
   expect "cli dir workers=4: exit 0" test $? -eq 0
   chk golden "$EXP" "$PRE" "$WORK/r_dir.json" "$WORK/r_zip.json" "$WORK/r_tgz.json" "$WORK/r_w4.json"
+  chk fixture "$EXP" "$WORK/r_dir.json" "$WORK/r_zip.json" "$WORK/r_tgz.json"  # WS-C hard checks (serial runs only)
   expect "cli: report model.file is --model-file" test "$(jq -r .model.file "$WORK/r_dir.json")" = "$MODEL_FILE"
   "$WJ" scan "$FIX" --workers 1 --base-url "$BASE" >"$WORK/r_stdout.json" 2>/dev/null
   expect "cli: no -o writes the report to stdout" jq -e '.schema_version == "1.0"' "$WORK/r_stdout.json"

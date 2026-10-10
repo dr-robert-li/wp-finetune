@@ -1,11 +1,14 @@
 """Units -> judgments via the wp-judge model behind an OpenAI-compatible server (llama-server)."""
 import json
+import math
 import re
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional
 
 from openai import OpenAI
+
+from .aggregate import DIM
 
 PROMPT = "<wp_judge> Evaluate this WordPress code:\n\n```php\n{code}\n```"  # training format, no system prompt
 
@@ -20,7 +23,7 @@ def _judge_create(client, *, model, messages, max_tokens=2048, temperature=0.0):
         try:
             return client.chat.completions.create(
                 model=model, messages=messages, max_tokens=max_tokens,
-                temperature=temperature,
+                temperature=temperature, logprobs=True,
                 extra_body={"chat_template_kwargs": {"enable_thinking": False}},
             )
         except Exception as e:  # noqa: BLE001
@@ -33,7 +36,7 @@ def _judge_create(client, *, model, messages, max_tokens=2048, temperature=0.0):
             else:
                 raise
     return client.chat.completions.create(
-        model=model, messages=messages, max_tokens=max_tokens, temperature=temperature)
+        model=model, messages=messages, max_tokens=max_tokens, temperature=temperature, logprobs=True)
 
 
 # Copied verbatim from eval/eval_judge.py:310-383.
@@ -113,7 +116,20 @@ def parse_judge_response(response: str) -> Optional[dict]:
     return None
 
 
-def to_judgment(unit, raw, attempts):
+def _sync_headers(critique, scores):
+    """T2b: prose header numbers are stale severity buckets (R2); keep them as prose_scores, rewrite from JSON."""
+    prose = {}
+
+    def fix(m):
+        d = m.group(1).lower().replace(' ', '_')
+        n = m.group(2) or m.group(3)
+        prose.setdefault(d, int(n) if n.isdigit() else None)
+        end = m.end(2) + 3 if m.group(2) else m.end(3) + 4      # past "/10" or "/10)"
+        return f"{m.group(1)}: score {scores.get(d)}/10" + m.string[end:m.end()]
+    return DIM.sub(fix, critique), prose
+
+
+def to_judgment(unit, raw, attempts, verdict_p=None):
     """Raw model text -> judged Judgment, or None if unusable (no JSON or no numeric overall_score)."""
     j = parse_judge_response(raw)
     if not isinstance(j, dict) or not isinstance(j.get("overall_score"), (int, float)) \
@@ -122,10 +138,27 @@ def to_judgment(unit, raw, attempts):
     scores = {k: int(v) for k, v in j.items()  # A5: scores only from the JSON, never the prose
               if k not in ("verdict", "overall_score") and isinstance(v, (int, float))
               and not isinstance(v, bool) and float(v).is_integer()}
+    critique, prose = _sync_headers(re.split(r"\[/REASONING\]|<judge_output>", raw, maxsplit=1)[0].strip(), scores)
     return {**unit, "status": "judged", "attempts": attempts, "verdict": j.get("verdict"),
-            "overall_score": int(round(j["overall_score"])), "scores": scores,
-            "critique": re.split(r"\[/REASONING\]|<judge_output>", raw, maxsplit=1)[0].strip(),
-            "raw": raw, "error": None}
+            "overall_score": int(round(j["overall_score"])), "scores": scores, "verdict_p": verdict_p,
+            "prose_scores": prose, "critique": critique, "raw": raw, "error": None}
+
+
+def verdict_prob(choice):
+    """T4: p of the first non-blank, non-quote token after "verdict": inside <judge_output>; None if absent."""
+    toks = getattr(getattr(choice, "logprobs", None), "content", None) or []
+    starts, text = [], ""
+    for t in toks:
+        starts.append(len(text))
+        text += t.token
+    i = text.find("<judge_output>")
+    m = re.compile(r'"verdict"\s*:').search(text, i) if i >= 0 else None
+    if not m:
+        return None
+    for p, t in zip(starts, toks):
+        if p + len(t.token) > m.end() and t.token[max(0, m.end() - p):].strip(' \t\r\n"'):
+            return round(math.exp(t.logprob), 3)
+    return None
 
 
 def judge_one(client, model, unit, max_tokens=2048):
@@ -135,7 +168,7 @@ def judge_one(client, model, unit, max_tokens=2048):
             r = _judge_create(client, model=model, max_tokens=max_tokens,
                               messages=[{"role": "user", "content": PROMPT.format(code=unit["code"])}])
             raw = r.choices[0].message.content or ""
-            j = to_judgment(unit, raw, attempt)
+            j = to_judgment(unit, raw, attempt, verdict_prob(r.choices[0]))
             if j:
                 return j
             err = "parse_failure"

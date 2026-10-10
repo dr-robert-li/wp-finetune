@@ -93,4 +93,43 @@ def test_worst_ties_and_rows():
     assert len(f) == 14 and all("code" not in x and "raw" not in x for x in f)
     assert {"id", "kind", "end_line", "attempts", "error", "loc", "truncated", "critique"} <= set(f[0])
     assert f[-1] == {"file": "t/x.php", "line": 3, "name": "tiny", "loc": 0, "truncated": False, "status": "skipped",
-                     "reason": "tiny", "verdict": None, "overall_score": None, "scores": {}, "critique": ""}
+                     "reason": "tiny", "verdict": None, "overall_score": None, "scores": {}, "critique": "",
+                     "verdict_p": None, "prose_scores": {}, "confidence_reasons": [], "low_confidence": False}
+
+
+def _conf(prose, scores, vp=None, cfg=CFG):
+    j = J("a.php:1:f", 70, scores=scores)
+    j.update(prose_scores=prose, verdict_p=vp)
+    return build_report(META, MODEL, [j], [], cfg)["functions"][0]["confidence_reasons"]
+
+
+def test_prose_disagrees():
+    assert _conf({"security": 4}, {"security": 6}) == ["prose_disagrees"]
+    assert _conf({"security": 4}, {"security": 4}) == []
+    assert _conf({"sql_safety": 4}, {}) == ["prose_disagrees"]          # JSON absent counts as above
+    assert _conf({"security": None}, {"security": 3}) == ["prose_disagrees"]
+    assert _conf({"performance": 2}, {"performance": 8}) == []          # not a cap dim
+    t5 = Config(cap_threshold=5)
+    assert _conf({"security": 5}, {"security": 6}, cfg=t5) == ["prose_disagrees"]
+    assert _conf({"security": 4}, {"security": 5}, cfg=t5) == []
+
+
+def test_cap_ignores_prose():
+    j = J("a.php:1:f", 70, scores={"security": 6}, critique="Security: score 6/10 — fine")
+    j["prose_scores"] = {"security": 4}
+    s = build_report(META, MODEL, [j], [], CFG)["summary"]
+    assert not s["capped"] and s["cap_reasons"] == [] and s["low_confidence"] == 1
+
+
+def test_verdict_p_confidence():
+    assert _conf({}, {}, vp=0.85) == ["verdict_p"]
+    assert _conf({}, {}, vp=0.95) == [] and _conf({}, {}, vp=None) == []
+    assert _conf({}, {}, vp=0.1, cfg=Config(min_verdict_p=0)) == []
+    a, b = J("a.php:1:f", 70), J("a.php:5:g", 70)
+    a["verdict_p"], b["verdict_p"] = 0.5, 0.99
+    r = build_report(META, MODEL, [a, b, J("a.php:9:u", None, status="unjudged")],
+                     [{"file": "t/x.php", "line": 3, "name": "tiny", "reason": "tiny"}], CFG)
+    f = r["functions"]
+    assert r["summary"]["low_confidence"] == 1 == sum(x["low_confidence"] for x in f)
+    assert [x["low_confidence"] for x in f] == [True, False, False, False]
+    assert all(x["verdict_p"] is None and x["confidence_reasons"] == [] for x in f[2:])
