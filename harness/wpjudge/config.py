@@ -12,7 +12,9 @@ class Config:
     workers: int = 4
     # aggregation (R2.1, R2.3)
     cap_dims: tuple = ("security", "sql_safety")
-    cap_threshold: int = 4      # a cap dim scored <= this triggers the cap
+    cap_threshold: int = 4      # a cap dim scored <= this triggers the cap; also the low_rate/anti-pattern bound.
+                                # Keep 4: 7 of 8 planted-bug cap reasons sit at exactly 4, so 3 misses most (v11_r2 §a)
+    pattern_min: int = 8        # rank(): a dim scored >= this counts as a pattern
     cap_value: float = 60
     coverage_threshold: float = 90
     # extraction (A3, binding change 15)
