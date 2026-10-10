@@ -1,7 +1,7 @@
 # Handover: WP Judge harness build (2026-10-10)
 
 **State:** ALL PHASES DONE (1-6). Phase 5: EVAL_PHASE5 PASS WITH NOTES (parity limit widened to ≤ 8 by the user). Phase 6: EVAL_W7 PASS (round 2). Committed and pushed 2026-10-10. Follow-ups (optional): webhook host check (SSRF), auth on /docs, low_rate tied to cap threshold, warning when prose and score disagree, TOPICS lexicon gaps ("other").
-Commit: see git log (feat(harness)).
+v1.1: research done (research/v11_r1..r5). Locked plan in PLAN_v1.1.md "Phase 2 lock", evaluated over 3 rounds (build_notes/EVAL_V11_PLAN.md); the round-3 fixes are applied. NEXT: user sign-off, then follow the worktree setup in the plan, run builders A to D in parallel worktrees with an evaluator each, merge A→B→C→D, then WS-E live E2E, then WS-F docs plus a doc evaluator, then commit.
 
 ## Read first (in order)
 1. `SPEC.md`: decisions R1.1–R3.3, amendments A1–A6, report schema v1 (accepted).
