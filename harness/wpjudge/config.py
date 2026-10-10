@@ -17,6 +17,7 @@ class Config:
     pattern_min: int = 8        # rank(): a dim scored >= this counts as a pattern
     cap_value: float = 60
     coverage_threshold: float = 90
+    min_verdict_p: float = 0.9  # T4: verdict-token p below this marks a row low_confidence; 0 disables
     # extraction (A3, binding change 15)
     max_chars: int = 15000
     templates: bool = True
