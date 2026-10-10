@@ -137,7 +137,8 @@ def test_webhook_delivered(env):
 BLOCKED = ["http://127.0.0.1/", "http://localhost/", "http://2130706433/", "http://0x7f.1/", "http://0177.0.0.1/",
            "http://0.0.0.0/", "http://[::1]/", "http://[::ffff:127.0.0.1]/", "http://[fd00::1]/", "http://[fe80::1]/",
            "http://10.0.0.1/", "http://192.168.1.1/", "http://169.254.169.254/latest/meta-data/", "http://[fd00:ec2::254]/",
-           "http://100.64.0.1/", "http://224.0.0.1/", "http://[64:ff9b::7f00:1]/", "http://evil@127.0.0.1/", "http://h:99999/"]
+           "http://100.64.0.1/", "http://224.0.0.1/", "http://[64:ff9b::7f00:1]/", "http://evil@127.0.0.1/", "http://h:99999/",
+           "http://[::127.0.0.1]/", "http://[::ffff:0:7f00:1]/"]  # v4-compatible, SIIT
 
 
 def test_webhook_internal_rejected(env):
@@ -161,6 +162,14 @@ def test_webhook_allow_nets(env):
             wait(c, r.json()["job_id"], "done")
         for bad in ("http://169.254.169.254/", "http://224.0.0.1/", "http://10.0.0.1/"):
             assert submit(c, webhook_url=bad).status_code == 400, bad  # allowlist is not "allow all"
+
+
+def test_webhook_allow_nets_host_bits():
+    api.CFG.webhook_allow_nets = ("127.0.0.1/8",)  # host bits set: read as 127.0.0.0/8, not a parse error
+    try:
+        assert api.webhook_target("http://127.0.0.1/")[2] == "127.0.0.1"
+    finally:
+        api.CFG.webhook_allow_nets = ()
 
 
 def test_webhook_rebind_pinned(monkeypatch):

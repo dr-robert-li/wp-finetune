@@ -28,7 +28,7 @@ from wpjudge.config import load
 CFG = load()
 SUFFIXES = (".zip", ".tar.gz", ".tgz")
 JOB_ID = re.compile(r"[0-9a-f]{32}")
-NAT64 = ipaddress.ip_network("64:ff9b::/96")
+EMBED_V4 = [ipaddress.ip_network(n) for n in ("64:ff9b::/96", "::/96", "::ffff:0:0:0/96")]  # NAT64, v4-compatible, SIIT
 Q: "queue.Queue[str | None]" = queue.Queue()
 
 
@@ -69,11 +69,11 @@ def webhook_target(url: str):
         infos = socket.getaddrinfo(u.hostname, port, type=socket.SOCK_STREAM)
     except (OSError, UnicodeError) as e:
         raise ValueError(f"webhook host does not resolve: {e}")
-    allow = [ipaddress.ip_network(n) for n in CFG.webhook_allow_nets]
+    allow = [ipaddress.ip_network(n, strict=False) for n in CFG.webhook_allow_nets]
     ips = {ipaddress.ip_address(i[4][0].split("%")[0]) for i in infos}
     for ip in ips:
         ip = getattr(ip, "ipv4_mapped", None) or ip
-        if ip in NAT64:  # 64:ff9b::a.b.c.d reaches a.b.c.d through the gateway
+        if any(ip in n for n in EMBED_V4):  # these forms reach the embedded a.b.c.d
             ip = ipaddress.IPv4Address(int(ip) & 0xFFFFFFFF)
         if (not ip.is_global or ip.is_multicast) and not any(ip in n for n in allow):
             raise ValueError(f"webhook_url resolves to a non-public address ({ip})")
