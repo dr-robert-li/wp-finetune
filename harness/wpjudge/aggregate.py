@@ -162,11 +162,14 @@ def build_report(target_meta, model_meta, judgments, skips, cfg, files_scanned=N
     rows = [_row(j, cfg) for j in judgments] + [_skip_row(s) for s in skips]
     if files_scanned is None:
         files_scanned = target_meta.get("files_scanned", 0)
+    workers, slots = model_meta.get("workers", cfg.workers), model_meta.get("server_slots")
     return {
         "schema_version": "1.0",
         "target": {"name": target_meta.get("name", ""), "type": target_meta.get("type", "plugin"),
                    "files_scanned": files_scanned, "sha256": target_meta.get("sha256", "")},
-        "model": {"file": model_meta.get("file", ""), "base_url": model_meta.get("base_url", "")},
+        "model": {"file": model_meta.get("file", ""), "base_url": model_meta.get("base_url", ""),
+                  "workers": workers, "server_slots": slots,
+                  "reproducible": workers == 1 or slots == 1},  # T5: only serial decoding is deterministic
         "summary": {
             "overall_score": overall, "overall_score_uncapped": uncapped, "capped": capped,
             "cap_reasons": cap_reasons,

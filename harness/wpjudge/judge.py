@@ -3,6 +3,7 @@ import json
 import math
 import re
 import sys
+import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional
 
@@ -12,8 +13,9 @@ from .aggregate import DIM
 
 PROMPT = "<wp_judge> Evaluate this WordPress code:\n\n```php\n{code}\n```"  # training format, no system prompt
 
-# Copied from eval/eval_judge.py _judge_create: if the server template rejects the
-# enable_thinking kwarg, drop it for the rest of the process and warn.
+# Copied from eval/eval_judge.py _judge_create: if the server rejects the llama.cpp
+# extra_body fields, drop them for the rest of the process and warn.
+# cache_prompt False: a reused slot's prompt KV from a concurrent (batched) run moves w1 scores.
 _thinking_kwarg_supported = True
 
 
@@ -24,14 +26,14 @@ def _judge_create(client, *, model, messages, max_tokens=2048, temperature=0.0):
             return client.chat.completions.create(
                 model=model, messages=messages, max_tokens=max_tokens,
                 temperature=temperature, logprobs=True,
-                extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+                extra_body={"chat_template_kwargs": {"enable_thinking": False}, "cache_prompt": False},
             )
         except Exception as e:  # noqa: BLE001
             emsg = str(e).lower()
-            if "enable_thinking" in emsg or "chat_template" in emsg or "template" in emsg:
+            if "template" in emsg or "enable_thinking" in emsg or "cache_prompt" in emsg:
                 _thinking_kwarg_supported = False
-                print("WARNING [wpjudge]: server template rejected chat_template_kwargs "
-                      "enable_thinking=False; dropping it for this process. Unclosed <think> "
+                print("WARNING [wpjudge]: server rejected chat_template_kwargs/cache_prompt; "
+                      "dropping them for this process. Unclosed <think> "
                       "blocks will show up as parse failures.", file=sys.stderr, flush=True)
             else:
                 raise
@@ -178,7 +180,17 @@ def judge_one(client, model, unit, max_tokens=2048):
             "scores": {}, "critique": "", "raw": raw, "error": err}
 
 
-def judge_units(units, base_url, model, workers=4, on_result=None, max_tokens=2048):
+def server_slots(base_url):
+    """llama-server slot count from GET <root>/props (total_slots), or None on any error."""
+    try:
+        with urllib.request.urlopen(re.sub(r"/v1/?$", "", base_url.rstrip("/")) + "/props", timeout=5) as r:
+            n = json.load(r).get("total_slots")
+        return n if type(n) is int else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def judge_units(units, base_url, model, workers=1, on_result=None, max_tokens=2048):
     """Judge every unit concurrently; on_result(judgment) fires per finished unit. Returns judgments sorted by id."""
     client = OpenAI(base_url=base_url, api_key="none", timeout=600, max_retries=0)
     out = []

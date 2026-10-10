@@ -25,7 +25,8 @@ def scan(path, on_result=None, **cfg):
         # llama-server ignores the model name; the file name keeps logs readable
         judgments = judge.judge_units(units, cfg.base_url, cfg.model_file, cfg.workers,
                                       on_result=cb, max_tokens=cfg.max_tokens)
-        model_meta = {"file": cfg.model_file, "base_url": cfg.base_url}
+        model_meta = {"file": cfg.model_file, "base_url": cfg.base_url, "workers": cfg.workers,
+                      "server_slots": judge.server_slots(cfg.base_url)}
         return aggregate.build_report(target_meta, model_meta, judgments, skips, cfg,
                                       files_scanned=files_scanned)
 

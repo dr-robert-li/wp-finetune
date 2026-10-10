@@ -100,7 +100,7 @@ def test_request_shape():
     assert j["attempts"] == 1 and kw["temperature"] == 0 and kw["max_tokens"] == 123 and kw["model"] == "m"
     assert kw["messages"] == [{"role": "user", "content":
                                "<wp_judge> Evaluate this WordPress code:\n\n```php\n<?php function f() {}\n```"}]
-    assert kw["extra_body"] == {"chat_template_kwargs": {"enable_thinking": False}} and kw["logprobs"] is True
+    assert kw["extra_body"] == {"chat_template_kwargs": {"enable_thinking": False}, "cache_prompt": False} and kw["logprobs"] is True
     assert "top_logprobs" not in kw and j["verdict_p"] is None
 
 
@@ -115,6 +115,12 @@ def test_template_rejected_path_sends_logprobs(monkeypatch):
     j = judge.judge_one(c, "m", UNIT)
     assert j["status"] == "judged" and len(c.calls) == 2
     assert c.calls[1]["logprobs"] is True and "extra_body" not in c.calls[1]
+
+
+def test_cache_prompt_rejected_falls_back(monkeypatch):
+    monkeypatch.setattr(judge, "_thinking_kwarg_supported", True)
+    c = Stub([ValueError("Unrecognized request argument supplied: cache_prompt"), raw("score_format_0")])
+    assert judge.judge_one(c, "m", UNIT)["status"] == "judged" and "extra_body" not in c.calls[1]
 
 
 def test_retry_after_unparseable_then_ok():

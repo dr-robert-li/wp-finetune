@@ -9,7 +9,7 @@ class Config:
     base_url: str = "http://127.0.0.1:8080/v1"
     model_file: str = "wp-judge-v4-pruned-k224.IQ4_XS.gguf"
     max_tokens: int = 2048
-    workers: int = 4
+    workers: int = 1           # >1 needs server --parallel >1: faster, but scores are not reproducible (T5)
     # aggregation (R2.1, R2.3)
     cap_dims: tuple = ("security", "sql_safety")
     cap_threshold: int = 4      # a cap dim scored <= this triggers the cap; also the low_rate/anti-pattern bound.

@@ -27,13 +27,18 @@ def main(argv=None):
 
     def progress(j, done, total):
         if j is None:
-            print(f"{total} units, ETA ~{total / 11:.1f} min", file=sys.stderr, flush=True)
+            print(f"{total} units, ETA ~{total / 5.5:.1f} min", file=sys.stderr, flush=True)
 
     try:
         report = scan(a.path, on_result=progress, workers=a.workers, base_url=a.base_url, model_file=a.model_file)
     except ValueError as e:  # extract.Rejected: missing path, not an archive, unsafe archive
         print(f"wpjudge: {e}", file=sys.stderr)
         return 2
+    m = report["model"]
+    if not m["reproducible"]:
+        print(f"wpjudge: WARNING: workers={m['workers']} on a server with {m['server_slots'] or 'unknown'} slots "
+              "decodes concurrently; scores and cap_reasons may change between runs. "
+              "Use --workers 1 or a --parallel 1 server for a reproducible report.", file=sys.stderr, flush=True)
     text = json.dumps(report, indent=2)
     if a.output:
         with open(a.output, "w") as f:

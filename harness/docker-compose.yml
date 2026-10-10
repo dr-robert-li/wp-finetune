@@ -5,7 +5,7 @@ services:
     entrypoint: ["/bin/sh", "/llama-entrypoint.sh"]
     environment:
       WPJUDGE_MODEL_FILE: ${WPJUDGE_MODEL_FILE:-wp-judge-v4-pruned-k224.IQ4_XS.gguf}
-      LLAMA_PARALLEL: ${LLAMA_PARALLEL:-4}
+      LLAMA_PARALLEL: ${LLAMA_PARALLEL:-1}
     volumes:
       - models:/models
       - ./docker/llama-entrypoint.sh:/llama-entrypoint.sh:ro
@@ -30,7 +30,7 @@ services:
     environment:
       WPJUDGE_BASE_URL: http://llama:8080/v1
       WPJUDGE_MODEL_FILE: ${WPJUDGE_MODEL_FILE:-wp-judge-v4-pruned-k224.IQ4_XS.gguf}
-      WPJUDGE_WORKERS: ${LLAMA_PARALLEL:-4}
+      WPJUDGE_WORKERS: ${LLAMA_PARALLEL:-1}
       WPJUDGE_API_KEY: ${WPJUDGE_API_KEY:-}
     volumes:
       - jobs:/data/jobs
