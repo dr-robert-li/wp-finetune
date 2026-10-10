@@ -3,14 +3,16 @@
 Run with ONE uvicorn worker: the queue lives in memory (`wpjudge serve` does this).
 """
 import hmac
+import http.client
+import ipaddress
 import json
 import os
 import queue
 import re
 import shutil
+import socket
 import threading
 import time
-import urllib.request
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -26,6 +28,7 @@ from wpjudge.config import load
 CFG = load()
 SUFFIXES = (".zip", ".tar.gz", ".tgz")
 JOB_ID = re.compile(r"[0-9a-f]{32}")
+NAT64 = ipaddress.ip_network("64:ff9b::/96")
 Q: "queue.Queue[str | None]" = queue.Queue()
 
 
@@ -56,13 +59,44 @@ def read_job(jid: str) -> dict:
         raise HTTPException(404, "no such job")
 
 
+def webhook_target(url: str):
+    """Resolve once; every address must be public (or in webhook_allow_nets). -> (parts, port, ip). ValueError if not."""
+    u = urlsplit(url)
+    if u.scheme not in ("http", "https") or not u.hostname:
+        raise ValueError("webhook_url must be an http(s) URL")
+    port = u.port or (443 if u.scheme == "https" else 80)  # bad port -> ValueError
+    try:
+        infos = socket.getaddrinfo(u.hostname, port, type=socket.SOCK_STREAM)
+    except (OSError, UnicodeError) as e:
+        raise ValueError(f"webhook host does not resolve: {e}")
+    allow = [ipaddress.ip_network(n) for n in CFG.webhook_allow_nets]
+    ips = {ipaddress.ip_address(i[4][0].split("%")[0]) for i in infos}
+    for ip in ips:
+        ip = getattr(ip, "ipv4_mapped", None) or ip
+        if ip in NAT64:  # 64:ff9b::a.b.c.d reaches a.b.c.d through the gateway
+            ip = ipaddress.IPv4Address(int(ip) & 0xFFFFFFFF)
+        if (not ip.is_global or ip.is_multicast) and not any(ip in n for n in allow):
+            raise ValueError(f"webhook_url resolves to a non-public address ({ip})")
+    return u, port, str(min(ips, key=lambda a: a.version))
+
+
 def webhook(url: str, report: dict):
-    req = urllib.request.Request(url, data=json.dumps(report).encode(), method="POST",
-                                 headers={"Content-Type": "application/json"})
+    body = json.dumps(report).encode()
     for _ in (1, 2):  # best effort: one retry, never raises
         try:
-            urllib.request.urlopen(req, timeout=5).close()
+            u, port, ip = webhook_target(url)  # re-checked at send time: DNS may have changed since submit
+            C = http.client.HTTPSConnection if u.scheme == "https" else http.client.HTTPConnection
+            c = C(u.hostname, port, timeout=5)  # Host header, SNI and cert check use the name
+            c._create_connection = lambda a, *r: socket.create_connection((ip, a[1]), *r)  # connect to the checked IP only
+            try:
+                c.request("POST", (u.path or "/") + (f"?{u.query}" if u.query else ""), body,
+                          {"Content-Type": "application/json"})
+                c.getresponse()  # http.client never follows redirects
+            finally:
+                c.close()
             return
+        except ValueError:
+            return  # blocked: retrying will not help
         except Exception:
             time.sleep(1)
 
@@ -163,9 +197,10 @@ async def create_job(file: UploadFile, webhook_url: str | None = Form(None)):
     if not name.lower().endswith(SUFFIXES):
         raise HTTPException(415, f"expected one of {SUFFIXES}")
     if webhook_url:
-        u = urlsplit(webhook_url)
-        if u.scheme not in ("http", "https") or not u.netloc:
-            raise HTTPException(400, "webhook_url must be an http(s) URL")
+        try:
+            await run_in_threadpool(webhook_target, webhook_url)  # getaddrinfo blocks: keep it off the event loop
+        except ValueError as e:
+            raise HTTPException(400, str(e))
     jid = uuid.uuid4().hex
     d = jobs_dir() / jid
     d.mkdir(parents=True)

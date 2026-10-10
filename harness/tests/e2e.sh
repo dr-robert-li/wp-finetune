@@ -410,7 +410,7 @@ poll() {  # poll <id> [curl auth args...]; echoes final status
     case $st in done | failed) echo "$st"; return;; esac; sleep 3
   done; echo timeout
 }
-compose_override() {  # $1 = api key ('' = auth off); GGUF bind-mounted read-only: no 16.6 GB download
+compose_override() {  # $1 = api key ('' = auth off), $2 = WPJUDGE_WEBHOOK_ALLOW_NETS; GGUF bind-mounted read-only: no 16.6 GB download
   cat >"$WORK/compose.e2e.yml" <<EOF
 services:
   llama:
@@ -424,13 +424,14 @@ services:
     environment:
       WPJUDGE_MODEL_FILE: "$MODEL_FILE"
       WPJUDGE_API_KEY: "$1"
+      WPJUDGE_WEBHOOK_ALLOW_NETS: "$2"
 EOF
 }
 
 sec_api() {
   note "== api (docker compose)"; host_down; make_archives
   API=http://127.0.0.1:$API_PORT; KEY=""
-  compose_override ""; COMPOSE_UP=1
+  compose_override "" "127.0.0.0/8"; COMPOSE_UP=1
   dc up -d --build >>"$LOG" 2>&1 || { fail "api: compose up"; return; }
   api_wait || { fail "api: harness not answering on $API"; dc logs --tail 40 | tee -a "$LOG"; return; }
   pass "api: stack up (auth off)"
@@ -473,6 +474,8 @@ EOF
   head -c $((60 * 2**20)) /dev/urandom >"$WORK/big.zip"
   c=$(code -F "file=@$WORK/big.zip" "$API/jobs"); expect "api: 60 MB upload -> 413 (got $c)" test "$c" = 413
   c=$(code -F "file=@$WORK/vuln-plugin.zip" -F "webhook_url=file:///etc/passwd" "$API/jobs"); expect "api: file:// webhook -> 400 (got $c)" test "$c" = 400
+  c=$(code -F "file=@$WORK/vuln-plugin.zip" -F "webhook_url=http://169.254.169.254/latest/meta-data/" "$API/jobs")
+  expect "api: metadata webhook -> 400 with allowlist 127/8 (got $c)" test "$c" = 400
   c=$(code -H "Content-Length: abc" -X POST "$API/jobs"); expect "api: non-numeric Content-Length -> 400 (got $c)" test "$c" = 400
   c=$(code --path-as-is "$API/jobs/..%2f../functions"); expect "api: /jobs/..%2f../functions -> 4xx not 200/500 (got $c)" test "$c" -ge 400 -a "$c" -lt 500
   c=$(code --path-as-is "$API/jobs/..%2f..%2fetc%2fpasswd"); expect "api: /jobs/..%2f..%2fetc%2fpasswd -> 4xx (got $c)" test "$c" -ge 400 -a "$c" -lt 500
@@ -483,7 +486,7 @@ EOF
   expect "api: no escaped file inside the container" test -z "$(dc exec -T harness find / /data/jobs -xdev -name 'wpjudge_e2e_escape*' 2>/dev/null)"
 
   # auth on: same job store, restart with a key
-  KEY=e2e-$RANDOM-key; compose_override "$KEY"
+  KEY=e2e-$RANDOM-key; compose_override "$KEY" ""
   dc up -d harness >>"$LOG" 2>&1; api_wait || { fail "api: harness not back after enabling auth"; return; }
   local A=(-H "Authorization: Bearer $KEY") W=(-H "Authorization: Bearer wrong")
   c=$(code "$API/jobs/$J1"); expect "api auth: GET /jobs/{id} no key -> 401 (got $c)" test "$c" = 401
@@ -494,6 +497,12 @@ EOF
   c=$(code "${A[@]}" "$API/jobs/$J1"); expect "api auth: right key -> 200 (got $c)" test "$c" = 200
   expect "api restart: done job survived the restart (result on disk)" jq -e '.status == "done" and .report.schema_version == "1.0"' "$WORK/body"
   c=$(code "${A[@]}" "$API/jobs/$J1/functions"); expect "api auth: /functions right key -> 200 (got $c)" test "$c" = 200
+  local u  # no allowlist now: internal webhook targets are refused at submit
+  for u in http://127.0.0.1:8766/hook http://2130706433:8766/hook "http://[::ffff:127.0.0.1]:8766/hook" \
+    http://localhost:8766/hook http://llama:8080/health; do
+    c=$(code "${A[@]}" -F "file=@$WORK/vuln-plugin.zip" -F "webhook_url=$u" "$API/jobs")
+    expect "api ssrf: webhook $u -> 400 (got $c: $(jq -r .detail "$WORK/body" 2>/dev/null))" test "$c" = 400
+  done
 
   # restart mid-run: running job -> failed "interrupted"
   local J2; J2=$(submit "$WORK/vuln-plugin.zip" "${A[@]}")
@@ -523,6 +532,8 @@ sec_allinone() {
   expect "allinone: fixture scan done (got $st)" test "$st" = done
   curl -s "$API/jobs/$J" | jq .report >"$WORK/aio_report.json"
   chk fixture "$EXP" "$WORK/aio_report.json"
+  local c; c=$(code -F "file=@$WORK/vuln-plugin.zip" -F "webhook_url=http://127.0.0.1:8080/health" "$API/jobs")
+  expect "allinone: webhook to the in-container llama server -> 400 (got $c)" test "$c" = 400
   dk rm -f wpjudge-e2e-aio >/dev/null
 }
 

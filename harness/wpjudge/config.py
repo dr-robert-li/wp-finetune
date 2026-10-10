@@ -27,6 +27,7 @@ class Config:
     jobs_dir: str = "jobs"
     retention_days: float = 7
     api_key: str = ""           # empty = auth off
+    webhook_allow_nets: tuple = ()  # CIDRs exempt from the public-address rule, e.g. 127.0.0.0/8
 
 
 def _cast(default, raw):
