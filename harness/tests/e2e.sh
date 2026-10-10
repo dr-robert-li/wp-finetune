@@ -78,7 +78,7 @@ make_archives() {  # fixture as .zip and .tar.gz with a single top-level dir
 
 # ---------------------------------------------------------------- python asserts (written once per run)
 cat >"$WORK/chk.py" <<'PYEOF'
-import json, statistics, sys, time
+import json, os, statistics, sys, time
 from collections import Counter
 from pathlib import Path
 
@@ -87,7 +87,8 @@ def load(p): return json.loads(Path(p).read_text())
 def units(r): return sorted(f["id"] for f in r["functions"] if f["status"] != "skipped")
 def skips(r): return sorted((f["file"], f["line"], f["name"], f["reason"]) for f in r["functions"] if f["status"] == "skipped")
 def byid(r): return {f["id"]: f for f in r["functions"] if f["status"] != "skipped"}
-CAP_DIMS, CAP_T, CAP_V, COV_T = ("security", "sql_safety"), 4, 60, 90
+CAP_DIMS, CAP_V, COV_T = ("security", "sql_safety"), 60, 90
+CAP_T = int(os.environ.get("WPJUDGE_CAP_THRESHOLD", 4))
 
 def schema(r, tag):
     ok(r.get("schema_version") == "1.0" and {"target", "model", "summary", "dimensions", "anti_patterns", "patterns",
@@ -103,8 +104,8 @@ def schema(r, tag):
     ok(all("examples" not in p for p in r["patterns"]) and all(isinstance(a.get("examples"), list) for a in r["anti_patterns"]),
        f"{tag}: anti_patterns have examples, patterns do not")
 
-def recompute(r, tag):
-    """Every summary number from functions[] (independent of wpjudge.aggregate)."""
+def recompute(r, tag, t=CAP_T):
+    """Every summary number from functions[] (independent of wpjudge.aggregate); t = cap threshold."""
     fs = r["functions"]; s = r["summary"]; c = s["coverage"]
     J = [f for f in fs if f["status"] == "judged"]; U = [f for f in fs if f["status"] in ("judged", "unjudged")]
     S = [f for f in fs if f["status"] == "skipped"]
@@ -112,9 +113,9 @@ def recompute(r, tag):
     ok((c["units"], c["judged"], c["unjudged"], c["skipped"]) == (len(U), len(J), len(U) - len(J), len(S))
        and abs(c["pct"] - pct) < 0.06 and c["low_coverage"] == (not J or pct < COV_T), f"{tag}: coverage recomputes")
     caps = {(f["id"], d, f["scores"][d]) for f in J for d in CAP_DIMS
-            if isinstance(f["scores"].get(d), (int, float)) and f["scores"][d] <= CAP_T}
+            if isinstance(f["scores"].get(d), (int, float)) and f["scores"][d] <= t}
     ok(s["capped"] == bool(caps) and {(x["id"], x["dimension"], x["score"]) for x in s["cap_reasons"]} == caps,
-       f"{tag}: cap invariant (capped == any security|sql_safety <= 4; cap_reasons exactly those) n={len(caps)}")
+       f"{tag}: cap invariant (capped == any security|sql_safety <= {t}; cap_reasons exactly those) n={len(caps)}")
     if J:
         w = [max(f["loc"], 1) for f in J]
         unc = sum(f["overall_score"] * x for f, x in zip(J, w)) / sum(w)
@@ -129,12 +130,31 @@ def recompute(r, tag):
     for d, st in r["dimensions"].items():
         v = [f["scores"][d] for f in J if isinstance(f["scores"].get(d), (int, float))]
         dims_ok &= bool(v) and st["n_rated"] == len(v) and st["min"] == min(v) and abs(st["mean"] - statistics.fmean(v)) < 0.011 \
-            and abs(st["std"] - statistics.pstdev(v)) < 0.011 and abs(st["low_rate"] - sum(x <= 4 for x in v) / len(v)) < 0.0011
+            and abs(st["std"] - statistics.pstdev(v)) < 0.011 and abs(st["low_rate"] - sum(x <= t for x in v) / len(v)) < 0.0011
     ok(dims_ok and set(r["dimensions"]) == {d for f in J for d, x in f["scores"].items() if isinstance(x, (int, float))},
        f"{tag}: dimensions recompute")
     worst = sorted(J, key=lambda f: (f["overall_score"], f["id"]))[:10]
     ok([(w["file"], w["line"], w["name"]) for w in r["worst_functions"]] == [(f["file"], f["line"], f["name"]) for f in worst],
        f"{tag}: worst_functions = 10 lowest judged")
+
+def topics(r, tag):  # T3: "other" stays a small residual of the top-10 lists
+    for k in ("patterns", "anti_patterns"):
+        rows = r[k]; tot = sum(x["count"] for x in rows); oth = sum(x["count"] for x in rows if x["finding"] == "other")
+        ok(tot == 0 or oth / tot <= 0.15, f"{tag}: {k} 'other' share {oth}/{tot} <= 15% of top-10 counts")
+        ok(not any(x["finding"] == "other" for x in rows[:3]), f"{tag}: no 'other' in {k} top 3")
+
+def cmd_rethreshold(*reports):  # T2a: re-aggregate saved judgments at WPJUDGE_CAP_THRESHOLD=5, no model run
+    from wpjudge import aggregate, config
+    for p in reports:
+        r = load(p); tag = Path(p).name + "@T5"
+        fs = [f for f in r["functions"] if f["status"] != "skipped"]
+        sk = [f for f in r["functions"] if f["status"] == "skipped"]
+        rb = lambda: aggregate.build_report(r["target"], r["model"], fs, sk, config.load())
+        os.environ["WPJUDGE_CAP_THRESHOLD"] = "4"; r4 = rb()
+        os.environ["WPJUDGE_CAP_THRESHOLD"] = "5"; r5 = rb()
+        topics(r4, Path(p).name + "@T4"); recompute(r5, tag, 5)
+        n4, n5 = (sum(a["count"] for a in x["anti_patterns"]) for x in (r4, r5))
+        ok(n5 >= n4, f"{tag}: anti count sum at T=5 ({n5}) >= at T=4 ({n4})")
 
 def fixture_units(r, tag, exp):
     ok(units(r) == sorted(exp["units"]), f"{tag}: units == expected ({len(exp['units'])})")
@@ -193,7 +213,7 @@ def cmd_serverdown(exp, rep):
 
 def cmd_real(rep, name, exp_units, kind, wall):
     r = load(rep); tag = name
-    schema(r, tag); recompute(r, tag)
+    schema(r, tag); recompute(r, tag); topics(r, tag)
     c = r["summary"]["coverage"]
     ok(c["pct"] >= 90 and not c["low_coverage"], f"{tag}: coverage {c['pct']}% >= 90")
     ok(r["target"]["type"] == kind, f"{tag}: target.type == {kind} (got {r['target']['type']})")
@@ -368,7 +388,9 @@ sec_real() {
     expect "real $name: exit 0" test $? -eq 0
     wall=$(($(date +%s) - t0)); note "INFO real $name: $(cat "$R/$name.err")"
     chk real "$R/$name.json" "$name" "$units" "$kind" "$wall"
+    chk rethreshold "$R/$name.json"
   done
+  if [ -s "$WORK/r_dir.json" ]; then chk rethreshold "$WORK/r_dir.json"; else note "INFO real: no r_dir.json (run cli first) -> fixture re-threshold skipped"; fi
 }
 
 sec_prerun() {  # regenerate the binding-change-2 pre-run into WORK (copy over the fixture by hand if intended)

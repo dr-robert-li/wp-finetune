@@ -94,3 +94,45 @@ def test_worst_ties_and_rows():
     assert {"id", "kind", "end_line", "attempts", "error", "loc", "truncated", "critique"} <= set(f[0])
     assert f[-1] == {"file": "t/x.php", "line": 3, "name": "tiny", "loc": 0, "truncated": False, "status": "skipped",
                      "reason": "tiny", "verdict": None, "overall_score": None, "scores": {}, "critique": ""}
+
+
+def test_thresholds_follow_cfg():
+    js = [J("a.php:1:f", 70, scores={"security": 5, "performance": 8},
+            critique="Security: score 5/10 — Missing nonce check.\nPerformance: score 8/10 — Lightweight.\n")]
+    r = build_report(META, MODEL, js, [], CFG)
+    assert r["dimensions"]["security"]["low_rate"] == 0.0 and r["anti_patterns"] == []
+    assert not r["summary"]["cap_reasons"] and r["patterns"] == [
+        {"dimension": "performance", "finding": "efficiency", "count": 1}]
+    r = build_report(META, MODEL, js, [], Config(cap_threshold=5, pattern_min=9))
+    assert r["dimensions"]["security"]["low_rate"] == 1.0
+    assert [(a["dimension"], a["finding"]) for a in r["anti_patterns"]] == [("security", "nonce")]
+    assert r["summary"]["cap_reasons"] == [{"id": "a.php:1:f", "dimension": "security", "score": 5}]
+    assert r["patterns"] == []
+
+
+def test_topics_v11():
+    J2 = lambda f, sc, c: J(f, 60, scores=sc, critique=c)
+    js = [J2("a.php:1:f", {"wp_api_usage": 9, "code_quality": 9, "performance": 9, "i18n": 9, "dependency_integrity": 9},
+             "WP API Usage: score 9/10 — get_post_meta() is the canonical WP meta API; usage is idiomatic.\n"
+             "Code Quality: score 9/10 — The code is clean, readable, and well-structured.\n"
+             "Performance: score 9/10 — Lightweight; negligible overhead.\n"
+             "i18n: score 9/10 — Strings use esc_html_e() with the text domain.\n"            # not output escaping
+             "Dependency Integrity: score 9/10 — No external dependencies.\n"),               # N/A -> dropped
+          J2("b.php:1:g", {"accessibility": 3, "security": 2, "sql_safety": 9},
+             "Accessibility: score 3/10 — No HTML output; scored 3 as entirely inapplicable.\n"  # N/A low score -> dropped
+             "Security: score 2/10 — No nonce verification before update_option().\n"          # 'No nonce' is NOT N/A
+             "SQL Safety: score 9/10 — No user input reaches it; uses $wpdb->prepare() with %d.\n")]  # keep 2nd sentence
+    r = build_report(META, MODEL, js, [], CFG)
+    pat = {(p["dimension"], p["finding"]) for p in r["patterns"]}
+    assert pat == {("wp_api_usage", "WP API choice"), ("code_quality", "readability"), ("performance", "efficiency"),
+                   ("i18n", "translation"), ("sql_safety", "SQL preparation")}
+    assert [(a["dimension"], a["finding"]) for a in r["anti_patterns"]] == [("security", "nonce")]
+
+
+def test_anti_fallback_and_code_quality_lexicon():
+    js = [J("a.php:1:f", 30, scores={"code_quality": 3},
+            critique="Code Quality: score 3/10 — ser_delete has no capability check before the DELETE.\n"),
+          J("b.php:1:g", 30, scores={"code_quality": 2},
+            critique="Code Quality: score 2/10 — Leftover print_r() debug statement.\n")]
+    anti = {(a["dimension"], a["finding"]) for a in build_report(META, MODEL, js, [], CFG)["anti_patterns"]}
+    assert anti == {("code_quality", "capability check"), ("code_quality", "debug code")}
