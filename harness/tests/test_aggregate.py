@@ -165,6 +165,14 @@ def test_cap_ignores_prose():
     assert not s["capped"] and s["cap_reasons"] == [] and s["low_confidence"] == 1
 
 
+def test_retry_confidence():
+    j = J("a.php:1:f", 70)
+    j["attempts"] = 2
+    f = build_report(META, MODEL, [j, J("a.php:9:u", None, status="unjudged")], [], CFG)["functions"]
+    assert f[0]["confidence_reasons"] == ["retry"] and f[0]["low_confidence"] is True
+    assert f[1]["confidence_reasons"] == [] and f[1]["low_confidence"] is False  # unjudged: no score to doubt
+
+
 def test_verdict_p_confidence():
     assert _conf({}, {}, vp=0.85) == ["verdict_p"]
     assert _conf({}, {}, vp=0.95) == [] and _conf({}, {}, vp=None) == []

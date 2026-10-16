@@ -127,6 +127,16 @@ def test_retry_after_unparseable_then_ok():
     c = Stub([raw("broken_89"), raw("severity_format_9")])
     j = judge.judge_one(c, "m", UNIT)
     assert j["status"] == "judged" and j["attempts"] == 2 and len(c.calls) == 2
+    a1, a2 = c.calls
+    assert a1["temperature"] == 0 and "seed" not in a1                  # attempt 1 is the unchanged request
+    assert a2 == {**a1, "temperature": 0.5, "seed": 1234}               # only attempt 2 varies, reproducibly
+
+
+def test_retry_sampling_survives_extra_body_fallback(monkeypatch):
+    monkeypatch.setattr(judge, "_thinking_kwarg_supported", True)
+    c = Stub([raw("broken_89"), ValueError("chat_template kwargs not supported"), raw("score_format_0")])
+    assert judge.judge_one(c, "m", UNIT)["status"] == "judged"
+    assert "extra_body" not in c.calls[2] and c.calls[2]["temperature"] == 0.5 and c.calls[2]["seed"] == 1234
 
 
 def test_unjudged_after_two_failures():

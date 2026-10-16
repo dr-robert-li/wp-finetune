@@ -17,15 +17,19 @@ PROMPT = "<wp_judge> Evaluate this WordPress code:\n\n```php\n{code}\n```"  # tr
 # extra_body fields, drop them for the rest of the process and warn.
 # cache_prompt False: a reused slot's prompt KV from a concurrent (batched) run moves w1 scores.
 _thinking_kwarg_supported = True
+# Attempt 2 only (V11_RETRY.md): greedy decode at temp 0 repeats attempt 1 byte for byte, so a repetition
+# loop to max_tokens never recovers. A small temperature with a fixed seed breaks the loops seen so far and
+# stays reproducible on a serial server. Both are standard OpenAI params, so they survive the fallback below.
+RETRY_SAMPLING = {"temperature": 0.5, "seed": 1234}
 
 
-def _judge_create(client, *, model, messages, max_tokens=2048, temperature=0.0):
+def _judge_create(client, *, model, messages, max_tokens=2048, temperature=0.0, **sampling):
     global _thinking_kwarg_supported
     if _thinking_kwarg_supported:
         try:
             return client.chat.completions.create(
                 model=model, messages=messages, max_tokens=max_tokens,
-                temperature=temperature, logprobs=True,
+                temperature=temperature, logprobs=True, **sampling,
                 extra_body={"chat_template_kwargs": {"enable_thinking": False}, "cache_prompt": False},
             )
         except Exception as e:  # noqa: BLE001
@@ -38,7 +42,7 @@ def _judge_create(client, *, model, messages, max_tokens=2048, temperature=0.0):
             else:
                 raise
     return client.chat.completions.create(
-        model=model, messages=messages, max_tokens=max_tokens, temperature=temperature, logprobs=True)
+        model=model, messages=messages, max_tokens=max_tokens, temperature=temperature, logprobs=True, **sampling)
 
 
 # Copied verbatim from eval/eval_judge.py:310-383.
@@ -167,7 +171,7 @@ def judge_one(client, model, unit, max_tokens=2048):
     raw, err = "", None
     for attempt in (1, 2):  # retry once
         try:
-            r = _judge_create(client, model=model, max_tokens=max_tokens,
+            r = _judge_create(client, model=model, max_tokens=max_tokens, **(RETRY_SAMPLING if attempt == 2 else {}),
                               messages=[{"role": "user", "content": PROMPT.format(code=unit["code"])}])
             raw = r.choices[0].message.content or ""
             j = to_judgment(unit, raw, attempt, verdict_prob(r.choices[0]))

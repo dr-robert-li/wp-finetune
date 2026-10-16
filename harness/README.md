@@ -245,7 +245,7 @@ Scoring rules:
 
 - The verdict is the model's own. The harness never recomputes it.
 - Scores come only from the JSON block (normally `<judge_output>`), never from the prose lines.
-- Each unit is sent once and retried once. If both fail (request error, or no JSON with a numeric `overall_score`), the unit is `unjudged`, with `error` set. It is excluded from the score.
+- Each unit is sent once and retried once. The retry samples at temperature 0.5 with a fixed seed (the first try is greedy, and an identical greedy retry would repeat a runaway byte for byte), so it stays reproducible. A unit judged on the retry gets `"retry"` in `confidence_reasons`. If both fail (request error, or no JSON with a numeric `overall_score`), the unit is `unjudged`, with `error` set. It is excluded from the score.
 - Dimension keys are the model's own (`wpcs_compliance`, `sql_safety`, `security`, `performance`, `wp_api_usage`, `code_quality`, `dependency_integrity`, `i18n`, `accessibility`, ...).
 
 ## Limits

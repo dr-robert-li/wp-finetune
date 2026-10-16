@@ -117,6 +117,8 @@ def _row(j, cfg):
         low = lambda x: isinstance(x, (int, float)) and x <= cfg.cap_threshold  # None / N/A / absent = above
         if any(low(prose.get(d)) != low(j["scores"].get(d)) for d in cfg.cap_dims):
             why.append("prose_disagrees")
+        if j.get("attempts") == 2:                     # judged on the varied retry (judge.RETRY_SAMPLING), not attempt 1
+            why.append("retry")
     else:
         r["verdict_p"] = None
     return {**r, "confidence_reasons": why, "low_confidence": bool(why)}
