@@ -1,7 +1,42 @@
-# Handover: WP Judge harness build (2026-10-10)
+# Handover: WP Judge harness build (v1 2026-10-10, v1.1 2026-10-11)
 
-**State:** ALL PHASES DONE (1-6). Phase 5: EVAL_PHASE5 PASS WITH NOTES (parity limit widened to ≤ 8 by the user). Phase 6: EVAL_W7 PASS (round 2). Committed and pushed 2026-10-10. Follow-ups (optional): webhook host check (SSRF), auth on /docs, low_rate tied to cap threshold, warning when prose and score disagree, TOPICS lexicon gaps ("other").
-v1.1: research done (research/v11_r1..r5). Locked plan in PLAN_v1.1.md "Phase 2 lock", evaluated over 3 rounds (build_notes/EVAL_V11_PLAN.md); the round-3 fixes are applied. NEXT: user sign-off, then follow the worktree setup in the plan, run builders A to D in parallel worktrees with an evaluator each, merge A→B→C→D, then WS-E live E2E, then WS-F docs plus a doc evaluator, then commit.
+**State v1.1:** DONE, pending commit and push. Builds A to D were evaluated and merged on main (66910b3 to a8c457f). The WS-D MAJOR (prompt-cache reuse after concurrent runs) was fixed with `cache_prompt: false` in a8c457f, and WS-E's determinism section re-checked it live. WS-E live E2E passed (EVAL_V11_WSE PASS; 425 checks, 0 failed). The varied retry (Decision 2) is committed (7b41194; EVAL_V11_RETRY PASS). WS-F docs are written (README, SPEC B1-B7, root CHANGELOG, this file; `build_notes/V11_DOCS.md`).
+**State v1:** ALL PHASES DONE (1-6). Committed and pushed 2026-10-10.
+
+## v1.1 summary (2026-10-11)
+Plan: `PLAN_v1.1.md`. Notes: `build_notes/V11_*.md`, `EVAL_V11_*.md`. The WS-A to WS-D evaluator reports are in the worktrees: `../.claude/worktrees/agent-*/harness/build_notes/EVAL_V11_WS{A,B,C,D}.md`.
+- T1 webhook SSRF guard (`api.webhook_target`, `WPJUDGE_WEBHOOK_ALLOW_NETS`). `HTTP(S)_PROXY` is no longer honoured.
+- T2a thresholds follow `WPJUDGE_CAP_THRESHOLD`; new `WPJUDGE_PATTERN_MIN`.
+- T2b JSON is the only score source (D1). Critique headers are rewritten from the JSON; `prose_scores` keeps the old numbers.
+- T3 27-topic lexicon. `other` share 0 in the top-10 counts on classic-editor, twentytwentyfour and twentytwelve.
+- T4 `verdict_p`, `confidence_reasons`, `low_confidence`, `WPJUDGE_MIN_VERDICT_P`. Logprobs +6% per completion token. No re-judge mode (D3).
+- T5 serial default (`workers` 1, `LLAMA_PARALLEL` 1), `cache_prompt: false` on every request, report `model.workers/server_slots/reproducible`, CLI warning, ETA at 5.5 units/min.
+- Decision 2: the retry uses temperature 0.5 and seed 1234. It recovered all 3 known loops.
+- Decision 1 (accepted limit): classic-editor is capped at 60 (uncapped 73.9). See v1.2 item 1.
+- Measured: fixture uncapped 68.8, 5/5 planted capped on the host and on compose b11515 (all-in-one not re-run after the retry change); classic-editor 426 s for 39 units (bound 520 s); twentytwentyfour 81.2; twentytwelve 4.9 54 units, 78.3, not capped; parity max |Δ| 8.
+
+## Next steps
+1. Run a separate doc evaluator on README, SPEC, CHANGELOG and this file against the code.
+2. Decide on the `pyproject.toml` version. It still says 1.0.0.
+3. Commit the docs (no Co-Authored-By lines; identity below). Push main.
+4. Remove the v1.1 worktrees and branches after the push (`git worktree list`).
+
+## v1.2 candidates
+1. **Training data: request nonce vs CSP nonce.** classic-editor `Classic_Editor::add_edit_php_inline_style` gets security 4 for "no nonce" on a static `<style>` block. The model conflates the WordPress request nonce (CSRF, `check_admin_referer`) with the CSP `nonce=` attribute, like context-blind scanners. It is reproducible under serial decoding. Add counter-examples to the judge training data.
+2. **Retrain note (D4).** `scripts/relabel/rebuild_targets.py` has a regex gap: it leaves the severity-format prose numbers stale. 29% of judge training examples use the severity format, and 67% of their prose numbers differ from the JSON. Fix the script before the next retrain. The fix is outside the harness.
+3. False negatives are systematic model leniency. Only training can fix them.
+
+## Known minors (v1.1, not fixed)
+- Webhook: the 400 detail echoes the resolved internal IP (a DNS oracle). `getaddrinfo` has no timeout, so slow DNS can hold threadpool threads.
+- `_sync_headers`: a header without a `— reason` tail is not rewritten (0 of 1789 saved headers lack it).
+- `prose_disagrees` is imprecise: it fires on about 25% of units on a clean plugin.
+- Lexicon: `docblock` matches `\bcomments?\b`, so block-markup and `phpcs:ignore` comments are mis-tagged. The NA filter sometimes drops a real defect sentence from an anti line.
+- `logprobs: true` is always sent. A server that rejects it outright makes every unit unjudged.
+- Tests: the `parity-cmp` failure message prints "max 8 <= 8" when it fails on the delta count. `sec_real` does not assert the classic-editor cap or the 520 s wall bound.
+
+## Carry-over v1 open items
+- Auth on `/docs` and `/openapi.json`: they stay open when `WPJUDGE_API_KEY` is set.
+- Float knobs take whole numbers only: `retention_days`, `cap_value` and `coverage_threshold` have int defaults, so `_cast` rejects `1.5`. The README says "whole numbers".
 
 ## Read first (in order)
 1. `SPEC.md`: decisions R1.1–R3.3, amendments A1–A6, report schema v1 (accepted).

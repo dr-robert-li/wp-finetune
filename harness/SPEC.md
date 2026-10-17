@@ -33,25 +33,40 @@ Component inventory: `INVENTORY.md`.
 | A5 | R1.4 | Scores come **only from `<judge_output>`** (41% of the prose lines carry wrong scores). Patterns use JSON score ≥ 8, anti-patterns ≤ 4. The reason clause is tagged with a fixed 16-topic lexicon and counted once per function, with one example kept (r2). |
 | A6 | R1.1 | The llama service uses `ghcr.io/ggml-org/llama.cpp:server-cuda13-b11515` (arm64 + sm_121 SASS). Never use `server-cuda` (12.8, no sm_121) (r4). |
 
-## Report schema (v1, accepted)
+## Amendments v1.1 (2026-10-11; plan in PLAN_v1.1.md, evidence in research/v11_r*.md)
+| # | Amends | Change |
+|---|---|---|
+| B1 | R2.4 | **Webhook SSRF guard** (T1). Every resolved address must be global and not multicast. IPv4-mapped, NAT64, IPv4-compatible and SIIT forms are unwrapped first. The host is checked at submit (400 on a block, no job) and again at send (dropped, no retry). The connection is pinned to the checked IP; Host, SNI and the cert use the name. No redirects. `HTTP(S)_PROXY` is not honoured. Opt-in exceptions: `WPJUDGE_WEBHOOK_ALLOW_NETS` (CIDR list). |
+| B2 | A5 | `low_rate`, anti-patterns and patterns follow config (T2a): `≤ cap_threshold` and `≥ pattern_min` (`WPJUDGE_PATTERN_MIN`, default 8). |
+| B3 | A5 | **The JSON stays the only score source** (T2b, D1). The prose numbers are stale severity buckets from a regex gap in the training-data rebuild. The critique headers are rewritten from the JSON, and the original numbers are kept in `prose_scores`. |
+| B4 | A5 | The topic lexicon grows from 16 to 27 topics (T3). A line is tagged with its own dimension's topics first; only anti lines fall back to the whole lexicon. "Does not apply" sentences are dropped. |
+| B5 | new | **Confidence flags** (T4): `verdict_p` (verdict-token probability from logprobs), `confidence_reasons` (`verdict_p` below `WPJUDGE_MIN_VERDICT_P` 0.9, `prose_disagrees`, `retry`), `low_confidence`, `summary.low_confidence`. Review leads only: they never change a score or the cap. No re-judge mode (D3). |
+| B6 | R3.2, A4 | **Serial by default** (T5): `workers` 1 and `LLAMA_PARALLEL` 1. Every request sends `cache_prompt: false`. The report `model` gets `workers`, `server_slots` and `reproducible`. The CLI warns when `reproducible` is false. The ETA uses 5.5 units/min. Fast mode (`--parallel 4 --workers 4`) stays opt-in. |
+| B7 | R2.3 | The retry varies: attempt 2 uses temperature 0.5 and seed 1234, so a repetition loop can recover. It is deterministic on a serial server. A unit judged on the retry gets the `retry` reason. |
+
+`schema_version` stays `"1.0"`: every v1.1 field is additive.
+
+## Report schema (v1, accepted; v1.1 additive fields included)
 ```json
 {
   "schema_version": "1.0",
   "target": {"name": "", "type": "plugin|theme", "files_scanned": 0, "sha256": ""},
-  "model": {"file": "", "base_url": ""},
+  "model": {"file": "", "base_url": "", "workers": 1, "server_slots": 1, "reproducible": true},
   "summary": {
     "overall_score": 0, "overall_score_uncapped": 0, "capped": false, "cap_reasons": [],
     "verdict_counts": {"PASS": 0, "FAIL": 0},
-    "coverage": {"units": 0, "judged": 0, "unjudged": 0, "skipped": 0, "pct": 0.0, "low_coverage": false}
+    "coverage": {"units": 0, "judged": 0, "unjudged": 0, "skipped": 0, "pct": 0.0, "low_coverage": false},
+    "low_confidence": 0
   },
   "dimensions": {"security": {"mean": 0, "std": 0, "min": 0, "n_rated": 0, "low_rate": 0.0}},
   "anti_patterns": [{"dimension": "", "finding": "", "count": 0, "examples": ["file:line fn"]}],
   "patterns": [{"dimension": "", "finding": "", "count": 0}],
   "worst_functions": [{"file": "", "line": 0, "name": "", "overall_score": 0, "verdict": ""}],
   "functions": [{"file": "", "line": 0, "name": "", "loc": 0, "truncated": false, "status": "judged|unjudged|skipped",
-                  "verdict": "", "overall_score": 0, "scores": {}, "critique": ""}]
+                  "verdict": "", "overall_score": 0, "scores": {}, "critique": "",
+                  "verdict_p": 0.0, "prose_scores": {}, "confidence_reasons": [], "low_confidence": false}]
 }
 ```
 
 ## Next
-- Confirm the report schema; then write the build plan (copy list from INVENTORY.md + greenfield gaps).
+- v1 and v1.1 are built. Open items and v1.2 candidates: `HANDOVER.md`.
