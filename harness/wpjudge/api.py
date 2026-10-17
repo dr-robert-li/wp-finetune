@@ -1,4 +1,4 @@
-"""Async-job API: one daemon worker thread + queue.Queue, one dir per job (r3 design B).
+"""Async-job API: one daemon worker thread + queue.Queue, one dir per job.
 
 Run with ONE uvicorn worker: the queue lives in memory (`wpjudge serve` does this).
 """

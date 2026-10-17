@@ -1,14 +1,14 @@
-"""Judgments + skips -> report dict (SPEC.md schema v1, PLAN.md binding changes 1-8)."""
+"""Judgments + skips -> report dict."""
 import re
 import statistics
 from collections import Counter
 
-# Prose dimension lines, both formats (r2 §3). Reason text only; scores come from <judge_output> JSON.
+# Prose dimension lines, both formats. Reason text only; scores come from <judge_output> JSON.
 DIM = re.compile(r'^(WPCS Compliance|SQL Safety|Security|Performance|WP API Usage|Code Quality|'
                  r'Dependency Integrity|i18n|Accessibility|Error Handling):\s*(?:score (\d+|None)/10|'
                  r'severity \w+ \((\d+|None)/10\))\s*[—–-]+\s*(?:Issue:\s*)?(.+?)(?:\.?\s*Fix:.*)?$', re.M)
 
-# Neutral topics; polarity comes from the JSON score (v11_r3 option F).
+# Neutral topics; polarity comes from the JSON score.
 # ponytail: fixed lexicon, extend when 'other' leads a dimension.
 TOPICS = {
  'nonce': r'nonce|check_admin_referer|check_ajax_referer|csrf',
@@ -80,7 +80,7 @@ def _topics(d, reason, kind):
 
 
 def rank(judged, lo=4, hi=8, top=10):
-    """r2 §5: tag each prose reason with topics, count (kind, dim, topic) once per function."""
+    """Tag each prose reason with topics, count (kind, dim, topic) once per function."""
     cnt = {'anti': Counter(), 'pattern': Counter()}
     ex = {}
     for j in judged:
@@ -107,7 +107,7 @@ def rank(judged, lo=4, hi=8, top=10):
 
 
 def _row(j, cfg):
-    """T4 (R4, PLAN D2): review leads only; they never change the score or the cap."""
+    """Review leads only; they never change the score or the cap."""
     r = {k: v for k, v in j.items() if k not in ("code", "raw")}
     prose, why = r.setdefault("prose_scores", {}), []
     if j["status"] == "judged":
@@ -136,7 +136,7 @@ def build_report(target_meta, model_meta, judgments, skips, cfg, files_scanned=N
     judged = [j for j in judgments if j["status"] == "judged"]
     n_units = len(judgments)
 
-    # overall: LOC-weighted mean (R1.3), cap (R2.1), null when nothing judged (change 8)
+    # overall: LOC-weighted mean, cap, null when nothing judged
     if judged:
         w = [max(j["loc"], 1) for j in judged]
         uncapped = round(sum(j["overall_score"] * x for j, x in zip(judged, w)) / sum(w), 1)
@@ -171,7 +171,7 @@ def build_report(target_meta, model_meta, judgments, skips, cfg, files_scanned=N
                    "files_scanned": files_scanned, "sha256": target_meta.get("sha256", "")},
         "model": {"file": model_meta.get("file", ""), "base_url": model_meta.get("base_url", ""),
                   "workers": workers, "server_slots": slots,
-                  "reproducible": workers == 1 or slots == 1},  # T5: only serial decoding is deterministic
+                  "reproducible": workers == 1 or slots == 1},  # only serial decoding is deterministic
         "summary": {
             "overall_score": overall, "overall_score_uncapped": uncapped, "capped": capped,
             "cap_reasons": cap_reasons,

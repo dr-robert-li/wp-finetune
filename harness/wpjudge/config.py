@@ -9,23 +9,23 @@ class Config:
     base_url: str = "http://127.0.0.1:8080/v1"
     model_file: str = "wp-judge-v4-pruned-k224.IQ4_XS.gguf"
     max_tokens: int = 2048
-    workers: int = 1           # >1 needs server --parallel >1: faster, but scores are not reproducible (T5)
-    # aggregation (R2.1, R2.3)
+    workers: int = 1           # >1 needs server --parallel >1: faster, but scores are not reproducible
+    # aggregation
     cap_dims: tuple = ("security", "sql_safety")
     cap_threshold: int = 4      # a cap dim scored <= this triggers the cap; also the low_rate/anti-pattern bound.
-                                # Keep 4: 7 of 8 planted-bug cap reasons sit at exactly 4, so 3 misses most (v11_r2 §a)
+                                # Keep 4: 7 of 8 planted-bug cap reasons sit at exactly 4, so 3 misses most
     pattern_min: int = 8        # rank(): a dim scored >= this counts as a pattern
     cap_value: float = 60
     coverage_threshold: float = 90
-    min_verdict_p: float = 0.9  # T4: verdict-token p below this marks a row low_confidence; 0 disables
-    # extraction (A3, binding change 15)
+    min_verdict_p: float = 0.9  # verdict-token p below this marks a row low_confidence; 0 disables
+    # extraction
     max_chars: int = 15000
     templates: bool = True
     # archive intake
     max_files: int = 20000
     max_total_mb: int = 200
     max_ratio: int = 100
-    # api (R2.4)
+    # api
     max_upload_mb: int = 50
     jobs_dir: str = "jobs"
     retention_days: float = 7

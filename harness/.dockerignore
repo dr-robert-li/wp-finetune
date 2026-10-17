@@ -1,6 +1,5 @@
 .venv
 jobs
-research
 build_notes
 **/__pycache__
 **/*.pyc

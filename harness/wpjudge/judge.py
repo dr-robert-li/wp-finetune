@@ -17,7 +17,7 @@ PROMPT = "<wp_judge> Evaluate this WordPress code:\n\n```php\n{code}\n```"  # tr
 # extra_body fields, drop them for the rest of the process and warn.
 # cache_prompt False: a reused slot's prompt KV from a concurrent (batched) run moves w1 scores.
 _thinking_kwarg_supported = True
-# Attempt 2 only (V11_RETRY.md): greedy decode at temp 0 repeats attempt 1 byte for byte, so a repetition
+# Attempt 2 only: greedy decode at temp 0 repeats attempt 1 byte for byte, so a repetition
 # loop to max_tokens never recovers. A small temperature with a fixed seed breaks the loops seen so far and
 # stays reproducible on a serial server. Both are standard OpenAI params, so they survive the fallback below.
 RETRY_SAMPLING = {"temperature": 0.5, "seed": 1234}
@@ -123,7 +123,7 @@ def parse_judge_response(response: str) -> Optional[dict]:
 
 
 def _sync_headers(critique, scores):
-    """T2b: prose header numbers are stale severity buckets (R2); keep them as prose_scores, rewrite from JSON."""
+    """Prose header numbers are stale severity buckets; keep them as prose_scores, rewrite from JSON."""
     prose = {}
 
     def fix(m):
@@ -141,7 +141,7 @@ def to_judgment(unit, raw, attempts, verdict_p=None):
     if not isinstance(j, dict) or not isinstance(j.get("overall_score"), (int, float)) \
             or isinstance(j["overall_score"], bool):
         return None
-    scores = {k: int(v) for k, v in j.items()  # A5: scores only from the JSON, never the prose
+    scores = {k: int(v) for k, v in j.items()  # scores only from the JSON, never the prose
               if k not in ("verdict", "overall_score") and isinstance(v, (int, float))
               and not isinstance(v, bool) and float(v).is_integer()}
     critique, prose = _sync_headers(re.split(r"\[/REASONING\]|<judge_output>", raw, maxsplit=1)[0].strip(), scores)
@@ -151,7 +151,7 @@ def to_judgment(unit, raw, attempts, verdict_p=None):
 
 
 def verdict_prob(choice):
-    """T4: p of the first non-blank, non-quote token after "verdict": inside <judge_output>; None if absent."""
+    """p of the first non-blank, non-quote token after "verdict": inside <judge_output>; None if absent."""
     toks = getattr(getattr(choice, "logprobs", None), "content", None) or []
     starts, text = [], ""
     for t in toks:

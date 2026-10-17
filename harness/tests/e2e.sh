@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Phase 5 integration + functional suite (PLAN.md phase 5, binding changes 1-3, 8, 12-15).
+# Integration and functional suite: live model server, CLI, library, API and Docker.
 # Usage: tests/e2e.sh <section>...   sections: cli malicious serverdown api allinone library parity real determinism prerun | all
 # Env knobs: GGUF (host model file), LLAMA_BIN, PORT (host server, 8097), HOST_PARALLEL (1), WORK (scratch dir),
 #            API_PORT (8000, compose), AIO_PORT (8001), PARITY_PORT (8098), DET_PORT (8099), JOB_TIMEOUT (secs, 1800)
@@ -19,7 +19,7 @@ MODEL_FILE=$(basename "$GGUF")
 LLAMA_BIN=${LLAMA_BIN:-$HOME/work/llama.cpp/build/bin/llama-server}
 PORT=${PORT:-8097}
 BASE=http://127.0.0.1:$PORT/v1
-HOST_PARALLEL=${HOST_PARALLEL:-1}  # serial decoding is the only reproducible mode (T5)
+HOST_PARALLEL=${HOST_PARALLEL:-1}  # serial decoding is the only reproducible mode
 DET_PORT=${DET_PORT:-8099}
 API_PORT=${API_PORT:-8000}
 AIO_PORT=${AIO_PORT:-8001}
@@ -138,13 +138,13 @@ def recompute(r, tag, t=CAP_T):
     ok([(w["file"], w["line"], w["name"]) for w in r["worst_functions"]] == [(f["file"], f["line"], f["name"]) for f in worst],
        f"{tag}: worst_functions = 10 lowest judged")
 
-def topics(r, tag):  # T3: "other" stays a small residual of the top-10 lists
+def topics(r, tag):  # "other" stays a small residual of the top-10 lists
     for k in ("patterns", "anti_patterns"):
         rows = r[k]; tot = sum(x["count"] for x in rows); oth = sum(x["count"] for x in rows if x["finding"] == "other")
         ok(tot == 0 or oth / tot <= 0.15, f"{tag}: {k} 'other' share {oth}/{tot} <= 15% of top-10 counts")
         ok(not any(x["finding"] == "other" for x in rows[:3]), f"{tag}: no 'other' in {k} top 3")
 
-def cmd_rethreshold(*reports):  # T2a: re-aggregate saved judgments at WPJUDGE_CAP_THRESHOLD=5, no model run
+def cmd_rethreshold(*reports):  # re-aggregate saved judgments at WPJUDGE_CAP_THRESHOLD=5, no model run
     from wpjudge import aggregate, config
     for p in reports:
         r = load(p); tag = Path(p).name + "@T5"
@@ -164,7 +164,7 @@ def fixture_units(r, tag, exp):
        f"{tag}: skip counts exact {exp['skip_counts']}")
     ok(r["target"]["files_scanned"] == exp["php_files"], f"{tag}: files_scanned {r['target']['files_scanned']} == {exp['php_files']}")
 
-def confidence(r, tag, exp=None, soft=False):  # WS-C: T2b header sync + T4 confidence fields
+def confidence(r, tag, exp=None, soft=False):  # header sync + confidence fields
     import os
     from wpjudge.aggregate import DIM, build_report
     from wpjudge.config import load as cfg_load
@@ -200,7 +200,7 @@ def cmd_fixture(exp, *reports):  # schema + units/skips + recompute for API / li
         confidence(r, tag, exp, soft=tag.startswith(("api", "aio")))  # soft until a serial b11515 run is recorded
         ok(not r["summary"]["coverage"]["low_coverage"], f"{tag}: coverage {r['summary']['coverage']['pct']}% >= 90")
 
-def same(a, b, msg):  # T5: exact equality on per-unit scores/verdicts, summary score+cap, dimensions
+def same(a, b, msg):  # exact equality on per-unit scores/verdicts, summary score+cap, dimensions
     def key(r):
         return ({i: (f["overall_score"], f["scores"], f["verdict"]) for i, f in byid(r).items()},
                 {k: r["summary"][k] for k in ("overall_score", "overall_score_uncapped", "cap_reasons")}, r["dimensions"])
@@ -227,9 +227,9 @@ def cmd_golden(exp, pre, rdir, rzip, rtgz, rw4):
     planted = [i for k in ("sqli", "ajax_no_nonce_no_cap", "unescaped_echo", "unsanitized_option") for i in g[k]]
     pre_by = {u["id"]: u for u in pre["units"]}
     pre_cap = [i for i in g["sqli"] if any(pre_by[i].get(d) is not None and pre_by[i][d] <= CAP_T for d in CAP_DIMS)]
-    for tag, r in R.items():  # binding change 3: the workers=4 run gets units/skips/verdicts only (checked above)
+    for tag, r in R.items():  # the workers=4 run gets units/skips/verdicts only (checked above)
         f = byid(r); capped_ids = {x["id"] for x in r["summary"]["cap_reasons"]}
-        if pre_cap:  # binding change 2(b): only if the pre-run showed it
+        if pre_cap:  # only if the pre-run showed it
             ok(r["summary"]["capped"] and any(i in capped_ids for i in pre_cap),
                f"{tag}: planted SQLi caps (pre-run capped {len(pre_cap)}); capped now: {sorted(i for i in g['sqli'] if i in capped_ids)}")
         bad = [(p, c) for p in planted for c in g["clean"] if f[p]["overall_score"] is not None and f[c]["overall_score"] is not None
@@ -273,7 +273,7 @@ def cmd_real(rep, name, exp_units, kind, wall):
     by = {}
     for f in r["functions"]:
         if f["status"] == "judged": by.setdefault("template" if f["kind"] == "template" else "function", []).append(f)
-    for k, fs in by.items():  # binding change 15: template vs function split
+    for k, fs in by.items():  # template vs function split
         w = sum(f["loc"] for f in fs)
         print(f"INFO {tag}: {k} n={len(fs)} mean={statistics.fmean(f['overall_score'] for f in fs):.1f} "
               f"loc_weighted={sum(f['overall_score'] * f['loc'] for f in fs) / w:.1f} loc={w}")
@@ -291,7 +291,7 @@ def _judge_json(raw):
     try: return json.loads(m.group(1)) if m else {}
     except ValueError: return {}
 
-def cmd_parity_run(val, base, out):  # r2's 16 prompts: the first 16 <wp_judge> val rows, sequential (workers=1)
+def cmd_parity_run(val, base, out):  # 16 prompts: the first 16 <wp_judge> val rows, sequential (workers=1)
     rows = []
     for line in open(val):
         msgs = [m for m in json.loads(line)["messages"] if m["role"] == "user"]
@@ -309,7 +309,7 @@ def cmd_parity_cmp(a, b):
     ok(len(A) == len(B) == 16 and eq == 16, f"parity: verdicts equal {eq}/16")
     ok(len(d) == 16 and max(d) <= 8, f"parity: overall |d| max {max(d) if d else None} <= 8 (mean {statistics.fmean(d) if d else 0:.2f})")
 
-def cmd_prerun(fixture, base, out):  # binding change 2: one live pass over the fixture units
+def cmd_prerun(fixture, base, out):  # one live pass over the fixture units
     from wpjudge.extract import collect_units
     exp = load(Path(fixture).parent / "vuln-plugin.expected.json")
     rows = []
@@ -375,7 +375,7 @@ sec_cli() {
   "$WJ" scan "$FIX" -o "$WORK/r_w4.json" --workers 4 --base-url "$BASE" --model-file "$MODEL_FILE" 2>/dev/null
   expect "cli dir workers=4: exit 0" test $? -eq 0
   chk golden "$EXP" "$PRE" "$WORK/r_dir.json" "$WORK/r_zip.json" "$WORK/r_tgz.json" "$WORK/r_w4.json"
-  chk fixture "$EXP" "$WORK/r_dir.json" "$WORK/r_zip.json" "$WORK/r_tgz.json"  # WS-C hard checks (serial runs only)
+  chk fixture "$EXP" "$WORK/r_dir.json" "$WORK/r_zip.json" "$WORK/r_tgz.json"  # hard checks (serial runs only)
   expect "cli: report model.file is --model-file" test "$(jq -r .model.file "$WORK/r_dir.json")" = "$MODEL_FILE"
   "$WJ" scan "$FIX" --workers 1 --base-url "$BASE" >"$WORK/r_stdout.json" 2>/dev/null
   expect "cli: no -o writes the report to stdout" jq -e '.schema_version == "1.0"' "$WORK/r_stdout.json"
@@ -406,7 +406,7 @@ sec_malicious() {
 }
 
 sec_serverdown() {
-  note "== serverdown (binding change 8)"
+  note "== serverdown"
   "$WJ" scan "$FIX" -o "$WORK/r_down.json" --base-url http://127.0.0.1:9/v1 --workers 4 2>/dev/null
   expect "serverdown: exit 0" test $? -eq 0
   chk serverdown "$EXP" "$WORK/r_down.json"
@@ -426,8 +426,8 @@ EOF
   chk fixture "$EXP" "$WORK/lib_dir.json" "$WORK/lib_zip.json"
 }
 
-sec_determinism() {  # T5: slot count alone does not move scores; concurrent decoding is flagged
-  note "== determinism (T5)"
+sec_determinism() {  # slot count alone does not move scores; concurrent decoding is flagged
+  note "== determinism"
   [ -s "$WORK/r_dir.json" ] || { fail "determinism: $WORK/r_dir.json missing; run the cli section first (same WORK)"; return; }
   host_down
   curl -fs "127.0.0.1:$DET_PORT/health" >/dev/null && { fail "determinism: port $DET_PORT already in use"; return; }
@@ -452,7 +452,7 @@ sec_determinism() {  # T5: slot count alone does not move scores; concurrent dec
 }
 
 sec_real() {
-  note "== real (binding changes 14, 15)"; host_up || return
+  note "== real"; host_up || return
   local R=$WORK/real; mkdir -p "$R"
   local spec name url units kind t0 wall
   for spec in "classic-editor|https://downloads.wordpress.org/plugin/classic-editor.latest-stable.zip|39|plugin" \
@@ -470,14 +470,14 @@ sec_real() {
   if [ -s "$WORK/r_dir.json" ]; then chk rethreshold "$WORK/r_dir.json"; else note "INFO real: no r_dir.json (run cli first) -> fixture re-threshold skipped"; fi
 }
 
-sec_prerun() {  # regenerate the binding-change-2 pre-run into WORK (copy over the fixture by hand if intended)
+sec_prerun() {  # regenerate the fixture pre-run into WORK (copy over the fixture by hand if intended)
   note "== prerun"; host_up || return
   chk prerun "$FIX" "$BASE" "$WORK/vuln-plugin.prerun.json"
   note "INFO prerun written to $WORK/vuln-plugin.prerun.json (committed copy: $PRE)"
 }
 
 sec_parity() {
-  note "== parity (binding change 13)"
+  note "== parity"
   host_down
   local v; v=$(dk run --rm --gpus all "$IMG" --version 2>&1 | tail -3)
   if grep -qi "version" <<<"$v"; then pass "parity: driver-580 smoke, image runs: $(tr '\n' ' ' <<<"$v")"; else fail "parity: image smoke: $v"; return; fi
@@ -560,7 +560,7 @@ EOF
     fi
     case $st in done | failed) break;; esac; sleep 1
   done
-  if [ -n "$seen" ]; then pass "api: partial /functions while running ($seen rows, no report yet, no code/raw)"; else fail "api: partial /functions not observed while running (phase 5 requires it)"; fi
+  if [ -n "$seen" ]; then pass "api: partial /functions while running ($seen rows, no report yet, no code/raw)"; else fail "api: partial /functions not observed while running (the live suite requires it)"; fi
   st=$(poll "$J1"); expect "api: job done (got $st)" test "$st" = done
   curl -s "$API/jobs/$J1" | jq .report >"$WORK/api_report.json"
   chk fixture "$EXP" "$WORK/api_report.json"

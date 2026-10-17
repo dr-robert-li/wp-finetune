@@ -58,7 +58,7 @@ def test_skips_templates_truncation(tmp_path):
     assert all(s["line"] == 0 and s["name"] == "" for s in skips if s["reason"] not in ("tiny", "too_large"))
     assert scanned == 15  # symlink not walked
     u = {x["file"]: x for x in units}
-    assert set(u) == {"abtest.php", "tpl.php", "huge.php"}  # abtest.php: r1 false-positive fix
+    assert set(u) == {"abtest.php", "tpl.php", "huge.php"}  # abtest.php: false-positive test-file fix
     assert u["tpl.php"]["kind"] == "template" and u["tpl.php"]["name"] == "<template>"
     h = u["huge.php"]
     assert h["truncated"] and h["code"].startswith("/** Doc. */") and h["code"].endswith("[truncated by wpjudge]\n")
@@ -141,7 +141,7 @@ def test_oversize_total(tmp_path):
         load_target(z, tmp_path / "j", load(max_total_mb=1))
 
 
-# ---- fix round 1 regressions (EVAL_W1.md) ----
+# ---- regression tests from the first fix round ----
 
 def test_docblock_drops_attributes_and_modifiers(tmp_path):
     _w(tmp_path, "c.php", "<?php\nclass C {\n\t/**\n\t * Doc.\n\t */\n\t#[Pure]\n\tfinal public static function s() {\n"

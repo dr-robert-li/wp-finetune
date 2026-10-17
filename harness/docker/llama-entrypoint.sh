@@ -10,7 +10,7 @@ if [ ! -f "$M" ]; then
   curl -fL -C - --retry 5 --retry-delay 10 -o "$M.part" "https://huggingface.co/$REPO/resolve/main/$FILE"
   mv "$M.part" "$M"
 fi
-P=${LLAMA_PARALLEL:-1}  # >1 batches decoding: faster, not reproducible (T5)
+P=${LLAMA_PARALLEL:-1}  # >1 batches decoding: faster, not reproducible
 # No -ctk/-ctv q8_0: the small file needs the default f16 KV cache.
 exec /app/llama-server -m "$M" --host 0.0.0.0 --port 8080 -ngl 999 --jinja \
   --chat-template-kwargs '{"enable_thinking": false}' \

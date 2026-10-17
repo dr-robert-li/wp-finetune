@@ -1,4 +1,4 @@
-"""T5 worker-count stability: serial defaults, reproducible flag, /props probe, client-side order independence."""
+"""Worker-count stability: serial defaults, reproducible flag, /props probe, client-side order independence."""
 import json
 import random
 import threading

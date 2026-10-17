@@ -1,4 +1,4 @@
-"""Target -> Units/Skips. tree-sitter-php, no PHP runtime (SPEC A1, research/r1_extract.md).
+"""Target -> Units/Skips. tree-sitter-php, no PHP runtime.
 
 load_target(path, dest=None, cfg=None) -> (root_dir, target_meta)
 collect_units(root_dir, cfg=None)      -> (units, skips, files_scanned)
